@@ -1,0 +1,14 @@
+:host { display: block; min-height: 100vh; }
+.bar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 10px 20px;
+  background: var(--lc-color-primary); color: var(--lc-color-on-primary);
+}
+.bar label { display: flex; align-items: center; gap: 6px; }
+.bar select { font: inherit; padding: 4px 6px; border-radius: var(--lc-radius); }
+.perms { margin-left: auto; font-size: .8em; opacity: .85; }
+main { max-width: 1000px; margin: 0 auto; padding: 20px; }
+.problem { border: 1px solid var(--lc-color-danger); color: var(--lc-color-danger); padding: 12px; border-radius: var(--lc-radius); }
+.toasts { position: fixed; right: 20px; bottom: 20px; display: flex; flex-direction: column; gap: 8px; }
+.toast { background: var(--lc-color-on-surface); color: var(--lc-color-surface); padding: 10px 14px; border-radius: var(--lc-radius); box-shadow: 0 2px 8px rgb(0 0 0 / .3); }
+.toast.error { background: var(--lc-color-danger); color: #fff; }
+.diag { text-align: center; font-size: .8em; color: var(--lc-color-muted); padding: 10px; }

@@ -1,9 +1,12 @@
 {
   "name": "components",
   "version": "0.0.1",
+  "description": "Catalogo dei componenti standard del linguaggio LowCode (testo, pulsante, sezione, filtri, tabella, form).",
   "peerDependencies": {
     "@angular/common": "^22.2.0",
-    "@angular/core": "^22.2.0"
+    "@angular/core": "^22.2.0",
+    "core": "^0.0.1",
+    "schema": "^0.0.1"
   },
   "dependencies": {
     "tslib": "^2.3.0"

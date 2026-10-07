@@ -44,7 +44,11 @@
         "type": { "const": "rest" },
         "method": { "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"] },
         "url": { "type": "string" },
-        "params": { "type": "object" },
+        "params": { "type": "object", "description": "Parametri di query (GET, DELETE)." },
+        "body": {
+          "description": "Corpo della richiesta (POST, PUT, PATCH): un oggetto con espressioni oppure una sola espressione, per esempio {{form}}. Se manca si usa params.",
+          "oneOf": [{ "type": "object" }, { "$ref": "#/$defs/expression" }]
+        },
         "paging": { "enum": ["server", "none"] }
       }
     },

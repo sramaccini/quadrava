@@ -1,4 +1,4 @@
-import { validateScreen } from './validate';
+import { validateScreen, validateTheme } from './validate';
 
 const minimal = () => ({
   schemaVersion: '1.0',
@@ -80,5 +80,42 @@ describe('validateScreen', () => {
   it('valida i componenti annidati nelle sezioni', () => {
     const doc = { ...minimal(), components: [{ type: 'section', components: [{ type: 'text' }] }] };
     expect(issuesOf(doc)).toContain('/components/0/components/0 proprietà obbligatoria mancante: text');
+  });
+});
+
+describe('validateTheme', () => {
+  const base = {
+    schemaVersion: '1.0',
+    theme: 'test',
+    tokens: {
+      colors: { primary: '#123456', onPrimary: '#fff', background: '#fff', surface: '#fff', onSurface: '#000', border: 'rgb(1, 2, 3)' },
+      typography: { fontFamily: 'Roboto, sans-serif', baseSize: 14 },
+      shape: { radius: 4 },
+      density: 'compact',
+    },
+  };
+
+  it('accetta un tema valido', () => {
+    expect(validateTheme(base).valid).toBe(true);
+  });
+
+  it('rifiuta colori che potrebbero iniettare CSS', () => {
+    const bad = structuredClone(base);
+    bad.tokens.colors.primary = 'red; background: url(http://evil)';
+    expect(validateTheme(bad).valid).toBe(false);
+  });
+
+  it('rifiuta una famiglia di font con caratteri non ammessi', () => {
+    const bad = structuredClone(base);
+    bad.tokens.typography.fontFamily = 'x}body{display:none';
+    expect(validateTheme(bad).valid).toBe(false);
+  });
+
+  it('rifiuta token sconosciuti e colori obbligatori mancanti', () => {
+    const unknown = { ...base, tokens: { ...base.tokens, extra: 1 } };
+    expect(validateTheme(unknown).valid).toBe(false);
+    const missing = structuredClone(base) as { tokens: { colors: Record<string, string> } };
+    delete missing.tokens.colors['primary'];
+    expect(validateTheme(missing).valid).toBe(false);
   });
 });

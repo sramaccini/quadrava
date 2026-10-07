@@ -82,7 +82,19 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
           "type": "string"
         },
         "params": {
-          "type": "object"
+          "type": "object",
+          "description": "Parametri di query (GET, DELETE)."
+        },
+        "body": {
+          "description": "Corpo della richiesta (POST, PUT, PATCH): un oggetto con espressioni oppure una sola espressione, per esempio {{form}}. Se manca si usa params.",
+          "oneOf": [
+            {
+              "type": "object"
+            },
+            {
+              "$ref": "#/$defs/expression"
+            }
+          ]
         },
         "paging": {
           "enum": [

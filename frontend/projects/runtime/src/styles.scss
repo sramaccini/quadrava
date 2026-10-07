@@ -1,1 +1,9 @@
-/* You can add global styles to this file, and also import other style files */
+/* Variabili di ripiego: il tema scelto le sovrascrive sul root (ThemeService). */
+:root {
+  --lc-color-primary: #1f5fbf; --lc-color-on-primary: #fff; --lc-color-background: #f4f6f9; --lc-color-surface: #fff;
+  --lc-color-on-surface: #1b2430; --lc-color-muted: #5d6b7a; --lc-color-border: #d5dbe3; --lc-color-danger: #c62828;
+  --lc-color-success: #2e7d32; --lc-font-family: system-ui, sans-serif; --lc-font-size: 15px; --lc-radius: 6px;
+  --lc-gap: 12px; --lc-control-height: 38px;
+}
+html, body { margin: 0; }
+body { background: var(--lc-color-background); color: var(--lc-color-on-surface); font-family: var(--lc-font-family); font-size: var(--lc-font-size); }

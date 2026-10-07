@@ -3,14 +3,17 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve runtime",
-    "start:runtime": "ng serve runtime --port 4200",
+    "start": "npm run start:runtime",
+    "start:runtime": "npm run demo:prepare && ng serve runtime --port 4200",
     "start:editor": "ng serve editor --port 4201",
     "build": "ng build",
     "test": "ng test",
     "validate:examples": "node tools/validate-examples.mjs",
     "schema:sync": "node tools/sync-schema.mjs",
-    "schema:check": "node tools/sync-schema.mjs --check"
+    "schema:check": "node tools/sync-schema.mjs --check",
+    "build:libs": "ng build schema && ng build expressions && ng build core && ng build components",
+    "demo:prepare": "npm run build:libs && node tools/copy-examples.mjs",
+    "test:libs": "ng test schema --watch=false && ng test expressions --watch=false && ng test core --watch=false && ng test components --watch=false"
   },
   "private": true,
   "packageManager": "npm@10.9.8",

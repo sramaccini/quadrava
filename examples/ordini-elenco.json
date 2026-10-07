@@ -8,7 +8,10 @@
       "type": "rest",
       "method": "GET",
       "url": "/api/ordini",
-      "params": { "stato": "{{state.filtri.stato}}", "page": "{{state.page}}" },
+      "params": {
+        "stato": "{{state.filtri.stato}}",
+        "page": "{{state.page}}"
+      },
       "paging": "server"
     },
     "approvaOrdine": {
@@ -23,23 +26,66 @@
       "type": "filterBar",
       "bind": "state.filtri",
       "fields": [
-        { "name": "stato", "type": "select", "label": "Stato", "options": ["bozza", "inviato", "approvato"] }
+        {
+          "name": "stato",
+          "type": "select",
+          "label": "Stato",
+          "options": [
+            "bozza",
+            "inviato",
+            "approvato"
+          ]
+        }
       ]
     },
     {
       "id": "tabella-ordini",
       "type": "table",
       "source": "ordini",
-      "columns": [{ "field": "numero" }, { "field": "cliente" }, { "field": "stato" }],
+      "columns": [
+        {
+          "field": "numero"
+        },
+        {
+          "field": "cliente"
+        },
+        {
+          "field": "stato"
+        }
+      ],
       "rowActions": [
+        {
+          "id": "btn-apri",
+          "label": "Apri",
+          "onClick": [
+            {
+              "navigate": "ordine-dettaglio",
+              "params": {
+                "id": "{{row.id}}"
+              }
+            }
+          ]
+        },
         {
           "id": "btn-approva",
           "label": "Approva",
           "visibleIf": "{{can('ordini.approva') && row.stato == 'inviato'}}",
           "onClick": [
-            { "call": "approvaOrdine", "args": { "id": "{{row.id}}" }, "onError": { "toast": "Approvazione non riuscita" } },
-            { "refresh": "ordini" },
-            { "toast": "Ordine approvato" }
+            {
+              "call": "approvaOrdine",
+              "args": {
+                "id": "{{row.id}}"
+              },
+              "onError": {
+                "toast": "Approvazione non riuscita"
+              }
+            },
+            {
+              "refresh": "ordini"
+            },
+            {
+              "toast": "Ordine approvato"
+            }
           ]
         }
       ]

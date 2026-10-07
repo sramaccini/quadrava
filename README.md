@@ -25,26 +25,46 @@ Documentazione di riferimento: vedi [docs/README.md](docs/README.md).
 | Spring Boot | 4.1.1 | Java 21 |
 | Keycloak | 26.8.0 | Immagine `quay.io/keycloak/keycloak` |
 
-## Avvio rapido
+## Demo del frontend (senza backend)
+
+Serve solo Node.js (22.22.3+ oppure 24.15+). La demo usa un backend finto in memoria, permessi simulati e le schermate JSON di `examples/`.
+
+```
+cd frontend
+npm ci
+npm run start:runtime
+```
+
+Poi apri http://localhost:4200. Il comando compila le librerie nell'ordine giusto (`schema`, `expressions`, `core`, `components`), copia gli esempi e avvia l'app.
+Nella barra in alto si cambiano **utente** (operatore, responsabile, amministratore) e **tema** (chiaro, scuro). Cosa provare:
+
+- Con `operatore` l'elenco ordini non mostra il pulsante Approva; con `responsabile` compare solo sugli ordini "inviato".
+- "Apri" porta al dettaglio: il campo IBAN compare solo con `amministratore` e Salva è abilitato solo con il permesso di scrittura.
+- Le librerie non si ricaricano a caldo: dopo una modifica in `projects/<libreria>` rilancia `npm run build:libs`.
+
+Test: `npm run test:libs` (librerie) e `npx ng test runtime --watch=false` (demo end-to-end con le schermate reali).
+
+## Avvio completo
 
 Prerequisiti: Node.js 22.22.3+, JDK 21, Maven 3.9+, Docker.
 
 1. Identity provider: `cd idp && docker compose up` (console su http://localhost:8180, utente `admin`, password `admin`).
 2. Reference implementation: `cd reference && mvn verify`, poi per ogni modulo `mvn -pl <modulo> spring-boot:run`.
    Porte: bff 8080, registry 8081, authz 8082, telemetry 8083.
-3. Frontend: `cd frontend && npm install`, poi `npm run start:runtime` (porta 4200) oppure `npm run start:editor` (porta 4201).
-4. Validazione degli esempi contro lo schema: `cd frontend && npm run validate:examples`.
+3. Frontend: `cd frontend && npm ci`, poi `npm run start:runtime` (porta 4200) oppure `npm run start:editor` (porta 4201, ancora scheletro).
+4. Validazione degli esempi contro gli schemi: `cd frontend && npm run validate:examples`.
 
 Utenti di sviluppo in Keycloak: `operatore`, `responsabile`, `amministratore` (password uguale al nome utente). Sono solo per sviluppo locale.
 
 ## Stato
 
-Scheletro iniziale. Verificato: build di tutte le app e librerie Angular, test dell'app `runtime`, validità dei tre contratti OpenAPI, validità degli esempi contro lo schema del nucleo.
-Non ancora verificato: la compilazione e i test dei moduli Java (vanno lanciati con `mvn verify`; i nomi degli starter di Spring Boot 4 vanno controllati al primo build).
+Verificato: schema di schermate e temi, valutatore di espressioni CEL, interprete (`core`), catalogo componenti (`components`) e demo `runtime`, con 71 test automatici; build di tutte le app e librerie; validità dei tre contratti OpenAPI e degli esempi.
+Non ancora verificato: la compilazione e i test dei moduli Java (vanno lanciati con `mvn verify`; i nomi degli starter di Spring Boot 4 vanno controllati al primo build). La demo non è stata provata in un browser reale: è coperta da test con jsdom.
+Punto aperto di sicurezza: Ajv genera codice con `new Function`, quindi la validazione nel browser richiede `unsafe-eval` nella Content-Security-Policy. Prima della produzione va precompilata (Ajv standalone) oppure spostata alla pubblicazione nel registry.
 
 ## Prossimi passi
 
-- Schema del nucleo: estendere `screen.schema.json` con i componenti del catalogo.
-- Interprete, stato e motore di azioni in `core`; client HTTP, autenticazione, autorizzazione e telemetria in `services`.
-- Prova di fattibilità del linguaggio di espressioni (CEL) in `expressions`.
+- `services`: client HTTP, autenticazione, autorizzazione (con `X-Permissions-Version`) e telemetria, al posto delle porte finte della demo.
+- Editor visuale (`editor`): albero dei nodi, pannello proprietà, anteprima, temi.
+- Controllo delle espressioni anche in `validate:examples`.
 - BFF: protezione CSRF, inoltro delle API con token e `traceparent`, elenco degli host consentiti.

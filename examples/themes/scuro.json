@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "1.0",
+  "theme": "scuro",
+  "label": "Scuro compatto",
+  "mode": "dark",
+  "tokens": {
+    "colors": {
+      "primary": "#6aa6ff",
+      "onPrimary": "#0b1220",
+      "background": "#0f141b",
+      "surface": "#1a222d",
+      "onSurface": "#e6ebf2",
+      "mutedText": "#9aa8b8",
+      "border": "#2e3a49",
+      "danger": "#ff6b6b",
+      "success": "#5fd38d"
+    },
+    "typography": { "fontFamily": "Segoe UI, Roboto, Arial, sans-serif", "baseSize": 14 },
+    "shape": { "radius": 2 },
+    "density": "compact"
+  }
+}

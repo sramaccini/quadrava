@@ -1,6 +1,8 @@
 import Ajv2020 from 'ajv/dist/2020.js';
+import type { ValidateFunction } from 'ajv/dist/2020.js';
 import { SCREEN_SCHEMA } from './screen.schema';
-import type { ScreenDefinition } from './types';
+import { THEME_SCHEMA } from './theme.schema';
+import type { ScreenDefinition, ThemeDefinition } from './types';
 
 export interface ValidationIssue {
   /** Posizione nel documento, per esempio `/components/0/columns`. */
@@ -8,17 +10,25 @@ export interface ValidationIssue {
   message: string;
 }
 
-export type ValidationResult =
-  | { valid: true; value: ScreenDefinition }
-  | { valid: false; issues: ValidationIssue[] };
+export type ValidationResult<T = ScreenDefinition> = { valid: true; value: T } | { valid: false; issues: ValidationIssue[] };
 
 const ajv = new Ajv2020({ allErrors: true, strict: true });
-const validator = ajv.compile(SCREEN_SCHEMA);
+const screenValidator = ajv.compile(SCREEN_SCHEMA);
+const themeValidator = ajv.compile(THEME_SCHEMA);
 
 /** Valida una definizione di schermata contro lo schema del nucleo. Non lancia eccezioni. */
-export function validateScreen(document: unknown): ValidationResult {
+export function validateScreen(document: unknown): ValidationResult<ScreenDefinition> {
+  return run<ScreenDefinition>(screenValidator, document);
+}
+
+/** Valida un tema (design token) contro lo schema dei temi. Non lancia eccezioni. */
+export function validateTheme(document: unknown): ValidationResult<ThemeDefinition> {
+  return run<ThemeDefinition>(themeValidator, document);
+}
+
+function run<T>(validator: ValidateFunction, document: unknown): ValidationResult<T> {
   if (validator(document)) {
-    return { valid: true, value: document as ScreenDefinition };
+    return { valid: true, value: document as T };
   }
   const issues = (validator.errors ?? [])
     // I messaggi "must match then schema" duplicano l'errore specifico che li segue.
@@ -28,7 +38,9 @@ export function validateScreen(document: unknown): ValidationResult {
 }
 
 function describe(keyword: string, message: string, params: Record<string, unknown>): string {
-  if (keyword === 'unevaluatedProperties') return `proprietà non prevista: ${String(params['unevaluatedProperty'])}`;
+  if (keyword === 'unevaluatedProperties' || keyword === 'additionalProperties') {
+    return `proprietà non prevista: ${String(params['unevaluatedProperty'] ?? params['additionalProperty'])}`;
+  }
   if (keyword === 'required') return `proprietà obbligatoria mancante: ${String(params['missingProperty'])}`;
   return message;
 }

@@ -7,7 +7,10 @@ export interface DataSourceDefinition {
   type: 'rest';
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   url: string;
+  /** Parametri di query (GET, DELETE). */
   params?: Record<string, unknown>;
+  /** Corpo (POST, PUT, PATCH): oggetto con espressioni o una sola espressione come `{{form}}`. Se manca si usa `params`. */
+  body?: Record<string, unknown> | Expression;
   paging?: 'server' | 'none';
 }
 
@@ -113,4 +116,32 @@ export interface ScreenDefinition {
   requires?: string;
   dataSources?: Record<string, DataSourceDefinition>;
   components: NodeDefinition[];
+}
+
+/** Tema: design token applicati dal runtime come variabili CSS. Allineato a schemas/theme.schema.json. */
+export interface ThemeColors {
+  primary: string;
+  onPrimary: string;
+  background: string;
+  surface: string;
+  onSurface: string;
+  mutedText?: string;
+  border: string;
+  danger?: string;
+  success?: string;
+}
+
+export interface ThemeTokens {
+  colors: ThemeColors;
+  typography?: { fontFamily?: string; baseSize?: number };
+  shape?: { radius?: number };
+  density?: 'compact' | 'comfortable';
+}
+
+export interface ThemeDefinition {
+  schemaVersion: string;
+  theme: string;
+  label?: string;
+  mode?: 'light' | 'dark';
+  tokens: ThemeTokens;
 }
