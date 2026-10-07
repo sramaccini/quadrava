@@ -2,7 +2,7 @@
   "schemaVersion": "1.0",
   "screen": "fattura-nuova",
   "title": "Nuova fattura",
-  "requires": "fatture.crea",
+  "requires": "fatture.fattura.crea",
   "dataSources": {
     "creaFattura": {
       "type": "rest",
@@ -61,7 +61,7 @@
         {
           "id": "btn-salva",
           "label": "Salva come bozza",
-          "enabledIf": "{{can('fatture.crea')}}",
+          "enabledIf": "{{can('fatture.fattura.crea')}}",
           "onClick": [
             {
               "call": "creaFattura",

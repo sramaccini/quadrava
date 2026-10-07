@@ -2,7 +2,7 @@
   "schemaVersion": "1.0",
   "screen": "fatture-elenco",
   "title": "Fatture",
-  "requires": "fatture.leggi",
+  "requires": "fatture.fattura.leggi",
   "dataSources": {
     "fatture": {
       "type": "rest",
@@ -65,7 +65,7 @@
         {
           "id": "btn-invia",
           "label": "Invia",
-          "visibleIf": "{{can('fatture.crea') && row.stato == 'bozza'}}",
+          "visibleIf": "{{can('fatture.fattura.crea') && row.stato == 'bozza'}}",
           "onClick": [
             {
               "call": "inviaFattura",

@@ -11,7 +11,7 @@ const definition: NavigationDefinition = {
     {
       id: 'inserimento',
       label: 'Inserimento',
-      requires: 'fatture.crea',
+      requires: 'fatture.fattura.crea',
       items: [
         {
           id: 'nuova',
@@ -25,7 +25,7 @@ const definition: NavigationDefinition = {
         { id: 'bozze', label: 'Bozze', screen: 'fatture-elenco', params: { stato: 'bozza' } },
       ],
     },
-    { id: 'consultazione', label: 'Consultazione', requires: 'fatture.leggi', items: [{ id: 'elenco', label: 'Elenco', screen: 'fatture-elenco' }] },
+    { id: 'consultazione', label: 'Consultazione', requires: 'fatture.fattura.leggi', items: [{ id: 'elenco', label: 'Elenco', screen: 'fatture-elenco' }] },
   ],
 };
 
@@ -52,13 +52,13 @@ describe('SidebarComponent', () => {
   const labels = (el: HTMLElement): string[] => [...el.querySelectorAll('.row .label')].map((n) => n.textContent?.trim() ?? '');
 
   it('con un solo caso d’uso non mostra il selettore', () => {
-    const { el } = render(['fatture.crea']);
+    const { el } = render(['fatture.fattura.crea']);
     expect(el.querySelector('select')).toBeNull();
     expect(labels(el)).toEqual(['Nuova fattura', 'Bozze']);
   });
 
   it('con più casi d’uso mostra il selettore e segnala il cambio', () => {
-    const { fixture, el, changes } = render(['fatture.crea', 'fatture.leggi']);
+    const { fixture, el, changes } = render(['fatture.fattura.crea', 'fatture.fattura.leggi']);
     const select = el.querySelector('select') as HTMLSelectElement;
     expect([...select.options].map((o) => o.textContent?.trim())).toEqual(['Inserimento', 'Consultazione']);
     select.value = 'consultazione';
@@ -70,7 +70,7 @@ describe('SidebarComponent', () => {
   });
 
   it('i gruppi si aprono e chiudono con aria-expanded, fino al terzo livello', () => {
-    const { fixture, el } = render(['fatture.crea']);
+    const { fixture, el } = render(['fatture.fattura.crea']);
     const group = el.querySelector('button.group') as HTMLButtonElement;
     expect(group.getAttribute('aria-expanded')).toBe('false');
     group.click();
@@ -83,7 +83,7 @@ describe('SidebarComponent', () => {
   });
 
   it('evidenzia la voce attiva e apre i suoi gruppi', () => {
-    const { fixture, el } = render(['fatture.crea']);
+    const { fixture, el } = render(['fatture.fattura.crea']);
     fixture.componentRef.setInput('active', { screen: 'fattura-nuova', params: { tipo: 'attiva' } });
     fixture.detectChanges();
     fixture.detectChanges();
@@ -93,7 +93,7 @@ describe('SidebarComponent', () => {
   });
 
   it('i link hanno href e il clic normale emette navigate senza ricaricare', () => {
-    const { fixture, el, events } = render(['fatture.crea']);
+    const { fixture, el, events } = render(['fatture.fattura.crea']);
     const bozze = [...el.querySelectorAll('a.leaf')].find((a) => a.textContent?.includes('Bozze')) as HTMLAnchorElement;
     expect(bozze.getAttribute('href')).toBe('/inserimento/fatture-elenco');
     const click = new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 });
@@ -109,7 +109,7 @@ describe('SidebarComponent', () => {
   });
 
   it('i permessi tolti ridisegnano il menu', () => {
-    const { fixture, el } = render(['fatture.crea']);
+    const { fixture, el } = render(['fatture.fattura.crea']);
     permissions.set(new Set());
     fixture.detectChanges();
     expect(el.querySelector('nav')).toBeNull();
@@ -117,7 +117,7 @@ describe('SidebarComponent', () => {
   });
 
   it('da compressa mostra solo le icone e un clic su un gruppo riapre la barra', () => {
-    const { fixture, el } = render(['fatture.crea']);
+    const { fixture, el } = render(['fatture.fattura.crea']);
     (el.querySelector('.toggle') as HTMLButtonElement).click();
     fixture.detectChanges();
     expect(el.querySelector('.side')?.classList.contains('collapsed')).toBe(true);

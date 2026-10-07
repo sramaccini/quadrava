@@ -28,13 +28,13 @@
     },
     "permission": {
       "type": "string",
-      "pattern": "^[a-z0-9]+(\\.[a-z0-9]+)+$",
-      "description": "Permesso nel formato dominio.risorsa.azione."
+      "pattern": "^[a-z0-9]+\\.[a-z0-9]+\\.[a-z0-9]+$",
+      "description": "Permesso nel formato dominio.risorsa.azione (tre parti, per esempio ordini.ordine.approva)."
     },
     "expression": {
       "type": "string",
       "pattern": "^\\{\\{[\\s\\S]+\\}\\}$",
-      "description": "Espressione CEL tra doppie graffe, per esempio {{can('ordini.approva') && row.stato == 'inviato'}}. Variabili disponibili: user, state, params, row, form, value. Funzione disponibile: can(permesso)."
+      "description": "Espressione CEL tra doppie graffe, per esempio {{can('ordini.ordine.approva') && row.stato == 'inviato'}}. Variabili disponibili: user, state, params, row, form, value. Funzione disponibile: can(permesso)."
     },
     "dataSource": {
       "type": "object",

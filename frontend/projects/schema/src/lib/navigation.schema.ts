@@ -39,7 +39,7 @@ export const NAVIGATION_SCHEMA: Record<string, unknown> = {
     },
     "permission": {
       "type": "string",
-      "pattern": "^[a-z0-9]+(\\.[a-z0-9]+)+$"
+      "pattern": "^[a-z0-9]+\\.[a-z0-9]+\\.[a-z0-9]+$"
     },
     "expression": {
       "type": "string",

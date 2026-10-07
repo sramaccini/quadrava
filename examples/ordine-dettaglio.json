@@ -2,7 +2,7 @@
   "schemaVersion": "1.0",
   "screen": "ordine-dettaglio",
   "title": "Dettaglio ordine",
-  "requires": "ordini.leggi",
+  "requires": "ordini.ordine.leggi",
   "dataSources": {
     "ordine": { "type": "rest", "method": "GET", "url": "/api/ordini/{{params.id}}" },
     "salvaOrdine": { "type": "rest", "method": "PUT", "url": "/api/ordini/{{params.id}}", "body": "{{form}}" }
@@ -33,7 +33,7 @@
         {
           "id": "btn-salva",
           "label": "Salva",
-          "enabledIf": "{{can('ordini.scrivi') && form._perm.update}}",
+          "enabledIf": "{{can('ordini.ordine.scrivi') && form._perm.update}}",
           "onClick": [
             { "call": "salvaOrdine", "onError": { "toast": "Salvataggio non riuscito" } },
             { "navigate": "ordini-elenco" }

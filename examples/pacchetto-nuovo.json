@@ -2,7 +2,7 @@
   "schemaVersion": "1.0",
   "screen": "pacchetto-nuovo",
   "title": "Nuovo pacchetto",
-  "requires": "pacchetti.crea",
+  "requires": "pacchetti.pacchetto.crea",
   "dataSources": {
     "creaPacchetto": {
       "type": "rest",
@@ -32,7 +32,7 @@
         {
           "id": "btn-crea",
           "label": "Crea pacchetto",
-          "enabledIf": "{{can('pacchetti.crea')}}",
+          "enabledIf": "{{can('pacchetti.pacchetto.crea')}}",
           "onClick": [
             {
               "call": "creaPacchetto",

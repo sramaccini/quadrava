@@ -2,7 +2,7 @@
   "schemaVersion": "1.0",
   "screen": "spese-elenco",
   "title": "Revisione spese",
-  "requires": "spese.leggi",
+  "requires": "spese.spesa.leggi",
   "dataSources": {
     "spese": {
       "type": "rest",
@@ -50,7 +50,7 @@
         {
           "id": "btn-approva-spesa",
           "label": "Approva",
-          "visibleIf": "{{can('spese.revisiona') && row.stato == 'da-revisionare'}}",
+          "visibleIf": "{{can('spese.spesa.revisiona') && row.stato == 'da-revisionare'}}",
           "onClick": [
             {
               "call": "revisionaSpesa",
@@ -73,7 +73,7 @@
         {
           "id": "btn-respingi-spesa",
           "label": "Respingi",
-          "visibleIf": "{{can('spese.revisiona') && row.stato == 'da-revisionare'}}",
+          "visibleIf": "{{can('spese.spesa.revisiona') && row.stato == 'da-revisionare'}}",
           "onClick": [
             {
               "call": "revisionaSpesa",

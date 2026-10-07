@@ -7,7 +7,7 @@ import { Fakes } from './testing';
 const screen: ScreenDefinition = {
   schemaVersion: '1.0',
   screen: 'ordini-elenco',
-  requires: 'ordini.leggi',
+  requires: 'ordini.ordine.leggi',
   dataSources: {
     ordini: { type: 'rest', method: 'GET', url: '/api/ordini', params: { stato: '{{state.filtri.stato}}', page: '{{state.page}}' } },
     approva: { type: 'rest', method: 'POST', url: '/api/ordini/{{id}}/approva' },
@@ -21,7 +21,7 @@ describe('ScreenRuntime', () => {
 
   beforeEach(() => {
     fakes = new Fakes();
-    fakes.permissions.add('ordini.leggi');
+    fakes.permissions.add('ordini.ordine.leggi');
     injector = TestBed.inject(Injector);
   });
 
@@ -100,8 +100,8 @@ describe('ScreenRuntime', () => {
   it('visibilità fail-closed: errore in hiddenIf nasconde, errore in visibleIf nasconde', () => {
     const rt = fakes.runtime(screen, injector);
     expect(rt.isVisible({})).toBe(true);
-    expect(rt.isVisible({ visibleIf: "{{can('ordini.approva')}}" })).toBe(false);
-    expect(rt.isVisible({ visibleIf: "{{can('ordini.leggi')}}" })).toBe(true);
+    expect(rt.isVisible({ visibleIf: "{{can('ordini.ordine.approva')}}" })).toBe(false);
+    expect(rt.isVisible({ visibleIf: "{{can('ordini.ordine.leggi')}}" })).toBe(true);
     expect(rt.isVisible({ hiddenIf: '{{row.inesistente == 1}}' })).toBe(false);
     expect(rt.isVisible({ visibleIf: '{{row.inesistente == 1}}' })).toBe(false);
     expect(rt.isReadOnly({ readOnlyIf: '{{row.inesistente == 1}}' })).toBe(true);
@@ -123,7 +123,7 @@ describe('runSteps', () => {
 
   beforeEach(() => {
     fakes = new Fakes();
-    fakes.permissions.add('ordini.leggi');
+    fakes.permissions.add('ordini.ordine.leggi');
     injector = TestBed.inject(Injector);
   });
 
@@ -180,7 +180,7 @@ describe('runSteps', () => {
 describe('ScreenRuntime: corpo delle richieste', () => {
   it('usa body con l’intero form e passa lo scope della chiamata', async () => {
     const fakes = new Fakes();
-    fakes.permissions.add('ordini.leggi');
+    fakes.permissions.add('ordini.ordine.leggi');
     const injector = TestBed.inject(Injector);
     const rt = fakes.runtime(
       { ...screen, dataSources: { salva: { type: 'rest', method: 'PUT', url: '/api/ordini/{{params.id}}', body: '{{form}}' } } },

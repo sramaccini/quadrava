@@ -4,12 +4,12 @@ import { Authorization, DataClient, Notifier, RuntimeDiagnostics, UserProvider, 
 /** Profili della demo: i permessi sono quelli che in produzione darebbe il servizio di autorizzazione. */
 export const DEMO_PROFILES: Record<string, string[]> = {
   // Inserisce e consulta fatture e vede gli ordini: due casi d'uso.
-  operatore: ['fatture.leggi', 'fatture.crea', 'ordini.leggi'],
+  operatore: ['fatture.fattura.leggi', 'fatture.fattura.crea', 'ordini.ordine.leggi'],
   // Aggiunge pacchetti, revisione spese e approvazione ordini: tutti e quattro i casi d'uso.
-  responsabile: ['fatture.leggi', 'fatture.crea', 'ordini.leggi', 'ordini.approva', 'ordini.scrivi', 'pacchetti.leggi', 'pacchetti.crea', 'spese.leggi', 'spese.revisiona'],
+  responsabile: ['fatture.fattura.leggi', 'fatture.fattura.crea', 'ordini.ordine.leggi', 'ordini.ordine.approva', 'ordini.ordine.scrivi', 'pacchetti.pacchetto.leggi', 'pacchetti.pacchetto.crea', 'spese.spesa.leggi', 'spese.spesa.revisiona'],
   amministratore: [
-    'fatture.leggi', 'fatture.crea', 'ordini.leggi', 'ordini.approva', 'ordini.scrivi', 'ordini.iban.leggi', 'ordini.iban.scrivi',
-    'pacchetti.leggi', 'pacchetti.crea', 'spese.leggi', 'spese.revisiona',
+    'fatture.fattura.leggi', 'fatture.fattura.crea', 'ordini.ordine.leggi', 'ordini.ordine.approva', 'ordini.ordine.scrivi', 'ordini.iban.leggi', 'ordini.iban.scrivi',
+    'pacchetti.pacchetto.leggi', 'pacchetti.pacchetto.crea', 'spese.spesa.leggi', 'spese.spesa.revisiona',
   ],
 };
 

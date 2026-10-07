@@ -1,6 +1,6 @@
 /** Tipi del nucleo del linguaggio, allineati a schemas/screen.schema.json. */
 
-/** Espressione CEL tra doppie graffe, per esempio `{{can('ordini.approva')}}`. */
+/** Espressione CEL tra doppie graffe, per esempio `{{can('ordini.ordine.approva')}}`. */
 export type Expression = string;
 
 export interface DataSourceDefinition {

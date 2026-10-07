@@ -90,8 +90,8 @@ components:
     Permission:
       type: string
       description: Formato dominio.risorsa.azione, minuscolo.
-      pattern: '^[a-z0-9]+(\.[a-z0-9]+)+$'
-      examples: ['ordini.approva']
+      pattern: '^[a-z0-9]+\.[a-z0-9]+\.[a-z0-9]+$'
+      examples: ['ordini.ordine.approva']
     Capabilities:
       type: object
       required: [permissions, version]

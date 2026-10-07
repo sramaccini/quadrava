@@ -2,7 +2,7 @@
   "schemaVersion": "1.0",
   "screen": "pacchetti-elenco",
   "title": "Pacchetti creati",
-  "requires": "pacchetti.leggi",
+  "requires": "pacchetti.pacchetto.leggi",
   "dataSources": {
     "pacchetti": {
       "type": "rest",

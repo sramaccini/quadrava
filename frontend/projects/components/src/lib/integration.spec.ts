@@ -8,7 +8,7 @@ const screen: ScreenDefinition = {
   schemaVersion: '1.0',
   screen: 'ordini-elenco',
   title: 'Ordini',
-  requires: 'ordini.leggi',
+  requires: 'ordini.ordine.leggi',
   dataSources: {
     ordini: { type: 'rest', method: 'GET', url: '/api/ordini', params: { stato: '{{state.filtri.stato}}', page: '{{state.page}}' }, paging: 'server' },
     approvaOrdine: { type: 'rest', method: 'POST', url: '/api/ordini/{{id}}/approva' },
@@ -22,7 +22,7 @@ const screen: ScreenDefinition = {
       rowActions: [
         {
           label: 'Approva',
-          visibleIf: "{{can('ordini.approva') && row.stato == 'inviato'}}",
+          visibleIf: "{{can('ordini.ordine.approva') && row.stato == 'inviato'}}",
           onClick: [
             { call: 'approvaOrdine', args: { id: '{{row.id}}' }, onError: { toast: 'Approvazione non riuscita' } },
             { refresh: 'ordini' },
@@ -47,7 +47,7 @@ describe('ScreenComponent + catalogo standard', () => {
   let toasts: string[];
 
   async function render(): Promise<{ fixture: ComponentFixture<ScreenComponent>; el: HTMLElement }> {
-    permissions.set(new Set(['ordini.leggi']));
+    permissions.set(new Set(['ordini.ordine.leggi']));
     requests = [];
     toasts = [];
     TestBed.configureTestingModule({
@@ -97,7 +97,7 @@ describe('ScreenComponent + catalogo standard', () => {
 
   it('con il permesso mostra Approva solo sulle righe inviate', async () => {
     const { fixture, el } = await render();
-    grant('ordini.approva');
+    grant('ordini.ordine.approva');
     await settle(fixture);
     expect(buttons(el).filter((b) => b === 'Approva')).toHaveLength(1);
     expect(el.querySelectorAll('tbody tr')[1]?.textContent).toContain('Approva');
@@ -105,7 +105,7 @@ describe('ScreenComponent + catalogo standard', () => {
 
   it('il click esegue la chiamata, ricarica la tabella e avvisa', async () => {
     const { fixture, el } = await render();
-    grant('ordini.approva');
+    grant('ordini.ordine.approva');
     await settle(fixture);
     const approva = [...el.querySelectorAll('button')].find((b) => b.textContent?.trim() === 'Approva') as HTMLButtonElement;
     approva.click();

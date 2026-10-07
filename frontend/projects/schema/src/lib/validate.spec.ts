@@ -19,7 +19,7 @@ describe('validateScreen', () => {
   it('accetta una tabella con azione condizionata dai permessi', () => {
     const doc = {
       ...minimal(),
-      requires: 'ordini.leggi',
+      requires: 'ordini.ordine.leggi',
       dataSources: { ordini: { type: 'rest', method: 'GET', url: '/api/ordini', paging: 'server' } },
       components: [
         {
@@ -30,7 +30,7 @@ describe('validateScreen', () => {
           rowActions: [
             {
               label: 'Approva',
-              visibleIf: "{{can('ordini.approva') && row.stato == 'inviato'}}",
+              visibleIf: "{{can('ordini.ordine.approva') && row.stato == 'inviato'}}",
               onClick: [{ call: 'approvaOrdine', onError: { toast: 'Errore' } }, { refresh: 'ordini' }],
             },
           ],
@@ -148,3 +148,20 @@ describe('validateNavigation', () => {
     expect(validateNavigation(doc([{ ...leaf('a'), requires: 'Permesso Maiuscolo' }])).valid).toBe(false);
   });
 });
+
+describe('formato dei permessi dominio.risorsa.azione', () => {
+  it('accetta tre parti e rifiuta due o quattro, in schermate e navigazione', () => {
+    const screen = (requires: string) => ({ schemaVersion: '1.0', screen: 'x', requires, components: [{ type: 'text', text: 'a' }] });
+    const nav = (requires: string) => ({ schemaVersion: '1.0', navigation: 'n', useCases: [{ id: 'u', label: 'U', items: [{ id: 'a', label: 'A', screen: 's', requires }] }] });
+    for (const make of [screen, nav]) {
+      expect(JSON.stringify(validateAny(make, 'ordini.ordine.approva'))).toContain('true');
+      expect(JSON.stringify(validateAny(make, 'ordini.approva'))).toContain('false');
+      expect(JSON.stringify(validateAny(make, 'a.b.c.d'))).toContain('false');
+    }
+  });
+});
+
+function validateAny(make: (r: string) => unknown, requires: string): { valid: boolean } {
+  const doc = make(requires) as { navigation?: string };
+  return doc.navigation ? validateNavigation(doc) : validateScreen(doc);
+}

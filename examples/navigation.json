@@ -7,7 +7,7 @@
       "id": "inserimento-fattura",
       "label": "Inserimento Fattura",
       "icon": "file-plus",
-      "requires": "fatture.crea",
+      "requires": "fatture.fattura.crea",
       "items": [
         {
           "id": "nuova-fattura",
@@ -19,7 +19,7 @@
             {
               "id": "da-ordine",
               "label": "Da ordine",
-              "children": [{ "id": "scegli-ordine", "label": "Scegli l'ordine", "screen": "ordini-elenco", "requires": "ordini.leggi" }]
+              "children": [{ "id": "scegli-ordine", "label": "Scegli l'ordine", "screen": "ordini-elenco", "requires": "ordini.ordine.leggi" }]
             }
           ]
         },
@@ -36,14 +36,14 @@
       "id": "consultazione-fatture",
       "label": "Consultazione Fatture",
       "icon": "search",
-      "requires": "fatture.leggi",
+      "requires": "fatture.fattura.leggi",
       "items": [
         { "id": "elenco-fatture", "label": "Elenco fatture", "icon": "receipt", "screen": "fatture-elenco" },
         {
           "id": "ordini-collegati",
           "label": "Ordini collegati",
           "icon": "folder",
-          "requires": "ordini.leggi",
+          "requires": "ordini.ordine.leggi",
           "children": [{ "id": "ordini", "label": "Ordini", "screen": "ordini-elenco" }]
         }
       ]
@@ -52,9 +52,9 @@
       "id": "creazione-pacchetto",
       "label": "Creazione pacchetto",
       "icon": "package",
-      "requires": "pacchetti.leggi",
+      "requires": "pacchetti.pacchetto.leggi",
       "items": [
-        { "id": "nuovo-pacchetto", "label": "Nuovo pacchetto", "icon": "package", "screen": "pacchetto-nuovo", "requires": "pacchetti.crea" },
+        { "id": "nuovo-pacchetto", "label": "Nuovo pacchetto", "icon": "package", "screen": "pacchetto-nuovo", "requires": "pacchetti.pacchetto.crea" },
         { "id": "pacchetti", "label": "Pacchetti creati", "icon": "list", "screen": "pacchetti-elenco" }
       ]
     },
@@ -62,7 +62,7 @@
       "id": "revisione-spese",
       "label": "Revisione Spese",
       "icon": "check-circle",
-      "requires": "spese.leggi",
+      "requires": "spese.spesa.leggi",
       "items": [
         {
           "id": "spese",

@@ -21,16 +21,28 @@ lowcode:
   authz:
     role-permissions:
       operatore:
-        - ordini.leggi
-        - ordini.scrivi
+        - fatture.fattura.leggi
+        - fatture.fattura.crea
+        - ordini.ordine.leggi
       responsabile:
-        - ordini.leggi
-        - ordini.scrivi
-        - ordini.approva
-        - ordini.iban.leggi
+        - fatture.fattura.leggi
+        - fatture.fattura.crea
+        - ordini.ordine.leggi
+        - ordini.ordine.scrivi
+        - ordini.ordine.approva
+        - pacchetti.pacchetto.leggi
+        - pacchetti.pacchetto.crea
+        - spese.spesa.leggi
+        - spese.spesa.revisiona
       amministratore:
-        - ordini.leggi
-        - ordini.scrivi
-        - ordini.approva
+        - fatture.fattura.leggi
+        - fatture.fattura.crea
+        - ordini.ordine.leggi
+        - ordini.ordine.scrivi
+        - ordini.ordine.approva
         - ordini.iban.leggi
         - ordini.iban.scrivi
+        - pacchetti.pacchetto.leggi
+        - pacchetti.pacchetto.crea
+        - spese.spesa.leggi
+        - spese.spesa.revisiona

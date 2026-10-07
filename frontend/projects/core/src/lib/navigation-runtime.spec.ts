@@ -13,7 +13,7 @@ const definition: NavigationDefinition = {
     {
       id: 'inserimento',
       label: 'Inserimento',
-      requires: 'fatture.crea',
+      requires: 'fatture.fattura.crea',
       items: [
         {
           id: 'nuova',
@@ -21,7 +21,7 @@ const definition: NavigationDefinition = {
           children: [
             { id: 'attiva', label: 'Attiva', screen: 'fattura-nuova', params: { tipo: 'attiva' } },
             { id: 'passiva', label: 'Passiva', screen: 'fattura-nuova', params: { tipo: 'passiva' } },
-            { id: 'da-ordine', label: 'Da ordine', children: [{ id: 'scegli', label: 'Scegli', screen: 'ordini-elenco', requires: 'ordini.leggi' }] },
+            { id: 'da-ordine', label: 'Da ordine', children: [{ id: 'scegli', label: 'Scegli', screen: 'ordini-elenco', requires: 'ordini.ordine.leggi' }] },
           ],
         },
       ],
@@ -29,7 +29,7 @@ const definition: NavigationDefinition = {
     {
       id: 'consultazione',
       label: 'Consultazione',
-      requires: 'fatture.leggi',
+      requires: 'fatture.fattura.leggi',
       items: [
         { id: 'elenco', label: 'Elenco', screen: 'fatture-elenco' },
         { id: 'solo-admin', label: 'Solo admin', screen: 'x', visibleIf: "{{'amministratore' in user.roles}}" },
@@ -50,56 +50,56 @@ function setup(initial: string[], roles: string[] = []) {
 
 describe('NavigationRuntime', () => {
   it('mostra solo i casi d’uso consentiti', () => {
-    const { nav } = setup(['fatture.leggi']);
+    const { nav } = setup(['fatture.fattura.leggi']);
     expect(nav.useCases().map((u) => u.id)).toEqual(['consultazione']);
   });
 
   it('nasconde un caso d’uso se nessuna voce è visibile', () => {
-    const { nav } = setup(['fatture.crea']);
+    const { nav } = setup(['fatture.fattura.crea']);
     // Le voci "Attiva" e "Passiva" non richiedono permessi propri: il caso d'uso resta.
     expect(nav.useCases().map((u) => u.id)).toEqual(['inserimento']);
     expect(nav.useCase('inserimento')?.items).toHaveLength(1);
   });
 
   it('elimina i gruppi vuoti e tiene i tre livelli quando consentiti', () => {
-    const { nav } = setup(['fatture.crea']);
+    const { nav } = setup(['fatture.fattura.crea']);
     const nuova = nav.useCase('inserimento')?.items[0];
     expect(nuova?.kind === 'group' && nuova.children.map((c) => c.id)).toEqual(['attiva', 'passiva']);
-    const withOrders = setup(['fatture.crea', 'ordini.leggi']).nav.useCase('inserimento')?.items[0];
+    const withOrders = setup(['fatture.fattura.crea', 'ordini.ordine.leggi']).nav.useCase('inserimento')?.items[0];
     expect(withOrders?.kind === 'group' && withOrders.children.map((c) => c.id)).toEqual(['attiva', 'passiva', 'da-ordine']);
   });
 
   it('si aggiorna quando cambiano i permessi', () => {
     const { nav, permissions } = setup([]);
     expect(nav.useCases()).toEqual([]);
-    permissions.set(new Set(['fatture.leggi']));
+    permissions.set(new Set(['fatture.fattura.leggi']));
     expect(nav.useCases().map((u) => u.id)).toEqual(['consultazione']);
   });
 
   it('visibleIf: vero mostra, errore nasconde e segnala', async () => {
-    const { nav, reports } = setup(['fatture.leggi'], ['amministratore']);
+    const { nav, reports } = setup(['fatture.fattura.leggi'], ['amministratore']);
     const ids = nav.useCase('consultazione')?.items.map((i) => i.id);
     expect(ids).toEqual(['elenco', 'solo-admin']);
     await Promise.resolve();
     expect(reports.length).toBeGreaterThan(0);
-    expect(setup(['fatture.leggi'], ['operatore']).nav.useCase('consultazione')?.items.map((i) => i.id)).toEqual(['elenco']);
+    expect(setup(['fatture.fattura.leggi'], ['operatore']).nav.useCase('consultazione')?.items.map((i) => i.id)).toEqual(['elenco']);
   });
 
   it('sceglie la destinazione iniziale: default se visibile, altrimenti il primo caso d’uso', () => {
-    expect(setup(['fatture.leggi', 'fatture.crea']).nav.defaultTarget()).toMatchObject({ useCase: 'consultazione', leaf: { id: 'elenco' } });
-    expect(setup(['fatture.crea']).nav.defaultTarget()).toMatchObject({ useCase: 'inserimento', leaf: { id: 'attiva' } });
+    expect(setup(['fatture.fattura.leggi', 'fatture.fattura.crea']).nav.defaultTarget()).toMatchObject({ useCase: 'consultazione', leaf: { id: 'elenco' } });
+    expect(setup(['fatture.fattura.crea']).nav.defaultTarget()).toMatchObject({ useCase: 'inserimento', leaf: { id: 'attiva' } });
     expect(setup([]).nav.defaultTarget()).toBeNull();
   });
 
   it('individua la voce attiva usando schermata e parametri', () => {
-    const { nav } = setup(['fatture.crea']);
+    const { nav } = setup(['fatture.fattura.crea']);
     expect(nav.locate('inserimento', 'fattura-nuova', { tipo: 'passiva' })).toEqual(['nuova', 'passiva']);
     expect(nav.locate('inserimento', 'fattura-nuova', { tipo: 'altro' })).toBeNull();
     expect(nav.locate('consultazione', 'fatture-elenco')).toBeNull();
   });
 
   it('trova il caso d’uso di una schermata preferendo quello corrente', () => {
-    const { nav } = setup(['fatture.crea', 'fatture.leggi', 'ordini.leggi']);
+    const { nav } = setup(['fatture.fattura.crea', 'fatture.fattura.leggi', 'ordini.ordine.leggi']);
     expect(nav.useCaseOf('ordini-elenco', {}, 'inserimento')).toBe('inserimento');
     expect(nav.useCaseOf('fatture-elenco', {}, 'inserimento')).toBe('consultazione');
     expect(nav.useCaseOf('sconosciuta')).toBeNull();

@@ -2,7 +2,7 @@ import { ExpressionEngine } from './engine';
 import { parseTemplate } from './template';
 import type { EvalContext } from './types';
 
-const granted = new Set(['ordini.leggi', 'ordini.approva']);
+const granted = new Set(['ordini.ordine.leggi', 'ordini.ordine.approva']);
 const errors: { source: string; error: string }[] = [];
 const engine = new ExpressionEngine({ can: (p) => granted.has(p) }, { onError: (e) => errors.push(e) });
 
@@ -20,7 +20,7 @@ beforeEach(() => {
 
 describe('ExpressionEngine.evaluate', () => {
   it('combina permessi e dati della riga', () => {
-    expect(engine.evaluate("can('ordini.approva') && row.stato == 'inviato'", ctx)).toEqual({ ok: true, value: true });
+    expect(engine.evaluate("can('ordini.ordine.approva') && row.stato == 'inviato'", ctx)).toEqual({ ok: true, value: true });
   });
 
   it('nega un permesso mancante', () => {
@@ -62,7 +62,7 @@ describe('ExpressionEngine.evaluate', () => {
   });
 
   it('rifiuta la sintassi con $ (non è un identificatore CEL)', () => {
-    expect(engine.evaluate("$can('ordini.approva')", ctx).ok).toBe(false);
+    expect(engine.evaluate("$can('ordini.ordine.approva')", ctx).ok).toBe(false);
   });
 
   it('applica i limiti di profondità', () => {
@@ -79,7 +79,7 @@ describe('ExpressionEngine.evaluate', () => {
 describe('ExpressionEngine.interpolate', () => {
   it('restituisce il valore tipizzato se il modello è una sola espressione', () => {
     expect(engine.interpolate('{{row.id}}', ctx)).toEqual({ ok: true, value: 7 });
-    expect(engine.interpolate("{{can('ordini.leggi')}}", ctx)).toEqual({ ok: true, value: true });
+    expect(engine.interpolate("{{can('ordini.ordine.leggi')}}", ctx)).toEqual({ ok: true, value: true });
   });
 
   it('compone testo e valori', () => {
@@ -106,7 +106,7 @@ describe('ExpressionEngine.evaluateCondition', () => {
   });
 
   it('valuta una condizione', () => {
-    expect(engine.evaluateCondition("{{can('ordini.approva')}}", ctx, { whenMissing: true })).toBe(true);
+    expect(engine.evaluateCondition("{{can('ordini.ordine.approva')}}", ctx, { whenMissing: true })).toBe(true);
   });
 
   it('fallisce chiusa se la valutazione dà errore', () => {
