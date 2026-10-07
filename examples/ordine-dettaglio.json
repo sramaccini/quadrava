@@ -25,15 +25,15 @@
           "name": "iban",
           "type": "text",
           "sensitive": true,
-          "hiddenIf": "{{!$can('ordini.iban.leggi')}}",
-          "readOnlyIf": "{{!$can('ordini.iban.scrivi')}}"
+          "hiddenIf": "{{!can('ordini.iban.leggi')}}",
+          "readOnlyIf": "{{!can('ordini.iban.scrivi')}}"
         }
       ],
       "actions": [
         {
           "id": "btn-salva",
           "label": "Salva",
-          "enabledIf": "{{$can('ordini.scrivi') && row.$perm.update}}",
+          "enabledIf": "{{can('ordini.scrivi') && row._perm.update}}",
           "onClick": [
             { "call": "salvaOrdine", "onError": { "toast": "Salvataggio non riuscito" } },
             { "navigate": "ordini-elenco" }

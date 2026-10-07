@@ -2,15 +2,15 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://lowcode.example/schemas/screen.schema.json",
   "title": "Schermata",
-  "description": "Nucleo del linguaggio di definizione: una schermata di un'applicazione LowCode.",
+  "description": "Nucleo del linguaggio di definizione: una schermata di un'applicazione LowCode con il catalogo dei componenti di base.",
   "type": "object",
   "required": ["schemaVersion", "screen", "components"],
   "additionalProperties": false,
   "properties": {
     "schemaVersion": { "type": "string", "pattern": "^\\d+\\.\\d+$" },
-    "screen": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$", "description": "Identificativo stabile, kebab-case." },
+    "screen": { "$ref": "#/$defs/id", "description": "Identificativo stabile della schermata." },
     "title": { "type": "string" },
-    "requires": { "type": "string", "pattern": "^[a-z0-9]+(\\.[a-z0-9]+)+$", "description": "Permesso necessario per aprire la schermata (dominio.risorsa.azione)." },
+    "requires": { "$ref": "#/$defs/permission", "description": "Permesso necessario per aprire la schermata." },
     "dataSources": {
       "type": "object",
       "additionalProperties": { "$ref": "#/$defs/dataSource" }
@@ -21,7 +21,21 @@
     }
   },
   "$defs": {
-    "expression": { "type": "string", "description": "Espressione tra doppie graffe, per esempio {{$can('ordini.approva')}}." },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "description": "Identificativo in kebab-case. Una volta pubblicato non cambia."
+    },
+    "permission": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(\\.[a-z0-9]+)+$",
+      "description": "Permesso nel formato dominio.risorsa.azione."
+    },
+    "expression": {
+      "type": "string",
+      "pattern": "^\\{\\{[\\s\\S]+\\}\\}$",
+      "description": "Espressione CEL tra doppie graffe, per esempio {{can('ordini.approva') && row.stato == 'inviato'}}. Variabili disponibili: user, state, params, row, form, value. Funzione disponibile: can(permesso)."
+    },
     "dataSource": {
       "type": "object",
       "required": ["type", "method", "url"],
@@ -34,18 +48,191 @@
         "paging": { "enum": ["server", "none"] }
       }
     },
+    "step": {
+      "oneOf": [
+        { "$ref": "#/$defs/stepCall" },
+        { "$ref": "#/$defs/stepRefresh" },
+        { "$ref": "#/$defs/stepNavigate" },
+        { "$ref": "#/$defs/stepToast" },
+        { "$ref": "#/$defs/stepSet" }
+      ]
+    },
+    "steps": {
+      "oneOf": [
+        { "$ref": "#/$defs/step" },
+        { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/step" } }
+      ]
+    },
+    "stepCall": {
+      "type": "object",
+      "required": ["call"],
+      "additionalProperties": false,
+      "properties": {
+        "call": { "type": "string", "description": "Nome del data source da eseguire." },
+        "args": { "type": "object" },
+        "onError": { "$ref": "#/$defs/steps" }
+      }
+    },
+    "stepRefresh": {
+      "type": "object",
+      "required": ["refresh"],
+      "additionalProperties": false,
+      "properties": { "refresh": { "type": "string", "description": "Nome del data source da ricaricare." } }
+    },
+    "stepNavigate": {
+      "type": "object",
+      "required": ["navigate"],
+      "additionalProperties": false,
+      "properties": {
+        "navigate": { "$ref": "#/$defs/id" },
+        "params": { "type": "object" }
+      }
+    },
+    "stepToast": {
+      "type": "object",
+      "required": ["toast"],
+      "additionalProperties": false,
+      "properties": { "toast": { "type": "string" } }
+    },
+    "stepSet": {
+      "type": "object",
+      "required": ["set"],
+      "additionalProperties": false,
+      "properties": {
+        "set": {
+          "type": "object",
+          "required": ["path", "value"],
+          "additionalProperties": false,
+          "properties": { "path": { "type": "string" }, "value": {} }
+        }
+      }
+    },
+    "action": {
+      "type": "object",
+      "required": ["label", "onClick"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "label": { "type": "string" },
+        "visibleIf": { "$ref": "#/$defs/expression" },
+        "hiddenIf": { "$ref": "#/$defs/expression" },
+        "enabledIf": { "$ref": "#/$defs/expression" },
+        "onClick": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/step" } }
+      }
+    },
+    "field": {
+      "type": "object",
+      "required": ["name", "type"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-zA-Z][A-Za-z0-9]*$" },
+        "type": { "enum": ["text", "number", "select", "checkbox", "date"] },
+        "label": { "type": "string" },
+        "required": { "type": "boolean" },
+        "options": { "type": "array", "items": { "type": "string" } },
+        "sensitive": { "type": "boolean", "description": "Il valore non compare mai in tracce e log." },
+        "visibleIf": { "$ref": "#/$defs/expression" },
+        "hiddenIf": { "$ref": "#/$defs/expression" },
+        "readOnlyIf": { "$ref": "#/$defs/expression" },
+        "validate": {
+          "type": "object",
+          "required": ["rule", "message"],
+          "additionalProperties": false,
+          "properties": {
+            "rule": { "$ref": "#/$defs/expression" },
+            "message": { "type": "string" }
+          }
+        }
+      }
+    },
+    "column": {
+      "type": "object",
+      "required": ["field"],
+      "additionalProperties": false,
+      "properties": { "field": { "type": "string" }, "label": { "type": "string" } }
+    },
     "node": {
       "type": "object",
       "required": ["type"],
       "properties": {
-        "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
-        "type": { "type": "string", "pattern": "^[a-z][A-Za-z0-9]*$" },
+        "id": { "$ref": "#/$defs/id" },
+        "type": { "enum": ["section", "text", "button", "filterBar", "table", "form"] },
         "visibleIf": { "$ref": "#/$defs/expression" },
         "hiddenIf": { "$ref": "#/$defs/expression" },
         "enabledIf": { "$ref": "#/$defs/expression" },
         "readOnlyIf": { "$ref": "#/$defs/expression" }
       },
-      "additionalProperties": true
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "section" } }, "required": ["type"] },
+          "then": {
+            "type": "object",
+            "required": ["components"],
+            "properties": {
+              "title": { "type": "string" },
+              "components": { "type": "array", "items": { "$ref": "#/$defs/node" } }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "text" } }, "required": ["type"] },
+          "then": {
+            "type": "object",
+            "required": ["text"],
+            "properties": {
+              "text": { "type": "string" },
+              "style": { "enum": ["heading", "body"] }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "button" } }, "required": ["type"] },
+          "then": {
+            "type": "object",
+            "required": ["label", "onClick"],
+            "properties": {
+              "label": { "type": "string" },
+              "onClick": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/step" } }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "filterBar" } }, "required": ["type"] },
+          "then": {
+            "type": "object",
+            "required": ["bind", "fields"],
+            "properties": {
+              "bind": { "type": "string", "description": "Percorso nello stato della schermata, per esempio state.filtri." },
+              "fields": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/field" } }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "table" } }, "required": ["type"] },
+          "then": {
+            "type": "object",
+            "required": ["source", "columns"],
+            "properties": {
+              "source": { "type": "string", "description": "Nome del data source che fornisce le righe." },
+              "columns": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/column" } },
+              "rowActions": { "type": "array", "items": { "$ref": "#/$defs/action" } }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "form" } }, "required": ["type"] },
+          "then": {
+            "type": "object",
+            "required": ["source", "fields"],
+            "properties": {
+              "source": { "type": "string", "description": "Nome del data source che fornisce i valori iniziali." },
+              "fields": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/field" } },
+              "actions": { "type": "array", "items": { "$ref": "#/$defs/action" } }
+            }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
     }
   }
 }

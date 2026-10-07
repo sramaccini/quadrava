@@ -2,4 +2,6 @@
  * Public API Surface of schema
  */
 
-export * from './lib/schema';
+export * from './lib/types';
+export * from './lib/validate';
+export { SCREEN_SCHEMA } from './lib/screen.schema';

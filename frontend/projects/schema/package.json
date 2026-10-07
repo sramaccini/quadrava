@@ -1,9 +1,9 @@
 {
   "name": "schema",
   "version": "0.0.1",
+  "description": "Schema JSON e tipi del linguaggio di definizione delle applicazioni LowCode, con validazione.",
   "peerDependencies": {
-    "@angular/common": "^22.2.0",
-    "@angular/core": "^22.2.0"
+    "ajv": "^8.17.0"
   },
   "dependencies": {
     "tslib": "^2.3.0"

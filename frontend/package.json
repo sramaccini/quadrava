@@ -8,7 +8,9 @@
     "start:editor": "ng serve editor --port 4201",
     "build": "ng build",
     "test": "ng test",
-    "validate:examples": "node tools/validate-examples.mjs"
+    "validate:examples": "node tools/validate-examples.mjs",
+    "schema:sync": "node tools/sync-schema.mjs",
+    "schema:check": "node tools/sync-schema.mjs --check"
   },
   "private": true,
   "packageManager": "npm@10.9.8",
@@ -19,6 +21,7 @@
     "@angular/forms": "^22.2.0",
     "@angular/platform-browser": "^22.2.0",
     "@angular/router": "^22.2.0",
+    "@marcbachmann/cel-js": "^8.0.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },
