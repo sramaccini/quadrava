@@ -120,6 +120,9 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
         },
         {
           "$ref": "#/$defs/stepSet"
+        },
+        {
+          "$ref": "#/$defs/stepConfirm"
         }
       ]
     },
@@ -323,10 +326,41 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
       "additionalProperties": false,
       "properties": {
         "field": {
-          "type": "string"
+          "type": "string",
+          "description": "Nome del campo nella riga restituita dal servizio."
         },
         "label": {
           "type": "string"
+        },
+        "format": {
+          "enum": [
+            "text",
+            "currency",
+            "percent",
+            "date",
+            "datetime",
+            "boolean",
+            "badge"
+          ],
+          "description": "Come mostrare il valore: currency (importo con simbolo), percent (il valore è già in punti percentuali, 10 = 10 %), date e datetime (testo ISO 8601), boolean (Sì/No), badge (etichetta colorata secondo `badges`)."
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$",
+          "description": "Codice ISO 4217 per format currency (EUR se assente)."
+        },
+        "badges": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/tone"
+          },
+          "description": "Per format badge: colore per ogni valore; i valori non elencati sono neutri."
+        },
+        "visibleIf": {
+          "$ref": "#/$defs/expression"
+        },
+        "hiddenIf": {
+          "$ref": "#/$defs/expression"
         }
       }
     },
@@ -346,7 +380,10 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
             "button",
             "filterBar",
             "table",
-            "form"
+            "form",
+            "tabs",
+            "detail",
+            "alert"
           ]
         },
         "visibleIf": {
@@ -562,9 +599,152 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
               }
             }
           }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "tabs"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "required": [
+              "tabs"
+            ],
+            "properties": {
+              "tabs": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "$ref": "#/$defs/tab"
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "detail"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "required": [
+              "source",
+              "fields"
+            ],
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "source": {
+                "type": "string",
+                "description": "Nome del data source che restituisce un solo record (un oggetto)."
+              },
+              "fields": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "$ref": "#/$defs/column"
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "alert"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "required": [
+              "text"
+            ],
+            "properties": {
+              "text": {
+                "type": "string"
+              },
+              "kind": {
+                "enum": [
+                  "info",
+                  "success",
+                  "error"
+                ],
+                "description": "Aspetto del messaggio; info se assente."
+              }
+            }
+          }
         }
       ],
       "unevaluatedProperties": false
+    },
+    "stepConfirm": {
+      "type": "object",
+      "required": [
+        "confirm"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "confirm": {
+          "type": "string",
+          "description": "Domanda posta all'utente prima di proseguire; può contenere espressioni, per esempio \"Approvare l'ordine {{row.numero}}?\". Se l'utente rinuncia la sequenza si ferma, senza messaggi di errore."
+        }
+      }
+    },
+    "tone": {
+      "enum": [
+        "neutral",
+        "primary",
+        "success",
+        "danger"
+      ],
+      "description": "Tono di colore, preso dal tema."
+    },
+    "tab": {
+      "type": "object",
+      "required": [
+        "label",
+        "components"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "label": {
+          "type": "string"
+        },
+        "visibleIf": {
+          "$ref": "#/$defs/expression"
+        },
+        "hiddenIf": {
+          "$ref": "#/$defs/expression"
+        },
+        "components": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      }
     }
   }
 };

@@ -20,6 +20,15 @@ export const CONTROL_STYLES = `
   .lc-error { color: var(--lc-color-danger, #c62828); font-size: .85em; }
 `;
 
+/** Etichette colorate (badge) e messaggi: solo variabili del tema. */
+export const TONE_STYLES = `
+  .tone { display: inline-block; padding: 1px calc(var(--lc-gap, 12px) * .6); border-radius: 999px; font-size: .85em; border: 1px solid currentColor; white-space: nowrap; }
+  .tone-neutral { color: var(--lc-color-muted, #5d6b7a); }
+  .tone-primary { color: var(--lc-color-primary, #1f5fbf); }
+  .tone-success { color: var(--lc-color-success, #2e7d32); }
+  .tone-danger { color: var(--lc-color-danger, #c62828); }
+`;
+
 let counter = 0;
 /** Identificatore univoco per collegare etichette e controlli. */
 export function nextId(prefix: string): string {

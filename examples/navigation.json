@@ -159,6 +159,11 @@
               "id": "vetrina-tabelle",
               "label": "Filtri e tabelle",
               "screen": "vetrina-tabelle"
+            },
+            {
+              "id": "vetrina-layout",
+              "label": "Schede, dettaglio e messaggi",
+              "screen": "vetrina-layout"
             }
           ]
         }

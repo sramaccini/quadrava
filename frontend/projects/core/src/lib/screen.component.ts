@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, Injector, effect, inject, input, signal, untracked } from '@angular/core';
 import type { ScreenDefinition } from 'schema';
-import { Authorization, DataClient, Notifier, RuntimeDiagnostics, ScreenNavigator, UserProvider } from './ports';
+import { Authorization, Confirmation, DataClient, Notifier, RuntimeDiagnostics, ScreenNavigator, UserProvider } from './ports';
 import { NodeHostComponent } from './node-host.component';
 import { ScreenRuntime } from './screen-runtime';
 
@@ -45,6 +45,7 @@ export class ScreenComponent {
   private readonly navigator = inject(ScreenNavigator);
   private readonly notifier = inject(Notifier);
   private readonly diagnostics = inject(RuntimeDiagnostics, { optional: true });
+  private readonly confirmation = inject(Confirmation, { optional: true });
 
   constructor() {
     effect(() => {
@@ -62,6 +63,7 @@ export class ScreenComponent {
               data: this.data,
               navigator: this.navigator,
               notifier: this.notifier,
+              confirmation: this.confirmation,
               diagnostics: this.diagnostics,
             },
             this.injector,

@@ -1,7 +1,7 @@
 import { effect, Injector, signal, computed, untracked, type EffectRef } from '@angular/core';
 import { ExpressionEngine, parseTemplate } from 'expressions';
 import type { NodeDefinition, ScreenDefinition } from 'schema';
-import { Authorization, DataClient, Notifier, RuntimeDiagnostics, ScreenNavigator, UserProvider, type DataRequest } from './ports';
+import { Authorization, Confirmation, DataClient, Notifier, RuntimeDiagnostics, ScreenNavigator, UserProvider, type DataRequest } from './ports';
 import type { CallResult, DataSourceState, Scope } from './types';
 
 export interface RuntimeDeps {
@@ -11,6 +11,8 @@ export interface RuntimeDeps {
   navigator: ScreenNavigator;
   notifier: Notifier;
   diagnostics?: RuntimeDiagnostics | null;
+  /** Se manca, i passi `confirm` non procedono (fail-closed). */
+  confirmation?: Confirmation | null;
 }
 
 type Built = { ok: true; request: DataRequest } | { ok: false; error: string };
@@ -73,6 +75,8 @@ export class ScreenRuntime {
         }
       } else if (node.type === 'section') {
         this.seedFilters(node.components);
+      } else if (node.type === 'tabs') {
+        for (const tab of node.tabs) this.seedFilters(tab.components);
       }
     }
   }
@@ -165,6 +169,16 @@ export class ScreenRuntime {
 
   navigate(screen: string, params: Record<string, unknown>): void {
     this.deps.navigator.navigate(screen, params);
+  }
+
+  /** Chiede conferma con un testo che può contenere espressioni. Senza servizio di conferma non si procede. */
+  async confirm(message: string, scope: Scope = {}): Promise<boolean> {
+    const confirmation = this.deps.confirmation;
+    if (!confirmation) {
+      this.report('confirm', 'nessun servizio di conferma disponibile: azione non eseguita');
+      return false;
+    }
+    return confirmation.confirm(this.text(message, scope));
   }
 
   toast(message: string, kind: 'info' | 'error' = 'info'): void {

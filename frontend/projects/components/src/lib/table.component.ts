@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
-import { runSteps, type ScreenRuntime, type Scope } from 'core';
-import type { ActionDefinition, TableNode } from 'schema';
-import { CONTROL_STYLES } from './shared';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import { LOWCODE_LOCALE, formatValue, runSteps, type FormattedValue, type ScreenRuntime, type Scope } from 'core';
+import type { ActionDefinition, ColumnDefinition, TableNode } from 'schema';
+import { CONTROL_STYLES, TONE_STYLES } from './shared';
 
 /**
  * Tabella con azioni di riga. Contratto della risposta del data source: un array di righe oppure
@@ -13,10 +13,12 @@ import { CONTROL_STYLES } from './shared';
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [
     CONTROL_STYLES,
+    TONE_STYLES,
     `
       .wrap { overflow-x: auto; border: 1px solid var(--lc-color-border, #d5dbe3); border-radius: var(--lc-radius, 6px); background: var(--lc-color-surface, #fff); }
       table { width: 100%; border-collapse: collapse; }
       th, td { text-align: left; padding: calc(var(--lc-gap, 12px) * .6) var(--lc-gap, 12px); border-bottom: 1px solid var(--lc-color-border, #d5dbe3); }
+      td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
       th { font-size: .85em; color: var(--lc-color-muted, #5d6b7a); font-weight: 600; }
       tr:last-child td { border-bottom: 0; }
       td.actions { display: flex; gap: 6px; }
@@ -34,8 +36,8 @@ import { CONTROL_STYLES } from './shared';
         <table>
           <thead>
             <tr>
-              @for (column of node().columns; track column.field) {
-                <th scope="col">{{ column.label ?? column.field }}</th>
+              @for (column of columns(); track column.field) {
+                <th scope="col" [class.num]="numeric(column)">{{ column.label ?? column.field }}</th>
               }
               @if (node().rowActions?.length) {
                 <th scope="col"><span class="visually-hidden">Azioni</span></th>
@@ -45,8 +47,16 @@ import { CONTROL_STYLES } from './shared';
           <tbody>
             @for (row of rows(); track $index) {
               <tr>
-                @for (column of node().columns; track column.field) {
-                  <td>{{ cell(row, column.field) }}</td>
+                @for (column of columns(); track column.field) {
+                  <td [class.num]="numeric(column)">
+                    @if (cell(row, column); as view) {
+                      @if (view.tone) {
+                        <span [class]="'tone tone-' + view.tone">{{ view.text }}</span>
+                      } @else {
+                        {{ view.text }}
+                      }
+                    }
+                  </td>
                 }
                 @if (node().rowActions?.length) {
                   <td class="actions">
@@ -85,6 +95,10 @@ export class TableComponent {
   readonly scope = input<Scope>({});
   protected readonly busy = signal(false);
 
+  private readonly locale = inject(LOWCODE_LOCALE);
+  /** Colonne visibili all'utente: `visibleIf` e `hiddenIf` valgono anche per le colonne. */
+  protected readonly columns = computed(() => this.node().columns.filter((c) => this.runtime().isVisible(c, this.scope())));
+
   protected readonly source = computed(() => this.runtime().source(this.node().source));
   protected readonly rows = computed<Record<string, unknown>[]>(() => {
     const data = this.source().data;
@@ -103,9 +117,12 @@ export class TableComponent {
     return (this.page() + 1) * data.size < data.total;
   });
 
-  protected cell(row: Record<string, unknown>, field: string): string {
-    const value = row[field];
-    return value === null || value === undefined ? '' : String(value);
+  protected cell(row: Record<string, unknown>, column: ColumnDefinition): FormattedValue {
+    return formatValue(row[column.field], column, this.locale);
+  }
+
+  protected numeric(column: ColumnDefinition): boolean {
+    return column.format === 'currency' || column.format === 'percent';
   }
 
   protected goTo(page: number): void {

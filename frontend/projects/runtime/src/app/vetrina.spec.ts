@@ -4,6 +4,7 @@ import navigationDoc from '../../public/examples/navigation.json';
 import base from '../../public/examples/vetrina-base.json';
 import form from '../../public/examples/vetrina-form.json';
 import tables from '../../public/examples/vetrina-tabelle.json';
+import layout from '../../public/examples/vetrina-layout.json';
 import detail from '../../public/examples/ordine-dettaglio.json';
 import chiaro from '../../public/examples/themes/chiaro.json';
 import scuro from '../../public/examples/themes/scuro.json';
@@ -18,6 +19,7 @@ describe('Vetrina dei componenti', () => {
     'examples/vetrina-base.json': base,
     'examples/vetrina-form.json': form,
     'examples/vetrina-tabelle.json': tables,
+    'examples/vetrina-layout.json': layout,
     'examples/ordine-dettaglio.json': detail,
     'examples/themes/chiaro.json': chiaro,
     'examples/themes/scuro.json': scuro,
@@ -34,6 +36,7 @@ describe('Vetrina dei componenti', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     document.documentElement.removeAttribute('style');
+    document.body.querySelectorAll('lc-confirm-dialog').forEach((n) => n.remove());
   });
 
   async function until(fixture: ComponentFixture<App>, condition: () => boolean, label: string): Promise<void> {
@@ -66,6 +69,9 @@ describe('Vetrina dei componenti', () => {
   const button = (el: HTMLElement, text: string): HTMLButtonElement | undefined =>
     [...el.querySelectorAll('main button')].find((b) => b.textContent?.trim().startsWith(text)) as HTMLButtonElement | undefined;
   const rows = (el: HTMLElement, table = 0): number => el.querySelectorAll('main table')[table]?.querySelectorAll('tbody tr').length ?? 0;
+  const plain = (text: string | null | undefined): string => (text ?? '').replace(/[\u00a0\u202f\s]+/g, ' ').trim();
+  const dialog = (): HTMLElement | null => document.body.querySelector('[role=dialog]');
+  const answer = (action: 'confirm' | 'cancel'): void => (document.body.querySelector(`[data-action=${action}]`) as HTMLButtonElement).click();
   const field = (el: HTMLElement, name: string): HTMLInputElement | HTMLSelectElement | null =>
     [...el.querySelectorAll('main input, main select')].find((i) => i.id.endsWith(`-${name}`)) as HTMLInputElement | undefined ?? null;
   const type = (el: HTMLElement, name: string, value: string): void => {
@@ -80,6 +86,7 @@ describe('Vetrina dei componenti', () => {
       ['/vetrina/vetrina-base', 'Componenti base'],
       ['/vetrina/vetrina-form', 'Form'],
       ['/vetrina/vetrina-tabelle', 'Filtri e tabelle'],
+      ['/vetrina/vetrina-layout', 'Schede, dettaglio e messaggi'],
     ]) {
       const { el, fixture } = await open(path);
       await until(fixture, () => main(el).includes(titolo), titolo);
@@ -185,6 +192,16 @@ describe('Vetrina dei componenti', () => {
       expect(approve.length).toBeLessThan(8); // solo gli ordini "inviato"
       const before = approve.length;
       (approve[0] as HTMLButtonElement).click();
+      // L'approvazione chiede conferma: se si annulla non cambia nulla.
+      await until(manager.fixture, () => !!dialog(), 'finestra di conferma');
+      expect(dialog()?.textContent).toMatch(/Approvare l'ordine ORD-\d{4}\?/);
+      answer('cancel');
+      await new Promise((r) => setTimeout(r, 300));
+      expect(manager.el.querySelector('.toast')).toBeNull();
+      expect([...manager.el.querySelectorAll('main button')].filter((b) => b.textContent?.trim() === 'Approva').length).toBe(before);
+      (approve[0] as HTMLButtonElement).click();
+      await until(manager.fixture, () => !!dialog(), 'seconda finestra di conferma');
+      answer('confirm');
       await until(manager.fixture, () => !!manager.el.querySelector('.toast'), 'conferma');
       await until(manager.fixture, () => [...manager.el.querySelectorAll('main button')].filter((b) => b.textContent?.trim() === 'Approva').length === before - 1, 'riga aggiornata');
     });
@@ -193,6 +210,74 @@ describe('Vetrina dei componenti', () => {
       const { fixture, el } = await open('/vetrina/vetrina-tabelle');
       await until(fixture, () => rows(el, 1) === 2, 'pacchetti');
       expect(main(el)).toContain('Chiusura settembre');
+    });
+    it('i formati di cella: percentuale e badge degli ordini, importo, data e sì/no delle fatture', async () => {
+      const { fixture, el } = await open('/vetrina/vetrina-tabelle');
+      await until(fixture, () => rows(el, 0) > 0 && rows(el, 2) > 0, 'righe');
+      const first = [...el.querySelectorAll('main table')[0].querySelectorAll('tbody tr')[0].querySelectorAll('td')].map((c) => plain(c.textContent));
+      expect(first[3]).toBe('0 %');
+      expect(el.querySelector('main table tbody tr .tone')?.className).toContain('tone-');
+      const invoice = [...el.querySelectorAll('main table')[2].querySelectorAll('tbody tr')[0].querySelectorAll('td')].map((c) => plain(c.textContent));
+      expect(invoice[2]).toMatch(/^\d+,00 €$/);
+      expect(invoice[3]).toMatch(/^\d{2}\/09\/26$/);
+      expect(invoice[4]).toBe('No');
+      expect(invoice[5]).toBe('inviata');
+    });
+  });
+
+  describe('schede, dettaglio e messaggi', () => {
+    const tabs = (el: HTMLElement): string[] => [...el.querySelectorAll('main [role=tab]')].map((t) => plain(t.textContent));
+    const openTab = async (fixture: ComponentFixture<App>, el: HTMLElement, label: string): Promise<void> => {
+      ([...el.querySelectorAll('main [role=tab]')].find((t) => plain(t.textContent) === label) as HTMLElement).click();
+      await until(fixture, () => !(el.querySelector('main [role=tabpanel]:not([hidden])') === null), label);
+    };
+
+    it('l\'operatore vede il dettaglio dell\'ordine, il messaggio di sola lettura e tre schede', async () => {
+      const { fixture, el } = await open('/vetrina/vetrina-layout');
+      await until(fixture, () => main(el).includes('ORD-0001'), 'dettaglio');
+      expect(tabs(el)).toEqual(["Dati dell'ordine", 'Fatture pagate', 'Azioni con conferma']);
+      expect(el.querySelector('main .alert.error')?.textContent).toContain('non può modificare');
+      const pairs = [...el.querySelectorAll('main dl > div')].map((d) => plain(d.textContent));
+      expect(pairs).toContain('Sconto 0 %');
+      expect(main(el)).not.toContain('IBAN');
+    });
+
+    it('il responsabile non vede più il messaggio; l\'amministratore ha anche IBAN e la scheda riservata', async () => {
+      const manager = await open('/vetrina/vetrina-layout', 'responsabile');
+      await until(manager.fixture, () => main(manager.el).includes('ORD-0001'), 'dettaglio');
+      expect(manager.el.querySelector('main .alert.error')).toBeNull();
+      manager.fixture.destroy();
+      const admin = await open('/vetrina/vetrina-layout', 'amministratore');
+      await until(admin.fixture, () => main(admin.el).includes('ORD-0001'), 'dettaglio');
+      expect(tabs(admin.el)).toEqual(["Dati dell'ordine", 'Fatture pagate', 'Azioni con conferma', 'Dati riservati']);
+      expect(main(admin.el)).toContain('IBAN');
+      expect(main(admin.el)).toContain('IT60X0542811101');
+    });
+
+    it('la scheda delle fatture mostra importo, data e sì/no formattati', async () => {
+      const { fixture, el } = await open('/vetrina/vetrina-layout');
+      await openTab(fixture, el, 'Fatture pagate');
+      await until(fixture, () => rows(el, 0) > 0, 'fatture pagate');
+      const cells = [...el.querySelectorAll('main table tbody tr')[0].querySelectorAll('td')].map((c) => plain(c.textContent));
+      expect(cells[1]).toMatch(/,00 €$/);
+      expect(cells[2]).toMatch(/^\d{2}\/09\/26$/);
+      expect(cells[3]).toBe('Sì');
+    });
+
+    it('l\'azione con conferma: Annulla non fa nulla, Conferma esegue e avvisa', async () => {
+      const { fixture, el } = await open('/vetrina/vetrina-layout');
+      await openTab(fixture, el, 'Azioni con conferma');
+      button(el, 'Elimina la bozza')!.click();
+      await until(fixture, () => !!dialog(), 'finestra');
+      expect(dialog()?.textContent).toContain('bozza di operatore');
+      answer('cancel');
+      await new Promise((r) => setTimeout(r, 300));
+      expect(el.querySelector('.toast')).toBeNull();
+      button(el, 'Elimina la bozza')!.click();
+      await until(fixture, () => !!dialog(), 'seconda finestra');
+      answer('confirm');
+      await until(fixture, () => !!el.querySelector('.toast'), 'conferma');
+      expect(el.querySelector('.toast')?.textContent).toContain('Bozza eliminata');
     });
   });
 });

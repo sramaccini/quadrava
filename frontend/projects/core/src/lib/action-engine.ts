@@ -43,6 +43,10 @@ async function runStep(runtime: ScreenRuntime, step: Step, scope: Scope): Promis
     runtime.navigate(step.navigate, params);
     return true;
   }
+  if ('confirm' in step) {
+    // Se l'utente rinuncia la sequenza si ferma in silenzio: non è un errore.
+    return runtime.confirm(step.confirm, scope);
+  }
   if ('toast' in step) {
     runtime.toast(runtime.text(step.toast, scope));
     return true;

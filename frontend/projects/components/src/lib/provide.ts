@@ -1,5 +1,9 @@
 import type { Provider } from '@angular/core';
-import { provideComponentCatalog, type ComponentCatalog } from 'core';
+import { Confirmation, provideComponentCatalog, type ComponentCatalog } from 'core';
+import { AlertComponent } from './alert.component';
+import { DetailComponent } from './detail.component';
+import { DialogConfirmation } from './dialog-confirmation';
+import { TabsComponent } from './tabs.component';
 import { ButtonComponent } from './button.component';
 import { FilterBarComponent } from './filter-bar.component';
 import { FormComponent } from './form.component';
@@ -15,8 +19,12 @@ export const STANDARD_COMPONENTS: ComponentCatalog = {
   filterBar: FilterBarComponent,
   table: TableComponent,
   form: FormComponent,
+  tabs: TabsComponent,
+  detail: DetailComponent,
+  alert: AlertComponent,
 };
 
-export function provideLowcodeComponents(extra: ComponentCatalog = {}): Provider {
-  return provideComponentCatalog({ ...STANDARD_COMPONENTS, ...extra });
+/** Catalogo e finestra di conferma standard. Per cambiare la conferma si fornisce `Confirmation` dopo questa chiamata. */
+export function provideLowcodeComponents(extra: ComponentCatalog = {}): Provider[] {
+  return [provideComponentCatalog({ ...STANDARD_COMPONENTS, ...extra }), { provide: Confirmation, useExisting: DialogConfirmation }];
 }

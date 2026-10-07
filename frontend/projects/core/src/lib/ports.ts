@@ -44,3 +44,8 @@ export abstract class Notifier {
 export abstract class RuntimeDiagnostics {
   abstract report(event: { screen: string; source: string; error: string }): void;
 }
+
+/** Chiede conferma all'utente prima di un'azione delicata. Risolve true solo se l'utente conferma esplicitamente. */
+export abstract class Confirmation {
+  abstract confirm(message: string): Promise<boolean>;
+}

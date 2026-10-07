@@ -165,3 +165,58 @@ function validateAny(make: (r: string) => unknown, requires: string): { valid: b
   const doc = make(requires) as { navigation?: string };
   return doc.navigation ? validateNavigation(doc) : validateScreen(doc);
 }
+
+describe('nuovi componenti: formati di cella, schede, dettaglio, messaggi e conferma', () => {
+  const screen = (components: unknown[]) => ({ schemaVersion: '1.0', screen: 'x', components });
+
+  it('accetta una tabella con formati, tonalità dei badge e colonne condizionate', () => {
+    const doc = screen([
+      {
+        type: 'table',
+        source: 'fatture',
+        columns: [
+          { field: 'importo', format: 'currency', currency: 'USD' },
+          { field: 'stato', format: 'badge', badges: { pagata: 'success', scaduta: 'danger', bozza: 'neutral', inviata: 'primary' } },
+          { field: 'iban', hiddenIf: "{{!can('ordini.iban.leggi')}}" },
+        ],
+      },
+    ]);
+    expect(issuesOf(doc)).toEqual([]);
+  });
+
+  it('rifiuta formati, toni e valute non previsti', () => {
+    const table = (column: object) => screen([{ type: 'table', source: 's', columns: [{ field: 'a', ...column }] }]);
+    expect(issuesOf(table({ format: 'euro' })).length).toBeGreaterThan(0);
+    expect(issuesOf(table({ format: 'badge', badges: { x: 'rosso' } })).length).toBeGreaterThan(0);
+    expect(issuesOf(table({ format: 'currency', currency: 'euro' })).length).toBeGreaterThan(0);
+  });
+
+  it('accetta schede annidate con condizioni, schede di dettaglio e messaggi', () => {
+    const doc = screen([
+      { type: 'alert', text: 'Attenzione', kind: 'error', visibleIf: '{{true}}' },
+      {
+        type: 'tabs',
+        tabs: [
+          { label: 'Dati', components: [{ type: 'detail', source: 'ordine', title: 'Ordine', fields: [{ field: 'cliente' }, { field: 'sconto', format: 'percent' }] }] },
+          { id: 'banca', label: 'Dati bancari', visibleIf: "{{can('ordini.iban.leggi')}}", components: [{ type: 'tabs', tabs: [{ label: 'Interna', components: [] }] }] },
+        ],
+      },
+    ]);
+    expect(issuesOf(doc)).toEqual([]);
+  });
+
+  it('rifiuta schede vuote, dettagli senza campi e messaggi di tipo sconosciuto', () => {
+    expect(issuesOf(screen([{ type: 'tabs', tabs: [] }])).length).toBeGreaterThan(0);
+    expect(issuesOf(screen([{ type: 'tabs', tabs: [{ components: [] }] }])).length).toBeGreaterThan(0);
+    expect(issuesOf(screen([{ type: 'detail', source: 's', fields: [] }])).length).toBeGreaterThan(0);
+    expect(issuesOf(screen([{ type: 'alert', text: 'x', kind: 'warning' }])).length).toBeGreaterThan(0);
+    expect(issuesOf(screen([{ type: 'alert', text: 'x', colore: 'rosso' }])).length).toBeGreaterThan(0);
+  });
+
+  it('accetta il passo confirm e rifiuta forme sbagliate', () => {
+    const button = (onClick: unknown[]) => screen([{ type: 'button', label: 'Vai', onClick }]);
+    expect(issuesOf(button([{ confirm: "Approvare l'ordine {{row.numero}}?" }, { toast: 'Fatto' }]))).toEqual([]);
+    expect(issuesOf(button([{ confirm: 5 }])).length).toBeGreaterThan(0);
+    expect(issuesOf(button([{ confirm: 'ok', titolo: 'x' }])).length).toBeGreaterThan(0);
+  });
+});
