@@ -1,0 +1,21 @@
+# Dipendenze e build
+node_modules/
+dist/
+.angular/
+target/
+*.class
+
+# IDE
+.idea/
+*.iml
+.vscode/*
+!.vscode/extensions.json
+.classpath
+.project
+.settings/
+
+# Sistema e segreti locali
+.DS_Store
+Thumbs.db
+.env
+*.log

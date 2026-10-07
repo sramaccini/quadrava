@@ -1,0 +1,36 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: lowcode-authz
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/lowcode}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+# Mappa ruolo -> permessi dell'applicazione di esempio (formato dominio.risorsa.azione).
+lowcode:
+  authz:
+    role-permissions:
+      operatore:
+        - ordini.leggi
+        - ordini.scrivi
+      responsabile:
+        - ordini.leggi
+        - ordini.scrivi
+        - ordini.approva
+        - ordini.iban.leggi
+      amministratore:
+        - ordini.leggi
+        - ordini.scrivi
+        - ordini.approva
+        - ordini.iban.leggi
+        - ordini.iban.scrivi

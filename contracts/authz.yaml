@@ -1,0 +1,151 @@
+openapi: 3.1.0
+info:
+  title: Piattaforma LowCode - Contratto di autorizzazione
+  version: 0.1.0
+  description: >
+    Contratto REST che ogni backend applicativo implementa per esporre i permessi dell'utente corrente.
+    Il frontend usa queste informazioni solo per nascondere o disabilitare parti dell'interfaccia:
+    il backend verifica sempre ogni richiesta e filtra i dati in uscita.
+  license:
+    name: Proprietaria
+    identifier: LicenseRef-Proprietary
+servers:
+  - url: /
+tags:
+  - name: authz
+    description: Permessi e verifiche di autorizzazione.
+security:
+  - cookieAuth: []
+  - bearerAuth: []
+paths:
+  /authz/capabilities:
+    get:
+      tags: [authz]
+      operationId: getCapabilities
+      summary: Permessi dell'utente corrente per un'applicazione
+      parameters:
+        - name: app
+          in: query
+          required: true
+          description: Identificativo dell'applicazione.
+          schema: { type: string }
+      responses:
+        '200':
+          description: Elenco dei permessi concessi.
+          headers:
+            X-Permissions-Version:
+              $ref: '#/components/headers/PermissionsVersion'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Capabilities' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /authz/check:
+    post:
+      tags: [authz]
+      operationId: checkPermissions
+      summary: Verifica a lotti di coppie permesso/risorsa
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CheckRequest' }
+      responses:
+        '200':
+          description: Esito per ciascuna verifica richiesta, nello stesso ordine.
+          headers:
+            X-Permissions-Version:
+              $ref: '#/components/headers/PermissionsVersion'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CheckResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+components:
+  securitySchemes:
+    cookieAuth: { type: apiKey, in: cookie, name: LOWCODE_SESSION }
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  headers:
+    PermissionsVersion:
+      description: Versione corrente dei permessi dell'utente. Se cambia, il runtime ricarica le capacità.
+      schema: { type: string }
+  responses:
+    BadRequest:
+      description: Richiesta non valida.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Unauthorized:
+      description: Sessione assente o scaduta.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Forbidden:
+      description: Operazione non consentita.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+  schemas:
+    Permission:
+      type: string
+      description: Formato dominio.risorsa.azione, minuscolo.
+      pattern: '^[a-z0-9]+(\.[a-z0-9]+)+$'
+      examples: ['ordini.approva']
+    Capabilities:
+      type: object
+      required: [permissions, version]
+      properties:
+        permissions:
+          type: array
+          items: { $ref: '#/components/schemas/Permission' }
+        version:
+          type: string
+        ttlSeconds:
+          type: integer
+          minimum: 0
+          description: Durata suggerita della cache.
+    ResourceRef:
+      type: object
+      required: [type, id]
+      properties:
+        type: { type: string }
+        id: { type: string }
+    CheckItem:
+      type: object
+      required: [permission]
+      properties:
+        permission: { $ref: '#/components/schemas/Permission' }
+        resource: { $ref: '#/components/schemas/ResourceRef' }
+    CheckRequest:
+      type: object
+      required: [checks]
+      properties:
+        checks:
+          type: array
+          maxItems: 200
+          items: { $ref: '#/components/schemas/CheckItem' }
+    CheckResult:
+      type: object
+      required: [permission, allowed]
+      properties:
+        permission: { $ref: '#/components/schemas/Permission' }
+        resource: { $ref: '#/components/schemas/ResourceRef' }
+        allowed: { type: boolean }
+    CheckResponse:
+      type: object
+      required: [results]
+      properties:
+        results:
+          type: array
+          items: { $ref: '#/components/schemas/CheckResult' }
+    Problem:
+      type: object
+      description: Errore in formato RFC 9457, con identificativo di correlazione.
+      required: [title, status]
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        correlationId: { type: string }

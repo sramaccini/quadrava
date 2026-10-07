@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lowcode.example/schemas/screen.schema.json",
+  "title": "Schermata",
+  "description": "Nucleo del linguaggio di definizione: una schermata di un'applicazione LowCode.",
+  "type": "object",
+  "required": ["schemaVersion", "screen", "components"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "type": "string", "pattern": "^\\d+\\.\\d+$" },
+    "screen": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$", "description": "Identificativo stabile, kebab-case." },
+    "title": { "type": "string" },
+    "requires": { "type": "string", "pattern": "^[a-z0-9]+(\\.[a-z0-9]+)+$", "description": "Permesso necessario per aprire la schermata (dominio.risorsa.azione)." },
+    "dataSources": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/dataSource" }
+    },
+    "components": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/node" }
+    }
+  },
+  "$defs": {
+    "expression": { "type": "string", "description": "Espressione tra doppie graffe, per esempio {{$can('ordini.approva')}}." },
+    "dataSource": {
+      "type": "object",
+      "required": ["type", "method", "url"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "rest" },
+        "method": { "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"] },
+        "url": { "type": "string" },
+        "params": { "type": "object" },
+        "paging": { "enum": ["server", "none"] }
+      }
+    },
+    "node": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+        "type": { "type": "string", "pattern": "^[a-z][A-Za-z0-9]*$" },
+        "visibleIf": { "$ref": "#/$defs/expression" },
+        "hiddenIf": { "$ref": "#/$defs/expression" },
+        "enabledIf": { "$ref": "#/$defs/expression" },
+        "readOnlyIf": { "$ref": "#/$defs/expression" }
+      },
+      "additionalProperties": true
+    }
+  }
+}

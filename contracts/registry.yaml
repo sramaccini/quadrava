@@ -1,0 +1,180 @@
+openapi: 3.1.0
+info:
+  title: Piattaforma LowCode - Contratto del registry
+  version: 0.1.0
+  description: >
+    Registro delle definizioni delle applicazioni. Le versioni sono immutabili e identificate da un hash;
+    pubblicare significa far puntare un ambiente a una versione.
+  license:
+    name: Proprietaria
+    identifier: LicenseRef-Proprietary
+servers:
+  - url: /
+tags:
+  - name: registry
+    description: Definizioni delle applicazioni e pubblicazione.
+security:
+  - cookieAuth: []
+  - bearerAuth: []
+paths:
+  /registry/apps:
+    get:
+      tags: [registry]
+      operationId: listApps
+      summary: Elenco delle applicazioni visibili all'utente
+      responses:
+        '200':
+          description: Applicazioni.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/AppSummary' }
+        '401': { $ref: '#/components/responses/Problem' }
+  /registry/apps/{appId}/versions:
+    parameters:
+      - $ref: '#/components/parameters/AppId'
+    get:
+      tags: [registry]
+      operationId: listVersions
+      summary: Storico delle versioni
+      responses:
+        '200':
+          description: Versioni, dalla più recente.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/AppVersion' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [registry]
+      operationId: saveVersion
+      summary: Salva una nuova versione (immutabile)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AppDefinition' }
+      responses:
+        '201':
+          description: Versione creata.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AppVersion' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /registry/apps/{appId}/versions/{hash}:
+    parameters:
+      - $ref: '#/components/parameters/AppId'
+      - name: hash
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      tags: [registry]
+      operationId: getVersion
+      summary: Contenuto di una versione
+      responses:
+        '200':
+          description: Definizione.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AppDefinition' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /registry/apps/{appId}/published:
+    parameters:
+      - $ref: '#/components/parameters/AppId'
+      - name: env
+        in: query
+        required: true
+        schema: { type: string, examples: [produzione] }
+    get:
+      tags: [registry]
+      operationId: getPublished
+      summary: Definizione pubblicata per un ambiente (con ETag)
+      responses:
+        '200':
+          description: Definizione pubblicata.
+          headers:
+            ETag: { schema: { type: string } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AppDefinition' }
+        '304': { description: Non modificata. }
+        '401': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [registry]
+      operationId: publish
+      summary: Pubblica una versione in un ambiente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PublishRequest' }
+      responses:
+        '204': { description: Pubblicata. }
+        '400': { $ref: '#/components/responses/Problem' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+components:
+  securitySchemes:
+    cookieAuth: { type: apiKey, in: cookie, name: LOWCODE_SESSION }
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    AppId:
+      name: appId
+      in: path
+      required: true
+      schema: { type: string }
+  responses:
+    Problem:
+      description: Errore in formato RFC 9457.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+  schemas:
+    AppSummary:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        publishedEnvironments:
+          type: array
+          items: { type: string }
+    AppDefinition:
+      type: object
+      description: Documento JSON dell'applicazione, validato contro lo schema del nucleo.
+      required: [schemaVersion]
+      properties:
+        schemaVersion: { type: string }
+      additionalProperties: true
+    AppVersion:
+      type: object
+      required: [hash, createdAt, author]
+      properties:
+        hash: { type: string, description: Hash del contenuto. }
+        createdAt: { type: string, format: date-time }
+        author: { type: string }
+        state:
+          type: string
+          enum: [bozza, in-revisione, pubblicata, ritirata]
+    PublishRequest:
+      type: object
+      required: [hash]
+      properties:
+        hash: { type: string }
+    Problem:
+      type: object
+      required: [title, status]
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        correlationId: { type: string }

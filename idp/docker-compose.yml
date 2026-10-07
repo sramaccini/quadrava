@@ -1,0 +1,13 @@
+# Keycloak per lo sviluppo locale. Solo per sviluppo: HTTP, credenziali di esempio, database interno.
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.8.0
+    command: start-dev --import-realm
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HTTP_PORT: 8180
+    ports:
+      - "8180:8180"
+    volumes:
+      - ./realm-lowcode.json:/opt/keycloak/data/import/realm-lowcode.json:ro

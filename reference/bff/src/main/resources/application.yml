@@ -1,0 +1,24 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: lowcode-bff
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            client-id: lowcode-bff
+            client-secret: ${LOWCODE_BFF_CLIENT_SECRET:dev-only-secret}
+            authorization-grant-type: authorization_code
+            scope: openid,profile,email
+        provider:
+          keycloak:
+            issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/lowcode}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

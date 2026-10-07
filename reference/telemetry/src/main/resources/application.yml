@@ -1,0 +1,21 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: lowcode-telemetry
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/lowcode}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+lowcode:
+  telemetry:
+    max-bytes: 1000000

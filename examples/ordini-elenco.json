@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "ordini-elenco",
+  "title": "Ordini",
+  "requires": "ordini.leggi",
+  "dataSources": {
+    "ordini": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/ordini",
+      "params": { "stato": "{{state.filtri.stato}}", "page": "{{state.page}}" },
+      "paging": "server"
+    },
+    "approvaOrdine": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/ordini/{{id}}/approva"
+    }
+  },
+  "components": [
+    {
+      "id": "filtri-ordini",
+      "type": "filterBar",
+      "bind": "state.filtri",
+      "fields": [
+        { "name": "stato", "type": "select", "label": "Stato", "options": ["bozza", "inviato", "approvato"] }
+      ]
+    },
+    {
+      "id": "tabella-ordini",
+      "type": "table",
+      "source": "ordini",
+      "columns": [{ "field": "numero" }, { "field": "cliente" }, { "field": "stato" }],
+      "rowActions": [
+        {
+          "id": "btn-approva",
+          "label": "Approva",
+          "visibleIf": "{{$can('ordini.approva') && row.stato == 'inviato'}}",
+          "onClick": [
+            { "call": "approvaOrdine", "args": { "id": "{{row.id}}" }, "onError": { "toast": "Approvazione non riuscita" } },
+            { "refresh": "ordini" },
+            { "toast": "Ordine approvato" }
+          ]
+        }
+      ]
+    }
+  ]
+}
