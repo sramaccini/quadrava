@@ -11,9 +11,9 @@
     "validate:examples": "node tools/validate-examples.mjs",
     "schema:sync": "node tools/sync-schema.mjs",
     "schema:check": "node tools/sync-schema.mjs --check",
-    "build:libs": "ng build schema && ng build expressions && ng build core && ng build components",
+    "build:libs": "ng build schema && ng build expressions && ng build core && ng build components && ng build services",
     "demo:prepare": "npm run build:libs && node tools/copy-examples.mjs",
-    "test:libs": "ng test schema --watch=false && ng test expressions --watch=false && ng test core --watch=false && ng test components --watch=false"
+    "test:libs": "ng test schema --watch=false && ng test expressions --watch=false && ng test core --watch=false && ng test components --watch=false && ng test services --watch=false"
   },
   "private": true,
   "packageManager": "npm@10.9.8",

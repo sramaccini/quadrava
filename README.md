@@ -62,13 +62,13 @@ Utenti di sviluppo in Keycloak: `operatore`, `responsabile`, `amministratore` (p
 
 ## Stato
 
-Verificato: schema di schermate, temi e navigazione, valutatore di espressioni CEL, interprete (`core`), catalogo componenti (`components`) e demo `runtime`, con 95 test automatici; build di tutte le app e librerie; validità dei tre contratti OpenAPI e degli esempi.
+Verificato: schema di schermate, temi e navigazione, valutatore di espressioni CEL, interprete (`core`), catalogo componenti (`components`), servizi (`services`) e demo `runtime`, con 114 test automatici (più 2 di prova dell'editor); build di tutte le app e librerie; validità dei tre contratti OpenAPI e degli esempi. `services` è provata solo con test su HTTP simulato, non contro il BFF reale.
 Non ancora verificato: la compilazione e i test dei moduli Java (vanno lanciati con `mvn verify`; i nomi degli starter di Spring Boot 4 vanno controllati al primo build). La demo non è stata provata in un browser reale: è coperta da test con jsdom.
 Punto aperto di sicurezza: Ajv genera codice con `new Function`, quindi la validazione nel browser richiede `unsafe-eval` nella Content-Security-Policy. Prima della produzione va precompilata (Ajv standalone) oppure spostata alla pubblicazione nel registry.
 
 ## Prossimi passi
 
-- `services`: client HTTP, autenticazione, autorizzazione (con `X-Permissions-Version`) e telemetria, al posto delle porte finte della demo.
+- Collegare `services` all'app `runtime` (oggi usa le porte finte della demo) e completare il BFF: CSRF, inoltro delle API con token, elenco degli host consentiti.
 - Editor visuale (`editor`): albero dei nodi, pannello proprietà, anteprima, temi e menu.
 - Menu: navigazione da tastiera con le frecce, badge sulle voci, ricerca nel menu.
 - Controllo delle espressioni anche in `validate:examples`.

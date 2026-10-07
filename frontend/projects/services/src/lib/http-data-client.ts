@@ -1,0 +1,44 @@
+import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
+import { DataClient, type DataRequest } from 'core';
+import { firstValueFrom } from 'rxjs';
+import { DataError } from './errors';
+import { isSameOriginRelative } from './trace';
+
+function toParams(query: Record<string, unknown> | undefined): HttpParams {
+  let params = new HttpParams();
+  for (const [key, value] of Object.entries(query ?? {})) {
+    if (value === null || value === undefined) continue;
+    for (const item of Array.isArray(value) ? value : [value]) {
+      params = params.append(key, String(item));
+    }
+  }
+  return params;
+}
+
+/** Esegue le chiamate REST dei data source. Solo URL relativi: il browser parla con il BFF, mai con host arbitrari. */
+@Injectable({ providedIn: 'root' })
+export class HttpDataClient extends DataClient {
+  private readonly http = inject(HttpClient);
+
+  async request(request: DataRequest): Promise<unknown> {
+    if (!isSameOriginRelative(request.url) || request.url.split(/[?#]/)[0].split('/').includes('..')) {
+      throw new DataError(0);
+    }
+    try {
+      return await firstValueFrom(
+        this.http.request(request.method, request.url, {
+          params: toParams(request.query),
+          body: request.method === 'GET' || request.method === 'DELETE' ? undefined : request.body,
+        }),
+      );
+    } catch (e) {
+      if (e instanceof HttpErrorResponse) {
+        const problem = e.error as { correlationId?: unknown } | null;
+        const fromBody = typeof problem?.correlationId === 'string' ? problem.correlationId : undefined;
+        throw new DataError(e.status, fromBody ?? e.headers?.get('X-Correlation-Id') ?? undefined);
+      }
+      throw new DataError(0);
+    }
+  }
+}

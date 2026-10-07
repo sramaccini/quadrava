@@ -1,5 +1,9 @@
-/*
- * Public API Surface of services
- */
-
-export * from './lib/services';
+export * from './lib/authorization';
+export * from './lib/config';
+export * from './lib/diagnostics';
+export * from './lib/errors';
+export * from './lib/http-data-client';
+export * from './lib/interceptor';
+export * from './lib/provide';
+export * from './lib/session';
+export * from './lib/trace';
