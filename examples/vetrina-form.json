@@ -1,0 +1,74 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "vetrina-form",
+  "title": "Vetrina: form",
+  "requires": "vetrina.componenti.leggi",
+  "dataSources": {
+    "salva": { "type": "rest", "method": "POST", "url": "/api/vetrina/segnala", "body": "{{form}}" },
+    "ordine": { "type": "rest", "method": "GET", "url": "/api/ordini/{{has(params.id) ? params.id : 1}}" },
+    "salvaOrdine": { "type": "rest", "method": "PUT", "url": "/api/ordini/{{has(params.id) ? params.id : 1}}", "body": "{{form}}" }
+  },
+  "components": [
+    { "id": "titolo", "type": "text", "style": "heading", "text": "Form" },
+    { "id": "intro", "type": "text", "text": "Tutti i tipi di campo, i campi obbligatori, la validazione con regole, i campi che compaiono, si bloccano o spariscono in base ai valori e ai permessi." },
+    {
+      "id": "sezione-inserimento",
+      "type": "section",
+      "title": "Form di inserimento: tutti i tipi di campo",
+      "components": [
+        {
+          "id": "form-tipi",
+          "type": "form",
+          "initial": { "categoria": "privato", "newsletter": true },
+          "fields": [
+            { "name": "nome", "type": "text", "label": "Nome", "required": true },
+            { "name": "eta", "type": "number", "label": "Età", "validate": { "rule": "{{value >= 18 && value <= 120}}", "message": "L'età deve essere tra 18 e 120" } },
+            { "name": "categoria", "type": "select", "label": "Categoria", "options": ["privato", "business"], "required": true },
+            { "name": "partitaIva", "type": "text", "label": "Partita IVA (solo business)", "visibleIf": "{{form.categoria == 'business'}}", "required": true, "validate": { "rule": "{{size(string(value)) == 11}}", "message": "La partita IVA ha 11 cifre" } },
+            { "name": "nascita", "type": "date", "label": "Data di nascita" },
+            { "name": "newsletter", "type": "checkbox", "label": "Desidero ricevere la newsletter" },
+            { "name": "codiceFiscale", "type": "text", "label": "Codice fiscale (dato sensibile)", "sensitive": true }
+          ],
+          "actions": [
+            {
+              "id": "btn-invia",
+              "label": "Invia",
+              "onClick": [{ "call": "salva", "onError": { "toast": "Invio non riuscito" } }, { "toast": "Dati inviati" }]
+            },
+            {
+              "id": "btn-azzera",
+              "label": "Che cosa ricevono le azioni?",
+              "onClick": [{ "toast": "Le azioni di un form ricevono i valori in 'form'" }]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sezione-modifica",
+      "type": "section",
+      "title": "Form di modifica: dati dal servizio, campi e azioni secondo i permessi",
+      "components": [
+        {
+          "id": "form-ordine",
+          "type": "form",
+          "source": "ordine",
+          "fields": [
+            { "name": "cliente", "type": "text", "required": true },
+            { "name": "tipo", "type": "select", "options": ["privato", "business"] },
+            { "name": "sconto", "type": "number", "visibleIf": "{{form.tipo == 'business'}}", "validate": { "rule": "{{value <= 20}}", "message": "Sconto massimo 20%" } },
+            { "name": "iban", "type": "text", "sensitive": true, "hiddenIf": "{{!can('ordini.iban.leggi')}}", "readOnlyIf": "{{!can('ordini.iban.scrivi')}}" }
+          ],
+          "actions": [
+            {
+              "id": "btn-salva",
+              "label": "Salva",
+              "enabledIf": "{{can('ordini.ordine.scrivi') && form._perm.update}}",
+              "onClick": [{ "call": "salvaOrdine", "onError": { "toast": "Salvataggio non riuscito" } }, { "toast": "Ordine salvato" }]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

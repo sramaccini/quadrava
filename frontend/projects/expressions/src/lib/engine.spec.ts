@@ -37,6 +37,15 @@ describe('ExpressionEngine.evaluate', () => {
     expect(engine.evaluate('row.id == 7', ctx)).toEqual({ ok: true, value: true });
   });
 
+  it('somma, sottrae, moltiplica e divide numeri JSON con letterali interi', () => {
+    const c = { state: { n: 3, prezzo: 2.5 } };
+    expect(engine.evaluate('state.n + 1', c)).toEqual({ ok: true, value: 4 });
+    expect(engine.evaluate('1 + state.n', c)).toEqual({ ok: true, value: 4 });
+    expect(engine.evaluate('state.n - 1', c)).toEqual({ ok: true, value: 2 });
+    expect(engine.evaluate('state.prezzo * 2', c)).toEqual({ ok: true, value: 5 });
+    expect(engine.evaluate('state.n / 2', c)).toEqual({ ok: true, value: 1.5 });
+  });
+
   it('converte gli interi CEL in numeri', () => {
     expect(engine.evaluate('1 + 2', ctx)).toEqual({ ok: true, value: 3 });
   });

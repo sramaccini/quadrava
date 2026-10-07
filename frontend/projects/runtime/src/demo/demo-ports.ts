@@ -4,11 +4,11 @@ import { Authorization, DataClient, Notifier, RuntimeDiagnostics, UserProvider, 
 /** Profili della demo: i permessi sono quelli che in produzione darebbe il servizio di autorizzazione. */
 export const DEMO_PROFILES: Record<string, string[]> = {
   // Inserisce e consulta fatture e vede gli ordini: due casi d'uso.
-  operatore: ['fatture.fattura.leggi', 'fatture.fattura.crea', 'ordini.ordine.leggi'],
+  operatore: ['vetrina.componenti.leggi', 'fatture.fattura.leggi', 'fatture.fattura.crea', 'ordini.ordine.leggi'],
   // Aggiunge pacchetti, revisione spese e approvazione ordini: tutti e quattro i casi d'uso.
-  responsabile: ['fatture.fattura.leggi', 'fatture.fattura.crea', 'ordini.ordine.leggi', 'ordini.ordine.approva', 'ordini.ordine.scrivi', 'pacchetti.pacchetto.leggi', 'pacchetti.pacchetto.crea', 'spese.spesa.leggi', 'spese.spesa.revisiona'],
+  responsabile: ['vetrina.componenti.leggi', 'fatture.fattura.leggi', 'fatture.fattura.crea', 'ordini.ordine.leggi', 'ordini.ordine.approva', 'ordini.ordine.scrivi', 'pacchetti.pacchetto.leggi', 'pacchetti.pacchetto.crea', 'spese.spesa.leggi', 'spese.spesa.revisiona'],
   amministratore: [
-    'fatture.fattura.leggi', 'fatture.fattura.crea', 'ordini.ordine.leggi', 'ordini.ordine.approva', 'ordini.ordine.scrivi', 'ordini.iban.leggi', 'ordini.iban.scrivi',
+    'vetrina.componenti.leggi', 'fatture.fattura.leggi', 'fatture.fattura.crea', 'ordini.ordine.leggi', 'ordini.ordine.approva', 'ordini.ordine.scrivi', 'ordini.iban.leggi', 'ordini.iban.scrivi',
     'pacchetti.pacchetto.leggi', 'pacchetti.pacchetto.crea', 'spese.spesa.leggi', 'spese.spesa.revisiona',
   ],
 };
@@ -132,6 +132,8 @@ export class MockDataClient extends DataClient {
       order.stato = 'approvato';
       return {};
     }
+    if (path === '/api/vetrina/segnala' && req.method === 'POST') return {};
+    if (path === '/api/vetrina/errore') throw new Error('500');
     const other = this.handleBilling(req, path);
     if (other !== undefined) return other;
     throw new Error(`404 ${req.method} ${req.url}`);

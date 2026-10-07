@@ -28,6 +28,19 @@ export class ExpressionEngine {
       unlistedVariablesAreDyn: true,
       limits: { maxAstNodes: 1000, maxDepth: 32, maxListElements: 100, maxMapEntries: 100, maxCallArguments: 8 },
     }).registerFunction('can(string): bool', (permission: string) => this.permissions.can(permission));
+    // I numeri che arrivano da JSON (stato, righe, form) sono "double" per CEL, mentre i letterali come 1 sono "int":
+    // senza queste regole `state.pagina + 1` darebbe errore. Il risultato è un numero decimale.
+    const arithmetic: Record<string, (a: number, b: number) => number> = {
+      '+': (a, b) => a + b,
+      '-': (a, b) => a - b,
+      '*': (a, b) => a * b,
+      '/': (a, b) => a / b,
+    };
+    for (const [op, fn] of Object.entries(arithmetic)) {
+      for (const [left, right] of [['double', 'int'], ['int', 'double']]) {
+        this.env.registerOperator(`${left} ${op} ${right}`, (a: unknown, b: unknown) => fn(Number(a), Number(b)));
+      }
+    }
   }
 
   /** Valuta un'espressione CEL "nuda", senza doppie graffe. */

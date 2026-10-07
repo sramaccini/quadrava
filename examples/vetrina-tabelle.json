@@ -1,0 +1,73 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "vetrina-tabelle",
+  "title": "Vetrina: filtri e tabelle",
+  "requires": "vetrina.componenti.leggi",
+  "dataSources": {
+    "ordini": { "type": "rest", "method": "GET", "url": "/api/ordini", "params": { "stato": "{{state.filtri.stato}}", "page": "{{state.page}}" }, "paging": "server" },
+    "approvaOrdine": { "type": "rest", "method": "POST", "url": "/api/ordini/{{id}}/approva" },
+    "pacchetti": { "type": "rest", "method": "GET", "url": "/api/pacchetti" }
+  },
+  "components": [
+    { "id": "titolo", "type": "text", "style": "heading", "text": "Filtri e tabelle" },
+    { "id": "intro", "type": "text", "text": "Una barra di filtri scrive nello stato della schermata; la tabella ricarica da sola quando i filtri cambiano. Le righe hanno azioni condizionate dai permessi e dallo stato della riga." },
+    {
+      "id": "sezione-paginata",
+      "type": "section",
+      "title": "Tabella con filtri, paginazione lato server e azioni di riga",
+      "components": [
+        {
+          "id": "filtri",
+          "type": "filterBar",
+          "bind": "state.filtri",
+          "fields": [
+            { "name": "stato", "type": "select", "label": "Stato", "options": ["bozza", "inviato", "approvato"] }
+          ]
+        },
+        {
+          "id": "tabella-ordini",
+          "type": "table",
+          "source": "ordini",
+          "columns": [
+            { "field": "numero", "label": "Numero" },
+            { "field": "cliente", "label": "Cliente" },
+            { "field": "tipo" },
+            { "field": "stato", "label": "Stato" }
+          ],
+          "rowActions": [
+            { "id": "btn-apri", "label": "Apri", "onClick": [{ "navigate": "ordine-dettaglio", "params": { "id": "{{row.id}}" } }] },
+            {
+              "id": "btn-approva",
+              "label": "Approva",
+              "visibleIf": "{{can('ordini.ordine.approva') && row.stato == 'inviato'}}",
+              "onClick": [
+                { "call": "approvaOrdine", "args": { "id": "{{row.id}}" }, "onError": { "toast": "Approvazione non riuscita" } },
+                { "refresh": "ordini" },
+                { "toast": "Ordine approvato" }
+              ]
+            },
+            {
+              "id": "btn-modifica",
+              "label": "Modifica",
+              "enabledIf": "{{row._perm.update}}",
+              "onClick": [{ "navigate": "vetrina-form", "params": { "id": "{{row.id}}" } }]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sezione-semplice",
+      "type": "section",
+      "title": "Tabella semplice: tutte le righe in un array, senza filtri né pagine",
+      "components": [
+        {
+          "id": "tabella-pacchetti",
+          "type": "table",
+          "source": "pacchetti",
+          "columns": [{ "field": "nome" }, { "field": "descrizione" }, { "field": "creato", "label": "Creato il" }]
+        }
+      ]
+    }
+  ]
+}

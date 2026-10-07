@@ -1,0 +1,198 @@
+import { TestBed, type ComponentFixture } from '@angular/core/testing';
+import { Router } from '@angular/router';
+import navigationDoc from '../../public/examples/navigation.json';
+import base from '../../public/examples/vetrina-base.json';
+import form from '../../public/examples/vetrina-form.json';
+import tables from '../../public/examples/vetrina-tabelle.json';
+import detail from '../../public/examples/ordine-dettaglio.json';
+import chiaro from '../../public/examples/themes/chiaro.json';
+import scuro from '../../public/examples/themes/scuro.json';
+import { DemoDiagnostics } from '../demo/demo-ports';
+import { App } from './app';
+import { appConfig } from './app.config';
+
+/** La vetrina deve funzionare davvero: ogni schermata si apre senza errori e i suoi esempi fanno quello che dicono. */
+describe('Vetrina dei componenti', () => {
+  const files: Record<string, unknown> = {
+    'examples/navigation.json': navigationDoc,
+    'examples/vetrina-base.json': base,
+    'examples/vetrina-form.json': form,
+    'examples/vetrina-tabelle.json': tables,
+    'examples/ordine-dettaglio.json': detail,
+    'examples/themes/chiaro.json': chiaro,
+    'examples/themes/scuro.json': scuro,
+  };
+
+  beforeEach(() => {
+    vi.stubGlobal('fetch', async (url: string) => {
+      const body = files[url];
+      return body ? { ok: true, status: 200, json: async () => body } : { ok: false, status: 404, json: async () => ({}) };
+    });
+    TestBed.configureTestingModule({ providers: appConfig.providers });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    document.documentElement.removeAttribute('style');
+  });
+
+  async function until(fixture: ComponentFixture<App>, condition: () => boolean, label: string): Promise<void> {
+    for (let i = 0; i < 200; i++) {
+      fixture.detectChanges();
+      await fixture.whenStable();
+      if (condition()) return;
+      await new Promise((r) => setTimeout(r, 20));
+    }
+    throw new Error(`timeout: ${label}\n${(fixture.nativeElement as HTMLElement).querySelector('main')?.innerHTML.slice(0, 1500)}`);
+  }
+
+  async function open(path: string, user = 'operatore'): Promise<{ fixture: ComponentFixture<App>; el: HTMLElement }> {
+    const fixture = TestBed.createComponent(App);
+    const el = fixture.nativeElement as HTMLElement;
+    fixture.detectChanges();
+    await TestBed.inject(Router).navigateByUrl('/');
+    await until(fixture, () => !!el.querySelector('header select'), 'barra superiore');
+    if (user !== 'operatore') {
+      const s = el.querySelector('header select') as HTMLSelectElement;
+      s.value = user;
+      s.dispatchEvent(new Event('change'));
+    }
+    await TestBed.inject(Router).navigateByUrl(path);
+    await until(fixture, () => !!el.querySelector('main h2'), 'contenuto');
+    return { fixture, el };
+  }
+
+  const main = (el: HTMLElement): string => el.querySelector('main')?.textContent ?? '';
+  const button = (el: HTMLElement, text: string): HTMLButtonElement | undefined =>
+    [...el.querySelectorAll('main button')].find((b) => b.textContent?.trim().startsWith(text)) as HTMLButtonElement | undefined;
+  const rows = (el: HTMLElement, table = 0): number => el.querySelectorAll('main table')[table]?.querySelectorAll('tbody tr').length ?? 0;
+  const field = (el: HTMLElement, name: string): HTMLInputElement | HTMLSelectElement | null =>
+    [...el.querySelectorAll('main input, main select')].find((i) => i.id.endsWith(`-${name}`)) as HTMLInputElement | undefined ?? null;
+  const type = (el: HTMLElement, name: string, value: string): void => {
+    const f = field(el, name)!;
+    f.value = value;
+    f.dispatchEvent(new Event(f.tagName === 'SELECT' ? 'change' : 'input'));
+  };
+
+  it('il caso d’uso compare nel menu e le tre schermate si aprono senza errori', async () => {
+    const diagnostics = TestBed.inject(DemoDiagnostics);
+    for (const [path, titolo] of [
+      ['/vetrina/vetrina-base', 'Componenti base'],
+      ['/vetrina/vetrina-form', 'Form'],
+      ['/vetrina/vetrina-tabelle', 'Filtri e tabelle'],
+    ]) {
+      const { el, fixture } = await open(path);
+      await until(fixture, () => main(el).includes(titolo), titolo);
+      expect(el.querySelector('lc-sidebar')?.textContent).toContain('Componenti base');
+      fixture.destroy();
+    }
+    expect(diagnostics.events(), JSON.stringify(diagnostics.events())).toEqual([]);
+  });
+
+  describe('componenti base', () => {
+    it('il contatore cambia il testo e abilita il pulsante condizionato dallo stato', async () => {
+      const { fixture, el } = await open('/vetrina/vetrina-base');
+      expect(main(el)).toContain('Hai premuto il pulsante 0 volte');
+      expect(button(el, 'Abilitato dopo')!.disabled).toBe(true);
+      button(el, 'Incrementa')!.click();
+      await until(fixture, () => main(el).includes('1 volte'), 'primo incremento');
+      await new Promise((r) => setTimeout(r, 30)); // il pulsante resta occupato finché l'azione non termina
+      button(el, 'Incrementa')!.click();
+      await until(fixture, () => main(el).includes('2 volte'), 'secondo incremento');
+      expect(button(el, 'Abilitato dopo')!.disabled).toBe(false);
+    });
+
+    it('la chiamata che fallisce mostra solo il messaggio di onError e ferma la sequenza', async () => {
+      const { fixture, el } = await open('/vetrina/vetrina-base');
+      button(el, 'Chiamata che fallisce')!.click();
+      await until(fixture, () => !!el.querySelector('.toast'), 'toast');
+      expect(el.querySelector('.toast')?.textContent).toContain('Errore gestito');
+      await new Promise((r) => setTimeout(r, 300));
+      expect(el.textContent).not.toContain('non compare mai');
+    });
+
+    it('la visibilità segue i permessi del profilo', async () => {
+      const { el } = await open('/vetrina/vetrina-base');
+      expect(button(el, 'Visibile solo con il permesso')).toBeUndefined();
+      expect(button(el, 'Nascosto a chi può leggere')).toBeDefined();
+      const admin = await open('/vetrina/vetrina-base', 'amministratore');
+      expect(button(admin.el, 'Visibile solo con il permesso')).toBeDefined();
+      expect(button(admin.el, 'Nascosto a chi può leggere')).toBeUndefined();
+    });
+  });
+
+  describe('form', () => {
+    it('i campi obbligatori e le regole mostrano gli errori solo dopo l’invio', async () => {
+      const { fixture, el } = await open('/vetrina/vetrina-form');
+      expect(el.querySelectorAll('main .lc-error').length).toBe(0);
+      button(el, 'Invia')!.click();
+      await until(fixture, () => el.querySelectorAll('main .lc-error').length > 0, 'errore del nome');
+      type(el, 'nome', 'Mario');
+      type(el, 'eta', '12');
+      button(el, 'Invia')!.click();
+      await until(fixture, () => main(el).includes("L'età deve essere tra 18 e 120"), 'regola sull’età');
+      type(el, 'eta', '40');
+      button(el, 'Invia')!.click();
+      await until(fixture, () => !!el.querySelector('.toast'), 'invio riuscito');
+      expect(el.querySelector('.toast')?.textContent).toContain('Dati inviati');
+    });
+
+    it('il campo partita IVA compare solo per i business e diventa obbligatorio', async () => {
+      const { fixture, el } = await open('/vetrina/vetrina-form');
+      expect(field(el, 'partitaIva')).toBeNull();
+      type(el, 'categoria', 'business');
+      await until(fixture, () => !!field(el, 'partitaIva'), 'campo condizionale');
+      type(el, 'nome', 'Mario');
+      button(el, 'Invia')!.click();
+      await until(fixture, () => main(el).includes('Campo obbligatorio'), 'partita IVA obbligatoria');
+      type(el, 'partitaIva', '123');
+      button(el, 'Invia')!.click();
+      await until(fixture, () => main(el).includes('La partita IVA ha 11 cifre'), 'regola partita IVA');
+    });
+
+    it('il form di modifica carica i dati e protegge IBAN e salvataggio secondo i permessi', async () => {
+      const operator = await open('/vetrina/vetrina-form');
+      await until(operator.fixture, () => (field(operator.el, 'cliente') as HTMLInputElement | null)?.value === 'Rossi Srl', 'dati caricati');
+      expect(field(operator.el, 'iban')).toBeNull();
+      expect(button(operator.el, 'Salva')!.disabled).toBe(true);
+      operator.fixture.destroy();
+      const admin = await open('/vetrina/vetrina-form', 'amministratore');
+      await until(admin.fixture, () => (field(admin.el, 'cliente') as HTMLInputElement | null)?.value === 'Rossi Srl', 'dati caricati');
+      expect(field(admin.el, 'iban')).not.toBeNull();
+      await until(admin.fixture, () => button(admin.el, 'Salva')!.disabled === false, 'salvataggio abilitato');
+    });
+  });
+
+  describe('filtri e tabelle', () => {
+    it('il filtro ricarica la tabella e la paginazione scorre le pagine', async () => {
+      const { fixture, el } = await open('/vetrina/vetrina-tabelle');
+      await until(fixture, () => rows(el, 0) === 8, 'prima pagina');
+      button(el, 'Successiva')!.click();
+      await until(fixture, () => main(el).includes('Pagina 2') && rows(el, 0) === 8, 'seconda pagina');
+      type(el, 'stato', 'approvato');
+      await until(fixture, () => rows(el, 0) === 7 && main(el).includes('Pagina 1'), 'filtro applicato');
+    });
+
+    it('le azioni di riga rispettano permessi e stato della riga', async () => {
+      const operator = await open('/vetrina/vetrina-tabelle');
+      await until(operator.fixture, () => rows(operator.el, 0) > 0, 'righe');
+      expect(button(operator.el, 'Approva')).toBeUndefined();
+      operator.fixture.destroy();
+      const manager = await open('/vetrina/vetrina-tabelle', 'responsabile');
+      await until(manager.fixture, () => rows(manager.el, 0) > 0, 'righe');
+      const approve = [...manager.el.querySelectorAll('main button')].filter((b) => b.textContent?.trim() === 'Approva');
+      expect(approve.length).toBeGreaterThan(0);
+      expect(approve.length).toBeLessThan(8); // solo gli ordini "inviato"
+      const before = approve.length;
+      (approve[0] as HTMLButtonElement).click();
+      await until(manager.fixture, () => !!manager.el.querySelector('.toast'), 'conferma');
+      await until(manager.fixture, () => [...manager.el.querySelectorAll('main button')].filter((b) => b.textContent?.trim() === 'Approva').length === before - 1, 'riga aggiornata');
+    });
+
+    it('la tabella semplice mostra un array di righe', async () => {
+      const { fixture, el } = await open('/vetrina/vetrina-tabelle');
+      await until(fixture, () => rows(el, 1) === 2, 'pacchetti');
+      expect(main(el)).toContain('Chiusura settembre');
+    });
+  });
+});

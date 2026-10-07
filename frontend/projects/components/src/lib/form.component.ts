@@ -77,15 +77,20 @@ export class FormComponent {
     // Valori iniziali dichiarati nel form (una sola volta), poi quelli del data source quando arriva.
     effect(() => {
       const initial = this.node().initial;
-      if (initial) untracked(() => this.values.set(this.runtime().resolveValue(initial, this.scope()) as Record<string, unknown>));
+      untracked(() => this.values.set({ ...this.empty(), ...((initial ? this.runtime().resolveValue(initial, this.scope()) : {}) as Record<string, unknown>) }));
     });
     effect(() => {
       const source = this.node().source;
       const data = source ? this.runtime().source(source).data : null;
       if (data !== null && typeof data === 'object' && !Array.isArray(data)) {
-        untracked(() => this.values.set({ ...(data as Record<string, unknown>) }));
+        untracked(() => this.values.set({ ...this.empty(), ...(data as Record<string, unknown>) }));
       }
     });
+  }
+
+  /** Ogni campo dichiarato esiste nei valori (nullo): le espressioni `form.campo` non vanno in errore prima che arrivino i dati. */
+  private empty(): Record<string, unknown> {
+    return Object.fromEntries(this.node().fields.map((f) => [f.name, null]));
   }
 
   protected text(field: FieldDefinition): string {

@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "vetrina-base",
+  "title": "Vetrina: componenti base",
+  "requires": "vetrina.componenti.leggi",
+  "dataSources": {
+    "segnala": { "type": "rest", "method": "POST", "url": "/api/vetrina/segnala", "body": { "messaggio": "{{state.messaggio}}" } },
+    "segnalaConErrore": { "type": "rest", "method": "POST", "url": "/api/vetrina/errore" }
+  },
+  "components": [
+    { "id": "titolo", "type": "text", "style": "heading", "text": "Componenti base" },
+    { "id": "intro", "type": "text", "text": "Questa schermata mostra testo, sezioni e pulsanti con le cinque azioni disponibili: set, call, refresh, navigate e toast." },
+    {
+      "id": "sezione-testo",
+      "type": "section",
+      "title": "Testo con valori dinamici",
+      "components": [
+        { "id": "saluto", "type": "text", "text": "Utente collegato: {{user.username}}" },
+        { "id": "contatore-testo", "type": "text", "text": "Hai premuto il pulsante {{has(state.contatore) ? state.contatore : 0}} volte." }
+      ]
+    },
+    {
+      "id": "sezione-azioni",
+      "type": "section",
+      "title": "Pulsanti e azioni",
+      "components": [
+        {
+          "id": "btn-incrementa",
+          "type": "button",
+          "label": "Incrementa il contatore (set)",
+          "onClick": [{ "set": { "path": "contatore", "value": "{{has(state.contatore) ? state.contatore + 1 : 1}}" } }]
+        },
+        {
+          "id": "btn-toast",
+          "type": "button",
+          "label": "Mostra un messaggio (toast)",
+          "onClick": [{ "toast": "Questo è un messaggio informativo" }]
+        },
+        {
+          "id": "btn-chiamata",
+          "type": "button",
+          "label": "Chiama un servizio (call)",
+          "onClick": [
+            { "set": { "path": "messaggio", "value": "Ciao dalla vetrina" } },
+            { "call": "segnala", "onError": { "toast": "Chiamata non riuscita" } },
+            { "toast": "Servizio chiamato" }
+          ]
+        },
+        {
+          "id": "btn-errore",
+          "type": "button",
+          "label": "Chiamata che fallisce (onError)",
+          "onClick": [{ "call": "segnalaConErrore", "onError": { "toast": "Errore gestito: la sequenza si ferma qui" } }, { "toast": "Questo messaggio non compare mai" }]
+        },
+        {
+          "id": "btn-naviga",
+          "type": "button",
+          "label": "Vai alla vetrina delle tabelle (navigate)",
+          "onClick": [{ "navigate": "vetrina-tabelle", "params": { "evidenzia": "inviato" } }]
+        }
+      ]
+    },
+    {
+      "id": "sezione-condizioni",
+      "type": "section",
+      "title": "Visibilità e abilitazione",
+      "components": [
+        { "id": "txt-condizioni", "type": "text", "text": "I pulsanti seguenti cambiano con i permessi dell'utente: provali con i tre profili del selettore in alto." },
+        {
+          "id": "btn-solo-responsabile",
+          "type": "button",
+          "label": "Visibile solo con il permesso di approvare ordini",
+          "visibleIf": "{{can('ordini.ordine.approva')}}",
+          "onClick": [{ "toast": "Hai il permesso ordini.ordine.approva" }]
+        },
+        {
+          "id": "btn-nascosto-admin",
+          "type": "button",
+          "label": "Nascosto a chi può leggere gli IBAN",
+          "hiddenIf": "{{can('ordini.iban.leggi')}}",
+          "onClick": [{ "toast": "Non vedi gli IBAN" }]
+        },
+        {
+          "id": "btn-abilitato",
+          "type": "button",
+          "label": "Abilitato dopo almeno due incrementi",
+          "enabledIf": "{{has(state.contatore) && state.contatore >= 2}}",
+          "onClick": [{ "toast": "Abilitato dallo stato della schermata" }]
+        }
+      ]
+    }
+  ]
+}

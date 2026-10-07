@@ -14,12 +14,33 @@
           "label": "Nuova fattura",
           "icon": "file-plus",
           "children": [
-            { "id": "fattura-attiva", "label": "Fattura attiva", "screen": "fattura-nuova", "params": { "tipo": "attiva" } },
-            { "id": "fattura-passiva", "label": "Fattura passiva", "screen": "fattura-nuova", "params": { "tipo": "passiva" } },
+            {
+              "id": "fattura-attiva",
+              "label": "Fattura attiva",
+              "screen": "fattura-nuova",
+              "params": {
+                "tipo": "attiva"
+              }
+            },
+            {
+              "id": "fattura-passiva",
+              "label": "Fattura passiva",
+              "screen": "fattura-nuova",
+              "params": {
+                "tipo": "passiva"
+              }
+            },
             {
               "id": "da-ordine",
               "label": "Da ordine",
-              "children": [{ "id": "scegli-ordine", "label": "Scegli l'ordine", "screen": "ordini-elenco", "requires": "ordini.ordine.leggi" }]
+              "children": [
+                {
+                  "id": "scegli-ordine",
+                  "label": "Scegli l'ordine",
+                  "screen": "ordini-elenco",
+                  "requires": "ordini.ordine.leggi"
+                }
+              ]
             }
           ]
         },
@@ -28,7 +49,9 @@
           "label": "Le mie bozze",
           "icon": "inbox",
           "screen": "fatture-elenco",
-          "params": { "stato": "bozza" }
+          "params": {
+            "stato": "bozza"
+          }
         }
       ]
     },
@@ -38,13 +61,24 @@
       "icon": "search",
       "requires": "fatture.fattura.leggi",
       "items": [
-        { "id": "elenco-fatture", "label": "Elenco fatture", "icon": "receipt", "screen": "fatture-elenco" },
+        {
+          "id": "elenco-fatture",
+          "label": "Elenco fatture",
+          "icon": "receipt",
+          "screen": "fatture-elenco"
+        },
         {
           "id": "ordini-collegati",
           "label": "Ordini collegati",
           "icon": "folder",
           "requires": "ordini.ordine.leggi",
-          "children": [{ "id": "ordini", "label": "Ordini", "screen": "ordini-elenco" }]
+          "children": [
+            {
+              "id": "ordini",
+              "label": "Ordini",
+              "screen": "ordini-elenco"
+            }
+          ]
         }
       ]
     },
@@ -54,8 +88,19 @@
       "icon": "package",
       "requires": "pacchetti.pacchetto.leggi",
       "items": [
-        { "id": "nuovo-pacchetto", "label": "Nuovo pacchetto", "icon": "package", "screen": "pacchetto-nuovo", "requires": "pacchetti.pacchetto.crea" },
-        { "id": "pacchetti", "label": "Pacchetti creati", "icon": "list", "screen": "pacchetti-elenco" }
+        {
+          "id": "nuovo-pacchetto",
+          "label": "Nuovo pacchetto",
+          "icon": "package",
+          "screen": "pacchetto-nuovo",
+          "requires": "pacchetti.pacchetto.crea"
+        },
+        {
+          "id": "pacchetti",
+          "label": "Pacchetti creati",
+          "icon": "list",
+          "screen": "pacchetti-elenco"
+        }
       ]
     },
     {
@@ -69,8 +114,52 @@
           "label": "Spese",
           "icon": "euro",
           "children": [
-            { "id": "da-revisionare", "label": "Da revisionare", "screen": "spese-elenco", "params": { "stato": "da-revisionare" } },
-            { "id": "revisionate", "label": "Revisionate", "screen": "spese-elenco", "params": { "stato": "revisionata" } }
+            {
+              "id": "da-revisionare",
+              "label": "Da revisionare",
+              "screen": "spese-elenco",
+              "params": {
+                "stato": "da-revisionare"
+              }
+            },
+            {
+              "id": "revisionate",
+              "label": "Revisionate",
+              "screen": "spese-elenco",
+              "params": {
+                "stato": "revisionata"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vetrina",
+      "label": "Vetrina componenti",
+      "icon": "list",
+      "requires": "vetrina.componenti.leggi",
+      "items": [
+        {
+          "id": "componenti",
+          "label": "Componenti",
+          "icon": "folder",
+          "children": [
+            {
+              "id": "vetrina-base",
+              "label": "Componenti base",
+              "screen": "vetrina-base"
+            },
+            {
+              "id": "vetrina-form",
+              "label": "Form",
+              "screen": "vetrina-form"
+            },
+            {
+              "id": "vetrina-tabelle",
+              "label": "Filtri e tabelle",
+              "screen": "vetrina-tabelle"
+            }
           ]
         }
       ]

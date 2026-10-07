@@ -91,10 +91,10 @@ describe('App (demo)', () => {
   it('i casi d’uso dipendono dai permessi del profilo', async () => {
     const { fixture, el } = await start();
     await until(fixture, () => useCases(el).length > 0, 'selettore');
-    expect(useCases(el)).toEqual(['Inserimento Fattura', 'Consultazione Fatture']);
+    expect(useCases(el)).toEqual(['Inserimento Fattura', 'Consultazione Fatture', 'Vetrina componenti']);
     choose(headerSelect(el, 0), 'responsabile');
-    await until(fixture, () => useCases(el).length === 4, 'quattro casi d’uso');
-    expect(useCases(el)).toEqual(['Inserimento Fattura', 'Consultazione Fatture', 'Creazione pacchetto', 'Revisione Spese']);
+    await until(fixture, () => useCases(el).length === 5, 'quattro casi d’uso');
+    expect(useCases(el)).toEqual(['Inserimento Fattura', 'Consultazione Fatture', 'Creazione pacchetto', 'Revisione Spese', 'Vetrina componenti']);
   });
 
   it('cambiare caso d’uso porta alla sua prima voce e aggiorna l’URL', async () => {
@@ -137,7 +137,7 @@ describe('App (demo)', () => {
 
   it('la revisione spese: voce con parametri, approvazione e messaggio', async () => {
     const { fixture, el, url } = await start('responsabile');
-    await until(fixture, () => useCases(el).length === 4, 'quattro casi d’uso');
+    await until(fixture, () => useCases(el).length === 5, 'quattro casi d’uso');
     choose(useCaseSelect(el)!, 'revisione-spese');
     await until(fixture, () => rows(el) > 0, 'elenco spese');
     expect(url()).toBe('/revisione-spese/spese-elenco?stato=da-revisionare');

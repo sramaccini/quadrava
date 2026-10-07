@@ -1,6 +1,6 @@
 import { effect, Injector, signal, computed, untracked, type EffectRef } from '@angular/core';
 import { ExpressionEngine, parseTemplate } from 'expressions';
-import type { ScreenDefinition } from 'schema';
+import type { NodeDefinition, ScreenDefinition } from 'schema';
 import { Authorization, DataClient, Notifier, RuntimeDiagnostics, ScreenNavigator, UserProvider, type DataRequest } from './ports';
 import type { CallResult, DataSourceState, Scope } from './types';
 
@@ -43,6 +43,8 @@ export class ScreenRuntime {
       { can: (permission) => deps.authorization.can(permission) },
       { onError: (info) => this.report(info.source, info.error) },
     );
+    // I filtri dichiarati esistono nello stato fin dall'inizio (nulli): i data source che li usano non vanno in errore al primo caricamento.
+    this.seedFilters(definition.components);
     // Ogni data source GET si carica da solo e si ricarica quando cambiano i valori da cui dipende (filtri, pagina, permessi).
     for (const [name, source] of Object.entries(definition.dataSources ?? {})) {
       if (source.method !== 'GET') continue;
@@ -59,6 +61,19 @@ export class ScreenRuntime {
           { injector },
         ),
       );
+    }
+  }
+
+  private seedFilters(nodes: readonly NodeDefinition[]): void {
+    for (const node of nodes) {
+      if (node.type === 'filterBar') {
+        for (const field of node.fields) {
+          const path = `${node.bind}.${field.name}`;
+          if (this.getState(path) === undefined) this.setState(path, null);
+        }
+      } else if (node.type === 'section') {
+        this.seedFilters(node.components);
+      }
     }
   }
 

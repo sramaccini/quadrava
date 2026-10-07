@@ -35,13 +35,14 @@ npm ci
 npm run start:runtime
 ```
 
-Poi apri http://localhost:4200. Il comando compila le librerie nell'ordine giusto (`schema`, `expressions`, `core`, `components`), copia gli esempi e avvia l'app.
+Poi apri http://localhost:4200. Il comando compila le librerie nell'ordine giusto (`schema`, `expressions`, `core`, `components`, `services`), copia gli esempi e avvia l'app.
 Nella barra in alto si cambiano **utente** (operatore, responsabile, amministratore) e **tema** (chiaro, scuro). A sinistra c'è il **menu**, definito in `examples/navigation.json`: un selettore in cima sceglie il **caso d'uso**, sotto ci sono le voci fino a tre livelli. I quattro casi d'uso della demo (Inserimento Fattura, Consultazione Fatture, Creazione pacchetto, Revisione Spese) sono solo esempi: la piattaforma non ha casi d'uso predefiniti. Cosa provare:
 
-- Con `operatore` il selettore mostra due casi d'uso; con `responsabile` quattro. I permessi del profilo decidono cosa compare, e i gruppi senza voci visibili spariscono.
+- Con `operatore` il selettore mostra tre casi d'uso (due più la vetrina); con `responsabile` cinque. I permessi del profilo decidono cosa compare, e i gruppi senza voci visibili spariscono.
 - Ogni schermata ha un URL (`/consultazione-fatture/fatture-elenco`, `/inserimento-fattura/fattura-nuova?tipo=passiva`): Indietro, preferiti e link condivisi funzionano. Aprire a mano l'URL di una schermata senza permesso mostra il rifiuto.
 - Inserimento Fattura: il form valida i campi, salva in bozza e porta all'elenco delle bozze.
 - Revisione Spese: due voci puntano alla stessa schermata con parametri diversi (da revisionare, revisionate); Approva e Respingi compaiono solo con il permesso di revisione.
+- **Vetrina componenti** (quinto caso d'uso, visibile a tutti i profili): tre schermate che mostrano ogni componente disponibile, con gli esempi commentati nei JSON `examples/vetrina-*.json`: componenti base e azioni, form (tutti i tipi di campo, validazione, campi condizionati) e filtri con tabelle (paginazione, azioni di riga). Il catalogo completo, con ciò che manca, è nel documento "Catalogo dei componenti".
 - Il pulsante in alto nella barra laterale la comprime a sole icone.
 - Il dettaglio ordine mostra il campo IBAN solo ad `amministratore`.
 - Le librerie non si ricaricano a caldo: dopo una modifica in `projects/<libreria>` rilancia `npm run build:libs`.
@@ -62,7 +63,7 @@ Utenti di sviluppo in Keycloak: `operatore`, `responsabile`, `amministratore` (p
 
 ## Stato
 
-Verificato: schema di schermate, temi e navigazione, valutatore di espressioni CEL, interprete (`core`), catalogo componenti (`components`), servizi (`services`) e demo `runtime`, con 114 test automatici (più 2 di prova dell'editor); build di tutte le app e librerie; validità dei tre contratti OpenAPI e degli esempi. `services` è provata solo con test su HTTP simulato, non contro il BFF reale.
+Verificato: schema di schermate, temi e navigazione, valutatore di espressioni CEL, interprete (`core`), catalogo componenti (`components`), servizi (`services`) e demo `runtime`, con 125 test automatici (più 2 di prova dell'editor); build di tutte le app e librerie; validità dei tre contratti OpenAPI e degli esempi. `services` è provata solo con test su HTTP simulato, non contro il BFF reale.
 Non ancora verificato: la compilazione e i test dei moduli Java (vanno lanciati con `mvn verify`; i nomi degli starter di Spring Boot 4 vanno controllati al primo build). La demo non è stata provata in un browser reale: è coperta da test con jsdom.
 Punto aperto di sicurezza: Ajv genera codice con `new Function`, quindi la validazione nel browser richiede `unsafe-eval` nella Content-Security-Policy. Prima della produzione va precompilata (Ajv standalone) oppure spostata alla pubblicazione nel registry.
 
