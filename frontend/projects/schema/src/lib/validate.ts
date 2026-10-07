@@ -2,7 +2,8 @@ import Ajv2020 from 'ajv/dist/2020.js';
 import type { ValidateFunction } from 'ajv/dist/2020.js';
 import { SCREEN_SCHEMA } from './screen.schema';
 import { THEME_SCHEMA } from './theme.schema';
-import type { ScreenDefinition, ThemeDefinition } from './types';
+import { NAVIGATION_SCHEMA } from './navigation.schema';
+import type { NavigationDefinition, ScreenDefinition, ThemeDefinition } from './types';
 
 export interface ValidationIssue {
   /** Posizione nel documento, per esempio `/components/0/columns`. */
@@ -15,6 +16,7 @@ export type ValidationResult<T = ScreenDefinition> = { valid: true; value: T } |
 const ajv = new Ajv2020({ allErrors: true, strict: true });
 const screenValidator = ajv.compile(SCREEN_SCHEMA);
 const themeValidator = ajv.compile(THEME_SCHEMA);
+const navigationValidator = ajv.compile(NAVIGATION_SCHEMA);
 
 /** Valida una definizione di schermata contro lo schema del nucleo. Non lancia eccezioni. */
 export function validateScreen(document: unknown): ValidationResult<ScreenDefinition> {
@@ -24,6 +26,11 @@ export function validateScreen(document: unknown): ValidationResult<ScreenDefini
 /** Valida un tema (design token) contro lo schema dei temi. Non lancia eccezioni. */
 export function validateTheme(document: unknown): ValidationResult<ThemeDefinition> {
   return run<ThemeDefinition>(themeValidator, document);
+}
+
+/** Valida un documento di navigazione (casi d'uso e menu a tre livelli). Non lancia eccezioni. */
+export function validateNavigation(document: unknown): ValidationResult<NavigationDefinition> {
+  return run<NavigationDefinition>(navigationValidator, document);
 }
 
 function run<T>(validator: ValidateFunction, document: unknown): ValidationResult<T> {

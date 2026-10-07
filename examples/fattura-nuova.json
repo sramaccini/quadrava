@@ -1,0 +1,86 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "fattura-nuova",
+  "title": "Nuova fattura",
+  "requires": "fatture.crea",
+  "dataSources": {
+    "creaFattura": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/fatture",
+      "body": "{{form}}"
+    }
+  },
+  "components": [
+    {
+      "id": "form-fattura",
+      "type": "form",
+      "initial": {
+        "tipo": "{{has(params.tipo) ? params.tipo : 'attiva'}}"
+      },
+      "fields": [
+        {
+          "name": "numero",
+          "type": "text",
+          "label": "Numero",
+          "required": true
+        },
+        {
+          "name": "cliente",
+          "type": "text",
+          "label": "Cliente / fornitore",
+          "required": true
+        },
+        {
+          "name": "tipo",
+          "type": "select",
+          "label": "Tipo",
+          "options": [
+            "attiva",
+            "passiva"
+          ],
+          "required": true
+        },
+        {
+          "name": "importo",
+          "type": "number",
+          "label": "Importo (€)",
+          "required": true,
+          "validate": {
+            "rule": "{{value > 0}}",
+            "message": "L'importo deve essere maggiore di zero"
+          }
+        },
+        {
+          "name": "data",
+          "type": "date",
+          "label": "Data"
+        }
+      ],
+      "actions": [
+        {
+          "id": "btn-salva",
+          "label": "Salva come bozza",
+          "enabledIf": "{{can('fatture.crea')}}",
+          "onClick": [
+            {
+              "call": "creaFattura",
+              "onError": {
+                "toast": "Salvataggio non riuscito"
+              }
+            },
+            {
+              "toast": "Fattura salvata in bozza"
+            },
+            {
+              "navigate": "fatture-elenco",
+              "params": {
+                "stato": "bozza"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

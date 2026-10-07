@@ -36,10 +36,14 @@ npm run start:runtime
 ```
 
 Poi apri http://localhost:4200. Il comando compila le librerie nell'ordine giusto (`schema`, `expressions`, `core`, `components`), copia gli esempi e avvia l'app.
-Nella barra in alto si cambiano **utente** (operatore, responsabile, amministratore) e **tema** (chiaro, scuro). Cosa provare:
+Nella barra in alto si cambiano **utente** (operatore, responsabile, amministratore) e **tema** (chiaro, scuro). A sinistra c'è il **menu**, definito in `examples/navigation.json`: un selettore in cima sceglie il **caso d'uso**, sotto ci sono le voci fino a tre livelli. I quattro casi d'uso della demo (Inserimento Fattura, Consultazione Fatture, Creazione pacchetto, Revisione Spese) sono solo esempi: la piattaforma non ha casi d'uso predefiniti. Cosa provare:
 
-- Con `operatore` l'elenco ordini non mostra il pulsante Approva; con `responsabile` compare solo sugli ordini "inviato".
-- "Apri" porta al dettaglio: il campo IBAN compare solo con `amministratore` e Salva è abilitato solo con il permesso di scrittura.
+- Con `operatore` il selettore mostra due casi d'uso; con `responsabile` quattro. I permessi del profilo decidono cosa compare, e i gruppi senza voci visibili spariscono.
+- Ogni schermata ha un URL (`/consultazione-fatture/fatture-elenco`, `/inserimento-fattura/fattura-nuova?tipo=passiva`): Indietro, preferiti e link condivisi funzionano. Aprire a mano l'URL di una schermata senza permesso mostra il rifiuto.
+- Inserimento Fattura: il form valida i campi, salva in bozza e porta all'elenco delle bozze.
+- Revisione Spese: due voci puntano alla stessa schermata con parametri diversi (da revisionare, revisionate); Approva e Respingi compaiono solo con il permesso di revisione.
+- Il pulsante in alto nella barra laterale la comprime a sole icone.
+- Il dettaglio ordine mostra il campo IBAN solo ad `amministratore`.
 - Le librerie non si ricaricano a caldo: dopo una modifica in `projects/<libreria>` rilancia `npm run build:libs`.
 
 Test: `npm run test:libs` (librerie) e `npx ng test runtime --watch=false` (demo end-to-end con le schermate reali).
@@ -58,13 +62,14 @@ Utenti di sviluppo in Keycloak: `operatore`, `responsabile`, `amministratore` (p
 
 ## Stato
 
-Verificato: schema di schermate e temi, valutatore di espressioni CEL, interprete (`core`), catalogo componenti (`components`) e demo `runtime`, con 71 test automatici; build di tutte le app e librerie; validità dei tre contratti OpenAPI e degli esempi.
+Verificato: schema di schermate, temi e navigazione, valutatore di espressioni CEL, interprete (`core`), catalogo componenti (`components`) e demo `runtime`, con 95 test automatici; build di tutte le app e librerie; validità dei tre contratti OpenAPI e degli esempi.
 Non ancora verificato: la compilazione e i test dei moduli Java (vanno lanciati con `mvn verify`; i nomi degli starter di Spring Boot 4 vanno controllati al primo build). La demo non è stata provata in un browser reale: è coperta da test con jsdom.
 Punto aperto di sicurezza: Ajv genera codice con `new Function`, quindi la validazione nel browser richiede `unsafe-eval` nella Content-Security-Policy. Prima della produzione va precompilata (Ajv standalone) oppure spostata alla pubblicazione nel registry.
 
 ## Prossimi passi
 
 - `services`: client HTTP, autenticazione, autorizzazione (con `X-Permissions-Version`) e telemetria, al posto delle porte finte della demo.
-- Editor visuale (`editor`): albero dei nodi, pannello proprietà, anteprima, temi.
+- Editor visuale (`editor`): albero dei nodi, pannello proprietà, anteprima, temi e menu.
+- Menu: navigazione da tastiera con le frecce, badge sulle voci, ricerca nel menu.
 - Controllo delle espressioni anche in `validate:examples`.
 - BFF: protezione CSRF, inoltro delle API con token e `traceparent`, elenco degli host consentiti.

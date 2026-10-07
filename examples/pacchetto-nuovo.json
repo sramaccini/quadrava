@@ -1,0 +1,54 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "pacchetto-nuovo",
+  "title": "Nuovo pacchetto",
+  "requires": "pacchetti.crea",
+  "dataSources": {
+    "creaPacchetto": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/pacchetti",
+      "body": "{{form}}"
+    }
+  },
+  "components": [
+    {
+      "id": "form-pacchetto",
+      "type": "form",
+      "fields": [
+        {
+          "name": "nome",
+          "type": "text",
+          "label": "Nome del pacchetto",
+          "required": true
+        },
+        {
+          "name": "descrizione",
+          "type": "text",
+          "label": "Descrizione"
+        }
+      ],
+      "actions": [
+        {
+          "id": "btn-crea",
+          "label": "Crea pacchetto",
+          "enabledIf": "{{can('pacchetti.crea')}}",
+          "onClick": [
+            {
+              "call": "creaPacchetto",
+              "onError": {
+                "toast": "Creazione non riuscita"
+              }
+            },
+            {
+              "toast": "Pacchetto creato"
+            },
+            {
+              "navigate": "pacchetti-elenco"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

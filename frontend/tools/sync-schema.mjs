@@ -9,6 +9,7 @@ const lib = join(here, '../projects/schema/src/lib');
 const schemas = [
   { name: 'screen', constant: 'SCREEN_SCHEMA' },
   { name: 'theme', constant: 'THEME_SCHEMA' },
+  { name: 'navigation', constant: 'NAVIGATION_SCHEMA' },
 ];
 const check = process.argv.includes('--check');
 let misaligned = 0;

@@ -74,9 +74,14 @@ export class FormComponent {
   protected readonly fieldScope = computed<Scope>(() => ({ ...this.scope(), form: this.values() }));
 
   constructor() {
-    // Quando il data source arriva con un oggetto, popola i valori del form.
+    // Valori iniziali dichiarati nel form (una sola volta), poi quelli del data source quando arriva.
     effect(() => {
-      const data = this.runtime().source(this.node().source).data;
+      const initial = this.node().initial;
+      if (initial) untracked(() => this.values.set(this.runtime().resolveValue(initial, this.scope()) as Record<string, unknown>));
+    });
+    effect(() => {
+      const source = this.node().source;
+      const data = source ? this.runtime().source(source).data : null;
       if (data !== null && typeof data === 'object' && !Array.isArray(data)) {
         untracked(() => this.values.set({ ...(data as Record<string, unknown>) }));
       }

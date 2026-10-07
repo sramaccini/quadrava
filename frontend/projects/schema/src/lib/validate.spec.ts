@@ -1,4 +1,4 @@
-import { validateScreen, validateTheme } from './validate';
+import { validateNavigation, validateScreen, validateTheme } from './validate';
 
 const minimal = () => ({
   schemaVersion: '1.0',
@@ -117,5 +117,34 @@ describe('validateTheme', () => {
     const missing = structuredClone(base) as { tokens: { colors: Record<string, string> } };
     delete missing.tokens.colors['primary'];
     expect(validateTheme(missing).valid).toBe(false);
+  });
+});
+
+describe('validateNavigation', () => {
+  const leaf = (id: string) => ({ id, label: id, screen: 'ordini-elenco' });
+  const doc = (items: unknown[]) => ({
+    schemaVersion: '1.0',
+    navigation: 'app',
+    useCases: [{ id: 'uc', label: 'Caso', items }],
+  });
+
+  it('accetta una voce, un gruppo e tre livelli', () => {
+    const items = [leaf('a'), { id: 'g1', label: 'G1', children: [leaf('b'), { id: 'g2', label: 'G2', children: [leaf('c')] }] }];
+    expect(validateNavigation(doc(items)).valid).toBe(true);
+  });
+
+  it('rifiuta un quarto livello', () => {
+    const deep = [{ id: 'g1', label: 'G1', children: [{ id: 'g2', label: 'G2', children: [{ id: 'g3', label: 'G3', children: [leaf('x')] }] }] }];
+    expect(validateNavigation(doc(deep)).valid).toBe(false);
+  });
+
+  it('rifiuta voci senza schermata né figli, e gruppi senza figli', () => {
+    expect(validateNavigation(doc([{ id: 'a', label: 'A' }])).valid).toBe(false);
+    expect(validateNavigation(doc([{ id: 'g', label: 'G', children: [] }])).valid).toBe(false);
+  });
+
+  it('rifiuta proprietà sconosciute e permessi non validi', () => {
+    expect(validateNavigation(doc([{ ...leaf('a'), color: 'red' }])).valid).toBe(false);
+    expect(validateNavigation(doc([{ ...leaf('a'), requires: 'Permesso Maiuscolo' }])).valid).toBe(false);
   });
 });

@@ -1,0 +1,99 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "spese-elenco",
+  "title": "Revisione spese",
+  "requires": "spese.leggi",
+  "dataSources": {
+    "spese": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/spese",
+      "paging": "server",
+      "params": {
+        "stato": "{{has(params.stato) ? params.stato : ''}}",
+        "page": "{{state.page}}"
+      }
+    },
+    "revisionaSpesa": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/spese/{{id}}/revisiona",
+      "body": {
+        "esito": "{{esito}}"
+      }
+    }
+  },
+  "components": [
+    {
+      "id": "tabella-spese",
+      "type": "table",
+      "source": "spese",
+      "columns": [
+        {
+          "field": "descrizione",
+          "label": "Descrizione"
+        },
+        {
+          "field": "dipendente",
+          "label": "Dipendente"
+        },
+        {
+          "field": "importo",
+          "label": "Importo (€)"
+        },
+        {
+          "field": "stato",
+          "label": "Stato"
+        }
+      ],
+      "rowActions": [
+        {
+          "id": "btn-approva-spesa",
+          "label": "Approva",
+          "visibleIf": "{{can('spese.revisiona') && row.stato == 'da-revisionare'}}",
+          "onClick": [
+            {
+              "call": "revisionaSpesa",
+              "args": {
+                "id": "{{row.id}}",
+                "esito": "approvata"
+              },
+              "onError": {
+                "toast": "Operazione non riuscita"
+              }
+            },
+            {
+              "refresh": "spese"
+            },
+            {
+              "toast": "Spesa approvata"
+            }
+          ]
+        },
+        {
+          "id": "btn-respingi-spesa",
+          "label": "Respingi",
+          "visibleIf": "{{can('spese.revisiona') && row.stato == 'da-revisionare'}}",
+          "onClick": [
+            {
+              "call": "revisionaSpesa",
+              "args": {
+                "id": "{{row.id}}",
+                "esito": "respinta"
+              },
+              "onError": {
+                "toast": "Operazione non riuscita"
+              }
+            },
+            {
+              "refresh": "spese"
+            },
+            {
+              "toast": "Spesa respinta"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

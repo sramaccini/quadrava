@@ -19,28 +19,21 @@
   <span class="perms" title="Permessi del profilo selezionato">{{ permissions().join(', ') }}</span>
 </header>
 
-<main>
-  @if (screen.error(); as e) {
-    <p class="problem" role="alert">Schermata non caricata: {{ e }}</p>
-  } @else if (screen.value(); as loaded) {
-    @if (loaded.ok) {
-      @for (def of [loaded.definition]; track def) {
-        <lc-screen [definition]="def" [params]="target().params" />
-      }
-    } @else {
-      <div class="problem" role="alert">
-        <p>La schermata non è valida:</p>
-        <ul>
-          @for (issue of loaded.issues; track issue) {
-            <li>{{ issue }}</li>
-          }
-        </ul>
-      </div>
-    }
-  } @else {
-    <p role="status">Caricamento…</p>
+<div class="body">
+  @if (navigation.runtime(); as nav) {
+    <lc-sidebar
+      [navigation]="nav"
+      [useCaseId]="navigation.current().useCase"
+      [active]="active()"
+      [hrefFor]="hrefFor"
+      (navigate)="navigation.open($event.useCase, $event.leaf.screen, $event.leaf.params)"
+      (useCaseChange)="navigation.switchUseCase($event)"
+    />
   }
-</main>
+  <main>
+    <router-outlet />
+  </main>
+</div>
 
 <div class="toasts" role="status" aria-live="polite">
   @for (t of notifier.toasts(); track t.id) {

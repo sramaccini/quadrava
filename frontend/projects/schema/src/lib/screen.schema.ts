@@ -536,13 +536,16 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
           "then": {
             "type": "object",
             "required": [
-              "source",
               "fields"
             ],
             "properties": {
               "source": {
                 "type": "string",
-                "description": "Nome del data source che fornisce i valori iniziali."
+                "description": "Nome del data source che fornisce i valori iniziali (assente nei form di inserimento)."
+              },
+              "initial": {
+                "type": "object",
+                "description": "Valori iniziali con espressioni, risolti una sola volta all'apertura; per esempio {\"tipo\": \"{{params.tipo}}\"}."
               },
               "fields": {
                 "type": "array",

@@ -1,11 +1,16 @@
 import { Injectable, signal } from '@angular/core';
-import { Authorization, DataClient, Notifier, RuntimeDiagnostics, ScreenNavigator, UserProvider, type DataRequest } from 'core';
+import { Authorization, DataClient, Notifier, RuntimeDiagnostics, UserProvider, type DataRequest } from 'core';
 
 /** Profili della demo: i permessi sono quelli che in produzione darebbe il servizio di autorizzazione. */
 export const DEMO_PROFILES: Record<string, string[]> = {
-  operatore: ['ordini.leggi'],
-  responsabile: ['ordini.leggi', 'ordini.approva', 'ordini.scrivi'],
-  amministratore: ['ordini.leggi', 'ordini.approva', 'ordini.scrivi', 'ordini.iban.leggi', 'ordini.iban.scrivi'],
+  // Inserisce e consulta fatture e vede gli ordini: due casi d'uso.
+  operatore: ['fatture.leggi', 'fatture.crea', 'ordini.leggi'],
+  // Aggiunge pacchetti, revisione spese e approvazione ordini: tutti e quattro i casi d'uso.
+  responsabile: ['fatture.leggi', 'fatture.crea', 'ordini.leggi', 'ordini.approva', 'ordini.scrivi', 'pacchetti.leggi', 'pacchetti.crea', 'spese.leggi', 'spese.revisiona'],
+  amministratore: [
+    'fatture.leggi', 'fatture.crea', 'ordini.leggi', 'ordini.approva', 'ordini.scrivi', 'ordini.iban.leggi', 'ordini.iban.scrivi',
+    'pacchetti.leggi', 'pacchetti.crea', 'spese.leggi', 'spese.revisiona',
+  ],
 };
 
 /** Autorizzazione finta, basata su signal: cambiando profilo la schermata si ridisegna. */
@@ -41,15 +46,6 @@ export class DemoNotifier extends Notifier {
 }
 
 @Injectable({ providedIn: 'root' })
-export class DemoNavigator extends ScreenNavigator {
-  readonly target = signal<{ screen: string; params: Record<string, unknown> }>({ screen: 'ordini-elenco', params: {} });
-
-  navigate(screen: string, params: Record<string, unknown>): void {
-    this.target.set({ screen, params });
-  }
-}
-
-@Injectable({ providedIn: 'root' })
 export class DemoDiagnostics extends RuntimeDiagnostics {
   readonly events = signal<{ screen: string; source: string; error: string }[]>([]);
 
@@ -58,6 +54,10 @@ export class DemoDiagnostics extends RuntimeDiagnostics {
     this.events.update((all) => [...all.slice(-49), event]);
   }
 }
+
+interface Invoice { id: number; numero: string; cliente: string; tipo: string; importo: number; stato: 'bozza' | 'inviata' | 'pagata' }
+interface Package { id: number; nome: string; descrizione: string; creato: string }
+interface Expense { id: number; descrizione: string; dipendente: string; importo: number; stato: 'da-revisionare' | 'approvata' | 'respinta' }
 
 interface Order {
   id: number;
@@ -81,6 +81,26 @@ export class MockDataClient extends DataClient {
     tipo: i % 2 ? 'business' : 'privato',
     sconto: i % 2 ? 10 : 0,
     iban: `IT60X0542811101${String(i).padStart(12, '0')}`,
+  }));
+
+  private readonly invoices: Invoice[] = Array.from({ length: 14 }, (_, i) => ({
+    id: 100 + i,
+    numero: `FT-2026-${String(i + 1).padStart(3, '0')}`,
+    cliente: ['Rossi Srl', 'Bianchi SpA', 'Verdi & C.', 'Neri Group'][i % 4],
+    tipo: i % 3 === 2 ? 'passiva' : 'attiva',
+    importo: 250 + i * 135,
+    stato: (['bozza', 'inviata', 'pagata'] as const)[i % 3],
+  }));
+  private readonly packages: Package[] = [
+    { id: 1, nome: 'Chiusura settembre', descrizione: 'Fatture attive del mese', creato: '2026-10-01' },
+    { id: 2, nome: 'Fornitori Q3', descrizione: 'Fatture passive del trimestre', creato: '2026-09-28' },
+  ];
+  private readonly expenses: Expense[] = Array.from({ length: 12 }, (_, i) => ({
+    id: 500 + i,
+    descrizione: ['Treno Milano-Roma', 'Hotel', 'Cena con cliente', 'Taxi', 'Materiale ufficio'][i % 5],
+    dipendente: ['M. Conti', 'L. Fabbri', 'S. Greco'][i % 3],
+    importo: 18 + i * 21,
+    stato: (['da-revisionare', 'da-revisionare', 'approvata', 'respinta'] as const)[i % 4],
   }));
 
   async request(req: DataRequest): Promise<unknown> {
@@ -112,7 +132,58 @@ export class MockDataClient extends DataClient {
       order.stato = 'approvato';
       return {};
     }
+    const other = this.handleBilling(req, path);
+    if (other !== undefined) return other;
     throw new Error(`404 ${req.method} ${req.url}`);
+  }
+
+  private page<T>(rows: T[], query: DataRequest['query']): { items: T[]; total: number; size: number } {
+    const size = MockDataClient.PAGE_SIZE;
+    const page = Number(query?.['page'] ?? 0);
+    return { items: rows.slice(page * size, page * size + size), total: rows.length, size };
+  }
+
+  /** Fatture, pacchetti e spese: i dati dei casi d'uso di esempio. */
+  private handleBilling(req: DataRequest, path: string): unknown {
+    if (path === '/api/fatture' && req.method === 'GET') {
+      const stato = req.query?.['stato'];
+      return this.page(this.invoices.filter((f) => !stato || f.stato === stato).map((f) => ({ ...f })), req.query);
+    }
+    if (path === '/api/fatture' && req.method === 'POST') {
+      const body = req.body ?? {};
+      if (!body['numero'] || !body['cliente']) throw new Error('400');
+      const id = Math.max(...this.invoices.map((f) => f.id)) + 1;
+      this.invoices.unshift({ id, numero: String(body['numero']), cliente: String(body['cliente']), tipo: String(body['tipo'] ?? 'attiva'), importo: Number(body['importo'] ?? 0), stato: 'bozza' });
+      return { id };
+    }
+    const send = /^\/api\/fatture\/(\d+)\/invia$/.exec(path);
+    if (send && req.method === 'POST') {
+      const invoice = this.invoices.find((f) => f.id === Number(send[1]));
+      if (!invoice || invoice.stato !== 'bozza') throw new Error('409');
+      invoice.stato = 'inviata';
+      return {};
+    }
+    if (path === '/api/pacchetti' && req.method === 'GET') return this.packages.map((p) => ({ ...p }));
+    if (path === '/api/pacchetti' && req.method === 'POST') {
+      const body = req.body ?? {};
+      if (!body['nome']) throw new Error('400');
+      this.packages.unshift({ id: this.packages.length + 1, nome: String(body['nome']), descrizione: String(body['descrizione'] ?? ''), creato: '2026-10-07' });
+      return {};
+    }
+    if (path === '/api/spese' && req.method === 'GET') {
+      const stato = req.query?.['stato'];
+      const match = (e: Expense): boolean => !stato || (stato === 'revisionata' ? e.stato !== 'da-revisionare' : e.stato === stato);
+      return this.page(this.expenses.filter(match).map((e) => ({ ...e })), req.query);
+    }
+    const review = /^\/api\/spese\/(\d+)\/revisiona$/.exec(path);
+    if (review && req.method === 'POST') {
+      const expense = this.expenses.find((e) => e.id === Number(review[1]));
+      const esito = req.body?.['esito'];
+      if (!expense || expense.stato !== 'da-revisionare' || (esito !== 'approvata' && esito !== 'respinta')) throw new Error('409');
+      expense.stato = esito;
+      return {};
+    }
+    return undefined;
   }
 
   private view(o: Order): Record<string, unknown> {

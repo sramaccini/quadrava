@@ -1,0 +1,90 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "fatture-elenco",
+  "title": "Fatture",
+  "requires": "fatture.leggi",
+  "dataSources": {
+    "fatture": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/fatture",
+      "paging": "server",
+      "params": {
+        "stato": "{{has(params.stato) ? params.stato : state.filtri.stato}}",
+        "page": "{{state.page}}"
+      }
+    },
+    "inviaFattura": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/fatture/{{id}}/invia"
+    }
+  },
+  "components": [
+    {
+      "id": "filtri-fatture",
+      "type": "filterBar",
+      "bind": "state.filtri",
+      "hiddenIf": "{{has(params.stato)}}",
+      "fields": [
+        {
+          "name": "stato",
+          "type": "select",
+          "label": "Stato",
+          "options": [
+            "bozza",
+            "inviata",
+            "pagata"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tabella-fatture",
+      "type": "table",
+      "source": "fatture",
+      "columns": [
+        {
+          "field": "numero",
+          "label": "Numero"
+        },
+        {
+          "field": "cliente",
+          "label": "Cliente"
+        },
+        {
+          "field": "importo",
+          "label": "Importo (€)"
+        },
+        {
+          "field": "stato",
+          "label": "Stato"
+        }
+      ],
+      "rowActions": [
+        {
+          "id": "btn-invia",
+          "label": "Invia",
+          "visibleIf": "{{can('fatture.crea') && row.stato == 'bozza'}}",
+          "onClick": [
+            {
+              "call": "inviaFattura",
+              "args": {
+                "id": "{{row.id}}"
+              },
+              "onError": {
+                "toast": "Invio non riuscito"
+              }
+            },
+            {
+              "refresh": "fatture"
+            },
+            {
+              "toast": "Fattura {{row.numero}} inviata"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

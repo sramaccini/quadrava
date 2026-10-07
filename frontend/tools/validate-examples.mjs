@@ -7,14 +7,18 @@ import Ajv2020 from 'ajv/dist/2020.js';
 const here = dirname(fileURLToPath(import.meta.url));
 const schema = JSON.parse(readFileSync(join(here, '../projects/schema/src/lib/schemas/screen.schema.json'), 'utf8'));
 const themeSchema = JSON.parse(readFileSync(join(here, '../projects/schema/src/lib/schemas/theme.schema.json'), 'utf8'));
+const navigationSchema = JSON.parse(readFileSync(join(here, '../projects/schema/src/lib/schemas/navigation.schema.json'), 'utf8'));
 const examplesDir = join(here, '../../examples');
 
 const ajv = new Ajv2020({ allErrors: true, strict: true });
 const validateScreen = ajv.compile(schema);
 const validateTheme = ajv.compile(themeSchema);
+const validateNavigation = ajv.compile(navigationSchema);
 
 const files = [
-  ...readdirSync(examplesDir).filter((f) => f.endsWith('.json')).map((f) => ({ file: f, validate: validateScreen })),
+  ...readdirSync(examplesDir)
+    .filter((f) => f.endsWith('.json'))
+    .map((f) => ({ file: f, validate: f === 'navigation.json' ? validateNavigation : validateScreen })),
   ...readdirSync(join(examplesDir, 'themes')).filter((f) => f.endsWith('.json')).map((f) => ({ file: `themes/${f}`, validate: validateTheme })),
 ];
 

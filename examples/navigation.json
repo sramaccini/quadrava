@@ -1,0 +1,79 @@
+{
+  "schemaVersion": "1.0",
+  "navigation": "fatturazione",
+  "default": "consultazione-fatture",
+  "useCases": [
+    {
+      "id": "inserimento-fattura",
+      "label": "Inserimento Fattura",
+      "icon": "file-plus",
+      "requires": "fatture.crea",
+      "items": [
+        {
+          "id": "nuova-fattura",
+          "label": "Nuova fattura",
+          "icon": "file-plus",
+          "children": [
+            { "id": "fattura-attiva", "label": "Fattura attiva", "screen": "fattura-nuova", "params": { "tipo": "attiva" } },
+            { "id": "fattura-passiva", "label": "Fattura passiva", "screen": "fattura-nuova", "params": { "tipo": "passiva" } },
+            {
+              "id": "da-ordine",
+              "label": "Da ordine",
+              "children": [{ "id": "scegli-ordine", "label": "Scegli l'ordine", "screen": "ordini-elenco", "requires": "ordini.leggi" }]
+            }
+          ]
+        },
+        {
+          "id": "bozze",
+          "label": "Le mie bozze",
+          "icon": "inbox",
+          "screen": "fatture-elenco",
+          "params": { "stato": "bozza" }
+        }
+      ]
+    },
+    {
+      "id": "consultazione-fatture",
+      "label": "Consultazione Fatture",
+      "icon": "search",
+      "requires": "fatture.leggi",
+      "items": [
+        { "id": "elenco-fatture", "label": "Elenco fatture", "icon": "receipt", "screen": "fatture-elenco" },
+        {
+          "id": "ordini-collegati",
+          "label": "Ordini collegati",
+          "icon": "folder",
+          "requires": "ordini.leggi",
+          "children": [{ "id": "ordini", "label": "Ordini", "screen": "ordini-elenco" }]
+        }
+      ]
+    },
+    {
+      "id": "creazione-pacchetto",
+      "label": "Creazione pacchetto",
+      "icon": "package",
+      "requires": "pacchetti.leggi",
+      "items": [
+        { "id": "nuovo-pacchetto", "label": "Nuovo pacchetto", "icon": "package", "screen": "pacchetto-nuovo", "requires": "pacchetti.crea" },
+        { "id": "pacchetti", "label": "Pacchetti creati", "icon": "list", "screen": "pacchetti-elenco" }
+      ]
+    },
+    {
+      "id": "revisione-spese",
+      "label": "Revisione Spese",
+      "icon": "check-circle",
+      "requires": "spese.leggi",
+      "items": [
+        {
+          "id": "spese",
+          "label": "Spese",
+          "icon": "euro",
+          "children": [
+            { "id": "da-revisionare", "label": "Da revisionare", "screen": "spese-elenco", "params": { "stato": "da-revisionare" } },
+            { "id": "revisionate", "label": "Revisionate", "screen": "spese-elenco", "params": { "stato": "revisionata" } }
+          ]
+        }
+      ]
+    }
+  ]
+}

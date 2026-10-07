@@ -6,6 +6,8 @@ export * from './lib/types';
 export * from './lib/ports';
 export * from './lib/screen-runtime';
 export * from './lib/action-engine';
+export * from './lib/navigation-runtime';
+export * from './lib/navigation-check';
 export * from './lib/expression-check';
 export * from './lib/theme';
 export * from './lib/catalog';

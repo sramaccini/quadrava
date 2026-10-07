@@ -1,0 +1,228 @@
+// GENERATO da tools/sync-schema.mjs a partire da schemas/navigation.schema.json: non modificare a mano.
+// Dopo ogni modifica allo schema: npm run schema:sync
+export const NAVIGATION_SCHEMA: Record<string, unknown> = {
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lowcode.example/schemas/navigation.schema.json",
+  "title": "Navigazione dell'applicazione LowCode",
+  "description": "Menu laterale organizzato per casi d'uso, fino a tre livelli (gruppo, sottogruppo, voce). Il menu ragiona in permessi: i ruoli restano nel provider di identità. È solo una comodità di navigazione: l'enforcement resta in `requires` della schermata e nel backend.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "navigation",
+    "useCases"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "navigation": {
+      "$ref": "#/$defs/id",
+      "description": "Identificativo del documento di navigazione."
+    },
+    "default": {
+      "$ref": "#/$defs/id",
+      "description": "Caso d'uso aperto all'avvio, se l'utente lo può vedere."
+    },
+    "useCases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/useCase"
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    },
+    "permission": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(\\.[a-z0-9]+)+$"
+    },
+    "expression": {
+      "type": "string",
+      "pattern": "^\\{\\{[\\s\\S]+\\}\\}$"
+    },
+    "icon": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "description": "Nome di un'icona del set integrato (per esempio file-plus, search, package). Un nome sconosciuto non mostra l'icona."
+    },
+    "label": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 60
+    },
+    "useCase": {
+      "type": "object",
+      "required": [
+        "id",
+        "label",
+        "items"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "label": {
+          "$ref": "#/$defs/label"
+        },
+        "icon": {
+          "$ref": "#/$defs/icon"
+        },
+        "requires": {
+          "$ref": "#/$defs/permission"
+        },
+        "visibleIf": {
+          "$ref": "#/$defs/expression"
+        },
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/item1"
+          }
+        }
+      }
+    },
+    "leaf": {
+      "type": "object",
+      "required": [
+        "id",
+        "label",
+        "screen"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "label": {
+          "$ref": "#/$defs/label"
+        },
+        "icon": {
+          "$ref": "#/$defs/icon"
+        },
+        "screen": {
+          "$ref": "#/$defs/id",
+          "description": "Schermata aperta dalla voce."
+        },
+        "params": {
+          "type": "object",
+          "additionalProperties": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              }
+            ]
+          },
+          "description": "Parametri statici passati alla schermata (diventano `params` nelle espressioni)."
+        },
+        "requires": {
+          "$ref": "#/$defs/permission"
+        },
+        "visibleIf": {
+          "$ref": "#/$defs/expression"
+        }
+      }
+    },
+    "group3": {
+      "$ref": "#/$defs/leaf"
+    },
+    "group2": {
+      "type": "object",
+      "required": [
+        "id",
+        "label",
+        "children"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "label": {
+          "$ref": "#/$defs/label"
+        },
+        "icon": {
+          "$ref": "#/$defs/icon"
+        },
+        "requires": {
+          "$ref": "#/$defs/permission"
+        },
+        "visibleIf": {
+          "$ref": "#/$defs/expression"
+        },
+        "children": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/group3"
+          }
+        }
+      }
+    },
+    "item2": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/leaf"
+        },
+        {
+          "$ref": "#/$defs/group2"
+        }
+      ]
+    },
+    "group1": {
+      "type": "object",
+      "required": [
+        "id",
+        "label",
+        "children"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "label": {
+          "$ref": "#/$defs/label"
+        },
+        "icon": {
+          "$ref": "#/$defs/icon"
+        },
+        "requires": {
+          "$ref": "#/$defs/permission"
+        },
+        "visibleIf": {
+          "$ref": "#/$defs/expression"
+        },
+        "children": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/item2"
+          }
+        }
+      }
+    },
+    "item1": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/leaf"
+        },
+        {
+          "$ref": "#/$defs/group1"
+        }
+      ]
+    }
+  }
+};

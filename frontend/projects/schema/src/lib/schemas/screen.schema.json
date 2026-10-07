@@ -227,9 +227,10 @@
           "if": { "properties": { "type": { "const": "form" } }, "required": ["type"] },
           "then": {
             "type": "object",
-            "required": ["source", "fields"],
+            "required": ["fields"],
             "properties": {
-              "source": { "type": "string", "description": "Nome del data source che fornisce i valori iniziali." },
+              "source": { "type": "string", "description": "Nome del data source che fornisce i valori iniziali (assente nei form di inserimento)." },
+              "initial": { "type": "object", "description": "Valori iniziali con espressioni, risolti una sola volta all'apertura; per esempio {\"tipo\": \"{{params.tipo}}\"}." },
               "fields": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/field" } },
               "actions": { "type": "array", "items": { "$ref": "#/$defs/action" } }
             }

@@ -9,3 +9,5 @@ export * from './lib/section.component';
 export * from './lib/filter-bar.component';
 export * from './lib/table.component';
 export * from './lib/form.component';
+export * from './lib/icon.component';
+export * from './lib/sidebar.component';

@@ -101,7 +101,10 @@ export interface TableNode extends NodeBase {
 }
 export interface FormNode extends NodeBase {
   type: 'form';
-  source: string;
+  /** Data source dei valori iniziali; assente nei form di inserimento. */
+  source?: string;
+  /** Valori iniziali con espressioni, risolti una sola volta all'apertura. */
+  initial?: Record<string, unknown>;
   fields: FieldDefinition[];
   actions?: ActionDefinition[];
 }
@@ -144,4 +147,54 @@ export interface ThemeDefinition {
   label?: string;
   mode?: 'light' | 'dark';
   tokens: ThemeTokens;
+}
+
+/** Navigazione: casi d'uso con un menu a tre livelli. Allineata a schemas/navigation.schema.json. */
+export interface NavigationBase {
+  id: string;
+  label: string;
+  icon?: string;
+  /** Permesso necessario per vedere la voce. */
+  requires?: string;
+  visibleIf?: Expression;
+}
+
+export interface NavigationLeaf extends NavigationBase {
+  screen: string;
+  params?: Record<string, string | number | boolean>;
+}
+
+export interface NavigationGroup2 extends NavigationBase {
+  children: NavigationLeaf[];
+}
+
+export type NavigationItem2 = NavigationLeaf | NavigationGroup2;
+
+export interface NavigationGroup1 extends NavigationBase {
+  children: NavigationItem2[];
+}
+
+export type NavigationItem1 = NavigationLeaf | NavigationGroup1;
+
+/** Gruppo a un livello qualsiasi: il runtime attraversa l'albero senza distinguere i livelli (li limita lo schema). */
+export interface NavigationGroup extends NavigationBase {
+  children: NavigationItem[];
+}
+
+export type NavigationItem = NavigationLeaf | NavigationGroup;
+
+export interface NavigationUseCase {
+  id: string;
+  label: string;
+  icon?: string;
+  requires?: string;
+  visibleIf?: Expression;
+  items: NavigationItem1[];
+}
+
+export interface NavigationDefinition {
+  schemaVersion: string;
+  navigation: string;
+  default?: string;
+  useCases: NavigationUseCase[];
 }
