@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { NgComponentOutlet } from '@angular/common';
+import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import type { NodeDefinition } from 'schema';
 import { COMPONENT_CATALOG } from './catalog';
 import type { ScreenRuntime } from './screen-runtime';
@@ -11,12 +12,19 @@ import type { Scope } from './types';
  */
 @Component({
   selector: 'lc-node',
-  imports: [NgComponentOutlet],
+  imports: [NgComponentOutlet, NzTooltipModule],
+  styles: `.tip { display: block; } .tip.fit { width: fit-content; }`,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (component(); as c) {
       @if (visible()) {
-        <ng-container *ngComponentOutlet="c; inputs: inputs()" />
+        @if (tooltip(); as tip) {
+          <div class="tip" [class.fit]="fit()" nz-tooltip [nzTooltipTitle]="tip">
+            <ng-container *ngComponentOutlet="c; inputs: inputs()" />
+          </div>
+        } @else {
+          <ng-container *ngComponentOutlet="c; inputs: inputs()" />
+        }
       }
     }
   `,
@@ -35,5 +43,11 @@ export class NodeHostComponent {
     return found;
   });
   protected readonly visible = computed(() => this.runtime().isVisible(this.node(), this.scope()));
+  /** Testo del tooltip già risolto (`{{ }}`), mostrato come testo semplice mai come HTML. */
+  protected readonly tooltip = computed(() => {
+    const raw = this.node().tooltip;
+    return raw ? this.runtime().text(raw, this.scope()) || null : null;
+  });
+  protected readonly fit = computed(() => this.node().type === 'button');
   protected readonly inputs = computed(() => ({ node: this.node(), runtime: this.runtime(), scope: this.scope() }));
 }

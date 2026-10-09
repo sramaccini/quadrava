@@ -24,7 +24,7 @@ import { nextId, parseIsoDate, toIsoDate } from './shared';
         @if (runtime().isVisible(field, scope())) {
           <nz-form-item>
             @if (field.type !== 'checkbox') {
-              <nz-form-label [nzFor]="id + field.name">{{ field.label ?? field.name }}</nz-form-label>
+              <nz-form-label [nzFor]="id + field.name" [nzTooltipTitle]="field.tooltip ? runtime().text(field.tooltip, scope()) : undefined" [nzTooltipIcon]="'question-circle'">{{ field.label ?? field.name }}</nz-form-label>
             }
             <nz-form-control>
               @switch (field.type) {

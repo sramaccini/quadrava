@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import {
   AppstoreOutline,
+  QuestionCircleOutline,
   CheckCircleOutline,
   ContainerOutline,
   EuroOutline,
@@ -27,6 +28,7 @@ import { NzIconModule } from 'ng-zorro-antd/icon';
  * (`provideLowcodeComponents`): un nome sconosciuto non mostra nulla e non provoca mai il caricamento di icone dalla rete.
  */
 export const ICON_TYPES: Record<string, { type: string; icon: IconDefinition }> = {
+  help: { type: 'question-circle', icon: QuestionCircleOutline },
   menu: { type: 'menu', icon: MenuOutline },
   home: { type: 'home', icon: HomeOutline },
   'file-plus': { type: 'file-add', icon: FileAddOutline },

@@ -5,6 +5,7 @@ import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzPaginationModule } from 'ng-zorro-antd/pagination';
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzTagModule } from 'ng-zorro-antd/tag';
+import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import type { ActionDefinition, ColumnDefinition, TableNode } from 'schema';
 import { TONE_COLORS } from './shared';
 
@@ -17,7 +18,7 @@ const DEFAULT_PAGE_SIZE = 10;
  */
 @Component({
   selector: 'lc-table',
-  imports: [NzTableModule, NzTagModule, NzButtonModule, NzPaginationModule, NzAlertModule],
+  imports: [NzTableModule, NzTagModule, NzButtonModule, NzPaginationModule, NzAlertModule, NzTooltipModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     .wrap { overflow-x: auto; overflow-y: hidden; }
@@ -42,7 +43,7 @@ const DEFAULT_PAGE_SIZE = 10;
           <thead>
             <tr>
               @for (column of columns(); track column.field) {
-                <th scope="col" [nzAlign]="numeric(column) ? 'right' : 'left'">{{ column.label ?? column.field }}</th>
+                <th scope="col" [nzAlign]="numeric(column) ? 'right' : 'left'" nz-tooltip [nzTooltipTitle]="column.tooltip ? runtime().text(column.tooltip, scope()) : null">{{ column.label ?? column.field }}</th>
               }
               @if (node().rowActions?.length) {
                 <th scope="col"><span class="visually-hidden">Azioni</span></th>
@@ -68,9 +69,11 @@ const DEFAULT_PAGE_SIZE = 10;
                     <div class="actions">
                       @for (action of node().rowActions; track $index) {
                         @if (runtime().isVisible(action, { row: row })) {
-                          <button nz-button nzSize="small" type="button" [disabled]="busy() || !runtime().isEnabled(action, { row: row })" (click)="run(action, row)">
-                            {{ action.label }}
-                          </button>
+                          <span nz-tooltip [nzTooltipTitle]="action.tooltip ? runtime().text(action.tooltip, { row: row }) : null">
+                            <button nz-button nzSize="small" type="button" [disabled]="busy() || !runtime().isEnabled(action, { row: row })" (click)="run(action, row)">
+                              {{ action.label }}
+                            </button>
+                          </span>
                         }
                       }
                     </div>

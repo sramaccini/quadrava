@@ -9,7 +9,7 @@
   },
   "components": [
     { "id": "titolo", "type": "text", "style": "heading", "text": "Componenti base" },
-    { "id": "intro", "type": "text", "text": "Questa schermata mostra testo, sezioni e pulsanti con le cinque azioni disponibili: set, call, refresh, navigate e toast." },
+    { "id": "intro", "type": "text", "tooltip": "Ogni componente può avere un tooltip opzionale (solo testo, anche con espressioni)", "text": "Questa schermata mostra testo, sezioni e pulsanti con le cinque azioni disponibili: set, call, refresh, navigate e toast." },
     {
       "id": "sezione-testo",
       "type": "section",
@@ -28,6 +28,7 @@
           "id": "btn-incrementa",
           "type": "button",
           "label": "Incrementa il contatore (set)",
+          "tooltip": "Il contatore vale {{has(state.contatore) ? state.contatore : 0}}: ogni clic lo aumenta di uno",
           "onClick": [{ "set": { "path": "contatore", "value": "{{has(state.contatore) ? state.contatore + 1 : 1}}" } }]
         },
         {

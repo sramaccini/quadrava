@@ -7,13 +7,14 @@ import { NzDatePickerModule } from 'ng-zorro-antd/date-picker';
 import { NzFormModule } from 'ng-zorro-antd/form';
 import { NzInputModule } from 'ng-zorro-antd/input';
 import { NzSelectModule } from 'ng-zorro-antd/select';
+import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import type { ActionDefinition, FieldDefinition, FormNode } from 'schema';
 import { nextId, parseIsoDate, toIsoDate } from './shared';
 
 /** Form: i valori iniziali arrivano dal data source `source` (se restituisce un oggetto); le azioni ricevono `form` nello scope. */
 @Component({
   selector: 'lc-form',
-  imports: [FormsModule, NzFormModule, NzInputModule, NzSelectModule, NzCheckboxModule, NzDatePickerModule, NzButtonModule],
+  imports: [FormsModule, NzFormModule, NzInputModule, NzSelectModule, NzCheckboxModule, NzDatePickerModule, NzButtonModule, NzTooltipModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     form { max-width: 560px; }
@@ -26,7 +27,7 @@ import { nextId, parseIsoDate, toIsoDate } from './shared';
         @if (runtime().isVisible(field, fieldScope())) {
           <nz-form-item>
             @if (field.type !== 'checkbox') {
-              <nz-form-label [nzFor]="id + field.name" [nzRequired]="!!field.required">{{ field.label ?? field.name }}</nz-form-label>
+              <nz-form-label [nzFor]="id + field.name" [nzRequired]="!!field.required" [nzTooltipTitle]="field.tooltip ? runtime().text(field.tooltip, fieldScope()) : undefined" [nzTooltipIcon]="'question-circle'">{{ field.label ?? field.name }}</nz-form-label>
             }
             <nz-form-control [nzValidateStatus]="error(field) ? 'error' : ''" [nzErrorTip]="error(field) ?? undefined">
               @switch (field.type) {
@@ -65,9 +66,11 @@ import { nextId, parseIsoDate, toIsoDate } from './shared';
       <div class="actions">
         @for (action of node().actions ?? []; track $index) {
           @if (runtime().isVisible(action, fieldScope())) {
-            <button nz-button nzType="primary" type="button" [nzLoading]="busy()" [disabled]="busy() || !runtime().isEnabled(action, fieldScope())" (click)="run(action)">
-              {{ action.label }}
-            </button>
+            <span nz-tooltip [nzTooltipTitle]="action.tooltip ? runtime().text(action.tooltip, fieldScope()) : null">
+              <button nz-button nzType="primary" type="button" [nzLoading]="busy()" [disabled]="busy() || !runtime().isEnabled(action, fieldScope())" (click)="run(action)">
+                {{ action.label }}
+              </button>
+            </span>
           }
         }
       </div>

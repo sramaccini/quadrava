@@ -256,6 +256,10 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
           "items": {
             "$ref": "#/$defs/step"
           }
+        },
+        "tooltip": {
+          "type": "string",
+          "description": "Testo di aiuto mostrato al passaggio del mouse o con il focus. Solo testo (mai HTML); può contenere {{ }}."
         }
       }
     },
@@ -320,6 +324,10 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
               "type": "string"
             }
           }
+        },
+        "tooltip": {
+          "type": "string",
+          "description": "Testo di aiuto mostrato al passaggio del mouse o con il focus. Solo testo (mai HTML); può contenere {{ }}."
         }
       }
     },
@@ -366,6 +374,10 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
         },
         "hiddenIf": {
           "$ref": "#/$defs/expression"
+        },
+        "tooltip": {
+          "type": "string",
+          "description": "Testo di aiuto mostrato al passaggio del mouse o con il focus. Solo testo (mai HTML); può contenere {{ }}."
         }
       }
     },
@@ -402,6 +414,10 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
         },
         "readOnlyIf": {
           "$ref": "#/$defs/expression"
+        },
+        "tooltip": {
+          "type": "string",
+          "description": "Testo di aiuto mostrato al passaggio del mouse o con il focus. Solo testo (mai HTML); può contenere {{ }}."
         }
       },
       "allOf": [

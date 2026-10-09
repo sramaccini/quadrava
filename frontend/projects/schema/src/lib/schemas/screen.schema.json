@@ -254,6 +254,10 @@
           "items": {
             "$ref": "#/$defs/step"
           }
+        },
+        "tooltip": {
+          "type": "string",
+          "description": "Testo di aiuto mostrato al passaggio del mouse o con il focus. Solo testo (mai HTML); può contenere {{ }}."
         }
       }
     },
@@ -318,6 +322,10 @@
               "type": "string"
             }
           }
+        },
+        "tooltip": {
+          "type": "string",
+          "description": "Testo di aiuto mostrato al passaggio del mouse o con il focus. Solo testo (mai HTML); può contenere {{ }}."
         }
       }
     },
@@ -364,6 +372,10 @@
         },
         "hiddenIf": {
           "$ref": "#/$defs/expression"
+        },
+        "tooltip": {
+          "type": "string",
+          "description": "Testo di aiuto mostrato al passaggio del mouse o con il focus. Solo testo (mai HTML); può contenere {{ }}."
         }
       }
     },
@@ -400,6 +412,10 @@
         },
         "readOnlyIf": {
           "$ref": "#/$defs/expression"
+        },
+        "tooltip": {
+          "type": "string",
+          "description": "Testo di aiuto mostrato al passaggio del mouse o con il focus. Solo testo (mai HTML); può contenere {{ }}."
         }
       },
       "allOf": [

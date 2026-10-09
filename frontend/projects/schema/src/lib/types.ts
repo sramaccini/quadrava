@@ -48,6 +48,7 @@ export interface ConditionalProps {
 export interface ActionDefinition {
   id?: string;
   label: string;
+  tooltip?: string;
   visibleIf?: Expression;
   hiddenIf?: Expression;
   enabledIf?: Expression;
@@ -58,6 +59,7 @@ export interface FieldDefinition {
   name: string;
   type: 'text' | 'number' | 'select' | 'checkbox' | 'date';
   label?: string;
+  tooltip?: string;
   required?: boolean;
   options?: string[];
   /** Il valore non compare mai in tracce e log. */
@@ -75,6 +77,7 @@ export type CellFormat = 'text' | 'currency' | 'percent' | 'date' | 'datetime' |
 export interface ColumnDefinition {
   field: string;
   label?: string;
+  tooltip?: string;
   format?: CellFormat;
   /** Codice ISO 4217 per `currency` (EUR se assente). */
   currency?: string;
@@ -86,6 +89,8 @@ export interface ColumnDefinition {
 
 interface NodeBase extends ConditionalProps {
   id?: string;
+  /** Testo di aiuto al passaggio del mouse o con il focus (solo testo, può contenere `{{ }}`). */
+  tooltip?: string;
 }
 
 export interface SectionNode extends NodeBase {
