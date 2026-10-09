@@ -81,6 +81,7 @@ The Italian locale is patched in `provide.ts` (`rangeQuarterPlaceholder` is miss
 * The theme JSON becomes `--lc-*` variables (shell, sidebar, spacing) in `core`.
 * `theme-bridge.ts` converts the primary, success and error colours into the full `--ant-*` palette with `@ant-design/colors` `generate`. Only colour variables exist at run time in NG-ZORRO, so radius, density and typography tokens are not mapped.
 * Dark themes add `<link id="lc-nz-dark-theme" href="nz-dark.css">`; the stylesheet is built by `angular.json` (bundle `nz-dark`, `inject: false`). Light themes remove it.
+* The application shell is theme-driven too. `tokens.layout` (optional) sets `sider` (tone, background, text, mutedText, activeBackground, activeText, border, width, collapsedWidth), `header` (background, text, border, height), `pageHeader` and `content.padding`; they become `--lc-sider-*`, `--lc-header-*`, `--lc-page-header-*` and `--lc-content-padding`, with fallbacks derived from the base colours. The side bar and page header read only those variables; `tone` merely selects the NG-ZORRO menu style.
 * Never hard-code colours in components: use `var(--lc-*)` or NG-ZORRO tokens.
 
 ## 7. Ports and dependency injection
@@ -108,7 +109,7 @@ Vitest runs in jsdom through `ng test`. Conventions:
 * Test the configuration of what jsdom cannot verify (for example `nzAutofocus: 'cancel'`), and note the limit in the test.
 * Runtime specs import the demo JSON, so run `npm run demo:prepare` first.
 
-Layout, real focus and the dark theme are not covered by tests (the application shell follows the Ant Design Pro look: dark side bar, light top bar, card content); check them manually with `npm run start:runtime` for UI changes.
+Layout, real focus and the dark theme are not covered by tests (the application shell follows the Ant Design Pro look, driven by the theme); check them manually with `npm run start:runtime` for UI changes.
 
 ## 10. Code style
 

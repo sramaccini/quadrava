@@ -7,16 +7,17 @@ import { NavigationService } from '../navigation.service';
   selector: 'lc-home-page',
   imports: [NzAlertModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: `.pad { padding: var(--lc-content-padding, 24px); }`,
   template: `
     @if (problems().length) {
-      <div role="alert">
+      <div class="pad" role="alert">
         <nz-alert nzType="error" nzShowIcon nzMessage="Il menu non è valido:" [nzDescription]="list" />
         <ng-template #list><ul>@for (p of problems(); track p) { <li>{{ p }}</li> }</ul></ng-template>
       </div>
     } @else if (empty()) {
-      <div role="status"><nz-alert nzType="info" nzShowIcon nzMessage="Nessuna funzione disponibile per il tuo profilo." /></div>
+      <div class="pad" role="status"><nz-alert nzType="info" nzShowIcon nzMessage="Nessuna funzione disponibile per il tuo profilo." /></div>
     } @else {
-      <p role="status">Caricamento…</p>
+      <p class="pad" role="status">Caricamento…</p>
     }
   `,
 })

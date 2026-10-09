@@ -6,7 +6,7 @@ import type { ThemeDefinition } from 'schema';
  * (colori e font con caratteri ammessi), quindi non possono iniettare CSS arbitrario.
  */
 export function themeToCssVars(theme: ThemeDefinition): Record<string, string> {
-  const { colors, typography, shape, density } = theme.tokens;
+  const { colors, typography, shape, density, layout } = theme.tokens;
   const vars: Record<string, string> = {
     '--lc-color-primary': colors.primary,
     '--lc-color-on-primary': colors.onPrimary,
@@ -21,6 +21,28 @@ export function themeToCssVars(theme: ThemeDefinition): Record<string, string> {
     '--lc-font-size': `${typography?.baseSize ?? 15}px`,
     '--lc-radius': `${shape?.radius ?? 6}px`,
   };
+  // Guscio dell'applicazione: ogni valore ha un ripiego ricavato dai colori base, così un tema minimo resta coerente.
+  const sider = layout?.sider ?? {};
+  const header = layout?.header ?? {};
+  const page = layout?.pageHeader ?? {};
+  const muted = colors.mutedText ?? colors.onSurface;
+  vars['--lc-sider-bg'] = sider.background ?? colors.surface;
+  vars['--lc-sider-text'] = sider.text ?? colors.onSurface;
+  vars['--lc-sider-muted'] = sider.mutedText ?? muted;
+  vars['--lc-sider-active-bg'] = sider.activeBackground ?? `color-mix(in srgb, ${colors.primary} 10%, ${sider.background ?? colors.surface})`;
+  vars['--lc-sider-active-text'] = sider.activeText ?? colors.primary;
+  vars['--lc-sider-border'] = sider.border ?? colors.border;
+  vars['--lc-sider-width'] = `${sider.width ?? 256}px`;
+  vars['--lc-sider-collapsed-width'] = `${sider.collapsedWidth ?? 80}px`;
+  vars['--lc-header-bg'] = header.background ?? colors.surface;
+  vars['--lc-header-text'] = header.text ?? colors.onSurface;
+  vars['--lc-header-border'] = header.border ?? colors.border;
+  vars['--lc-header-height'] = `${header.height ?? 56}px`;
+  vars['--lc-page-header-bg'] = page.background ?? colors.surface;
+  vars['--lc-page-header-text'] = page.text ?? colors.onSurface;
+  vars['--lc-page-header-muted'] = page.mutedText ?? muted;
+  vars['--lc-page-header-border'] = page.border ?? colors.border;
+  vars['--lc-content-padding'] = `${layout?.content?.padding ?? 24}px`;
   const compact = density === 'compact';
   vars['--lc-gap'] = compact ? '6px' : '12px';
   vars['--lc-control-height'] = compact ? '30px' : '38px';

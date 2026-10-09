@@ -121,6 +121,107 @@ export const THEME_SCHEMA: Record<string, unknown> = {
             "compact",
             "comfortable"
           ]
+        },
+        "layout": {
+          "type": "object",
+          "description": "Aspetto del guscio dell'applicazione: barra laterale, barra superiore, intestazione di pagina, spaziature. Tutto opzionale: se manca, la barra laterale è chiara (colori di superficie) e le misure sono quelle di Ant Design Pro.",
+          "properties": {
+            "sider": {
+              "type": "object",
+              "properties": {
+                "tone": {
+                  "enum": [
+                    "light",
+                    "dark"
+                  ],
+                  "description": "Stile del menu: chiaro o scuro."
+                },
+                "background": {
+                  "$ref": "#/$defs/color"
+                },
+                "text": {
+                  "$ref": "#/$defs/color"
+                },
+                "mutedText": {
+                  "$ref": "#/$defs/color"
+                },
+                "activeBackground": {
+                  "$ref": "#/$defs/color"
+                },
+                "activeText": {
+                  "$ref": "#/$defs/color"
+                },
+                "border": {
+                  "$ref": "#/$defs/color"
+                },
+                "width": {
+                  "type": "number",
+                  "minimum": 180,
+                  "maximum": 360,
+                  "description": "Larghezza in px."
+                },
+                "collapsedWidth": {
+                  "type": "number",
+                  "minimum": 48,
+                  "maximum": 120,
+                  "description": "Larghezza da compressa in px."
+                }
+              },
+              "additionalProperties": false
+            },
+            "header": {
+              "type": "object",
+              "properties": {
+                "background": {
+                  "$ref": "#/$defs/color"
+                },
+                "text": {
+                  "$ref": "#/$defs/color"
+                },
+                "border": {
+                  "$ref": "#/$defs/color"
+                },
+                "height": {
+                  "type": "number",
+                  "minimum": 40,
+                  "maximum": 96,
+                  "description": "Altezza in px."
+                }
+              },
+              "additionalProperties": false
+            },
+            "pageHeader": {
+              "type": "object",
+              "properties": {
+                "background": {
+                  "$ref": "#/$defs/color"
+                },
+                "text": {
+                  "$ref": "#/$defs/color"
+                },
+                "mutedText": {
+                  "$ref": "#/$defs/color"
+                },
+                "border": {
+                  "$ref": "#/$defs/color"
+                }
+              },
+              "additionalProperties": false
+            },
+            "content": {
+              "type": "object",
+              "properties": {
+                "padding": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 64,
+                  "description": "Margine interno in px."
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false

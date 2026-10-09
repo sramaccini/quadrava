@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, Injector, effect, inject, input, signal, untracked } from '@angular/core';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
+import { NzBreadCrumbModule } from 'ng-zorro-antd/breadcrumb';
 import { NzTypographyModule } from 'ng-zorro-antd/typography';
 import type { ScreenDefinition } from 'schema';
 import { Authorization, Confirmation, DataClient, Notifier, RuntimeDiagnostics, ScreenNavigator, UserProvider } from './ports';
@@ -9,26 +10,46 @@ import { ScreenRuntime } from './screen-runtime';
 /** Mostra una schermata già validata: crea il runtime, controlla `requires` e disegna i componenti di primo livello. */
 @Component({
   selector: 'lc-screen',
-  imports: [NodeHostComponent, NzAlertModule, NzTypographyModule],
+  imports: [NodeHostComponent, NzAlertModule, NzBreadCrumbModule, NzTypographyModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: block; }
-    h1[nz-typography] { margin: 0 0 var(--lc-gap, 12px); font-size: 24px; font-weight: 600; line-height: 1.3; }
+    .page-header { padding: 16px var(--lc-content-padding, 24px) 20px; background: var(--lc-page-header-bg, #fff); color: var(--lc-page-header-text, inherit); border-bottom: 1px solid var(--lc-page-header-border, #e3e8ef); }
+    nz-breadcrumb { display: block; margin-bottom: 8px; color: var(--lc-page-header-muted, #5d6b7a); }
+    h1[nz-typography] { margin: 0; font-size: 24px; font-weight: 600; line-height: 1.3; color: inherit; }
+    .description { margin: 4px 0 0; color: var(--lc-page-header-muted, #5d6b7a); }
+    .page-body { padding: var(--lc-content-padding, 24px); }
     .stack { display: flex; flex-direction: column; gap: var(--lc-gap, 12px); }
   `,
   template: `
     @if (runtime(); as rt) {
       @if (rt.allowed()) {
-        @if (rt.definition.title) {
-          <h1 nz-typography>{{ rt.definition.title }}</h1>
+        @if (rt.definition.title || breadcrumb().length) {
+          <header class="page-header">
+            @if (breadcrumb().length) {
+              <nz-breadcrumb [nzAutoGenerate]="false" aria-label="Percorso">
+                @for (label of breadcrumb(); track $index) {
+                  <nz-breadcrumb-item>{{ label }}</nz-breadcrumb-item>
+                }
+              </nz-breadcrumb>
+            }
+            @if (rt.definition.title) {
+              <h1 nz-typography>{{ rt.definition.title }}</h1>
+            }
+            @if (rt.definition.description) {
+              <p class="description">{{ rt.definition.description }}</p>
+            }
+          </header>
         }
-        <div class="stack">
-          @for (node of rt.definition.components; track $index) {
-            <lc-node [node]="node" [runtime]="rt" />
-          }
+        <div class="page-body">
+          <div class="stack">
+            @for (node of rt.definition.components; track $index) {
+              <lc-node [node]="node" [runtime]="rt" />
+            }
+          </div>
         </div>
       } @else {
-        <div role="alert"><nz-alert nzType="error" nzShowIcon nzMessage="Non hai i permessi per visualizzare questa schermata." /></div>
+        <div class="page-body"><div role="alert"><nz-alert nzType="error" nzShowIcon nzMessage="Non hai i permessi per visualizzare questa schermata." /></div></div>
       }
     }
   `,
@@ -36,6 +57,8 @@ import { ScreenRuntime } from './screen-runtime';
 export class ScreenComponent {
   readonly definition = input.required<ScreenDefinition>();
   readonly params = input<Record<string, unknown>>({});
+  /** Percorso mostrato sopra il titolo (per esempio caso d'uso, gruppo, voce). Lo fornisce l'applicazione ospite. */
+  readonly breadcrumb = input<readonly string[]>([]);
 
   readonly runtime = signal<ScreenRuntime | null>(null);
 

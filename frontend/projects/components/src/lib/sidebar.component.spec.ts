@@ -154,4 +154,14 @@ describe('SidebarComponent', () => {
     await flush(fixture);
     expect(el.querySelector('.side')?.classList.contains('collapsed')).toBe(false);
   });
+
+  it('può essere compressa dall’esterno e senza pulsante proprio', async () => {
+    const { fixture, el } = await render(['fatture.fattura.crea']);
+    fixture.componentRef.setInput('showToggle', false);
+    await flush(fixture);
+    expect(el.querySelector('button.toggle')).toBeNull();
+    fixture.componentRef.setInput('collapsed', true);
+    await flush(fixture);
+    expect(el.querySelector('.side')?.classList.contains('collapsed')).toBe(true);
+  });
 });

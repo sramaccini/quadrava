@@ -15,8 +15,37 @@
       "danger": "#c62828",
       "success": "#2e7d32"
     },
-    "typography": { "fontFamily": "Segoe UI, Roboto, Arial, sans-serif", "baseSize": 15 },
-    "shape": { "radius": 6 },
-    "density": "comfortable"
+    "typography": {
+      "fontFamily": "Segoe UI, Roboto, Arial, sans-serif",
+      "baseSize": 15
+    },
+    "shape": {
+      "radius": 6
+    },
+    "density": "comfortable",
+    "layout": {
+      "sider": {
+        "tone": "light",
+        "background": "#ffffff",
+        "text": "#1b2430",
+        "mutedText": "#5d6b7a",
+        "activeBackground": "#e8f0fb",
+        "activeText": "#1f5fbf",
+        "border": "#e3e8ef",
+        "width": 256,
+        "collapsedWidth": 80
+      },
+      "header": {
+        "background": "#ffffff",
+        "text": "#1b2430",
+        "height": 56
+      },
+      "pageHeader": {
+        "background": "#ffffff"
+      },
+      "content": {
+        "padding": 24
+      }
+    }
   }
 }

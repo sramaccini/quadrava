@@ -1,5 +1,8 @@
 <nz-layout class="shell">
   <nz-header class="bar">
+    <button nz-button nzType="text" class="trigger" type="button" [attr.aria-label]="collapsed() ? 'Espandi il menu' : 'Comprimi il menu'" [attr.aria-expanded]="!collapsed()" (click)="collapsed.set(!collapsed())">
+      <lc-icon name="menu" />
+    </button>
     <span class="crumb">Piattaforma LowCode · demo</span>
     <span class="spacer"></span>
     <label for="lc-user">Utente</label>
@@ -22,6 +25,9 @@
       <lc-sidebar
         [navigation]="nav"
         brand="LowCode"
+        [tone]="siderTone()"
+        [showToggle]="false"
+        [(collapsed)]="collapsed"
         [useCaseId]="navigation.current().useCase"
         [active]="active()"
         [hrefFor]="hrefFor"

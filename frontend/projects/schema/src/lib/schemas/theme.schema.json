@@ -4,13 +4,34 @@
   "title": "Tema dell'applicazione LowCode",
   "description": "Design token di un tema. Il runtime li applica come CSS custom properties (--lc-*). I valori ammessi sono volutamente ristretti: un tema non può iniettare CSS arbitrario.",
   "type": "object",
-  "required": ["schemaVersion", "theme", "tokens"],
+  "required": [
+    "schemaVersion",
+    "theme",
+    "tokens"
+  ],
   "properties": {
-    "schemaVersion": { "const": "1.0" },
-    "theme": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,63}$", "description": "Identificativo del tema." },
-    "label": { "type": "string", "maxLength": 80 },
-    "mode": { "enum": ["light", "dark"], "description": "Aiuta il runtime a impostare color-scheme." },
-    "tokens": { "$ref": "#/$defs/tokens" }
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "theme": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{1,63}$",
+      "description": "Identificativo del tema."
+    },
+    "label": {
+      "type": "string",
+      "maxLength": 80
+    },
+    "mode": {
+      "enum": [
+        "light",
+        "dark"
+      ],
+      "description": "Aiuta il runtime a impostare color-scheme."
+    },
+    "tokens": {
+      "$ref": "#/$defs/tokens"
+    }
   },
   "additionalProperties": false,
   "$defs": {
@@ -20,40 +41,186 @@
     },
     "tokens": {
       "type": "object",
-      "required": ["colors"],
+      "required": [
+        "colors"
+      ],
       "properties": {
         "colors": {
           "type": "object",
-          "required": ["primary", "onPrimary", "background", "surface", "onSurface", "border"],
+          "required": [
+            "primary",
+            "onPrimary",
+            "background",
+            "surface",
+            "onSurface",
+            "border"
+          ],
           "properties": {
-            "primary": { "$ref": "#/$defs/color" },
-            "onPrimary": { "$ref": "#/$defs/color" },
-            "background": { "$ref": "#/$defs/color" },
-            "surface": { "$ref": "#/$defs/color" },
-            "onSurface": { "$ref": "#/$defs/color" },
-            "mutedText": { "$ref": "#/$defs/color" },
-            "border": { "$ref": "#/$defs/color" },
-            "danger": { "$ref": "#/$defs/color" },
-            "success": { "$ref": "#/$defs/color" }
+            "primary": {
+              "$ref": "#/$defs/color"
+            },
+            "onPrimary": {
+              "$ref": "#/$defs/color"
+            },
+            "background": {
+              "$ref": "#/$defs/color"
+            },
+            "surface": {
+              "$ref": "#/$defs/color"
+            },
+            "onSurface": {
+              "$ref": "#/$defs/color"
+            },
+            "mutedText": {
+              "$ref": "#/$defs/color"
+            },
+            "border": {
+              "$ref": "#/$defs/color"
+            },
+            "danger": {
+              "$ref": "#/$defs/color"
+            },
+            "success": {
+              "$ref": "#/$defs/color"
+            }
           },
           "additionalProperties": false
         },
         "typography": {
           "type": "object",
           "properties": {
-            "fontFamily": { "type": "string", "pattern": "^[A-Za-z0-9 ,'\"-]{1,200}$" },
-            "baseSize": { "type": "number", "minimum": 12, "maximum": 20, "description": "Dimensione base in px." }
+            "fontFamily": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9 ,'\"-]{1,200}$"
+            },
+            "baseSize": {
+              "type": "number",
+              "minimum": 12,
+              "maximum": 20,
+              "description": "Dimensione base in px."
+            }
           },
           "additionalProperties": false
         },
         "shape": {
           "type": "object",
           "properties": {
-            "radius": { "type": "number", "minimum": 0, "maximum": 24, "description": "Raggio degli angoli in px." }
+            "radius": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 24,
+              "description": "Raggio degli angoli in px."
+            }
           },
           "additionalProperties": false
         },
-        "density": { "enum": ["compact", "comfortable"] }
+        "density": {
+          "enum": [
+            "compact",
+            "comfortable"
+          ]
+        },
+        "layout": {
+          "type": "object",
+          "description": "Aspetto del guscio dell'applicazione: barra laterale, barra superiore, intestazione di pagina, spaziature. Tutto opzionale: se manca, la barra laterale è chiara (colori di superficie) e le misure sono quelle di Ant Design Pro.",
+          "properties": {
+            "sider": {
+              "type": "object",
+              "properties": {
+                "tone": {
+                  "enum": [
+                    "light",
+                    "dark"
+                  ],
+                  "description": "Stile del menu: chiaro o scuro."
+                },
+                "background": {
+                  "$ref": "#/$defs/color"
+                },
+                "text": {
+                  "$ref": "#/$defs/color"
+                },
+                "mutedText": {
+                  "$ref": "#/$defs/color"
+                },
+                "activeBackground": {
+                  "$ref": "#/$defs/color"
+                },
+                "activeText": {
+                  "$ref": "#/$defs/color"
+                },
+                "border": {
+                  "$ref": "#/$defs/color"
+                },
+                "width": {
+                  "type": "number",
+                  "minimum": 180,
+                  "maximum": 360,
+                  "description": "Larghezza in px."
+                },
+                "collapsedWidth": {
+                  "type": "number",
+                  "minimum": 48,
+                  "maximum": 120,
+                  "description": "Larghezza da compressa in px."
+                }
+              },
+              "additionalProperties": false
+            },
+            "header": {
+              "type": "object",
+              "properties": {
+                "background": {
+                  "$ref": "#/$defs/color"
+                },
+                "text": {
+                  "$ref": "#/$defs/color"
+                },
+                "border": {
+                  "$ref": "#/$defs/color"
+                },
+                "height": {
+                  "type": "number",
+                  "minimum": 40,
+                  "maximum": 96,
+                  "description": "Altezza in px."
+                }
+              },
+              "additionalProperties": false
+            },
+            "pageHeader": {
+              "type": "object",
+              "properties": {
+                "background": {
+                  "$ref": "#/$defs/color"
+                },
+                "text": {
+                  "$ref": "#/$defs/color"
+                },
+                "mutedText": {
+                  "$ref": "#/$defs/color"
+                },
+                "border": {
+                  "$ref": "#/$defs/color"
+                }
+              },
+              "additionalProperties": false
+            },
+            "content": {
+              "type": "object",
+              "properties": {
+                "padding": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 64,
+                  "description": "Margine interno in px."
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        }
       },
       "additionalProperties": false
     }

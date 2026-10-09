@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "1.0",
+  "theme": "classico",
+  "label": "Classico (barra laterale scura)",
+  "mode": "light",
+  "tokens": {
+    "colors": {
+      "primary": "#1f5fbf",
+      "onPrimary": "#ffffff",
+      "background": "#f4f6f9",
+      "surface": "#ffffff",
+      "onSurface": "#1b2430",
+      "mutedText": "#5d6b7a",
+      "border": "#d5dbe3",
+      "danger": "#c62828",
+      "success": "#2e7d32"
+    },
+    "typography": {
+      "fontFamily": "Segoe UI, Roboto, Arial, sans-serif",
+      "baseSize": 15
+    },
+    "shape": {
+      "radius": 6
+    },
+    "density": "comfortable",
+    "layout": {
+      "sider": {
+        "tone": "dark",
+        "background": "#001529",
+        "text": "rgba(255,255,255,0.85)",
+        "mutedText": "rgba(255,255,255,0.55)",
+        "activeBackground": "#1f5fbf",
+        "activeText": "#ffffff",
+        "border": "#001529",
+        "width": 256,
+        "collapsedWidth": 80
+      },
+      "header": {
+        "background": "#ffffff",
+        "text": "#1b2430",
+        "height": 56
+      },
+      "pageHeader": {
+        "background": "#ffffff"
+      },
+      "content": {
+        "padding": 24
+      }
+    }
+  }
+}

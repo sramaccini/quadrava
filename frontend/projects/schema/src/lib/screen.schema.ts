@@ -39,6 +39,11 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
       "items": {
         "$ref": "#/$defs/node"
       }
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 300,
+      "description": "Frase mostrata sotto il titolo, nell'intestazione di pagina."
     }
   },
   "$defs": {

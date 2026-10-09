@@ -95,6 +95,18 @@ describe('ScreenComponent + catalogo standard', () => {
     expect(requests[0]).toEqual({ method: 'GET', url: '/api/ordini', query: { page: 0 } });
   });
 
+  it('l’intestazione di pagina mostra briciole di pane, titolo e descrizione', async () => {
+    const { fixture, el } = await render();
+    expect(el.querySelector('nz-breadcrumb')).toBeNull();
+    fixture.componentRef.setInput('breadcrumb', ['Consultazione', 'Ordini']);
+    fixture.componentRef.setInput('definition', { ...screen, description: 'Elenco degli ordini.' });
+    await settle(fixture);
+    const crumbs = [...el.querySelectorAll('nz-breadcrumb-item')].map((n) => (n.textContent ?? '').replace('/', '').trim());
+    expect(crumbs).toEqual(['Consultazione', 'Ordini']);
+    expect(el.querySelector('header.page-header h1')?.textContent?.trim()).toBe('Ordini');
+    expect(el.querySelector('header.page-header .description')?.textContent?.trim()).toBe('Elenco degli ordini.');
+  });
+
   it('senza il permesso di approvazione non mostra il pulsante', async () => {
     const { el } = await render();
     expect(buttons(el)).not.toContain('Approva');

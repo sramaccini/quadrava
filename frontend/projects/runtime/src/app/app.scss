@@ -1,9 +1,10 @@
 :host { display: block; min-height: 100vh; }
 .shell { min-height: 100vh; }
 .bar {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 12px; height: 56px; line-height: 1.5715; padding: 0 24px;
-  background: var(--lc-color-surface); color: var(--lc-color-on-surface); box-shadow: 0 1px 4px rgba(0, 21, 41, 0.12); position: relative; z-index: 1;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 12px; height: var(--lc-header-height); line-height: 1.5715; padding: 0 24px 0 12px;
+  background: var(--lc-header-bg); color: var(--lc-header-text); border-bottom: 1px solid var(--lc-header-border); position: relative; z-index: 1;
 }
+.trigger { color: inherit; font-size: 18px; }
 .crumb { color: var(--lc-color-muted); }
 .spacer { flex: 1; }
 .bar label { margin-left: 8px; color: var(--lc-color-muted); }
@@ -12,7 +13,7 @@
 .body { flex-direction: row; align-items: stretch; background: var(--lc-color-background); }
 lc-sidebar { flex: none; }
 nz-content { flex: 1; min-width: 0; }
-main { padding: 24px; color: var(--lc-color-on-surface); }
+main { color: var(--lc-color-on-surface); }
 .diag { text-align: center; font-size: .8em; color: var(--lc-color-muted); background: transparent; }
 @media (max-width: 720px) {
   .body { flex-direction: column !important; }

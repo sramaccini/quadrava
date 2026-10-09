@@ -91,6 +91,12 @@ describe('NavigationRuntime', () => {
     expect(setup([]).nav.defaultTarget()).toBeNull();
   });
 
+  it('costruisce il percorso di etichette per le briciole di pane', () => {
+    const { nav } = setup(['fatture.fattura.crea']);
+    expect(nav.trail('inserimento', 'fattura-nuova', { tipo: 'passiva' })).toEqual(['Inserimento', 'Nuova', 'Passiva']);
+    expect(nav.trail('inserimento', 'fattura-nuova', { tipo: 'altro' })).toBeNull();
+  });
+
   it('individua la voce attiva usando schermata e parametri', () => {
     const { nav } = setup(['fatture.fattura.crea']);
     expect(nav.locate('inserimento', 'fattura-nuova', { tipo: 'passiva' })).toEqual(['nuova', 'passiva']);

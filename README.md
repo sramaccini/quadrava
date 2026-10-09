@@ -112,7 +112,7 @@ Key design choices:
 
 ### Theme
 
-A theme is a document of **design tokens only** (colours, typography, radius, density, light/dark mode), validated with restrictive patterns so it cannot inject CSS. The runtime applies it as CSS variables (`--lc-*`) and a bridge translates the primary, success and error colours into NG-ZORRO's `--ant-*` variables (computing the tonal scale); a dark theme additionally loads NG-ZORRO's dark stylesheet. Themes switch at run time without reloading.
+A theme is a document of **design tokens only** (colours, typography, radius, density, light/dark mode, and the layout of the application shell: side bar tone/colours/widths, top bar, page header, content padding), validated with restrictive patterns so it cannot inject CSS. The runtime applies it as CSS variables (`--lc-*`) and a bridge translates the primary, success and error colours into NG-ZORRO's `--ant-*` variables (computing the tonal scale); a dark theme additionally loads NG-ZORRO's dark stylesheet. Themes switch at run time without reloading.
 
 ### Navigation
 
@@ -171,7 +171,7 @@ In the top bar choose the **user** (`operatore`, `responsabile`, `amministratore
 * *Inserimento Fattura*: a form with validation that saves a draft and navigates to the drafts list.
 * *Revisione Spese*: two menu entries open the same screen with different parameters; Approve and Reject only appear with the review permission.
 * **Component showcase** (visible to every profile): four screens, `examples/vetrina-*.json`, exercising every component: basics and actions, forms (all field types, validation, conditional fields), filters and tables (server paging, row actions, cell formats, confirmation), and tabs, detail view and in-page messages.
-* The look follows Ant Design Pro: dark side bar with logo and use-case selector, light top bar, cards on a light grey background. The toggle at the bottom of the side bar collapses it to icons (groups then open as pop-ups).
+* The look follows Ant Design Pro and is entirely driven by the theme: light side bar with logo and use-case selector, top bar with the collapse button, page header with breadcrumb, title and description, cards on a light grey background. Three themes are provided: `chiaro`, `classico` (dark navy side bar) and `scuro`. The button in the top bar collapses the side bar to icons (groups then open as pop-ups).
 
 The libraries are not hot-reloaded: after changing anything in `frontend/projects/<library>` run `npm run build:libs` again.
 

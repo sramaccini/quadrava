@@ -155,6 +155,7 @@ export interface ScreenDefinition {
   schemaVersion: string;
   screen: string;
   title?: string;
+  description?: string;
   requires?: string;
   dataSources?: Record<string, DataSourceDefinition>;
   components: NodeDefinition[];
@@ -173,11 +174,29 @@ export interface ThemeColors {
   success?: string;
 }
 
+export interface ThemeLayout {
+  sider?: {
+    tone?: 'light' | 'dark';
+    background?: string;
+    text?: string;
+    mutedText?: string;
+    activeBackground?: string;
+    activeText?: string;
+    border?: string;
+    width?: number;
+    collapsedWidth?: number;
+  };
+  header?: { background?: string; text?: string; border?: string; height?: number };
+  pageHeader?: { background?: string; text?: string; mutedText?: string; border?: string };
+  content?: { padding?: number };
+}
+
 export interface ThemeTokens {
   colors: ThemeColors;
   typography?: { fontFamily?: string; baseSize?: number };
   shape?: { radius?: number };
   density?: 'compact' | 'comfortable';
+  layout?: ThemeLayout;
 }
 
 export interface ThemeDefinition {

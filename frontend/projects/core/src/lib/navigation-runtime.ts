@@ -106,6 +106,22 @@ export class NavigationRuntime {
     return (best as { path: string[] } | null)?.path ?? null;
   }
 
+  /** Etichette del percorso (caso d'uso, gruppi, voce) che porta a una schermata: servono alle briciole di pane. */
+  trail(useCaseId: string, screen: string, params: Record<string, unknown> = {}): string[] | null {
+    const useCase = this.useCase(useCaseId);
+    const path = this.locate(useCaseId, screen, params);
+    if (!useCase || !path) return null;
+    const labels = [useCase.label];
+    let items: VisibleItem[] = useCase.items;
+    for (const id of path) {
+      const item = items.find((i) => i.id === id);
+      if (!item) break;
+      labels.push(item.label);
+      items = item.kind === 'group' ? item.children : [];
+    }
+    return labels;
+  }
+
   /** Caso d'uso a cui appartiene una schermata: prima quello preferito (di norma il corrente), poi gli altri. */
   useCaseOf(screen: string, params: Record<string, unknown> = {}, preferred?: string | null): string | null {
     const order = [...this.useCases()].sort((a, b) => Number(b.id === preferred) - Number(a.id === preferred));

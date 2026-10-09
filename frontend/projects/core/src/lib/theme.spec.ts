@@ -29,4 +29,32 @@ describe('themeToCssVars', () => {
     expect(vars['--lc-gap']).toBe('12px');
     expect(vars['--lc-color-muted']).toBe('#eee');
   });
+
+  it('ricava il guscio dai colori base se il tema non dichiara il layout', () => {
+    const vars = themeToCssVars({ ...theme, tokens: { colors: theme.tokens.colors } });
+    expect(vars['--lc-sider-bg']).toBe('#222');
+    expect(vars['--lc-sider-text']).toBe('#eee');
+    expect(vars['--lc-sider-active-text']).toBe('#111');
+    expect(vars['--lc-sider-width']).toBe('256px');
+    expect(vars['--lc-header-height']).toBe('56px');
+    expect(vars['--lc-content-padding']).toBe('24px');
+  });
+
+  it('applica i token di layout dichiarati dal tema', () => {
+    const vars = themeToCssVars({
+      ...theme,
+      tokens: {
+        ...theme.tokens,
+        layout: { sider: { tone: 'dark', background: '#001529', text: '#fff', activeBackground: '#123456', width: 300, collapsedWidth: 64 }, header: { background: '#eee', height: 48 }, pageHeader: { background: '#fafafa' }, content: { padding: 16 } },
+      },
+    });
+    expect(vars['--lc-sider-bg']).toBe('#001529');
+    expect(vars['--lc-sider-active-bg']).toBe('#123456');
+    expect(vars['--lc-sider-width']).toBe('300px');
+    expect(vars['--lc-sider-collapsed-width']).toBe('64px');
+    expect(vars['--lc-header-bg']).toBe('#eee');
+    expect(vars['--lc-header-height']).toBe('48px');
+    expect(vars['--lc-page-header-bg']).toBe('#fafafa');
+    expect(vars['--lc-content-padding']).toBe('16px');
+  });
 });
