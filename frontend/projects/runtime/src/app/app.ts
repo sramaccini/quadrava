@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterOutlet } from '@angular/router';
-import { IconComponent, SidebarComponent } from 'components';
+import { SidebarComponent, UserMenuComponent, type UserMenuItem } from 'components';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzLayoutModule } from 'ng-zorro-antd/layout';
 import { NzSelectModule } from 'ng-zorro-antd/select';
@@ -15,7 +15,7 @@ const THEMES = ['chiaro', 'classico', 'scuro'];
 /** Guscio dell'applicazione: barra superiore (profilo e tema della demo), menu laterale, contenuto e notifiche. */
 @Component({
   selector: 'lc-root',
-  imports: [FormsModule, RouterOutlet, IconComponent, SidebarComponent, NzButtonModule, NzLayoutModule, NzSelectModule],
+  imports: [FormsModule, RouterOutlet, SidebarComponent, UserMenuComponent, NzButtonModule, NzLayoutModule, NzSelectModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './app.scss',
   templateUrl: './app.html',
@@ -30,6 +30,8 @@ export class App {
   protected readonly themes = THEMES;
   protected readonly themeName = signal(THEMES[0]);
   protected readonly collapsed = signal(false);
+  /** Voci del menu utente prima dell'uscita, che il componente aggiunge da sé come ultima. */
+  protected readonly userItems = computed<UserMenuItem[]>(() => [{ id: 'permessi', label: `${this.permissions().length} permessi`, icon: 'safety', disabled: true }]);
   /** Stile del menu: lo dice il tema (barra laterale chiara o scura). */
   protected readonly siderTone = computed(() => {
     const theme = this.themeService.current();

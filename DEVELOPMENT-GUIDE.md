@@ -30,7 +30,7 @@ editor  (scaffold)
 * `schema`: JSON Schemas (`screen`, `theme`, `navigation`), Ajv validators, TypeScript types. The `.schema.ts` files are **generated** from the JSON by `tools/sync-schema.mjs`.
 * `expressions`: the CEL evaluator. No Angular dependency.
 * `core`: interpreter, action engine, ports, theme service, screen shell. **No UI-library code except the screen shell's alert and typography.**
-* `components`: everything that depends on NG-ZORRO (standard components, side menu, confirmation dialog, notifier, theme bridge).
+* `components`: everything that depends on NG-ZORRO (standard components, side menu, user menu, confirmation dialog, notifier, theme bridge).
 * `services`: production implementations of the ports.
 * `runtime`: the demo application; wiring only, plus `demo/` fakes.
 

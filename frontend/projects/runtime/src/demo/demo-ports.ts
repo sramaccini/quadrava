@@ -17,9 +17,19 @@ export const DEMO_PROFILES: Record<string, string[]> = {
 @Injectable({ providedIn: 'root' })
 export class DemoSession extends Authorization implements UserProvider {
   readonly username = signal('operatore');
+  /** Falso dopo l'uscita: nessun permesso finché non si accede di nuovo. */
+  readonly loggedIn = signal(true);
+
+  logout(): void {
+    this.loggedIn.set(false);
+  }
+
+  login(): void {
+    this.loggedIn.set(true);
+  }
 
   override can(permission: string): boolean {
-    return (DEMO_PROFILES[this.username()] ?? []).includes(permission);
+    return this.loggedIn() && (DEMO_PROFILES[this.username()] ?? []).includes(permission);
   }
 
   user(): Record<string, unknown> {

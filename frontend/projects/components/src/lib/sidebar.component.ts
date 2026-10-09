@@ -22,12 +22,13 @@ export interface NavigateEvent {
   imports: [FormsModule, IconComponent, NzButtonModule, NzMenuModule, NzSelectModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
-    :host { display: flex; align-self: stretch; }
-    .side { box-sizing: border-box; flex: none; width: var(--lc-sider-width, 256px); display: flex; flex-direction: column; overflow-x: hidden; overflow-y: auto;
+    :host { display: block; position: sticky; top: 0; z-index: 2; align-self: flex-start; height: 100vh; flex: none; }
+    .side { box-sizing: border-box; height: 100%; width: var(--lc-sider-width, 256px); display: flex; flex-direction: column; overflow-x: hidden; overflow-y: auto;
       background: var(--lc-sider-bg, #fff); color: var(--lc-sider-text, #1b2430); border-right: 1px solid var(--lc-sider-border, #e3e8ef);
       transition: width 0.2s; }
     .side.collapsed { width: var(--lc-sider-collapsed-width, 80px); }
     .logo { display: flex; align-items: center; gap: 12px; height: var(--lc-header-height, 56px); padding: 0 24px; flex: none; font-size: 18px; font-weight: 600; white-space: nowrap; overflow: hidden; }
+    .logo img { width: 32px; height: 32px; flex: none; }
     .logo .mark { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; flex: none; border-radius: var(--lc-radius, 6px); background: var(--lc-color-primary, #1f5fbf); color: var(--lc-color-on-primary, #fff); font-size: 16px; }
     .collapsed .logo { padding: 0; justify-content: center; }
     .collapsed .logo .name { display: none; }
@@ -52,13 +53,19 @@ export interface NavigateEvent {
     a.leaf { display: flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; }
     .collapsed .label { display: none; }
     .empty { margin: 0; padding: 0 16px; color: var(--lc-sider-muted); font-size: .9em; }
-    .foot { flex: none; border-top: 1px solid var(--lc-sider-border, #e3e8ef); padding: 8px; text-align: center; }
-    .foot button { color: var(--lc-sider-text); }
+    /* Pulsante tondo sul bordo della barra, come in Ant Design Pro. Sta fuori dall'area che scorre. */
+    .toggle { position: absolute; z-index: 3; top: calc(var(--lc-header-height, 56px) / 2 - 13px); right: -13px; width: 26px; height: 26px; min-width: 26px; padding: 0;
+      display: inline-flex; align-items: center; justify-content: center; font-size: 12px; color: var(--lc-color-on-surface, #1b2430); background: var(--lc-color-surface, #fff);
+      border: 1px solid var(--lc-sider-border, #d5dbe3); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); }
   `,
   template: `
     <aside class="side" [class.collapsed]="collapsed()">
       <div class="logo">
-        <span class="mark" aria-hidden="true"><lc-icon name="package" /></span>
+        @if (logo(); as src) {
+          <img [src]="src" alt="" />
+        } @else {
+          <span class="mark" aria-hidden="true"><lc-icon name="package" /></span>
+        }
         <span class="name">{{ brand() }}</span>
       </div>
       @if (!collapsed() && useCases().length > 1) {
@@ -120,20 +127,20 @@ export interface NavigateEvent {
       } @else if (!collapsed()) {
         <p class="empty">Nessuna funzione disponibile per il tuo profilo.</p>
       }
-      @if (showToggle()) {
-      <div class="foot">
-        <button nz-button nzType="text" class="toggle" type="button" [attr.aria-label]="collapsed() ? 'Espandi il menu' : 'Comprimi il menu'" [attr.aria-expanded]="!collapsed()" (click)="collapsed.set(!collapsed())">
-          <lc-icon name="menu" />
-        </button>
-      </div>
-      }
     </aside>
+    @if (showToggle()) {
+      <button nz-button nzShape="circle" class="toggle" type="button" [attr.aria-label]="collapsed() ? 'Espandi il menu' : 'Comprimi il menu'" [attr.aria-expanded]="!collapsed()" (click)="collapsed.set(!collapsed())">
+        <lc-icon [name]="collapsed() ? 'right' : 'left'" />
+      </button>
+    }
   `,
 })
 export class SidebarComponent {
   readonly navigation = input.required<NavigationRuntime>();
   /** Nome mostrato accanto al logo. */
   readonly brand = input('LowCode');
+  /** Indirizzo (relativo) dell'immagine del logo; se manca si mostra un'icona. */
+  readonly logo = input<string | null>(null);
   /** Caso d'uso mostrato; se manca o non è visibile si mostra il primo disponibile. */
   readonly useCaseId = input<string | null>(null);
   /** Schermata corrente, per evidenziare la voce attiva e aprire i suoi gruppi. */

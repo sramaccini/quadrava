@@ -105,6 +105,29 @@ describe('App (demo)', () => {
     expect(el.querySelector('lc-sidebar a[aria-current="page"]')?.textContent).toContain('Elenco fatture');
   });
 
+  it('l’intestazione di pagina mostra le briciole di pane dal menu e il logo sta sopra il menu', async () => {
+    const { fixture, el } = await start();
+    await until(fixture, () => rows(el) > 0, 'elenco fatture');
+    const crumbs = [...el.querySelectorAll('main nz-breadcrumb-item')].map((n) => (n.textContent ?? '').replace('/', '').trim());
+    expect(crumbs).toEqual(['Consultazione Fatture', 'Elenco fatture']);
+    expect(el.querySelector('lc-sidebar .logo img')?.getAttribute('src')).toBe('logo.svg');
+  });
+
+  it('il menu utente mostra il nome e termina la sessione con l’ultima voce, poi si può accedere di nuovo', async () => {
+    const { fixture, el } = await start();
+    await until(fixture, () => rows(el) > 0, 'elenco fatture');
+    expect(el.querySelector('lc-user-menu .name')?.textContent?.trim()).toBe('operatore');
+    (el.querySelector('lc-user-menu button.trigger') as HTMLButtonElement).click();
+    await until(fixture, () => document.querySelectorAll('.ant-dropdown li[nz-menu-item]').length > 0, 'menu utente');
+    const items = [...document.querySelectorAll<HTMLElement>('.ant-dropdown li[nz-menu-item]')];
+    expect(items.at(-1)?.textContent?.trim()).toBe('Esci');
+    items.at(-1)!.click();
+    await until(fixture, () => !!el.querySelector('.signed-out'), 'sessione terminata');
+    expect(el.querySelector('lc-sidebar')).toBeNull();
+    (el.querySelector('.signed-out button') as HTMLButtonElement).click();
+    await until(fixture, () => !el.querySelector('.signed-out'), 'di nuovo collegato');
+  });
+
   it('i casi d’uso dipendono dai permessi del profilo', async () => {
     const { fixture, el } = await start();
     await until(fixture, () => useCases().length > 0, 'selettore');

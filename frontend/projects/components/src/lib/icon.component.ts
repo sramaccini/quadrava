@@ -8,10 +8,15 @@ import {
   FolderOutline,
   HomeOutline,
   InboxOutline,
+  LeftOutline,
+  LogoutOutline,
   MenuOutline,
+  RightOutline,
+  SafetyOutline,
   SearchOutline,
   SettingOutline,
   UnorderedListOutline,
+  UserOutline,
 } from '@ant-design/icons-angular/icons';
 import type { IconDefinition } from '@ant-design/icons-angular';
 import { NzIconModule } from 'ng-zorro-antd/icon';
@@ -33,6 +38,11 @@ export const ICON_TYPES: Record<string, { type: string; icon: IconDefinition }> 
   euro: { type: 'euro', icon: EuroOutline },
   inbox: { type: 'inbox', icon: InboxOutline },
   settings: { type: 'setting', icon: SettingOutline },
+  user: { type: 'user', icon: UserOutline },
+  logout: { type: 'logout', icon: LogoutOutline },
+  left: { type: 'left', icon: LeftOutline },
+  right: { type: 'right', icon: RightOutline },
+  safety: { type: 'safety', icon: SafetyOutline },
 };
 
 /** Tipo NG-ZORRO di un nome di icona del set integrato, oppure `null` se il nome non è noto. */
