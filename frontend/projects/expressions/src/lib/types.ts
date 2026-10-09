@@ -34,4 +34,14 @@ export type ExpressionErrorHandler = (info: { source: string; error: string }) =
 
 export interface ExpressionEngineOptions {
   onError?: ExpressionErrorHandler;
+  /** Se assente, `t()` restituisce il testo di ripiego (o la chiave) e i formati usano `it-IT`. */
+  i18n?: ExpressionI18n;
+}
+
+/** Aggancio dell'internazionalizzazione: la lingua attiva e la ricerca delle traduzioni. Nel runtime lo fornisce il servizio `I18n` del core. */
+export interface ExpressionI18n {
+  /** Lingua attiva come tag BCP 47 (per `Intl`), per esempio `it-IT`. */
+  locale(): string;
+  /** Testo tradotto di una chiave; se manca ovunque `fallback`, e in sua assenza la chiave stessa. */
+  translate(key: string, fallback: string | undefined, params: Record<string, unknown>): string;
 }

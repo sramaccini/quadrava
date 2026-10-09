@@ -1,6 +1,7 @@
 import { computed } from '@angular/core';
 import { ExpressionEngine } from 'expressions';
 import type { NavigationDefinition, NavigationItem, NavigationLeaf, NavigationUseCase } from 'schema';
+import type { I18n } from './i18n';
 import type { Authorization, RuntimeDiagnostics, UserProvider } from './ports';
 
 /** Voce visibile che apre una schermata. I parametri sono già testi, pronti per la query string. */
@@ -34,6 +35,8 @@ export interface NavigationDeps {
   authorization: Authorization;
   userProvider: UserProvider;
   diagnostics?: RuntimeDiagnostics | null;
+  /** Lingua e traduzioni: abilita `{{ t('chiave', 'ripiego') }}` nelle etichette del menu. */
+  i18n?: I18n | null;
 }
 
 /** Posizione corrente nella navigazione: caso d'uso e percorso di id dal gruppo alla voce. */
@@ -62,8 +65,20 @@ export class NavigationRuntime {
   ) {
     this.engine = new ExpressionEngine(
       { can: (permission) => deps.authorization.can(permission) },
-      { onError: (info) => this.report(info.source, info.error) },
+      {
+        onError: (info) => this.report(info.source, info.error),
+        i18n: deps.i18n
+          ? { locale: () => deps.i18n!.intlLocale(), translate: (key, fallback, params) => deps.i18n!.lookup(key, fallback, params).text }
+          : undefined,
+      },
     );
+  }
+
+  /** Etichetta del menu: se contiene `{{ }}` (per esempio `t('chiave')`) la valuta; in caso di errore resta il testo scritto. */
+  private text(label: string): string {
+    if (!label.includes('{{')) return label;
+    const result = this.engine.interpolate(label, { user: this.deps.userProvider.user() });
+    return result.ok && result.value !== null && result.value !== undefined ? String(result.value) : label;
   }
 
   useCase(id: string): VisibleUseCase | null {
@@ -131,7 +146,7 @@ export class NavigationRuntime {
   private filterUseCase(useCase: NavigationUseCase): VisibleUseCase | null {
     if (!this.allowed(useCase)) return null;
     const items = this.filterItems(useCase.items);
-    return items.length > 0 ? { id: useCase.id, label: useCase.label, icon: useCase.icon, items } : null;
+    return items.length > 0 ? { id: useCase.id, label: this.text(useCase.label), icon: useCase.icon, items } : null;
   }
 
   private filterItems(items: NavigationItem[]): VisibleItem[] {
@@ -140,9 +155,9 @@ export class NavigationRuntime {
       if (!this.allowed(item)) continue;
       if ('children' in item) {
         const children = this.filterItems(item.children);
-        if (children.length > 0) result.push({ kind: 'group', id: item.id, label: item.label, icon: item.icon, children });
+        if (children.length > 0) result.push({ kind: 'group', id: item.id, label: this.text(item.label), icon: item.icon, children });
       } else {
-        result.push(toLeaf(item));
+        result.push(toLeaf(item, this.text(item.label)));
       }
     }
     return result;
@@ -161,9 +176,9 @@ export class NavigationRuntime {
   }
 }
 
-function toLeaf(item: NavigationLeaf): VisibleLeaf {
+function toLeaf(item: NavigationLeaf, label: string): VisibleLeaf {
   const params = Object.fromEntries(Object.entries(item.params ?? {}).map(([k, v]) => [k, String(v)]));
-  return { kind: 'leaf', id: item.id, label: item.label, icon: item.icon, screen: item.screen, params };
+  return { kind: 'leaf', id: item.id, label, icon: item.icon, screen: item.screen, params };
 }
 
 function firstLeafOf(items: VisibleItem[]): VisibleLeaf | null {

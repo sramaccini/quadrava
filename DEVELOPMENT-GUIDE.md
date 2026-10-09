@@ -84,6 +84,14 @@ The Italian locale is patched in `provide.ts` (`rangeQuarterPlaceholder` is miss
 * The application shell is theme-driven too. `tokens.layout` (optional) sets `sider` (tone, background, text, mutedText, activeBackground, activeText, border, width, collapsedWidth), `header` (background, text, border, height), `pageHeader` and `content.padding`; they become `--lc-sider-*`, `--lc-header-*`, `--lc-page-header-*` and `--lc-content-padding`, with fallbacks derived from the base colours. The side bar and page header read only those variables; `tone` merely selects the NG-ZORRO menu style.
 * Never hard-code colours in components: use `var(--lc-*)` or NG-ZORRO tokens.
 
+## 6b. Texts and languages
+
+* Never write user-facing text in a component. Texts that come from the JSON go through `runtime().text(value, scope)`, which evaluates `{{ }}` (including `t()`); this includes labels of columns, fields and actions. The platform's own strings use `inject(I18n).t('lc.something')` and a key in `components/src/lib/messages.ts` (add it to both `it` and `en`).
+* `I18n` (core) holds the active language and two layers of messages: the application's (wins) and the built-in `lc.*` layer. Reading it inside a template or a `computed` is reactive: changing the language updates the screen without reloading.
+* Expression functions (`t`, `fmtCurrency`, `fmtNumber`, `fmtDate`, `plural`) live in `expressions` and have no side effects. CEL cannot register namespaced functions (`fmt.currency`), so the names are flat. A map with mixed value types in `t()` needs `dyn(...)` around the literals: `{'n': dyn(1), 'name': state.name}`.
+* The result is always plain text. Never bind a translation to `innerHTML` or to NG-ZORRO modal/message strings without escaping.
+* NG-ZORRO's own locale follows the active language (`provide.ts`); an unknown language falls back to English.
+
 ## 7. Ports and dependency injection
 
 Everything external to the interpreter is an abstract class used as a DI token: `Authorization`, `UserProvider`, `DataClient`, `ScreenNavigator`, `Notifier`, `RuntimeDiagnostics`, `Confirmation`. To add one: declare the abstract class in `core`, inject it where needed, provide a fake in `runtime/demo`, and a real implementation in `services` (or `components` when it is UI). Components must depend on the abstraction only.
@@ -138,4 +146,5 @@ Layout, real focus and the dark theme are not covered by tests (the application 
 * `services` is not yet wired into `runtime`; the BFF lacks CSRF protection, API forwarding and a host allow-list.
 * Java modules are not yet compiled in CI.
 * Ajv needs `unsafe-eval` under CSP until validators are precompiled.
-* `validate:examples` does not check CEL expressions.
+* `validate:examples` checks translation keys but not CEL expressions.
+* Only the examples `navigation.json`, `fatture-elenco.json` and part of `vetrina-base.json` use translation keys; the other screens stay in Italian (they show the fallback behaviour).

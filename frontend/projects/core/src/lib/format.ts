@@ -1,8 +1,4 @@
-import { InjectionToken } from '@angular/core';
 import type { ColumnDefinition, Tone } from 'schema';
-
-/** Lingua usata per date, importi e numeri. Per ora una sola per applicazione. */
-export const LOWCODE_LOCALE = new InjectionToken<string>('LOWCODE_LOCALE', { providedIn: 'root', factory: () => 'it-IT' });
 
 export interface FormattedValue {
   text: string;
@@ -36,7 +32,7 @@ const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
  * Trasforma un valore della riga nel testo da mostrare. Non lancia mai eccezioni: un valore che non si può
  * formattare (data non valida, importo non numerico) viene mostrato com'è, e `null` o `undefined` diventano testo vuoto.
  */
-export function formatValue(value: unknown, spec: FormatSpec, locale = 'it-IT'): FormattedValue {
+export function formatValue(value: unknown, spec: FormatSpec, locale = 'it-IT', labels: { yes: string; no: string } = { yes: 'Sì', no: 'No' }): FormattedValue {
   if (value === null || value === undefined) return { text: '' };
   try {
     switch (spec.format) {
@@ -60,7 +56,7 @@ export function formatValue(value: unknown, spec: FormatSpec, locale = 'it-IT'):
         return { text: dateTime(locale, options).format(date) };
       }
       case 'boolean':
-        return { text: value === true ? 'Sì' : value === false ? 'No' : String(value) };
+        return { text: value === true ? labels.yes : value === false ? labels.no : String(value) };
       case 'badge': {
         const text = String(value);
         const own = spec.badges && Object.prototype.hasOwnProperty.call(spec.badges, text) ? spec.badges[text] : undefined;

@@ -118,6 +118,16 @@ A theme is a document of **design tokens only** (colours, typography, radius, de
 
 A navigation document lists **use cases** (functional areas), each with a menu of up to three levels (group → subgroup → item). Items point to a screen with optional parameters and may carry `requires` (a permission) and `visibleIf`. Groups and use cases with no visible items disappear. The platform has no built-in use cases; those in the examples are only examples.
 
+### Texts, tooltips and languages
+
+Every text is a string that may contain `{{ … }}` expressions, and every component (and every action, field and column) accepts an optional `tooltip` (plain text, never HTML). Translations live in **catalogues**, one flat JSON file per language (`examples/i18n/it.json`, `en.json`), and a screen refers to them with `t('key', 'fallback text', {params})`:
+
+```json
+{ "type": "button", "label": "{{ t('fatture.nuova', 'Nuova fattura') }}", "tooltip": "{{ t('fatture.nuova_aiuto', 'Crea una fattura') }}" }
+```
+
+The lookup order is: active language, default language, the fallback written in the JSON, the key itself. Messages use a subset of ICU (`{n}`, `plural`, `select`). Expressions also offer `fmtCurrency(v, 'EUR')`, `fmtNumber(v)`, `fmtDate(v)` and `plural(n, 'one', '{n} many')`, all following the active language, and `user.locale` holds the language code. The platform's own strings (`lc.*`) ship in Italian and English; an application can override any of them. Menu labels use the same mechanism. `validate:examples` checks that every language has the same keys and that every key used with `t()` exists.
+
 ## Repository layout
 
 | Folder | Content |
@@ -228,6 +238,7 @@ Open point: Ajv generates validators with `new Function`, so browser-side valida
 * Components still to build (see the catalogue): sorting, selection, detail rows, dialog with form, row-action menus, repeatable form rows, tree and calendar views.
 * Menu: arrow-key navigation, badges, search.
 * Check expressions in `validate:examples` too.
+* Language catalogues loaded from a service (today they are files shipped with the app) and an editor picker for translation keys.
 
 ## License
 

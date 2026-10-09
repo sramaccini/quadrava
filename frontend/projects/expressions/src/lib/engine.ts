@@ -1,4 +1,5 @@
 import { Environment } from '@marcbachmann/cel-js';
+import { formatMessage } from './message-format';
 import { parseTemplate } from './template';
 import type {
   EvalContext,
@@ -6,28 +7,32 @@ import type {
   ExpressionCheck,
   ExpressionEngineOptions,
   ExpressionErrorHandler,
+  ExpressionI18n,
   PermissionChecker,
 } from './types';
 
 /**
  * Valutatore delle espressioni del linguaggio (CEL). Principi:
- * - nessun accesso a rete, DOM o codice arbitrario: l'unica funzione esposta è `can(permesso)`;
+ * - nessun accesso a rete, DOM o codice arbitrario: le uniche funzioni esposte sono `can(permesso)` e quelle di presentazione (`t`, `fmt*`, `plural`), senza effetti collaterali;
  * - limiti strutturali sull'espressione (profondità, nodi, argomenti);
  * - non lancia mai eccezioni: restituisce un esito, e le condizioni falliscono "chiuse" (valore di ripiego).
  */
 export class ExpressionEngine {
   private readonly env: Environment;
   private readonly onError?: ExpressionErrorHandler;
+  private readonly i18n?: ExpressionI18n;
 
   constructor(
     private readonly permissions: PermissionChecker,
     options: ExpressionEngineOptions = {},
   ) {
     this.onError = options.onError;
+    this.i18n = options.i18n;
     this.env = new Environment({
       unlistedVariablesAreDyn: true,
       limits: { maxAstNodes: 1000, maxDepth: 32, maxListElements: 100, maxMapEntries: 100, maxCallArguments: 8 },
     }).registerFunction('can(string): bool', (permission: string) => this.permissions.can(permission));
+    this.registerPresentation();
     // I numeri che arrivano da JSON (stato, righe, form) sono "double" per CEL, mentre i letterali come 1 sono "int":
     // senza queste regole `state.pagina + 1` darebbe errore. Il risultato è un numero decimale.
     const arithmetic: Record<string, (a: number, b: number) => number> = {
@@ -41,6 +46,51 @@ export class ExpressionEngine {
         this.env.registerOperator(`${left} ${op} ${right}`, (a: unknown, b: unknown) => fn(Number(a), Number(b)));
       }
     }
+  }
+
+  /**
+   * Funzioni di presentazione, senza effetti collaterali e che seguono la lingua attiva:
+   * `t(chiave[, ripiego[, parametri]])`, `fmtCurrency(v, 'EUR')`, `fmtNumber(v)`, `fmtDate(v)`, `plural(n, 'una riga', '{n} righe')`.
+   * Un valore non formattabile (null, testo non numerico) diventa testo vuoto: la presentazione non fa fallire la schermata.
+   */
+  private registerPresentation(): void {
+    const locale = (): string => this.i18n?.locale() ?? 'it-IT';
+    const translate = (key: string, fallback: string | undefined, params: unknown): string => {
+      const plain = toParams(params);
+      return this.i18n ? this.i18n.translate(key, fallback, plain) : formatMessage(fallback ?? key, plain, locale());
+    };
+    const num = (v: unknown): number | null => {
+      const n = toPlain(v);
+      if (typeof n === 'number') return Number.isFinite(n) ? n : null;
+      if (typeof n === 'string' && n.trim() !== '') return Number.isFinite(Number(n)) ? Number(n) : null;
+      return null;
+    };
+    this.env
+      .registerFunction('t(string): string', (key: string) => translate(key, undefined, {}))
+      .registerFunction('t(string, string): string', (key: string, fallback: string) => translate(key, fallback, {}))
+      .registerFunction('t(string, string, dyn): string', (key: string, fallback: string, params: unknown) => translate(key, fallback, params))
+      .registerFunction('fmtCurrency(dyn, string): string', (v: unknown, currency: string) => {
+        const n = num(v);
+        return n === null ? '' : new Intl.NumberFormat(locale(), { style: 'currency', currency }).format(n);
+      })
+      .registerFunction('fmtNumber(dyn): string', (v: unknown) => {
+        const n = num(v);
+        return n === null ? '' : new Intl.NumberFormat(locale()).format(n);
+      })
+      .registerFunction('fmtDate(dyn): string', (v: unknown) => {
+        const raw = toPlain(v);
+        if (typeof raw !== 'string' && typeof raw !== 'number') return '';
+        const dateOnly = typeof raw === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(raw);
+        const date = new Date(raw);
+        if (Number.isNaN(date.getTime())) return '';
+        return new Intl.DateTimeFormat(locale(), { dateStyle: 'short', ...(dateOnly ? { timeZone: 'UTC' } : {}) }).format(date);
+      })
+      .registerFunction('plural(dyn, string, string): string', (v: unknown, one: string, other: string) => {
+        const n = num(v);
+        if (n === null) return '';
+        const text = new Intl.PluralRules(locale()).select(n) === 'one' ? one : other;
+        return text.replaceAll('{n}', new Intl.NumberFormat(locale()).format(n));
+      });
   }
 
   /** Valuta un'espressione CEL "nuda", senza doppie graffe. */
@@ -134,6 +184,11 @@ export class ExpressionEngine {
     this.onError?.({ source, error });
     return { ok: false, error };
   }
+}
+
+function toParams(value: unknown): Record<string, unknown> {
+  const plain = toPlain(value);
+  return plain !== null && typeof plain === 'object' && !Array.isArray(plain) ? (plain as Record<string, unknown>) : {};
 }
 
 function firstLine(message: string | undefined): string {

@@ -1,8 +1,8 @@
 {
   "schemaVersion": "1.0",
   "screen": "fatture-elenco",
-  "title": "Fatture",
-  "description": "Elenco delle fatture con filtro per stato e invio delle bozze.",
+  "title": "{{ t('fatture.fatture', 'Fatture') }}",
+  "description": "{{ t('fatture.elenco_delle_fatture_con_filtro', 'Elenco delle fatture con filtro per stato e invio delle bozze.') }}",
   "requires": "fatture.fattura.leggi",
   "dataSources": {
     "fatture": {
@@ -31,7 +31,7 @@
         {
           "name": "stato",
           "type": "select",
-          "label": "Stato",
+          "label": "{{ t('fatture.stato', 'Stato') }}",
           "options": [
             "bozza",
             "inviata",
@@ -47,25 +47,25 @@
       "columns": [
         {
           "field": "numero",
-          "label": "Numero"
+          "label": "{{ t('fatture.numero', 'Numero') }}"
         },
         {
           "field": "cliente",
-          "label": "Cliente"
+          "label": "{{ t('fatture.cliente', 'Cliente') }}"
         },
         {
           "field": "importo",
-          "label": "Importo (€)"
+          "label": "{{ t('fatture.importo', 'Importo (€)') }}"
         },
         {
           "field": "stato",
-          "label": "Stato"
+          "label": "{{ t('fatture.stato', 'Stato') }}"
         }
       ],
       "rowActions": [
         {
           "id": "btn-invia",
-          "label": "Invia",
+          "label": "{{ t('fatture.invia', 'Invia') }}",
           "visibleIf": "{{can('fatture.fattura.crea') && row.stato == 'bozza'}}",
           "onClick": [
             {
@@ -74,14 +74,14 @@
                 "id": "{{row.id}}"
               },
               "onError": {
-                "toast": "Invio non riuscito"
+                "toast": "{{ t('fatture.invio_non_riuscito', 'Invio non riuscito') }}"
               }
             },
             {
               "refresh": "fatture"
             },
             {
-              "toast": "Fattura {{row.numero}} inviata"
+              "toast": "{{ t('fatture.inviata', 'Fattura {n} inviata', {'n': row.numero}) }}"
             }
           ]
         }

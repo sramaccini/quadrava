@@ -117,6 +117,49 @@ describe('ScreenRuntime', () => {
   });
 });
 
+describe('ScreenRuntime: lingua e traduzioni', () => {
+  let fakes: Fakes;
+  let injector: Injector;
+  const screenWith = (components: ScreenDefinition['components']): ScreenDefinition => ({ schemaVersion: '1.0', screen: 'p', components });
+
+  beforeEach(() => {
+    fakes = new Fakes();
+    injector = TestBed.inject(Injector);
+    fakes.i18n.addMessages('it', { 'p.ciao': 'Ciao {nome}' });
+    fakes.i18n.addMessages('en', { 'p.ciao': 'Hello {nome}' });
+  });
+
+  it('text() traduce con la lingua attiva e segue il cambio di lingua', () => {
+    const rt = fakes.runtime(screenWith([]), injector);
+    const template = "{{ t('p.ciao', 'Ciao {nome}', {'nome': user.username}) }}";
+    expect(rt.text(template)).toBe('Ciao test');
+    fakes.i18n.setLocale('en');
+    expect(rt.text(template)).toBe('Hello test');
+  });
+
+  it('espone la lingua come user.locale', () => {
+    const rt = fakes.runtime(screenWith([]), injector);
+    fakes.i18n.setLocale('en');
+    expect(rt.text('{{ user.locale }}')).toBe('en');
+  });
+
+  it('una chiave senza traduzione e senza ripiego mostra la chiave e viene segnalata una sola volta', async () => {
+    const rt = fakes.runtime(screenWith([]), injector);
+    expect(rt.text("{{ t('p.manca') }}")).toBe('p.manca');
+    expect(rt.text("{{ t('p.manca') }}")).toBe('p.manca');
+    await Promise.resolve();
+    expect(fakes.reports.filter((r) => r.error.includes('p.manca'))).toHaveLength(1);
+  });
+
+  it('i messaggi generici del runtime seguono la lingua', () => {
+    const rt = fakes.runtime(screenWith([]), injector);
+    fakes.i18n.addMessages('en', { 'lc.operationFailed': 'Operation failed' }, 'builtin');
+    expect(rt.systemText('lc.operationFailed', 'Operazione non riuscita')).toBe('Operazione non riuscita');
+    fakes.i18n.setLocale('en');
+    expect(rt.systemText('lc.operationFailed', 'Operazione non riuscita')).toBe('Operation failed');
+  });
+});
+
 describe('runSteps', () => {
   let fakes: Fakes;
   let injector: Injector;

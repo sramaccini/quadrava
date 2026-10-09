@@ -3,6 +3,7 @@ import type { ScreenRuntime } from './screen-runtime';
 import type { Scope } from './types';
 
 const GENERIC_ERROR = 'Operazione non riuscita';
+const genericError = (runtime: ScreenRuntime): string => runtime.systemText('lc.operationFailed', GENERIC_ERROR);
 
 /**
  * Esegue una sequenza di passi in ordine. Si ferma al primo passo che fallisce
@@ -16,7 +17,7 @@ export async function runSteps(runtime: ScreenRuntime, steps: Step[], scope: Sco
       ok = await runStep(runtime, step, scope);
     } catch (e) {
       runtime.report('azione', e instanceof Error ? e.message : String(e));
-      runtime.toast(GENERIC_ERROR, 'error');
+      runtime.toast(genericError(runtime), 'error');
     }
     if (!ok) return false;
   }
@@ -29,13 +30,13 @@ async function runStep(runtime: ScreenRuntime, step: Step, scope: Scope): Promis
     const result = await runtime.execute(step.call, args, scope);
     if (result.ok) return true;
     // Il messaggio del server non viene mostrato all'utente: potrebbe contenere dettagli interni.
-    const handler = step.onError === undefined ? [{ toast: GENERIC_ERROR }] : Array.isArray(step.onError) ? step.onError : [step.onError];
+    const handler = step.onError === undefined ? [{ toast: genericError(runtime) }] : Array.isArray(step.onError) ? step.onError : [step.onError];
     await runSteps(runtime, handler, scope);
     return false;
   }
   if ('refresh' in step) {
     const result = await runtime.refresh(step.refresh);
-    if (!result.ok) runtime.toast(GENERIC_ERROR, 'error');
+    if (!result.ok) runtime.toast(genericError(runtime), 'error');
     return result.ok;
   }
   if ('navigate' in step) {

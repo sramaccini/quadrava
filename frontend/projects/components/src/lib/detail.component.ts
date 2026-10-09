@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
-import { LOWCODE_LOCALE, formatValue, type FormattedValue, type ScreenRuntime, type Scope } from 'core';
+import { I18n, formatValue, type FormattedValue, type ScreenRuntime, type Scope } from 'core';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzCardModule } from 'ng-zorro-antd/card';
 import { NzDescriptionsModule } from 'ng-zorro-antd/descriptions';
@@ -16,13 +16,13 @@ import { TONE_COLORS } from './shared';
   imports: [NzCardModule, NzDescriptionsModule, NzTagModule, NzAlertModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <nz-card role="region" [attr.aria-label]="node().title" [attr.aria-busy]="source().status === 'loading'" [nzTitle]="node().title ? runtime().text(node().title, scope())  : undefined">
+    <nz-card role="region" [attr.aria-label]="node().title ? runtime().text(node().title, scope()) : null" [attr.aria-busy]="source().status === 'loading'" [nzTitle]="node().title ? runtime().text(node().title, scope())  : undefined">
       @if (source().status === 'error') {
         <div role="alert"><nz-alert nzType="error" [nzMessage]="source().error ?? null" nzShowIcon /></div>
       } @else if (record(); as rec) {
         <nz-descriptions nzBordered nzSize="small" [nzColumn]="{ xxl: 3, xl: 3, lg: 3, md: 2, sm: 1, xs: 1 }">
           @for (field of fields(); track field.field) {
-            <nz-descriptions-item [nzTitle]="field.label ?? field.field">
+            <nz-descriptions-item [nzTitle]="runtime().text(field.label, scope()) || field.field">
               @if (view(rec, field); as v) {
                 @if (v.tone) {
                   <nz-tag [nzColor]="color(v.tone)">{{ v.text }}</nz-tag>
@@ -34,9 +34,9 @@ import { TONE_COLORS } from './shared';
           }
         </nz-descriptions>
       } @else if (source().status === 'ready') {
-        <p role="status">Nessun dato.</p>
+        <p role="status">{{ i18n.t('lc.noData') }}</p>
       } @else {
-        <p role="status">Caricamento…</p>
+        <p role="status">{{ i18n.t('lc.loading') }}</p>
       }
     </nz-card>
   `,
@@ -46,7 +46,7 @@ export class DetailComponent {
   readonly runtime = input.required<ScreenRuntime>();
   readonly scope = input<Scope>({});
 
-  private readonly locale = inject(LOWCODE_LOCALE);
+  protected readonly i18n = inject(I18n);
   protected readonly source = computed(() => this.runtime().source(this.node().source));
   protected readonly fields = computed(() => this.node().fields.filter((f) => this.runtime().isVisible(f, this.scope())));
   protected readonly record = computed<Record<string, unknown> | null>(() => {
@@ -55,7 +55,7 @@ export class DetailComponent {
   });
 
   protected view(record: Record<string, unknown>, field: ColumnDefinition): FormattedValue {
-    return formatValue(record[field.field], field, this.locale);
+    return formatValue(record[field.field], field, this.i18n.intlLocale(), { yes: this.i18n.t('lc.yes'), no: this.i18n.t('lc.no') });
   }
 
   protected color(tone: NonNullable<FormattedValue['tone']>): string {

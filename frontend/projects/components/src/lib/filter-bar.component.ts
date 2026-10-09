@@ -1,6 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, input, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import type { ScreenRuntime, Scope } from 'core';
+import { I18n, type ScreenRuntime, type Scope } from 'core';
 import { NzCheckboxModule } from 'ng-zorro-antd/checkbox';
 import { NzDatePickerModule } from 'ng-zorro-antd/date-picker';
 import { NzFormModule } from 'ng-zorro-antd/form';
@@ -24,19 +24,19 @@ import { nextId, parseIsoDate, toIsoDate } from './shared';
         @if (runtime().isVisible(field, scope())) {
           <nz-form-item>
             @if (field.type !== 'checkbox') {
-              <nz-form-label [nzFor]="id + field.name" [nzTooltipTitle]="field.tooltip ? runtime().text(field.tooltip, scope()) : undefined" [nzTooltipIcon]="'question-circle'">{{ field.label ?? field.name }}</nz-form-label>
+              <nz-form-label [nzFor]="id + field.name" [nzTooltipTitle]="field.tooltip ? runtime().text(field.tooltip, scope()) : undefined" [nzTooltipIcon]="'question-circle'">{{ runtime().text(field.label, scope()) || field.name }}</nz-form-label>
             }
             <nz-form-control>
               @switch (field.type) {
                 @case ('select') {
-                  <nz-select [nzId]="id + field.name" nzAllowClear nzPlaceHolder="Tutti" [ngModel]="value(field)" (ngModelChange)="change(field, $event)">
+                  <nz-select [nzId]="id + field.name" nzAllowClear [nzPlaceHolder]="i18n.t('lc.all')" [ngModel]="value(field)" (ngModelChange)="change(field, $event)">
                     @for (option of field.options ?? []; track option) {
                       <nz-option [nzValue]="option" [nzLabel]="option" />
                     }
                   </nz-select>
                 }
                 @case ('checkbox') {
-                  <label nz-checkbox [ngModel]="value(field) === true" (ngModelChange)="change(field, $event || null)">{{ field.label ?? field.name }}</label>
+                  <label nz-checkbox [ngModel]="value(field) === true" (ngModelChange)="change(field, $event || null)">{{ runtime().text(field.label, scope()) || field.name }}</label>
                 }
                 @case ('date') {
                   <nz-date-picker [nzId]="id + field.name" [ngModel]="dates()[field.name]" (ngModelChange)="change(field, toIso($event))" />
@@ -56,6 +56,7 @@ export class FilterBarComponent implements OnInit {
   readonly node = input.required<FilterBarNode>();
   readonly runtime = input.required<ScreenRuntime>();
   readonly scope = input<Scope>({});
+  protected readonly i18n = inject(I18n);
   protected readonly id = nextId('lc-filter') + '-';
   /** Date dei filtri `date`, calcolate una volta per valore (vedi il form). */
   protected readonly dates = computed<Record<string, Date | null>>(() =>

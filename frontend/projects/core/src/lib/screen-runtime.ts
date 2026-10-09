@@ -2,6 +2,7 @@ import { effect, Injector, signal, computed, untracked, type EffectRef } from '@
 import { ExpressionEngine, parseTemplate } from 'expressions';
 import type { NodeDefinition, ScreenDefinition } from 'schema';
 import { Authorization, Confirmation, DataClient, Notifier, RuntimeDiagnostics, ScreenNavigator, UserProvider, type DataRequest } from './ports';
+import type { I18n } from './i18n';
 import type { CallResult, DataSourceState, Scope } from './types';
 
 export interface RuntimeDeps {
@@ -13,6 +14,8 @@ export interface RuntimeDeps {
   diagnostics?: RuntimeDiagnostics | null;
   /** Se manca, i passi `confirm` non procedono (fail-closed). */
   confirmation?: Confirmation | null;
+  /** Lingua e traduzioni. Se manca, i testi restano in italiano e `t()` usa il ripiego. */
+  i18n?: I18n | null;
 }
 
 type Built = { ok: true; request: DataRequest } | { ok: false; error: string };
@@ -34,6 +37,7 @@ export class ScreenRuntime {
 
   private readonly effects: EffectRef[] = [];
   private readonly sequence = new Map<string, number>();
+  private readonly missingKeys = new Set<string>();
 
   constructor(
     readonly definition: ScreenDefinition,
@@ -43,7 +47,19 @@ export class ScreenRuntime {
   ) {
     this.engine = new ExpressionEngine(
       { can: (permission) => deps.authorization.can(permission) },
-      { onError: (info) => this.report(info.source, info.error) },
+      {
+        onError: (info) => this.report(info.source, info.error),
+        i18n: deps.i18n
+          ? {
+              locale: () => deps.i18n!.intlLocale(),
+              translate: (key, fallback, params) => {
+                const result = deps.i18n!.lookup(key, fallback, params);
+                if (!result.found) this.reportMissingKey(key);
+                return result.text;
+              },
+            }
+          : undefined,
+      },
     );
     // I filtri dichiarati esistono nello stato fin dall'inizio (nulli): i data source che li usano non vanno in errore al primo caricamento.
     this.seedFilters(definition.components);
@@ -88,7 +104,8 @@ export class ScreenRuntime {
 
   /** Contesto di valutazione: utente, stato, parametri e variabili del punto corrente. */
   context(scope: Scope = {}): Scope {
-    return { user: this.deps.userProvider.user(), state: this.state(), params: this.params, ...scope };
+    const user = this.deps.userProvider.user();
+    return { user: this.deps.i18n ? { ...user, locale: this.deps.i18n.locale() } : user, state: this.state(), params: this.params, ...scope };
   }
 
   isVisible(node: { visibleIf?: string; hiddenIf?: string }, scope: Scope = {}): boolean {
@@ -107,6 +124,18 @@ export class ScreenRuntime {
   /** readOnlyIf in errore => sola lettura (fail-closed). */
   isReadOnly(node: { readOnlyIf?: string }, scope: Scope = {}): boolean {
     return this.engine.evaluateCondition(node.readOnlyIf, this.context(scope), { whenMissing: false, fallback: true });
+  }
+
+  /** Scritta di sistema (messaggi generici del runtime): dal catalogo `lc.*` nella lingua attiva, oppure il ripiego italiano. */
+  systemText(key: string, fallback: string): string {
+    return this.deps.i18n ? this.deps.i18n.t(key, {}, fallback) : fallback;
+  }
+
+  /** Segnala una sola volta per schermata una chiave di traduzione che non esiste in nessuna lingua. */
+  private reportMissingKey(key: string): void {
+    if (this.missingKeys.has(key)) return;
+    this.missingKeys.add(key);
+    this.report('t()', `chiave di traduzione mancante: ${key}`);
   }
 
   /** Valuta un testo con `{{ }}`; in caso di errore restituisce il testo originale. */
@@ -209,7 +238,7 @@ export class ScreenRuntime {
     } catch (e) {
       const error = e instanceof Error ? e.message : String(e);
       this.report(`data source ${name}`, error);
-      if (this.sequence.get(name) === seq) this.setSource(name, { status: 'error', data: null, error: 'Caricamento non riuscito' });
+      if (this.sequence.get(name) === seq) this.setSource(name, { status: 'error', data: null, error: this.systemText('lc.loadFailed', 'Caricamento non riuscito') });
       return { ok: false, error };
     }
   }

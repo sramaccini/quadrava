@@ -1,6 +1,6 @@
 import { FormsModule } from '@angular/forms';
-import { ChangeDetectionStrategy, Component, computed, effect, input, model, output, signal, untracked } from '@angular/core';
-import type { NavigationRuntime, VisibleItem, VisibleLeaf } from 'core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, model, output, signal, untracked } from '@angular/core';
+import { I18n, type NavigationRuntime, type VisibleItem, type VisibleLeaf } from 'core';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzDropdownModule } from 'ng-zorro-antd/dropdown';
 import { NzMenuModule } from 'ng-zorro-antd/menu';
@@ -75,7 +75,7 @@ export interface NavigateEvent {
       @if (useCases().length > 1) {
         @if (!collapsed()) {
           <div class="usecase">
-            <label [for]="selectId">Caso d'uso</label>
+            <label [for]="selectId">{{ i18n.t('lc.useCase') }}</label>
             <nz-select [nzId]="selectId" [ngModel]="current()?.id" (ngModelChange)="useCaseChange.emit($event)">
               @for (u of useCases(); track u.id) {
                 <nz-option [nzValue]="u.id" [nzLabel]="u.label" />
@@ -86,7 +86,7 @@ export interface NavigateEvent {
           <!-- Da compressa il selettore diventa un'icona (sempre la stessa, a griglia: rappresenta le sezioni) con un menu a tendina. -->
           <div class="usecase-icon">
             <button nz-button nzType="text" class="usecase-trigger" type="button" nz-dropdown nzTrigger="click" nzPlacement="bottomLeft" [nzDropdownMenu]="useCaseMenu"
-              [attr.aria-label]="'Caso d’uso: ' + (current()?.label ?? '')" [attr.title]="current()?.label ?? null" aria-haspopup="menu">
+              [attr.aria-label]="i18n.t('lc.useCase') + ': ' + (current()?.label ?? '')" [attr.title]="current()?.label ?? null" aria-haspopup="menu">
               <lc-icon name="sections" />
             </button>
             <nz-dropdown-menu #useCaseMenu="nzDropdownMenu">
@@ -103,7 +103,7 @@ export interface NavigateEvent {
       }
 
       @if (current(); as uc) {
-        <nav [attr.aria-label]="'Menu ' + uc.label">
+        <nav [attr.aria-label]="i18n.t('lc.menu') + ' ' + uc.label">
           <ul nz-menu nzMode="inline" [nzTheme]="tone()" [nzInlineCollapsed]="collapsed()" [nzInlineIndent]="18">
             @for (g1 of uc.items; track g1.id) {
               @if (g1.kind === 'group') {
@@ -148,17 +148,18 @@ export interface NavigateEvent {
           </ul>
         </nav>
       } @else if (!collapsed()) {
-        <p class="empty">Nessuna funzione disponibile per il tuo profilo.</p>
+        <p class="empty">{{ i18n.t('lc.noFunctions') }}</p>
       }
     </aside>
     @if (showToggle()) {
-      <button nz-button nzShape="circle" class="toggle" type="button" [attr.aria-label]="collapsed() ? 'Espandi il menu' : 'Comprimi il menu'" [attr.aria-expanded]="!collapsed()" (click)="collapsed.set(!collapsed())">
+      <button nz-button nzShape="circle" class="toggle" type="button" [attr.aria-label]="collapsed() ? i18n.t('lc.expandMenu') : i18n.t('lc.collapseMenu')" [attr.aria-expanded]="!collapsed()" (click)="collapsed.set(!collapsed())">
         <lc-icon [name]="collapsed() ? 'right' : 'left'" />
       </button>
     }
   `,
 })
 export class SidebarComponent {
+  protected readonly i18n = inject(I18n);
   readonly navigation = input.required<NavigationRuntime>();
   /** Nome mostrato accanto al logo. */
   readonly brand = input('LowCode');

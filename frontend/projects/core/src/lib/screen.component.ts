@@ -4,6 +4,7 @@ import { NzBreadCrumbModule } from 'ng-zorro-antd/breadcrumb';
 import { NzTypographyModule } from 'ng-zorro-antd/typography';
 import type { ScreenDefinition } from 'schema';
 import { Authorization, Confirmation, DataClient, Notifier, RuntimeDiagnostics, ScreenNavigator, UserProvider } from './ports';
+import { I18n } from './i18n';
 import { NodeHostComponent } from './node-host.component';
 import { ScreenRuntime } from './screen-runtime';
 
@@ -27,17 +28,17 @@ import { ScreenRuntime } from './screen-runtime';
         @if (rt.definition.title || breadcrumb().length) {
           <header class="page-header">
             @if (breadcrumb().length) {
-              <nz-breadcrumb [nzAutoGenerate]="false" aria-label="Percorso">
+              <nz-breadcrumb [nzAutoGenerate]="false" [attr.aria-label]="i18n.t('lc.breadcrumb')">
                 @for (label of breadcrumb(); track $index) {
                   <nz-breadcrumb-item>{{ label }}</nz-breadcrumb-item>
                 }
               </nz-breadcrumb>
             }
             @if (rt.definition.title) {
-              <h1 nz-typography>{{ rt.definition.title }}</h1>
+              <h1 nz-typography>{{ rt.text(rt.definition.title) }}</h1>
             }
             @if (rt.definition.description) {
-              <p class="description">{{ rt.definition.description }}</p>
+              <p class="description">{{ rt.text(rt.definition.description) }}</p>
             }
           </header>
         }
@@ -49,7 +50,7 @@ import { ScreenRuntime } from './screen-runtime';
           </div>
         </div>
       } @else {
-        <div class="page-body"><div role="alert"><nz-alert nzType="error" nzShowIcon nzMessage="Non hai i permessi per visualizzare questa schermata." /></div></div>
+        <div class="page-body"><div role="alert"><nz-alert nzType="error" nzShowIcon [nzMessage]="i18n.t('lc.forbidden')" /></div></div>
       }
     }
   `,
@@ -70,6 +71,7 @@ export class ScreenComponent {
   private readonly notifier = inject(Notifier);
   private readonly diagnostics = inject(RuntimeDiagnostics, { optional: true });
   private readonly confirmation = inject(Confirmation, { optional: true });
+  protected readonly i18n = inject(I18n);
 
   constructor() {
     effect(() => {
@@ -89,6 +91,7 @@ export class ScreenComponent {
               notifier: this.notifier,
               confirmation: this.confirmation,
               diagnostics: this.diagnostics,
+              i18n: this.i18n,
             },
             this.injector,
             params,

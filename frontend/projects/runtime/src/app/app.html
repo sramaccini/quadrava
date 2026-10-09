@@ -16,18 +16,24 @@
     }
     <nz-layout class="main">
       <nz-header class="bar">
-        <span class="crumb">Piattaforma LowCode · demo</span>
+        <span class="crumb">{{ i18n.t('app.title') }}</span>
         <span class="spacer"></span>
-        <label for="lc-user">Profilo demo</label>
+        <label for="lc-user">{{ i18n.t('app.profile') }}</label>
         <nz-select nzId="lc-user" nzSize="small" class="pick" [ngModel]="session.username()" (ngModelChange)="session.username.set($event)">
           @for (p of profiles; track p) {
             <nz-option [nzValue]="p" [nzLabel]="p" />
           }
         </nz-select>
-        <label for="lc-theme">Tema</label>
+        <label for="lc-theme">{{ i18n.t('app.theme') }}</label>
         <nz-select nzId="lc-theme" nzSize="small" class="pick" [ngModel]="themeName()" (ngModelChange)="themeName.set($event)">
           @for (t of themes; track t) {
             <nz-option [nzValue]="t" [nzLabel]="t" />
+          }
+        </nz-select>
+        <label for="lc-lang">{{ i18n.t('app.language') }}</label>
+        <nz-select nzId="lc-lang" nzSize="small" class="pick" [ngModel]="i18n.locale()" (ngModelChange)="i18n.setLocale($event)">
+          @for (l of languages; track l) {
+            <nz-option [nzValue]="l" [nzLabel]="l" />
           }
         </nz-select>
         <lc-user-menu [name]="session.username()" [items]="userItems()" (logout)="session.logout()" />
@@ -38,14 +44,14 @@
         </main>
       </nz-content>
       @if (diagnostics.events().length) {
-        <nz-footer class="diag">Segnalazioni tecniche: {{ diagnostics.events().length }} (dettagli nella console del browser)</nz-footer>
+        <nz-footer class="diag">{{ i18n.t('app.diagnostics', { n: diagnostics.events().length }) }}</nz-footer>
       }
     </nz-layout>
   </nz-layout>
 } @else {
   <div class="signed-out" role="status">
-    <h1>Sessione terminata</h1>
-    <p>Hai effettuato l'uscita. In produzione qui si torna al provider di identità.</p>
-    <button nz-button nzType="primary" type="button" (click)="session.login()">Accedi di nuovo</button>
+    <h1>{{ i18n.t('app.signedOutTitle') }}</h1>
+    <p>{{ i18n.t('app.signedOutText') }}</p>
+    <button nz-button nzType="primary" type="button" (click)="session.login()">{{ i18n.t('app.signIn') }}</button>
   </div>
 }

@@ -53,7 +53,7 @@ export const NAVIGATION_SCHEMA: Record<string, unknown> = {
     "label": {
       "type": "string",
       "minLength": 1,
-      "maxLength": 60
+      "maxLength": 200
     },
     "useCase": {
       "type": "object",

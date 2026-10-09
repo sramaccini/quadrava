@@ -5,3 +5,4 @@
 export * from './lib/types';
 export * from './lib/engine';
 export * from './lib/template';
+export * from './lib/message-format';

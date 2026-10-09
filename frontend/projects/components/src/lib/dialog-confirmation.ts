@@ -1,6 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Injectable, inject } from '@angular/core';
-import { Confirmation } from 'core';
+import { Confirmation, I18n } from 'core';
 import { NZ_MODAL_DATA, NzModalService } from 'ng-zorro-antd/modal';
 
 /** Contenuto della finestra: il messaggio è sempre testo (nzContent come stringa sarebbe interpretato come HTML). */
@@ -22,6 +22,7 @@ export class ConfirmMessageComponent {
 export class DialogConfirmation extends Confirmation {
   private readonly modal = inject(NzModalService);
   private readonly doc = inject(DOCUMENT);
+  private readonly i18n = inject(I18n);
   private open = false;
 
   confirm(message: string): Promise<boolean> {
@@ -40,8 +41,8 @@ export class DialogConfirmation extends Confirmation {
       const ref = this.modal.confirm({
         nzContent: ConfirmMessageComponent,
         nzData: { message },
-        nzOkText: 'Conferma',
-        nzCancelText: 'Annulla',
+        nzOkText: this.i18n.t('lc.confirm'),
+        nzCancelText: this.i18n.t('lc.cancel'),
         nzAutofocus: 'cancel',
         nzKeyboard: true,
         nzMaskClosable: true,

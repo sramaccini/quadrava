@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
-import { LOWCODE_LOCALE, formatValue, runSteps, type FormattedValue, type ScreenRuntime, type Scope } from 'core';
+import { I18n, formatValue, runSteps, type FormattedValue, type ScreenRuntime, type Scope } from 'core';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzPaginationModule } from 'ng-zorro-antd/pagination';
@@ -43,7 +43,7 @@ const DEFAULT_PAGE_SIZE = 10;
           <thead>
             <tr>
               @for (column of columns(); track column.field) {
-                <th scope="col" [nzAlign]="numeric(column) ? 'right' : 'left'" nz-tooltip [nzTooltipTitle]="column.tooltip ? runtime().text(column.tooltip, scope()) : null">{{ column.label ?? column.field }}</th>
+                <th scope="col" [nzAlign]="numeric(column) ? 'right' : 'left'" nz-tooltip [nzTooltipTitle]="column.tooltip ? runtime().text(column.tooltip, scope()) : null">{{ runtime().text(column.label, scope()) || column.field }}</th>
               }
               @if (node().rowActions?.length) {
                 <th scope="col"><span class="visually-hidden">Azioni</span></th>
@@ -71,7 +71,7 @@ const DEFAULT_PAGE_SIZE = 10;
                         @if (runtime().isVisible(action, { row: row })) {
                           <span nz-tooltip [nzTooltipTitle]="action.tooltip ? runtime().text(action.tooltip, { row: row }) : null">
                             <button nz-button nzSize="small" type="button" [disabled]="busy() || !runtime().isEnabled(action, { row: row })" (click)="run(action, row)">
-                              {{ action.label }}
+                              {{ runtime().text(action.label, { row: row }) }}
                             </button>
                           </span>
                         }
@@ -86,9 +86,9 @@ const DEFAULT_PAGE_SIZE = 10;
         </div>
         <ng-template #empty>
           @if (source().status === 'loading') {
-            <span role="status">Caricamento…</span>
+            <span role="status">{{ i18n.t('lc.loading') }}</span>
           } @else {
-            <span role="status">Nessun risultato.</span>
+            <span role="status">{{ i18n.t('lc.noResults') }}</span>
           }
         </ng-template>
         @if (paged()) {
@@ -106,7 +106,7 @@ export class TableComponent {
   readonly scope = input<Scope>({});
   protected readonly busy = signal(false);
 
-  private readonly locale = inject(LOWCODE_LOCALE);
+  protected readonly i18n = inject(I18n);
   /** Colonne visibili all'utente: `visibleIf` e `hiddenIf` valgono anche per le colonne. */
   protected readonly columns = computed(() => this.node().columns.filter((c) => this.runtime().isVisible(c, this.scope())));
 
@@ -133,7 +133,7 @@ export class TableComponent {
   });
 
   protected cell(row: Record<string, unknown>, column: ColumnDefinition): FormattedValue {
-    return formatValue(row[column.field], column, this.locale);
+    return formatValue(row[column.field], column, this.i18n.intlLocale(), { yes: this.i18n.t('lc.yes'), no: this.i18n.t('lc.no') });
   }
 
   protected color(tone: NonNullable<FormattedValue['tone']>): string {

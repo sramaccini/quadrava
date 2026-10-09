@@ -1,4 +1,5 @@
 import { ExpressionEngine } from './engine';
+import { formatMessage } from './message-format';
 import { parseTemplate } from './template';
 import type { EvalContext } from './types';
 
@@ -159,5 +160,51 @@ describe('parseTemplate', () => {
       { kind: 'expr', source: 'x' },
       { kind: 'text', text: ' b' },
     ]);
+  });
+});
+
+describe('funzioni di presentazione', () => {
+  const none = { can: () => false };
+  const withI18n = (locale: string, catalog: Record<string, string> = {}) =>
+    new ExpressionEngine(none, {
+      i18n: { locale: () => locale, translate: (key, fallback, params) => formatMessage(catalog[key] ?? fallback ?? key, params, locale) },
+    });
+
+  it('t() senza servizio usa il ripiego, altrimenti la chiave', () => {
+    const engine = new ExpressionEngine(none);
+    expect(engine.evaluate("t('a.b', 'Ciao {n}', {'n': 2})")).toEqual({ ok: true, value: 'Ciao 2' });
+    expect(engine.evaluate("t('a.b')")).toEqual({ ok: true, value: 'a.b' });
+  });
+
+  it('t() usa il catalogo della lingua attiva', () => {
+    const engine = withI18n('en-GB', { 'a.b': 'Hello {nome}' });
+    expect(engine.interpolate("{{ t('a.b', 'Ciao {nome}', {'nome': state.n}) }}!", { state: { n: 'Ann' } })).toEqual({ ok: true, value: 'Hello Ann!' });
+  });
+
+  it('formatta importi, numeri e date secondo la lingua', () => {
+    const it = withI18n('it-IT');
+    const en = withI18n('en-GB');
+    expect(it.evaluate("fmtNumber(1234.5)")).toEqual({ ok: true, value: '1234,5' });
+    expect(en.evaluate("fmtNumber(1234.5)")).toEqual({ ok: true, value: '1,234.5' });
+    expect(it.evaluate("fmtCurrency(1234.5, 'EUR')")).toMatchObject({ ok: true, value: expect.stringContaining('1234,50') });
+    expect(en.evaluate("fmtDate('2026-10-09')")).toEqual({ ok: true, value: '09/10/2026' });
+    expect(it.evaluate("fmtDate('2026-10-09')")).toEqual({ ok: true, value: '09/10/26' });
+  });
+
+  it('un valore non formattabile diventa testo vuoto', () => {
+    const engine = withI18n('it-IT');
+    expect(engine.evaluate('fmtCurrency(state.x, "EUR")', { state: { x: null } })).toEqual({ ok: true, value: '' });
+    expect(engine.evaluate('fmtDate("non è una data")')).toEqual({ ok: true, value: '' });
+  });
+
+  it('plural() sceglie la forma e sostituisce {n}', () => {
+    const engine = withI18n('it-IT');
+    expect(engine.evaluate("plural(1, 'una riga', '{n} righe')")).toEqual({ ok: true, value: 'una riga' });
+    expect(engine.evaluate("plural(state.n, 'una riga', '{n} righe')", { state: { n: 3 } })).toEqual({ ok: true, value: '3 righe' });
+  });
+
+  it('check() conosce le funzioni di presentazione', () => {
+    expect(new ExpressionEngine(none).check("t('a', 'b')").valid).toBe(true);
+    expect(new ExpressionEngine(none).check("t(1)").valid).toBe(false);
   });
 });

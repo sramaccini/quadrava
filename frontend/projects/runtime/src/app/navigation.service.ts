@@ -2,7 +2,7 @@ import { Location } from '@angular/common';
 import { Injectable, inject, signal } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { ExpressionEngine } from 'expressions';
-import { Authorization, NavigationRuntime, RuntimeDiagnostics, ScreenNavigator, UserProvider, checkNavigation, type VisibleLeaf } from 'core';
+import { Authorization, I18n, NavigationRuntime, RuntimeDiagnostics, ScreenNavigator, UserProvider, checkNavigation, type VisibleLeaf } from 'core';
 import { validateNavigation } from 'schema';
 
 export interface RouteLocation {
@@ -22,6 +22,7 @@ export class NavigationService {
   private readonly authorization = inject(Authorization);
   private readonly userProvider = inject(UserProvider);
   private readonly diagnostics = inject(RuntimeDiagnostics, { optional: true });
+  private readonly i18n = inject(I18n);
 
   readonly runtime = signal<NavigationRuntime | null>(null);
   readonly problems = signal<string[]>([]);
@@ -50,7 +51,7 @@ export class NavigationService {
         this.problems.set(issues.map((i) => `${i.path}: ${i.message}`));
         return;
       }
-      this.runtime.set(new NavigationRuntime(result.value, { authorization: this.authorization, userProvider: this.userProvider, diagnostics: this.diagnostics }));
+      this.runtime.set(new NavigationRuntime(result.value, { authorization: this.authorization, userProvider: this.userProvider, diagnostics: this.diagnostics, i18n: this.i18n }));
     } catch (e) {
       this.problems.set([`Navigazione non caricata: ${e instanceof Error ? e.message : String(e)}`]);
     }

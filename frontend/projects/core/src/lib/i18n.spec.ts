@@ -1,0 +1,53 @@
+import { I18n, loadMessages } from './i18n';
+
+describe('I18n', () => {
+  function make(): I18n {
+    const i18n = new I18n();
+    i18n.addMessages('it', { 'a.salva': 'Salva', 'lc.ok': 'OK it' });
+    i18n.addMessages('en', { 'a.salva': 'Save', 'a.solo_en': 'Only English' });
+    i18n.addMessages('it', { 'lc.ok': 'OK builtin it', 'lc.altro': 'Altro' }, 'builtin');
+    return i18n;
+  }
+
+  it('cerca nella lingua attiva, poi nella predefinita, poi nel ripiego, poi la chiave', () => {
+    const i18n = make();
+    i18n.setLocale('en');
+    expect(i18n.lookup('a.salva')).toEqual({ text: 'Save', found: true });
+    expect(i18n.lookup('lc.altro')).toEqual({ text: 'Altro', found: true });
+    expect(i18n.lookup('x.nuovo', 'Nuovo testo')).toEqual({ text: 'Nuovo testo', found: true });
+    expect(i18n.lookup('x.nuovo')).toEqual({ text: 'x.nuovo', found: false });
+  });
+
+  it('i messaggi dell\'applicazione prevalgono su quelli integrati', () => {
+    expect(make().t('lc.ok')).toBe('OK it');
+  });
+
+  it('formatta con i parametri secondo la lingua e la lingua cambia i testi', () => {
+    const i18n = make();
+    i18n.addMessages('it', { 'a.n': '{n, plural, one {# riga} other {# righe}}' });
+    expect(i18n.t('a.n', { n: 3 })).toBe('3 righe');
+    expect(i18n.intlLocale()).toBe('it-IT');
+    i18n.setLocale('en');
+    expect(i18n.intlLocale()).toBe('en-GB');
+    expect(i18n.t('a.salva')).toBe('Save');
+  });
+});
+
+describe('loadMessages', () => {
+  const reply = (body: unknown, ok = true) => async () => ({ ok, status: ok ? 200 : 404, json: async () => body });
+
+  it('carica il catalogo di ogni lingua', async () => {
+    const i18n = new I18n();
+    const problems = await loadMessages(i18n, ['it', 'en'], (l) => `/i18n/${l}.json`, async (url) => reply(url.includes('/it') ? { k: 'ciao' } : { k: 'hello' })());
+    expect(problems).toEqual([]);
+    expect(i18n.raw('k', 'en')).toBe('hello');
+  });
+
+  it('segnala file mancanti e valori non testuali senza lanciare', async () => {
+    const i18n = new I18n();
+    const problems = await loadMessages(i18n, ['it', 'en'], (l) => `/i18n/${l}.json`, async (url) => (url.includes('/it') ? reply({ ok: 'x', bad: 5 })() : reply({}, false)()));
+    expect(problems.join('|')).toContain('it: la chiave bad non è un testo');
+    expect(problems.join('|')).toContain('en: catalogo non caricato (HTTP 404)');
+    expect(i18n.raw('ok', 'it')).toBe('x');
+  });
+});

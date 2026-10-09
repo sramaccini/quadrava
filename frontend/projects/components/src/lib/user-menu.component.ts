@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { I18n } from 'core';
 import { NzAvatarModule } from 'ng-zorro-antd/avatar';
 import { NzDropdownModule } from 'ng-zorro-antd/dropdown';
 import { NzMenuModule } from 'ng-zorro-antd/menu';
@@ -28,7 +29,7 @@ export interface UserMenuItem {
     ul { min-width: 160px; }
   `,
   template: `
-    <button type="button" class="trigger" nz-dropdown [nzDropdownMenu]="menu" nzTrigger="click" nzPlacement="bottomRight" [attr.aria-label]="'Menu utente ' + name()" aria-haspopup="menu">
+    <button type="button" class="trigger" nz-dropdown [nzDropdownMenu]="menu" nzTrigger="click" nzPlacement="bottomRight" [attr.aria-label]="i18n.t('lc.userMenu') + ' ' + name()" aria-haspopup="menu">
       <nz-avatar nzSize="small" [nzText]="initial()" />
       <span class="name">{{ name() }}</span>
     </button>
@@ -43,7 +44,7 @@ export interface UserMenuItem {
           <li nz-menu-divider></li>
         }
         <li nz-menu-item class="logout" (click)="logout.emit()">
-          <span class="row"><lc-icon name="logout" />{{ logoutLabel() }}</span>
+          <span class="row"><lc-icon name="logout" />{{ logoutLabel() ?? i18n.t('lc.logout') }}</span>
         </li>
       </ul>
     </nz-dropdown-menu>
@@ -52,7 +53,8 @@ export interface UserMenuItem {
 export class UserMenuComponent {
   readonly name = input.required<string>();
   readonly items = input<readonly UserMenuItem[]>([]);
-  readonly logoutLabel = input('Esci');
+  readonly logoutLabel = input<string>();
+  protected readonly i18n = inject(I18n);
   /** Scelta di una voce diversa dall'uscita. */
   readonly select = output<string>();
   readonly logout = output<void>();

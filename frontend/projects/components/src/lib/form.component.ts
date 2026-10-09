@@ -27,7 +27,7 @@ import { nextId, parseIsoDate, toIsoDate } from './shared';
         @if (runtime().isVisible(field, fieldScope())) {
           <nz-form-item>
             @if (field.type !== 'checkbox') {
-              <nz-form-label [nzFor]="id + field.name" [nzRequired]="!!field.required" [nzTooltipTitle]="field.tooltip ? runtime().text(field.tooltip, fieldScope()) : undefined" [nzTooltipIcon]="'question-circle'">{{ field.label ?? field.name }}</nz-form-label>
+              <nz-form-label [nzFor]="id + field.name" [nzRequired]="!!field.required" [nzTooltipTitle]="field.tooltip ? runtime().text(field.tooltip, fieldScope()) : undefined" [nzTooltipIcon]="'question-circle'">{{ runtime().text(field.label, fieldScope()) || field.name }}</nz-form-label>
             }
             <nz-form-control [nzValidateStatus]="error(field) ? 'error' : ''" [nzErrorTip]="error(field) ?? undefined">
               @switch (field.type) {
@@ -40,7 +40,7 @@ import { nextId, parseIsoDate, toIsoDate } from './shared';
                 }
                 @case ('checkbox') {
                   <label nz-checkbox [nzDisabled]="readOnly(field)" [ngModel]="values()[field.name] === true" (ngModelChange)="set(field, $event)">
-                    {{ field.label ?? field.name }}
+                    {{ runtime().text(field.label, fieldScope()) || field.name }}
                   </label>
                 }
                 @case ('date') {
@@ -68,7 +68,7 @@ import { nextId, parseIsoDate, toIsoDate } from './shared';
           @if (runtime().isVisible(action, fieldScope())) {
             <span nz-tooltip [nzTooltipTitle]="action.tooltip ? runtime().text(action.tooltip, fieldScope()) : null">
               <button nz-button nzType="primary" type="button" [nzLoading]="busy()" [disabled]="busy() || !runtime().isEnabled(action, fieldScope())" (click)="run(action)">
-                {{ action.label }}
+                {{ runtime().text(action.label, fieldScope()) }}
               </button>
             </span>
           }

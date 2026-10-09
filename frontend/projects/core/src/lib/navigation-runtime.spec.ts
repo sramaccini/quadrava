@@ -3,6 +3,7 @@ import { ExpressionEngine } from 'expressions';
 import type { NavigationDefinition } from 'schema';
 import { checkNavigation } from './navigation-check';
 import { NavigationRuntime } from './navigation-runtime';
+import { I18n } from './i18n';
 import type { Authorization, UserProvider } from './ports';
 
 const definition: NavigationDefinition = {
@@ -142,5 +143,28 @@ describe('checkNavigation', () => {
     expect(messages.some((m) => m.includes('schermata inesistente'))).toBe(true);
     expect(messages.some((m) => m.includes('predefinito inesistente'))).toBe(true);
     expect(messages.some((m) => m.includes('espressione non valida'))).toBe(true);
+  });
+});
+
+describe('NavigationRuntime: etichette tradotte', () => {
+  it('valuta t() nelle etichette e segue il cambio di lingua', () => {
+    const i18n = new I18n();
+    i18n.addMessages('it', { 'nav.a': 'Alfa' });
+    i18n.addMessages('en', { 'nav.a': 'Alpha' });
+    const def: NavigationDefinition = {
+      schemaVersion: '1.0',
+      navigation: 'n',
+      useCases: [{ id: 'u', label: "{{ t('nav.u', 'Caso') }}", items: [{ id: 'a', label: "{{ t('nav.a', 'A') }}", screen: 's' }] }],
+    };
+    const nav = new NavigationRuntime(def, {
+      authorization: { can: () => true } as Authorization,
+      userProvider: { user: () => ({}) } as UserProvider,
+      i18n,
+    });
+    expect(nav.useCases()[0].label).toBe('Caso');
+    expect(nav.useCases()[0].items[0].label).toBe('Alfa');
+    i18n.setLocale('en');
+    expect(nav.useCases()[0].items[0].label).toBe('Alpha');
+    expect(nav.trail('u', 's')).toEqual(['Caso', 'Alpha']);
   });
 });

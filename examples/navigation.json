@@ -5,18 +5,18 @@
   "useCases": [
     {
       "id": "inserimento-fattura",
-      "label": "Inserimento Fattura",
+      "label": "{{ t('nav.inserimento_fattura', 'Inserimento Fattura') }}",
       "icon": "file-plus",
       "requires": "fatture.fattura.crea",
       "items": [
         {
           "id": "nuova-fattura",
-          "label": "Nuova fattura",
+          "label": "{{ t('nav.nuova_fattura', 'Nuova fattura') }}",
           "icon": "file-plus",
           "children": [
             {
               "id": "fattura-attiva",
-              "label": "Fattura attiva",
+              "label": "{{ t('nav.fattura_attiva', 'Fattura attiva') }}",
               "screen": "fattura-nuova",
               "params": {
                 "tipo": "attiva"
@@ -24,7 +24,7 @@
             },
             {
               "id": "fattura-passiva",
-              "label": "Fattura passiva",
+              "label": "{{ t('nav.fattura_passiva', 'Fattura passiva') }}",
               "screen": "fattura-nuova",
               "params": {
                 "tipo": "passiva"
@@ -32,11 +32,11 @@
             },
             {
               "id": "da-ordine",
-              "label": "Da ordine",
+              "label": "{{ t('nav.da_ordine', 'Da ordine') }}",
               "children": [
                 {
                   "id": "scegli-ordine",
-                  "label": "Scegli l'ordine",
+                  "label": "{{ t('nav.scegli_l_ordine', 'Scegli l\\'ordine') }}",
                   "screen": "ordini-elenco",
                   "requires": "ordini.ordine.leggi"
                 }
@@ -46,7 +46,7 @@
         },
         {
           "id": "bozze",
-          "label": "Le mie bozze",
+          "label": "{{ t('nav.le_mie_bozze', 'Le mie bozze') }}",
           "icon": "inbox",
           "screen": "fatture-elenco",
           "params": {
@@ -57,25 +57,25 @@
     },
     {
       "id": "consultazione-fatture",
-      "label": "Consultazione Fatture",
+      "label": "{{ t('nav.consultazione_fatture', 'Consultazione Fatture') }}",
       "icon": "search",
       "requires": "fatture.fattura.leggi",
       "items": [
         {
           "id": "elenco-fatture",
-          "label": "Elenco fatture",
+          "label": "{{ t('nav.elenco_fatture', 'Elenco fatture') }}",
           "icon": "receipt",
           "screen": "fatture-elenco"
         },
         {
           "id": "ordini-collegati",
-          "label": "Ordini collegati",
+          "label": "{{ t('nav.ordini_collegati', 'Ordini collegati') }}",
           "icon": "folder",
           "requires": "ordini.ordine.leggi",
           "children": [
             {
               "id": "ordini",
-              "label": "Ordini",
+              "label": "{{ t('nav.ordini', 'Ordini') }}",
               "screen": "ordini-elenco"
             }
           ]
@@ -84,20 +84,20 @@
     },
     {
       "id": "creazione-pacchetto",
-      "label": "Creazione pacchetto",
+      "label": "{{ t('nav.creazione_pacchetto', 'Creazione pacchetto') }}",
       "icon": "package",
       "requires": "pacchetti.pacchetto.leggi",
       "items": [
         {
           "id": "nuovo-pacchetto",
-          "label": "Nuovo pacchetto",
+          "label": "{{ t('nav.nuovo_pacchetto', 'Nuovo pacchetto') }}",
           "icon": "package",
           "screen": "pacchetto-nuovo",
           "requires": "pacchetti.pacchetto.crea"
         },
         {
           "id": "pacchetti",
-          "label": "Pacchetti creati",
+          "label": "{{ t('nav.pacchetti_creati', 'Pacchetti creati') }}",
           "icon": "list",
           "screen": "pacchetti-elenco"
         }
@@ -105,18 +105,18 @@
     },
     {
       "id": "revisione-spese",
-      "label": "Revisione Spese",
+      "label": "{{ t('nav.revisione_spese', 'Revisione Spese') }}",
       "icon": "check-circle",
       "requires": "spese.spesa.leggi",
       "items": [
         {
           "id": "spese",
-          "label": "Spese",
+          "label": "{{ t('nav.spese', 'Spese') }}",
           "icon": "euro",
           "children": [
             {
               "id": "da-revisionare",
-              "label": "Da revisionare",
+              "label": "{{ t('nav.da_revisionare', 'Da revisionare') }}",
               "screen": "spese-elenco",
               "params": {
                 "stato": "da-revisionare"
@@ -124,7 +124,7 @@
             },
             {
               "id": "revisionate",
-              "label": "Revisionate",
+              "label": "{{ t('nav.revisionate', 'Revisionate') }}",
               "screen": "spese-elenco",
               "params": {
                 "stato": "revisionata"
@@ -136,33 +136,33 @@
     },
     {
       "id": "vetrina",
-      "label": "Vetrina componenti",
+      "label": "{{ t('nav.vetrina_componenti', 'Vetrina componenti') }}",
       "icon": "list",
       "requires": "vetrina.componenti.leggi",
       "items": [
         {
           "id": "componenti",
-          "label": "Componenti",
+          "label": "{{ t('nav.componenti', 'Componenti') }}",
           "icon": "folder",
           "children": [
             {
               "id": "vetrina-base",
-              "label": "Componenti base",
+              "label": "{{ t('nav.componenti_base', 'Componenti base') }}",
               "screen": "vetrina-base"
             },
             {
               "id": "vetrina-form",
-              "label": "Form",
+              "label": "{{ t('nav.form', 'Form') }}",
               "screen": "vetrina-form"
             },
             {
               "id": "vetrina-tabelle",
-              "label": "Filtri e tabelle",
+              "label": "{{ t('nav.filtri_e_tabelle', 'Filtri e tabelle') }}",
               "screen": "vetrina-tabelle"
             },
             {
               "id": "vetrina-layout",
-              "label": "Schede, dettaglio e messaggi",
+              "label": "{{ t('nav.schede_dettaglio_e_messaggi', 'Schede, dettaglio e messaggi') }}",
               "screen": "vetrina-layout"
             }
           ]

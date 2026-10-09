@@ -4,19 +4,91 @@
   "title": "Vetrina: componenti base",
   "requires": "vetrina.componenti.leggi",
   "dataSources": {
-    "segnala": { "type": "rest", "method": "POST", "url": "/api/vetrina/segnala", "body": { "messaggio": "{{state.messaggio}}" } },
-    "segnalaConErrore": { "type": "rest", "method": "POST", "url": "/api/vetrina/errore" }
+    "segnala": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/vetrina/segnala",
+      "body": {
+        "messaggio": "{{state.messaggio}}"
+      }
+    },
+    "segnalaConErrore": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/vetrina/errore"
+    }
   },
   "components": [
-    { "id": "titolo", "type": "text", "style": "heading", "text": "Componenti base" },
-    { "id": "intro", "type": "text", "tooltip": "Ogni componente può avere un tooltip opzionale (solo testo, anche con espressioni)", "text": "Questa schermata mostra testo, sezioni e pulsanti con le cinque azioni disponibili: set, call, refresh, navigate e toast." },
+    {
+      "id": "titolo",
+      "type": "text",
+      "style": "heading",
+      "text": "Componenti base"
+    },
+    {
+      "id": "intro",
+      "type": "text",
+      "tooltip": "Ogni componente può avere un tooltip opzionale (solo testo, anche con espressioni)",
+      "text": "Questa schermata mostra testo, sezioni e pulsanti con le cinque azioni disponibili: set, call, refresh, navigate e toast."
+    },
     {
       "id": "sezione-testo",
       "type": "section",
       "title": "Testo con valori dinamici",
       "components": [
-        { "id": "saluto", "type": "text", "text": "Utente collegato: {{user.username}}" },
-        { "id": "contatore-testo", "type": "text", "text": "Hai premuto il pulsante {{has(state.contatore) ? state.contatore : 0}} volte." }
+        {
+          "id": "saluto",
+          "type": "text",
+          "text": "Utente collegato: {{user.username}}"
+        },
+        {
+          "id": "contatore-testo",
+          "type": "text",
+          "text": "Hai premuto il pulsante {{has(state.contatore) ? state.contatore : 0}} volte."
+        }
+      ]
+    },
+    {
+      "id": "sezione-lingue",
+      "type": "section",
+      "title": "{{ t('vetrina.lingue.titolo', 'Lingue e traduzioni') }}",
+      "components": [
+        {
+          "id": "lingue-intro",
+          "type": "text",
+          "text": "{{ t('vetrina.lingue.intro', 'Cambia la lingua dal selettore in alto') }}"
+        },
+        {
+          "id": "lingue-attiva",
+          "type": "text",
+          "text": "{{ t('vetrina.lingue.attiva', 'Lingua attiva: {lingua}', {'lingua': user.locale}) }}"
+        },
+        {
+          "id": "lingue-importo",
+          "type": "text",
+          "text": "{{ t('vetrina.lingue.importo', 'Importo: {v}', {'v': fmtCurrency(1234.5, 'EUR')}) }}"
+        },
+        {
+          "id": "lingue-data",
+          "type": "text",
+          "text": "{{ t('vetrina.lingue.data', 'Data: {v}', {'v': fmtDate('2026-10-09')}) }}"
+        },
+        {
+          "id": "lingue-righe",
+          "type": "text",
+          "text": "{{ t('vetrina.lingue.righe', '{n} registrate', {'n': has(state.contatore) ? state.contatore : 0}) }}"
+        },
+        {
+          "id": "lingue-bottone",
+          "type": "button",
+          "label": "{{ t('vetrina.lingue.bottone', 'Pulsante con tooltip tradotto') }}",
+          "tooltip": "{{ t('vetrina.lingue.tooltip', 'Questo tooltip cambia con la lingua') }}",
+          "onClick": [
+            {
+              "toast": "{{ t('vetrina.lingue.toast', 'Ciao {nome}!', {'nome': user.username}) }}"
+            }
+          ]
+        }
       ]
     },
     {
@@ -29,35 +101,75 @@
           "type": "button",
           "label": "Incrementa il contatore (set)",
           "tooltip": "Il contatore vale {{has(state.contatore) ? state.contatore : 0}}: ogni clic lo aumenta di uno",
-          "onClick": [{ "set": { "path": "contatore", "value": "{{has(state.contatore) ? state.contatore + 1 : 1}}" } }]
+          "onClick": [
+            {
+              "set": {
+                "path": "contatore",
+                "value": "{{has(state.contatore) ? state.contatore + 1 : 1}}"
+              }
+            }
+          ]
         },
         {
           "id": "btn-toast",
           "type": "button",
           "label": "Mostra un messaggio (toast)",
-          "onClick": [{ "toast": "Questo è un messaggio informativo" }]
+          "onClick": [
+            {
+              "toast": "Questo è un messaggio informativo"
+            }
+          ]
         },
         {
           "id": "btn-chiamata",
           "type": "button",
           "label": "Chiama un servizio (call)",
           "onClick": [
-            { "set": { "path": "messaggio", "value": "Ciao dalla vetrina" } },
-            { "call": "segnala", "onError": { "toast": "Chiamata non riuscita" } },
-            { "toast": "Servizio chiamato" }
+            {
+              "set": {
+                "path": "messaggio",
+                "value": "Ciao dalla vetrina"
+              }
+            },
+            {
+              "call": "segnala",
+              "onError": {
+                "toast": "Chiamata non riuscita"
+              }
+            },
+            {
+              "toast": "Servizio chiamato"
+            }
           ]
         },
         {
           "id": "btn-errore",
           "type": "button",
           "label": "Chiamata che fallisce (onError)",
-          "onClick": [{ "call": "segnalaConErrore", "onError": { "toast": "Errore gestito: la sequenza si ferma qui" } }, { "toast": "Questo messaggio non compare mai" }]
+          "onClick": [
+            {
+              "call": "segnalaConErrore",
+              "onError": {
+                "toast": "Errore gestito: la sequenza si ferma qui"
+              }
+            },
+            {
+              "toast": "Questo messaggio non compare mai"
+            }
+          ]
         },
         {
           "id": "btn-naviga",
           "type": "button",
           "label": "Vai alla vetrina delle tabelle (navigate)",
-          "onClick": [{ "navigate": "vetrina-tabelle", "params": { "evidenzia": "inviato" } }]
+          "onClick": [
+            {
+              "navigate": "vetrina-tabelle",
+              "params": {
+                "evidenzia": "inviato"
+              }
+            }
+          ]
         }
       ]
     },
@@ -66,27 +178,43 @@
       "type": "section",
       "title": "Visibilità e abilitazione",
       "components": [
-        { "id": "txt-condizioni", "type": "text", "text": "I pulsanti seguenti cambiano con i permessi dell'utente: provali con i tre profili del selettore in alto." },
+        {
+          "id": "txt-condizioni",
+          "type": "text",
+          "text": "I pulsanti seguenti cambiano con i permessi dell'utente: provali con i tre profili del selettore in alto."
+        },
         {
           "id": "btn-solo-responsabile",
           "type": "button",
           "label": "Visibile solo con il permesso di approvare ordini",
           "visibleIf": "{{can('ordini.ordine.approva')}}",
-          "onClick": [{ "toast": "Hai il permesso ordini.ordine.approva" }]
+          "onClick": [
+            {
+              "toast": "Hai il permesso ordini.ordine.approva"
+            }
+          ]
         },
         {
           "id": "btn-nascosto-admin",
           "type": "button",
           "label": "Nascosto a chi può leggere gli IBAN",
           "hiddenIf": "{{can('ordini.iban.leggi')}}",
-          "onClick": [{ "toast": "Non vedi gli IBAN" }]
+          "onClick": [
+            {
+              "toast": "Non vedi gli IBAN"
+            }
+          ]
         },
         {
           "id": "btn-abilitato",
           "type": "button",
           "label": "Abilitato dopo almeno due incrementi",
           "enabledIf": "{{has(state.contatore) && state.contatore >= 2}}",
-          "onClick": [{ "toast": "Abilitato dallo stato della schermata" }]
+          "onClick": [
+            {
+              "toast": "Abilitato dallo stato della schermata"
+            }
+          ]
         }
       ]
     }
