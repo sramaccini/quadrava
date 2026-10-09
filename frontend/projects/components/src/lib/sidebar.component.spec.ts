@@ -164,4 +164,21 @@ describe('SidebarComponent', () => {
     await flush(fixture);
     expect(el.querySelector('.side')?.classList.contains('collapsed')).toBe(true);
   });
+
+  it('da compressa il selettore dei casi d’uso diventa un’icona con un menu a tendina', async () => {
+    const { fixture, el, changes } = await render(['fatture.fattura.crea', 'fatture.fattura.leggi']);
+    expect(el.querySelector('nz-select')).not.toBeNull();
+    fixture.componentRef.setInput('collapsed', true);
+    await flush(fixture);
+    expect(el.querySelector('nz-select')).toBeNull();
+    const trigger = el.querySelector('button.usecase-trigger') as HTMLButtonElement;
+    expect(trigger.getAttribute('aria-label')).toBe('Caso d’uso: Inserimento');
+    trigger.click();
+    for (let i = 0; i < 40 && document.querySelectorAll('.ant-dropdown li[nz-menu-item]').length === 0; i++) await flush(fixture);
+    const items = [...document.querySelectorAll<HTMLElement>('.ant-dropdown li[nz-menu-item]')];
+    expect(items.map((n) => text(n))).toEqual(['Inserimento', 'Consultazione']);
+    items[1].click();
+    expect(changes).toEqual(['consultazione']);
+    document.querySelectorAll('.cdk-overlay-container').forEach((c) => (c.innerHTML = ''));
+  });
 });

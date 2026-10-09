@@ -2,6 +2,7 @@ import { FormsModule } from '@angular/forms';
 import { ChangeDetectionStrategy, Component, computed, effect, input, model, output, signal, untracked } from '@angular/core';
 import type { NavigationRuntime, VisibleItem, VisibleLeaf } from 'core';
 import { NzButtonModule } from 'ng-zorro-antd/button';
+import { NzDropdownModule } from 'ng-zorro-antd/dropdown';
 import { NzMenuModule } from 'ng-zorro-antd/menu';
 import { NzSelectModule } from 'ng-zorro-antd/select';
 import { IconComponent, iconType } from './icon.component';
@@ -19,7 +20,7 @@ export interface NavigateEvent {
  */
 @Component({
   selector: 'lc-sidebar',
-  imports: [FormsModule, IconComponent, NzButtonModule, NzMenuModule, NzSelectModule],
+  imports: [FormsModule, IconComponent, NzButtonModule, NzDropdownModule, NzMenuModule, NzSelectModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: block; position: sticky; top: 0; z-index: 2; align-self: flex-start; height: 100vh; flex: none; }
@@ -35,6 +36,9 @@ export interface NavigateEvent {
     .usecase { display: flex; flex-direction: column; gap: 4px; padding: 4px 16px 12px; }
     .usecase label { font-size: 12px; color: var(--lc-sider-muted, #5d6b7a); }
     nz-select { width: 100%; }
+    .usecase-icon { display: flex; justify-content: center; padding: 4px 0 12px; }
+    .usecase-trigger { color: var(--lc-sider-text); border: 1px solid var(--lc-sider-border); font-size: 16px; }
+    .uc-row { display: flex; align-items: center; gap: 8px; }
     :host ::ng-deep .usecase .ant-select-selector { background: transparent !important; border-color: var(--lc-sider-border, #d5dbe3) !important; color: var(--lc-sider-text) !important; }
     :host ::ng-deep .usecase .ant-select-arrow { color: var(--lc-sider-muted); }
     nav { flex: 1; }
@@ -68,15 +72,34 @@ export interface NavigateEvent {
         }
         <span class="name">{{ brand() }}</span>
       </div>
-      @if (!collapsed() && useCases().length > 1) {
-        <div class="usecase">
-          <label [for]="selectId">Caso d'uso</label>
-          <nz-select [nzId]="selectId" [ngModel]="current()?.id" (ngModelChange)="useCaseChange.emit($event)">
-            @for (u of useCases(); track u.id) {
-              <nz-option [nzValue]="u.id" [nzLabel]="u.label" />
-            }
-          </nz-select>
-        </div>
+      @if (useCases().length > 1) {
+        @if (!collapsed()) {
+          <div class="usecase">
+            <label [for]="selectId">Caso d'uso</label>
+            <nz-select [nzId]="selectId" [ngModel]="current()?.id" (ngModelChange)="useCaseChange.emit($event)">
+              @for (u of useCases(); track u.id) {
+                <nz-option [nzValue]="u.id" [nzLabel]="u.label" />
+              }
+            </nz-select>
+          </div>
+        } @else {
+          <!-- Da compressa il selettore diventa un'icona (quella del caso d'uso corrente) con un menu a tendina. -->
+          <div class="usecase-icon">
+            <button nz-button nzType="text" class="usecase-trigger" type="button" nz-dropdown nzTrigger="click" nzPlacement="bottomLeft" [nzDropdownMenu]="useCaseMenu"
+              [attr.aria-label]="'Caso d’uso: ' + (current()?.label ?? '')" [attr.title]="current()?.label ?? null" aria-haspopup="menu">
+              <lc-icon [name]="current()?.icon ?? 'list'" />
+            </button>
+            <nz-dropdown-menu #useCaseMenu="nzDropdownMenu">
+              <ul nz-menu nzSelectable>
+                @for (u of useCases(); track u.id) {
+                  <li nz-menu-item [nzSelected]="u.id === current()?.id" (click)="useCaseChange.emit(u.id)">
+                    <span class="uc-row"><lc-icon [name]="u.icon ?? 'list'" />{{ u.label }}</span>
+                  </li>
+                }
+              </ul>
+            </nz-dropdown-menu>
+          </div>
+        }
       }
 
       @if (current(); as uc) {
