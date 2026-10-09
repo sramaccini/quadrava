@@ -1,7 +1,14 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { LOWCODE_LOCALE, formatValue, runSteps, type FormattedValue, type ScreenRuntime, type Scope } from 'core';
+import { NzAlertModule } from 'ng-zorro-antd/alert';
+import { NzButtonModule } from 'ng-zorro-antd/button';
+import { NzPaginationModule } from 'ng-zorro-antd/pagination';
+import { NzTableModule } from 'ng-zorro-antd/table';
+import { NzTagModule } from 'ng-zorro-antd/tag';
 import type { ActionDefinition, ColumnDefinition, TableNode } from 'schema';
-import { CONTROL_STYLES, TONE_STYLES } from './shared';
+import { TONE_COLORS } from './shared';
+
+const DEFAULT_PAGE_SIZE = 10;
 
 /**
  * Tabella con azioni di riga. Contratto della risposta del data source: un array di righe oppure
@@ -10,34 +17,31 @@ import { CONTROL_STYLES, TONE_STYLES } from './shared';
  */
 @Component({
   selector: 'lc-table',
+  imports: [NzTableModule, NzTagModule, NzButtonModule, NzPaginationModule, NzAlertModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  styles: [
-    CONTROL_STYLES,
-    TONE_STYLES,
-    `
-      .wrap { overflow-x: auto; border: 1px solid var(--lc-color-border, #d5dbe3); border-radius: var(--lc-radius, 6px); background: var(--lc-color-surface, #fff); }
-      table { width: 100%; border-collapse: collapse; }
-      th, td { text-align: left; padding: calc(var(--lc-gap, 12px) * .6) var(--lc-gap, 12px); border-bottom: 1px solid var(--lc-color-border, #d5dbe3); }
-      td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
-      th { font-size: .85em; color: var(--lc-color-muted, #5d6b7a); font-weight: 600; }
-      tr:last-child td { border-bottom: 0; }
-      td.actions { display: flex; gap: 6px; }
-      .state { padding: var(--lc-gap, 12px); color: var(--lc-color-muted, #5d6b7a); }
-      .state.error { color: var(--lc-color-danger, #c62828); }
-      .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-      .pager { display: flex; align-items: center; gap: var(--lc-gap, 12px); justify-content: flex-end; padding: var(--lc-gap, 12px); }
-    `,
-  ],
+  styles: `
+    .wrap { overflow-x: auto; }
+    .actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .pager { display: flex; justify-content: flex-end; padding-top: var(--lc-gap, 12px); }
+    .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  `,
   template: `
     <div class="wrap" [attr.aria-busy]="source().status === 'loading'">
       @if (source().status === 'error') {
-        <p class="state error" role="alert">{{ source().error }}</p>
+        <div role="alert"><nz-alert nzType="error" [nzMessage]="source().error ?? null" nzShowIcon /></div>
       } @else {
-        <table>
+        <nz-table
+          nzSize="middle"
+          [nzData]="rows()"
+          [nzLoading]="source().status === 'loading' && rows().length > 0"
+          [nzFrontPagination]="false"
+          [nzShowPagination]="false"
+          [nzNoResult]="empty"
+        >
           <thead>
             <tr>
               @for (column of columns(); track column.field) {
-                <th scope="col" [class.num]="numeric(column)">{{ column.label ?? column.field }}</th>
+                <th scope="col" [nzAlign]="numeric(column) ? 'right' : 'left'">{{ column.label ?? column.field }}</th>
               }
               @if (node().rowActions?.length) {
                 <th scope="col"><span class="visually-hidden">Azioni</span></th>
@@ -48,10 +52,10 @@ import { CONTROL_STYLES, TONE_STYLES } from './shared';
             @for (row of rows(); track $index) {
               <tr>
                 @for (column of columns(); track column.field) {
-                  <td [class.num]="numeric(column)">
+                  <td [nzAlign]="numeric(column) ? 'right' : 'left'">
                     @if (cell(row, column); as view) {
                       @if (view.tone) {
-                        <span [class]="'tone tone-' + view.tone">{{ view.text }}</span>
+                        <nz-tag [nzColor]="color(view.tone)">{{ view.text }}</nz-tag>
                       } @else {
                         {{ view.text }}
                       }
@@ -59,30 +63,32 @@ import { CONTROL_STYLES, TONE_STYLES } from './shared';
                   </td>
                 }
                 @if (node().rowActions?.length) {
-                  <td class="actions">
-                    @for (action of node().rowActions; track $index) {
-                      @if (runtime().isVisible(action, { row: row })) {
-                        <button type="button" class="lc-btn secondary" [disabled]="busy() || !runtime().isEnabled(action, { row: row })" (click)="run(action, row)">
-                          {{ action.label }}
-                        </button>
+                  <td>
+                    <div class="actions">
+                      @for (action of node().rowActions; track $index) {
+                        @if (runtime().isVisible(action, { row: row })) {
+                          <button nz-button nzSize="small" type="button" [disabled]="busy() || !runtime().isEnabled(action, { row: row })" (click)="run(action, row)">
+                            {{ action.label }}
+                          </button>
+                        }
                       }
-                    }
+                    </div>
                   </td>
                 }
               </tr>
             }
           </tbody>
-        </table>
-        @if (source().status === 'loading' && rows().length === 0) {
-          <p class="state" role="status">Caricamento…</p>
-        } @else if (source().status === 'ready' && rows().length === 0) {
-          <p class="state" role="status">Nessun risultato.</p>
-        }
+        </nz-table>
+        <ng-template #empty>
+          @if (source().status === 'loading') {
+            <span role="status">Caricamento…</span>
+          } @else {
+            <span role="status">Nessun risultato.</span>
+          }
+        </ng-template>
         @if (paged()) {
           <div class="pager">
-            <button type="button" class="lc-btn secondary" [disabled]="page() === 0" (click)="goTo(page() - 1)">Precedente</button>
-            <span>Pagina {{ page() + 1 }}</span>
-            <button type="button" class="lc-btn secondary" [disabled]="!hasNext()" (click)="goTo(page() + 1)">Successiva</button>
+            <nz-pagination [nzPageIndex]="page() + 1" [nzPageSize]="pageSize()" [nzTotal]="total()" (nzPageIndexChange)="goTo($event - 1)" />
           </div>
         }
       }
@@ -111,14 +117,22 @@ export class TableComponent {
     const page = this.runtime().state()['page'];
     return typeof page === 'number' ? page : 0;
   });
-  protected readonly hasNext = computed(() => {
-    const data = this.source().data as { total?: number; size?: number } | null;
-    if (typeof data?.total !== 'number' || typeof data.size !== 'number') return false;
-    return (this.page() + 1) * data.size < data.total;
+  protected readonly pageSize = computed(() => {
+    const size = (this.source().data as { size?: unknown } | null)?.size;
+    return typeof size === 'number' && size > 0 ? size : DEFAULT_PAGE_SIZE;
+  });
+  /** Se il servizio non dichiara il totale, si mostra solo la pagina corrente (nessuna pagina successiva). */
+  protected readonly total = computed(() => {
+    const total = (this.source().data as { total?: unknown } | null)?.total;
+    return typeof total === 'number' ? total : (this.page() + 1) * this.pageSize();
   });
 
   protected cell(row: Record<string, unknown>, column: ColumnDefinition): FormattedValue {
     return formatValue(row[column.field], column, this.locale);
+  }
+
+  protected color(tone: NonNullable<FormattedValue['tone']>): string {
+    return TONE_COLORS[tone];
   }
 
   protected numeric(column: ColumnDefinition): boolean {

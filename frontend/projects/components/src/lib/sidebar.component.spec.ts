@@ -1,7 +1,9 @@
 import { signal } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
+import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { NavigationRuntime, type Authorization, type UserProvider, type VisibleLeaf } from 'core';
 import type { NavigationDefinition } from 'schema';
+import { provideLowcodeComponents } from './provide';
+import { openSelect, stubViewportHeight } from './select-testing';
 import { SidebarComponent, type NavigateEvent } from './sidebar.component';
 
 const definition: NavigationDefinition = {
@@ -30,10 +32,22 @@ const definition: NavigationDefinition = {
 };
 
 describe('SidebarComponent', () => {
-  const permissions = signal(new Set<string>());
+  let restore: () => void;
+  beforeAll(() => (restore = stubViewportHeight()));
+  afterAll(() => restore());
 
-  function render(granted: string[]) {
+  const permissions = signal(new Set<string>());
+  const flush = async (fixture: ComponentFixture<unknown>): Promise<void> => {
+    for (let i = 0; i < 4; i++) {
+      fixture.detectChanges();
+      await fixture.whenStable();
+      await new Promise((r) => setTimeout(r, 5));
+    }
+  };
+
+  async function render(granted: string[]) {
     permissions.set(new Set(granted));
+    TestBed.configureTestingModule({ providers: [provideLowcodeComponents()] });
     const nav = new NavigationRuntime(definition, {
       authorization: { can: (p: string) => permissions().has(p) } as Authorization,
       userProvider: { user: () => ({}) } as UserProvider,
@@ -45,55 +59,64 @@ describe('SidebarComponent', () => {
     const changes: string[] = [];
     fixture.componentInstance.navigate.subscribe((e) => events.push(e));
     fixture.componentInstance.useCaseChange.subscribe((id) => changes.push(id));
-    fixture.detectChanges();
+    await flush(fixture);
     return { fixture, el: fixture.nativeElement as HTMLElement, events, changes };
   }
 
-  const labels = (el: HTMLElement): string[] => [...el.querySelectorAll('.row .label')].map((n) => n.textContent?.trim() ?? '');
+  const text = (n: Element | null | undefined): string => (n?.textContent ?? '').replace(/\s+/g, ' ').trim();
+  /** Etichette delle voci di primo livello. */
+  const top = (el: HTMLElement): string[] =>
+    [...el.querySelectorAll(':scope ul[nz-menu] > li')].map((li) => text(li.matches('.ant-menu-submenu') ? li.querySelector('.ant-menu-submenu-title') : li.querySelector('.label')));
+  const openGroups = (el: HTMLElement): string[] => [...el.querySelectorAll('li.ant-menu-submenu-open > .ant-menu-submenu-title')].map((n) => text(n));
+  const groupTitle = (el: HTMLElement, label: string): HTMLElement =>
+    [...el.querySelectorAll<HTMLElement>('.ant-menu-submenu-title')].find((n) => text(n) === label)!;
 
-  it('con un solo caso d’uso non mostra il selettore', () => {
-    const { el } = render(['fatture.fattura.crea']);
-    expect(el.querySelector('select')).toBeNull();
-    expect(labels(el)).toEqual(['Nuova fattura', 'Bozze']);
+  it('con un solo caso d’uso non mostra il selettore', async () => {
+    const { el } = await render(['fatture.fattura.crea']);
+    expect(el.querySelector('nz-select')).toBeNull();
+    expect(top(el)).toEqual(['Nuova fattura', 'Bozze']);
   });
 
-  it('con più casi d’uso mostra il selettore e segnala il cambio', () => {
-    const { fixture, el, changes } = render(['fatture.fattura.crea', 'fatture.fattura.leggi']);
-    const select = el.querySelector('select') as HTMLSelectElement;
-    expect([...select.options].map((o) => o.textContent?.trim())).toEqual(['Inserimento', 'Consultazione']);
-    select.value = 'consultazione';
-    select.dispatchEvent(new Event('change'));
+  it('con più casi d’uso mostra il selettore e segnala il cambio', async () => {
+    const { fixture, el, changes } = await render(['fatture.fattura.crea', 'fatture.fattura.leggi']);
+    const options = await openSelect(el.querySelector('nz-select') as Element, () => flush(fixture));
+    expect(options.map((o) => text(o))).toEqual(['Inserimento', 'Consultazione']);
+    options[1].click();
+    await flush(fixture);
     expect(changes).toEqual(['consultazione']);
     fixture.componentRef.setInput('useCaseId', 'consultazione');
-    fixture.detectChanges();
-    expect(labels(el)).toEqual(['Elenco']);
+    await flush(fixture);
+    expect(top(el)).toEqual(['Elenco']);
   });
 
-  it('i gruppi si aprono e chiudono con aria-expanded, fino al terzo livello', () => {
-    const { fixture, el } = render(['fatture.fattura.crea']);
-    const group = el.querySelector('button.group') as HTMLButtonElement;
-    expect(group.getAttribute('aria-expanded')).toBe('false');
-    group.click();
-    fixture.detectChanges();
-    expect(group.getAttribute('aria-expanded')).toBe('true');
-    expect(labels(el)).toContain('Da ordine');
-    ([...el.querySelectorAll('button.group')][1] as HTMLButtonElement).click();
-    fixture.detectChanges();
-    expect(labels(el)).toContain('Scegli ordine');
+  it('i gruppi si aprono e chiudono, fino al terzo livello', async () => {
+    const { fixture, el } = await render(['fatture.fattura.crea']);
+    expect(openGroups(el)).toEqual([]);
+    groupTitle(el, 'Nuova fattura').click();
+    await flush(fixture);
+    expect(openGroups(el)).toEqual(['Nuova fattura']);
+    groupTitle(el, 'Da ordine').click();
+    await flush(fixture);
+    expect(openGroups(el)).toEqual(['Nuova fattura', 'Da ordine']);
+    expect(text(el)).toContain('Scegli ordine');
+    groupTitle(el, 'Nuova fattura').click();
+    await flush(fixture);
+    expect(openGroups(el)).not.toContain('Nuova fattura');
   });
 
-  it('evidenzia la voce attiva e apre i suoi gruppi', () => {
-    const { fixture, el } = render(['fatture.fattura.crea']);
+  it('evidenzia la voce attiva e apre i suoi gruppi', async () => {
+    const { fixture, el } = await render(['fatture.fattura.crea']);
     fixture.componentRef.setInput('active', { screen: 'fattura-nuova', params: { tipo: 'attiva' } });
-    fixture.detectChanges();
-    fixture.detectChanges();
+    await flush(fixture);
     const current = el.querySelector('a[aria-current="page"]');
     expect(current?.textContent).toContain('Attiva');
     expect(el.querySelectorAll('a[aria-current="page"]')).toHaveLength(1);
+    expect(openGroups(el)).toEqual(['Nuova fattura']);
+    expect(el.querySelector('li.ant-menu-item-selected')).not.toBeNull();
   });
 
-  it('i link hanno href e il clic normale emette navigate senza ricaricare', () => {
-    const { fixture, el, events } = render(['fatture.fattura.crea']);
+  it('i link hanno href e il clic normale emette navigate senza ricaricare', async () => {
+    const { fixture, el, events } = await render(['fatture.fattura.crea']);
     const bozze = [...el.querySelectorAll('a.leaf')].find((a) => a.textContent?.includes('Bozze')) as HTMLAnchorElement;
     expect(bozze.getAttribute('href')).toBe('/inserimento/fatture-elenco');
     const click = new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 });
@@ -105,26 +128,30 @@ describe('SidebarComponent', () => {
     bozze.dispatchEvent(ctrl);
     expect(ctrl.defaultPrevented).toBe(false);
     expect(events).toHaveLength(1);
-    fixture.detectChanges();
+    await flush(fixture);
   });
 
-  it('i permessi tolti ridisegnano il menu', () => {
-    const { fixture, el } = render(['fatture.fattura.crea']);
+  it('i permessi tolti ridisegnano il menu', async () => {
+    const { fixture, el } = await render(['fatture.fattura.crea']);
     permissions.set(new Set());
-    fixture.detectChanges();
+    await flush(fixture);
     expect(el.querySelector('nav')).toBeNull();
     expect(el.textContent).toContain('Nessuna funzione disponibile');
   });
 
-  it('da compressa mostra solo le icone e un clic su un gruppo riapre la barra', () => {
-    const { fixture, el } = render(['fatture.fattura.crea']);
-    (el.querySelector('.toggle') as HTMLButtonElement).click();
-    fixture.detectChanges();
+  it('da compressa mostra solo le icone e si può riaprire', async () => {
+    const { fixture, el } = await render(['fatture.fattura.crea']);
+    const toggle = el.querySelector('button.toggle') as HTMLButtonElement;
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    toggle.click();
+    await flush(fixture);
     expect(el.querySelector('.side')?.classList.contains('collapsed')).toBe(true);
-    expect(labels(el)).toEqual([]);
-    (el.querySelector('button.group') as HTMLButtonElement).click();
-    fixture.detectChanges();
+    expect(el.querySelector('ul[nz-menu]')?.classList.contains('ant-menu-inline-collapsed')).toBe(true);
+    // Le voci restano raggiungibili da tastiera e per screen reader grazie ad aria-label.
+    expect(el.querySelector('a.leaf')?.getAttribute('aria-label')).toBe('Bozze');
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    toggle.click();
+    await flush(fixture);
     expect(el.querySelector('.side')?.classList.contains('collapsed')).toBe(false);
-    expect(labels(el)).toContain('Attiva');
   });
 });

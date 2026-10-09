@@ -1,60 +1,73 @@
 import { ChangeDetectionStrategy, Component, computed, effect, input, signal, untracked } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { runSteps, type ScreenRuntime, type Scope } from 'core';
+import { NzButtonModule } from 'ng-zorro-antd/button';
+import { NzCheckboxModule } from 'ng-zorro-antd/checkbox';
+import { NzDatePickerModule } from 'ng-zorro-antd/date-picker';
+import { NzFormModule } from 'ng-zorro-antd/form';
+import { NzInputModule } from 'ng-zorro-antd/input';
+import { NzSelectModule } from 'ng-zorro-antd/select';
 import type { ActionDefinition, FieldDefinition, FormNode } from 'schema';
-import { CONTROL_STYLES, nextId } from './shared';
+import { nextId, parseIsoDate, toIsoDate } from './shared';
 
 /** Form: i valori iniziali arrivano dal data source `source` (se restituisce un oggetto); le azioni ricevono `form` nello scope. */
 @Component({
   selector: 'lc-form',
+  imports: [FormsModule, NzFormModule, NzInputModule, NzSelectModule, NzCheckboxModule, NzDatePickerModule, NzButtonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  styles: [
-    CONTROL_STYLES,
-    `
-      form { display: flex; flex-direction: column; gap: var(--lc-gap, 12px); max-width: 520px; }
-      .actions { display: flex; gap: var(--lc-gap, 12px); }
-    `,
-  ],
+  styles: `
+    form { max-width: 560px; }
+    nz-select, nz-date-picker { width: 100%; }
+    .actions { display: flex; gap: var(--lc-gap, 12px); }
+  `,
   template: `
-    <form novalidate (submit)="$event.preventDefault()">
+    <form nz-form ngNoForm nzLayout="vertical" novalidate (submit)="$event.preventDefault()">
       @for (field of node().fields; track field.name) {
         @if (runtime().isVisible(field, fieldScope())) {
-          <div class="lc-field">
-            <label [for]="id + field.name">{{ field.label ?? field.name }}{{ field.required ? ' *' : '' }}</label>
-            @switch (field.type) {
-              @case ('select') {
-                <select class="lc-input" [id]="id + field.name" [disabled]="readOnly(field)" [attr.aria-invalid]="!!error(field)" (change)="set(field, $any($event.target).value)">
-                  <option value="">—</option>
-                  @for (option of field.options ?? []; track option) {
-                    <option [value]="option" [selected]="text(field) === option">{{ option }}</option>
-                  }
-                </select>
-              }
-              @case ('checkbox') {
-                <input class="lc-input" type="checkbox" [id]="id + field.name" [disabled]="readOnly(field)" [checked]="values()[field.name] === true" (change)="set(field, $any($event.target).checked)" />
-              }
-              @default {
-                <input
-                  class="lc-input"
-                  [id]="id + field.name"
-                  [type]="field.type"
-                  [value]="text(field)"
-                  [readOnly]="readOnly(field)"
-                  [attr.autocomplete]="field.sensitive ? 'off' : null"
-                  [attr.aria-invalid]="!!error(field)"
-                  (input)="set(field, $any($event.target).value)"
-                />
-              }
+          <nz-form-item>
+            @if (field.type !== 'checkbox') {
+              <nz-form-label [nzFor]="id + field.name" [nzRequired]="!!field.required">{{ field.label ?? field.name }}</nz-form-label>
             }
-            @if (error(field); as message) {
-              <span class="lc-error" role="alert">{{ message }}</span>
-            }
-          </div>
+            <nz-form-control [nzValidateStatus]="error(field) ? 'error' : ''" [nzErrorTip]="error(field) ?? undefined">
+              @switch (field.type) {
+                @case ('select') {
+                  <nz-select [nzId]="id + field.name" nzAllowClear nzPlaceHolder="—" [nzDisabled]="readOnly(field)" [ngModel]="selected(field)" (ngModelChange)="set(field, $event)">
+                    @for (option of field.options ?? []; track option) {
+                      <nz-option [nzValue]="option" [nzLabel]="option" />
+                    }
+                  </nz-select>
+                }
+                @case ('checkbox') {
+                  <label nz-checkbox [nzDisabled]="readOnly(field)" [ngModel]="values()[field.name] === true" (ngModelChange)="set(field, $event)">
+                    {{ field.label ?? field.name }}
+                  </label>
+                }
+                @case ('date') {
+                  <nz-date-picker [nzId]="id + field.name" [nzDisabled]="readOnly(field)" [ngModel]="dates()[field.name]" (ngModelChange)="set(field, toIso($event))" />
+                }
+                @default {
+                  <input
+                    nz-input
+                    [id]="id + field.name"
+                    [type]="field.type"
+                    [value]="text(field)"
+                    [readOnly]="readOnly(field)"
+                    [attr.autocomplete]="field.sensitive ? 'off' : null"
+                    [attr.aria-invalid]="!!error(field)"
+                    (input)="set(field, $any($event.target).value)"
+                  />
+                }
+              }
+            </nz-form-control>
+          </nz-form-item>
         }
       }
       <div class="actions">
         @for (action of node().actions ?? []; track $index) {
           @if (runtime().isVisible(action, fieldScope())) {
-            <button type="button" class="lc-btn" [disabled]="busy() || !runtime().isEnabled(action, fieldScope())" (click)="run(action)">{{ action.label }}</button>
+            <button nz-button nzType="primary" type="button" [nzLoading]="busy()" [disabled]="busy() || !runtime().isEnabled(action, fieldScope())" (click)="run(action)">
+              {{ action.label }}
+            </button>
           }
         }
       </div>
@@ -70,6 +83,11 @@ export class FormComponent {
   protected readonly values = signal<Record<string, unknown>>({});
   protected readonly busy = signal(false);
   private readonly submitted = signal(false);
+
+  /** Le date dei campi `date`, calcolate una volta per valore: un oggetto nuovo a ogni rilevamento delle modifiche farebbe riscrivere il campo di continuo. */
+  protected readonly dates = computed<Record<string, Date | null>>(() =>
+    Object.fromEntries(this.node().fields.filter((f) => f.type === 'date').map((f) => [f.name, parseIsoDate(this.values()[f.name])])),
+  );
 
   protected readonly fieldScope = computed<Scope>(() => ({ ...this.scope(), form: this.values() }));
 
@@ -98,12 +116,22 @@ export class FormComponent {
     return value === null || value === undefined ? '' : String(value);
   }
 
+  protected selected(field: FieldDefinition): string | null {
+    const value = this.values()[field.name];
+    return value === null || value === undefined || value === '' ? null : String(value);
+  }
+
+
+  protected toIso(date: Date | null): string | null {
+    return toIsoDate(date);
+  }
+
   protected readOnly(field: FieldDefinition): boolean {
     return this.runtime().isReadOnly(field, this.fieldScope());
   }
 
   protected set(field: FieldDefinition, raw: unknown): void {
-    const value = field.type === 'number' && raw !== '' ? Number(raw) : raw;
+    const value = field.type === 'number' && raw !== '' && raw !== null ? Number(raw) : raw;
     this.values.update((current) => ({ ...current, [field.name]: value }));
   }
 

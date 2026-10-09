@@ -9,6 +9,7 @@ import detail from '../../public/examples/ordine-dettaglio.json';
 import chiaro from '../../public/examples/themes/chiaro.json';
 import scuro from '../../public/examples/themes/scuro.json';
 import { DemoDiagnostics } from '../demo/demo-ports';
+import { openSelect, stubViewportHeight } from './select-testing';
 import { App } from './app';
 import { appConfig } from './app.config';
 
@@ -25,6 +26,10 @@ describe('Vetrina dei componenti', () => {
     'examples/themes/scuro.json': scuro,
   };
 
+  let restoreViewport: () => void;
+  beforeAll(() => (restoreViewport = stubViewportHeight()));
+  afterAll(() => restoreViewport());
+
   beforeEach(() => {
     vi.stubGlobal('fetch', async (url: string) => {
       const body = files[url];
@@ -36,7 +41,7 @@ describe('Vetrina dei componenti', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     document.documentElement.removeAttribute('style');
-    document.body.querySelectorAll('lc-confirm-dialog').forEach((n) => n.remove());
+    document.body.querySelectorAll('.cdk-overlay-container').forEach((n) => n.remove());
   });
 
   async function until(fixture: ComponentFixture<App>, condition: () => boolean, label: string): Promise<void> {
@@ -54,30 +59,42 @@ describe('Vetrina dei componenti', () => {
     const el = fixture.nativeElement as HTMLElement;
     fixture.detectChanges();
     await TestBed.inject(Router).navigateByUrl('/');
-    await until(fixture, () => !!el.querySelector('header select'), 'barra superiore');
-    if (user !== 'operatore') {
-      const s = el.querySelector('header select') as HTMLSelectElement;
-      s.value = user;
-      s.dispatchEvent(new Event('change'));
-    }
+    await until(fixture, () => !!el.querySelector('nz-header nz-select'), 'barra superiore');
+    if (user !== 'operatore') await pick(fixture, el.querySelector('nz-header nz-select') as HTMLElement, user);
     await TestBed.inject(Router).navigateByUrl(path);
     await until(fixture, () => !!el.querySelector('main h2'), 'contenuto');
     return { fixture, el };
   }
 
+  /** Sceglie una voce di un menu a tendina di NG-ZORRO dal suo testo. */
+  async function pick(fixture: ComponentFixture<App>, select: HTMLElement, label: string): Promise<void> {
+    const options = await openSelect(select, async () => {
+      fixture.detectChanges();
+      await fixture.whenStable();
+      await new Promise((r) => setTimeout(r, 5));
+    });
+    (options.find((o) => (o.textContent ?? '').trim() === label) as HTMLElement).click();
+  }
+  const toast = (): Element | null => document.body.querySelector('.ant-message-notice');
   const main = (el: HTMLElement): string => el.querySelector('main')?.textContent ?? '';
   const button = (el: HTMLElement, text: string): HTMLButtonElement | undefined =>
     [...el.querySelectorAll('main button')].find((b) => b.textContent?.trim().startsWith(text)) as HTMLButtonElement | undefined;
-  const rows = (el: HTMLElement, table = 0): number => el.querySelectorAll('main table')[table]?.querySelectorAll('tbody tr').length ?? 0;
+  const rows = (el: HTMLElement, table = 0): number => el.querySelectorAll('main nz-table')[table]?.querySelectorAll('tbody tr:not(.ant-table-placeholder)').length ?? 0;
   const plain = (text: string | null | undefined): string => (text ?? '').replace(/[\u00a0\u202f\s]+/g, ' ').trim();
-  const dialog = (): HTMLElement | null => document.body.querySelector('[role=dialog]');
-  const answer = (action: 'confirm' | 'cancel'): void => (document.body.querySelector(`[data-action=${action}]`) as HTMLButtonElement).click();
+  // Una finestra appena chiusa resta nel documento fino alla fine dell'animazione: conta l'ultima.
+  const dialog = (): HTMLElement | null => [...document.body.querySelectorAll<HTMLElement>('.ant-modal-confirm')].at(-1) ?? null;
+  const answer = (action: 'confirm' | 'cancel'): void => {
+    const buttons = [...document.body.querySelectorAll<HTMLElement>('.ant-modal-confirm-btns')].at(-1)!.querySelectorAll<HTMLButtonElement>('button');
+    (action === 'cancel' ? buttons[0] : buttons[1]).click();
+  };
   const field = (el: HTMLElement, name: string): HTMLInputElement | HTMLSelectElement | null =>
     [...el.querySelectorAll('main input, main select')].find((i) => i.id.endsWith(`-${name}`)) as HTMLInputElement | undefined ?? null;
-  const type = (el: HTMLElement, name: string, value: string): void => {
+  const type = async (fixture: ComponentFixture<App>, el: HTMLElement, name: string, value: string): Promise<void> => {
     const f = field(el, name)!;
+    const select = f.closest('nz-select') as HTMLElement | null;
+    if (select) return pick(fixture, select, value);
     f.value = value;
-    f.dispatchEvent(new Event(f.tagName === 'SELECT' ? 'change' : 'input'));
+    f.dispatchEvent(new Event('input'));
   };
 
   it('il caso d’uso compare nel menu e le tre schermate si aprono senza errori', async () => {
@@ -112,8 +129,8 @@ describe('Vetrina dei componenti', () => {
     it('la chiamata che fallisce mostra solo il messaggio di onError e ferma la sequenza', async () => {
       const { fixture, el } = await open('/vetrina/vetrina-base');
       button(el, 'Chiamata che fallisce')!.click();
-      await until(fixture, () => !!el.querySelector('.toast'), 'toast');
-      expect(el.querySelector('.toast')?.textContent).toContain('Errore gestito');
+      await until(fixture, () => !!toast(), 'toast');
+      expect(toast()?.textContent).toContain('Errore gestito');
       await new Promise((r) => setTimeout(r, 300));
       expect(el.textContent).not.toContain('non compare mai');
     });
@@ -131,28 +148,28 @@ describe('Vetrina dei componenti', () => {
   describe('form', () => {
     it('i campi obbligatori e le regole mostrano gli errori solo dopo l’invio', async () => {
       const { fixture, el } = await open('/vetrina/vetrina-form');
-      expect(el.querySelectorAll('main .lc-error').length).toBe(0);
+      expect(el.querySelectorAll('main .ant-form-item-explain-error').length).toBe(0);
       button(el, 'Invia')!.click();
-      await until(fixture, () => el.querySelectorAll('main .lc-error').length > 0, 'errore del nome');
-      type(el, 'nome', 'Mario');
-      type(el, 'eta', '12');
+      await until(fixture, () => el.querySelectorAll('main .ant-form-item-explain-error').length > 0, 'errore del nome');
+      await type(fixture, el, 'nome', 'Mario');
+      await type(fixture, el, 'eta', '12');
       button(el, 'Invia')!.click();
       await until(fixture, () => main(el).includes("L'età deve essere tra 18 e 120"), 'regola sull’età');
-      type(el, 'eta', '40');
+      await type(fixture, el, 'eta', '40');
       button(el, 'Invia')!.click();
-      await until(fixture, () => !!el.querySelector('.toast'), 'invio riuscito');
-      expect(el.querySelector('.toast')?.textContent).toContain('Dati inviati');
+      await until(fixture, () => !!toast(), 'invio riuscito');
+      expect(toast()?.textContent).toContain('Dati inviati');
     });
 
     it('il campo partita IVA compare solo per i business e diventa obbligatorio', async () => {
       const { fixture, el } = await open('/vetrina/vetrina-form');
       expect(field(el, 'partitaIva')).toBeNull();
-      type(el, 'categoria', 'business');
+      await type(fixture, el, 'categoria', 'business');
       await until(fixture, () => !!field(el, 'partitaIva'), 'campo condizionale');
-      type(el, 'nome', 'Mario');
+      await type(fixture, el, 'nome', 'Mario');
       button(el, 'Invia')!.click();
       await until(fixture, () => main(el).includes('Campo obbligatorio'), 'partita IVA obbligatoria');
-      type(el, 'partitaIva', '123');
+      await type(fixture, el, 'partitaIva', '123');
       button(el, 'Invia')!.click();
       await until(fixture, () => main(el).includes('La partita IVA ha 11 cifre'), 'regola partita IVA');
     });
@@ -174,10 +191,10 @@ describe('Vetrina dei componenti', () => {
     it('il filtro ricarica la tabella e la paginazione scorre le pagine', async () => {
       const { fixture, el } = await open('/vetrina/vetrina-tabelle');
       await until(fixture, () => rows(el, 0) === 8, 'prima pagina');
-      button(el, 'Successiva')!.click();
-      await until(fixture, () => main(el).includes('Pagina 2') && rows(el, 0) === 8, 'seconda pagina');
-      type(el, 'stato', 'approvato');
-      await until(fixture, () => rows(el, 0) === 7 && main(el).includes('Pagina 1'), 'filtro applicato');
+      (el.querySelector('main .ant-pagination-next button') as HTMLButtonElement).click();
+      await until(fixture, () => el.querySelector('main .ant-pagination-item-active')?.textContent?.trim() === '2' && rows(el, 0) === 8, 'seconda pagina');
+      await type(fixture, el, 'stato', 'approvato');
+      await until(fixture, () => rows(el, 0) === 7 && el.querySelector('main .ant-pagination-item-active')?.textContent?.trim() === '1', 'filtro applicato');
     });
 
     it('le azioni di riga rispettano permessi e stato della riga', async () => {
@@ -197,12 +214,12 @@ describe('Vetrina dei componenti', () => {
       expect(dialog()?.textContent).toMatch(/Approvare l'ordine ORD-\d{4}\?/);
       answer('cancel');
       await new Promise((r) => setTimeout(r, 300));
-      expect(manager.el.querySelector('.toast')).toBeNull();
+      expect(toast()).toBeNull();
       expect([...manager.el.querySelectorAll('main button')].filter((b) => b.textContent?.trim() === 'Approva').length).toBe(before);
       (approve[0] as HTMLButtonElement).click();
       await until(manager.fixture, () => !!dialog(), 'seconda finestra di conferma');
       answer('confirm');
-      await until(manager.fixture, () => !!manager.el.querySelector('.toast'), 'conferma');
+      await until(manager.fixture, () => !!toast(), 'conferma');
       await until(manager.fixture, () => [...manager.el.querySelectorAll('main button')].filter((b) => b.textContent?.trim() === 'Approva').length === before - 1, 'riga aggiornata');
     });
 
@@ -214,10 +231,10 @@ describe('Vetrina dei componenti', () => {
     it('i formati di cella: percentuale e badge degli ordini, importo, data e sì/no delle fatture', async () => {
       const { fixture, el } = await open('/vetrina/vetrina-tabelle');
       await until(fixture, () => rows(el, 0) > 0 && rows(el, 2) > 0, 'righe');
-      const first = [...el.querySelectorAll('main table')[0].querySelectorAll('tbody tr')[0].querySelectorAll('td')].map((c) => plain(c.textContent));
+      const first = [...el.querySelectorAll('main nz-table')[0].querySelectorAll('tbody tr')[0].querySelectorAll('td')].map((c) => plain(c.textContent));
       expect(first[3]).toBe('0 %');
-      expect(el.querySelector('main table tbody tr .tone')?.className).toContain('tone-');
-      const invoice = [...el.querySelectorAll('main table')[2].querySelectorAll('tbody tr')[0].querySelectorAll('td')].map((c) => plain(c.textContent));
+      expect(el.querySelector('main nz-table tbody tr nz-tag')?.className).toContain('ant-tag-');
+      const invoice = [...el.querySelectorAll('main nz-table')[2].querySelectorAll('tbody tr')[0].querySelectorAll('td')].map((c) => plain(c.textContent));
       expect(invoice[2]).toMatch(/^\d+,00 €$/);
       expect(invoice[3]).toMatch(/^\d{2}\/09\/26$/);
       expect(invoice[4]).toBe('No');
@@ -229,15 +246,15 @@ describe('Vetrina dei componenti', () => {
     const tabs = (el: HTMLElement): string[] => [...el.querySelectorAll('main [role=tab]')].map((t) => plain(t.textContent));
     const openTab = async (fixture: ComponentFixture<App>, el: HTMLElement, label: string): Promise<void> => {
       ([...el.querySelectorAll('main [role=tab]')].find((t) => plain(t.textContent) === label) as HTMLElement).click();
-      await until(fixture, () => !(el.querySelector('main [role=tabpanel]:not([hidden])') === null), label);
+      await until(fixture, () => !(el.querySelector('main [role=tabpanel][aria-hidden=false]') === null), label);
     };
 
     it('l\'operatore vede il dettaglio dell\'ordine, il messaggio di sola lettura e tre schede', async () => {
       const { fixture, el } = await open('/vetrina/vetrina-layout');
       await until(fixture, () => main(el).includes('ORD-0001'), 'dettaglio');
       expect(tabs(el)).toEqual(["Dati dell'ordine", 'Fatture pagate', 'Azioni con conferma']);
-      expect(el.querySelector('main .alert.error')?.textContent).toContain('non può modificare');
-      const pairs = [...el.querySelectorAll('main dl > div')].map((d) => plain(d.textContent));
+      expect(el.querySelector('main lc-alert .ant-alert-error')?.textContent).toContain('non può modificare');
+      const pairs = [...el.querySelectorAll('main .ant-descriptions-item-label')].map((l) => plain(`${l.textContent} ${l.nextElementSibling?.textContent}`));
       expect(pairs).toContain('Sconto 0 %');
       expect(main(el)).not.toContain('IBAN');
     });
@@ -245,7 +262,7 @@ describe('Vetrina dei componenti', () => {
     it('il responsabile non vede più il messaggio; l\'amministratore ha anche IBAN e la scheda riservata', async () => {
       const manager = await open('/vetrina/vetrina-layout', 'responsabile');
       await until(manager.fixture, () => main(manager.el).includes('ORD-0001'), 'dettaglio');
-      expect(manager.el.querySelector('main .alert.error')).toBeNull();
+      expect(manager.el.querySelector('main lc-alert .ant-alert-error')).toBeNull();
       manager.fixture.destroy();
       const admin = await open('/vetrina/vetrina-layout', 'amministratore');
       await until(admin.fixture, () => main(admin.el).includes('ORD-0001'), 'dettaglio');
@@ -258,7 +275,7 @@ describe('Vetrina dei componenti', () => {
       const { fixture, el } = await open('/vetrina/vetrina-layout');
       await openTab(fixture, el, 'Fatture pagate');
       await until(fixture, () => rows(el, 0) > 0, 'fatture pagate');
-      const cells = [...el.querySelectorAll('main table tbody tr')[0].querySelectorAll('td')].map((c) => plain(c.textContent));
+      const cells = [...el.querySelectorAll('main nz-table tbody tr')[0].querySelectorAll('td')].map((c) => plain(c.textContent));
       expect(cells[1]).toMatch(/,00 €$/);
       expect(cells[2]).toMatch(/^\d{2}\/09\/26$/);
       expect(cells[3]).toBe('Sì');
@@ -272,12 +289,12 @@ describe('Vetrina dei componenti', () => {
       expect(dialog()?.textContent).toContain('bozza di operatore');
       answer('cancel');
       await new Promise((r) => setTimeout(r, 300));
-      expect(el.querySelector('.toast')).toBeNull();
+      expect(toast()).toBeNull();
       button(el, 'Elimina la bozza')!.click();
       await until(fixture, () => !!dialog(), 'seconda finestra');
       answer('confirm');
-      await until(fixture, () => !!el.querySelector('.toast'), 'conferma');
-      expect(el.querySelector('.toast')?.textContent).toContain('Bozza eliminata');
+      await until(fixture, () => !!toast(), 'conferma');
+      expect(toast()?.textContent).toContain('Bozza eliminata');
     });
   });
 });

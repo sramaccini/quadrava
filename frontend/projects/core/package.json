@@ -6,7 +6,8 @@
     "@angular/common": "^22.2.0",
     "@angular/core": "^22.2.0",
     "expressions": "^0.0.1",
-    "schema": "^0.0.1"
+    "schema": "^0.0.1",
+    "ng-zorro-antd": "^22.1.0"
   },
   "dependencies": {
     "tslib": "^2.3.0"

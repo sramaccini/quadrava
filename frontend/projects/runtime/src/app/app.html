@@ -1,46 +1,40 @@
-<header class="bar">
-  <strong>Piattaforma LowCode — demo</strong>
-  <label>
-    Utente
-    <select (change)="session.username.set(value($event))">
+<nz-layout class="shell">
+  <nz-header class="bar">
+    <strong class="title">Piattaforma LowCode — demo</strong>
+    <label for="lc-user">Utente</label>
+    <nz-select nzId="lc-user" nzSize="small" class="pick" [ngModel]="session.username()" (ngModelChange)="session.username.set($event)">
       @for (p of profiles; track p) {
-        <option [value]="p" [selected]="p === session.username()">{{ p }}</option>
+        <nz-option [nzValue]="p" [nzLabel]="p" />
       }
-    </select>
-  </label>
-  <label>
-    Tema
-    <select (change)="themeName.set(value($event))">
+    </nz-select>
+    <label for="lc-theme">Tema</label>
+    <nz-select nzId="lc-theme" nzSize="small" class="pick" [ngModel]="themeName()" (ngModelChange)="themeName.set($event)">
       @for (t of themes; track t) {
-        <option [value]="t" [selected]="t === themeName()">{{ t }}</option>
+        <nz-option [nzValue]="t" [nzLabel]="t" />
       }
-    </select>
-  </label>
-  <span class="perms" title="Permessi del profilo selezionato">{{ permissions().join(', ') }}</span>
-</header>
+    </nz-select>
+    <span class="perms" title="Permessi del profilo selezionato">{{ permissions().join(', ') }}</span>
+  </nz-header>
 
-<div class="body">
-  @if (navigation.runtime(); as nav) {
-    <lc-sidebar
-      [navigation]="nav"
-      [useCaseId]="navigation.current().useCase"
-      [active]="active()"
-      [hrefFor]="hrefFor"
-      (navigate)="navigation.open($event.useCase, $event.leaf.screen, $event.leaf.params)"
-      (useCaseChange)="navigation.switchUseCase($event)"
-    />
+  <nz-layout class="body">
+    @if (navigation.runtime(); as nav) {
+      <lc-sidebar
+        [navigation]="nav"
+        [useCaseId]="navigation.current().useCase"
+        [active]="active()"
+        [hrefFor]="hrefFor"
+        (navigate)="navigation.open($event.useCase, $event.leaf.screen, $event.leaf.params)"
+        (useCaseChange)="navigation.switchUseCase($event)"
+      />
+    }
+    <nz-content>
+      <main>
+        <router-outlet />
+      </main>
+    </nz-content>
+  </nz-layout>
+
+  @if (diagnostics.events().length) {
+    <nz-footer class="diag">Segnalazioni tecniche: {{ diagnostics.events().length }} (dettagli nella console del browser)</nz-footer>
   }
-  <main>
-    <router-outlet />
-  </main>
-</div>
-
-<div class="toasts" role="status" aria-live="polite">
-  @for (t of notifier.toasts(); track t.id) {
-    <div class="toast" [class.error]="t.kind === 'error'">{{ t.message }}</div>
-  }
-</div>
-
-@if (diagnostics.events().length) {
-  <footer class="diag">Segnalazioni tecniche: {{ diagnostics.events().length }} (dettagli nella console del browser)</footer>
-}
+</nz-layout>

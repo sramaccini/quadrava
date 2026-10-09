@@ -3,6 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { ExpressionEngine } from 'expressions';
 import { ScreenComponent, checkScreenExpressions } from 'core';
+import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { validateScreen, type ScreenDefinition } from 'schema';
 
 type Loaded = { ok: true; definition: ScreenDefinition } | { ok: false; issues: string[] };
@@ -10,23 +11,24 @@ type Loaded = { ok: true; definition: ScreenDefinition } | { ok: false; issues: 
 /** Pagina del router: carica la schermata indicata nell'URL, la valida e la mostra con i parametri della query. */
 @Component({
   selector: 'lc-screen-page',
-  imports: [ScreenComponent],
+  imports: [ScreenComponent, NzAlertModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  styles: `.problem { border: 1px solid var(--lc-color-danger); color: var(--lc-color-danger); padding: 12px; border-radius: var(--lc-radius); }`,
   template: `
     @if (screen.error(); as e) {
-      <p class="problem" role="alert">Schermata non caricata: {{ e }}</p>
+      <div role="alert"><nz-alert nzType="error" nzShowIcon [nzMessage]="'Schermata non caricata: ' + e" /></div>
     } @else if (screen.value(); as loaded) {
       @if (loaded.ok) {
         <lc-screen [definition]="loaded.definition" [params]="params()" />
       } @else {
-        <div class="problem" role="alert">
-          <p>La schermata non è valida:</p>
-          <ul>
-            @for (issue of loaded.issues; track issue) {
-              <li>{{ issue }}</li>
-            }
-          </ul>
+        <div role="alert">
+          <nz-alert nzType="error" nzShowIcon nzMessage="La schermata non è valida:" [nzDescription]="issues" />
+          <ng-template #issues>
+            <ul>
+              @for (issue of loaded.issues; track issue) {
+                <li>{{ issue }}</li>
+              }
+            </ul>
+          </ng-template>
         </div>
       }
     } @else {

@@ -1,14 +1,14 @@
 import { ChangeDetectionStrategy, Component, input, signal } from '@angular/core';
 import { runSteps, type ScreenRuntime, type Scope } from 'core';
+import { NzButtonModule } from 'ng-zorro-antd/button';
 import type { ButtonNode } from 'schema';
-import { CONTROL_STYLES } from './shared';
 
 @Component({
   selector: 'lc-button',
+  imports: [NzButtonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  styles: CONTROL_STYLES,
   template: `
-    <button type="button" class="lc-btn" [disabled]="busy() || !runtime().isEnabled(node(), scope())" (click)="click()">
+    <button nz-button nzType="primary" type="button" [nzLoading]="busy()" [disabled]="busy() || !runtime().isEnabled(node(), scope())" (click)="click()">
       {{ runtime().text(node().label, scope()) }}
     </button>
   `,

@@ -11,6 +11,8 @@ import packages from '../../public/examples/pacchetti-elenco.json';
 import expenses from '../../public/examples/spese-elenco.json';
 import chiaro from '../../public/examples/themes/chiaro.json';
 import scuro from '../../public/examples/themes/scuro.json';
+import { NavigationService } from './navigation.service';
+import { openSelect, stubViewportHeight } from './select-testing';
 import { App } from './app';
 import { appConfig } from './app.config';
 
@@ -29,6 +31,10 @@ describe('App (demo)', () => {
     'examples/themes/scuro.json': scuro,
   };
 
+  let restoreViewport: () => void;
+  beforeAll(() => (restoreViewport = stubViewportHeight()));
+  afterAll(() => restoreViewport());
+
   beforeEach(() => {
     vi.stubGlobal('fetch', async (url: string) => {
       const body = files[url];
@@ -40,6 +46,8 @@ describe('App (demo)', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     document.documentElement.removeAttribute('style');
+    document.body.querySelectorAll('.cdk-overlay-container').forEach((n) => n.remove());
+    document.getElementById('lc-nz-dark-theme')?.remove();
   });
 
   async function until(fixture: ComponentFixture<App>, condition: () => boolean, label: string): Promise<void> {
@@ -60,62 +68,71 @@ describe('App (demo)', () => {
     await TestBed.inject(Router).navigateByUrl('/');
     if (user !== 'operatore') {
       await until(fixture, () => !!headerSelect(el, 0), 'barra superiore');
-      choose(headerSelect(el, 0), user);
+      await choose(fixture, headerSelect(el, 0), user);
     }
     return { fixture, el, url };
   }
 
   const buttonsOf = (el: HTMLElement): string[] => [...el.querySelectorAll('button')].map((b) => b.textContent?.trim() ?? '');
-  const headerSelect = (el: HTMLElement, index: number): HTMLSelectElement => el.querySelectorAll('header select')[index] as HTMLSelectElement;
-  const useCaseSelect = (el: HTMLElement): HTMLSelectElement | null => el.querySelector('lc-sidebar select');
-  const useCases = (el: HTMLElement): string[] => [...(useCaseSelect(el)?.options ?? [])].map((o) => o.textContent?.trim() ?? '');
-  const sideLabels = (el: HTMLElement): string[] => [...el.querySelectorAll('lc-sidebar .row .label')].map((n) => n.textContent?.trim() ?? '');
-  const choose = (s: HTMLSelectElement, value: string): void => {
-    s.value = value;
-    s.dispatchEvent(new Event('change'));
+  const headerSelect = (el: HTMLElement, index: number): HTMLElement => el.querySelectorAll('nz-header nz-select')[index] as HTMLElement;
+  const useCaseSelect = (el: HTMLElement): HTMLElement | null => el.querySelector('lc-sidebar nz-select');
+  /** Casi d'uso offerti all'utente (letti dallo stato del menu, non dal menu a tendina). */
+  const useCases = (): string[] => TestBed.inject(NavigationService).runtime()?.useCases().map((u) => u.label) ?? [];
+  const sideLabels = (el: HTMLElement): string[] =>
+    [...el.querySelectorAll('lc-sidebar a.leaf .label, lc-sidebar .ant-menu-submenu-title')].map((n) => (n.textContent ?? '').replace(/\s+/g, ' ').trim());
+  /** Sceglie una voce di un menu a tendina di NG-ZORRO dal suo testo. */
+  const choose = async (fixture: ComponentFixture<App>, select: HTMLElement, label: string): Promise<void> => {
+    const options = await openSelect(select, async () => {
+      fixture.detectChanges();
+      await fixture.whenStable();
+      await new Promise((r) => setTimeout(r, 5));
+    });
+    (options.find((o) => (o.textContent ?? '').trim() === label) as HTMLElement).click();
   };
+  const toast = (): Element | null => document.body.querySelector('.ant-message-notice');
   const clickLabel = (el: HTMLElement, selector: string, text: string): void => {
     ([...el.querySelectorAll(selector)].find((n) => n.textContent?.trim().startsWith(text)) as HTMLElement).click();
   };
-  const rows = (el: HTMLElement): number => el.querySelectorAll('main tbody tr').length;
+  const heading = (el: HTMLElement): string | undefined => el.querySelector('h1')?.textContent?.trim();
+  const rows = (el: HTMLElement): number => el.querySelectorAll('main tbody tr:not(.ant-table-placeholder)').length;
 
   it('all’avvio apre il caso d’uso predefinito e applica il tema', async () => {
     const { fixture, el, url } = await start();
     await until(fixture, () => rows(el) > 0, 'elenco fatture');
     expect(url()).toBe('/consultazione-fatture/fatture-elenco');
-    expect(el.querySelector('h1')?.textContent).toBe('Fatture');
+    expect(heading(el)).toBe('Fatture');
     expect(document.documentElement.style.getPropertyValue('--lc-color-primary')).toBe('#1f5fbf');
     expect(el.querySelector('lc-sidebar a[aria-current="page"]')?.textContent).toContain('Elenco fatture');
   });
 
   it('i casi d’uso dipendono dai permessi del profilo', async () => {
     const { fixture, el } = await start();
-    await until(fixture, () => useCases(el).length > 0, 'selettore');
-    expect(useCases(el)).toEqual(['Inserimento Fattura', 'Consultazione Fatture', 'Vetrina componenti']);
-    choose(headerSelect(el, 0), 'responsabile');
-    await until(fixture, () => useCases(el).length === 5, 'quattro casi d’uso');
-    expect(useCases(el)).toEqual(['Inserimento Fattura', 'Consultazione Fatture', 'Creazione pacchetto', 'Revisione Spese', 'Vetrina componenti']);
+    await until(fixture, () => useCases().length > 0, 'selettore');
+    expect(useCases()).toEqual(['Inserimento Fattura', 'Consultazione Fatture', 'Vetrina componenti']);
+    await choose(fixture, headerSelect(el, 0), 'responsabile');
+    await until(fixture, () => useCases().length === 5, 'quattro casi d’uso');
+    expect(useCases()).toEqual(['Inserimento Fattura', 'Consultazione Fatture', 'Creazione pacchetto', 'Revisione Spese', 'Vetrina componenti']);
   });
 
   it('cambiare caso d’uso porta alla sua prima voce e aggiorna l’URL', async () => {
     const { fixture, el, url } = await start();
-    await until(fixture, () => useCases(el).length > 0, 'selettore');
-    choose(useCaseSelect(el)!, 'inserimento-fattura');
-    await until(fixture, () => el.querySelector('h1')?.textContent === 'Nuova fattura', 'form nuova fattura');
+    await until(fixture, () => useCases().length > 0, 'selettore');
+    await choose(fixture, useCaseSelect(el)!, 'Inserimento Fattura');
+    await until(fixture, () => heading(el) === 'Nuova fattura', 'form nuova fattura');
     expect(url()).toBe('/inserimento-fattura/fattura-nuova?tipo=attiva');
     // il tipo arriva dai parametri della voce di menu
-    expect((el.querySelector('main select') as HTMLSelectElement).value).toBe('attiva');
+    expect(el.querySelector('main nz-select .ant-select-selection-item')?.textContent?.trim()).toBe('attiva');
     // il menu mostra i tre livelli: gruppo, sottogruppo, voce
     expect(sideLabels(el)).toContain('Fattura passiva');
-    clickLabel(el, 'lc-sidebar button.group', 'Da ordine');
+    clickLabel(el, 'lc-sidebar .ant-menu-submenu-title', 'Da ordine');
     await until(fixture, () => sideLabels(el).includes("Scegli l'ordine"), 'terzo livello');
   });
 
   it('inserire una fattura la salva in bozza e porta all’elenco delle bozze', async () => {
     const { fixture, el, url } = await start();
-    await until(fixture, () => useCases(el).length > 0, 'selettore');
-    choose(useCaseSelect(el)!, 'inserimento-fattura');
-    await until(fixture, () => el.querySelector('h1')?.textContent === 'Nuova fattura', 'form nuova fattura');
+    await until(fixture, () => useCases().length > 0, 'selettore');
+    await choose(fixture, useCaseSelect(el)!, 'Inserimento Fattura');
+    await until(fixture, () => heading(el) === 'Nuova fattura', 'form nuova fattura');
     const input = (name: string): HTMLInputElement => [...el.querySelectorAll('main input')].find((i) => i.id.endsWith(`-${name}`)) as HTMLInputElement;
     const type = (name: string, value: string): void => {
       input(name).value = value;
@@ -123,29 +140,29 @@ describe('App (demo)', () => {
     };
     // senza dati obbligatori il salvataggio non parte e compaiono gli errori
     (el.querySelector('main .actions button') as HTMLButtonElement).click();
-    await until(fixture, () => el.querySelectorAll('main .lc-error').length > 0, 'errori di validazione');
+    await until(fixture, () => el.querySelectorAll('main .ant-form-item-explain-error').length > 0, 'errori di validazione');
     type('numero', 'FT-2026-900');
     type('cliente', 'Gialli Srl');
     type('importo', '1200');
     (el.querySelector('main .actions button') as HTMLButtonElement).click();
-    await until(fixture, () => el.querySelector('h1')?.textContent === 'Fatture' && rows(el) > 0, 'elenco delle bozze');
+    await until(fixture, () => heading(el) === 'Fatture' && rows(el) > 0, 'elenco delle bozze');
     expect(url()).toBe('/inserimento-fattura/fatture-elenco?stato=bozza');
     expect(el.querySelector('main')?.textContent).toContain('FT-2026-900');
     // con ?stato fisso il filtro non compare
-    expect(el.querySelector('main select')).toBeNull();
+    expect(el.querySelector('main nz-select')).toBeNull();
   });
 
   it('la revisione spese: voce con parametri, approvazione e messaggio', async () => {
     const { fixture, el, url } = await start('responsabile');
-    await until(fixture, () => useCases(el).length === 5, 'quattro casi d’uso');
-    choose(useCaseSelect(el)!, 'revisione-spese');
+    await until(fixture, () => useCases().length === 5, 'quattro casi d’uso');
+    await choose(fixture, useCaseSelect(el)!, 'Revisione Spese');
     await until(fixture, () => rows(el) > 0, 'elenco spese');
     expect(url()).toBe('/revisione-spese/spese-elenco?stato=da-revisionare');
     const before = rows(el);
     expect(buttonsOf(el)).toContain('Respingi');
     clickLabel(el, 'main button', 'Approva');
-    await until(fixture, () => !!el.querySelector('.toast'), 'conferma');
-    expect(el.querySelector('.toast')?.textContent).toContain('Spesa approvata');
+    await until(fixture, () => !!toast(), 'conferma');
+    expect(toast()?.textContent).toContain('Spesa approvata');
     await until(fixture, () => rows(el) === before - 1, 'riga sparita dall’elenco da revisionare');
     // l'altra voce, stessa schermata con altri parametri, mostra le spese revisionate
     clickLabel(el, 'lc-sidebar a.leaf', 'Revisionate');
@@ -165,9 +182,15 @@ describe('App (demo)', () => {
   it('il tema scuro cambia le variabili CSS', async () => {
     const { fixture, el } = await start();
     await until(fixture, () => rows(el) > 0, 'elenco fatture');
-    choose(headerSelect(el, 1), 'scuro');
+    await choose(fixture, headerSelect(el, 1), 'scuro');
     await until(fixture, () => document.documentElement.style.getPropertyValue('--lc-color-primary') === '#6aa6ff', 'tema scuro');
     expect(document.documentElement.style.getPropertyValue('color-scheme')).toBe('dark');
+    // il ponte verso NG-ZORRO imposta i suoi colori e carica lo stylesheet scuro
+    await until(fixture, () => document.documentElement.style.getPropertyValue('--ant-primary-color') === '#6aa6ff', 'colori di NG-ZORRO');
+    expect(document.getElementById('lc-nz-dark-theme')?.getAttribute('href')).toBe('nz-dark.css');
+    await choose(fixture, headerSelect(el, 1), 'chiaro');
+    await until(fixture, () => document.documentElement.style.getPropertyValue('--ant-primary-color') === '#1f5fbf', 'tema chiaro');
+    expect(document.getElementById('lc-nz-dark-theme')).toBeNull();
   });
 
   it('naviga al dettaglio di un ordine e mostra il form con i campi protetti', async () => {
@@ -176,7 +199,7 @@ describe('App (demo)', () => {
     await TestBed.inject(Router).navigateByUrl('/consultazione-fatture/ordini-elenco');
     await until(fixture, () => rows(el) > 0, 'elenco ordini');
     clickLabel(el, 'main button', 'Apri');
-    await until(fixture, () => el.querySelector('h1')?.textContent === 'Dettaglio ordine', 'dettaglio');
+    await until(fixture, () => heading(el) === 'Dettaglio ordine', 'dettaglio');
     await until(fixture, () => (el.querySelector('main input[type=text]') as HTMLInputElement | null)?.value === 'Rossi Srl', 'valori del form');
     expect(el.querySelector('main')?.textContent).not.toContain('iban');
     expect((el.querySelector('main .actions button') as HTMLButtonElement).disabled).toBe(true);

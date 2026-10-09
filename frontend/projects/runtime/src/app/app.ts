@@ -1,9 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { RouterOutlet } from '@angular/router';
 import { SidebarComponent } from 'components';
+import { NzLayoutModule } from 'ng-zorro-antd/layout';
+import { NzSelectModule } from 'ng-zorro-antd/select';
 import { ThemeService, type VisibleLeaf } from 'core';
 import { validateTheme } from 'schema';
-import { DEMO_PROFILES, DemoDiagnostics, DemoNotifier, DemoSession } from '../demo/demo-ports';
+import { DEMO_PROFILES, DemoDiagnostics, DemoSession } from '../demo/demo-ports';
 import { NavigationService } from './navigation.service';
 
 const THEMES = ['chiaro', 'scuro'];
@@ -11,14 +14,13 @@ const THEMES = ['chiaro', 'scuro'];
 /** Guscio dell'applicazione: barra superiore (profilo e tema della demo), menu laterale, contenuto e notifiche. */
 @Component({
   selector: 'lc-root',
-  imports: [RouterOutlet, SidebarComponent],
+  imports: [FormsModule, RouterOutlet, SidebarComponent, NzLayoutModule, NzSelectModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './app.scss',
   templateUrl: './app.html',
 })
 export class App {
   protected readonly session = inject(DemoSession);
-  protected readonly notifier = inject(DemoNotifier);
   protected readonly diagnostics = inject(DemoDiagnostics);
   protected readonly navigation = inject(NavigationService);
   private readonly themeService = inject(ThemeService);
@@ -45,7 +47,4 @@ export class App {
     });
   }
 
-  protected value(event: Event): string {
-    return (event.target as HTMLSelectElement).value;
-  }
 }

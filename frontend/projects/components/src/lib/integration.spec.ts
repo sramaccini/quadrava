@@ -3,6 +3,7 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { Authorization, DataClient, Notifier, ScreenComponent, ScreenNavigator, UserProvider, type DataRequest } from 'core';
 import type { ScreenDefinition } from 'schema';
 import { provideLowcodeComponents } from './provide';
+import { openSelect, stubViewportHeight } from './select-testing';
 
 const screen: ScreenDefinition = {
   schemaVersion: '1.0',
@@ -40,6 +41,10 @@ const rows = [
 ];
 
 describe('ScreenComponent + catalogo standard', () => {
+  let restore: () => void;
+  beforeAll(() => (restore = stubViewportHeight()));
+  afterAll(() => restore());
+
   // Come l'implementazione reale di Authorization, i permessi sono un signal: un cambio ridisegna la schermata.
   const permissions = signal(new Set<string>());
   const grant = (p: string): void => permissions.update((s) => new Set(s).add(p));
@@ -85,7 +90,7 @@ describe('ScreenComponent + catalogo standard', () => {
 
   it('mostra titolo e righe caricate', async () => {
     const { el } = await render();
-    expect(el.querySelector('h1')?.textContent).toBe('Ordini');
+    expect(el.querySelector('h1')?.textContent?.trim()).toBe('Ordini');
     expect(el.querySelectorAll('tbody tr')).toHaveLength(2);
     expect(requests[0]).toEqual({ method: 'GET', url: '/api/ordini', query: { page: 0 } });
   });
@@ -119,9 +124,8 @@ describe('ScreenComponent + catalogo standard', () => {
 
   it('cambiare un filtro ricarica con il parametro', async () => {
     const { fixture, el } = await render();
-    const select = el.querySelector('select') as HTMLSelectElement;
-    select.value = 'inviato';
-    select.dispatchEvent(new Event('change'));
+    const options = await openSelect(el.querySelector('lc-filter-bar nz-select') as Element, () => settle(fixture));
+    (options.find((o) => o.textContent?.trim() === 'inviato') as HTMLElement).click();
     await settle(fixture);
     expect(requests.at(-1)?.query).toEqual({ stato: 'inviato', page: 0 });
   });

@@ -14,5 +14,6 @@ export * from './lib/sidebar.component';
 export * from './lib/detail.component';
 export * from './lib/alert.component';
 export * from './lib/tabs.component';
-export * from './lib/confirm-dialog.component';
 export * from './lib/dialog-confirmation';
+export * from './lib/notifier';
+export * from './lib/theme-bridge';

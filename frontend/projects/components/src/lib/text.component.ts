@@ -1,16 +1,18 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import type { ScreenRuntime, Scope } from 'core';
+import { NzTypographyModule } from 'ng-zorro-antd/typography';
 import type { TextNode } from 'schema';
 
 @Component({
   selector: 'lc-text',
+  imports: [NzTypographyModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  styles: `h2 { margin: 0; font-size: 1.25em; } p { margin: 0; }`,
+  styles: `h2, p { margin: 0; }`,
   template: `
     @if (node().style === 'heading') {
-      <h2>{{ runtime().text(node().text, scope()) }}</h2>
+      <h2 nz-typography>{{ runtime().text(node().text, scope()) }}</h2>
     } @else {
-      <p>{{ runtime().text(node().text, scope()) }}</p>
+      <p nz-typography>{{ runtime().text(node().text, scope()) }}</p>
     }
   `,
 })

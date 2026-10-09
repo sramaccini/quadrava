@@ -1,15 +1,20 @@
 import { ChangeDetectionStrategy, Component, effect, inject, signal, untracked } from '@angular/core';
+import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NavigationService } from '../navigation.service';
 
 /** Pagina iniziale: porta alla destinazione predefinita dell'utente, oppure spiega che non ha funzioni disponibili. */
 @Component({
   selector: 'lc-home-page',
+  imports: [NzAlertModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (problems().length) {
-      <div role="alert"><p>Il menu non è valido:</p><ul>@for (p of problems(); track p) { <li>{{ p }}</li> }</ul></div>
+      <div role="alert">
+        <nz-alert nzType="error" nzShowIcon nzMessage="Il menu non è valido:" [nzDescription]="list" />
+        <ng-template #list><ul>@for (p of problems(); track p) { <li>{{ p }}</li> }</ul></ng-template>
+      </div>
     } @else if (empty()) {
-      <p role="status">Nessuna funzione disponibile per il tuo profilo.</p>
+      <div role="status"><nz-alert nzType="info" nzShowIcon nzMessage="Nessuna funzione disponibile per il tuo profilo." /></div>
     } @else {
       <p role="status">Caricamento…</p>
     }

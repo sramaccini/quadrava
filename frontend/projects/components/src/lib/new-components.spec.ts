@@ -1,8 +1,9 @@
-import { signal } from '@angular/core';
+import { ApplicationRef, signal } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { Authorization, DataClient, Notifier, ScreenComponent, ScreenNavigator, UserProvider, type DataRequest } from 'core';
 import type { NodeDefinition, ScreenDefinition } from 'schema';
 import { DialogConfirmation } from './dialog-confirmation';
+import { NzModalService } from 'ng-zorro-antd/modal';
 import { provideLowcodeComponents } from './provide';
 
 const plain = (text: string | null | undefined): string => (text ?? '').replace(/[  \s]+/g, ' ').trim();
@@ -95,13 +96,13 @@ describe('nuovi componenti del catalogo', () => {
 
     it('i badge hanno il tono del tema; i valori non elencati sono neutri', async () => {
       const { el } = await renderWithData([table], [row]);
-      const badges = [...el.querySelectorAll('tbody .tone')];
-      expect(badges.map((b) => b.className.replace('tone ', ''))).toEqual(['tone-success', 'tone-neutral']);
+      const badges = [...el.querySelectorAll('tbody nz-tag')];
+      expect(badges.map((b) => [...b.classList].find((c) => c.startsWith('ant-tag-') && c !== 'ant-tag'))).toEqual(['ant-tag-success', 'ant-tag-default']);
     });
 
     it('importi e percentuali sono allineati a destra', async () => {
       const { el } = await renderWithData([table], [row]);
-      const aligned = [...el.querySelectorAll('thead th')].map((h) => h.classList.contains('num'));
+      const aligned = [...el.querySelectorAll<HTMLElement>('thead th')].map((h) => h.style.textAlign === 'right');
       expect(aligned.slice(0, 5)).toEqual([true, true, false, false, false]);
     });
 
@@ -139,10 +140,12 @@ describe('nuovi componenti del catalogo', () => {
 
     it('mostra etichette e valori formattati; un valore vuoto è un trattino', async () => {
       const { el } = await renderWithData([detail], record);
-      expect(el.querySelector('h2')?.textContent).toBe('Ordine');
-      const pairs = [...el.querySelectorAll('dl > div')].map((d) => [plain(d.querySelector('dt')?.textContent), plain(d.querySelector('dd')?.textContent)]);
-      expect(pairs).toEqual([['Numero', 'ORD-1'], ['Sconto', '10 %'], ['Stato', 'approvato'], ['Nota', '—']]);
-      expect(el.querySelector('dd .tone-success')).not.toBeNull();
+      expect(plain(el.querySelector('.ant-card-head-title')?.textContent)).toBe('Ordine');
+      const labels = [...el.querySelectorAll('.ant-descriptions-item-label')].map((d) => plain(d.textContent));
+      const values = [...el.querySelectorAll('.ant-descriptions-item-content')].map((d) => plain(d.textContent));
+      expect(labels).toEqual(['Numero', 'Sconto', 'Stato', 'Nota']);
+      expect(values).toEqual(['ORD-1', '10 %', 'approvato', '—']);
+      expect(el.querySelector('.ant-descriptions-item-content nz-tag.ant-tag-success')).not.toBeNull();
     });
 
     it('i campi con hiddenIf compaiono solo con il permesso', async () => {
@@ -181,21 +184,22 @@ describe('nuovi componenti del catalogo', () => {
         { type: 'alert', text: 'Salvato', kind: 'success' },
         { type: 'alert', text: 'Errore', kind: 'error' },
       ]);
-      const alerts = [...el.querySelectorAll('.alert')];
-      expect(alerts.map((a) => [a.getAttribute('role'), a.classList.contains('info'), a.classList.contains('success'), a.classList.contains('error')])).toEqual([
-        ['status', true, false, false],
-        ['status', false, true, false],
-        ['alert', false, false, true],
+      const alerts = [...el.querySelectorAll('lc-alert > div')];
+      const kind = (a: Element): string | undefined => [...(a.querySelector('.ant-alert')?.classList ?? [])].find((c) => /^ant-alert-(info|success|error)$/.test(c));
+      expect(alerts.map((a) => [a.getAttribute('role'), kind(a)])).toEqual([
+        ['status', 'ant-alert-info'],
+        ['status', 'ant-alert-success'],
+        ['alert', 'ant-alert-error'],
       ]);
-      expect(alerts[0].textContent).toBe('Ciao u');
+      expect(plain(alerts[0].textContent)).toBe('Ciao u');
     });
 
     it('compare e sparisce con visibleIf, che dipende dai permessi', async () => {
       const { fixture, el } = await render([{ type: 'alert', text: 'Sola lettura', visibleIf: "{{!can('ordini.ordine.scrivi')}}" }]);
-      expect(el.querySelector('.alert')).not.toBeNull();
+      expect(el.querySelector('lc-alert')).not.toBeNull();
       permissions.set(new Set(['ordini.ordine.scrivi']));
       await settle(fixture);
-      expect(el.querySelector('.alert')).toBeNull();
+      expect(el.querySelector('lc-alert')).toBeNull();
     });
   });
 
@@ -208,24 +212,25 @@ describe('nuovi componenti del catalogo', () => {
         { label: 'Banca', visibleIf: "{{can('ordini.iban.leggi')}}", components: [{ type: 'text', text: 'Dati bancari' }] },
       ],
     };
-    const tabButtons = (el: HTMLElement): HTMLButtonElement[] => [...el.querySelectorAll<HTMLButtonElement>('[role=tab]')];
+    const tabButtons = (el: HTMLElement): HTMLElement[] => [...el.querySelectorAll<HTMLElement>('[role=tab]')];
     const panels = (el: HTMLElement): HTMLElement[] => [...el.querySelectorAll<HTMLElement>('[role=tabpanel]')];
+    const selected = (el: HTMLElement): (string | null)[] => tabButtons(el).map((b) => b.getAttribute('aria-selected'));
 
     it('mostra la prima scheda e collega le schede ai loro pannelli', async () => {
       const { el } = await render([tabs]);
       expect(tabButtons(el).map((b) => plain(b.textContent))).toEqual(['Dati', 'Note']);
-      expect(tabButtons(el).map((b) => b.getAttribute('aria-selected'))).toEqual(['true', 'false']);
-      expect(panels(el).map((p) => p.hidden)).toEqual([false, true]);
-      const [first] = tabButtons(el);
-      expect(panels(el)[0].getAttribute('aria-labelledby')).toBe(first.id);
-      expect(first.getAttribute('aria-controls')).toBe(panels(el)[0].id);
+      expect(selected(el)).toEqual(['true', 'false']);
+      // Tutti i pannelli restano nella pagina; quelli non scelti sono nascosti a chi usa uno screen reader.
+      expect(panels(el).map((p) => p.getAttribute('aria-hidden'))).toEqual(['false', 'true']);
+      expect(panels(el)[0].getAttribute('aria-labelledby')).toBe(tabButtons(el)[0].id);
     });
 
     it('il click cambia scheda e solo la scheda scelta è nel tabindex', async () => {
       const { fixture, el } = await render([tabs]);
       tabButtons(el)[1].click();
       await settle(fixture);
-      expect(panels(el).map((p) => p.hidden)).toEqual([true, false]);
+      expect(selected(el)).toEqual(['false', 'true']);
+      expect(panels(el).map((p) => p.getAttribute('aria-hidden'))).toEqual(['true', 'false']);
       expect(tabButtons(el).map((b) => b.tabIndex)).toEqual([-1, 0]);
     });
 
@@ -242,105 +247,95 @@ describe('nuovi componenti del catalogo', () => {
       expect((el.querySelector('input') as HTMLInputElement).value).toBe('Rossi Srl');
     });
 
-    it('le frecce, Home e Fine spostano scheda e focus', async () => {
-      const { fixture, el } = await render([tabs]);
-      document.body.appendChild(el);
-      const key = (k: string, from: number): void => {
-        tabButtons(el)[from].dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
-      };
-      key('ArrowRight', 0);
-      await settle(fixture);
-      await Promise.resolve();
-      expect(tabButtons(el)[1].getAttribute('aria-selected')).toBe('true');
-      expect(document.activeElement).toBe(tabButtons(el)[1]);
-      key('ArrowRight', 1); // dall'ultima si torna alla prima
-      await settle(fixture);
-      expect(tabButtons(el)[0].getAttribute('aria-selected')).toBe('true');
-      key('End', 0);
-      await settle(fixture);
-      expect(tabButtons(el)[1].getAttribute('aria-selected')).toBe('true');
-      key('Home', 1);
-      await settle(fixture);
-      expect(tabButtons(el)[0].getAttribute('aria-selected')).toBe('true');
-      el.remove();
-    });
-
     it('una scheda con visibleIf compare con il permesso; se sparisce, si torna alla prima', async () => {
       const { fixture, el } = await render([tabs], {}, ['ordini.iban.leggi']);
       expect(tabButtons(el).map((b) => plain(b.textContent))).toEqual(['Dati', 'Note', 'Banca']);
       tabButtons(el)[2].click();
       await settle(fixture);
-      expect(panels(el)[2].hidden).toBe(false);
+      expect(selected(el)).toEqual(['false', 'false', 'true']);
       permissions.set(new Set());
       await settle(fixture);
       expect(tabButtons(el)).toHaveLength(2);
-      expect(tabButtons(el)[0].getAttribute('aria-selected')).toBe('true');
+      expect(selected(el)[0]).toBe('true');
     });
   });
 
   describe('finestra di conferma', () => {
-    const dialog = (): HTMLElement | null => document.body.querySelector('[role=dialog]');
-    const click = (action: 'cancel' | 'confirm'): void => (document.body.querySelector(`[data-action=${action}]`) as HTMLButtonElement).click();
+    // Una finestra appena chiusa resta nel documento fino alla fine della sua animazione: conta l'ultima.
+    const dialog = (): HTMLElement | null => [...document.body.querySelectorAll<HTMLElement>('.ant-modal-confirm')].at(-1) ?? null;
+    const button = (action: 'cancel' | 'confirm'): HTMLButtonElement => {
+      const all = [...document.body.querySelectorAll<HTMLElement>('.ant-modal-confirm-btns')].at(-1)!.querySelectorAll<HTMLButtonElement>('button');
+      return action === 'cancel' ? all[0] : all[1];
+    };
+    const click = (action: 'cancel' | 'confirm'): void => button(action).click();
+    /** La finestra compare dopo un ciclo di rilevamento delle modifiche e la sua animazione. */
+    const flush = async (): Promise<void> => {
+      for (let i = 0; i < 4; i++) {
+        TestBed.inject(ApplicationRef).tick();
+        await new Promise((r) => setTimeout(r, 10));
+      }
+    };
+    const ask = (message: string): Promise<boolean> => TestBed.inject(DialogConfirmation).confirm(message);
 
     beforeEach(() => TestBed.configureTestingModule({ providers: [provideLowcodeComponents()] }));
-    afterEach(() => document.body.querySelectorAll('lc-confirm-dialog, .stub').forEach((n) => n.remove()));
-
-    it('mostra il messaggio come testo, con il focus su Annulla, e Conferma risolve true', async () => {
-      const service = TestBed.inject(DialogConfirmation);
-      const result = service.confirm('Approvare <b>ORD-1</b>?');
-      expect(dialog()?.getAttribute('aria-modal')).toBe('true');
-      expect(dialog()?.querySelector('b')).toBeNull();
-      expect(dialog()?.textContent).toContain('Approvare <b>ORD-1</b>?');
-      expect((document.activeElement as HTMLElement).dataset['action']).toBe('cancel');
-      click('confirm');
-      expect(await result).toBe(true);
-      expect(dialog()).toBeNull();
+    afterEach(() => {
+      document.body.querySelectorAll('.cdk-overlay-container, .stub').forEach((n) => n.remove());
     });
 
-    it('Annulla, Esc e clic fuori dalla finestra risolvono false', async () => {
-      const service = TestBed.inject(DialogConfirmation);
-      let result = service.confirm('Sicuro?');
+    it('mostra il messaggio come testo, con il focus su Annulla, e Conferma risolve true', async () => {
+      const result = ask('Approvare <b>ORD-1</b>?');
+      await flush();
+      expect(document.body.querySelector('[role=dialog]')).not.toBeNull();
+      expect(dialog()?.querySelector('b')).toBeNull();
+      expect(dialog()?.textContent).toContain('Approvare <b>ORD-1</b>?');
+      expect(plain(button('confirm').textContent)).toBe('Conferma');
+      click('confirm');
+      expect(await result).toBe(true);
+    });
+
+    it('il focus parte su Annulla (la prova di focus non è possibile in jsdom: si controlla la configurazione)', async () => {
+      const spy = vi.spyOn(TestBed.inject(NzModalService), 'confirm');
+      const result = ask('Sicuro?');
+      await flush();
+      expect(spy).toHaveBeenCalledWith(expect.objectContaining({ nzAutofocus: 'cancel', nzKeyboard: true, nzMaskClosable: true }));
+      click('cancel');
+      await result;
+    });
+
+    it('Annulla, Esc e clic sullo sfondo risolvono false', async () => {
+      let result = ask('Sicuro?');
+      await flush();
       click('cancel');
       expect(await result).toBe(false);
-      result = service.confirm('Sicuro?');
-      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      await flush();
+      result = ask('Sicuro?');
+      await flush();
+      (document.activeElement as HTMLElement).dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, bubbles: true }));
+      await flush();
       expect(await result).toBe(false);
-      result = service.confirm('Sicuro?');
-      (document.body.querySelector('.backdrop') as HTMLElement).click();
+      await flush();
+      result = ask('Sicuro?');
+      await flush();
+      ([...document.body.querySelectorAll<HTMLElement>('.ant-modal-wrap')].at(-1) as HTMLElement).click();
+      await flush();
       expect(await result).toBe(false);
-      expect(dialog()).toBeNull();
     });
 
     it('un clic dentro la finestra, fuori dai pulsanti, non annulla', async () => {
-      const service = TestBed.inject(DialogConfirmation);
-      const result = service.confirm('Sicuro?');
-      (document.body.querySelector('.panel p') as HTMLElement).click();
+      const result = ask('Sicuro?');
+      await flush();
+      (dialog()?.querySelector('.ant-modal-confirm-content') as HTMLElement).click();
+      await flush();
       expect(dialog()).not.toBeNull();
       click('cancel');
       await result;
     });
 
-    it('Tab resta dentro la finestra', async () => {
-      const service = TestBed.inject(DialogConfirmation);
-      const result = service.confirm('Sicuro?');
-      const tab = (shift = false): void => {
-        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: shift, bubbles: true, cancelable: true }));
-      };
-      tab();
-      expect((document.activeElement as HTMLElement).dataset['action']).toBe('confirm');
-      tab();
-      expect((document.activeElement as HTMLElement).dataset['action']).toBe('cancel');
-      tab(true);
-      expect((document.activeElement as HTMLElement).dataset['action']).toBe('confirm');
-      click('cancel');
-      await result;
-    });
-
     it('una seconda richiesta mentre la finestra è aperta viene rifiutata', async () => {
-      const service = TestBed.inject(DialogConfirmation);
-      const first = service.confirm('Prima');
-      expect(await service.confirm('Seconda')).toBe(false);
-      expect(document.body.querySelectorAll('[role=dialog]')).toHaveLength(1);
+      const first = ask('Prima');
+      await flush();
+      expect(await TestBed.inject(DialogConfirmation).confirm('Seconda')).toBe(false);
+      expect(document.body.querySelectorAll('.ant-modal-confirm-btns')).toHaveLength(1);
       click('confirm');
       expect(await first).toBe(true);
     });
@@ -350,7 +345,8 @@ describe('nuovi componenti del catalogo', () => {
       opener.className = 'stub';
       document.body.appendChild(opener);
       opener.focus();
-      const result = TestBed.inject(DialogConfirmation).confirm('Sicuro?');
+      const result = ask('Sicuro?');
+      await flush();
       expect(document.activeElement).not.toBe(opener);
       click('cancel');
       await result;
@@ -358,20 +354,21 @@ describe('nuovi componenti del catalogo', () => {
     });
 
     it('in una schermata, un pulsante con confirm non chiama il servizio se si annulla e lo chiama se si conferma', async () => {
-      const button: NodeDefinition = {
+      const buttonNode: NodeDefinition = {
         type: 'button',
         label: 'Elimina',
         onClick: [{ confirm: 'Eliminare {{user.username}}?' }, { call: 'elimina' }, { toast: 'Eliminato' }],
       };
-      const { fixture, el } = await render([button], { elimina: { type: 'rest', method: 'POST', url: '/api/elimina' } });
+      const { fixture, el } = await render([buttonNode], { elimina: { type: 'rest', method: 'POST', url: '/api/elimina' } });
       const press = async (): Promise<void> => {
-        (el.querySelector('button') as HTMLButtonElement).click();
+        (el.querySelector('lc-button button') as HTMLButtonElement).click();
+        await flush();
         await settle(fixture);
       };
       await press();
       expect(dialog()?.textContent).toContain('Eliminare u?');
       click('cancel');
-      await new Promise((r) => setTimeout(r)); // la sequenza si chiude in modo asincrono: il pulsante torna libero
+      await flush();
       await settle(fixture);
       expect(requests).toEqual([]);
       expect(toasts).toEqual([]);

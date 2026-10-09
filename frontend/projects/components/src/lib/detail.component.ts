@@ -1,7 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { LOWCODE_LOCALE, formatValue, type FormattedValue, type ScreenRuntime, type Scope } from 'core';
+import { NzAlertModule } from 'ng-zorro-antd/alert';
+import { NzCardModule } from 'ng-zorro-antd/card';
+import { NzDescriptionsModule } from 'ng-zorro-antd/descriptions';
+import { NzTagModule } from 'ng-zorro-antd/tag';
 import type { ColumnDefinition, DetailNode } from 'schema';
-import { TONE_STYLES } from './shared';
+import { TONE_COLORS } from './shared';
 
 /**
  * Scheda di dettaglio in sola lettura: un record mostrato come coppie etichetta e valore.
@@ -9,49 +13,32 @@ import { TONE_STYLES } from './shared';
  */
 @Component({
   selector: 'lc-detail',
+  imports: [NzCardModule, NzDescriptionsModule, NzTagModule, NzAlertModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  styles: [
-    TONE_STYLES,
-    `
-      .box { border: 1px solid var(--lc-color-border, #d5dbe3); border-radius: var(--lc-radius, 6px); background: var(--lc-color-surface, #fff); padding: var(--lc-gap, 12px); }
-      h2 { margin: 0 0 var(--lc-gap, 12px); font-size: 1.15em; }
-      dl { margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--lc-gap, 12px); }
-      dt { font-size: .85em; color: var(--lc-color-muted, #5d6b7a); }
-      dd { margin: 2px 0 0; min-height: 1.4em; overflow-wrap: anywhere; }
-      .state { margin: 0; color: var(--lc-color-muted, #5d6b7a); }
-      .state.error { color: var(--lc-color-danger, #c62828); }
-    `,
-  ],
   template: `
-    <section class="box" [attr.aria-label]="node().title" [attr.aria-busy]="source().status === 'loading'">
-      @if (node().title) {
-        <h2>{{ runtime().text(node().title, scope()) }}</h2>
-      }
+    <nz-card role="region" [attr.aria-label]="node().title" [attr.aria-busy]="source().status === 'loading'" [nzTitle]="node().title ? runtime().text(node().title, scope())  : undefined">
       @if (source().status === 'error') {
-        <p class="state error" role="alert">{{ source().error }}</p>
+        <div role="alert"><nz-alert nzType="error" [nzMessage]="source().error ?? null" nzShowIcon /></div>
       } @else if (record(); as rec) {
-        <dl>
+        <nz-descriptions nzBordered nzSize="small" [nzColumn]="{ xxl: 3, xl: 3, lg: 3, md: 2, sm: 1, xs: 1 }">
           @for (field of fields(); track field.field) {
-            <div>
-              <dt>{{ field.label ?? field.field }}</dt>
-              <dd>
-                @if (view(rec, field); as v) {
-                  @if (v.tone) {
-                    <span [class]="'tone tone-' + v.tone">{{ v.text }}</span>
-                  } @else {
-                    {{ v.text || '—' }}
-                  }
+            <nz-descriptions-item [nzTitle]="field.label ?? field.field">
+              @if (view(rec, field); as v) {
+                @if (v.tone) {
+                  <nz-tag [nzColor]="color(v.tone)">{{ v.text }}</nz-tag>
+                } @else {
+                  {{ v.text || '—' }}
                 }
-              </dd>
-            </div>
+              }
+            </nz-descriptions-item>
           }
-        </dl>
+        </nz-descriptions>
       } @else if (source().status === 'ready') {
-        <p class="state" role="status">Nessun dato.</p>
+        <p role="status">Nessun dato.</p>
       } @else {
-        <p class="state" role="status">Caricamento…</p>
+        <p role="status">Caricamento…</p>
       }
-    </section>
+    </nz-card>
   `,
 })
 export class DetailComponent {
@@ -69,5 +56,9 @@ export class DetailComponent {
 
   protected view(record: Record<string, unknown>, field: ColumnDefinition): FormattedValue {
     return formatValue(record[field.field], field, this.locale);
+  }
+
+  protected color(tone: NonNullable<FormattedValue['tone']>): string {
+    return TONE_COLORS[tone];
   }
 }

@@ -1,8 +1,8 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideRouter } from '@angular/router';
-import { provideLowcodeComponents } from 'components';
+import { NzNotifier, provideLowcodeComponents } from 'components';
 import { Authorization, DataClient, Notifier, RuntimeDiagnostics, ScreenNavigator, UserProvider } from 'core';
-import { DemoDiagnostics, DemoNotifier, DemoSession, MockDataClient } from '../demo/demo-ports';
+import { DemoDiagnostics, DemoSession, MockDataClient } from '../demo/demo-ports';
 import { routes } from './app.routes';
 import { RouterNavigator } from './navigation.service';
 
@@ -17,7 +17,7 @@ export const appConfig: ApplicationConfig = {
     { provide: UserProvider, useExisting: DemoSession },
     { provide: DataClient, useExisting: MockDataClient },
     { provide: ScreenNavigator, useExisting: RouterNavigator },
-    { provide: Notifier, useExisting: DemoNotifier },
+    { provide: Notifier, useExisting: NzNotifier },
     { provide: RuntimeDiagnostics, useExisting: DemoDiagnostics },
   ],
 };

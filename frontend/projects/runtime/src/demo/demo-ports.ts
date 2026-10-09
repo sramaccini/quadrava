@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import { Authorization, DataClient, Notifier, RuntimeDiagnostics, UserProvider, type DataRequest } from 'core';
+import { Authorization, DataClient, RuntimeDiagnostics, UserProvider, type DataRequest } from 'core';
 
 /** Profili della demo: i permessi sono quelli che in produzione darebbe il servizio di autorizzazione. */
 export const DEMO_PROFILES: Record<string, string[]> = {
@@ -24,24 +24,6 @@ export class DemoSession extends Authorization implements UserProvider {
 
   user(): Record<string, unknown> {
     return { username: this.username(), roles: [this.username()] };
-  }
-}
-
-export interface Toast {
-  id: number;
-  message: string;
-  kind: 'info' | 'error';
-}
-
-@Injectable({ providedIn: 'root' })
-export class DemoNotifier extends Notifier {
-  readonly toasts = signal<Toast[]>([]);
-  private next = 1;
-
-  toast(message: string, kind: 'info' | 'error' = 'info'): void {
-    const id = this.next++;
-    this.toasts.update((all) => [...all, { id, message, kind }]);
-    setTimeout(() => this.toasts.update((all) => all.filter((t) => t.id !== id)), 4000);
   }
 }
 

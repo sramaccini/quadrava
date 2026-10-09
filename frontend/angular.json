@@ -30,15 +30,23 @@
                 "input": "projects/runtime/public"
               }
             ],
-            "styles": ["projects/runtime/src/styles.scss"]
+            "styles": [
+              "node_modules/ng-zorro-antd/ng-zorro-antd.variable.min.css",
+              {
+                "input": "node_modules/ng-zorro-antd/ng-zorro-antd.dark.min.css",
+                "bundleName": "nz-dark",
+                "inject": false
+              },
+              "projects/runtime/src/styles.scss"
+            ]
           },
           "configurations": {
             "production": {
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "500kB",
-                  "maximumError": "1MB"
+                  "maximumWarning": "2.5MB",
+                  "maximumError": "4MB"
                 },
                 {
                   "type": "anyComponentStyle",
@@ -96,7 +104,9 @@
                 "input": "projects/editor/public"
               }
             ],
-            "styles": ["projects/editor/src/styles.scss"]
+            "styles": [
+              "projects/editor/src/styles.scss"
+            ]
           },
           "configurations": {
             "production": {
