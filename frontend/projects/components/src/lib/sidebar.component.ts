@@ -22,41 +22,50 @@ export interface NavigateEvent {
   imports: [FormsModule, IconComponent, NzButtonModule, NzMenuModule, NzSelectModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
-    :host { display: block; height: 100%; }
-    .side { box-sizing: border-box; width: 270px; height: 100%; display: flex; flex-direction: column; gap: var(--lc-gap, 12px); padding: var(--lc-gap, 12px) 0;
-      background: var(--lc-color-surface, #fff); border-right: 1px solid var(--lc-color-border, #d5dbe3); overflow-y: auto; }
+    :host { display: flex; align-self: stretch; }
+    .side { box-sizing: border-box; flex: none; width: 256px; display: flex; flex-direction: column; overflow-x: hidden; overflow-y: auto;
+      background: var(--lc-sider-bg, #001529); color: rgba(255, 255, 255, 0.85); box-shadow: 2px 0 6px rgba(0, 21, 41, 0.35); }
     .side.collapsed { width: 80px; }
-    .head { display: flex; align-items: flex-end; gap: var(--lc-gap, 12px); padding: 0 var(--lc-gap, 12px); }
-    .collapsed .head { justify-content: center; padding: 0; }
-    .usecase { flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-    .usecase label { font-size: .8em; color: var(--lc-color-muted, #5d6b7a); }
+    .logo { display: flex; align-items: center; gap: 12px; height: 56px; padding: 0 24px; flex: none; color: #fff; font-size: 18px; font-weight: 600; white-space: nowrap; overflow: hidden; }
+    .logo .mark { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; flex: none; border-radius: 6px; background: var(--ant-primary-color, #1677ff); font-size: 16px; }
+    .collapsed .logo { padding: 0; justify-content: center; }
+    .collapsed .logo .name { display: none; }
+    .usecase { display: flex; flex-direction: column; gap: 4px; padding: 4px 16px 12px; }
+    .usecase label { font-size: 12px; color: rgba(255, 255, 255, 0.55); }
     nz-select { width: 100%; }
+    :host ::ng-deep .usecase .ant-select-selector { background: rgba(255, 255, 255, 0.08) !important; border-color: rgba(255, 255, 255, 0.18) !important; color: #fff !important; }
+    :host ::ng-deep .usecase .ant-select-arrow { color: rgba(255, 255, 255, 0.65); }
+    nav { flex: 1; }
+    :host ::ng-deep .ant-menu-dark.ant-menu-inline .ant-menu-sub, :host ::ng-deep .ant-menu-dark { background: transparent; }
+    :host ::ng-deep .ant-menu-sub.ant-menu-inline { background: rgba(0, 0, 0, 0.3) !important; }
     ul[nz-menu] { border-inline-end: 0; }
     a.leaf { display: flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; }
     .collapsed .label { display: none; }
-    .empty { margin: 0; padding: 0 var(--lc-gap, 12px); color: var(--lc-color-muted, #5d6b7a); font-size: .9em; }
+    .empty { margin: 0; padding: 0 16px; color: rgba(255, 255, 255, 0.55); font-size: .9em; }
+    .foot { flex: none; border-top: 1px solid rgba(255, 255, 255, 0.12); padding: 8px; text-align: center; }
+    .foot button { color: rgba(255, 255, 255, 0.85); }
+    .foot button:hover { color: #fff; background: rgba(255, 255, 255, 0.1); }
   `,
   template: `
     <aside class="side" [class.collapsed]="collapsed()">
-      <div class="head">
-        <button nz-button nzType="text" class="toggle" type="button" [attr.aria-label]="collapsed() ? 'Espandi il menu' : 'Comprimi il menu'" [attr.aria-expanded]="!collapsed()" (click)="collapsed.set(!collapsed())">
-          <lc-icon name="menu" />
-        </button>
-        @if (!collapsed() && useCases().length > 1) {
-          <div class="usecase">
-            <label [for]="selectId">Caso d'uso</label>
-            <nz-select [nzId]="selectId" [ngModel]="current()?.id" (ngModelChange)="useCaseChange.emit($event)">
-              @for (u of useCases(); track u.id) {
-                <nz-option [nzValue]="u.id" [nzLabel]="u.label" />
-              }
-            </nz-select>
-          </div>
-        }
+      <div class="logo">
+        <span class="mark" aria-hidden="true"><lc-icon name="package" /></span>
+        <span class="name">{{ brand() }}</span>
       </div>
+      @if (!collapsed() && useCases().length > 1) {
+        <div class="usecase">
+          <label [for]="selectId">Caso d'uso</label>
+          <nz-select [nzId]="selectId" [ngModel]="current()?.id" (ngModelChange)="useCaseChange.emit($event)">
+            @for (u of useCases(); track u.id) {
+              <nz-option [nzValue]="u.id" [nzLabel]="u.label" />
+            }
+          </nz-select>
+        </div>
+      }
 
       @if (current(); as uc) {
         <nav [attr.aria-label]="'Menu ' + uc.label">
-          <ul nz-menu nzMode="inline" [nzInlineCollapsed]="collapsed()" [nzInlineIndent]="18">
+          <ul nz-menu nzMode="inline" nzTheme="dark" [nzInlineCollapsed]="collapsed()" [nzInlineIndent]="18">
             @for (g1 of uc.items; track g1.id) {
               @if (g1.kind === 'group') {
                 <li nz-submenu class="group" [nzTitle]="g1.label" [nzIcon]="type(g1.icon)" [nzOpen]="isExpanded(g1.id)" (nzOpenChange)="setOpen(g1.id, $event)">
@@ -102,11 +111,18 @@ export interface NavigateEvent {
       } @else if (!collapsed()) {
         <p class="empty">Nessuna funzione disponibile per il tuo profilo.</p>
       }
+      <div class="foot">
+        <button nz-button nzType="text" class="toggle" type="button" [attr.aria-label]="collapsed() ? 'Espandi il menu' : 'Comprimi il menu'" [attr.aria-expanded]="!collapsed()" (click)="collapsed.set(!collapsed())">
+          <lc-icon name="menu" />
+        </button>
+      </div>
     </aside>
   `,
 })
 export class SidebarComponent {
   readonly navigation = input.required<NavigationRuntime>();
+  /** Nome mostrato accanto al logo. */
+  readonly brand = input('LowCode');
   /** Caso d'uso mostrato; se manca o non è visibile si mostra il primo disponibile. */
   readonly useCaseId = input<string | null>(null);
   /** Schermata corrente, per evidenziare la voce attiva e aprire i suoi gruppi. */

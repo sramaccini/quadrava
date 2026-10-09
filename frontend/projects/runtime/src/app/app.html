@@ -1,6 +1,7 @@
 <nz-layout class="shell">
   <nz-header class="bar">
-    <strong class="title">Piattaforma LowCode — demo</strong>
+    <span class="crumb">Piattaforma LowCode · demo</span>
+    <span class="spacer"></span>
     <label for="lc-user">Utente</label>
     <nz-select nzId="lc-user" nzSize="small" class="pick" [ngModel]="session.username()" (ngModelChange)="session.username.set($event)">
       @for (p of profiles; track p) {
@@ -13,13 +14,14 @@
         <nz-option [nzValue]="t" [nzLabel]="t" />
       }
     </nz-select>
-    <span class="perms" title="Permessi del profilo selezionato">{{ permissions().join(', ') }}</span>
+    <span class="perms" [attr.title]="permissions().join(', ')">{{ permissions().length }} permessi</span>
   </nz-header>
 
   <nz-layout class="body">
     @if (navigation.runtime(); as nav) {
       <lc-sidebar
         [navigation]="nav"
+        brand="LowCode"
         [useCaseId]="navigation.current().useCase"
         [active]="active()"
         [hrefFor]="hrefFor"

@@ -81,7 +81,8 @@
               "label": "Cliente"
             },
             {
-              "field": "tipo"
+              "field": "tipo",
+              "label": "Tipo"
             },
             {
               "field": "sconto",
@@ -165,10 +166,12 @@
           "source": "pacchetti",
           "columns": [
             {
-              "field": "nome"
+              "field": "nome",
+              "label": "Nome"
             },
             {
-              "field": "descrizione"
+              "field": "descrizione",
+              "label": "Descrizione"
             },
             {
               "field": "creato",

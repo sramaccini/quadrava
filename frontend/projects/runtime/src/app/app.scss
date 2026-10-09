@@ -1,17 +1,20 @@
 :host { display: block; min-height: 100vh; }
 .shell { min-height: 100vh; }
 .bar {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 12px; height: auto; line-height: 1.5715; padding: 10px 20px;
-  background: var(--lc-color-primary); color: var(--lc-color-on-primary);
+  display: flex; flex-wrap: wrap; align-items: center; gap: 12px; height: 56px; line-height: 1.5715; padding: 0 24px;
+  background: var(--lc-color-surface); color: var(--lc-color-on-surface); box-shadow: 0 1px 4px rgba(0, 21, 41, 0.12); position: relative; z-index: 1;
 }
-.bar label { margin-left: 8px; }
-.pick { min-width: 150px; color: var(--lc-color-on-surface); }
-.perms { margin-left: auto; font-size: .8em; opacity: .85; }
-.body { align-items: stretch; background: var(--lc-color-background); }
+.crumb { color: var(--lc-color-muted); }
+.spacer { flex: 1; }
+.bar label { margin-left: 8px; color: var(--lc-color-muted); }
+.pick { min-width: 150px; }
+.perms { font-size: .85em; color: var(--lc-color-muted); border: 1px solid var(--lc-color-border); border-radius: 12px; padding: 0 10px; cursor: help; }
+.body { flex-direction: row; align-items: stretch; background: var(--lc-color-background); }
 lc-sidebar { flex: none; }
 nz-content { flex: 1; min-width: 0; }
-main { max-width: 1000px; margin: 0 auto; padding: 20px; color: var(--lc-color-on-surface); }
+main { padding: 24px; color: var(--lc-color-on-surface); }
 .diag { text-align: center; font-size: .8em; color: var(--lc-color-muted); background: transparent; }
 @media (max-width: 720px) {
-  .body { flex-direction: column; }
+  .body { flex-direction: column !important; }
+  .bar { height: auto; padding: 8px 16px; }
 }

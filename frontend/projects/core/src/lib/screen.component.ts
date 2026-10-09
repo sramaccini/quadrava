@@ -13,7 +13,7 @@ import { ScreenRuntime } from './screen-runtime';
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: block; }
-    h1 { margin: 0 0 var(--lc-gap, 12px); }
+    h1[nz-typography] { margin: 0 0 var(--lc-gap, 12px); font-size: 24px; font-weight: 600; line-height: 1.3; }
     .stack { display: flex; flex-direction: column; gap: var(--lc-gap, 12px); }
   `,
   template: `

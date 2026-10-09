@@ -20,16 +20,17 @@ const DEFAULT_PAGE_SIZE = 10;
   imports: [NzTableModule, NzTagModule, NzButtonModule, NzPaginationModule, NzAlertModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
-    .wrap { overflow-x: auto; }
+    .wrap { overflow-x: auto; overflow-y: hidden; }
     .actions { display: flex; gap: 6px; flex-wrap: wrap; }
     .pager { display: flex; justify-content: flex-end; padding-top: var(--lc-gap, 12px); }
     .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   `,
   template: `
-    <div class="wrap" [attr.aria-busy]="source().status === 'loading'">
+    <div [attr.aria-busy]="source().status === 'loading'">
       @if (source().status === 'error') {
         <div role="alert"><nz-alert nzType="error" [nzMessage]="source().error ?? null" nzShowIcon /></div>
       } @else {
+        <div class="wrap">
         <nz-table
           nzSize="middle"
           [nzData]="rows()"
@@ -79,6 +80,7 @@ const DEFAULT_PAGE_SIZE = 10;
             }
           </tbody>
         </nz-table>
+        </div>
         <ng-template #empty>
           @if (source().status === 'loading') {
             <span role="status">Caricamento…</span>

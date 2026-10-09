@@ -13,6 +13,14 @@ function rgba(hex: string, alpha: number): string {
   return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
 }
 
+/** Miscela due colori esadecimali: `t` è la quota di `other` (0 = solo `hex`, 1 = solo `other`). */
+function mix(hex: string, other: string, t: number): string {
+  const a = parseInt(hex.slice(1), 16);
+  const b = parseInt(other.slice(1), 16);
+  const channel = (shift: number): string => Math.round(((a >> shift) & 255) * (1 - t) + ((b >> shift) & 255) * t).toString(16).padStart(2, '0');
+  return `#${channel(16)}${channel(8)}${channel(0)}`;
+}
+
 /** Variabili CSS di NG-ZORRO (`--ant-*`) ricavate dai colori del tema: primario, successo, errore. Funzione pura. */
 export function themeToNzVars(theme: ThemeDefinition): Record<string, string> {
   const { colors } = theme.tokens;
@@ -27,8 +35,9 @@ export function themeToNzVars(theme: ThemeDefinition): Record<string, string> {
     vars[`--ant-${name}-color-outline`] = rgba(base, 0.2);
     if (name === 'primary') palette.slice(0, 7).forEach((c, i) => (vars[`--ant-primary-${i + 1}`] = c));
     else {
-      vars[`--ant-${name}-color-deprecated-bg`] = palette[0];
-      vars[`--ant-${name}-color-deprecated-border`] = palette[2];
+      // Sul chiaro la scala di Ant impasta i colori scuri (un verde scuro diventa grigio): meglio schiarirli verso il bianco.
+      vars[`--ant-${name}-color-deprecated-bg`] = dark ? palette[0] : mix(base, '#ffffff', 0.9);
+      vars[`--ant-${name}-color-deprecated-border`] = dark ? palette[2] : mix(base, '#ffffff', 0.6);
     }
   };
   family('primary', colors.primary);
