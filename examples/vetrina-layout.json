@@ -1,22 +1,47 @@
 {
   "schemaVersion": "1.0",
   "screen": "vetrina-layout",
-  "title": "Vetrina: schede, dettaglio e messaggi",
+  "title": "{{ t('vetrina_layout.vetrina_schede_dettaglio_e_messa', 'Vetrina: schede, dettaglio e messaggi') }}",
   "requires": "vetrina.componenti.leggi",
   "dataSources": {
-    "ordine": { "type": "rest", "method": "GET", "url": "/api/ordini/{{has(params.id) ? params.id : 1}}" },
-    "fatture": { "type": "rest", "method": "GET", "url": "/api/fatture", "params": { "stato": "pagata" } },
-    "eliminaBozza": { "type": "rest", "method": "POST", "url": "/api/vetrina/segnala" }
+    "ordine": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/ordini/{{has(params.id) ? params.id : 1}}"
+    },
+    "fatture": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/fatture",
+      "params": {
+        "stato": "pagata"
+      }
+    },
+    "eliminaBozza": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/vetrina/segnala"
+    }
   },
   "components": [
-    { "id": "titolo", "type": "text", "style": "heading", "text": "Schede, dettaglio e messaggi" },
-    { "id": "avviso-info", "type": "alert", "kind": "info", "text": "Un messaggio in pagina informa senza interrompere: qui è il tipo info." },
+    {
+      "id": "titolo",
+      "type": "text",
+      "style": "heading",
+      "text": "{{ t('vetrina_layout.schede_dettaglio_e_messaggi', 'Schede, dettaglio e messaggi') }}"
+    },
+    {
+      "id": "avviso-info",
+      "type": "alert",
+      "kind": "info",
+      "text": "{{ t('vetrina_layout.un_messaggio_in_pagina_informa_s', 'Un messaggio in pagina informa senza interrompere: qui è il tipo info.') }}"
+    },
     {
       "id": "avviso-sola-lettura",
       "type": "alert",
       "kind": "error",
       "visibleIf": "{{!can('ordini.ordine.scrivi')}}",
-      "text": "Il tuo profilo non può modificare gli ordini: questo messaggio sparisce con il permesso ordini.ordine.scrivi (prova il profilo responsabile)."
+      "text": "{{ t('vetrina_layout.il_tuo_profilo_non_puo_modificar', 'Il tuo profilo non può modificare gli ordini: questo messaggio sparisce con il permesso ordini.ordine.scrivi (prova il profilo responsabile).') }}"
     },
     {
       "id": "schede",
@@ -24,64 +49,125 @@
       "tabs": [
         {
           "id": "scheda-dati",
-          "label": "Dati dell'ordine",
+          "label": "{{ t('vetrina_layout.dati_dell_ordine', 'Dati dell\\'ordine') }}",
           "components": [
             {
               "id": "dettaglio-ordine",
               "type": "detail",
               "source": "ordine",
-              "title": "Ordine in sola lettura",
+              "title": "{{ t('vetrina_layout.ordine_in_sola_lettura', 'Ordine in sola lettura') }}",
               "fields": [
-                { "field": "numero", "label": "Numero" },
-                { "field": "cliente", "label": "Cliente" },
-                { "field": "tipo", "label": "Tipo" },
-                { "field": "sconto", "label": "Sconto", "format": "percent" },
-                { "field": "stato", "label": "Stato", "format": "badge", "badges": { "bozza": "neutral", "inviato": "primary", "approvato": "success" } },
-                { "field": "iban", "label": "IBAN", "hiddenIf": "{{!can('ordini.iban.leggi')}}" }
+                {
+                  "field": "numero",
+                  "label": "{{ t('comune.numero', 'Numero') }}"
+                },
+                {
+                  "field": "cliente",
+                  "label": "{{ t('comune.cliente', 'Cliente') }}"
+                },
+                {
+                  "field": "tipo",
+                  "label": "{{ t('comune.tipo', 'Tipo') }}",
+                  "valueKey": "valori.tipo"
+                },
+                {
+                  "field": "sconto",
+                  "label": "{{ t('comune.sconto', 'Sconto') }}",
+                  "format": "percent"
+                },
+                {
+                  "field": "stato",
+                  "label": "{{ t('comune.stato', 'Stato') }}",
+                  "format": "badge",
+                  "badges": {
+                    "bozza": "neutral",
+                    "inviato": "primary",
+                    "approvato": "success"
+                  },
+                  "valueKey": "valori.stato"
+                },
+                {
+                  "field": "iban",
+                  "label": "{{ t('vetrina_layout.iban', 'IBAN') }}",
+                  "hiddenIf": "{{!can('ordini.iban.leggi')}}"
+                }
               ]
             }
           ]
         },
         {
           "id": "scheda-fatture",
-          "label": "Fatture pagate",
+          "label": "{{ t('vetrina_layout.fatture_pagate', 'Fatture pagate') }}",
           "components": [
             {
               "id": "tabella-fatture",
               "type": "table",
               "source": "fatture",
               "columns": [
-                { "field": "numero", "label": "Numero" },
-                { "field": "importo", "label": "Importo", "format": "currency" },
-                { "field": "emessa", "label": "Emessa il", "format": "date" },
-                { "field": "incassata", "label": "Incassata", "format": "boolean" }
+                {
+                  "field": "numero",
+                  "label": "{{ t('comune.numero', 'Numero') }}"
+                },
+                {
+                  "field": "importo",
+                  "label": "{{ t('comune.importo_2', 'Importo') }}",
+                  "format": "currency"
+                },
+                {
+                  "field": "emessa",
+                  "label": "{{ t('comune.emessa_il', 'Emessa il') }}",
+                  "format": "date"
+                },
+                {
+                  "field": "incassata",
+                  "label": "{{ t('comune.incassata', 'Incassata') }}",
+                  "format": "boolean"
+                }
               ]
             }
           ]
         },
         {
           "id": "scheda-azioni",
-          "label": "Azioni con conferma",
+          "label": "{{ t('vetrina_layout.azioni_con_conferma', 'Azioni con conferma') }}",
           "components": [
-            { "id": "txt-conferma", "type": "text", "text": "Prima di un'azione delicata si chiede conferma. Se premi Annulla non succede nulla e non compare nessun errore." },
+            {
+              "id": "txt-conferma",
+              "type": "text",
+              "text": "{{ t('vetrina_layout.prima_di_un_azione_delicata_si_c', 'Prima di un\\'azione delicata si chiede conferma. Se premi Annulla non succede nulla e non compare nessun errore.') }}"
+            },
             {
               "id": "btn-elimina",
               "type": "button",
-              "label": "Elimina la bozza",
+              "label": "{{ t('vetrina_layout.elimina_la_bozza', 'Elimina la bozza') }}",
               "onClick": [
-                { "confirm": "Eliminare definitivamente la bozza di {{user.username}}?" },
-                { "call": "eliminaBozza", "onError": { "toast": "Eliminazione non riuscita" } },
-                { "toast": "Bozza eliminata" }
+                {
+                  "confirm": "{{ t('vetrina_layout.eliminare_definitivamente_la_boz', 'Eliminare definitivamente la bozza di {username}?', {'username': dyn(user.username)}) }}"
+                },
+                {
+                  "call": "eliminaBozza",
+                  "onError": {
+                    "toast": "{{ t('vetrina_layout.eliminazione_non_riuscita', 'Eliminazione non riuscita') }}"
+                  }
+                },
+                {
+                  "toast": "{{ t('vetrina_layout.bozza_eliminata', 'Bozza eliminata') }}"
+                }
               ]
             }
           ]
         },
         {
           "id": "scheda-riservata",
-          "label": "Dati riservati",
+          "label": "{{ t('vetrina_layout.dati_riservati', 'Dati riservati') }}",
           "visibleIf": "{{can('ordini.iban.leggi')}}",
           "components": [
-            { "id": "avviso-riservato", "type": "alert", "kind": "success", "text": "Questa scheda esiste solo per chi può leggere gli IBAN: senza il permesso non compare nemmeno il suo titolo." }
+            {
+              "id": "avviso-riservato",
+              "type": "alert",
+              "kind": "success",
+              "text": "{{ t('vetrina_layout.questa_scheda_esiste_solo_per_ch', 'Questa scheda esiste solo per chi può leggere gli IBAN: senza il permesso non compare nemmeno il suo titolo.') }}"
+            }
           ]
         }
       ]

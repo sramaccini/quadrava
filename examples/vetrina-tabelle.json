@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0",
   "screen": "vetrina-tabelle",
-  "title": "Vetrina: filtri e tabelle",
+  "title": "{{ t('vetrina_tabelle.vetrina_filtri_e_tabelle', 'Vetrina: filtri e tabelle') }}",
   "requires": "vetrina.componenti.leggi",
   "dataSources": {
     "ordini": {
@@ -38,17 +38,17 @@
       "id": "titolo",
       "type": "text",
       "style": "heading",
-      "text": "Filtri e tabelle"
+      "text": "{{ t('vetrina_tabelle.filtri_e_tabelle', 'Filtri e tabelle') }}"
     },
     {
       "id": "intro",
       "type": "text",
-      "text": "Una barra di filtri scrive nello stato della schermata; la tabella ricarica da sola quando i filtri cambiano. Le righe hanno azioni condizionate dai permessi e dallo stato della riga."
+      "text": "{{ t('vetrina_tabelle.una_barra_di_filtri_scrive_nello', 'Una barra di filtri scrive nello stato della schermata; la tabella ricarica da sola quando i filtri cambiano. Le righe hanno azioni condizionate dai permessi e dallo stato della riga.') }}"
     },
     {
       "id": "sezione-paginata",
       "type": "section",
-      "title": "Tabella con filtri, paginazione lato server e azioni di riga",
+      "title": "{{ t('vetrina_tabelle.tabella_con_filtri_paginazione_l', 'Tabella con filtri, paginazione lato server e azioni di riga') }}",
       "components": [
         {
           "id": "filtri",
@@ -58,12 +58,13 @@
             {
               "name": "stato",
               "type": "select",
-              "label": "Stato",
+              "label": "{{ t('comune.stato', 'Stato') }}",
               "options": [
                 "bozza",
                 "inviato",
                 "approvato"
-              ]
+              ],
+              "optionKey": "valori.stato"
             }
           ]
         },
@@ -74,36 +75,38 @@
           "columns": [
             {
               "field": "numero",
-              "label": "Numero"
+              "label": "{{ t('comune.numero', 'Numero') }}"
             },
             {
               "field": "cliente",
-              "label": "Cliente"
+              "label": "{{ t('comune.cliente', 'Cliente') }}"
             },
             {
               "field": "tipo",
-              "label": "Tipo"
+              "label": "{{ t('comune.tipo', 'Tipo') }}",
+              "valueKey": "valori.tipo"
             },
             {
               "field": "sconto",
-              "label": "Sconto",
+              "label": "{{ t('comune.sconto', 'Sconto') }}",
               "format": "percent"
             },
             {
               "field": "stato",
-              "label": "Stato",
+              "label": "{{ t('comune.stato', 'Stato') }}",
               "format": "badge",
               "badges": {
                 "bozza": "neutral",
                 "inviato": "primary",
                 "approvato": "success"
-              }
+              },
+              "valueKey": "valori.stato"
             }
           ],
           "rowActions": [
             {
               "id": "btn-apri",
-              "label": "Apri",
+              "label": "{{ t('comune.apri', 'Apri') }}",
               "onClick": [
                 {
                   "navigate": "ordine-dettaglio",
@@ -115,11 +118,11 @@
             },
             {
               "id": "btn-approva",
-              "label": "Approva",
+              "label": "{{ t('comune.approva', 'Approva') }}",
               "visibleIf": "{{can('ordini.ordine.approva') && row.stato == 'inviato'}}",
               "onClick": [
                 {
-                  "confirm": "Approvare l'ordine {{row.numero}}?"
+                  "confirm": "{{ t('vetrina_tabelle.approvare_l_ordine', 'Approvare l\\'ordine {numero}?', {'numero': dyn(row.numero)}) }}"
                 },
                 {
                   "call": "approvaOrdine",
@@ -127,20 +130,20 @@
                     "id": "{{row.id}}"
                   },
                   "onError": {
-                    "toast": "Approvazione non riuscita"
+                    "toast": "{{ t('comune.approvazione_non_riuscita', 'Approvazione non riuscita') }}"
                   }
                 },
                 {
                   "refresh": "ordini"
                 },
                 {
-                  "toast": "Ordine approvato"
+                  "toast": "{{ t('comune.ordine_approvato', 'Ordine approvato') }}"
                 }
               ]
             },
             {
               "id": "btn-modifica",
-              "label": "Modifica",
+              "label": "{{ t('vetrina_tabelle.modifica', 'Modifica') }}",
               "enabledIf": "{{row._perm.update}}",
               "onClick": [
                 {
@@ -158,7 +161,7 @@
     {
       "id": "sezione-semplice",
       "type": "section",
-      "title": "Tabella semplice: tutte le righe in un array, senza filtri né pagine",
+      "title": "{{ t('vetrina_tabelle.tabella_semplice_tutte_le_righe', 'Tabella semplice: tutte le righe in un array, senza filtri né pagine') }}",
       "components": [
         {
           "id": "tabella-pacchetti",
@@ -167,15 +170,15 @@
           "columns": [
             {
               "field": "nome",
-              "label": "Nome"
+              "label": "{{ t('comune.nome', 'Nome') }}"
             },
             {
               "field": "descrizione",
-              "label": "Descrizione"
+              "label": "{{ t('comune.descrizione', 'Descrizione') }}"
             },
             {
               "field": "creato",
-              "label": "Creato il"
+              "label": "{{ t('comune.creato_il', 'Creato il') }}"
             }
           ]
         }
@@ -184,12 +187,12 @@
     {
       "id": "sezione-formati",
       "type": "section",
-      "title": "Formati di cella: importo, data, sì/no ed etichetta di stato",
+      "title": "{{ t('vetrina_tabelle.formati_di_cella_importo_data_si', 'Formati di cella: importo, data, sì/no ed etichetta di stato') }}",
       "components": [
         {
           "id": "txt-formati",
           "type": "text",
-          "text": "Le fatture inviate: ogni colonna sceglie come mostrare il valore con la proprietà format. I valori restano quelli del servizio, cambia solo come si leggono."
+          "text": "{{ t('vetrina_tabelle.le_fatture_inviate_ogni_colonna', 'Le fatture inviate: ogni colonna sceglie come mostrare il valore con la proprietà format. I valori restano quelli del servizio, cambia solo come si leggono.') }}"
         },
         {
           "id": "tabella-fatture",
@@ -198,36 +201,37 @@
           "columns": [
             {
               "field": "numero",
-              "label": "Numero"
+              "label": "{{ t('comune.numero', 'Numero') }}"
             },
             {
               "field": "cliente",
-              "label": "Cliente"
+              "label": "{{ t('comune.cliente', 'Cliente') }}"
             },
             {
               "field": "importo",
-              "label": "Importo",
+              "label": "{{ t('comune.importo_2', 'Importo') }}",
               "format": "currency"
             },
             {
               "field": "emessa",
-              "label": "Emessa il",
+              "label": "{{ t('comune.emessa_il', 'Emessa il') }}",
               "format": "date"
             },
             {
               "field": "incassata",
-              "label": "Incassata",
+              "label": "{{ t('comune.incassata', 'Incassata') }}",
               "format": "boolean"
             },
             {
               "field": "stato",
-              "label": "Stato",
+              "label": "{{ t('comune.stato', 'Stato') }}",
               "format": "badge",
               "badges": {
                 "bozza": "neutral",
                 "inviata": "primary",
                 "pagata": "success"
-              }
+              },
+              "valueKey": "valori.stato"
             }
           ]
         }

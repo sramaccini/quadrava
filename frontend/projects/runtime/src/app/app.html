@@ -27,13 +27,13 @@
         <label for="lc-theme">{{ i18n.t('app.theme') }}</label>
         <nz-select nzId="lc-theme" nzSize="small" class="pick" [ngModel]="themeName()" (ngModelChange)="themeName.set($event)">
           @for (t of themes; track t) {
-            <nz-option [nzValue]="t" [nzLabel]="t" />
+            <nz-option [nzValue]="t" [nzLabel]="i18n.t('app.theme.' + t, {}, t)" />
           }
         </nz-select>
         <label for="lc-lang">{{ i18n.t('app.language') }}</label>
         <nz-select nzId="lc-lang" nzSize="small" class="pick" [ngModel]="i18n.locale()" (ngModelChange)="i18n.setLocale($event)">
           @for (l of languages; track l) {
-            <nz-option [nzValue]="l" [nzLabel]="l" />
+            <nz-option [nzValue]="l" [nzLabel]="i18n.t('app.lang.' + l, {}, l)" />
           }
         </nz-select>
         <lc-user-menu [name]="session.username()" [items]="userItems()" (logout)="session.logout()" />

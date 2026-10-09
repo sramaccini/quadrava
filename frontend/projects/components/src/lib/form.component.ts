@@ -1,6 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, effect, input, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { runSteps, type ScreenRuntime, type Scope } from 'core';
+import { I18n, runSteps, type ScreenRuntime, type Scope } from 'core';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzCheckboxModule } from 'ng-zorro-antd/checkbox';
 import { NzDatePickerModule } from 'ng-zorro-antd/date-picker';
@@ -34,7 +34,7 @@ import { nextId, parseIsoDate, toIsoDate } from './shared';
                 @case ('select') {
                   <nz-select [nzId]="id + field.name" nzAllowClear nzPlaceHolder="—" [nzDisabled]="readOnly(field)" [ngModel]="selected(field)" (ngModelChange)="set(field, $event)">
                     @for (option of field.options ?? []; track option) {
-                      <nz-option [nzValue]="option" [nzLabel]="option" />
+                      <nz-option [nzValue]="option" [nzLabel]="optionLabel(field, option)" />
                     }
                   </nz-select>
                 }
@@ -82,6 +82,12 @@ export class FormComponent {
   readonly runtime = input.required<ScreenRuntime>();
   readonly scope = input<Scope>({});
 
+  protected readonly i18n = inject(I18n);
+
+  /** Etichetta di un'opzione: tradotta con `optionKey` (`<prefisso>.<valore>`), altrimenti il valore stesso. */
+  protected optionLabel(field: FieldDefinition, option: string): string {
+    return field.optionKey ? this.i18n.t(`${field.optionKey}.${option}`, {}, option) : option;
+  }
   protected readonly id = nextId('lc-form') + '-';
   protected readonly values = signal<Record<string, unknown>>({});
   protected readonly busy = signal(false);
@@ -146,14 +152,14 @@ export class FormComponent {
   private validate(field: FieldDefinition): string | null {
     const value = this.values()[field.name];
     const empty = value === undefined || value === null || value === '';
-    if (field.required && empty && field.type !== 'checkbox') return 'Campo obbligatorio';
+    if (field.required && empty && field.type !== 'checkbox') return this.i18n.t('lc.required');
     if (field.validate && !empty) {
       const result = this.runtime().engine.interpolate(field.validate.rule, {
         ...this.runtime().context(this.fieldScope()),
         value,
       });
       // regola in errore => non valido (fail-closed)
-      if (!result.ok || result.value !== true) return field.validate.message;
+      if (!result.ok || result.value !== true) return this.runtime().text(field.validate.message, this.fieldScope()) || this.i18n.t('lc.invalid');
     }
     return null;
   }

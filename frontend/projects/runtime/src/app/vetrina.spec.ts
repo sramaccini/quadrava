@@ -10,6 +10,9 @@ import chiaro from '../../public/examples/themes/chiaro.json';
 import scuro from '../../public/examples/themes/scuro.json';
 import { DemoDiagnostics } from '../demo/demo-ports';
 import { openSelect, stubViewportHeight } from './select-testing';
+import catalogIt from '../../public/examples/i18n/it.json';
+import catalogEn from '../../public/examples/i18n/en.json';
+import { I18n } from 'core';
 import { App } from './app';
 import { appConfig } from './app.config';
 
@@ -22,6 +25,8 @@ describe('Vetrina dei componenti', () => {
     'examples/vetrina-tabelle.json': tables,
     'examples/vetrina-layout.json': layout,
     'examples/ordine-dettaglio.json': detail,
+    'examples/i18n/it.json': catalogIt,
+    'examples/i18n/en.json': catalogEn,
     'examples/themes/chiaro.json': chiaro,
     'examples/themes/scuro.json': scuro,
   };
@@ -31,6 +36,8 @@ describe('Vetrina dei componenti', () => {
   afterAll(() => restoreViewport());
 
   beforeEach(() => {
+    // Lingua della demo fissata: jsdom dichiara un browser in inglese.
+    localStorage.setItem('lc.language', 'it');
     vi.stubGlobal('fetch', async (url: string) => {
       const body = files[url];
       return body ? { ok: true, status: 200, json: async () => body } : { ok: false, status: 404, json: async () => ({}) };
@@ -164,7 +171,7 @@ describe('Vetrina dei componenti', () => {
     it('il campo partita IVA compare solo per i business e diventa obbligatorio', async () => {
       const { fixture, el } = await open('/vetrina/vetrina-form');
       expect(field(el, 'partitaIva')).toBeNull();
-      await type(fixture, el, 'categoria', 'business');
+      await type(fixture, el, 'categoria', 'Business');
       await until(fixture, () => !!field(el, 'partitaIva'), 'campo condizionale');
       await type(fixture, el, 'nome', 'Mario');
       button(el, 'Invia')!.click();
@@ -193,7 +200,7 @@ describe('Vetrina dei componenti', () => {
       await until(fixture, () => rows(el, 0) === 8, 'prima pagina');
       (el.querySelector('main .ant-pagination-next button') as HTMLButtonElement).click();
       await until(fixture, () => el.querySelector('main .ant-pagination-item-active')?.textContent?.trim() === '2' && rows(el, 0) === 8, 'seconda pagina');
-      await type(fixture, el, 'stato', 'approvato');
+      await type(fixture, el, 'stato', 'Approvato');
       await until(fixture, () => rows(el, 0) === 7 && el.querySelector('main .ant-pagination-item-active')?.textContent?.trim() === '1', 'filtro applicato');
     });
 
@@ -238,7 +245,7 @@ describe('Vetrina dei componenti', () => {
       expect(invoice[2]).toMatch(/^\d+,00 €$/);
       expect(invoice[3]).toMatch(/^\d{2}\/09\/26$/);
       expect(invoice[4]).toBe('No');
-      expect(invoice[5]).toBe('inviata');
+      expect(invoice[5]).toBe('Inviata');
     });
   });
 
@@ -296,5 +303,17 @@ describe('Vetrina dei componenti', () => {
       await until(fixture, () => !!toast(), 'conferma');
       expect(toast()?.textContent).toContain('Bozza eliminata');
     });
+  });
+
+  it('cambiando lingua cambiano titolo, menu, testi della schermata e scritte del guscio', async () => {
+    const { fixture, el } = await open('/inserimento-fattura/vetrina-base');
+    await until(fixture, () => !!el.querySelector('h1') && el.querySelector('h1')!.textContent!.includes('Vetrina: componenti base'), 'titolo in italiano');
+    expect(el.querySelector('lc-sidebar')!.textContent).toContain('Inserimento Fattura');
+    TestBed.inject(I18n).setLocale('en');
+    await until(fixture, () => el.querySelector('h1')!.textContent!.includes('Showcase: basic components'), 'titolo in inglese');
+    expect(el.querySelector('lc-sidebar')!.textContent).toContain('Invoice entry');
+    expect(el.textContent).toContain('Active language: en');
+    expect(el.textContent).toContain('Language');
+    expect(document.documentElement.lang).toBe('en');
   });
 });

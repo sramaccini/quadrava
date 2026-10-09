@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0",
   "screen": "vetrina-base",
-  "title": "Vetrina: componenti base",
+  "title": "{{ t('vetrina_base.vetrina_componenti_base', 'Vetrina: componenti base') }}",
   "requires": "vetrina.componenti.leggi",
   "dataSources": {
     "segnala": {
@@ -23,28 +23,28 @@
       "id": "titolo",
       "type": "text",
       "style": "heading",
-      "text": "Componenti base"
+      "text": "{{ t('vetrina_base.componenti_base', 'Componenti base') }}"
     },
     {
       "id": "intro",
       "type": "text",
-      "tooltip": "Ogni componente può avere un tooltip opzionale (solo testo, anche con espressioni)",
-      "text": "Questa schermata mostra testo, sezioni e pulsanti con le cinque azioni disponibili: set, call, refresh, navigate e toast."
+      "tooltip": "{{ t('vetrina_base.ogni_componente_puo_avere_un_too', 'Ogni componente può avere un tooltip opzionale (solo testo, anche con espressioni)') }}",
+      "text": "{{ t('vetrina_base.questa_schermata_mostra_testo_se', 'Questa schermata mostra testo, sezioni e pulsanti con le cinque azioni disponibili: set, call, refresh, navigate e toast.') }}"
     },
     {
       "id": "sezione-testo",
       "type": "section",
-      "title": "Testo con valori dinamici",
+      "title": "{{ t('vetrina_base.testo_con_valori_dinamici', 'Testo con valori dinamici') }}",
       "components": [
         {
           "id": "saluto",
           "type": "text",
-          "text": "Utente collegato: {{user.username}}"
+          "text": "{{ t('vetrina_base.utente_collegato', 'Utente collegato: {username}', {'username': dyn(user.username)}) }}"
         },
         {
           "id": "contatore-testo",
           "type": "text",
-          "text": "Hai premuto il pulsante {{has(state.contatore) ? state.contatore : 0}} volte."
+          "text": "{{ t('vetrina_base.hai_premuto_il_pulsante_volte', 'Hai premuto il pulsante {contatore} volte.', {'contatore': dyn(has(state.contatore) ? state.contatore : 0)}) }}"
         }
       ]
     },
@@ -94,13 +94,13 @@
     {
       "id": "sezione-azioni",
       "type": "section",
-      "title": "Pulsanti e azioni",
+      "title": "{{ t('vetrina_base.pulsanti_e_azioni', 'Pulsanti e azioni') }}",
       "components": [
         {
           "id": "btn-incrementa",
           "type": "button",
-          "label": "Incrementa il contatore (set)",
-          "tooltip": "Il contatore vale {{has(state.contatore) ? state.contatore : 0}}: ogni clic lo aumenta di uno",
+          "label": "{{ t('vetrina_base.incrementa_il_contatore_set', 'Incrementa il contatore (set)') }}",
+          "tooltip": "{{ t('vetrina_base.il_contatore_vale_ogni_clic_lo_a', 'Il contatore vale {contatore}: ogni clic lo aumenta di uno', {'contatore': dyn(has(state.contatore) ? state.contatore : 0)}) }}",
           "onClick": [
             {
               "set": {
@@ -113,17 +113,17 @@
         {
           "id": "btn-toast",
           "type": "button",
-          "label": "Mostra un messaggio (toast)",
+          "label": "{{ t('vetrina_base.mostra_un_messaggio_toast', 'Mostra un messaggio (toast)') }}",
           "onClick": [
             {
-              "toast": "Questo è un messaggio informativo"
+              "toast": "{{ t('vetrina_base.questo_e_un_messaggio_informativ', 'Questo è un messaggio informativo') }}"
             }
           ]
         },
         {
           "id": "btn-chiamata",
           "type": "button",
-          "label": "Chiama un servizio (call)",
+          "label": "{{ t('vetrina_base.chiama_un_servizio_call', 'Chiama un servizio (call)') }}",
           "onClick": [
             {
               "set": {
@@ -134,34 +134,34 @@
             {
               "call": "segnala",
               "onError": {
-                "toast": "Chiamata non riuscita"
+                "toast": "{{ t('vetrina_base.chiamata_non_riuscita', 'Chiamata non riuscita') }}"
               }
             },
             {
-              "toast": "Servizio chiamato"
+              "toast": "{{ t('vetrina_base.servizio_chiamato', 'Servizio chiamato') }}"
             }
           ]
         },
         {
           "id": "btn-errore",
           "type": "button",
-          "label": "Chiamata che fallisce (onError)",
+          "label": "{{ t('vetrina_base.chiamata_che_fallisce_onerror', 'Chiamata che fallisce (onError)') }}",
           "onClick": [
             {
               "call": "segnalaConErrore",
               "onError": {
-                "toast": "Errore gestito: la sequenza si ferma qui"
+                "toast": "{{ t('vetrina_base.errore_gestito_la_sequenza_si_fe', 'Errore gestito: la sequenza si ferma qui') }}"
               }
             },
             {
-              "toast": "Questo messaggio non compare mai"
+              "toast": "{{ t('vetrina_base.questo_messaggio_non_compare_mai', 'Questo messaggio non compare mai') }}"
             }
           ]
         },
         {
           "id": "btn-naviga",
           "type": "button",
-          "label": "Vai alla vetrina delle tabelle (navigate)",
+          "label": "{{ t('vetrina_base.vai_alla_vetrina_delle_tabelle_n', 'Vai alla vetrina delle tabelle (navigate)') }}",
           "onClick": [
             {
               "navigate": "vetrina-tabelle",
@@ -176,43 +176,43 @@
     {
       "id": "sezione-condizioni",
       "type": "section",
-      "title": "Visibilità e abilitazione",
+      "title": "{{ t('vetrina_base.visibilita_e_abilitazione', 'Visibilità e abilitazione') }}",
       "components": [
         {
           "id": "txt-condizioni",
           "type": "text",
-          "text": "I pulsanti seguenti cambiano con i permessi dell'utente: provali con i tre profili del selettore in alto."
+          "text": "{{ t('vetrina_base.i_pulsanti_seguenti_cambiano_con', 'I pulsanti seguenti cambiano con i permessi dell\\'utente: provali con i tre profili del selettore in alto.') }}"
         },
         {
           "id": "btn-solo-responsabile",
           "type": "button",
-          "label": "Visibile solo con il permesso di approvare ordini",
+          "label": "{{ t('vetrina_base.visibile_solo_con_il_permesso_di', 'Visibile solo con il permesso di approvare ordini') }}",
           "visibleIf": "{{can('ordini.ordine.approva')}}",
           "onClick": [
             {
-              "toast": "Hai il permesso ordini.ordine.approva"
+              "toast": "{{ t('vetrina_base.hai_il_permesso_ordini_ordine_ap', 'Hai il permesso ordini.ordine.approva') }}"
             }
           ]
         },
         {
           "id": "btn-nascosto-admin",
           "type": "button",
-          "label": "Nascosto a chi può leggere gli IBAN",
+          "label": "{{ t('vetrina_base.nascosto_a_chi_puo_leggere_gli_i', 'Nascosto a chi può leggere gli IBAN') }}",
           "hiddenIf": "{{can('ordini.iban.leggi')}}",
           "onClick": [
             {
-              "toast": "Non vedi gli IBAN"
+              "toast": "{{ t('vetrina_base.non_vedi_gli_iban', 'Non vedi gli IBAN') }}"
             }
           ]
         },
         {
           "id": "btn-abilitato",
           "type": "button",
-          "label": "Abilitato dopo almeno due incrementi",
+          "label": "{{ t('vetrina_base.abilitato_dopo_almeno_due_increm', 'Abilitato dopo almeno due incrementi') }}",
           "enabledIf": "{{has(state.contatore) && state.contatore >= 2}}",
           "onClick": [
             {
-              "toast": "Abilitato dallo stato della schermata"
+              "toast": "{{ t('vetrina_base.abilitato_dallo_stato_della_sche', 'Abilitato dallo stato della schermata') }}"
             }
           ]
         }

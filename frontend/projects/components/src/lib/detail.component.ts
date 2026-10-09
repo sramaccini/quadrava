@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
-import { I18n, formatValue, type FormattedValue, type ScreenRuntime, type Scope } from 'core';
+import { I18n, formatValue, type FormatLabels, type FormattedValue, type ScreenRuntime, type Scope } from 'core';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzCardModule } from 'ng-zorro-antd/card';
 import { NzDescriptionsModule } from 'ng-zorro-antd/descriptions';
@@ -47,6 +47,7 @@ export class DetailComponent {
   readonly scope = input<Scope>({});
 
   protected readonly i18n = inject(I18n);
+  private readonly labels = (): FormatLabels => ({ yes: this.i18n.t('lc.yes'), no: this.i18n.t('lc.no'), translate: (key, fallback) => this.i18n.t(key, {}, fallback) });
   protected readonly source = computed(() => this.runtime().source(this.node().source));
   protected readonly fields = computed(() => this.node().fields.filter((f) => this.runtime().isVisible(f, this.scope())));
   protected readonly record = computed<Record<string, unknown> | null>(() => {
@@ -55,7 +56,7 @@ export class DetailComponent {
   });
 
   protected view(record: Record<string, unknown>, field: ColumnDefinition): FormattedValue {
-    return formatValue(record[field.field], field, this.i18n.intlLocale(), { yes: this.i18n.t('lc.yes'), no: this.i18n.t('lc.no') });
+    return formatValue(record[field.field], field, this.i18n.intlLocale(), this.labels());
   }
 
   protected color(tone: NonNullable<FormattedValue['tone']>): string {

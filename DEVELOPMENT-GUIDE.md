@@ -147,4 +147,5 @@ Layout, real focus and the dark theme are not covered by tests (the application 
 * Java modules are not yet compiled in CI.
 * Ajv needs `unsafe-eval` under CSP until validators are precompiled.
 * `validate:examples` checks translation keys but not CEL expressions.
-* Only the examples `navigation.json`, `fatture-elenco.json` and part of `vetrina-base.json` use translation keys; the other screens stay in Italian (they show the fallback behaviour).
+* Developer diagnostics are not translated and stay in Italian: schema and expression issues, navigation loading errors, and the messages of the `services` library. Everything the end user reads is translatable.
+* Adding a language means adding `examples/i18n/<code>.json` (same keys as `it.json`), an entry in `LANGUAGES` of the demo, and, for the platform strings, a block in `components/src/lib/messages.ts` and a NG-ZORRO locale in `provide.ts`.

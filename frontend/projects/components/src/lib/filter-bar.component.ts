@@ -31,7 +31,7 @@ import { nextId, parseIsoDate, toIsoDate } from './shared';
                 @case ('select') {
                   <nz-select [nzId]="id + field.name" nzAllowClear [nzPlaceHolder]="i18n.t('lc.all')" [ngModel]="value(field)" (ngModelChange)="change(field, $event)">
                     @for (option of field.options ?? []; track option) {
-                      <nz-option [nzValue]="option" [nzLabel]="option" />
+                      <nz-option [nzValue]="option" [nzLabel]="optionLabel(field, option)" />
                     }
                   </nz-select>
                 }
@@ -57,6 +57,10 @@ export class FilterBarComponent implements OnInit {
   readonly runtime = input.required<ScreenRuntime>();
   readonly scope = input<Scope>({});
   protected readonly i18n = inject(I18n);
+  /** Etichetta di un'opzione: tradotta con `optionKey` (`<prefisso>.<valore>`), altrimenti il valore stesso. */
+  protected optionLabel(field: FieldDefinition, option: string): string {
+    return field.optionKey ? this.i18n.t(`${field.optionKey}.${option}`, {}, option) : option;
+  }
   protected readonly id = nextId('lc-filter') + '-';
   /** Date dei filtri `date`, calcolate una volta per valore (vedi il form). */
   protected readonly dates = computed<Record<string, Date | null>>(() =>

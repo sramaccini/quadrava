@@ -36,6 +36,8 @@ describe('App (demo)', () => {
   afterAll(() => restoreViewport());
 
   beforeEach(() => {
+    // Lingua della demo fissata: jsdom dichiara un browser in inglese.
+    localStorage.setItem('lc.language', 'it');
     vi.stubGlobal('fetch', async (url: string) => {
       const body = files[url];
       return body ? { ok: true, status: 200, json: async () => body } : { ok: false, status: 404, json: async () => ({}) };

@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
-import { I18n, formatValue, runSteps, type FormattedValue, type ScreenRuntime, type Scope } from 'core';
+import { I18n, formatValue, type FormatLabels, runSteps, type FormattedValue, type ScreenRuntime, type Scope } from 'core';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzPaginationModule } from 'ng-zorro-antd/pagination';
@@ -107,6 +107,7 @@ export class TableComponent {
   protected readonly busy = signal(false);
 
   protected readonly i18n = inject(I18n);
+  private readonly labels = (): FormatLabels => ({ yes: this.i18n.t('lc.yes'), no: this.i18n.t('lc.no'), translate: (key, fallback) => this.i18n.t(key, {}, fallback) });
   /** Colonne visibili all'utente: `visibleIf` e `hiddenIf` valgono anche per le colonne. */
   protected readonly columns = computed(() => this.node().columns.filter((c) => this.runtime().isVisible(c, this.scope())));
 
@@ -133,7 +134,7 @@ export class TableComponent {
   });
 
   protected cell(row: Record<string, unknown>, column: ColumnDefinition): FormattedValue {
-    return formatValue(row[column.field], column, this.i18n.intlLocale(), { yes: this.i18n.t('lc.yes'), no: this.i18n.t('lc.no') });
+    return formatValue(row[column.field], column, this.i18n.intlLocale(), this.labels());
   }
 
   protected color(tone: NonNullable<FormattedValue['tone']>): string {

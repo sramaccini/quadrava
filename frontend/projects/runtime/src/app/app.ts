@@ -14,6 +14,20 @@ const THEMES = ['chiaro', 'classico', 'scuro'];
 /** Lingue della demo: per ciascuna esiste `examples/i18n/<lingua>.json`. */
 const LANGUAGES = ['it', 'en'];
 
+const LANGUAGE_KEY = 'lc.language';
+
+/** Lingua iniziale: l'ultima scelta, altrimenti quella del browser se supportata, altrimenti l'italiano. */
+function initialLanguage(): string {
+  try {
+    const stored = localStorage.getItem(LANGUAGE_KEY);
+    if (stored && LANGUAGES.includes(stored)) return stored;
+  } catch {
+    // vedi sopra
+  }
+  const browser = (typeof navigator === 'undefined' ? '' : navigator.language).slice(0, 2);
+  return LANGUAGES.includes(browser) ? browser : 'it';
+}
+
 /** Guscio dell'applicazione: barra superiore (profilo e tema della demo), menu laterale, contenuto e notifiche. */
 @Component({
   selector: 'lc-root',
@@ -50,7 +64,16 @@ export class App {
 
   constructor() {
     void loadMessages(this.i18n, LANGUAGES, (l) => `examples/i18n/${l}.json`).then((problems) => problems.forEach((p) => console.warn('[i18n]', p)));
-    effect(() => (document.documentElement.lang = this.i18n.locale()));
+    this.i18n.setLocale(initialLanguage());
+    effect(() => {
+      const locale = this.i18n.locale();
+      document.documentElement.lang = locale;
+      try {
+        localStorage.setItem(LANGUAGE_KEY, locale);
+      } catch {
+        // Archiviazione non disponibile (navigazione privata, blocchi): la scelta vale solo per questa sessione.
+      }
+    });
     effect(() => {
       const name = this.themeName();
       void fetch(`examples/themes/${name}.json`)

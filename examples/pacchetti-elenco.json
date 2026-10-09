@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0",
   "screen": "pacchetti-elenco",
-  "title": "Pacchetti creati",
+  "title": "{{ t('pacchetti_elenco.pacchetti_creati', 'Pacchetti creati') }}",
   "requires": "pacchetti.pacchetto.leggi",
   "dataSources": {
     "pacchetti": {
@@ -18,15 +18,15 @@
       "columns": [
         {
           "field": "nome",
-          "label": "Nome"
+          "label": "{{ t('comune.nome', 'Nome') }}"
         },
         {
           "field": "descrizione",
-          "label": "Descrizione"
+          "label": "{{ t('comune.descrizione', 'Descrizione') }}"
         },
         {
           "field": "creato",
-          "label": "Creato il"
+          "label": "{{ t('comune.creato_il', 'Creato il') }}"
         }
       ]
     }

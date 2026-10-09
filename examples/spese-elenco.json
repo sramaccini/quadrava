@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0",
   "screen": "spese-elenco",
-  "title": "Revisione spese",
+  "title": "{{ t('spese_elenco.revisione_spese', 'Revisione spese') }}",
   "requires": "spese.spesa.leggi",
   "dataSources": {
     "spese": {
@@ -31,25 +31,26 @@
       "columns": [
         {
           "field": "descrizione",
-          "label": "Descrizione"
+          "label": "{{ t('comune.descrizione', 'Descrizione') }}"
         },
         {
           "field": "dipendente",
-          "label": "Dipendente"
+          "label": "{{ t('spese_elenco.dipendente', 'Dipendente') }}"
         },
         {
           "field": "importo",
-          "label": "Importo (€)"
+          "label": "{{ t('comune.importo', 'Importo (€)') }}"
         },
         {
           "field": "stato",
-          "label": "Stato"
+          "label": "{{ t('comune.stato', 'Stato') }}",
+          "valueKey": "valori.stato"
         }
       ],
       "rowActions": [
         {
           "id": "btn-approva-spesa",
-          "label": "Approva",
+          "label": "{{ t('comune.approva', 'Approva') }}",
           "visibleIf": "{{can('spese.spesa.revisiona') && row.stato == 'da-revisionare'}}",
           "onClick": [
             {
@@ -59,20 +60,20 @@
                 "esito": "approvata"
               },
               "onError": {
-                "toast": "Operazione non riuscita"
+                "toast": "{{ t('spese_elenco.operazione_non_riuscita', 'Operazione non riuscita') }}"
               }
             },
             {
               "refresh": "spese"
             },
             {
-              "toast": "Spesa approvata"
+              "toast": "{{ t('spese_elenco.spesa_approvata', 'Spesa approvata') }}"
             }
           ]
         },
         {
           "id": "btn-respingi-spesa",
-          "label": "Respingi",
+          "label": "{{ t('spese_elenco.respingi', 'Respingi') }}",
           "visibleIf": "{{can('spese.spesa.revisiona') && row.stato == 'da-revisionare'}}",
           "onClick": [
             {
@@ -82,14 +83,14 @@
                 "esito": "respinta"
               },
               "onError": {
-                "toast": "Operazione non riuscita"
+                "toast": "{{ t('spese_elenco.operazione_non_riuscita', 'Operazione non riuscita') }}"
               }
             },
             {
               "refresh": "spese"
             },
             {
-              "toast": "Spesa respinta"
+              "toast": "{{ t('spese_elenco.spesa_respinta', 'Spesa respinta') }}"
             }
           ]
         }

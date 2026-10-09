@@ -6,7 +6,15 @@ export interface FormattedValue {
   tone?: Tone;
 }
 
-type FormatSpec = Pick<ColumnDefinition, 'format' | 'currency' | 'badges'>;
+type FormatSpec = Pick<ColumnDefinition, 'format' | 'currency' | 'badges' | 'valueKey'>;
+
+/** Scritte che dipendono dalla lingua: sì/no e la traduzione dei valori (`valueKey`). */
+export interface FormatLabels {
+  yes: string;
+  no: string;
+  /** Traduce una chiave (con il valore come ripiego). Se manca, i valori restano com'è. */
+  translate?: (key: string, fallback: string) => string;
+}
 
 // Creare un formattatore costa: se ne tiene uno per ogni combinazione di lingua e opzioni.
 const numberFormats = new Map<string, Intl.NumberFormat>();
@@ -32,7 +40,7 @@ const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
  * Trasforma un valore della riga nel testo da mostrare. Non lancia mai eccezioni: un valore che non si può
  * formattare (data non valida, importo non numerico) viene mostrato com'è, e `null` o `undefined` diventano testo vuoto.
  */
-export function formatValue(value: unknown, spec: FormatSpec, locale = 'it-IT', labels: { yes: string; no: string } = { yes: 'Sì', no: 'No' }): FormattedValue {
+export function formatValue(value: unknown, spec: FormatSpec, locale = 'it-IT', labels: FormatLabels = { yes: 'Sì', no: 'No' }): FormattedValue {
   if (value === null || value === undefined) return { text: '' };
   try {
     switch (spec.format) {
@@ -58,16 +66,20 @@ export function formatValue(value: unknown, spec: FormatSpec, locale = 'it-IT', 
       case 'boolean':
         return { text: value === true ? labels.yes : value === false ? labels.no : String(value) };
       case 'badge': {
-        const text = String(value);
-        const own = spec.badges && Object.prototype.hasOwnProperty.call(spec.badges, text) ? spec.badges[text] : undefined;
-        return { text, tone: own ?? 'neutral' };
+        const raw = String(value);
+        const own = spec.badges && Object.prototype.hasOwnProperty.call(spec.badges, raw) ? spec.badges[raw] : undefined;
+        return { text: translated(raw, spec, labels), tone: own ?? 'neutral' };
       }
       default:
-        return { text: String(value) };
+        return { text: translated(String(value), spec, labels) };
     }
   } catch {
     return { text: String(value) };
   }
+}
+
+function translated(raw: string, spec: FormatSpec, labels: FormatLabels): string {
+  return spec.valueKey && labels.translate ? labels.translate(`${spec.valueKey}.${raw}`, raw) : raw;
 }
 
 function toNumber(value: unknown): number | null {

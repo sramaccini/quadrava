@@ -328,6 +328,13 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
         "tooltip": {
           "type": "string",
           "description": "Testo di aiuto mostrato al passaggio del mouse o con il focus. Solo testo (mai HTML); può contenere {{ }}."
+        },
+        "optionKey": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_.-]+$",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "Prefisso delle chiavi di traduzione per le etichette delle opzioni: l'etichetta di un'opzione è t('<prefisso>.<valore>'), con il valore come ripiego."
         }
       }
     },
@@ -378,6 +385,13 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
         "tooltip": {
           "type": "string",
           "description": "Testo di aiuto mostrato al passaggio del mouse o con il focus. Solo testo (mai HTML); può contenere {{ }}."
+        },
+        "valueKey": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_.-]+$",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "Prefisso delle chiavi di traduzione per i valori mostrati: il testo è t('<prefisso>.<valore>'), con il valore come ripiego. I colori dei badge restano legati al valore originale."
         }
       }
     },

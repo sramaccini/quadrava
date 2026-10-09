@@ -1,8 +1,8 @@
 {
   "schemaVersion": "1.0",
   "screen": "ordini-elenco",
-  "title": "Ordini",
-  "description": "Ordini con azioni di riga secondo i permessi.",
+  "title": "{{ t('ordini_elenco.ordini', 'Ordini') }}",
+  "description": "{{ t('ordini_elenco.ordini_con_azioni_di_riga_second', 'Ordini con azioni di riga secondo i permessi.') }}",
   "requires": "ordini.ordine.leggi",
   "dataSources": {
     "ordini": {
@@ -30,12 +30,13 @@
         {
           "name": "stato",
           "type": "select",
-          "label": "Stato",
+          "label": "{{ t('comune.stato', 'Stato') }}",
           "options": [
             "bozza",
             "inviato",
             "approvato"
-          ]
+          ],
+          "optionKey": "valori.stato"
         }
       ]
     },
@@ -45,19 +46,23 @@
       "source": "ordini",
       "columns": [
         {
-          "field": "numero"
+          "field": "numero",
+          "label": "{{ t('comune.numero', 'Numero') }}"
         },
         {
-          "field": "cliente"
+          "field": "cliente",
+          "label": "{{ t('comune.cliente', 'Cliente') }}"
         },
         {
-          "field": "stato"
+          "field": "stato",
+          "label": "{{ t('comune.stato', 'Stato') }}",
+          "valueKey": "valori.stato"
         }
       ],
       "rowActions": [
         {
           "id": "btn-apri",
-          "label": "Apri",
+          "label": "{{ t('comune.apri', 'Apri') }}",
           "onClick": [
             {
               "navigate": "ordine-dettaglio",
@@ -69,7 +74,7 @@
         },
         {
           "id": "btn-approva",
-          "label": "Approva",
+          "label": "{{ t('comune.approva', 'Approva') }}",
           "visibleIf": "{{can('ordini.ordine.approva') && row.stato == 'inviato'}}",
           "onClick": [
             {
@@ -78,14 +83,14 @@
                 "id": "{{row.id}}"
               },
               "onError": {
-                "toast": "Approvazione non riuscita"
+                "toast": "{{ t('comune.approvazione_non_riuscita', 'Approvazione non riuscita') }}"
               }
             },
             {
               "refresh": "ordini"
             },
             {
-              "toast": "Ordine approvato"
+              "toast": "{{ t('comune.ordine_approvato', 'Ordine approvato') }}"
             }
           ]
         }

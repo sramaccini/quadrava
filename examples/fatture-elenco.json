@@ -31,12 +31,13 @@
         {
           "name": "stato",
           "type": "select",
-          "label": "{{ t('fatture.stato', 'Stato') }}",
+          "label": "{{ t('comune.stato', 'Stato') }}",
           "options": [
             "bozza",
             "inviata",
             "pagata"
-          ]
+          ],
+          "optionKey": "valori.stato"
         }
       ]
     },
@@ -47,19 +48,20 @@
       "columns": [
         {
           "field": "numero",
-          "label": "{{ t('fatture.numero', 'Numero') }}"
+          "label": "{{ t('comune.numero', 'Numero') }}"
         },
         {
           "field": "cliente",
-          "label": "{{ t('fatture.cliente', 'Cliente') }}"
+          "label": "{{ t('comune.cliente', 'Cliente') }}"
         },
         {
           "field": "importo",
-          "label": "{{ t('fatture.importo', 'Importo (€)') }}"
+          "label": "{{ t('comune.importo', 'Importo (€)') }}"
         },
         {
           "field": "stato",
-          "label": "{{ t('fatture.stato', 'Stato') }}"
+          "label": "{{ t('comune.stato', 'Stato') }}",
+          "valueKey": "valori.stato"
         }
       ],
       "rowActions": [

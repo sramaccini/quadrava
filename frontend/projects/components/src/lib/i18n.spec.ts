@@ -76,4 +76,40 @@ describe('lingua e traduzioni nei componenti', () => {
     const { el } = await render([{ type: 'table', source: 'righe', columns: [{ field: 'importo' }] }], { items: [{ importo: 1 }], total: 1 });
     expect(el.querySelector('th')!.textContent).toContain('importo');
   });
+
+  it('i valori mostrati (valueKey), le opzioni (optionKey) e i messaggi di validazione seguono la lingua', async () => {
+    const { fixture, el } = await render(
+      [
+        { type: 'table', source: 'righe', columns: [{ field: 'stato', valueKey: 'val.stato' }, { field: 'tipo', format: 'badge', valueKey: 'val.tipo', badges: { a: 'success' } }] },
+        {
+          type: 'form',
+          fields: [{ name: 'tipo', type: 'select', options: ['a', 'b'], optionKey: 'val.tipo', validate: { rule: '{{ false }}', message: "{{ t('x.errore', 'Errore') }}" } }],
+          actions: [{ label: 'Ok', onClick: [] }],
+        } as NodeDefinition,
+      ],
+      { items: [{ stato: 'bozza', tipo: 'a' }], total: 1 },
+    );
+    i18n.addMessages('it', { 'val.stato.bozza': 'Bozza', 'val.tipo.a': 'Alfa', 'x.errore': 'Errore' });
+    i18n.addMessages('en', { 'val.stato.bozza': 'Draft', 'val.tipo.a': 'Alpha', 'x.errore': 'Error' });
+    await settle(fixture);
+    expect(el.querySelector('tbody')!.textContent).toContain('Bozza');
+    expect(el.querySelector('tbody nz-tag')!.textContent).toContain('Alfa');
+    i18n.setLocale('en');
+    await settle(fixture);
+    expect(el.querySelector('tbody')!.textContent).toContain('Draft');
+    expect(el.querySelector('tbody nz-tag')!.textContent).toContain('Alpha');
+    // Un valore senza traduzione resta quello originale.
+    expect(i18n.t('val.tipo.zzz', {}, 'zzz')).toBe('zzz');
+  });
+
+  it('il messaggio "obbligatorio" del form è tradotto', async () => {
+    const { fixture, el } = await render([
+      { type: 'form', fields: [{ name: 'n', type: 'text', label: 'Nome', required: true }], actions: [{ label: 'Invia', onClick: [] }] } as NodeDefinition,
+    ]);
+    i18n.setLocale('en');
+    await settle(fixture);
+    (el.querySelector('form button') as HTMLButtonElement).click();
+    await settle(fixture);
+    expect(el.textContent).toContain('Required field');
+  });
 });

@@ -27,8 +27,17 @@ const ITALIAN: NzI18nInterface = {
   },
 };
 
+/** Inglese di NG-ZORRO completato con la stessa voce mancante. */
+const ENGLISH: NzI18nInterface = {
+  ...en_GB,
+  DatePicker: {
+    ...en_GB.DatePicker,
+    lang: { ...en_GB.DatePicker.lang, rangeQuarterPlaceholder: ['Start quarter', 'End quarter'] },
+  },
+};
+
 /** Lingua di NG-ZORRO per ogni lingua dell'applicazione; una lingua senza voce usa l'inglese. */
-const NZ_LOCALES: Record<string, NzI18nInterface> = { it: ITALIAN, en: en_GB };
+const NZ_LOCALES: Record<string, NzI18nInterface> = { it: ITALIAN, en: ENGLISH };
 
 /** Catalogo standard. Le applicazioni possono aggiungere o sostituire componenti passando `extra`. */
 export const STANDARD_COMPONENTS: ComponentCatalog = {
@@ -62,7 +71,7 @@ export function provideLowcodeComponents(extra: ComponentCatalog = {}): (Provide
       const i18n = inject(I18n);
       const nz = inject(NzI18nService);
       for (const [locale, messages] of Object.entries(BUILTIN_MESSAGES)) i18n.addMessages(locale, messages, 'builtin');
-      effect(() => nz.setLocale(NZ_LOCALES[i18n.locale()] ?? en_GB));
+      effect(() => nz.setLocale(NZ_LOCALES[i18n.locale()] ?? ENGLISH));
     }),
   ];
 }

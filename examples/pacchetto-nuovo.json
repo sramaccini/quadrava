@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0",
   "screen": "pacchetto-nuovo",
-  "title": "Nuovo pacchetto",
+  "title": "{{ t('pacchetto_nuovo.nuovo_pacchetto', 'Nuovo pacchetto') }}",
   "requires": "pacchetti.pacchetto.crea",
   "dataSources": {
     "creaPacchetto": {
@@ -19,29 +19,29 @@
         {
           "name": "nome",
           "type": "text",
-          "label": "Nome del pacchetto",
+          "label": "{{ t('pacchetto_nuovo.nome_del_pacchetto', 'Nome del pacchetto') }}",
           "required": true
         },
         {
           "name": "descrizione",
           "type": "text",
-          "label": "Descrizione"
+          "label": "{{ t('comune.descrizione', 'Descrizione') }}"
         }
       ],
       "actions": [
         {
           "id": "btn-crea",
-          "label": "Crea pacchetto",
+          "label": "{{ t('pacchetto_nuovo.crea_pacchetto', 'Crea pacchetto') }}",
           "enabledIf": "{{can('pacchetti.pacchetto.crea')}}",
           "onClick": [
             {
               "call": "creaPacchetto",
               "onError": {
-                "toast": "Creazione non riuscita"
+                "toast": "{{ t('pacchetto_nuovo.creazione_non_riuscita', 'Creazione non riuscita') }}"
               }
             },
             {
-              "toast": "Pacchetto creato"
+              "toast": "{{ t('pacchetto_nuovo.pacchetto_creato', 'Pacchetto creato') }}"
             },
             {
               "navigate": "pacchetti-elenco"

@@ -62,6 +62,8 @@ export interface FieldDefinition {
   tooltip?: string;
   required?: boolean;
   options?: string[];
+  /** Prefisso delle chiavi di traduzione delle etichette delle opzioni (`<prefisso>.<valore>`). */
+  optionKey?: string;
   /** Il valore non compare mai in tracce e log. */
   sensitive?: boolean;
   visibleIf?: Expression;
@@ -79,6 +81,8 @@ export interface ColumnDefinition {
   label?: string;
   tooltip?: string;
   format?: CellFormat;
+  /** Prefisso delle chiavi di traduzione dei valori mostrati (`<prefisso>.<valore>`); i badge restano legati al valore originale. */
+  valueKey?: string;
   /** Codice ISO 4217 per `currency` (EUR se assente). */
   currency?: string;
   /** Per `badge`: tono per ogni valore. */

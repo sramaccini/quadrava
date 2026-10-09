@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0",
   "screen": "fattura-nuova",
-  "title": "Nuova fattura",
+  "title": "{{ t('fattura_nuova.nuova_fattura', 'Nuova fattura') }}",
   "requires": "fatture.fattura.crea",
   "dataSources": {
     "creaFattura": {
@@ -22,55 +22,56 @@
         {
           "name": "numero",
           "type": "text",
-          "label": "Numero",
+          "label": "{{ t('comune.numero', 'Numero') }}",
           "required": true
         },
         {
           "name": "cliente",
           "type": "text",
-          "label": "Cliente / fornitore",
+          "label": "{{ t('fattura_nuova.cliente_fornitore', 'Cliente / fornitore') }}",
           "required": true
         },
         {
           "name": "tipo",
           "type": "select",
-          "label": "Tipo",
+          "label": "{{ t('comune.tipo', 'Tipo') }}",
           "options": [
             "attiva",
             "passiva"
           ],
-          "required": true
+          "required": true,
+          "optionKey": "valori.tipo"
         },
         {
           "name": "importo",
           "type": "number",
-          "label": "Importo (€)",
+          "label": "{{ t('comune.importo', 'Importo (€)') }}",
           "required": true,
           "validate": {
             "rule": "{{value > 0}}",
-            "message": "L'importo deve essere maggiore di zero"
+            "message": "{{ t('fattura_nuova.l_importo_deve_essere_maggiore_d', 'L\\'importo deve essere maggiore di zero') }}"
           }
         },
         {
           "name": "data",
           "type": "date",
-          "label": "Data"
+          "label": "{{ t('fattura_nuova.data', 'Data') }}"
         }
       ],
       "actions": [
         {
           "id": "btn-salva",
-          "label": "Salva come bozza",
+          "label": "{{ t('fattura_nuova.salva_come_bozza', 'Salva come bozza') }}",
           "enabledIf": "{{can('fatture.fattura.crea')}}",
           "onClick": [
             {
               "call": "creaFattura",
               "onError": {
-                "toast": "Salvataggio non riuscito"
+                "toast": "{{ t('comune.salvataggio_non_riuscito', 'Salvataggio non riuscito') }}"
               }
             },
             {
-              "toast": "Fattura salvata in bozza"
+              "toast": "{{ t('fattura_nuova.fattura_salvata_in_bozza', 'Fattura salvata in bozza') }}"
             },
             {
               "navigate": "fatture-elenco",

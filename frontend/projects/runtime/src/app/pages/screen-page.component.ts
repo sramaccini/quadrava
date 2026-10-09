@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, resource } from '
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { ExpressionEngine } from 'expressions';
-import { ScreenComponent, checkScreenExpressions } from 'core';
+import { I18n, ScreenComponent, checkScreenExpressions } from 'core';
 import { NavigationService } from '../navigation.service';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { validateScreen, type ScreenDefinition } from 'schema';
@@ -17,13 +17,13 @@ type Loaded = { ok: true; definition: ScreenDefinition } | { ok: false; issues: 
   styles: `.pad { padding: var(--lc-content-padding, 24px); }`,
   template: `
     @if (screen.error(); as e) {
-      <div class="pad" role="alert"><nz-alert nzType="error" nzShowIcon [nzMessage]="'Schermata non caricata: ' + e" /></div>
+      <div class="pad" role="alert"><nz-alert nzType="error" nzShowIcon [nzMessage]="i18n.t('app.screenLoadFailed', { e: e })" /></div>
     } @else if (screen.value(); as loaded) {
       @if (loaded.ok) {
         <lc-screen [definition]="loaded.definition" [params]="params()" [breadcrumb]="breadcrumb()" />
       } @else {
         <div class="pad" role="alert">
-          <nz-alert nzType="error" nzShowIcon nzMessage="La schermata non è valida:" [nzDescription]="issues" />
+          <nz-alert nzType="error" nzShowIcon [nzMessage]="i18n.t('app.screenInvalid')" [nzDescription]="issues" />
           <ng-template #issues>
             <ul>
               @for (issue of loaded.issues; track issue) {
@@ -34,7 +34,7 @@ type Loaded = { ok: true; definition: ScreenDefinition } | { ok: false; issues: 
         </div>
       }
     } @else {
-      <p class="pad" role="status">Caricamento…</p>
+      <p class="pad" role="status">{{ i18n.t('lc.loading') }}</p>
     }
   `,
 })
@@ -43,6 +43,7 @@ export class ScreenPage {
   private readonly pathParams = toSignal(this.route.paramMap, { requireSync: true });
   private readonly queryParams = toSignal(this.route.queryParamMap, { requireSync: true });
 
+  protected readonly i18n = inject(I18n);
   private readonly navigation = inject(NavigationService);
 
   /** Percorso nel menu (caso d'uso, gruppi, voce) mostrato come briciole di pane sopra il titolo. */

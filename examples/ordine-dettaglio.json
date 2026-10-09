@@ -1,11 +1,20 @@
 {
   "schemaVersion": "1.0",
   "screen": "ordine-dettaglio",
-  "title": "Dettaglio ordine",
+  "title": "{{ t('ordine_dettaglio.dettaglio_ordine', 'Dettaglio ordine') }}",
   "requires": "ordini.ordine.leggi",
   "dataSources": {
-    "ordine": { "type": "rest", "method": "GET", "url": "/api/ordini/{{params.id}}" },
-    "salvaOrdine": { "type": "rest", "method": "PUT", "url": "/api/ordini/{{params.id}}", "body": "{{form}}" }
+    "ordine": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/ordini/{{params.id}}"
+    },
+    "salvaOrdine": {
+      "type": "rest",
+      "method": "PUT",
+      "url": "/api/ordini/{{params.id}}",
+      "body": "{{form}}"
+    }
   },
   "components": [
     {
@@ -13,16 +22,35 @@
       "type": "form",
       "source": "ordine",
       "fields": [
-        { "name": "cliente", "type": "text", "required": true },
-        { "name": "tipo", "type": "select", "options": ["privato", "business"] },
+        {
+          "name": "cliente",
+          "label": "{{ t('comune.cliente', 'Cliente') }}",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "tipo",
+          "label": "{{ t('comune.tipo', 'Tipo') }}",
+          "type": "select",
+          "options": [
+            "privato",
+            "business"
+          ],
+          "optionKey": "valori.tipo"
+        },
         {
           "name": "sconto",
+          "label": "{{ t('comune.sconto', 'Sconto') }}",
           "type": "number",
           "visibleIf": "{{form.tipo == 'business'}}",
-          "validate": { "rule": "{{value <= 20}}", "message": "Sconto massimo 20%" }
+          "validate": {
+            "rule": "{{value <= 20}}",
+            "message": "{{ t('comune.sconto_massimo_20', 'Sconto massimo 20%') }}"
+          }
         },
         {
           "name": "iban",
+          "label": "{{ t('vetrina_layout.iban', 'IBAN') }}",
           "type": "text",
           "sensitive": true,
           "hiddenIf": "{{!can('ordini.iban.leggi')}}",
@@ -32,11 +60,18 @@
       "actions": [
         {
           "id": "btn-salva",
-          "label": "Salva",
+          "label": "{{ t('comune.salva', 'Salva') }}",
           "enabledIf": "{{can('ordini.ordine.scrivi') && form._perm.update}}",
           "onClick": [
-            { "call": "salvaOrdine", "onError": { "toast": "Salvataggio non riuscito" } },
-            { "navigate": "ordini-elenco" }
+            {
+              "call": "salvaOrdine",
+              "onError": {
+                "toast": "{{ t('comune.salvataggio_non_riuscito', 'Salvataggio non riuscito') }}"
+              }
+            },
+            {
+              "navigate": "ordini-elenco"
+            }
           ]
         }
       ]
