@@ -70,6 +70,10 @@ Example: adding a `progress` node.
 6. **Dates:** never create a new `Date` inside a template binding with `ngModel`; it loops change detection. Use a `computed` map (see `dates` in `filter-bar.component.ts`).
 7. **Tables:** do not use `nzScroll` (it adds a measuring row); wrap in an `overflow-x: auto` container. Paginate on the server with `nz-pagination`, not the table's built-in paging.
 
+8. **Layout trap.** `nz-layout` stacks its children in a column and switches to a row only when it contains an `nz-sider`. The side menu here is our own `lc-sidebar`, so the app shell sets `flex-direction: row` explicitly.
+9. **Palette trap.** `@ant-design/colors` `generate` turns dark base colours into greyish tints; for the light theme the bridge derives success/error tag backgrounds by mixing the colour with white.
+10. **Scroll containers.** An `overflow-x: auto` wrapper also shows a vertical scrollbar when its content is one pixel too tall: keep pagination outside it.
+
 The Italian locale is patched in `provide.ts` (`rangeQuarterPlaceholder` is missing upstream); keep that patch when upgrading.
 
 ## 6. Theming
@@ -104,7 +108,7 @@ Vitest runs in jsdom through `ng test`. Conventions:
 * Test the configuration of what jsdom cannot verify (for example `nzAutofocus: 'cancel'`), and note the limit in the test.
 * Runtime specs import the demo JSON, so run `npm run demo:prepare` first.
 
-Layout, real focus and the dark theme are not covered by tests; check them manually with `npm run start:runtime` for UI changes.
+Layout, real focus and the dark theme are not covered by tests (the application shell follows the Ant Design Pro look: dark side bar, light top bar, card content); check them manually with `npm run start:runtime` for UI changes.
 
 ## 10. Code style
 

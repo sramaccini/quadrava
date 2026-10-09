@@ -171,7 +171,7 @@ In the top bar choose the **user** (`operatore`, `responsabile`, `amministratore
 * *Inserimento Fattura*: a form with validation that saves a draft and navigates to the drafts list.
 * *Revisione Spese*: two menu entries open the same screen with different parameters; Approve and Reject only appear with the review permission.
 * **Component showcase** (visible to every profile): four screens, `examples/vetrina-*.json`, exercising every component: basics and actions, forms (all field types, validation, conditional fields), filters and tables (server paging, row actions, cell formats, confirmation), and tabs, detail view and in-page messages.
-* The toggle at the top of the side menu collapses it to icons.
+* The look follows Ant Design Pro: dark side bar with logo and use-case selector, light top bar, cards on a light grey background. The toggle at the bottom of the side bar collapses it to icons (groups then open as pop-ups).
 
 The libraries are not hot-reloaded: after changing anything in `frontend/projects/<library>` run `npm run build:libs` again.
 
