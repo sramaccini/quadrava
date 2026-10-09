@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import {
+  AppstoreOutline,
   CheckCircleOutline,
   ContainerOutline,
   EuroOutline,
@@ -38,6 +39,7 @@ export const ICON_TYPES: Record<string, { type: string; icon: IconDefinition }> 
   euro: { type: 'euro', icon: EuroOutline },
   inbox: { type: 'inbox', icon: InboxOutline },
   settings: { type: 'setting', icon: SettingOutline },
+  sections: { type: 'appstore', icon: AppstoreOutline },
   user: { type: 'user', icon: UserOutline },
   logout: { type: 'logout', icon: LogoutOutline },
   left: { type: 'left', icon: LeftOutline },

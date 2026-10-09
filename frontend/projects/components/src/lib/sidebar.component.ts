@@ -83,11 +83,11 @@ export interface NavigateEvent {
             </nz-select>
           </div>
         } @else {
-          <!-- Da compressa il selettore diventa un'icona (quella del caso d'uso corrente) con un menu a tendina. -->
+          <!-- Da compressa il selettore diventa un'icona (sempre la stessa, a griglia: rappresenta le sezioni) con un menu a tendina. -->
           <div class="usecase-icon">
             <button nz-button nzType="text" class="usecase-trigger" type="button" nz-dropdown nzTrigger="click" nzPlacement="bottomLeft" [nzDropdownMenu]="useCaseMenu"
               [attr.aria-label]="'Caso d’uso: ' + (current()?.label ?? '')" [attr.title]="current()?.label ?? null" aria-haspopup="menu">
-              <lc-icon [name]="current()?.icon ?? 'list'" />
+              <lc-icon name="sections" />
             </button>
             <nz-dropdown-menu #useCaseMenu="nzDropdownMenu">
               <ul nz-menu nzSelectable>

@@ -172,6 +172,7 @@ describe('SidebarComponent', () => {
     await flush(fixture);
     expect(el.querySelector('nz-select')).toBeNull();
     const trigger = el.querySelector('button.usecase-trigger') as HTMLButtonElement;
+    expect(trigger.querySelector('[nztype="appstore"], .anticon-appstore')).not.toBeNull();
     expect(trigger.getAttribute('aria-label')).toBe('Caso d’uso: Inserimento');
     trigger.click();
     for (let i = 0; i < 40 && document.querySelectorAll('.ant-dropdown li[nz-menu-item]').length === 0; i++) await flush(fixture);
