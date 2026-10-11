@@ -17,6 +17,17 @@
       "params": {
         "quanti": 20000
       }
+    },
+    "ricerca": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/movimenti/ricerca",
+      "body": "{{ request }}"
+    },
+    "verificaMovimento": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/movimenti/{{ id }}/verifica"
     }
   },
   "components": [
@@ -186,6 +197,102 @@
               "sortable": true,
               "filter": "number",
               "aggregate": "sum"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sezione-server",
+      "type": "section",
+      "title": "{{ t('vetrina_datatable.server', 'Lato server: 200.000 movimenti') }}",
+      "components": [
+        {
+          "id": "spiega-server",
+          "type": "text",
+          "text": "{{ t('vetrina_datatable.server_spiega', 'Stessa interfaccia, ma filtri, ordinamento, gruppi, totali e pagine li calcola il servizio: il browser riceve solo la pagina e i gruppi che si vedono. Aprendo un gruppo si caricano le sue righe a pagine.') }}"
+        },
+        {
+          "id": "tabella-server",
+          "type": "serverDataTable",
+          "source": "ricerca",
+          "groupBy": [
+            "conto"
+          ],
+          "defaultSort": {
+            "field": "data",
+            "direction": "desc"
+          },
+          "pageSize": 15,
+          "bind": "state.ricercaMovimenti",
+          "rowActionsInline": 1,
+          "columns": [
+            {
+              "field": "data",
+              "label": "{{ t('vetrina_datatable.data', 'Data') }}",
+              "format": "date",
+              "sortable": true,
+              "filter": "date"
+            },
+            {
+              "field": "conto",
+              "label": "{{ t('vetrina_datatable.conto', 'Conto') }}",
+              "sortable": true,
+              "filter": "select",
+              "groupable": true
+            },
+            {
+              "field": "categoria",
+              "label": "{{ t('vetrina_datatable.categoria', 'Categoria') }}",
+              "filter": "select",
+              "groupable": true,
+              "aggregate": "count"
+            },
+            {
+              "field": "descrizione",
+              "label": "{{ t('comune.descrizione', 'Descrizione') }}",
+              "filter": "text"
+            },
+            {
+              "field": "stato",
+              "label": "{{ t('comune.stato', 'Stato') }}",
+              "format": "badge",
+              "badges": {
+                "registrato": "success",
+                "da-verificare": "danger"
+              },
+              "valueKey": "valori.movimento",
+              "filter": "select",
+              "groupable": true
+            },
+            {
+              "field": "importo",
+              "label": "{{ t('comune.importo', 'Importo') }}",
+              "format": "currency",
+              "sortable": true,
+              "filter": "number",
+              "aggregate": "sum"
+            }
+          ],
+          "rowActions": [
+            {
+              "id": "btn-verifica-server",
+              "label": "{{ t('vetrina_datatable.verifica', 'Verifica') }}",
+              "enabledIf": "{{ row.stato == 'da-verificare' }}",
+              "onClick": [
+                {
+                  "call": "verificaMovimento",
+                  "args": {
+                    "id": "{{ row.id }}"
+                  }
+                },
+                {
+                  "refresh": "ricerca"
+                },
+                {
+                  "toast": "{{ t('vetrina_datatable.verificato_server', 'Movimento {d} verificato', {'d': row.descrizione}) }}"
+                }
+              ]
             }
           ]
         }

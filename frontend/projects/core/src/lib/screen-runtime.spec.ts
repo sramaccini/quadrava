@@ -66,6 +66,17 @@ describe('ScreenRuntime', () => {
     rt.destroy();
   });
 
+  it('refresh su un data source non GET non dà errore: avvisa i componenti che lo interrogano da sé', async () => {
+    const rt = fakes.runtime(screen, injector);
+    await settle();
+    const before = fakes.requests.length;
+    expect(await rt.refresh('approva')).toEqual({ ok: true, data: null });
+    expect(rt.refreshCount()).toEqual({ approva: 1 });
+    expect(fakes.requests).toHaveLength(before);
+    expect((await rt.refresh('sconosciuto')).ok).toBe(false);
+    rt.destroy();
+  });
+
   it('non carica nulla se manca il permesso richiesto dalla schermata', async () => {
     fakes.permissions.clear();
     const rt = fakes.runtime(screen, injector);

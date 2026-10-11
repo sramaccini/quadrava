@@ -337,7 +337,22 @@ export interface DataTableNode extends NodeBase {
   rowActionsInline?: number;
 }
 
-export type NodeDefinition = SectionNode | TextNode | ButtonNode | FilterBarNode | TableNode | FormNode | TabsNode | DetailNode | AlertNode | StatsNode | WizardNode | TreeNode | CalendarNode | ChartNode | DataTableNode;
+/** Datatable pilotata dal servizio: filtri, ordinamento, gruppi, totali e pagine li calcola il data source. */
+export interface ServerDataTableNode extends NodeBase {
+  type: 'serverDataTable';
+  /** Data source di ricerca: riceve `request` e restituisce righe, gruppi o valori distinti. */
+  source: string;
+  columns: DataColumnDefinition[];
+  groupBy?: string[];
+  defaultSort?: SortSpec;
+  pageSize?: number;
+  /** Stato in cui scrivere la richiesta corrente (senza pagina). */
+  bind?: StatePath;
+  rowActions?: ActionDefinition[];
+  rowActionsInline?: number;
+}
+
+export type NodeDefinition = SectionNode | TextNode | ButtonNode | FilterBarNode | TableNode | FormNode | TabsNode | DetailNode | AlertNode | StatsNode | WizardNode | TreeNode | CalendarNode | ChartNode | DataTableNode | ServerDataTableNode;
 export type NodeType = NodeDefinition['type'];
 
 export interface ScreenDefinition {

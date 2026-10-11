@@ -1,5 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import { Authorization, DataClient, RuntimeDiagnostics, UserProvider, type DataRequest } from 'core';
+import { movementArchive, searchMovements } from './demo-search';
 
 /** Profili della demo: i permessi sono quelli che in produzione darebbe il servizio di autorizzazione. */
 export const DEMO_PROFILES: Record<string, string[]> = {
@@ -233,6 +234,14 @@ export class MockDataClient extends DataClient {
         { id: 'ser', nome: 'Servizi', voci: 27, figli: [leaf('ser-con', 'Consulenze', 9), { id: 'ser-man', nome: 'Manutenzione', voci: 18, figli: [leaf('ser-man-imp', 'Impianti', 11), leaf('ser-man-edi', 'Edifici', 7)] }] },
         { id: 'per', nome: 'Personale', voci: 35, figli: [{ id: 'per-tra', nome: 'Trasferte', voci: 25, figli: [leaf('per-tra-tre', 'Treni', 10), leaf('per-tra-hot', 'Hotel', 15)] }, leaf('per-for', 'Formazione', 10)] },
       ];
+    }
+    if (path === '/api/movimenti/ricerca' && req.method === 'POST') return searchMovements(movementArchive(), req.body);
+    const verify = /^\/api\/movimenti\/(\d+)\/verifica$/.exec(path);
+    if (verify && req.method === 'POST') {
+      const row = movementArchive().find((m) => m['id'] === Number(verify[1]));
+      if (!row) throw new Error('404');
+      row['stato'] = 'registrato';
+      return {};
     }
     if (path === '/api/movimenti' && req.method === 'GET') {
       // Con quanti=N (fino a 50.000) un archivio sintetico più grande, per provare la datatable con molti dati.

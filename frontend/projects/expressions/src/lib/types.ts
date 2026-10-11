@@ -19,6 +19,8 @@ export interface EvalContext {
   search?: string | null;
   /** Valore di un campo lookup di cui serve il testo (nei parametri del suo data source). */
   lookupKey?: unknown;
+  /** Richiesta di una serverDataTable (pagina, ordinamento, filtri, gruppi), da passare al servizio. */
+  request?: Record<string, unknown> | null;
   /** Riga corrente di un campo a righe ripetibili (nelle sue regole di validazione). */
   item?: Record<string, unknown>;
   /** Righe selezionate di una tabella (nelle azioni multiple). */

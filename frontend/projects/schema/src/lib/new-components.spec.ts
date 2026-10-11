@@ -233,4 +233,16 @@ describe('schema dei componenti nuovi', () => {
       expect(issuesOf(screen([{ type: 'table', source: 's', columns: [{ field: 'a', filter: 'text' }] }])).length).toBeGreaterThan(0);
     });
   });
+
+  describe('datatable lato server', () => {
+    const sdt = (extra: Record<string, unknown>) => screen([{ type: 'serverDataTable', source: 'ricerca', columns: [{ field: 'a', filter: 'text', groupable: true, sortable: true, aggregate: 'sum' }], ...extra }]);
+    it('accetta colonne filtrabili, gruppi iniziali, pagine fino a 200 e lo stato della richiesta', () => {
+      expect(issuesOf(sdt({ groupBy: ['a'], defaultSort: { field: 'a', direction: 'desc' }, pageSize: 200, bind: 'state.richiesta', rowActionsInline: 1, rowActions: [{ label: 'X', onClick: [{ refresh: 'ricerca' }] }] }))).toEqual([]);
+    });
+    it('rifiuta pagine fuori misura, più di tre gruppi e proprietà estranee', () => {
+      expect(issuesOf(sdt({ pageSize: 500 })).length).toBeGreaterThan(0);
+      expect(issuesOf(sdt({ groupBy: ['a', 'b', 'c', 'd'] })).length).toBeGreaterThan(0);
+      expect(issuesOf(sdt({ paging: 'server' })).length).toBeGreaterThan(0);
+    });
+  });
 });

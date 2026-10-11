@@ -19,6 +19,7 @@ import { StatsComponent } from './stats.component';
 import { CalendarComponent } from './calendar.component';
 import { ChartComponent } from './chart.component';
 import { DataTableComponent } from './data-table.component';
+import { ServerDataTableComponent } from './server-data-table.component';
 import { TreeComponent } from './tree.component';
 import { WizardComponent } from './wizard.component';
 import { TableComponent } from './table.component';
@@ -67,6 +68,7 @@ export const STANDARD_COMPONENTS: ComponentCatalog = {
   calendar: CalendarComponent,
   chart: ChartComponent,
   dataTable: DataTableComponent,
+  serverDataTable: ServerDataTableComponent,
 };
 
 /**

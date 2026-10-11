@@ -72,6 +72,9 @@ export const BUILTIN_MESSAGES: Record<string, Messages> = {
     'lc.toggleGroup': 'Apri o chiudi il gruppo {label}',
     'lc.tree': 'Albero',
     'lc.rightAxis': 'asse destro',
+    'lc.showMore': 'Mostra altre ({n, number} rimanenti)',
+    'lc.groupsCount': '{n, plural, one {# gruppo} other {# gruppi}}',
+    'lc.serverRowsCount': '{n, plural, one {# riga} other {# righe}}',
   },
   en: {
     'lc.all': 'All',
@@ -140,5 +143,8 @@ export const BUILTIN_MESSAGES: Record<string, Messages> = {
     'lc.toggleGroup': 'Expand or collapse the group {label}',
     'lc.tree': 'Tree',
     'lc.rightAxis': 'right axis',
+    'lc.showMore': 'Show more ({n, number} left)',
+    'lc.groupsCount': '{n, plural, one {# group} other {# groups}}',
+    'lc.serverRowsCount': '{n, plural, one {# row} other {# rows}}',
   },
 };

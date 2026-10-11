@@ -34,6 +34,8 @@ export class ScreenRuntime {
   /** Stato della schermata: filtri, pagina, selezione. Si legge nelle espressioni come `state`. */
   readonly state = signal<Record<string, unknown>>({ page: 0 });
   readonly dataSources = signal<Record<string, DataSourceState>>({});
+  /** Quante volte è stato chiesto di ricaricare ogni data source (passo refresh): i componenti che lo interrogano da sé lo seguono. */
+  readonly refreshCount = signal<Record<string, number>>({});
   /** Vero se l'utente ha il permesso richiesto dalla schermata (`requires`). */
   readonly allowed = computed(() => !this.definition.requires || this.deps.authorization.can(this.definition.requires));
 
@@ -236,15 +238,20 @@ export class ScreenRuntime {
     }
   }
 
-  /** Ricarica un data source GET. */
+  /**
+   * Ricarica un data source. Un GET si riesegue qui; un data source interrogato direttamente da un componente (per
+   * esempio la ricerca di una serverDataTable, di solito POST) viene solo segnalato con `refreshCount`, e il
+   * componente ripete le sue richieste.
+   */
   async refresh(name: string): Promise<CallResult> {
     const source = this.definition.dataSources?.[name];
-    if (source?.method !== 'GET') {
-      const error = `refresh non applicabile a ${name}`;
+    if (!source) {
+      const error = `data source sconosciuto: ${name}`;
       this.report(`refresh ${name}`, error);
       return { ok: false, error };
     }
-    return this.execute(name);
+    this.refreshCount.update((all) => ({ ...all, [name]: (all[name] ?? 0) + 1 }));
+    return source.method === 'GET' ? this.execute(name) : { ok: true, data: null };
   }
 
   navigate(screen: string, params: Record<string, unknown>): void {
@@ -323,9 +330,9 @@ export class ScreenRuntime {
     const source = this.definition.dataSources?.[name];
     if (!source) return { ok: false, error: `data source sconosciuto: ${name}` };
     // Gli argomenti hanno la precedenza sulle variabili del punto da cui parte la chiamata (row, form).
-    // Le variabili dei campi lookup esistono sempre, nulle finché non servono: `search` (testo cercato) e
-    // `lookupKey` (valore di cui serve il testo, quando non è tra le righe caricate).
-    const ctx = this.context({ search: null, lookupKey: null, ...scope, ...args });
+    // Variabili dei componenti che interrogano un data source, sempre presenti e nulle finché non servono: `search` e
+    // `lookupKey` (campi lookup), `request` (pagina, ordinamento, filtri e gruppi di una serverDataTable).
+    const ctx = this.context({ search: null, lookupKey: null, request: null, ...scope, ...args });
     const url = this.resolveUrl(source.url, ctx);
     if (!url.ok) return url;
     const resolved = (this.resolveIn(source.params ?? {}, ctx) ?? {}) as Record<string, unknown>;

@@ -530,7 +530,8 @@
             "tree",
             "calendar",
             "chart",
-            "dataTable"
+            "dataTable",
+            "serverDataTable"
           ]
         },
         "visibleIf": {
@@ -1253,6 +1254,71 @@
                 "minimum": 5,
                 "maximum": 100,
                 "description": "Elementi per pagina, intestazioni dei gruppi comprese (10 se assente)."
+              },
+              "rowActions": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/action"
+                }
+              },
+              "rowActionsInline": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 10
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "serverDataTable"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "required": [
+              "source",
+              "columns"
+            ],
+            "properties": {
+              "source": {
+                "type": "string",
+                "description": "Data source di ricerca (di solito POST con \"body\": \"{{ request }}\") che riceve pagina, ordinamento, filtri e gruppi e restituisce solo ciò che serve: { items, total, totals } per le righe, { groups: [{ value, count, aggregates }], total, totals } per i gruppi, { values } per i valori di un filtro a scelta."
+              },
+              "columns": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "$ref": "#/$defs/dataColumn"
+                }
+              },
+              "groupBy": {
+                "type": "array",
+                "maxItems": 3,
+                "uniqueItems": true,
+                "items": {
+                  "type": "string"
+                },
+                "description": "Colonne di raggruppamento iniziali (groupable), in ordine."
+              },
+              "defaultSort": {
+                "$ref": "#/$defs/sortSpec"
+              },
+              "pageSize": {
+                "type": "integer",
+                "minimum": 5,
+                "maximum": 200,
+                "description": "Righe (o gruppi) per pagina e righe caricate a ogni «mostra altre» dentro un gruppo (20 se assente)."
+              },
+              "bind": {
+                "$ref": "#/$defs/statePath",
+                "description": "Stato in cui la tabella scrive la richiesta corrente (senza pagina), per altri componenti, per esempio un pulsante di esportazione."
               },
               "rowActions": {
                 "type": "array",

@@ -367,4 +367,26 @@ describe('Vetrina: componenti avanzati', () => {
       expect(TestBed.inject(DemoDiagnostics).events()).toEqual([]);
     });
   });
+
+  describe('datatable lato server', () => {
+    it('200.000 movimenti: gruppi dal servizio, apertura di un gruppo, verifica di una riga con refresh', { timeout: 30000 }, async () => {
+      const { el, until } = await openShowcase('/vetrina/vetrina-datatable');
+      const sdt = (): HTMLElement => el.querySelector('main lc-server-data-table') as HTMLElement;
+      const groups = (): string[] => [...sdt().querySelectorAll('tr.group-row .group-label')].map((g) => plainText(g.textContent));
+      await until(() => groups().length === 4, 'gruppi');
+      expect(plainText(sdt().querySelector('.count')?.textContent)).toBe('4 gruppi');
+      expect(groups()[0]).toBe('Conto: Banca Intesa (50.000)');
+      (sdt().querySelector('tr.group-row button.toggle') as HTMLButtonElement).click();
+      await until(() => sdt().querySelectorAll('tbody tr:not(.group-row):not(.note-row)').length === 15, 'righe del gruppo');
+      expect(sdt().querySelector('tr.note-row button')?.textContent).toContain('49.985');
+      // La prima riga da verificare del gruppo: Verifica, poi refresh e messaggio.
+      const verify = [...sdt().querySelectorAll<HTMLButtonElement>('lc-row-actions .actions > span button')].find((b) => !b.disabled);
+      if (verify) {
+        verify.click();
+        await until(() => !!document.querySelector('.ant-message-notice'), 'messaggio');
+        expect(document.querySelector('.ant-message-notice')?.textContent).toContain('verificato');
+      }
+      expect(TestBed.inject(DemoDiagnostics).events()).toEqual([]);
+    });
+  });
 });
