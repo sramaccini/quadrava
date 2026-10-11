@@ -15,6 +15,7 @@ import { FilterBarComponent } from './filter-bar.component';
 import { FormComponent } from './form.component';
 import { ICON_TYPES } from './icon.component';
 import { SectionComponent } from './section.component';
+import { StatsComponent } from './stats.component';
 import { TableComponent } from './table.component';
 import { TabsComponent } from './tabs.component';
 import { TextComponent } from './text.component';
@@ -55,6 +56,7 @@ export const STANDARD_COMPONENTS: ComponentCatalog = {
   tabs: TabsComponent,
   detail: DetailComponent,
   alert: AlertComponent,
+  stats: StatsComponent,
 };
 
 /**

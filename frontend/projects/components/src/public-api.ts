@@ -15,6 +15,7 @@ export * from './lib/user-menu.component';
 export * from './lib/messages';
 export * from './lib/detail.component';
 export * from './lib/alert.component';
+export * from './lib/stats.component';
 export * from './lib/tabs.component';
 export * from './lib/dialog-confirmation';
 export * from './lib/dialog-form';

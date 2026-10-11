@@ -252,4 +252,17 @@ describe('Vetrina: componenti avanzati', () => {
       ]);
     });
   });
+
+  describe('cruscotto', () => {
+    it('gli indicatori mostrano i valori del riepilogo, formattati e con le note', async () => {
+      const { el, until } = await openShowcase('/vetrina/vetrina-cruscotto');
+      const values = (): string[] => [...el.querySelectorAll('main lc-stats .value')].map((v) => plainText(v.textContent));
+      await until(() => values().length === 4 && values()[0] !== '…', 'indicatori');
+      expect(values()).toEqual(['11.275,00 €', '5975,00 €', '10', '2818,75 €']);
+      expect([...el.querySelectorAll('main lc-stats .caption')].map((c) => plainText(c.textContent))).toEqual(['+12,5 % rispetto al mese scorso', 'su 14 in tutto']);
+      // Nessun errore di espressione mentre i dati arrivano.
+      await new Promise((r) => setTimeout(r, 0));
+      expect(TestBed.inject(DemoDiagnostics).events()).toEqual([]);
+    });
+  });
 });

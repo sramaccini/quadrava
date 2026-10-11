@@ -1,0 +1,67 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "vetrina-cruscotto",
+  "title": "{{ t('vetrina_cruscotto.titolo', 'Vetrina: cruscotto') }}",
+  "description": "{{ t('vetrina_cruscotto.descrizione', 'Indicatori e grafici calcolati dai dati del servizio.') }}",
+  "requires": "vetrina.componenti.leggi",
+  "dataSources": {
+    "riepilogo": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/riepilogo"
+    }
+  },
+  "components": [
+    {
+      "id": "titolo",
+      "type": "text",
+      "style": "heading",
+      "text": "{{ t('vetrina_cruscotto.intestazione', 'Cruscotto') }}"
+    },
+    {
+      "id": "sezione-kpi",
+      "type": "section",
+      "title": "{{ t('vetrina_cruscotto.indicatori', 'Indicatori') }}",
+      "components": [
+        {
+          "id": "kpi-fatture",
+          "type": "stats",
+          "source": "riepilogo",
+          "items": [
+            {
+              "id": "kpi-fatturato",
+              "label": "{{ t('vetrina_cruscotto.fatturato', 'Fatturato') }}",
+              "field": "fatturato",
+              "format": "currency",
+              "tone": "success",
+              "caption": "{{ t('vetrina_cruscotto.crescita', '+{p, number} % rispetto al mese scorso', {'p': row.crescita}) }}"
+            },
+            {
+              "id": "kpi-incassare",
+              "label": "{{ t('vetrina_cruscotto.da_incassare', 'Da incassare') }}",
+              "field": "daIncassare",
+              "format": "currency",
+              "tone": "primary",
+              "tooltip": "{{ t('vetrina_cruscotto.da_incassare_aiuto', 'Fatture attive inviate e non ancora pagate') }}"
+            },
+            {
+              "id": "kpi-aperte",
+              "label": "{{ t('vetrina_cruscotto.aperte', 'Fatture aperte') }}",
+              "field": "aperte",
+              "format": "number",
+              "decimals": 0,
+              "tone": "danger",
+              "caption": "{{ t('vetrina_cruscotto.su_totale', 'su {n} in tutto', {'n': row.totale}) }}"
+            },
+            {
+              "id": "kpi-media",
+              "label": "{{ t('vetrina_cruscotto.media_cliente', 'Fatturato medio per cliente') }}",
+              "value": "{{ row.fatturato / row.clienti }}",
+              "format": "currency"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

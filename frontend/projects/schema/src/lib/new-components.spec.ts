@@ -152,4 +152,16 @@ describe('schema dei componenti nuovi', () => {
       expect(issuesOf(button([{ dialog: { title: 'T', fields: [{ name: 'a', type: 'text' }], onSubmit: [{ toast: 'x' }], larghezza: 3 } }])).length).toBeGreaterThan(0);
     });
   });
+
+  describe('indicatori', () => {
+    it('accetta indicatori da campo o da espressione', () => {
+      expect(issuesOf(screen([{ type: 'stats', source: 'r', items: [{ label: 'A', field: 'a', format: 'currency', tone: 'success', caption: 'x' }, { label: 'B', value: '{{ row.a / 2 }}' }] }]))).toEqual([]);
+    });
+    it('rifiuta indicatori senza valore, troppi indicatori o proprietà estranee', () => {
+      expect(issuesOf(screen([{ type: 'stats', items: [{ label: 'A' }] }])).length).toBeGreaterThan(0);
+      expect(issuesOf(screen([{ type: 'stats', items: [] }])).length).toBeGreaterThan(0);
+      expect(issuesOf(screen([{ type: 'stats', items: Array.from({ length: 9 }, (_, i) => ({ label: String(i), field: 'a' })) }])).length).toBeGreaterThan(0);
+      expect(issuesOf(screen([{ type: 'stats', items: [{ label: 'A', field: 'a', icona: 'x' }] }])).length).toBeGreaterThan(0);
+    });
+  });
 });

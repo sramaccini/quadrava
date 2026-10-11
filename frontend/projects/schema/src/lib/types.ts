@@ -221,7 +221,30 @@ export interface AlertNode extends NodeBase {
   kind?: 'info' | 'success' | 'error';
 }
 
-export type NodeDefinition = SectionNode | TextNode | ButtonNode | FilterBarNode | TableNode | FormNode | TabsNode | DetailNode | AlertNode;
+/** Un indicatore: valore da un campo del record (`field`) o da un'espressione (`value`, con il record come `row`). */
+export interface StatItem {
+  id?: string;
+  label: string;
+  field?: string;
+  value?: Expression;
+  format?: CellFormat;
+  currency?: string;
+  decimals?: number;
+  valueKey?: string;
+  tone?: Tone;
+  caption?: string;
+  tooltip?: string;
+  visibleIf?: Expression;
+  hiddenIf?: Expression;
+}
+export interface StatsNode extends NodeBase {
+  type: 'stats';
+  /** Data source che restituisce un record con i valori. */
+  source?: string;
+  items: StatItem[];
+}
+
+export type NodeDefinition = SectionNode | TextNode | ButtonNode | FilterBarNode | TableNode | FormNode | TabsNode | DetailNode | AlertNode | StatsNode;
 export type NodeType = NodeDefinition['type'];
 
 export interface ScreenDefinition {

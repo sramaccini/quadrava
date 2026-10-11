@@ -515,7 +515,8 @@
             "form",
             "tabs",
             "detail",
-            "alert"
+            "alert",
+            "stats"
           ]
         },
         "visibleIf": {
@@ -899,6 +900,38 @@
               }
             }
           }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "stats"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "required": [
+              "items"
+            ],
+            "properties": {
+              "source": {
+                "type": "string",
+                "description": "Data source che restituisce un record (oggetto) con i valori; facoltativo se tutti gli indicatori usano value."
+              },
+              "items": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 8,
+                "items": {
+                  "$ref": "#/$defs/statItem"
+                }
+              }
+            }
+          }
         }
       ],
       "unevaluatedProperties": false
@@ -1122,6 +1155,93 @@
           }
         }
       }
+    },
+    "statItem": {
+      "type": "object",
+      "required": [
+        "label"
+      ],
+      "additionalProperties": false,
+      "description": "Un indicatore: etichetta e valore grande. Il valore viene da un campo del record del data source (`field`) o da un'espressione (`value`, che vede il record come `row`).",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "label": {
+          "type": "string"
+        },
+        "field": {
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/expression"
+        },
+        "format": {
+          "enum": [
+            "text",
+            "number",
+            "currency",
+            "percent",
+            "date",
+            "datetime",
+            "boolean",
+            "badge"
+          ]
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$",
+          "description": "Codice ISO 4217 per format currency (EUR se assente)."
+        },
+        "decimals": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 6,
+          "description": "Decimali mostrati con format number (fino a 2 se assente)."
+        },
+        "valueKey": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_.-]+$",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "Prefisso delle chiavi di traduzione per i valori mostrati: il testo è t('<prefisso>.<valore>'), con il valore come ripiego. I colori dei badge restano legati al valore originale."
+        },
+        "tone": {
+          "$ref": "#/$defs/tone"
+        },
+        "caption": {
+          "type": "string",
+          "description": "Riga piccola sotto il valore (per esempio un confronto); può contenere {{ }} con il record come row."
+        },
+        "tooltip": {
+          "type": "string",
+          "description": "Testo di aiuto mostrato al passaggio del mouse o con il focus. Solo testo (mai HTML); può contenere {{ }}."
+        },
+        "visibleIf": {
+          "$ref": "#/$defs/expression"
+        },
+        "hiddenIf": {
+          "$ref": "#/$defs/expression"
+        }
+      },
+      "anyOf": [
+        {
+          "required": [
+            "field"
+          ],
+          "properties": {
+            "field": true
+          }
+        },
+        {
+          "required": [
+            "value"
+          ],
+          "properties": {
+            "value": true
+          }
+        }
+      ]
     }
   }
 }

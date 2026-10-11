@@ -197,6 +197,18 @@ export class MockDataClient extends DataClient {
       invoice.stato = 'inviata';
       return {};
     }
+    if (path === '/api/riepilogo' && req.method === 'GET') {
+      const attive = this.invoices.filter((f) => f.tipo === 'attiva');
+      const sum = (rows: Invoice[]): number => rows.reduce((t, f) => t + f.importo, 0);
+      return {
+        fatturato: sum(attive),
+        daIncassare: sum(attive.filter((f) => f.stato === 'inviata')),
+        aperte: this.invoices.filter((f) => f.stato !== 'pagata').length,
+        totale: this.invoices.length,
+        clienti: new Set(this.invoices.map((f) => f.cliente)).size,
+        crescita: 12.5,
+      };
+    }
     if (path === '/api/contatti' && req.method === 'GET') return this.contacts.map((c) => ({ ...c }));
     if (path === '/api/contatti' && req.method === 'POST') {
       const body = req.body ?? {};

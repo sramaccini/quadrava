@@ -46,7 +46,7 @@ L'ordine è quello di realizzazione. Lo stato si aggiorna a ogni componente comp
 | 10 | Righe ripetibili nel form | form | realizzato |
 | 11 | Dialog con form (passo `dialog`) | azioni | realizzato |
 | 12 | Tooltip nella scheda di dettaglio | dettaglio | realizzato |
-| 13 | Indicatori (KPI) | visualizzazione | da fare |
+| 13 | Indicatori (KPI) | visualizzazione | realizzato |
 | 14 | Procedura a passi (wizard) | layout | da fare |
 | 15 | Vista ad albero | visualizzazione | da fare |
 | 16 | Calendario | visualizzazione | da fare |
