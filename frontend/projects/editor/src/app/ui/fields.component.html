@@ -1,0 +1,132 @@
+@for (row of rows(); track row.info.name) {
+  <div class="prop" [class.invalid]="row.issues.length" [attr.data-prop]="row.info.name">
+    <label [attr.for]="row.id" class="name">
+      {{ row.info.name }}
+      @if (row.info.required) {
+        <span class="required" [attr.title]="i18n.t('ed.required')">*</span>
+      }
+    </label>
+    @switch (row.info.kind) {
+      @case ('enum') {
+        <nz-select
+          [nzId]="row.id"
+          [ngModel]="row.value ?? null"
+          (ngModelChange)="setOption(row, $event)"
+          [nzAllowClear]="!row.info.required"
+          [nzPlaceHolder]="i18n.t('ed.unset')"
+          nzSize="small"
+        >
+          @for (option of row.info.options; track option) {
+            <nz-option [nzValue]="option" [nzLabel]="option" />
+          }
+        </nz-select>
+      }
+      @case ('boolean') {
+        <label nz-checkbox [nzId]="row.id" [ngModel]="row.value === true" (ngModelChange)="setBoolean(row, $event)"></label>
+      }
+      @case ('number') {
+        <nz-input-number
+          [nzId]="row.id"
+          nzSize="small"
+          [nzMin]="row.info.minimum ?? -1e15"
+          [nzMax]="row.info.maximum ?? 1e15"
+          [ngModel]="asNumber(row.value)"
+          (ngModelChange)="setNumber(row, $event)"
+        />
+      }
+      @case ('json') {
+        <ed-json-field [fieldId]="row.id" [value]="row.value" [allowExpression]="true" [minRows]="2" (valueChange)="setJson(row, $event)" />
+      }
+      @case ('object') {
+        @if (row.value !== undefined) {
+          <div class="object" [id]="row.id" role="group" [attr.aria-label]="row.info.name">
+            <ed-fields [path]="row.path" [fields]="objectFields(row)" [idPrefix]="row.id" />
+            @if (!row.info.required) {
+              <button nz-button nzType="link" nzDanger nzSize="small" type="button" class="drop" (click)="setJson(row, undefined)">{{ i18n.t('ed.object.remove') }}</button>
+            }
+          </div>
+        } @else {
+          <button nz-button nzSize="small" nzType="dashed" type="button" [id]="row.id" (click)="addObject(row)"><span nz-icon nzType="plus"></span>{{ i18n.t('ed.object.add') }}</button>
+        }
+      }
+      @case ('list') {
+        <div class="list" [id]="row.id" role="group" [attr.aria-label]="row.info.name">
+          <div class="list-head">
+            <span class="count">{{ i18n.t('ed.list.count', { n: entries(row).length }) }}</span>
+            <button nz-button nzType="link" nzSize="small" type="button" (click)="toggleRaw(row)" [attr.aria-pressed]="isRaw(row)">
+              {{ isRaw(row) ? i18n.t('ed.list.fields') : 'JSON' }}
+            </button>
+          </div>
+          @if (isRaw(row)) {
+            <ed-json-field [fieldId]="row.id + '-json'" [value]="row.value" [minRows]="3" (valueChange)="setJson(row, $event)" />
+          } @else {
+            <ol class="items">
+              @for (entry of entries(row); track entry.index; let first = $first; let last = $last) {
+                <li class="item" [class.invalid]="entry.hasIssues" [class.open]="isOpen(entry.path)">
+                  <div class="item-head">
+                    <button type="button" class="item-toggle" (click)="toggle(entry.path)" [attr.aria-expanded]="isOpen(entry.path)">
+                      <span nz-icon [nzType]="isOpen(entry.path) ? 'down' : 'right'" aria-hidden="true"></span>
+                      <span class="summary">{{ entry.summary || '#' + (entry.index + 1) }}</span>
+                    </button>
+                    <button nz-button nzType="text" nzSize="small" type="button" [disabled]="first" (click)="moveItem(entry, -1)" [attr.aria-label]="i18n.t('ed.moveUp')">
+                      <span nz-icon nzType="arrow-up"></span>
+                    </button>
+                    <button nz-button nzType="text" nzSize="small" type="button" [disabled]="last" (click)="moveItem(entry, 1)" [attr.aria-label]="i18n.t('ed.moveDown')">
+                      <span nz-icon nzType="arrow-down"></span>
+                    </button>
+                    <button nz-button nzType="text" nzSize="small" nzDanger type="button" (click)="removeItem(row, entry)" [attr.aria-label]="i18n.t('ed.delete')">
+                      <span nz-icon nzType="delete"></span>
+                    </button>
+                  </div>
+                  @if (isOpen(entry.path)) {
+                    <div class="item-body">
+                      <ed-fields [path]="entry.path" [fields]="entry.fields" [idPrefix]="row.id + '-' + entry.index" />
+                    </div>
+                  }
+                </li>
+              }
+            </ol>
+            @if (variants(row).length) {
+              <button nz-button nzSize="small" nzType="dashed" type="button" nz-dropdown [nzDropdownMenu]="variantMenu" nzTrigger="click">
+                <span nz-icon nzType="plus"></span>{{ i18n.t('ed.list.add') }}
+              </button>
+              <nz-dropdown-menu #variantMenu="nzDropdownMenu">
+                <ul nz-menu>
+                  @for (variant of variants(row); track variant.key) {
+                    <li nz-menu-item (click)="addItem(row, variant)">
+                      <span class="variant-key">{{ variant.key }}</span>&nbsp;{{ i18n.t('ed.variant.' + variant.key) }}
+                    </li>
+                  }
+                </ul>
+              </nz-dropdown-menu>
+            } @else {
+              <button nz-button nzSize="small" nzType="dashed" type="button" (click)="addItem(row)"><span nz-icon nzType="plus"></span>{{ i18n.t('ed.list.add') }}</button>
+            }
+          }
+        </div>
+      }
+      @default {
+        @if (isLong(row)) {
+          <textarea
+            nz-input
+            [id]="row.id"
+            [class.code]="row.info.kind === 'expression'"
+            rows="1"
+            [value]="asText(row.value)"
+            (input)="setText(row, $any($event.target).value)"
+            [attr.placeholder]="row.info.kind === 'expression' ? expressionHint : null"
+            spellcheck="false"
+          ></textarea>
+        } @else {
+          <input nz-input nzSize="small" [id]="row.id" [value]="asText(row.value)" (input)="setText(row, $any($event.target).value)" spellcheck="false" />
+        }
+      }
+    }
+    @if (row.info.description && !(hideExpressionHelp() && row.info.kind === 'expression')) {
+      <p class="help">{{ row.info.description }}</p>
+    }
+    @for (message of row.issues; track $index) {
+      <p class="issue" role="alert">{{ message }}</p>
+    }
+  </div>
+}

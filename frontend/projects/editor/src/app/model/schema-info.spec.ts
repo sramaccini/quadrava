@@ -2,8 +2,8 @@ import { validateScreen } from 'schema';
 import { paletteGroups } from '../ui/palette.component';
 import { EDITOR_MESSAGES } from '../messages';
 import type { Json, JsonObject } from './doc-ops';
-import { childSlots, containerItems, definitionProperties, nodeProperties, NODE_TYPES, ownerOf, screenProperties, targetAt } from './schema-info';
-import { emptyScreen, ensureSource, freshId, nodeTemplate, withFreshIds } from './templates';
+import { childSlots, containerItems, definitionProperties, listItem, nodeProperties, NODE_TYPES, objectFields, ownerOf, screenProperties, targetAt, type PropertyInfo, type Variant } from './schema-info';
+import { defaultItem, emptyScreen, ensureSource, freshId, nodeTemplate, summaryOf, withFreshIds } from './templates';
 
 const t = (key: string): string => EDITOR_MESSAGES['it'][key] ?? key;
 
@@ -12,7 +12,8 @@ describe('lettura dello schema', () => {
     const table = nodeProperties('table');
     expect(table[0].name).toBe('id');
     expect(table.find((p) => p.name === 'source')).toMatchObject({ kind: 'text', required: true });
-    expect(table.find((p) => p.name === 'columns')).toMatchObject({ kind: 'json', required: true });
+    expect(table.find((p) => p.name === 'columns')).toMatchObject({ kind: 'list', required: true, minimum: 1 });
+    expect(table.find((p) => p.name === 'sort')?.kind).toBe('object');
     expect(table.find((p) => p.name === 'rowActionsInline')).toMatchObject({ kind: 'number', minimum: 0, maximum: 10 });
     expect(table.find((p) => p.name === 'visibleIf')).toMatchObject({ kind: 'expression' });
     expect(nodeProperties('alert').find((p) => p.name === 'kind')).toMatchObject({ kind: 'enum', options: ['info', 'success', 'error'] });
@@ -20,6 +21,29 @@ describe('lettura dello schema', () => {
     expect(nodeProperties('section').find((p) => p.name === 'components')?.kind).toBe('children');
     expect(definitionProperties('wizardStep').map((p) => p.name)).toContain('nextIf');
     expect(screenProperties().map((p) => p.name)).toEqual(['screen', 'title', 'description', 'requires', 'schemaVersion']);
+  });
+
+  it('elenchi: le colonne ereditano i campi da più definizioni; i passi sono varianti riconosciute dalla chiave', () => {
+    const columns = listItem(nodeProperties('dataTable').find((p) => p.name === 'columns')!) as { fields: PropertyInfo[] };
+    expect(columns.fields.map((f) => f.name)).toEqual(expect.arrayContaining(['field', 'label', 'format', 'sortable', 'aggregate', 'filter', 'groupable']));
+    expect(columns.fields.find((f) => f.name === 'field')?.required).toBe(true);
+    const steps = listItem(nodeProperties('button').find((p) => p.name === 'onClick')!) as { variants: Variant[] };
+    expect(steps.variants.map((v) => v.key)).toEqual(['call', 'refresh', 'navigate', 'toast', 'set', 'confirm', 'dialog']);
+    const dialog = steps.variants.find((v) => v.key === 'dialog')!.fields[0];
+    expect(dialog.kind).toBe('object');
+    expect(objectFields(dialog).find((f) => f.name === 'fields')?.kind).toBe('list');
+    // Le mappe libere restano JSON.
+    expect(nodeProperties('form').find((p) => p.name === 'initial')?.kind).toBe('json');
+  });
+
+  it('elementi nuovi e riassunti', () => {
+    const fields = (listItem(nodeProperties('form').find((p) => p.name === 'fields')!) as { fields: PropertyInfo[] }).fields;
+    expect(defaultItem(fields, 1, t)).toEqual({ name: 'campo2', type: 'text' });
+    const columns = (listItem(nodeProperties('table').find((p) => p.name === 'columns')!) as { fields: PropertyInfo[] }).fields;
+    expect(defaultItem(columns, 0, t)).toEqual({ field: 'campo1', label: 'Descrizione' });
+    expect(summaryOf({ field: 'importo', label: "{{ t('x.importo', 'Importo') }}" })).toBe('Importo (importo)');
+    expect(summaryOf({ name: 'cliente', type: 'lookup' })).toBe('cliente · lookup');
+    expect(summaryOf({ toast: "{{ t('x.ok', 'Fatto') }}" }, 'toast')).toBe('toast: Fatto');
   });
 
   it('riconosce nodi, schede e passi e trova l’elemento che contiene un percorso', () => {

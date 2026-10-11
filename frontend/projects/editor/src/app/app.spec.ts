@@ -126,6 +126,48 @@ describe('editor delle schermate', () => {
     expect(getIn(store.doc(), ['screen'])).toBe('nuova-schermata');
   });
 
+  it('elenchi nelle proprietà: colonne campo per campo, passi per variante, e come JSON', async () => {
+    (el.querySelector('ed-palette button[data-type="table"]') as HTMLButtonElement).click();
+    await settle();
+    const columns = (): HTMLElement => el.querySelector('ed-inspector [data-prop="columns"]') as HTMLElement;
+    expect([...columns().querySelectorAll('.summary')].map((s) => s.textContent?.trim())).toEqual(['Id (id)', 'Descrizione (descrizione)']);
+    // Si apre la seconda colonna e se ne cambia il formato.
+    (columns().querySelectorAll('.item-toggle')[1] as HTMLButtonElement).click();
+    await settle();
+    type(columns().querySelector('#prop-columns-1-label') as HTMLInputElement, 'Note');
+    await settle();
+    expect(getIn(store.doc(), ['components', 0, 'columns', 1, 'label'])).toBe('Note');
+    // Una colonna nuova in fondo, poi spostata in cima.
+    (columns().querySelector(':scope > .list > button') as HTMLButtonElement).click();
+    await settle();
+    expect(getIn(store.doc(), ['components', 0, 'columns', 2])).toEqual({ field: 'campo3', label: 'Descrizione' });
+    const up = columns().querySelectorAll(':scope > .list > .items > .item')[2].querySelector('button[aria-label^="Sposta su"]') as HTMLButtonElement;
+    up.click();
+    await settle();
+    expect(getIn(store.doc(), ['components', 0, 'columns', 1, 'field'])).toBe('campo3');
+    // Vista JSON dell'elenco.
+    (columns().querySelector(':scope > .list > .list-head button') as HTMLButtonElement).click();
+    await settle();
+    expect((columns().querySelector(':scope > .list > ed-json-field textarea') as HTMLTextAreaElement).value).toContain('"campo3"');
+
+    // Pulsante: un passo nuovo scelto dalla variante.
+    store.select([]);
+    (el.querySelector('ed-palette button[data-type="button"]') as HTMLButtonElement).click();
+    await settle();
+    const steps = el.querySelector('ed-inspector [data-prop="onClick"]') as HTMLElement;
+    expect(steps.querySelector('.summary')?.textContent?.trim()).toBe('toast: Fatto');
+    (steps.querySelector('button[nz-dropdown]') as HTMLButtonElement).click();
+    await until(() => document.querySelectorAll('.ant-dropdown-menu-item').length === 7, 'varianti dei passi');
+    ([...document.querySelectorAll<HTMLElement>('.ant-dropdown-menu-item')].find((i) => i.textContent?.includes('refresh')) as HTMLElement).click();
+    await settle();
+    expect(getIn(store.doc(), ['components', 1, 'onClick', 1])).toEqual({ refresh: '' });
+    // Il passo nuovo è aperto: il data source si scrive nel suo campo.
+    type(steps.querySelector('#prop-onClick-1-refresh') as HTMLInputElement, 'elenco');
+    await settle();
+    expect(getIn(store.doc(), ['components', 1, 'onClick', 1])).toEqual({ refresh: 'elenco' });
+    expect(store.issues()).toEqual([]);
+  });
+
   it('apre un esempio, e da tastiera elimina il nodo selezionato', async () => {
     store.load(layout as never);
     await until(() => outline().length > 5, 'struttura dell’esempio');

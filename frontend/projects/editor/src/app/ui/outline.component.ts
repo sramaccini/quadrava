@@ -7,6 +7,7 @@ import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import { getIn, isObject, samePath, startsWith, type Json, type Path } from '../model/doc-ops';
 import { EditorStore } from '../model/editor-store';
 import { childSlots, containerItems, targetAt } from '../model/schema-info';
+import { fallbackText } from '../model/templates';
 
 /** Una riga della struttura: un nodo, una scheda o un passo, con i propri figli. */
 export interface OutlineItem {
@@ -109,15 +110,7 @@ export class OutlineComponent {
 function detailOf(value: Record<string, Json>): string {
   for (const key of DETAIL_KEYS) {
     const text = value[key];
-    if (typeof text === 'string' && text.trim()) return shorten(text);
+    if (typeof text === 'string' && text.trim()) return fallbackText(text);
   }
   return typeof value['id'] === 'string' ? value['id'] : '';
-}
-
-/** Testo breve per la struttura: le espressioni `t('chiave', 'Ripiego')` mostrano il ripiego. */
-function shorten(text: string): string {
-  const quoted = /t\(\s*(['"])(?:\\.|(?!\1).)*\1\s*,\s*(['"])((?:\\.|(?!\2).)*)\2/.exec(text);
-  const fallback = quoted ? quoted[3].replace(/\\(.)/g, '$1') : null;
-  const plain = (fallback ?? text).replace(/\s+/g, ' ').trim();
-  return plain.length > 40 ? plain.slice(0, 39) + '…' : plain;
 }

@@ -1,98 +1,25 @@
 <section class="inspector" [attr.aria-label]="i18n.t('ed.inspector')">
   <h2 class="panel-title">{{ i18n.t('ed.inspector') }}</h2>
-  @if (store.target(); as target) {
+  @if (store.target()) {
     <p class="kind">{{ heading() }}</p>
     @if (generalIssues().length) {
-      <ul class="issues general" role="alert">
+      <ul class="issues" role="alert">
         @for (message of generalIssues(); track $index) {
           <li>{{ message }}</li>
         }
       </ul>
     }
-    <div class="props">
-      @for (row of mainRows(); track row.info.name) {
-        <ng-container [ngTemplateOutlet]="field" [ngTemplateOutletContext]="{ $implicit: row }" />
-      }
-    </div>
-    @if (conditionRows().length) {
+    <ed-fields [path]="store.selection()" [fields]="main()" />
+    @if (conditions().length) {
       <details class="conditions" [open]="conditionsOpen()">
         <summary>{{ i18n.t('ed.conditions') }}</summary>
         @if (expressionHelp()) {
           <p class="help">{{ expressionHelp() }}</p>
         }
-        <div class="props">
-          @for (row of conditionRows(); track row.info.name) {
-            <ng-container [ngTemplateOutlet]="field" [ngTemplateOutletContext]="{ $implicit: row }" />
-          }
-        </div>
+        <ed-fields [path]="store.selection()" [fields]="conditions()" [hideExpressionHelp]="true" />
       </details>
     }
   } @else {
     <p class="empty">{{ i18n.t('ed.noSelection') }}</p>
   }
 </section>
-
-<ng-template #field let-row>
-  <div class="prop" [class.invalid]="row.issues.length">
-    <label [attr.for]="row.id" class="name">
-      {{ row.info.name }}
-      @if (row.info.required) {
-        <span class="required" [attr.title]="i18n.t('ed.required')">*</span>
-      }
-    </label>
-    @switch (row.info.kind) {
-      @case ('enum') {
-        <nz-select
-          [nzId]="row.id"
-          [ngModel]="row.value ?? null"
-          (ngModelChange)="setOption(row, $event)"
-          [nzAllowClear]="!row.info.required"
-          [nzPlaceHolder]="i18n.t('ed.unset')"
-          nzSize="small"
-        >
-          @for (option of row.info.options; track option) {
-            <nz-option [nzValue]="option" [nzLabel]="option" />
-          }
-        </nz-select>
-      }
-      @case ('boolean') {
-        <label nz-checkbox [nzId]="row.id" [ngModel]="row.value === true" (ngModelChange)="setBoolean(row, $event)"></label>
-      }
-      @case ('number') {
-        <nz-input-number
-          [nzId]="row.id"
-          nzSize="small"
-          [nzMin]="row.info.minimum ?? -1e15"
-          [nzMax]="row.info.maximum ?? 1e15"
-          [ngModel]="asNumber(row.value)"
-          (ngModelChange)="setNumber(row, $event)"
-        />
-      }
-      @case ('json') {
-        <ed-json-field [fieldId]="row.id" [value]="row.value" [allowExpression]="true" [minRows]="2" (valueChange)="setJson(row, $event)" />
-      }
-      @default {
-        @if (isLong(row)) {
-          <textarea
-            nz-input
-            [id]="row.id"
-            [class.code]="row.info.kind === 'expression'"
-            rows="1"
-            [value]="asText(row.value)"
-            (input)="setText(row, $any($event.target).value)"
-            [attr.placeholder]="row.info.kind === 'expression' ? expressionHint : null"
-            spellcheck="false"
-          ></textarea>
-        } @else {
-          <input nz-input nzSize="small" [id]="row.id" [value]="asText(row.value)" (input)="setText(row, $any($event.target).value)" spellcheck="false" />
-        }
-      }
-    }
-    @if (row.info.description && !(row.info.kind === 'expression' && row.info.description === expressionHelp())) {
-      <p class="help">{{ row.info.description }}</p>
-    }
-    @for (message of row.issues; track $index) {
-      <p class="issue" role="alert">{{ message }}</p>
-    }
-  </div>
-</ng-template>

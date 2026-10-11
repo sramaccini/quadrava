@@ -1,4 +1,5 @@
 import { getIn, isObject, type Json, type JsonObject } from './doc-ops';
+import type { PropertyInfo } from './schema-info';
 
 /**
  * Modelli iniziali dei nodi aggiunti dalla tavolozza: il minimo valido per lo schema, con testi segnaposto nella
@@ -109,6 +110,74 @@ export function withFreshIds(doc: Json, node: Json): Json {
     return copy;
   };
   return visit(node);
+}
+
+/** Valori iniziali per alcune proprietà obbligatorie ricorrenti degli elementi di un elenco. */
+const ITEM_DEFAULTS: Record<string, (index: number, t: Translate) => Json> = {
+  name: (i) => `campo${i + 1}`,
+  field: (i) => `campo${i + 1}`,
+  label: (_, t) => t('ed.tpl.label'),
+  title: (_, t) => t('ed.tpl.label'),
+};
+
+/**
+ * Un elemento nuovo di un elenco (colonna, campo, azione, passo…): le proprietà obbligatorie con un valore iniziale
+ * plausibile. Quello che resta da completare lo segnala la validazione.
+ */
+export function defaultItem(fields: PropertyInfo[], index: number, t: Translate): JsonObject {
+  const item: JsonObject = {};
+  for (const info of fields) {
+    if (!info.required && !(info.name === 'label' && fields.some((f) => f.name === 'field'))) continue;
+    item[info.name] = defaultValue(info, index, t);
+  }
+  return item;
+}
+
+function defaultValue(info: PropertyInfo, index: number, t: Translate): Json {
+  const preset = ITEM_DEFAULTS[info.name];
+  if (preset) return preset(index, t);
+  switch (info.kind) {
+    case 'enum':
+      return info.options?.[0] ?? '';
+    case 'boolean':
+      return false;
+    case 'number':
+      return info.minimum ?? 0;
+    case 'list':
+    case 'children':
+      return [];
+    case 'object':
+    case 'json':
+      return {};
+    default:
+      return '';
+  }
+}
+
+/** Testo breve che riassume un elemento di un elenco quando è chiuso: la sua etichetta o il campo, oppure il passo. */
+export function summaryOf(item: Json, variantKey?: string): string {
+  if (!isObject(item)) return typeof item === 'string' ? item : JSON.stringify(item);
+  if (variantKey) {
+    const value = item[variantKey];
+    const text = typeof value === 'string' ? fallbackText(value) : isObject(value) ? summaryOf(value) : '';
+    return text ? `${variantKey}: ${text}` : variantKey;
+  }
+  for (const key of ['label', 'title', 'field', 'name', 'id']) {
+    const value = item[key];
+    if (typeof value === 'string' && value.trim()) {
+      const extra = key === 'label' && typeof item['field'] === 'string' ? ` (${item['field']})` : key === 'name' && typeof item['type'] === 'string' ? ` · ${item['type']}` : '';
+      return fallbackText(value) + extra;
+    }
+  }
+  return '';
+}
+
+/** Le espressioni `t('chiave', 'Ripiego')` si riassumono con il ripiego; i testi lunghi si accorciano. */
+export function fallbackText(text: string): string {
+  const quoted = /t\(\s*(['"])(?:\\.|(?!\1).)*\1\s*,\s*(['"])((?:\\.|(?!\2).)*)\2/.exec(text);
+  const fallback = quoted ? quoted[3].replace(/\\(.)/g, '$1') : null;
+  const plain = (fallback ?? text).replace(/\s+/g, ' ').trim();
+  return plain.length > 40 ? plain.slice(0, 39) + '…' : plain;
 }
 
 /** Schermata vuota da cui parte un documento nuovo. */
