@@ -1,0 +1,124 @@
+<aside class="left">
+  <nav class="outline" [attr.aria-label]="i18n.t('ed.outline')">
+    <div class="add" role="toolbar" [attr.aria-label]="i18n.t('ed.nav.add')">
+      <button nz-button nzSize="small" type="button" (click)="store.addUseCase()"><span nz-icon nzType="plus"></span>{{ i18n.t('ed.nav.kind.useCase') }}</button>
+      <button nz-button nzSize="small" type="button" [disabled]="!canAddGroup()" (click)="store.addItem('group')"><span nz-icon nzType="plus"></span>{{ i18n.t('ed.nav.kind.group') }}</button>
+      <button nz-button nzSize="small" type="button" [disabled]="!canAddLeaf()" (click)="store.addItem('leaf')"><span nz-icon nzType="plus"></span>{{ i18n.t('ed.nav.kind.leaf') }}</button>
+    </div>
+    <h2 class="panel-title">{{ i18n.t('ed.outline') }}</h2>
+    <button type="button" class="row root" [class.selected]="isSelected([])" [attr.aria-current]="isSelected([]) ? 'true' : null" (click)="store.select([])">
+      <span class="label">{{ i18n.t('ed.nav.kind.root') }}</span>
+      @if (rootSeverity(); as s) {
+        <span class="mark" [class]="s" [attr.title]="i18n.t('ed.has.' + s)" [attr.aria-label]="i18n.t('ed.has.' + s)"></span>
+      }
+    </button>
+    <ng-container [ngTemplateOutlet]="branch" [ngTemplateOutletContext]="{ $implicit: items(), level: 1 }" />
+  </nav>
+</aside>
+
+<ng-template #branch let-items let-level="level">
+  <ul class="branch">
+    @for (item of items; track item.path.join('/')) {
+      <li>
+        <div class="line" [class.selected]="isSelected(item.path)" [class.ancestor]="containsSelection(item.path)" [style.--level]="level">
+          <button type="button" class="row" [attr.aria-current]="isSelected(item.path) ? 'true' : null" (click)="store.select(item.path)" [attr.data-path]="item.path.join('/')">
+            <span class="label">{{ item.label }}</span>
+            <span class="detail">{{ item.detail }}</span>
+            @if (item.severity; as s) {
+              <span class="mark" [class]="s" [attr.title]="i18n.t('ed.has.' + s)" [attr.aria-label]="i18n.t('ed.has.' + s)"></span>
+            }
+          </button>
+          @if (isSelected(item.path)) {
+            <span class="tools">
+              <button nz-button nzType="text" nzSize="small" type="button" [disabled]="item.first" (click)="store.move(item.path, -1)" [attr.aria-label]="i18n.t('ed.moveUp')" [nz-tooltip]="i18n.t('ed.moveUp')">
+                <span nz-icon nzType="arrow-up"></span>
+              </button>
+              <button nz-button nzType="text" nzSize="small" type="button" [disabled]="item.last" (click)="store.move(item.path, 1)" [attr.aria-label]="i18n.t('ed.moveDown')" [nz-tooltip]="i18n.t('ed.moveDown')">
+                <span nz-icon nzType="arrow-down"></span>
+              </button>
+              <button nz-button nzType="text" nzSize="small" type="button" (click)="store.duplicate(item.path)" [attr.aria-label]="i18n.t('ed.duplicate')" [nz-tooltip]="i18n.t('ed.duplicate')">
+                <span nz-icon nzType="copy"></span>
+              </button>
+              <button nz-button nzType="text" nzSize="small" nzDanger type="button" (click)="store.remove(item.path)" [attr.aria-label]="i18n.t('ed.delete')" [nz-tooltip]="i18n.t('ed.delete')">
+                <span nz-icon nzType="delete"></span>
+              </button>
+            </span>
+          }
+        </div>
+        @if (item.children.length) {
+          <ng-container [ngTemplateOutlet]="branch" [ngTemplateOutletContext]="{ $implicit: item.children, level: level + 1 }" />
+        }
+      </li>
+    }
+  </ul>
+</ng-template>
+
+<main class="center">
+  <nz-tabs nzSize="small" [nzSelectedIndex]="view() === 'json' ? 1 : 0" (nzSelectedIndexChange)="setView($event)" [nzAnimated]="false">
+    <nz-tab [nzTitle]="i18n.t('ed.nav.preview')"></nz-tab>
+    <nz-tab [nzTitle]="i18n.t('ed.tabs.json')"></nz-tab>
+  </nz-tabs>
+  <div class="view">
+    @if (view() === 'json') {
+      <ed-json-view />
+    } @else {
+      <div class="preview">
+        <section class="profile" [attr.aria-label]="i18n.t('ed.nav.profile')">
+          <h2 class="panel-title">{{ i18n.t('ed.nav.profile') }}</h2>
+          <label class="switch">
+            <nz-switch nzSize="small" [ngModel]="granted() === null" (ngModelChange)="setGrantAll($event)" />
+            {{ i18n.t('ed.preview.grantAll') }}
+          </label>
+          @if (granted() !== null) {
+            <ul class="permissions">
+              @for (permission of store.permissions(); track permission) {
+                <li>
+                  <label nz-checkbox [ngModel]="has(permission)" (ngModelChange)="toggle(permission, $event)">
+                    <code>{{ permission }}</code>
+                  </label>
+                </li>
+              } @empty {
+                <li class="none">{{ i18n.t('ed.nav.noPermissions') }}</li>
+              }
+            </ul>
+          }
+          <p class="help">{{ i18n.t('ed.nav.profileHint') }}</p>
+        </section>
+        <div class="menu">
+          @if (runtime(); as nav) {
+            <lc-sidebar
+              [navigation]="nav"
+              brand="LowCode"
+              [useCaseId]="useCaseId()"
+              (useCaseChange)="useCaseId.set($event)"
+              (navigate)="navigated($event)"
+              [collapsed]="collapsed()"
+              (collapsedChange)="collapsed.set($event)"
+            />
+          } @else {
+            <p class="empty">{{ i18n.t('ed.preview.empty') }}</p>
+          }
+        </div>
+      </div>
+    }
+  </div>
+</main>
+
+<aside class="right">
+  <section class="inspector" [attr.aria-label]="i18n.t('ed.inspector')">
+    <h2 class="panel-title">{{ i18n.t('ed.inspector') }}</h2>
+    @if (store.target()) {
+      <p class="kind">{{ heading() }}</p>
+      @if (generalIssues().length) {
+        <ul class="issues" role="alert">
+          @for (message of generalIssues(); track $index) {
+            <li>{{ message }}</li>
+          }
+        </ul>
+      }
+      <ed-fields [path]="store.selection()" [fields]="properties()" />
+    } @else {
+      <p class="empty">{{ i18n.t('ed.noSelection') }}</p>
+    }
+  </section>
+</aside>

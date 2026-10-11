@@ -6,6 +6,7 @@ import { App } from './app';
 import { appConfig } from './app.config';
 import { getIn } from './model/doc-ops';
 import { EditorStore } from './model/editor-store';
+import { NavigationStore } from './model/navigation-store';
 
 const FILES: Record<string, unknown> = { 'examples/index.json': ['vetrina-layout'], 'examples/vetrina-layout.json': layout };
 
@@ -220,6 +221,35 @@ describe('editor delle schermate', () => {
     TestBed.inject(I18n).setLocale('en');
     tab(0);
     await until(() => !!preview().querySelector('lc-alert')?.textContent?.includes('Message for the user'), 'anteprima in inglese');
+  });
+
+  it('navigazione: struttura, campi dallo schema, menu vero con un profilo simulato', async () => {
+    ([...el.querySelectorAll<HTMLElement>('.mode .ant-segmented-item')].find((i) => i.textContent?.includes('Navigazione')) as HTMLElement).click();
+    await until(() => !!el.querySelector('ed-navigation-editor'), 'editor della navigazione');
+    const nav = TestBed.inject(NavigationStore);
+    const menu = (): string => el.querySelector('ed-navigation-editor lc-sidebar')?.textContent?.replace(/\s+/g, ' ') ?? '';
+    await until(() => menu().includes('Nuova voce'), 'menu nell’anteprima');
+    // Una voce che richiede un permesso.
+    nav.select(['useCases', 0, 'items', 0]);
+    await settle();
+    expect(el.querySelector('ed-navigation-editor .kind')?.textContent).toBe('Voce');
+    type(el.querySelector('ed-navigation-editor #prop-label') as HTMLInputElement, 'Ordini');
+    type(el.querySelector('ed-navigation-editor #prop-requires') as HTMLInputElement, 'ordini.ordine.leggi');
+    await until(() => menu().includes('Ordini'), 'etichetta nuova nel menu');
+    // Profilo senza il permesso: la voce sparisce.
+    (el.querySelector('ed-navigation-editor .profile nz-switch') as HTMLElement).click();
+    await settle();
+    (el.querySelector('ed-navigation-editor .permissions input') as HTMLInputElement).click();
+    await until(() => !menu().includes('Ordini'), 'voce nascosta');
+    // Il gruppo si aggiunge dalla barra della struttura; Ctrl+Z vale per la navigazione.
+    ([...el.querySelectorAll<HTMLButtonElement>('ed-navigation-editor .add button')].find((b) => b.textContent?.includes('Gruppo')) as HTMLButtonElement).click();
+    await settle();
+    expect(nav.target()).toEqual({ kind: 'group', level: 1 });
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true }));
+    await settle();
+    expect(getIn(nav.doc(), ['useCases', 0, 'items'])).toHaveLength(1);
+    // Problemi della navigazione in basso: la voce iniziale apre una schermata che non è tra quelle note.
+    expect(el.querySelector('.bottom')?.textContent).toContain('Schermata «nuova-schermata» non trovata tra quelle note');
   });
 
   it('apre un esempio, e da tastiera elimina il nodo selezionato', async () => {

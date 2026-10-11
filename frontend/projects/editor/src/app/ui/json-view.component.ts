@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, linkedSignal, signal } from
 import { I18n } from 'core';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import type { Json } from '../model/doc-ops';
-import { EditorStore } from '../model/editor-store';
+import { DocumentState } from '../model/document-state';
 
 /**
  * Il documento intero come JSON, modificabile a mano. Le modifiche si applicano con «Applica» (un solo passo di
@@ -34,7 +34,7 @@ import { EditorStore } from '../model/editor-store';
   `,
 })
 export class JsonViewComponent {
-  protected readonly store = inject(EditorStore);
+  protected readonly store = inject(DocumentState);
   protected readonly i18n = inject(I18n);
   protected readonly text = linkedSignal(() => JSON.stringify(this.store.doc(), null, 2));
   protected readonly dirty = linkedSignal<Json, boolean>({ source: () => this.store.doc(), computation: () => false });

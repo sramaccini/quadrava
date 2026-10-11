@@ -1,9 +1,10 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
 import { I18n } from 'core';
 import { NzIconModule } from 'ng-zorro-antd/icon';
-import { EditorStore, type EditorIssue } from '../model/editor-store';
+import type { DocumentState, EditorIssue } from '../model/document-state';
+import { EditorStore } from '../model/editor-store';
 
-/** Elenco dei problemi del documento: un clic seleziona l'elemento a cui appartiene. */
+/** Elenco dei problemi del documento aperto (schermata o navigazione): un clic seleziona l'elemento a cui appartiene. */
 @Component({
   selector: 'ed-issues',
   imports: [NzIconModule],
@@ -24,7 +25,7 @@ import { EditorStore, type EditorIssue } from '../model/editor-store';
   `,
   template: `
     <ul [attr.aria-label]="i18n.t('ed.issues')">
-      @for (issue of store.issues(); track $index) {
+      @for (issue of state().issues(); track $index) {
         <li [class]="issue.severity">
           <button type="button" (click)="open(issue)">
             <span nz-icon [nzType]="issue.severity === 'error' ? 'close-circle' : 'warning'" [attr.aria-label]="i18n.t('ed.severity.' + issue.severity)"></span>
@@ -39,12 +40,13 @@ import { EditorStore, type EditorIssue } from '../model/editor-store';
   `,
 })
 export class IssuesComponent {
-  protected readonly store = inject(EditorStore);
+  readonly state = input.required<DocumentState>();
   protected readonly i18n = inject(I18n);
 
   protected open(issue: EditorIssue): void {
-    // I data source non sono nella struttura: si apre il loro pannello.
-    if (issue.pointer.startsWith('/dataSources')) this.store.view.set('sources');
-    else this.store.select(issue.owner);
+    const state = this.state();
+    // I data source della schermata non sono nella struttura: si apre il loro pannello.
+    if (state instanceof EditorStore && issue.pointer.startsWith('/dataSources')) state.view.set('sources');
+    else state.select(issue.owner);
   }
 }

@@ -21,7 +21,7 @@ import {
   UploadOutline,
   WarningOutline,
 } from '@ant-design/icons-angular/icons';
-import { NzNotifier, provideLowcodeComponents } from 'components';
+import { ICON_TYPES, NzNotifier, provideLowcodeComponents } from 'components';
 import { Authorization, DataClient, I18n, Notifier, RuntimeDiagnostics, ScreenNavigator, UserProvider } from 'core';
 import { provideNzIcons } from 'ng-zorro-antd/icon';
 import { EDITOR_MESSAGES } from './messages';
@@ -33,7 +33,9 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideLowcodeComponents(),
+    // provideNzIcons non si somma: sostituisce l'elenco registrato da provideLowcodeComponents, che va quindi ripetuto.
     provideNzIcons([
+      ...Object.values(ICON_TYPES).map((i) => i.icon),
       ArrowDownOutline,
       ArrowUpOutline,
       CloseCircleOutline,

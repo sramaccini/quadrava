@@ -1,14 +1,15 @@
 <div class="editor">
   <header class="toolbar" role="toolbar" [attr.aria-label]="i18n.t('ed.title')">
     <h1 class="brand">{{ i18n.t('ed.title') }}</h1>
+    <nz-segmented class="mode" nzSize="small" [nzOptions]="modeOptions()" [ngModel]="mode()" (ngModelChange)="mode.set($event)" [attr.aria-label]="i18n.t('ed.mode.label')" />
     <div class="group">
-      <button nz-button nzSize="small" type="button" (click)="newScreen()"><span nz-icon nzType="file-add"></span>{{ i18n.t('ed.new') }}</button>
+      <button nz-button nzSize="small" type="button" (click)="newDocument()"><span nz-icon nzType="file-add"></span>{{ i18n.t('ed.new') }}</button>
       <button nz-button nzSize="small" type="button" nz-dropdown [nzDropdownMenu]="examplesMenu" nzTrigger="click">
         <span nz-icon nzType="folder-open"></span>{{ i18n.t('ed.openExample') }}
       </button>
       <nz-dropdown-menu #examplesMenu="nzDropdownMenu">
         <ul nz-menu class="examples">
-          @for (name of examples.value() ?? []; track name) {
+          @for (name of exampleNames(); track name) {
             <li nz-menu-item (click)="openExample(name)">{{ name }}</li>
           }
         </ul>
@@ -18,19 +19,21 @@
       <button nz-button nzSize="small" type="button" (click)="exportFile()"><span nz-icon nzType="download"></span>{{ i18n.t('ed.export') }}</button>
     </div>
     <div class="group">
-      <button nz-button nzSize="small" type="button" [disabled]="!store.canUndo()" (click)="store.undo()" [attr.aria-label]="i18n.t('ed.undo')" [nz-tooltip]="i18n.t('ed.undo')">
+      <button nz-button nzSize="small" type="button" [disabled]="!active().canUndo()" (click)="active().undo()" [attr.aria-label]="i18n.t('ed.undo')" [nz-tooltip]="i18n.t('ed.undo')">
         <span nz-icon nzType="undo"></span>
       </button>
-      <button nz-button nzSize="small" type="button" [disabled]="!store.canRedo()" (click)="store.redo()" [attr.aria-label]="i18n.t('ed.redo')" [nz-tooltip]="i18n.t('ed.redo')">
+      <button nz-button nzSize="small" type="button" [disabled]="!active().canRedo()" (click)="active().redo()" [attr.aria-label]="i18n.t('ed.redo')" [nz-tooltip]="i18n.t('ed.redo')">
         <span nz-icon nzType="redo"></span>
       </button>
-      <button nz-button nzSize="small" type="button" [disabled]="!store.clipboard()" (click)="store.paste()" [attr.aria-label]="i18n.t('ed.paste')" [nz-tooltip]="i18n.t('ed.paste')">
-        <span nz-icon nzType="snippets"></span>
-      </button>
+      @if (mode() === 'screen') {
+        <button nz-button nzSize="small" type="button" [disabled]="!store.clipboard()" (click)="store.paste()" [attr.aria-label]="i18n.t('ed.paste')" [nz-tooltip]="i18n.t('ed.paste')">
+          <span nz-icon nzType="snippets"></span>
+        </button>
+      }
     </div>
     <div class="status" role="status">
-      @if (store.errorCount()) {
-        <nz-tag nzColor="error">{{ i18n.t('ed.errors', { n: store.errorCount() }) }}</nz-tag>
+      @if (active().errorCount()) {
+        <nz-tag nzColor="error">{{ i18n.t('ed.errors', { n: active().errorCount() }) }}</nz-tag>
       } @else {
         <nz-tag nzColor="success">{{ i18n.t('ed.valid') }}</nz-tag>
       }
@@ -45,6 +48,9 @@
     </nz-select>
   </header>
 
+  @if (mode() === 'navigation') {
+    <ed-navigation-editor class="nav-workspace" />
+  } @else {
   <aside class="left">
     <ed-palette />
     <ed-outline />
@@ -78,13 +84,14 @@
   <aside class="right">
     <ed-inspector />
   </aside>
+  }
 
   <footer class="bottom">
     <button type="button" class="issues-toggle" (click)="showIssues.set(!showIssues())" [attr.aria-expanded]="showIssues()">
-      {{ i18n.t('ed.issues') }} ({{ store.issues().length }})
+      {{ i18n.t('ed.issues') }} ({{ active().issues().length }})
     </button>
     @if (showIssues()) {
-      <ed-issues />
+      <ed-issues [state]="active()" />
     }
   </footer>
 </div>

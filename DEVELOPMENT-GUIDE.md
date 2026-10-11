@@ -33,7 +33,7 @@ editor  ──► components ──► core   (the preview renders screens with 
 * `components`: everything that depends on NG-ZORRO (standard components, side menu, user menu, confirmation dialog, notifier, theme bridge).
 * `services`: production implementations of the ports.
 * `runtime`: the demo application; wiring only, plus `demo/` fakes.
-* `editor`: the visual editor. `model/` holds pure, tested logic (immutable document operations, schema reading, templates, drop positions, the `EditorStore`); `ui/` the panels; `preview/` the live preview and its fake ports. The property panel is generated from `screen.schema.json` (`model/schema-info.ts`): do not hand-write per-component forms. See `docs/editor.md`.
+* `editor`: the visual editor for screens and navigation. `model/` holds pure, tested logic (immutable document operations, the `SchemaReader`, templates, drop positions, `DocumentState` with its two stores `EditorStore` and `NavigationStore`); `ui/` the panels; `preview/` the live preview and its fake ports. The property panel is generated from `screen.schema.json` (`model/schema-info.ts`): do not hand-write per-component forms. See `docs/editor.md`.
 
 ## 3. Daily commands
 
@@ -160,5 +160,6 @@ Layout, real focus and the dark theme are not covered by tests (the application 
 * Ajv needs `unsafe-eval` under CSP until validators are precompiled.
 * `validate:examples` checks translation keys but not CEL expressions (the runtime test `i18n-examples.spec.ts` does).
 * Component limits that remain (no nested repeaters, no chart zoom, no row selection in the server data table) are listed in the component catalogue, § 3.
+* `provideNzIcons` is not cumulative: a second call replaces the icons registered by `provideLowcodeComponents`. An app that registers its own icons must repeat `Object.values(ICON_TYPES).map((i) => i.icon)` (the editor does).
 * Developer diagnostics are not translated and stay in Italian: schema and expression issues, navigation loading errors, and the messages of the `services` library. Everything the end user reads is translatable.
 * Adding a language means adding `examples/i18n/<code>.json` (same keys as `it.json`), an entry in `LANGUAGES` of the demo, and, for the platform strings, a block in `components/src/lib/messages.ts` and a NG-ZORRO locale in `provide.ts`.

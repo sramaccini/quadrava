@@ -70,6 +70,8 @@ export class SchemaReader {
     const { schema: s, ref } = this.resolve(schema);
     const description = typeof s['description'] === 'string' ? (s['description'] as string) : undefined;
     if (Array.isArray(s['enum'])) return { kind: 'enum', options: (s['enum'] as unknown[]).map(String), description };
+    // Un valore fisso (per esempio la versione dello schema) è una scelta con una sola opzione.
+    if (typeof s['const'] === 'string') return { kind: 'enum', options: [s['const'] as string], description };
     if (ref === 'expression') return { kind: 'expression', description };
     if (s['type'] === 'string') return { kind: 'text', description, pattern: typeof s['pattern'] === 'string' ? (s['pattern'] as string) : undefined };
     if (s['type'] === 'boolean') return { kind: 'boolean', description };

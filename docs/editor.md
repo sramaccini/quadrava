@@ -1,6 +1,6 @@
-# Editor visuale delle schermate
+# Editor visuale
 
-L'editor (`frontend/projects/editor`) produce lo stesso JSON che il runtime legge: chi lo usa compone la schermata con tavolozza, struttura e pannello delle proprietà, e vede subito il risultato disegnato dal runtime vero. Non esiste un formato intermedio: quello che si esporta si mette in `examples/` (o, in futuro, si pubblica nel registro) così com'è.
+L'editor (`frontend/projects/editor`) modifica le **schermate** e la **navigazione** (casi d'uso e menu); un selettore nella barra degli strumenti passa dall'una all'altra. Per le schermate produce lo stesso JSON che il runtime legge: chi lo usa compone la schermata con tavolozza, struttura e pannello delle proprietà, e vede subito il risultato disegnato dal runtime vero. Non esiste un formato intermedio: quello che si esporta si mette in `examples/` (o, in futuro, si pubblica nel registro) così com'è.
 
 Avvio: `cd frontend && npm run start:editor` (porta 4201; costruisce le librerie e copia gli esempi).
 
@@ -68,6 +68,17 @@ Si possono provare le larghezze (desktop, tablet 768 px, telefono 375 px) e i pa
 
 Per collegare disegno e struttura, `lc-node` espone `data-node-id` e `data-node-type` (mai dati): per questo l'editor dà un `id` a ogni nodo che crea. I nodi senza `id` (scritti a mano) si selezionano solo dalla struttura.
 
+## 3b. Navigazione
+
+Modalità «Navigazione»: il documento `navigation.json` (casi d'uso, gruppi, sottogruppi, voci).
+
+- **Struttura** a sinistra, con «+ Caso d'uso», «+ Gruppo», «+ Voce»: un elemento nuovo va dentro il caso d'uso o il gruppo selezionato, o accanto alla voce selezionata; i gruppi si fermano al secondo livello, come impone lo schema. Sposta, duplica (id nuovi), elimina come per le schermate.
+- **Proprietà** a destra, generate da `navigation.schema.json` con lo stesso pannello delle schermate: `screen` suggerisce le schermate note, `icon` le icone del set integrato, `requires` i permessi già usati, `default` i casi d'uso.
+- **Anteprima del menu** al centro: il menu vero (`lc-sidebar` con `NavigationRuntime`) e un **profilo simulato**. Con «Tutti i permessi» spento si sceglie quali permessi ha l'utente (quelli citati dai `requires` del menu) e si vede che cosa gli compare. Un clic su una voce non naviga: mostra quale schermata aprirebbe.
+- **Problemi**: schema, espressioni, id ripetuti tra fratelli (errori), schermate non note e caso d'uso predefinito inesistente (avvisi).
+
+La bozza della navigazione si salva nel browser come quella della schermata; «Apri esempio» apre la navigazione della demo, «Esporta» scarica `<navigation>.json`.
+
 ## 4. Scorciatoie
 
 | Tasti | Azione |
@@ -86,23 +97,24 @@ Fuori da annulla e ripeti, le scorciatoie valgono quando il fuoco non è in un c
 
 ```
 editor/src/app/
-  model/      doc-ops (operazioni pure sul documento), schema-info (lettura dello schema),
-              templates (modelli, valori iniziali, riassunti), drop (trascinamento),
-              texts (testi e chiavi di traduzione), editor-store (stato)
+  model/      doc-ops (operazioni pure sul documento), schema-info (SchemaReader: lettura di uno schema),
+              document-state (documento, selezione, cronologia, problemi: comune ai documenti),
+              editor-store (la schermata), navigation-store (la navigazione),
+              templates (modelli, valori iniziali, riassunti), drop (trascinamento), texts (testi e chiavi)
   ui/         palette, outline, inspector, fields (campi ricorsivi), json-field, json-view,
-              data-sources, texts, issues
+              data-sources, texts, issues, navigation-editor
   preview/    preview (anteprima), preview-ports (porte finte)
   app.*       guscio, barra degli strumenti, scorciatoie
   messages.ts scritte dell'editor (chiavi ed.*, it ed en)
 ```
 
 - Il documento è **immutabile**: ogni operazione restituisce una copia che condivide le parti non toccate, così la cronologia (200 passi) costa poco.
-- `EditorStore` contiene documento, selezione (un percorso come `['components', 0, 'tabs', 1]`), cronologia, problemi calcolati (`computed`) e dati di esempio.
+- `DocumentState` contiene documento, selezione (un percorso come `['components', 0, 'tabs', 1]`), cronologia e problemi calcolati (`computed`); `EditorStore` (schermata, con dati di esempio e traduzioni) e `NavigationStore` lo estendono. `ed-fields` e la vista JSON lavorano su `DocumentState`: l'editor della navigazione li ridirige sul proprio documento con un provider.
 - I test: operazioni sul documento, lettura dello schema (ogni tipo ha un modello valido), stato dell'editor, trascinamento, porte dell'anteprima e un test d'insieme che usa l'interfaccia vera (tavolozza → struttura → proprietà → anteprima, errori, data source, JSON, elenchi, selezione dall'anteprima).
 
 ## 6. Limiti e prossimi passi
 
-- **Solo schermate.** Navigazione (casi d'uso e menu) e temi si modificano ancora a mano; sono i prossimi documenti da portare nell'editor, con la stessa tecnica (pannello generato dallo schema).
+- **Temi.** I temi si modificano ancora a mano; sono il prossimo documento da portare nell'editor, con la stessa tecnica (pannello generato dallo schema, anteprima con una schermata di prova).
 - **Traduzioni.** Le traduzioni si esportano in un file da unire a mano ai cataloghi; quando i cataloghi verranno da un servizio, l'editor li aggiornerà direttamente. Le lingue sono quelle della demo (italiano e inglese).
 - **Pubblicazione.** Si esporta un file; il collegamento al registro (bozza, revisione, pubblicazione con versioni) è da fare, con la validazione lato servizio.
 - **Espressioni.** Sintassi controllata, ma nessun completamento delle variabili (`state`, `row`, `form`…) né dei nomi dei campi delle righe.

@@ -5,28 +5,37 @@ import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzDropdownModule } from 'ng-zorro-antd/dropdown';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzMenuModule } from 'ng-zorro-antd/menu';
+import { NzSegmentedModule } from 'ng-zorro-antd/segmented';
 import { NzSelectModule } from 'ng-zorro-antd/select';
 import { NzTabsModule } from 'ng-zorro-antd/tabs';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import { validateTheme } from 'schema';
 import { isObject, type Json } from './model/doc-ops';
+import type { DocumentState } from './model/document-state';
 import { EditorStore } from './model/editor-store';
+import { NavigationStore } from './model/navigation-store';
 import { PreviewComponent } from './preview/preview.component';
 import { DataSourcesComponent } from './ui/data-sources.component';
 import { InspectorComponent } from './ui/inspector.component';
 import { IssuesComponent } from './ui/issues.component';
 import { JsonViewComponent } from './ui/json-view.component';
+import { NavigationEditorComponent } from './ui/navigation-editor.component';
 import { OutlineComponent } from './ui/outline.component';
 import { PaletteComponent } from './ui/palette.component';
 import { TextsComponent } from './ui/texts.component';
 
 const LANGUAGES = ['it', 'en'];
+const MODE_KEY = 'lc.editor.mode';
+
+/** Che cosa si modifica: una schermata o la navigazione dell'applicazione. */
+type Mode = 'screen' | 'navigation';
 const VIEWS = ['preview', 'json', 'sources', 'texts'] as const;
 
 /**
- * Editor visuale delle schermate: tavolozza e struttura a sinistra, anteprima / JSON / data source al centro,
- * proprietà a destra, problemi in basso. Il documento prodotto è lo stesso JSON che il runtime legge.
+ * Editor visuale: schermate (tavolozza e struttura a sinistra, anteprima / JSON / data source / testi al centro,
+ * proprietà a destra) e navigazione (casi d'uso e menu, con l'anteprima del menu), problemi in basso. I documenti
+ * prodotti sono gli stessi JSON che il runtime legge.
  */
 @Component({
   selector: 'lc-root',
@@ -36,6 +45,7 @@ const VIEWS = ['preview', 'json', 'sources', 'texts'] as const;
     InspectorComponent,
     IssuesComponent,
     JsonViewComponent,
+    NavigationEditorComponent,
     OutlineComponent,
     PaletteComponent,
     PreviewComponent,
@@ -44,6 +54,7 @@ const VIEWS = ['preview', 'json', 'sources', 'texts'] as const;
     NzDropdownModule,
     NzIconModule,
     NzMenuModule,
+    NzSegmentedModule,
     NzSelectModule,
     NzTabsModule,
     NzTagModule,
@@ -56,6 +67,14 @@ const VIEWS = ['preview', 'json', 'sources', 'texts'] as const;
 })
 export class App {
   protected readonly store = inject(EditorStore);
+  protected readonly nav = inject(NavigationStore);
+  protected readonly mode = signal<Mode>(initialMode());
+  protected readonly modeOptions = computed(() => [
+    { value: 'screen', label: this.i18n.t('ed.mode.screen') },
+    { value: 'navigation', label: this.i18n.t('ed.mode.navigation') },
+  ]);
+  /** Il documento aperto nella modalità corrente: lo usano barra degli strumenti, scorciatoie e problemi. */
+  protected readonly active = computed<DocumentState>(() => (this.mode() === 'screen' ? this.store : this.nav));
   protected readonly i18n = inject(I18n);
   private readonly confirmation = inject(Confirmation);
   private readonly notifier = inject(Notifier);
@@ -63,7 +82,7 @@ export class App {
   protected readonly languages = LANGUAGES;
 
   protected readonly viewIndex = computed(() => VIEWS.indexOf(this.store.view()));
-  protected readonly warningCount = computed(() => this.store.issues().length - this.store.errorCount());
+  protected readonly warningCount = computed(() => this.active().issues().length - this.active().errorCount());
   protected readonly showIssues = signal(true);
 
   /** Schermate di esempio (`examples/index.json`, scritto da tools/copy-examples.mjs). */
@@ -72,6 +91,7 @@ export class App {
       const response = await fetch('examples/index.json');
       const names = response.ok ? ((await response.json()) as string[]) : [];
       this.store.knownScreens.set(names);
+      this.nav.knownScreens.set(names);
       return names;
     },
   });
@@ -87,22 +107,34 @@ export class App {
       })
       .catch(() => undefined);
     effect(() => (document.documentElement.lang = this.i18n.locale()));
+    effect(() => {
+      try {
+        localStorage.setItem(MODE_KEY, this.mode());
+      } catch {
+        // vedi la bozza
+      }
+    });
   }
 
   protected setView(index: number): void {
     this.store.view.set(VIEWS[index] ?? 'preview');
   }
 
-  protected async newScreen(): Promise<void> {
-    if (await this.confirmation.confirm(this.i18n.t('ed.confirmReplace'))) this.store.newScreen();
+  protected async newDocument(): Promise<void> {
+    if (!(await this.confirmation.confirm(this.i18n.t('ed.confirmReplace')))) return;
+    if (this.mode() === 'screen') this.store.newScreen();
+    else this.nav.newNavigation();
   }
+
+  /** Esempi apribili nella modalità corrente: le schermate, oppure la navigazione della demo. */
+  protected readonly exampleNames = computed(() => (this.mode() === 'screen' ? (this.examples.value() ?? []) : ['navigation']));
 
   protected async openExample(name: string): Promise<void> {
     if (!(await this.confirmation.confirm(this.i18n.t('ed.confirmReplace')))) return;
     try {
       const response = await fetch(`examples/${encodeURIComponent(name)}.json`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      this.store.load((await response.json()) as Json);
+      this.loadDocument((await response.json()) as Json);
       this.notifier.toast(this.i18n.t('ed.opened', { name }));
     } catch (e) {
       this.notifier.toast(this.i18n.t('ed.loadFailed', { e: e instanceof Error ? e.message : String(e) }), 'error');
@@ -115,16 +147,22 @@ export class App {
     if (!file || !(await this.confirmation.confirm(this.i18n.t('ed.confirmReplace')))) return;
     try {
       const doc = JSON.parse(await file.text()) as Json;
-      this.store.load(doc);
+      this.loadDocument(doc);
       this.notifier.toast(this.i18n.t('ed.opened', { name: file.name }));
     } catch (e) {
       this.notifier.toast(this.i18n.t('ed.loadFailed', { e: e instanceof Error ? e.message : String(e) }), 'error');
     }
   }
 
+  private loadDocument(doc: Json): void {
+    if (this.mode() === 'screen') this.store.load(doc);
+    else this.nav.load(doc);
+  }
+
   protected exportFile(): void {
-    const doc = this.store.doc();
-    const name = isObject(doc) && typeof doc['screen'] === 'string' && doc['screen'] ? doc['screen'] : 'schermata';
+    const doc = this.active().doc();
+    const key = this.mode() === 'screen' ? 'screen' : 'navigation';
+    const name = isObject(doc) && typeof doc[key] === 'string' && doc[key] ? doc[key] : key === 'screen' ? 'schermata' : 'navigation';
     const blob = new Blob([JSON.stringify(doc, null, 2) + '\n'], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -138,9 +176,11 @@ export class App {
   protected onKey(event: KeyboardEvent): void {
     const ctrl = event.ctrlKey || event.metaKey;
     const key = event.key.toLowerCase();
-    if (ctrl && key === 'z' && !event.shiftKey) return this.handled(event, () => this.store.undo());
-    if (ctrl && (key === 'y' || (key === 'z' && event.shiftKey))) return this.handled(event, () => this.store.redo());
+    const active = this.active();
+    if (ctrl && key === 'z' && !event.shiftKey) return this.handled(event, () => active.undo());
+    if (ctrl && (key === 'y' || (key === 'z' && event.shiftKey))) return this.handled(event, () => active.redo());
     if (isEditable(event.target) || document.querySelector('.cdk-overlay-container .ant-modal-wrap')) return;
+    if (this.mode() === 'navigation') return this.navigationKey(event, ctrl, key);
     const selection = this.store.selection();
     if (!selection.length) {
       if (ctrl && key === 'v') this.handled(event, () => this.store.paste());
@@ -155,6 +195,16 @@ export class App {
     else if (event.altKey && key === 'arrowdown') this.handled(event, () => this.store.move(selection, 1));
   }
 
+  /** Nella navigazione: elimina, duplica, sposta (copia e incolla valgono solo per i nodi delle schermate). */
+  private navigationKey(event: KeyboardEvent, ctrl: boolean, key: string): void {
+    const selection = this.nav.selection();
+    if (!selection.length) return;
+    if (key === 'delete') this.handled(event, () => this.nav.remove(selection));
+    else if (ctrl && key === 'd') this.handled(event, () => this.nav.duplicate(selection));
+    else if (event.altKey && key === 'arrowup') this.handled(event, () => this.nav.move(selection, -1));
+    else if (event.altKey && key === 'arrowdown') this.handled(event, () => this.nav.move(selection, 1));
+  }
+
   private handled(event: KeyboardEvent, action: () => void): void {
     event.preventDefault();
     action();
@@ -164,4 +214,12 @@ export class App {
 function isEditable(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
   return target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName);
+}
+
+function initialMode(): Mode {
+  try {
+    return localStorage.getItem(MODE_KEY) === 'navigation' ? 'navigation' : 'screen';
+  } catch {
+    return 'screen';
+  }
 }

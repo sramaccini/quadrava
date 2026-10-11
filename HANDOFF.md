@@ -4,7 +4,7 @@ Documento di passaggio per continuare il lavoro con Claude Code in locale. Ultim
 
 ## 1. Cos'è
 
-Piattaforma low-code per frontend gestionali/amministrativi **definiti da JSON** (schermate, data source, azioni, espressioni CEL), più un editor visuale (prima versione: solo schermate) e servizi di base. Il backend consiste in contratti OpenAPI e un'implementazione di riferimento Spring Boot non destinata alla produzione (moduli Java mai compilati).
+Piattaforma low-code per frontend gestionali/amministrativi **definiti da JSON** (schermate, data source, azioni, espressioni CEL), più un editor visuale (schermate e navigazione) e servizi di base. Il backend consiste in contratti OpenAPI e un'implementazione di riferimento Spring Boot non destinata alla produzione (moduli Java mai compilati).
 
 ## 2. Preferenze di Simone (rispettale)
 
@@ -30,7 +30,7 @@ Da `frontend/`:
 - `.claude/launch.json` avvia una copia della demo sulla porta 4300 e dell'editor sulla 4301 (per l'anteprima nel pannello di Claude).
 - test per progetto: `npx ng test <schema|expressions|core|components|services|runtime|editor> --watch=false`
 
-Stato test (tutti verdi): schema 62, expressions 39, core 61, components 128, services 19, runtime 66, editor 35 (**410**). Build di produzione della demo: 2,27 MB iniziali (avviso a 2,5 MB).
+Stato test (tutti verdi): schema 62, expressions 39, core 61, components 128, services 19, runtime 66, editor 39 (**414**). Build di produzione della demo: 2,27 MB iniziali (avviso a 2,5 MB).
 
 ## 4. Architettura in breve
 
@@ -54,6 +54,8 @@ Librerie (`frontend/projects/`): `schema` (JSON Schema + tipi), `expressions` (C
 
 `docs/editor.md` descrive tutto. In breve: tavolozza (clic o trascinamento), struttura (seleziona, sposta, duplica, taglia/incolla, trascina), pannello delle proprietà **generato da `screen.schema.json`** (elenchi di colonne/campi/azioni/passi modificabili elemento per elemento, passi per variante, oggetti come gruppi), anteprima con il runtime vero e porte finte (dati di esempio per data source, permessi, larghezze, parametri, registro; Alt+clic seleziona), vista JSON, pannello dei data source (rinomina con aggiornamento dei riferimenti), pannello dei testi (rendi traducibile, traduzioni it/en applicate all'anteprima, esportazione per i cataloghi), problemi (schema, CEL, id ripetuti, data source mancanti), cronologia di annullamento, bozza nel browser, apri esempio / importa / esporta. Un componente nuovo richiede solo il modello in `model/templates.ts`, il gruppo nella tavolozza e `ed.type.<tipo>` nei messaggi.
 
+Modalità «Navigazione» (selettore nella barra): struttura di casi d'uso/gruppi/voci con «+ Caso d'uso / Gruppo / Voce», campi da `navigation.schema.json`, anteprima del menu vero con profilo simulato (permessi da spegnere), problemi (schema, id ripetuti tra fratelli, schermate non note, default inesistente). `DocumentState` è la base comune; `ed-fields` e la vista JSON lo iniettano, e l'editor della navigazione lo ridirige su `NavigationStore` con un provider.
+
 ## 6. Trappole note (NG-ZORRO / Angular / strumenti)
 
 Le principali sono nella DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In breve:
@@ -65,6 +67,7 @@ Le principali sono nella DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In breve:
 - Script con espressioni regolari: scriverli in un file, non in un heredoc della shell (le doppie barre rovesciate si perdono).
 - CEL: `has(state.x)` per chiavi che non esistono ancora; `dyn(...)` nelle mappe di parametri miste di `t()`; `{n, number}` per i numeri nei messaggi.
 - Nei test: `stubViewportHeight` + attesa delle opzioni per `nz-select`; `Element.scrollTo` simulato; le finestre chiuse restano nel DOM.
+- `provideNzIcons` non si somma: una seconda chiamata sostituisce le icone di `provideLowcodeComponents` (l'editor le ripete).
 - NG-ZORRO 22: `NzTooltipModule` (non `NzToolTipModule`), `nz-tabs` (non `nz-tabset`), niente `nzAutosize` sulle textarea (si usa `field-sizing: content`). Angular non ha il modificatore `.capture` negli eventi: `addEventListener(..., true)`.
 - Messaggi con graffe letterali (`{{ }}`, JSON): vanno scritte `\\{` `\\}` nel sorgente TypeScript.
 
@@ -81,7 +84,7 @@ Le principali sono nella DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In breve:
 
 1. Review dei 18 componenti (commit da `4d224fb` a `47a96ee`), del fix del runtime `9d96798`, dei limiti superati (da `7907884` a `f42abdf`), della serverDataTable (`9bae9b7`) e dell'editor (da `5840c9c` a `b3d7a5d`).
 2. Collegare `services` a `runtime` e completare il BFF (CSRF, forwarding, allow-list; il forwarding deve gestire anche i corpi multipart).
-3. **Editor visuale**, seconda fase: navigazione e temi con la stessa tecnica; pubblicazione nel registro; completamento delle espressioni (vedi `docs/editor.md` § 6).
+3. **Editor visuale**, seconda fase: temi con la stessa tecnica; pubblicazione nel registro; completamento delle espressioni (vedi `docs/editor.md` § 6).
 4. Menu: navigazione da tastiera, badge, ricerca. CEL in `validate:examples`.
 
 ## 9. Convenzioni di lavoro
