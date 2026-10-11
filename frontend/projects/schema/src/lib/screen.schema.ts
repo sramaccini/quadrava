@@ -408,7 +408,7 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
           "type": "array",
           "minItems": 1,
           "maxItems": 8,
-          "description": "Per type repeater: i campi di ogni riga (solo tipi semplici). Le regole di validazione vedono la riga in `item`.",
+          "description": "Per type repeater: i campi di ogni riga (text, number, select, checkbox, date, textarea, switch, lookup, file; niente righe annidate). Le regole di validazione vedono la riga in `item`.",
           "items": {
             "allOf": [
               {
@@ -425,7 +425,9 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                       "checkbox",
                       "date",
                       "textarea",
-                      "switch"
+                      "switch",
+                      "lookup",
+                      "file"
                     ]
                   }
                 }

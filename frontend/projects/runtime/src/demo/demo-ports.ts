@@ -259,6 +259,16 @@ export class MockDataClient extends DataClient {
         crescita: 12.5,
       };
     }
+    if (path === '/api/articoli' && req.method === 'GET') {
+      const articoli = [
+        ['CAR-A4', 'Risma carta A4'], ['CAR-A3', 'Risma carta A3'], ['GRA-01', 'Graffette'], ['PEN-BL', 'Penne blu'], ['PEN-RO', 'Penne rosse'],
+        ['MAT-HB', 'Matite HB'], ['EVI-GI', 'Evidenziatori gialli'], ['CAR-RA', 'Raccoglitori ad anelli'], ['TON-01', 'Toner stampante'], ['BUS-A4', 'Buste A4'],
+      ].map(([codice, nome]) => ({ codice, nome }));
+      const id = req.query?.['id'];
+      if (id !== undefined) return articoli.filter((a) => a.codice === id);
+      const q = String(req.query?.['q'] ?? '').toLowerCase();
+      return articoli.filter((a) => !q || a.nome.toLowerCase().includes(q)).slice(0, 6);
+    }
     if (path === '/api/contatti' && req.method === 'GET') return this.contacts.map((c) => ({ ...c }));
     if (path === '/api/contatti' && req.method === 'POST') {
       const body = req.body ?? {};

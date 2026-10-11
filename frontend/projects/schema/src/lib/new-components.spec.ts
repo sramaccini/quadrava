@@ -137,7 +137,8 @@ describe('schema dei componenti nuovi', () => {
     it('rifiuta righe senza campi, campi non semplici e limiti fuori misura', () => {
       expect(issuesOf(form([{ name: 'r', type: 'repeater' }])).length).toBeGreaterThan(0);
       expect(issuesOf(form([{ name: 'r', type: 'repeater', fields: [{ name: 'x', type: 'repeater', fields: [{ name: 'y', type: 'text' }] }] }])).length).toBeGreaterThan(0);
-      expect(issuesOf(form([{ name: 'r', type: 'repeater', fields: [{ name: 'x', type: 'file' }] }])).length).toBeGreaterThan(0);
+      expect(issuesOf(form([{ name: 'r', type: 'repeater', fields: [{ name: 'x', type: 'multiselect', options: ['a'] }] }])).length).toBeGreaterThan(0);
+      expect(issuesOf(form([{ name: 'r', type: 'repeater', fields: [{ name: 'x', type: 'file' }, { name: 'y', type: 'lookup', lookup: { source: 's', labelField: 'n' } }] }]))).toEqual([]);
       expect(issuesOf(form([{ name: 'r', type: 'repeater', maxRows: 0, fields: [{ name: 'x', type: 'text' }] }])).length).toBeGreaterThan(0);
     });
   });

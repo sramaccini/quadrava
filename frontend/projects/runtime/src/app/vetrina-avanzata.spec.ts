@@ -192,16 +192,17 @@ describe('Vetrina: componenti avanzati', () => {
       const form = repeater.closest('lc-form') as HTMLElement;
       const rows = (): HTMLElement[] => [...repeater.querySelectorAll<HTMLElement>('tbody tr')];
       expect(rows()).toHaveLength(1);
-      expect((rows()[0].querySelector('input[type="text"]') as HTMLInputElement).value).toBe('Risma carta A4');
+      // L'articolo della riga iniziale è un codice: il lookup ne mostra il nome chiesto al servizio.
+      await until(() => rows()[0].querySelector('lc-lookup .ant-select-selection-item')?.textContent?.trim() === 'Toner stampante', 'articolo iniziale');
       ([...repeater.querySelectorAll('button')].find((b) => b.textContent?.includes('Aggiungi un articolo')) as HTMLButtonElement).click();
       await settle();
       const save = (): void => ([...form.querySelectorAll(':scope > form > .actions button')].find((b) => b.textContent?.trim() === 'Salva') as HTMLButtonElement).click();
       save();
       await until(() => repeater.querySelectorAll('.cell-error').length === 2, 'errori della riga nuova');
       const second = rows()[1];
-      const article = second.querySelector('input[type="text"]') as HTMLInputElement;
-      article.value = 'Graffette';
-      article.dispatchEvent(new Event('input'));
+      await openSelect(second.querySelector('lc-lookup nz-select')!, settle);
+      await until(() => [...document.querySelectorAll('.ant-select-item-option')].some((o) => o.textContent?.trim() === 'Graffette'), 'articoli');
+      ([...document.querySelectorAll<HTMLElement>('.ant-select-item-option')].find((o) => o.textContent?.trim() === 'Graffette'))!.click();
       const quantity = second.querySelector('input[type="number"]') as HTMLInputElement;
       quantity.value = '3';
       quantity.dispatchEvent(new Event('input'));

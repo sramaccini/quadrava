@@ -25,6 +25,8 @@ import { nextId, parseIsoDate, parseIsoDateTime, toIsoDate, toIsoDateTime } from
   styles: `
     :host { display: block; container-type: inline-size; }
     form { max-width: 560px; }
+    /* Le righe ripetibili hanno bisogno di spazio in larghezza. */
+    form.wide { max-width: 880px; }
     form.grid { max-width: none; display: grid; grid-template-columns: repeat(var(--lc-form-columns), minmax(0, 1fr)); column-gap: 16px; }
     form.grid > nz-form-item { grid-column: span var(--lc-field-span, 1); }
     form.grid > .actions { grid-column: 1 / -1; }
@@ -37,7 +39,7 @@ import { nextId, parseIsoDate, parseIsoDateTime, toIsoDate, toIsoDateTime } from
     .actions { display: flex; gap: var(--lc-gap, 12px); }
   `,
   template: `
-    <form nz-form ngNoForm nzLayout="vertical" novalidate [class.grid]="columns() > 1" [style.--lc-form-columns]="columns()" (submit)="$event.preventDefault()">
+    <form nz-form ngNoForm nzLayout="vertical" novalidate [class.grid]="columns() > 1" [class.wide]="hasRows()" [style.--lc-form-columns]="columns()" (submit)="$event.preventDefault()">
       @for (field of node().fields; track field.name) {
         @if (runtime().isVisible(field, fieldScope())) {
           <nz-form-item [style.--lc-field-span]="span(field)">
@@ -164,6 +166,9 @@ export class FormComponent {
         .map((f) => [f.name, f.type === 'date' ? parseIsoDate(this.values()[f.name]) : parseIsoDateTime(this.values()[f.name])]),
     ),
   );
+
+  /** Il form contiene righe ripetibili. */
+  protected readonly hasRows = computed(() => this.node().fields.some((f) => f.type === 'repeater'));
 
   /** Colonne della griglia (da 1 a 4). */
   protected readonly columns = computed(() => Math.min(4, Math.max(1, this.node().columns ?? 1)));

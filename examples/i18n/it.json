@@ -234,7 +234,7 @@
   "vetrina_campi.righe": "Righe ripetibili",
   "vetrina_campi.righe_ordine": "Righe dell’ordine",
   "vetrina_campi.righe_salvate": "Ordine salvato con {n, plural, one {# riga} other {# righe}}",
-  "vetrina_campi.righe_spiega": "Le righe di un ordine: almeno una, al massimo dieci. Articolo obbligatorio e quantità maggiore di zero, controllati riga per riga al salvataggio.",
+  "vetrina_campi.righe_spiega": "Le righe di un ordine: almeno una, al massimo dieci. L’articolo si cerca nel catalogo (lookup nella riga); quantità maggiore di zero, controllata riga per riga al salvataggio.",
   "vetrina_campi.ruolo": "Ruolo",
   "vetrina_campi.titolo": "Vetrina: campi e form",
   "vetrina_campi.urgente": "Spedizione urgente",

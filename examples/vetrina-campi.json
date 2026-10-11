@@ -46,6 +46,15 @@
       "method": "PUT",
       "url": "/api/contatti/{{ id }}",
       "body": "{{ form }}"
+    },
+    "articoli": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/articoli",
+      "params": {
+        "q": "{{ search }}",
+        "id": "{{ lookupKey }}"
+      }
     }
   },
   "components": [
@@ -304,7 +313,7 @@
         {
           "id": "spiega-righe",
           "type": "text",
-          "text": "{{ t('vetrina_campi.righe_spiega', 'Le righe di un ordine: almeno una, al massimo dieci. Articolo obbligatorio e quantità maggiore di zero, controllati riga per riga al salvataggio.') }}"
+          "text": "{{ t('vetrina_campi.righe_spiega', 'Le righe di un ordine: almeno una, al massimo dieci. L’articolo si cerca nel catalogo (lookup nella riga); quantità maggiore di zero, controllata riga per riga al salvataggio.') }}"
         },
         {
           "id": "form-righe",
@@ -312,9 +321,9 @@
           "initial": {
             "righe": [
               {
-                "articolo": "Risma carta A4",
-                "quantita": 5,
-                "prezzo": 4.9,
+                "articolo": "TON-01",
+                "quantita": 2,
+                "prezzo": 49.9,
                 "omaggio": false
               }
             ]
@@ -330,9 +339,15 @@
               "fields": [
                 {
                   "name": "articolo",
-                  "type": "text",
+                  "type": "lookup",
                   "label": "{{ t('vetrina_campi.articolo', 'Articolo') }}",
-                  "required": true
+                  "required": true,
+                  "lookup": {
+                    "source": "articoli",
+                    "valueField": "codice",
+                    "labelField": "nome",
+                    "minChars": 0
+                  }
                 },
                 {
                   "name": "quantita",

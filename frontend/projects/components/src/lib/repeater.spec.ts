@@ -1,5 +1,6 @@
 import type { NodeDefinition } from 'schema';
 import { plain, renderScreen, type ScreenHarness } from './screen-testing';
+import { openSelect, stubViewportHeight } from './select-testing';
 
 describe('righe ripetibili nel form', () => {
   const form = (extra: Record<string, unknown> = {}): NodeDefinition => ({
@@ -87,5 +88,47 @@ describe('righe ripetibili nel form', () => {
     // La riga iniziale più una vuota per arrivare al minimo.
     expect(rows(h)).toHaveLength(2);
     expect((rows(h)[0].querySelector('input[type="text"]') as HTMLInputElement).value).toBe('Gomme');
+  });
+
+  describe('con lookup e file nelle righe', () => {
+    let restore: () => void;
+    beforeAll(() => (restore = stubViewportHeight()));
+    afterAll(() => restore());
+    afterEach(() => document.querySelectorAll('.cdk-overlay-container').forEach((c) => (c.innerHTML = '')));
+
+    it('ogni riga ha il suo lookup e il suo file; i valori arrivano al salvataggio', async () => {
+      const articles = [{ id: 'A1', nome: 'Penne' }, { id: 'A2', nome: 'Matite' }];
+      const node = {
+        type: 'form',
+        fields: [
+          {
+            name: 'righe',
+            type: 'repeater',
+            minRows: 1,
+            fields: [
+              { name: 'articolo', type: 'lookup', label: 'Articolo', required: true, lookup: { source: 'articoli', labelField: 'nome', minChars: 0 } },
+              { name: 'foto', type: 'file', label: 'Foto', accept: 'image/*' },
+            ],
+          },
+        ],
+        actions: [{ label: 'Salva', onClick: [{ call: 'salva' }] }],
+      } as NodeDefinition;
+      const h = await renderScreen({
+        components: [node],
+        dataSources: { ...dataSources, articoli: { type: 'rest', method: 'GET', url: '/api/articoli' } },
+        respond: (r) => (r.method === 'GET' ? articles : {}),
+      });
+      await h.until(() => !!h.el.querySelector('lc-repeater lc-lookup nz-select'), 'riga');
+      await openSelect(h.el.querySelector('lc-repeater lc-lookup nz-select')!, () => h.settle());
+      await h.until(() => document.querySelectorAll('.ant-select-item-option').length === 2, 'articoli');
+      ([...document.querySelectorAll<HTMLElement>('.ant-select-item-option')].find((o) => plain(o.textContent) === 'Matite'))!.click();
+      const input = h.el.querySelector('lc-repeater lc-file-field input[type="file"]') as HTMLInputElement;
+      Object.defineProperty(input, 'files', { configurable: true, value: [new File(['x'], 'foto.png', { type: 'image/png' })] });
+      input.dispatchEvent(new Event('change'));
+      await h.until(() => !!h.el.querySelector('lc-repeater lc-file-field .name'), 'foto scelta');
+      button(h, 'Salva').click();
+      await h.until(() => h.requests.some((r) => r.method === 'POST'), 'salvataggio');
+      expect(h.requests.find((r) => r.method === 'POST')?.body).toEqual({ righe: [{ articolo: 'A2', foto: { name: 'foto.png', type: 'image/png', size: 1, content: btoa('x') } }] });
+    });
   });
 });

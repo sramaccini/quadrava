@@ -234,7 +234,7 @@
   "vetrina_campi.righe": "Repeatable rows",
   "vetrina_campi.righe_ordine": "Order lines",
   "vetrina_campi.righe_salvate": "Order saved with {n, plural, one {# line} other {# lines}}",
-  "vetrina_campi.righe_spiega": "The lines of an order: at least one, at most ten. Item is required and quantity must be above zero, checked row by row when saving.",
+  "vetrina_campi.righe_spiega": "The lines of an order: at least one, at most ten. The item is searched in the catalogue (a lookup in the row); quantity must be above zero, checked row by row when saving.",
   "vetrina_campi.ruolo": "Role",
   "vetrina_campi.titolo": "Showcase: fields and forms",
   "vetrina_campi.urgente": "Express shipping",

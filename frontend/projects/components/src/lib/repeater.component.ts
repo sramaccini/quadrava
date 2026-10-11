@@ -9,19 +9,21 @@ import { NzSelectModule } from 'ng-zorro-antd/select';
 import { NzSwitchModule } from 'ng-zorro-antd/switch';
 import type { FieldDefinition } from 'schema';
 import { repeaterCellErrors, repeaterRows } from './field-validation';
+import { FileFieldComponent } from './file-field.component';
 import { IconComponent } from './icon.component';
+import { LookupComponent } from './lookup.component';
 import { nextId, parseIsoDate, toIsoDate } from './shared';
 
 type Row = Record<string, unknown>;
 
 /**
- * Campo `repeater`: un elenco di righe, ognuna con i campi semplici di `fields`. Il valore è un elenco di oggetti.
+ * Campo `repeater`: un elenco di righe, ognuna con i campi di `fields` (anche lookup e file, non righe annidate). Il valore è un elenco di oggetti.
  * Righe aggiunte e tolte con i pulsanti, nei limiti di `minRows` e `maxRows`; gli errori delle celle compaiono
  * dopo il primo tentativo di invio del form (`submitted`).
  */
 @Component({
   selector: 'lc-repeater',
-  imports: [FormsModule, IconComponent, NzButtonModule, NzCheckboxModule, NzDatePickerModule, NzInputModule, NzSelectModule, NzSwitchModule],
+  imports: [FormsModule, FileFieldComponent, IconComponent, LookupComponent, NzButtonModule, NzCheckboxModule, NzDatePickerModule, NzInputModule, NzSelectModule, NzSwitchModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: block; }
@@ -30,6 +32,7 @@ type Row = Record<string, unknown>;
     th { text-align: left; font-weight: 500; padding: 0 8px 6px 0; color: var(--lc-color-muted, #5d6b7a); white-space: nowrap; }
     th .required { color: var(--lc-color-danger, #c62828); margin-right: 2px; }
     td { padding: 0 8px 8px 0; vertical-align: top; min-width: 110px; }
+    td.wide { min-width: 200px; }
     td.remove { min-width: 0; width: 40px; padding-right: 0; }
     nz-select, nz-date-picker { width: 100%; }
     .cell-error { margin: 2px 0 0; font-size: 12px; color: var(--lc-color-danger, #c62828); }
@@ -60,7 +63,7 @@ type Row = Record<string, unknown>;
             @for (row of rows(); track $index; let i = $index) {
               <tr>
                 @for (sub of field().fields ?? []; track sub.name) {
-                  <td>
+                  <td [class.wide]="sub.type === 'lookup' || sub.type === 'file'">
                     @let cellId = id + i + '-' + sub.name;
                     @let err = submitted() ? errors()[i]?.[sub.name] : null;
                     @switch (sub.type) {
@@ -79,6 +82,12 @@ type Row = Record<string, unknown>;
                       }
                       @case ('date') {
                         <nz-date-picker [nzId]="cellId" [nzDisabled]="disabled()" [nzStatus]="err ? 'error' : ''" [ngModel]="dates()[i]?.[sub.name] ?? null" (ngModelChange)="set(i, sub, toIso($event))" />
+                      }
+                      @case ('lookup') {
+                        <lc-lookup [inputId]="cellId" [field]="sub" [runtime]="runtime()" [scope]="cellScope(row)" [value]="row[sub.name]" [disabled]="disabled()" (valueChange)="set(i, sub, $event)" />
+                      }
+                      @case ('file') {
+                        <lc-file-field [inputId]="cellId" [field]="sub" [runtime]="runtime()" [scope]="cellScope(row)" [value]="row[sub.name]" [disabled]="disabled()" (valueChange)="set(i, sub, $event)" />
                       }
                       @case ('textarea') {
                         <textarea nz-input [id]="cellId" [rows]="sub.rows ?? 2" [attr.aria-label]="label(sub)" [readOnly]="disabled()" [nzStatus]="err ? 'error' : ''" [value]="text(row, sub)" (input)="set(i, sub, $any($event.target).value)"></textarea>
@@ -139,6 +148,14 @@ export class RepeaterComponent {
   protected readonly dates = computed(() =>
     this.rows().map((row) => Object.fromEntries((this.field().fields ?? []).filter((f) => f.type === 'date').map((f) => [f.name, parseIsoDate(row[f.name])]))),
   );
+
+  /** Scope di una cella: i data source e le espressioni vedono anche la riga in `item` (una volta per riga). */
+  private readonly cellScopes = new WeakMap<Row, Scope>();
+  protected cellScope(row: Row): Scope {
+    let scope = this.cellScopes.get(row);
+    if (!scope) this.cellScopes.set(row, (scope = { ...this.scope(), item: row }));
+    return scope;
+  }
 
   protected label(sub: FieldDefinition): string {
     return this.runtime().text(sub.label, this.scope()) || sub.name;
