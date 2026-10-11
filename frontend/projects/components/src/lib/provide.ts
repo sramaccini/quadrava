@@ -16,6 +16,7 @@ import { FormComponent } from './form.component';
 import { ICON_TYPES } from './icon.component';
 import { SectionComponent } from './section.component';
 import { StatsComponent } from './stats.component';
+import { TreeComponent } from './tree.component';
 import { WizardComponent } from './wizard.component';
 import { TableComponent } from './table.component';
 import { TabsComponent } from './tabs.component';
@@ -59,6 +60,7 @@ export const STANDARD_COMPONENTS: ComponentCatalog = {
   alert: AlertComponent,
   stats: StatsComponent,
   wizard: WizardComponent,
+  tree: TreeComponent,
 };
 
 /**

@@ -4,7 +4,13 @@
   "title": "{{ t('vetrina_viste.titolo', 'Vetrina: procedure e viste') }}",
   "description": "{{ t('vetrina_viste.descrizione', 'Procedura a passi, vista ad albero e calendario.') }}",
   "requires": "vetrina.componenti.leggi",
-  "dataSources": {},
+  "dataSources": {
+    "categorie": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/categorie"
+    }
+  },
   "components": [
     {
       "id": "titolo",
@@ -148,6 +154,38 @@
               ]
             }
           ]
+        }
+      ]
+    },
+    {
+      "id": "sezione-albero",
+      "type": "section",
+      "title": "{{ t('vetrina_viste.albero', 'Vista ad albero') }}",
+      "components": [
+        {
+          "id": "spiega-albero",
+          "type": "text",
+          "text": "{{ t('vetrina_viste.albero_spiega', 'Categorie di spesa su più livelli. Scegli una categoria (anche con Invio) o cerca: le parti trovate sono evidenziate.') }}"
+        },
+        {
+          "id": "albero-categorie",
+          "type": "tree",
+          "source": "categorie",
+          "keyField": "id",
+          "labelField": "nome",
+          "childrenField": "figli",
+          "bind": "state.categoria",
+          "searchable": true,
+          "onSelect": [
+            {
+              "toast": "{{ t('vetrina_viste.categoria_scelta', '{nome}: {n} voci di spesa', {'nome': row.nome, 'n': row.voci}) }}"
+            }
+          ]
+        },
+        {
+          "id": "categoria-corrente",
+          "type": "text",
+          "text": "{{ t('vetrina_viste.categoria_corrente', 'Codice scelto: {c}', {'c': state.categoria == null ? '—' : state.categoria}) }}"
         }
       ]
     }

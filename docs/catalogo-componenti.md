@@ -48,7 +48,7 @@ L'ordine è quello di realizzazione. Lo stato si aggiorna a ogni componente comp
 | 12 | Tooltip nella scheda di dettaglio | dettaglio | realizzato |
 | 13 | Indicatori (KPI) | visualizzazione | realizzato |
 | 14 | Procedura a passi (wizard) | layout | realizzato |
-| 15 | Vista ad albero | visualizzazione | da fare |
+| 15 | Vista ad albero | visualizzazione | realizzato |
 | 16 | Calendario | visualizzazione | da fare |
 | 17 | Grafici | visualizzazione | da fare |
 | 18 | Datatable con colonne filtrabili, ordinabili e raggruppabili | tabella | da fare |

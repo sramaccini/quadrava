@@ -288,5 +288,16 @@ describe('Vetrina: componenti avanzati', () => {
       await until(() => !!wizard.querySelector('lc-form') && button('Avanti')?.disabled === true, 'di nuovo al primo passo, da compilare');
       expect(TestBed.inject(DemoDiagnostics).events()).toEqual([]);
     });
+
+    it('vista ad albero: la scelta di una categoria aggiorna lo stato e mostra un messaggio', async () => {
+      const { el, until } = await openShowcase('/vetrina/vetrina-viste');
+      const titles = (): HTMLElement[] => [...el.querySelectorAll<HTMLElement>('main lc-tree .title')];
+      await until(() => titles().some((t) => t.textContent?.trim() === 'Informatica'), 'albero');
+      titles().find((t) => t.textContent?.trim() === 'Manutenzione')!.click();
+      await until(() => !!document.querySelector('.ant-message-notice'), 'messaggio');
+      expect(document.querySelector('.ant-message-notice')?.textContent).toContain('Manutenzione: 18 voci di spesa');
+      await until(() => !!el.querySelector('main')?.textContent?.includes('Codice scelto: ser-man'), 'stato aggiornato');
+      expect(TestBed.inject(DemoDiagnostics).events()).toEqual([]);
+    });
   });
 });

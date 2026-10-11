@@ -517,7 +517,8 @@
             "detail",
             "alert",
             "stats",
-            "wizard"
+            "wizard",
+            "tree"
           ]
         },
         "visibleIf": {
@@ -968,6 +969,63 @@
               },
               "backLabel": {
                 "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "tree"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "required": [
+              "source",
+              "labelField"
+            ],
+            "properties": {
+              "source": {
+                "type": "string",
+                "description": "Data source che restituisce i nodi radice, con i figli annidati."
+              },
+              "keyField": {
+                "type": "string",
+                "description": "Campo che identifica il nodo (id se assente)."
+              },
+              "labelField": {
+                "type": "string",
+                "description": "Campo mostrato come testo del nodo."
+              },
+              "childrenField": {
+                "type": "string",
+                "description": "Campo con i figli (children se assente)."
+              },
+              "bind": {
+                "$ref": "#/$defs/statePath",
+                "description": "Stato in cui scrivere la chiave del nodo scelto."
+              },
+              "searchable": {
+                "type": "boolean",
+                "description": "Mostra un campo di ricerca che evidenzia i nodi e apre i rami corrispondenti."
+              },
+              "expandAll": {
+                "type": "boolean",
+                "description": "Tutti i rami aperti all’inizio (solo il primo livello se assente)."
+              },
+              "onSelect": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "$ref": "#/$defs/step"
+                },
+                "description": "Passi eseguiti alla scelta di un nodo, che vedono il nodo in `row`."
               }
             }
           }

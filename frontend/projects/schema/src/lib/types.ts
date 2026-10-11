@@ -261,7 +261,22 @@ export interface WizardNode extends NodeBase {
   backLabel?: string;
 }
 
-export type NodeDefinition = SectionNode | TextNode | ButtonNode | FilterBarNode | TableNode | FormNode | TabsNode | DetailNode | AlertNode | StatsNode | WizardNode;
+export interface TreeNode extends NodeBase {
+  type: 'tree';
+  /** Data source con i nodi radice e i figli annidati. */
+  source: string;
+  keyField?: string;
+  labelField: string;
+  childrenField?: string;
+  /** Stato in cui scrivere la chiave del nodo scelto. */
+  bind?: StatePath;
+  searchable?: boolean;
+  expandAll?: boolean;
+  /** Passi eseguiti alla scelta di un nodo (il nodo è `row`). */
+  onSelect?: Step[];
+}
+
+export type NodeDefinition = SectionNode | TextNode | ButtonNode | FilterBarNode | TableNode | FormNode | TabsNode | DetailNode | AlertNode | StatsNode | WizardNode | TreeNode;
 export type NodeType = NodeDefinition['type'];
 
 export interface ScreenDefinition {

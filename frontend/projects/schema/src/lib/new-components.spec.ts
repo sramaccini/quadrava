@@ -176,4 +176,15 @@ describe('schema dei componenti nuovi', () => {
       expect(issuesOf(screen([{ type: 'wizard', steps: [{ ...step('A'), icona: 'x' }, step('B')] }])).length).toBeGreaterThan(0);
     });
   });
+
+  describe('vista ad albero', () => {
+    it('accetta un albero con campi, stato, ricerca e passi alla scelta', () => {
+      expect(issuesOf(screen([{ type: 'tree', source: 's', keyField: 'id', labelField: 'nome', childrenField: 'figli', bind: 'state.x', searchable: true, expandAll: false, onSelect: [{ toast: '{{ row.nome }}' }] }]))).toEqual([]);
+    });
+    it('rifiuta alberi senza data source o campo del testo, o con proprietà estranee', () => {
+      expect(issuesOf(screen([{ type: 'tree', labelField: 'nome' }])).length).toBeGreaterThan(0);
+      expect(issuesOf(screen([{ type: 'tree', source: 's' }])).length).toBeGreaterThan(0);
+      expect(issuesOf(screen([{ type: 'tree', source: 's', labelField: 'n', trascinabile: true }])).length).toBeGreaterThan(0);
+    });
+  });
 });

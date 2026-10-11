@@ -55,6 +55,7 @@ export const BUILTIN_MESSAGES: Record<string, Messages> = {
     'lc.next': 'Avanti',
     'lc.back': 'Indietro',
     'lc.stepOf': 'Passo {n} di {total}',
+    'lc.search': 'Cerca',
   },
   en: {
     'lc.all': 'All',
@@ -106,5 +107,6 @@ export const BUILTIN_MESSAGES: Record<string, Messages> = {
     'lc.next': 'Next',
     'lc.back': 'Back',
     'lc.stepOf': 'Step {n} of {total}',
+    'lc.search': 'Search',
   },
 };

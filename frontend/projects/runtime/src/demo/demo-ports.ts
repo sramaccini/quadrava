@@ -197,6 +197,14 @@ export class MockDataClient extends DataClient {
       invoice.stato = 'inviata';
       return {};
     }
+    if (path === '/api/categorie' && req.method === 'GET') {
+      const leaf = (id: string, nome: string, voci: number): Record<string, unknown> => ({ id, nome, voci, figli: [] });
+      return [
+        { id: 'acq', nome: 'Acquisti', voci: 42, figli: [leaf('acq-can', 'Cancelleria', 12), leaf('acq-inf', 'Informatica', 18), leaf('acq-arr', 'Arredi', 12)] },
+        { id: 'ser', nome: 'Servizi', voci: 27, figli: [leaf('ser-con', 'Consulenze', 9), { id: 'ser-man', nome: 'Manutenzione', voci: 18, figli: [leaf('ser-man-imp', 'Impianti', 11), leaf('ser-man-edi', 'Edifici', 7)] }] },
+        { id: 'per', nome: 'Personale', voci: 35, figli: [{ id: 'per-tra', nome: 'Trasferte', voci: 25, figli: [leaf('per-tra-tre', 'Treni', 10), leaf('per-tra-hot', 'Hotel', 15)] }, leaf('per-for', 'Formazione', 10)] },
+      ];
+    }
     if (path === '/api/riepilogo' && req.method === 'GET') {
       const attive = this.invoices.filter((f) => f.tipo === 'attiva');
       const sum = (rows: Invoice[]): number => rows.reduce((t, f) => t + f.importo, 0);
