@@ -66,6 +66,8 @@ export interface FieldDefinition {
   upload?: string;
   /** Per `lookup`: data source cercato mentre si scrive (variabile `search`), campo del valore e campo del testo. */
   lookup?: { source: string; valueField?: string; labelField: string; minChars?: number };
+  /** Colonne occupate nella griglia del form (1 se assente). */
+  span?: number;
   /** Righe visibili di un campo `textarea` (4 se assente). */
   rows?: number;
   label?: string;
@@ -173,6 +175,8 @@ export interface FormNode extends NodeBase {
   initial?: Record<string, unknown>;
   fields: FieldDefinition[];
   actions?: ActionDefinition[];
+  /** Colonne della griglia dei campi (1 se assente). */
+  columns?: number;
 }
 
 export interface TabDefinition {

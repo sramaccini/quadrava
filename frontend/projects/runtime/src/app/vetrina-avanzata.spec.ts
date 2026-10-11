@@ -174,5 +174,13 @@ describe('Vetrina: componenti avanzati', () => {
       await until(() => !!document.querySelector('.ant-message-notice'), 'messaggio');
       expect(document.querySelector('.ant-message-notice')?.textContent).toContain('Allegato contratto.pdf salvato (id 1)');
     });
+
+    it('griglia: il form dell’anagrafica è a tre colonne e i campi larghi occupano più colonne', async () => {
+      const { el } = await openShowcase('/vetrina/vetrina-campi');
+      const form = [...el.querySelectorAll<HTMLElement>('main lc-form form')].find((f) => f.classList.contains('grid'))!;
+      expect(form.style.getPropertyValue('--lc-form-columns')).toBe('3');
+      const spans = [...form.querySelectorAll<HTMLElement>(':scope > nz-form-item')].map((i) => i.style.getPropertyValue('--lc-field-span'));
+      expect(spans).toEqual(['2', '1', '2', '1', '1', '1', '1', '3']);
+    });
   });
 });

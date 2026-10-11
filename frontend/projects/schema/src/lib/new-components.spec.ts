@@ -116,4 +116,14 @@ describe('schema dei componenti nuovi', () => {
       expect(issuesOf(screen([{ type: 'table', source: 's', columns: [{ field: 'n' }], sort: { bind: 'state.a.b' } }]))).toEqual([]);
     });
   });
+
+  describe('griglia nel form', () => {
+    it('accetta da 1 a 4 colonne e campi che ne occupano più di una', () => {
+      expect(issuesOf(screen([{ type: 'form', columns: 3, fields: [{ name: 'a', type: 'text', span: 2 }] }]))).toEqual([]);
+    });
+    it('rifiuta colonne e ampiezze fuori misura', () => {
+      expect(issuesOf(screen([{ type: 'form', columns: 5, fields: [{ name: 'a', type: 'text' }] }])).length).toBeGreaterThan(0);
+      expect(issuesOf(screen([{ type: 'form', fields: [{ name: 'a', type: 'text', span: 0 }] }])).length).toBeGreaterThan(0);
+    });
+  });
 });

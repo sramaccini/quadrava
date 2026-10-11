@@ -393,6 +393,12 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
         "upload": {
           "type": "string",
           "description": "Per type file: data source (POST) a cui inviare subito il file; lo riceve nella variabile `file` ({ name, type, size, content in base64 }), per esempio \"body\": \"{{ file }}\"."
+        },
+        "span": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4,
+          "description": "Colonne occupate dal campo nella griglia del form (1 se assente)."
         }
       },
       "allOf": [
@@ -724,6 +730,12 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                 "items": {
                   "$ref": "#/$defs/action"
                 }
+              },
+              "columns": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 4,
+                "description": "Colonne della griglia dei campi (1 se assente). Con poco spazio il form torna a una colonna."
               }
             }
           }

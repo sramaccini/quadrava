@@ -194,6 +194,88 @@
       ]
     },
     {
+      "id": "sezione-griglia",
+      "type": "section",
+      "title": "{{ t('vetrina_campi.griglia', 'Griglia a colonne') }}",
+      "components": [
+        {
+          "id": "spiega-griglia",
+          "type": "text",
+          "text": "{{ t('vetrina_campi.griglia_spiega', 'Il form ha tre colonne (columns: 3); ragione sociale e indirizzo ne occupano due (span: 2), le note tutte. Restringendo la finestra il form torna a una colonna.') }}"
+        },
+        {
+          "id": "form-griglia",
+          "type": "form",
+          "columns": 3,
+          "fields": [
+            {
+              "name": "ragioneSociale",
+              "type": "text",
+              "label": "{{ t('vetrina_campi.ragione_sociale', 'Ragione sociale') }}",
+              "span": 2,
+              "required": true
+            },
+            {
+              "name": "partitaIva",
+              "type": "text",
+              "label": "{{ t('vetrina_campi.partita_iva', 'Partita IVA') }}"
+            },
+            {
+              "name": "indirizzo",
+              "type": "text",
+              "label": "{{ t('vetrina_campi.indirizzo', 'Indirizzo') }}",
+              "span": 2
+            },
+            {
+              "name": "cap",
+              "type": "text",
+              "label": "{{ t('vetrina_campi.cap', 'CAP') }}"
+            },
+            {
+              "name": "citta",
+              "type": "text",
+              "label": "{{ t('vetrina_campi.citta', 'Città') }}"
+            },
+            {
+              "name": "provincia",
+              "type": "select",
+              "label": "{{ t('vetrina_campi.provincia', 'Provincia') }}",
+              "options": [
+                "MI",
+                "TO",
+                "BO",
+                "RM",
+                "NA"
+              ]
+            },
+            {
+              "name": "cliente",
+              "type": "switch",
+              "label": "{{ t('vetrina_campi.gia_cliente', 'Già cliente') }}"
+            },
+            {
+              "name": "note",
+              "type": "textarea",
+              "label": "{{ t('vetrina_campi.note_generali', 'Note') }}",
+              "rows": 2,
+              "span": 3
+            }
+          ],
+          "actions": [
+            {
+              "id": "btn-salva-anagrafica",
+              "label": "{{ t('comune.salva', 'Salva') }}",
+              "onClick": [
+                {
+                  "toast": "{{ t('vetrina_campi.anagrafica_salvata', 'Anagrafica di {nome} salvata', {'nome': form.ragioneSociale}) }}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "sezione-filtri-nuovi",
       "type": "section",
       "title": "{{ t('vetrina_campi.filtri_nuovi', 'I nuovi tipi nella barra dei filtri') }}",
