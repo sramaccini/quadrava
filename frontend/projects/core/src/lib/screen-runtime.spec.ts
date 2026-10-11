@@ -51,6 +51,21 @@ describe('ScreenRuntime', () => {
     rt.destroy();
   });
 
+  it('non ricarica se cambia una parte dello stato che non tocca la richiesta', async () => {
+    const rt = fakes.runtime(screen, injector);
+    rt.setState('filtri', { stato: null });
+    await settle();
+    const before = fakes.requests.length;
+    rt.setState('selezione', [1, 2]);
+    rt.setState('passo', 2);
+    await settle();
+    expect(fakes.requests).toHaveLength(before);
+    // Il passo refresh ricarica comunque.
+    await rt.refresh('ordini');
+    expect(fakes.requests).toHaveLength(before + 1);
+    rt.destroy();
+  });
+
   it('non carica nulla se manca il permesso richiesto dalla schermata', async () => {
     fakes.permissions.clear();
     const rt = fakes.runtime(screen, injector);

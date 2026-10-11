@@ -40,6 +40,8 @@ export class ScreenRuntime {
   private readonly effects: EffectRef[] = [];
   private readonly sequence = new Map<string, number>();
   private readonly missingKeys = new Set<string>();
+  /** Ultima richiesta del caricamento automatico di ogni data source GET (per non ripeterla se non cambia). */
+  private readonly lastAutoRequest = new Map<string, string>();
 
   constructor(
     readonly definition: ScreenDefinition,
@@ -65,15 +67,23 @@ export class ScreenRuntime {
     );
     // I filtri dichiarati esistono nello stato fin dall'inizio (nulli): i data source che li usano non vanno in errore al primo caricamento.
     this.seedFilters(definition.components);
-    // Ogni data source GET si carica da solo e si ricarica quando cambiano i valori da cui dipende (filtri, pagina, permessi).
+    // Ogni data source GET si carica da solo e si ricarica quando cambia la richiesta risolta (URL e parametri: filtri,
+    // pagina, ordinamento…). Un cambiamento dello stato che non tocca la richiesta (una selezione, un passo, un nodo
+    // scelto) non provoca una nuova chiamata: per ricaricare comunque c'è il passo refresh.
     for (const [name, source] of Object.entries(definition.dataSources ?? {})) {
       if (source.method !== 'GET') continue;
       this.effects.push(
         effect(
           () => {
-            if (!this.allowed()) return;
+            if (!this.allowed()) {
+              this.lastAutoRequest.delete(name);
+              return;
+            }
             const built = this.build(name, {});
             untracked(() => {
+              const key = built.ok ? JSON.stringify(built.request) : `errore: ${built.error}`;
+              if (this.lastAutoRequest.get(name) === key) return;
+              this.lastAutoRequest.set(name, key);
               if (built.ok) void this.run(name, built.request);
               else this.setSource(name, { status: 'error', data: null, error: built.error });
             });
