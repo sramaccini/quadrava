@@ -266,6 +266,8 @@
   "vetrina_layout.prima_di_un_azione_delicata_si_c": "Prima di un'azione delicata si chiede conferma. Se premi Annulla non succede nulla e non compare nessun errore.",
   "vetrina_layout.questa_scheda_esiste_solo_per_ch": "Questa scheda esiste solo per chi può leggere gli IBAN: senza il permesso non compare nemmeno il suo titolo.",
   "vetrina_layout.schede_dettaglio_e_messaggi": "Schede, dettaglio e messaggi",
+  "vetrina_layout.sconto_aiuto": "Percentuale applicata al totale dell’ordine",
+  "vetrina_layout.stato_aiuto": "Bozza, inviato al cliente o approvato",
   "vetrina_layout.un_messaggio_in_pagina_informa_s": "Un messaggio in pagina informa senza interrompere: qui è il tipo info.",
   "vetrina_layout.vetrina_schede_dettaglio_e_messa": "Vetrina: schede, dettaglio e messaggi",
   "vetrina_tabelle.approvare_l_ordine": "Approvare l'ordine {numero}?",

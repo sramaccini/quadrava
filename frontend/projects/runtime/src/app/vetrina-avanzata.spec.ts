@@ -241,4 +241,15 @@ describe('Vetrina: componenti avanzati', () => {
       await until(() => cells(el, 0, 1)[0] === 'anna@example.com', 'contatto aggiornato');
     });
   });
+
+  describe('dettaglio', () => {
+    it('i campi con tooltip hanno l’icona di aiuto con il testo tradotto', async () => {
+      const { el, until } = await openShowcase('/vetrina/vetrina-layout');
+      await until(() => el.querySelectorAll('main lc-detail .help').length === 2, 'icone di aiuto');
+      expect([...el.querySelectorAll('main lc-detail .help')].map((h) => h.getAttribute('aria-label'))).toEqual([
+        'Percentuale applicata al totale dell’ordine',
+        'Bozza, inviato al cliente o approvato',
+      ]);
+    });
+  });
 });

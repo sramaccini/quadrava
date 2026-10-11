@@ -73,7 +73,8 @@
                 {
                   "field": "sconto",
                   "label": "{{ t('comune.sconto', 'Sconto') }}",
-                  "format": "percent"
+                  "format": "percent",
+                  "tooltip": "{{ t('vetrina_layout.sconto_aiuto', 'Percentuale applicata al totale dell’ordine') }}"
                 },
                 {
                   "field": "stato",
@@ -84,7 +85,8 @@
                     "inviato": "primary",
                     "approvato": "success"
                   },
-                  "valueKey": "valori.stato"
+                  "valueKey": "valori.stato",
+                  "tooltip": "{{ t('vetrina_layout.stato_aiuto', 'Bozza, inviato al cliente o approvato') }}"
                 },
                 {
                   "field": "iban",

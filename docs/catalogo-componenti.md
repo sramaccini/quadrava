@@ -45,7 +45,7 @@ L'ordine è quello di realizzazione. Lo stato si aggiorna a ogni componente comp
 | 9 | Griglia a colonne nel form | form | realizzato |
 | 10 | Righe ripetibili nel form | form | realizzato |
 | 11 | Dialog con form (passo `dialog`) | azioni | realizzato |
-| 12 | Tooltip nella scheda di dettaglio | dettaglio | da fare |
+| 12 | Tooltip nella scheda di dettaglio | dettaglio | realizzato |
 | 13 | Indicatori (KPI) | visualizzazione | da fare |
 | 14 | Procedura a passi (wizard) | layout | da fare |
 | 15 | Vista ad albero | visualizzazione | da fare |

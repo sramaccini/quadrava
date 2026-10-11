@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import navigationDoc from '../../public/examples/navigation.json';
 import tabelleAvanzate from '../../public/examples/vetrina-tabelle-avanzate.json';
 import campi from '../../public/examples/vetrina-campi.json';
+import layout from '../../public/examples/vetrina-layout.json';
 import chiaro from '../../public/examples/themes/chiaro.json';
 import catalogIt from '../../public/examples/i18n/it.json';
 import catalogEn from '../../public/examples/i18n/en.json';
@@ -16,6 +17,7 @@ export const SHOWCASE_FILES: Record<string, unknown> = {
   'examples/navigation.json': navigationDoc,
   'examples/vetrina-tabelle-avanzate.json': tabelleAvanzate,
   'examples/vetrina-campi.json': campi,
+  'examples/vetrina-layout.json': layout,
   'examples/i18n/it.json': catalogIt,
   'examples/i18n/en.json': catalogEn,
   'examples/themes/chiaro.json': chiaro,

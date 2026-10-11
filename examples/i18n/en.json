@@ -266,6 +266,8 @@
   "vetrina_layout.prima_di_un_azione_delicata_si_c": "Before a sensitive action, confirmation is requested. If you press Cancel nothing happens and no error appears.",
   "vetrina_layout.questa_scheda_esiste_solo_per_ch": "This tab exists only for those who can read IBANs: without the permission not even its title appears.",
   "vetrina_layout.schede_dettaglio_e_messaggi": "Tabs, detail and messages",
+  "vetrina_layout.sconto_aiuto": "Percentage applied to the order total",
+  "vetrina_layout.stato_aiuto": "Draft, sent to the customer or approved",
   "vetrina_layout.un_messaggio_in_pagina_informa_s": "An in-page message informs without interrupting: this one is of type info.",
   "vetrina_layout.vetrina_schede_dettaglio_e_messa": "Showcase: tabs, detail and messages",
   "vetrina_tabelle.approvare_l_ordine": "Approve order {numero}?",

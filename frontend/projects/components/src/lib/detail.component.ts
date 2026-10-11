@@ -4,7 +4,9 @@ import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzCardModule } from 'ng-zorro-antd/card';
 import { NzDescriptionsModule } from 'ng-zorro-antd/descriptions';
 import { NzTagModule } from 'ng-zorro-antd/tag';
+import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import type { ColumnDefinition, DetailNode } from 'schema';
+import { IconComponent } from './icon.component';
 import { TONE_COLORS } from './shared';
 
 /**
@@ -13,8 +15,12 @@ import { TONE_COLORS } from './shared';
  */
 @Component({
   selector: 'lc-detail',
-  imports: [NzCardModule, NzDescriptionsModule, NzTagModule, NzAlertModule],
+  imports: [IconComponent, NzCardModule, NzDescriptionsModule, NzTagModule, NzAlertModule, NzTooltipModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: `
+    .help { display: inline-flex; margin-left: 4px; color: var(--lc-color-muted, #5d6b7a); cursor: help; vertical-align: -1px; }
+    .help:focus-visible { outline: 2px solid var(--lc-color-primary, #1f5fbf); outline-offset: 2px; border-radius: 50%; }
+  `,
   template: `
     <nz-card role="region" [attr.aria-label]="node().title ? runtime().text(node().title, scope()) : null" [attr.aria-busy]="source().status === 'loading'" [nzTitle]="node().title ? runtime().text(node().title, scope())  : undefined">
       @if (source().status === 'error') {
@@ -22,7 +28,14 @@ import { TONE_COLORS } from './shared';
       } @else if (record(); as rec) {
         <nz-descriptions nzBordered nzSize="small" [nzColumn]="{ xxl: 3, xl: 3, lg: 3, md: 2, sm: 1, xs: 1 }">
           @for (field of fields(); track field.field) {
-            <nz-descriptions-item [nzTitle]="runtime().text(field.label, scope()) || field.field">
+            <ng-template #title>
+              {{ runtime().text(field.label, scope()) || field.field }}
+              @if (tip(field); as text) {
+                <!-- Icona di aiuto raggiungibile da tastiera: il testo è anche il suo nome per gli screen reader. -->
+                <span class="help" tabindex="0" role="img" [attr.aria-label]="text" nz-tooltip [nzTooltipTitle]="text"><lc-icon name="help" /></span>
+              }
+            </ng-template>
+            <nz-descriptions-item [nzTitle]="title">
               @if (view(rec, field); as v) {
                 @if (v.tone) {
                   <nz-tag [nzColor]="color(v.tone)">{{ v.text }}</nz-tag>
@@ -57,6 +70,11 @@ export class DetailComponent {
 
   protected view(record: Record<string, unknown>, field: ColumnDefinition): FormattedValue {
     return formatValue(record[field.field], field, this.i18n.intlLocale(), this.labels());
+  }
+
+  /** Testo di aiuto di un campo, già risolto; null se il campo non ne ha. */
+  protected tip(field: ColumnDefinition): string | null {
+    return field.tooltip ? this.runtime().text(field.tooltip, this.scope()) || null : null;
   }
 
   protected color(tone: NonNullable<FormattedValue['tone']>): string {
