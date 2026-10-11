@@ -216,7 +216,7 @@ npm run schema:check                  # generated schema constants are in sync
 npm run validate:examples             # examples are valid
 ```
 
-At the time of writing there are **404 automated tests**: schema 62, expressions 39, core 61, components 128, services 19, runtime 66, editor 29. They run in jsdom, so layout, real focus handling and pixel-level rendering are **not** covered; see the development guide for the helpers that make NG-ZORRO overlays testable.
+At the time of writing there are **405 automated tests**: schema 62, expressions 39, core 61, components 128, services 19, runtime 66, editor 30. They run in jsdom, so layout, real focus handling and pixel-level rendering are **not** covered; see the development guide for the helpers that make NG-ZORRO overlays testable.
 
 ## Security model
 

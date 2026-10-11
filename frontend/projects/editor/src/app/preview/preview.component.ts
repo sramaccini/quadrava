@@ -25,6 +25,7 @@ const WIDTHS: Record<string, number | null> = { desktop: null, tablet: 768, mobi
  *
  * Collegamento con la struttura: il nodo selezionato è evidenziato nel disegno; Alt+clic su un componente (o un clic
  * in modalità selezione) lo seleziona invece di attivarlo. Funziona per i nodi con `id`, che l'editor assegna sempre.
+ * Se il nodo selezionato sta in una scheda non attiva, l'anteprima apre quella scheda.
  */
 @Component({
   selector: 'ed-preview',
@@ -82,14 +83,29 @@ export class PreviewComponent {
     // Riquadro sul nodo selezionato, ricalcolato dopo ogni disegno: i componenti cambiano dimensione quando arrivano
     // i dati. Un riquadro sopra il disegno, invece di un bordo sul componente, non sposta nulla.
     let scrolledTo: string | null = null;
+    // Una sola apertura delle schede per selezione, anche se il clic non riuscisse ad attivarle.
+    let revealedFor: string | null = null;
+    let lastDrawn: unknown[] = [];
     afterEveryRender(() => {
       const frame = this.frame()?.nativeElement;
       const id = this.selectedId();
+      // Una schermata ridisegnata riparte dalla prima scheda: la scheda del nodo va riaperta.
+      const drawn = [this.shown(), this.version()];
+      if (drawn[0] !== lastDrawn[0] || drawn[1] !== lastDrawn[1]) {
+        lastDrawn = drawn;
+        revealedFor = null;
+      }
       const node = frame && id ? frame.querySelector(`lc-node[data-node-id="${CSS.escape(id)}"]`) : null;
+      // Un nodo appena selezionato dentro una scheda non attiva: si apre la scheda (il riquadro arriva al disegno dopo).
+      if (node && id !== revealedFor) {
+        revealedFor = id;
+        if (revealTabs(node)) return;
+      }
       const box = frame && node ? boxOf(node, frame) : null;
       if (!sameBox(box, this.highlight())) this.highlight.set(box);
       if (node && id !== scrolledTo) node.scrollIntoView?.({ block: 'nearest' });
       scrolledTo = node ? id : null;
+      if (!id) revealedFor = null;
     });
   }
 
@@ -136,4 +152,27 @@ function boxOf(node: Element, frame: HTMLElement): Box | null {
 function sameBox(a: Box | null, b: Box | null): boolean {
   if (!a || !b) return a === b;
   return Math.abs(a.top - b.top) < 0.5 && Math.abs(a.left - b.left) < 0.5 && Math.abs(a.width - b.width) < 0.5 && Math.abs(a.height - b.height) < 0.5;
+}
+
+/**
+ * Apre le schede (anche annidate) che contengono il nodo, cliccandone il titolo come farebbe l'utente. Le schede
+ * restano tutte nella pagina, quindi il nodo esiste anche in una scheda nascosta. Restituisce true se ha aperto qualcosa.
+ */
+function revealTabs(node: Element): boolean {
+  let opened = false;
+  let pane = node.closest('.ant-tabs-tabpane');
+  while (pane) {
+    if (!pane.classList.contains('ant-tabs-tabpane-active') && pane.parentElement) {
+      const index = [...pane.parentElement.children].indexOf(pane);
+      const tabs = pane.closest('.ant-tabs');
+      const nav = tabs ? [...tabs.children].find((c) => c.classList.contains('ant-tabs-nav')) : null;
+      const title = nav?.querySelectorAll<HTMLElement>('.ant-tabs-tab .ant-tabs-tab-btn')[index];
+      if (title) {
+        title.click();
+        opened = true;
+      }
+    }
+    pane = pane.parentElement?.closest('.ant-tabs-tabpane') ?? null;
+  }
+  return opened;
 }

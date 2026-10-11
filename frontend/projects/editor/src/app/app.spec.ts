@@ -190,6 +190,16 @@ describe('editor delle schermate', () => {
     expect(store.selection()).toEqual(['components', 1]);
   });
 
+  it('selezionando un nodo in una scheda nascosta l’anteprima apre quella scheda', async () => {
+    (el.querySelector('ed-palette button[data-type="tabs"]') as HTMLButtonElement).click();
+    store.select(['components', 0, 'tabs', 1]);
+    (el.querySelector('ed-palette button[data-type="alert"]') as HTMLButtonElement).click();
+    store.select(['components', 0]);
+    await until(() => preview().querySelector('.ant-tabs-tab-active')?.textContent?.trim() === 'Scheda 1', 'prima scheda attiva');
+    store.select(['components', 0, 'tabs', 1, 'components', 0]);
+    await until(() => preview().querySelector('.ant-tabs-tab-active')?.textContent?.trim() === 'Scheda 2', 'seconda scheda aperta');
+  });
+
   it('apre un esempio, e da tastiera elimina il nodo selezionato', async () => {
     store.load(layout as never);
     await until(() => outline().length > 5, 'struttura dell’esempio');
