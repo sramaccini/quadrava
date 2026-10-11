@@ -179,7 +179,7 @@
         {
           "id": "spiega-file",
           "type": "text",
-          "text": "{{ t('vetrina_campi.file_spiega', 'PDF o immagini fino a 2 MB. Il file parte subito verso il servizio, che risponde con un id; il form salva poi l’id insieme al nome.') }}"
+          "text": "{{ t('vetrina_campi.file_spiega', 'PDF o immagini fino a 20 MB. Il file parte subito verso il servizio come file vero (multipart), il servizio risponde con un id e il form salva poi l’id insieme al nome.') }}"
         },
         {
           "id": "form-file",
@@ -190,7 +190,7 @@
               "type": "file",
               "label": "{{ t('vetrina_campi.allegato', 'Allegato') }}",
               "accept": ".pdf,image/*",
-              "maxSizeKb": 2048,
+              "maxSizeKb": 20480,
               "upload": "caricaAllegato",
               "required": true
             },

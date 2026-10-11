@@ -205,7 +205,7 @@
   "vetrina_campi.email": "Email",
   "vetrina_campi.email_non_valida": "Invalid email address",
   "vetrina_campi.file": "File upload",
-  "vetrina_campi.file_spiega": "PDFs or images up to 2 MB. The file goes straight to the service, which answers with an id; the form then saves the id with the name.",
+  "vetrina_campi.file_spiega": "PDFs or images up to 20 MB. The file goes straight to the service as a real file (multipart), the service answers with an id and the form then saves the id with the name.",
   "vetrina_campi.filtri_nuovi": "The new types in the filter bar",
   "vetrina_campi.gia_cliente": "Existing customer",
   "vetrina_campi.griglia": "Column grid",

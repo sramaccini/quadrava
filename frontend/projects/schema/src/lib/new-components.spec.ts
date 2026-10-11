@@ -109,7 +109,9 @@ describe('schema dei componenti nuovi', () => {
       expect(issuesOf(form([{ name: 'f', type: 'file', accept: 'pdf' }])).length).toBeGreaterThan(0);
       expect(issuesOf(form([{ name: 'f', type: 'file', accept: '.pdf;.doc' }])).length).toBeGreaterThan(0);
       expect(issuesOf(form([{ name: 'f', type: 'file', maxSizeKb: 0 }])).length).toBeGreaterThan(0);
-      expect(issuesOf(form([{ name: 'f', type: 'file', maxSizeKb: 20000 }])).length).toBeGreaterThan(0);
+      expect(issuesOf(form([{ name: 'f', type: 'file', maxSizeKb: 200000 }])).length).toBeGreaterThan(0);
+      expect(issuesOf(form([{ name: 'f', type: 'file', upload: 'u', uploadAs: 'zip' }])).length).toBeGreaterThan(0);
+      expect(issuesOf(form([{ name: 'f', type: 'file', upload: 'u', uploadAs: 'multipart', maxSizeKb: 102400 }]))).toEqual([]);
     });
     it('lo stato deve iniziare da state. seguito da nomi', () => {
       expect(issuesOf(screen([{ type: 'table', source: 's', columns: [{ field: 'n' }], sort: { bind: 'statex.y' } }])).length).toBeGreaterThan(0);

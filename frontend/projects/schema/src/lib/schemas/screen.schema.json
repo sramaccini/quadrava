@@ -389,12 +389,12 @@
         "maxSizeKb": {
           "type": "integer",
           "minimum": 1,
-          "maximum": 10240,
-          "description": "Per type file: dimensione massima in KB (1024 se assente)."
+          "maximum": 102400,
+          "description": "Per type file: dimensione massima in KB (1024 se assente). Fino a 102400 con invio multipart; il contenuto in base64 è limitato a 10240."
         },
         "upload": {
           "type": "string",
-          "description": "Per type file: data source (POST) a cui inviare subito il file; lo riceve nella variabile `file` ({ name, type, size, content in base64 }), per esempio \"body\": \"{{ file }}\"."
+          "description": "Per type file: data source (POST) a cui inviare subito il file. In multipart il file è la parte \"file\" della richiesta e la variabile `file` ha name, type e size; in base64 ha anche content."
         },
         "span": {
           "type": "integer",
@@ -446,6 +446,13 @@
         "addLabel": {
           "type": "string",
           "description": "Per type repeater: testo del pulsante che aggiunge una riga."
+        },
+        "uploadAs": {
+          "enum": [
+            "multipart",
+            "base64"
+          ],
+          "description": "Per type file con upload: multipart (il file viaggia come file, variabile `file` con name, type e size; predefinito) oppure base64 (il contenuto in `file.content` dentro il corpo JSON)."
         }
       },
       "allOf": [

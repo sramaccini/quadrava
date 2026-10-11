@@ -5,6 +5,17 @@ import { firstValueFrom } from 'rxjs';
 import { DataError } from './errors';
 import { isSameOriginRelative } from './trace';
 
+/** Corpo multipart: ogni voce del corpo è una parte di testo (gli oggetti come JSON), il file è la parte `field`. */
+function toFormData(body: Record<string, unknown> | undefined, file: NonNullable<DataRequest['file']>): FormData {
+  const form = new FormData();
+  for (const [key, value] of Object.entries(body ?? {})) {
+    if (value === null || value === undefined) continue;
+    form.append(key, typeof value === 'object' ? JSON.stringify(value) : String(value));
+  }
+  form.append(file.field, file.blob, file.name);
+  return form;
+}
+
 function toParams(query: Record<string, unknown> | undefined): HttpParams {
   let params = new HttpParams();
   for (const [key, value] of Object.entries(query ?? {})) {
@@ -29,7 +40,8 @@ export class HttpDataClient extends DataClient {
       return await firstValueFrom(
         this.http.request(request.method, request.url, {
           params: toParams(request.query),
-          body: request.method === 'GET' || request.method === 'DELETE' ? undefined : request.body,
+          // Con un file la richiesta è multipart (il browser imposta da solo il Content-Type con il boundary).
+          body: request.method === 'GET' || request.method === 'DELETE' ? undefined : request.file ? toFormData(request.body, request.file) : request.body,
         }),
       );
     } catch (e) {

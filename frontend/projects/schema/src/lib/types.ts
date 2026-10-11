@@ -82,6 +82,8 @@ export interface FieldDefinition {
   maxSizeKb?: number;
   /** Per `file`: data source a cui inviare subito il file (variabile `file`). */
   upload?: string;
+  /** Per `file` con `upload`: multipart (predefinito) o base64 nel corpo JSON. */
+  uploadAs?: 'multipart' | 'base64';
   /** Per `lookup`: data source cercato mentre si scrive (variabile `search`), campo del valore e campo del testo. */
   lookup?: { source: string; valueField?: string; labelField: string; minChars?: number };
   /** Colonne occupate nella griglia del form (1 se assente). */

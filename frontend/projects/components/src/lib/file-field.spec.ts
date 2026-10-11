@@ -31,7 +31,7 @@ describe('caricamento di file', () => {
   const save = (h: ScreenHarness): void => ([...h.el.querySelectorAll('button')].find((b) => b.textContent?.includes('Salva')) as HTMLButtonElement).click();
   const error = (h: ScreenHarness): string => plain(h.el.querySelector('lc-file-field .error')?.textContent);
 
-  it('rifiuta tipo e dimensione prima di inviare; con upload il valore è la risposta del servizio', async () => {
+  it('rifiuta tipo e dimensione prima di inviare; con upload il file parte in multipart e il valore è la risposta del servizio', async () => {
     const h = await renderScreen({ components: [form('carica')], dataSources, respond: (r) => (r.url === '/api/allegati' ? { id: 42 } : {}) });
     choose(h, new File(['x'], 'note.txt', { type: 'text/plain' }));
     await h.until(() => !!error(h), 'tipo rifiutato');
@@ -43,7 +43,10 @@ describe('caricamento di file', () => {
     choose(h, new File(['ciao'], 'ok.pdf', { type: 'application/pdf' }));
     await h.until(() => plain(h.el.querySelector('lc-file-field .name')?.textContent) === 'ok.pdf', 'file caricato');
     expect(error(h)).toBe('');
-    expect(h.requests[0].body).toEqual({ name: 'ok.pdf', type: 'application/pdf', size: 4, content: btoa('ciao') });
+    // Multipart: nel corpo solo i dati del file, il contenuto viaggia come file.
+    expect(h.requests[0].body).toEqual({ name: 'ok.pdf', type: 'application/pdf', size: 4 });
+    expect(h.requests[0].file?.name).toBe('ok.pdf');
+    expect(await (h.requests[0].file?.blob as Blob).text()).toBe('ciao');
     save(h);
     await h.until(() => h.requests.length === 2, 'salvataggio');
     expect(h.requests[1].body).toEqual({ allegato: { id: 42, name: 'ok.pdf', type: 'application/pdf', size: 4 } });
@@ -66,5 +69,22 @@ describe('caricamento di file', () => {
     await h.settle();
     expect(plain(h.el.querySelector('.ant-form-item-explain-error')?.textContent)).toBe('Campo obbligatorio');
     expect(h.requests).toHaveLength(1);
+  });
+
+  it('con uploadAs base64 il contenuto viaggia nel corpo JSON, e oltre 10 MB non si accetta', async () => {
+    const node: NodeDefinition = {
+      type: 'form',
+      fields: [{ name: 'allegato', type: 'file', upload: 'carica', uploadAs: 'base64', maxSizeKb: 102400 }],
+    };
+    const h = await renderScreen({ components: [node], dataSources, respond: () => ({ id: 1 }) });
+    const big = new File(['x'], 'grande.pdf', { type: 'application/pdf' });
+    Object.defineProperty(big, 'size', { value: 11 * 1024 * 1024 });
+    choose(h, big);
+    await h.until(() => error(h).startsWith('File troppo grande'), 'limite del base64');
+    expect(error(h)).toBe('File troppo grande (massimo 10 MB)');
+    choose(h, new File(['abc'], 'piccolo.pdf', { type: 'application/pdf' }));
+    await h.until(() => h.requests.length === 1, 'invio');
+    expect(h.requests[0].body).toEqual({ name: 'piccolo.pdf', type: 'application/pdf', size: 3, content: btoa('abc') });
+    expect(h.requests[0].file).toBeUndefined();
   });
 });

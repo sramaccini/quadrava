@@ -205,7 +205,7 @@
   "vetrina_campi.email": "E-mail",
   "vetrina_campi.email_non_valida": "Indirizzo e-mail non valido",
   "vetrina_campi.file": "Caricamento di file",
-  "vetrina_campi.file_spiega": "PDF o immagini fino a 2 MB. Il file parte subito verso il servizio, che risponde con un id; il form salva poi l’id insieme al nome.",
+  "vetrina_campi.file_spiega": "PDF o immagini fino a 20 MB. Il file parte subito verso il servizio come file vero (multipart), il servizio risponde con un id e il form salva poi l’id insieme al nome.",
   "vetrina_campi.filtri_nuovi": "I nuovi tipi nella barra dei filtri",
   "vetrina_campi.gia_cliente": "Già cliente",
   "vetrina_campi.griglia": "Griglia a colonne",

@@ -5,6 +5,8 @@ import type { FieldDefinition } from 'schema';
 import { IconComponent } from './icon.component';
 
 const DEFAULT_MAX_KB = 1024;
+/** Il contenuto in base64 dentro il JSON pesa un terzo in più: oltre questo limite serve il multipart. */
+const MAX_BASE64_KB = 10240;
 
 /** Il file è ammesso da `accept`? Estensioni (`.pdf`), tipi esatti (`application/pdf`) e famiglie (`image/*`). */
 export function accepts(accept: string | undefined, file: { name: string; type: string }): boolean {
@@ -30,8 +32,9 @@ function readBase64(file: Blob): Promise<string> {
 
 /**
  * Campo `file`: un file per campo. Tipo e dimensione si controllano prima di qualunque invio. Con `upload` il file
- * parte subito verso il data source (variabile `file`) e il valore del campo diventa `{ name, type, size }` più la
- * risposta del servizio; senza `upload` il valore contiene anche `content` (base64). Il nome del file è sempre testo.
+ * parte subito verso il data source: in multipart (predefinito) come file vero, in base64 dentro il corpo JSON
+ * (variabile `file`); il valore del campo diventa `{ name, type, size }` più la risposta del servizio. Senza
+ * `upload` il valore contiene anche `content` (base64). Il nome del file è sempre testo.
  */
 @Component({
   selector: 'lc-file-field',
@@ -102,7 +105,8 @@ export class FileFieldComponent {
     input.value = '';
     if (!chosen) return;
     const field = this.field();
-    const max = field.maxSizeKb ?? DEFAULT_MAX_KB;
+    const multipart = !!field.upload && field.uploadAs !== 'base64';
+    const max = Math.min(field.maxSizeKb ?? DEFAULT_MAX_KB, multipart ? Infinity : MAX_BASE64_KB);
     if (!accepts(field.accept, chosen)) {
       this.error.set(this.i18n.t('lc.fileType', { accept: field.accept ?? '' }));
       return;
@@ -115,12 +119,17 @@ export class FileFieldComponent {
     this.busy.set(true);
     try {
       const meta = { name: chosen.name, type: chosen.type, size: chosen.size };
-      const content = await readBase64(chosen);
-      if (!field.upload) {
-        this.valueChange.emit({ ...meta, content });
-        return;
+      let result;
+      if (multipart) {
+        result = await this.runtime().execute(field.upload!, { file: meta }, this.scope(), { field: 'file', name: chosen.name, type: chosen.type, blob: chosen });
+      } else {
+        const content = await readBase64(chosen);
+        if (!field.upload) {
+          this.valueChange.emit({ ...meta, content });
+          return;
+        }
+        result = await this.runtime().execute(field.upload, { file: { ...meta, content } }, this.scope());
       }
-      const result = await this.runtime().execute(field.upload, { file: { ...meta, content } }, this.scope());
       if (!result.ok) {
         this.error.set(this.i18n.t('lc.uploadFailed'));
         return;

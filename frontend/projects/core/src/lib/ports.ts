@@ -25,6 +25,11 @@ export interface DataRequest {
   query?: Record<string, unknown>;
   /** Corpo (POST, PUT, PATCH). */
   body?: Record<string, unknown>;
+  /**
+   * File da inviare insieme al corpo in una richiesta multipart: il client mette il file nella parte `field` e ogni
+   * voce del corpo in una parte di testo (gli oggetti come JSON).
+   */
+  file?: { field: string; name: string; type: string; blob: Blob };
 }
 
 /** Esegue le chiamate REST. Deve lanciare un errore se la risposta non è di successo. */

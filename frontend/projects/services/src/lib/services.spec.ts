@@ -162,6 +162,27 @@ describe('HttpDataClient', () => {
     await p;
   });
 
+  it('con un file invia un corpo multipart: il file nella sua parte, le voci del corpo come testo', async () => {
+    const { http } = setup();
+    const blob = new Blob(['ciao'], { type: 'text/plain' });
+    const p = TestBed.inject(HttpDataClient).request({
+      method: 'POST',
+      url: '/api/allegati',
+      body: { name: 'nota.txt', size: 4, extra: { a: 1 }, vuoto: null },
+      file: { field: 'file', name: 'nota.txt', type: 'text/plain', blob },
+    });
+    const req = http.expectOne('/api/allegati');
+    const form = req.request.body as FormData;
+    expect(form).toBeInstanceOf(FormData);
+    expect(form.get('name')).toBe('nota.txt');
+    expect(form.get('size')).toBe('4');
+    expect(form.get('extra')).toBe('{"a":1}');
+    expect(form.has('vuoto')).toBe(false);
+    expect((form.get('file') as File).name).toBe('nota.txt');
+    req.flush({ id: 9 });
+    expect(await p).toEqual({ id: 9 });
+  });
+
   it('rifiuta URL assoluti o con ".." senza fare richieste', async () => {
     const { http } = setup();
     const client = TestBed.inject(HttpDataClient);

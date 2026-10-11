@@ -204,14 +204,17 @@ export class ScreenRuntime {
     return this.dataSources()[name] ?? IDLE;
   }
 
-  /** Esegue un data source con gli argomenti dati (variabili disponibili a `url` e `params`). */
-  async execute(name: string, args: Record<string, unknown> = {}, scope: Scope = {}): Promise<CallResult> {
+  /**
+   * Esegue un data source con gli argomenti dati (variabili disponibili a `url` e `params`). Con `file` la richiesta
+   * diventa multipart: il file viaggia come file e non nel corpo JSON.
+   */
+  async execute(name: string, args: Record<string, unknown> = {}, scope: Scope = {}, file?: DataRequest['file']): Promise<CallResult> {
     const built = this.build(name, args, scope);
     if (!built.ok) {
       this.report(`call ${name}`, built.error);
       return { ok: false, error: built.error };
     }
-    return this.run(name, built.request);
+    return this.run(name, file && built.request.method !== 'GET' && built.request.method !== 'DELETE' ? { ...built.request, file } : built.request);
   }
 
   /**

@@ -276,9 +276,13 @@ export class MockDataClient extends DataClient {
       return { ...found };
     }
     if (path === '/api/allegati' && req.method === 'POST') {
-      // Un vero servizio salverebbe il contenuto; qui basta verificare che sia base64 e rispondere con un id.
-      const content = req.body?.['content'];
-      if (typeof content !== 'string' || !/^[A-Za-z0-9+/]*={0,2}$/.test(content)) throw new Error('400');
+      // Un vero servizio salverebbe il file; qui basta verificare che sia arrivato (come file o in base64) e rispondere con un id.
+      if (req.file) {
+        if (!(req.file.blob instanceof Blob) || req.file.blob.size !== req.body?.['size']) throw new Error('400');
+      } else {
+        const content = req.body?.['content'];
+        if (typeof content !== 'string' || !/^[A-Za-z0-9+/]*={0,2}$/.test(content)) throw new Error('400');
+      }
       this.attachments += 1;
       return { id: this.attachments };
     }
