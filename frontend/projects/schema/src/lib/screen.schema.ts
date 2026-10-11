@@ -576,6 +576,12 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                   "$ref": "#/$defs/action"
                 },
                 "description": "Azioni sulle righe selezionate, sopra la tabella. Le espressioni vedono `selection` (elenco delle righe scelte)."
+              },
+              "rowActionsInline": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 10,
+                "description": "Quante azioni di riga (visibili) mostrare come pulsanti; le altre finiscono nel menu «⋯». 0 = tutte nel menu; se manca, tutte pulsanti."
               }
             }
           }

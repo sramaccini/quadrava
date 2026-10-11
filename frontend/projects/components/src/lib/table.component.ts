@@ -2,11 +2,14 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, input, li
 import { I18n, formatValue, type FormatLabels, runSteps, type FormattedValue, type ScreenRuntime, type Scope } from 'core';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzButtonModule } from 'ng-zorro-antd/button';
+import { NzDropdownModule } from 'ng-zorro-antd/dropdown';
+import { NzMenuModule } from 'ng-zorro-antd/menu';
 import { NzPaginationModule } from 'ng-zorro-antd/pagination';
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import type { ActionDefinition, ColumnDefinition, SortSpec, TableColumnDefinition, TableNode } from 'schema';
+import { IconComponent } from './icon.component';
 import { TONE_COLORS } from './shared';
 import { asSort, sortRows, type Row } from './table-data';
 
@@ -21,11 +24,13 @@ const DEFAULT_PAGE_SIZE = 10;
  */
 @Component({
   selector: 'lc-table',
-  imports: [NzTableModule, NzTagModule, NzButtonModule, NzPaginationModule, NzAlertModule, NzTooltipModule],
+  imports: [IconComponent, NzTableModule, NzTagModule, NzButtonModule, NzDropdownModule, NzMenuModule, NzPaginationModule, NzAlertModule, NzTooltipModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     .wrap { overflow-x: auto; overflow-y: hidden; }
-    .actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    .more { padding-inline: 6px; }
+    .menu-row { display: inline-flex; align-items: center; gap: 8px; }
     .pager { display: flex; justify-content: flex-end; padding-top: var(--lc-gap, 12px); }
     .bulk { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding-bottom: var(--lc-gap, 12px); }
     .bulk .count { color: var(--lc-color-muted, #5d6b7a); margin-right: 4px; }
@@ -101,15 +106,30 @@ const DEFAULT_PAGE_SIZE = 10;
                 }
                 @if (node().rowActions?.length) {
                   <td>
+                    @let actions = actionsOf(row);
                     <div class="actions">
-                      @for (action of node().rowActions; track $index) {
-                        @if (runtime().isVisible(action, { row: row })) {
-                          <span nz-tooltip [nzTooltipTitle]="action.tooltip ? runtime().text(action.tooltip, { row: row }) : null">
-                            <button nz-button nzSize="small" type="button" [disabled]="busy() || !runtime().isEnabled(action, { row: row })" (click)="run(action, row)">
-                              {{ runtime().text(action.label, { row: row }) }}
-                            </button>
-                          </span>
-                        }
+                      @for (action of actions.inline; track $index) {
+                        <span nz-tooltip [nzTooltipTitle]="action.tooltip ? runtime().text(action.tooltip, { row: row }) : null">
+                          <button nz-button nzSize="small" type="button" [disabled]="busy() || !runtime().isEnabled(action, { row: row })" (click)="run(action, row)">
+                            {{ runtime().text(action.label, { row: row }) }}
+                          </button>
+                        </span>
+                      }
+                      @if (actions.menu.length) {
+                        <button nz-button nzSize="small" nzType="text" class="more" type="button" nz-dropdown nzTrigger="click" nzPlacement="bottomRight" [nzDropdownMenu]="rowMenu"
+                          [disabled]="busy()" [attr.aria-label]="i18n.t('lc.moreActions')" aria-haspopup="menu">
+                          <lc-icon name="more" />
+                        </button>
+                        <nz-dropdown-menu #rowMenu="nzDropdownMenu">
+                          <ul nz-menu>
+                            @for (action of actions.menu; track $index) {
+                              <li nz-menu-item class="lc-row-action" [nzDisabled]="!runtime().isEnabled(action, { row: row })" (click)="runtime().isEnabled(action, { row: row }) && run(action, row)"
+                                nz-tooltip nzTooltipPlacement="left" [nzTooltipTitle]="action.tooltip ? runtime().text(action.tooltip, { row: row }) : null">
+                                {{ runtime().text(action.label, { row: row }) }}
+                              </li>
+                            }
+                          </ul>
+                        </nz-dropdown-menu>
                       }
                     </div>
                   </td>
@@ -289,6 +309,14 @@ export class TableComponent {
 
   protected goTo(page: number): void {
     this.runtime().setState('page', Math.max(0, page));
+  }
+
+  /** Azioni visibili di una riga, divise tra pulsanti e menu «⋯» secondo `rowActionsInline`. */
+  protected actionsOf(row: Row): { inline: ActionDefinition[]; menu: ActionDefinition[] } {
+    const visible = (this.node().rowActions ?? []).filter((action) => this.runtime().isVisible(action, { row }));
+    const inline = this.node().rowActionsInline;
+    if (inline === undefined || visible.length <= inline) return { inline: visible, menu: [] };
+    return { inline: visible.slice(0, inline), menu: visible.slice(inline) };
   }
 
   protected async run(action: ActionDefinition, row: Record<string, unknown>): Promise<void> {

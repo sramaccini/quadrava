@@ -3,8 +3,13 @@ import {
   AppstoreOutline,
   QuestionCircleOutline,
   CheckCircleOutline,
+  CloseOutline,
+  DeleteOutline,
+  DownOutline,
+  EllipsisOutline,
   ContainerOutline,
   EuroOutline,
+  FilterOutline,
   FileAddOutline,
   FileTextOutline,
   FolderOutline,
@@ -13,11 +18,14 @@ import {
   LeftOutline,
   LogoutOutline,
   MenuOutline,
+  PaperClipOutline,
+  PlusOutline,
   RightOutline,
   SafetyOutline,
   SearchOutline,
   SettingOutline,
   UnorderedListOutline,
+  UploadOutline,
   UserOutline,
 } from '@ant-design/icons-angular/icons';
 import type { IconDefinition } from '@ant-design/icons-angular';
@@ -47,6 +55,14 @@ export const ICON_TYPES: Record<string, { type: string; icon: IconDefinition }> 
   left: { type: 'left', icon: LeftOutline },
   right: { type: 'right', icon: RightOutline },
   safety: { type: 'safety', icon: SafetyOutline },
+  more: { type: 'ellipsis', icon: EllipsisOutline },
+  plus: { type: 'plus', icon: PlusOutline },
+  delete: { type: 'delete', icon: DeleteOutline },
+  upload: { type: 'upload', icon: UploadOutline },
+  down: { type: 'down', icon: DownOutline },
+  filter: { type: 'filter', icon: FilterOutline },
+  attachment: { type: 'paper-clip', icon: PaperClipOutline },
+  close: { type: 'close', icon: CloseOutline },
 };
 
 /** Tipo NG-ZORRO di un nome di icona del set integrato, oppure `null` se il nome non è noto. */

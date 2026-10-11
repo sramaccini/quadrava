@@ -28,6 +28,11 @@
       "body": {
         "ids": "{{ids}}"
       }
+    },
+    "inviaFattura": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/fatture/{{id}}/invia"
     }
   },
   "components": [
@@ -189,6 +194,99 @@
                 },
                 {
                   "toast": "{{ t('vetrina_avanzate.fatture_inviate', 'Fatture inviate') }}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sezione-menu-azioni",
+      "type": "section",
+      "title": "{{ t('vetrina_avanzate.menu_azioni', 'Menu delle azioni di riga') }}",
+      "components": [
+        {
+          "id": "spiega-menu-azioni",
+          "type": "text",
+          "text": "{{ t('vetrina_avanzate.menu_azioni_spiega', 'Con rowActionsInline: 1 solo la prima azione visibile è un pulsante; le altre stanno nel menu «⋯». Le azioni non disponibili restano visibili ma disabilitate.') }}"
+        },
+        {
+          "id": "fatture-con-menu",
+          "type": "table",
+          "source": "fatture",
+          "rowActionsInline": 1,
+          "columns": [
+            {
+              "field": "numero",
+              "label": "{{ t('comune.numero', 'Numero') }}"
+            },
+            {
+              "field": "cliente",
+              "label": "{{ t('comune.cliente', 'Cliente') }}"
+            },
+            {
+              "field": "stato",
+              "label": "{{ t('comune.stato', 'Stato') }}",
+              "format": "badge",
+              "badges": {
+                "bozza": "neutral",
+                "inviata": "primary",
+                "pagata": "success"
+              },
+              "valueKey": "valori.stato"
+            }
+          ],
+          "rowActions": [
+            {
+              "id": "btn-invia",
+              "label": "{{ t('vetrina_avanzate.invia', 'Invia') }}",
+              "enabledIf": "{{ row.stato == 'bozza' }}",
+              "onClick": [
+                {
+                  "call": "inviaFattura",
+                  "args": {
+                    "id": "{{row.id}}"
+                  }
+                },
+                {
+                  "refresh": "fatture"
+                },
+                {
+                  "toast": "{{ t('vetrina_avanzate.fattura_inviata', 'Fattura {numero} inviata', {'numero': row.numero}) }}"
+                }
+              ]
+            },
+            {
+              "id": "btn-duplica",
+              "label": "{{ t('vetrina_avanzate.duplica', 'Duplica') }}",
+              "onClick": [
+                {
+                  "toast": "{{ t('vetrina_avanzate.duplicata', 'Copia di {numero} creata (esempio)', {'numero': row.numero}) }}"
+                }
+              ]
+            },
+            {
+              "id": "btn-sollecita",
+              "label": "{{ t('vetrina_avanzate.sollecita', 'Sollecita il pagamento') }}",
+              "tooltip": "{{ t('vetrina_avanzate.sollecita_aiuto', 'Solo per le fatture inviate e non pagate') }}",
+              "enabledIf": "{{ row.stato == 'inviata' }}",
+              "onClick": [
+                {
+                  "toast": "{{ t('vetrina_avanzate.sollecito_inviato', 'Sollecito inviato a {cliente}', {'cliente': row.cliente}) }}"
+                }
+              ]
+            },
+            {
+              "id": "btn-annulla",
+              "label": "{{ t('vetrina_avanzate.annulla_fattura', 'Annulla la fattura') }}",
+              "visibleIf": "{{ row.stato == 'bozza' }}",
+              "onClick": [
+                {
+                  "confirm": "{{ t('vetrina_avanzate.conferma_annulla', 'Annullare la fattura {numero}?', {'numero': row.numero}) }}"
+                },
+                {
+                  "toast": "{{ t('vetrina_avanzate.annullata', 'Annullamento simulato') }}"
                 }
               ]
             }

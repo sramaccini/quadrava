@@ -142,6 +142,8 @@ export interface TableNode extends NodeBase {
   /** Azioni sulle righe selezionate; le espressioni vedono `selection`. */
   bulkActions?: ActionDefinition[];
   rowActions?: ActionDefinition[];
+  /** Quante azioni di riga visibili mostrare come pulsanti; le altre vanno nel menu «⋯» (0 = tutte nel menu). */
+  rowActionsInline?: number;
 }
 export interface FormNode extends NodeBase {
   type: 'form';

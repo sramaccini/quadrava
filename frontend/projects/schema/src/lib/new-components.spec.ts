@@ -39,4 +39,14 @@ describe('schema dei componenti nuovi', () => {
       expect(issuesOf(table({ bulkActions: [{ label: 'Invia' }] })).length).toBeGreaterThan(0);
     });
   });
+
+  describe('menu delle azioni di riga', () => {
+    it('accetta un numero di pulsanti tra 0 e 10', () => {
+      expect(issuesOf(table({ rowActionsInline: 0 }))).toEqual([]);
+      expect(issuesOf(table({ rowActionsInline: 2 }))).toEqual([]);
+      expect(issuesOf(table({ rowActionsInline: -1 })).length).toBeGreaterThan(0);
+      expect(issuesOf(table({ rowActionsInline: 1.5 })).length).toBeGreaterThan(0);
+      expect(issuesOf(table({ rowActionsInline: 11 })).length).toBeGreaterThan(0);
+    });
+  });
 });

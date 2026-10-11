@@ -31,6 +31,7 @@ export const BUILTIN_MESSAGES: Record<string, Messages> = {
     'lc.selectedRows': '{n, plural, =0 {Nessuna riga selezionata} one {# riga selezionata} other {# righe selezionate}}',
     'lc.selectAll': 'Seleziona tutte le righe',
     'lc.selectRow': 'Seleziona la riga',
+    'lc.moreActions': 'Altre azioni',
   },
   en: {
     'lc.all': 'All',
@@ -58,5 +59,6 @@ export const BUILTIN_MESSAGES: Record<string, Messages> = {
     'lc.selectedRows': '{n, plural, =0 {No rows selected} one {# row selected} other {# rows selected}}',
     'lc.selectAll': 'Select all rows',
     'lc.selectRow': 'Select the row',
+    'lc.moreActions': 'More actions',
   },
 };

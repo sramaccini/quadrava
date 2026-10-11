@@ -51,5 +51,22 @@ describe('Vetrina: componenti avanzati', () => {
       await until(() => cells(el, 2, 3)[0] === 'Inviata' && cells(el, 2, 3)[3] === 'Inviata', 'fatture inviate');
       expect(el.querySelector('main .bulk .count')?.textContent).toContain('Nessuna riga selezionata');
     });
+
+    it('menu delle azioni: un pulsante per riga, le altre azioni nel menu «⋯»', async () => {
+      const { el, until } = await openShowcase('/vetrina/vetrina-tabelle-avanzate');
+      await until(() => cells(el, 3, 0).length === 8, 'fatture');
+      const rows = [...el.querySelectorAll('main nz-table')[3].querySelectorAll('tbody tr')];
+      const inline = (i: number): string[] => [...rows[i].querySelectorAll('.actions > span button')].map((b) => b.textContent!.trim());
+      expect(inline(0)).toEqual(['Invia']);
+      expect(inline(1)).toEqual(['Invia']);
+      expect((rows[1].querySelector('.actions > span button') as HTMLButtonElement).disabled).toBe(true);
+      (rows[1].querySelector('button.more') as HTMLButtonElement).click();
+      const items = (): HTMLElement[] => [...document.querySelectorAll<HTMLElement>('.ant-dropdown li.lc-row-action')];
+      await until(() => items().length === 2, 'menu della seconda riga');
+      expect(items().map((i) => i.textContent!.trim())).toEqual(['Duplica', 'Sollecita il pagamento']);
+      items()[1].click();
+      await until(() => !!document.querySelector('.ant-message-notice'), 'messaggio');
+      expect(document.querySelector('.ant-message-notice')?.textContent).toContain('Sollecito inviato a Bianchi SpA');
+    });
   });
 });
