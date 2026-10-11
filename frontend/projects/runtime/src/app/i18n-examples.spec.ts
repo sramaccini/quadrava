@@ -16,6 +16,7 @@ import vetrinaTabelleAvanzate from '../../public/examples/vetrina-tabelle-avanza
 import vetrinaCampi from '../../public/examples/vetrina-campi.json';
 import vetrinaCruscotto from '../../public/examples/vetrina-cruscotto.json';
 import vetrinaViste from '../../public/examples/vetrina-viste.json';
+import vetrinaDatatable from '../../public/examples/vetrina-datatable.json';
 import navigation from '../../public/examples/navigation.json';
 import catalogEn from '../../public/examples/i18n/en.json';
 import catalogIt from '../../public/examples/i18n/it.json';
@@ -36,6 +37,7 @@ const SCREENS: Record<string, unknown> = {
   'vetrina-campi': vetrinaCampi,
   'vetrina-cruscotto': vetrinaCruscotto,
   'vetrina-viste': vetrinaViste,
+  'vetrina-datatable': vetrinaDatatable,
 };
 
 /** Le stringhe di testo che compaiono in una schermata (etichette, titoli, messaggi…), per verificare che nessuna sia rimasta scritta in una sola lingua. */

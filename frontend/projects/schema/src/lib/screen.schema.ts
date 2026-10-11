@@ -522,7 +522,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
             "wizard",
             "tree",
             "calendar",
-            "chart"
+            "chart",
+            "dataTable"
           ]
         },
         "visibleIf": {
@@ -1186,6 +1187,67 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
               }
             }
           }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "dataTable"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "required": [
+              "source",
+              "columns"
+            ],
+            "properties": {
+              "source": {
+                "type": "string",
+                "description": "Data source con le righe da analizzare in pagina (tutte caricate: niente paginazione lato server)."
+              },
+              "columns": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "$ref": "#/$defs/dataColumn"
+                }
+              },
+              "groupBy": {
+                "type": "array",
+                "maxItems": 3,
+                "uniqueItems": true,
+                "items": {
+                  "type": "string"
+                },
+                "description": "Colonne di raggruppamento iniziali (groupable), in ordine."
+              },
+              "defaultSort": {
+                "$ref": "#/$defs/sortSpec"
+              },
+              "pageSize": {
+                "type": "integer",
+                "minimum": 5,
+                "maximum": 100,
+                "description": "Elementi per pagina, intestazioni dei gruppi comprese (10 se assente)."
+              },
+              "rowActions": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/action"
+                }
+              },
+              "rowActionsInline": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 10
+              }
+            }
+          }
         }
       ],
       "unevaluatedProperties": false
@@ -1545,6 +1607,26 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
           "description": "Colore della serie dal tema (altrimenti la tavolozza del grafico)."
         }
       }
+    },
+    "dataColumn": {
+      "type": "object",
+      "$ref": "#/$defs/tableColumnProps",
+      "properties": {
+        "filter": {
+          "enum": [
+            "text",
+            "select",
+            "number",
+            "date"
+          ],
+          "description": "Filtro nell’intestazione: testo (contiene), scelta tra i valori presenti, intervallo numerico o di date."
+        },
+        "groupable": {
+          "type": "boolean",
+          "description": "La colonna si può scegliere per raggruppare le righe."
+        }
+      },
+      "unevaluatedProperties": false
     }
   }
 };

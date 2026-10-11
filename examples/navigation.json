@@ -171,6 +171,11 @@
               "screen": "vetrina-tabelle-avanzate"
             },
             {
+              "id": "vetrina-datatable",
+              "label": "{{ t('nav.datatable', 'Datatable') }}",
+              "screen": "vetrina-datatable"
+            },
+            {
               "id": "vetrina-layout",
               "label": "{{ t('nav.schede_dettaglio_e_messaggi', 'Schede, dettaglio e messaggi') }}",
               "screen": "vetrina-layout"

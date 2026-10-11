@@ -212,4 +212,19 @@ describe('schema dei componenti nuovi', () => {
       expect(issuesOf(chart({ height: 100 })).length).toBeGreaterThan(0);
     });
   });
+
+  describe('datatable', () => {
+    const dt = (extra: Record<string, unknown>, columns: unknown[] = [{ field: 'a', filter: 'select', groupable: true, sortable: true, aggregate: 'count' }]) =>
+      screen([{ type: 'dataTable', source: 's', columns, ...extra }]);
+    it('accetta colonne filtrabili, ordinabili e raggruppabili, gruppi iniziali e paginazione', () => {
+      expect(issuesOf(dt({ groupBy: ['a'], defaultSort: { field: 'a', direction: 'asc' }, pageSize: 20, rowActionsInline: 1, rowActions: [{ label: 'X', onClick: [{ toast: 'x' }] }] }))).toEqual([]);
+    });
+    it('rifiuta filtri sconosciuti, più di tre gruppi, gruppi ripetuti e proprietà da tabella non previste', () => {
+      expect(issuesOf(dt({}, [{ field: 'a', filter: 'regex' }])).length).toBeGreaterThan(0);
+      expect(issuesOf(dt({ groupBy: ['a', 'b', 'c', 'd'] })).length).toBeGreaterThan(0);
+      expect(issuesOf(dt({ groupBy: ['a', 'a'] })).length).toBeGreaterThan(0);
+      expect(issuesOf(dt({ sort: { bind: 'state.x' } })).length).toBeGreaterThan(0);
+      expect(issuesOf(screen([{ type: 'table', source: 's', columns: [{ field: 'a', filter: 'text' }] }])).length).toBeGreaterThan(0);
+    });
+  });
 });

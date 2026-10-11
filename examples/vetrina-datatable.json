@@ -1,0 +1,117 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "vetrina-datatable",
+  "title": "{{ t('vetrina_datatable.titolo', 'Vetrina: datatable') }}",
+  "description": "{{ t('vetrina_datatable.descrizione', 'Colonne filtrabili, ordinabili e raggruppabili, con totali per gruppo.') }}",
+  "requires": "vetrina.componenti.leggi",
+  "dataSources": {
+    "movimenti": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/movimenti"
+    }
+  },
+  "components": [
+    {
+      "id": "titolo",
+      "type": "text",
+      "style": "heading",
+      "text": "{{ t('vetrina_datatable.intestazione', 'Datatable') }}"
+    },
+    {
+      "id": "sezione-movimenti",
+      "type": "section",
+      "title": "{{ t('vetrina_datatable.movimenti', 'Movimenti dei conti') }}",
+      "components": [
+        {
+          "id": "spiega-movimenti",
+          "type": "text",
+          "text": "{{ t('vetrina_datatable.spiega', 'Sessanta movimenti caricati una volta sola: filtra dall’icona nelle intestazioni, ordina con le frecce, scegli una o più colonne per raggruppare. Ogni gruppo mostra il numero di movimenti e il saldo.') }}"
+        },
+        {
+          "id": "datatable-movimenti",
+          "type": "dataTable",
+          "source": "movimenti",
+          "groupBy": [
+            "conto"
+          ],
+          "defaultSort": {
+            "field": "data",
+            "direction": "desc"
+          },
+          "pageSize": 15,
+          "rowActionsInline": 1,
+          "columns": [
+            {
+              "field": "data",
+              "label": "{{ t('vetrina_datatable.data', 'Data') }}",
+              "format": "date",
+              "sortable": true,
+              "filter": "date"
+            },
+            {
+              "field": "conto",
+              "label": "{{ t('vetrina_datatable.conto', 'Conto') }}",
+              "sortable": true,
+              "filter": "select",
+              "groupable": true
+            },
+            {
+              "field": "categoria",
+              "label": "{{ t('vetrina_datatable.categoria', 'Categoria') }}",
+              "filter": "select",
+              "groupable": true,
+              "aggregate": "count"
+            },
+            {
+              "field": "descrizione",
+              "label": "{{ t('comune.descrizione', 'Descrizione') }}",
+              "filter": "text"
+            },
+            {
+              "field": "stato",
+              "label": "{{ t('comune.stato', 'Stato') }}",
+              "format": "badge",
+              "badges": {
+                "registrato": "success",
+                "da-verificare": "danger"
+              },
+              "valueKey": "valori.movimento",
+              "filter": "select",
+              "groupable": true
+            },
+            {
+              "field": "importo",
+              "label": "{{ t('comune.importo', 'Importo') }}",
+              "format": "currency",
+              "sortable": true,
+              "filter": "number",
+              "aggregate": "sum"
+            }
+          ],
+          "rowActions": [
+            {
+              "id": "btn-verifica",
+              "label": "{{ t('vetrina_datatable.verifica', 'Verifica') }}",
+              "enabledIf": "{{ row.stato == 'da-verificare' }}",
+              "onClick": [
+                {
+                  "toast": "{{ t('vetrina_datatable.verificato', 'Movimento {d} verificato (esempio)', {'d': row.descrizione}) }}"
+                }
+              ]
+            },
+            {
+              "id": "btn-dettagli",
+              "label": "{{ t('vetrina_datatable.dettagli', 'Dettagli') }}",
+              "onClick": [
+                {
+                  "toast": "{{ t('vetrina_datatable.dettagli_msg', '{d}: {i}', {'d': dyn(row.descrizione), 'i': dyn(fmtCurrency(row.importo, 'EUR'))}) }}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

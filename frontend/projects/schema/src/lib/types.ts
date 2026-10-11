@@ -310,7 +310,24 @@ export interface ChartNode extends NodeBase {
   caption?: string;
 }
 
-export type NodeDefinition = SectionNode | TextNode | ButtonNode | FilterBarNode | TableNode | FormNode | TabsNode | DetailNode | AlertNode | StatsNode | WizardNode | TreeNode | CalendarNode | ChartNode;
+/** Colonna della datatable: in più filtro e raggruppamento. */
+export interface DataColumnDefinition extends TableColumnDefinition {
+  filter?: 'text' | 'select' | 'number' | 'date';
+  groupable?: boolean;
+}
+export interface DataTableNode extends NodeBase {
+  type: 'dataTable';
+  source: string;
+  columns: DataColumnDefinition[];
+  /** Colonne di raggruppamento iniziali, in ordine. */
+  groupBy?: string[];
+  defaultSort?: SortSpec;
+  pageSize?: number;
+  rowActions?: ActionDefinition[];
+  rowActionsInline?: number;
+}
+
+export type NodeDefinition = SectionNode | TextNode | ButtonNode | FilterBarNode | TableNode | FormNode | TabsNode | DetailNode | AlertNode | StatsNode | WizardNode | TreeNode | CalendarNode | ChartNode | DataTableNode;
 export type NodeType = NodeDefinition['type'];
 
 export interface ScreenDefinition {

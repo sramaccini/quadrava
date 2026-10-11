@@ -80,3 +80,108 @@ export function aggregate(rows: readonly Row[], field: string, kind: 'sum' | 'av
       return Math.max(...values);
   }
 }
+
+/** Filtro di una colonna della datatable. */
+export type ColumnFilter =
+  | { kind: 'text'; text: string }
+  | { kind: 'select'; values: unknown[] }
+  | { kind: 'number'; from: number | null; to: number | null }
+  | { kind: 'date'; from: string | null; to: string | null };
+
+/** Il filtro restringe davvero le righe? Un filtro vuoto non conta. */
+export function isActiveFilter(filter: ColumnFilter | undefined): boolean {
+  if (!filter) return false;
+  switch (filter.kind) {
+    case 'text':
+      return filter.text.trim() !== '';
+    case 'select':
+      return filter.values.length > 0;
+    default:
+      return filter.from !== null || filter.to !== null;
+  }
+}
+
+/**
+ * Righe che soddisfano tutti i filtri attivi. Testo: contiene (senza distinguere maiuscole e minuscole) nel testo
+ * mostrato o nel valore; scelta: uno dei valori; numero e data: dentro l'intervallo (estremi compresi). Un valore
+ * vuoto non soddisfa un filtro attivo.
+ */
+export function filterRows(rows: readonly Row[], filters: Readonly<Record<string, ColumnFilter>>, shown: (row: Row, field: string) => string): Row[] {
+  const active = Object.entries(filters).filter(([, f]) => isActiveFilter(f));
+  if (active.length === 0) return [...rows];
+  return rows.filter((row) =>
+    active.every(([field, filter]) => {
+      const value = row[field];
+      switch (filter.kind) {
+        case 'text': {
+          if (value === null || value === undefined || value === '') return false;
+          const needle = filter.text.trim().toLowerCase();
+          return shown(row, field).toLowerCase().includes(needle) || String(value).toLowerCase().includes(needle);
+        }
+        case 'select':
+          return filter.values.includes(value);
+        case 'number': {
+          const n = numeric(value);
+          return n !== null && (filter.from === null || n >= filter.from) && (filter.to === null || n <= filter.to);
+        }
+        case 'date': {
+          const day = typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value) ? value.slice(0, 10) : null;
+          return day !== null && (filter.from === null || day >= filter.from) && (filter.to === null || day <= filter.to);
+        }
+      }
+    }),
+  );
+}
+
+/** Valori distinti di una colonna, in ordine (per il filtro a scelta). */
+export function distinctValues(rows: readonly Row[], field: string, locale = 'it-IT'): unknown[] {
+  const seen = new Set<unknown>();
+  for (const row of rows) {
+    const v = row[field];
+    if (v !== null && v !== undefined && v !== '') seen.add(v);
+  }
+  return [...seen].sort((a, b) => compareValues(a, b, locale));
+}
+
+export interface RowGroup {
+  /** Chiave univoca del gruppo (percorso dei valori), per aprirlo e chiuderlo. */
+  key: string;
+  field: string;
+  value: unknown;
+  level: number;
+  rows: Row[];
+  children: RowGroup[];
+}
+
+/** Raggruppa le righe per i campi dati, in ordine; i gruppi sono in ordine di valore, le righe restano nel loro ordine. */
+export function groupRows(rows: readonly Row[], fields: readonly string[], locale = 'it-IT', level = 0, parent = ''): RowGroup[] {
+  if (level >= fields.length) return [];
+  const field = fields[level];
+  const buckets = new Map<unknown, Row[]>();
+  for (const row of rows) {
+    const value = row[field] ?? null;
+    const bucket = buckets.get(value);
+    if (bucket) bucket.push(row);
+    else buckets.set(value, [row]);
+  }
+  return [...buckets.entries()]
+    .sort(([a], [b]) => compareValues(a, b, locale))
+    .map(([value, items]) => {
+      const key = `${parent}/${field}=${JSON.stringify(value)}`;
+      return { key, field, value, level, rows: items, children: groupRows(items, fields, locale, level + 1, key) };
+    });
+}
+
+export type DisplayItem = { kind: 'group'; group: RowGroup } | { kind: 'row'; row: Row; level: number };
+
+/** Elenco da disegnare: intestazioni dei gruppi e righe, saltando il contenuto dei gruppi chiusi. */
+export function flattenGroups(groups: readonly RowGroup[], collapsed: ReadonlySet<string>, depth: number): DisplayItem[] {
+  const out: DisplayItem[] = [];
+  for (const group of groups) {
+    out.push({ kind: 'group', group });
+    if (collapsed.has(group.key)) continue;
+    if (group.children.length) out.push(...flattenGroups(group.children, collapsed, depth));
+    else for (const row of group.rows) out.push({ kind: 'row', row, level: depth });
+  }
+  return out;
+}

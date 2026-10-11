@@ -326,4 +326,36 @@ describe('Vetrina: componenti avanzati', () => {
       expect(TestBed.inject(DemoDiagnostics).events()).toEqual([]);
     });
   });
+
+  describe('datatable', () => {
+    it('movimenti raggruppati per conto, con totali; un filtro per stato e il raggruppamento cambiano la vista', { timeout: 20000 }, async () => {
+      const { el, until, settle } = await openShowcase('/vetrina/vetrina-datatable');
+      const dt = (): HTMLElement => el.querySelector('main lc-data-table') as HTMLElement;
+      const groups = (): string[] => [...dt().querySelectorAll('tr.group-row .group-label')].map((g) => plainText(g.textContent));
+      await until(() => groups().length > 0, 'gruppi');
+      expect(plainText(dt().querySelector('.count')?.textContent)).toBe('60 di 60 righe');
+      expect(groups()[0]).toMatch(/^Conto: Banca Intesa \(\d+\)$/);
+      expect(dt().querySelector('tfoot')?.textContent).toContain('Totale');
+      // Filtro: solo i movimenti da verificare.
+      (([...dt().querySelectorAll<HTMLElement>('th')].find((th) => th.textContent?.trim().startsWith('Stato'))!.querySelector('nz-filter-trigger span')) as HTMLElement).click();
+      const panel = (): HTMLElement | undefined => [...document.querySelectorAll<HTMLElement>('.ant-dropdown .filter-panel')].find((p) => p.getAttribute('aria-label') === 'Filtra Stato');
+      await until(() => !!panel(), 'filtro');
+      const options = [...panel()!.querySelectorAll<HTMLElement>('label[nz-checkbox]')];
+      expect(options.map((o) => plainText(o.textContent))).toEqual(['Da verificare', 'Registrato']);
+      (options[0].querySelector('input') as HTMLInputElement).click();
+      await until(() => plainText(dt().querySelector('.count')?.textContent) !== '60 di 60 righe', 'filtrati');
+      expect(plainText(dt().querySelector('.count')?.textContent)).toBe('7 di 60 righe');
+      document.querySelectorAll('.cdk-overlay-container').forEach((c) => (c.innerHTML = ''));
+      // Raggruppamento: anche per categoria.
+      await openSelect(dt().querySelector('.toolbar nz-select')!, settle);
+      await until(() => document.querySelectorAll('.ant-select-item-option').length > 0, 'opzioni');
+      ([...document.querySelectorAll<HTMLElement>('.ant-select-item-option')].find((o) => o.textContent?.trim() === 'Categoria'))!.click();
+      await until(() => groups().some((g) => g.startsWith('Categoria:')), 'due livelli');
+      // La riga «Verifica» è abilitata solo per i movimenti da verificare.
+      const verify = [...dt().querySelectorAll<HTMLButtonElement>('lc-row-actions .actions > span button')];
+      expect(verify.length).toBeGreaterThan(0);
+      expect(verify.every((b) => !b.disabled)).toBe(true);
+      expect(TestBed.inject(DemoDiagnostics).events()).toEqual([]);
+    });
+  });
 });

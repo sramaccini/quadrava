@@ -18,6 +18,7 @@ import { SectionComponent } from './section.component';
 import { StatsComponent } from './stats.component';
 import { CalendarComponent } from './calendar.component';
 import { ChartComponent } from './chart.component';
+import { DataTableComponent } from './data-table.component';
 import { TreeComponent } from './tree.component';
 import { WizardComponent } from './wizard.component';
 import { TableComponent } from './table.component';
@@ -65,6 +66,7 @@ export const STANDARD_COMPONENTS: ComponentCatalog = {
   tree: TreeComponent,
   calendar: CalendarComponent,
   chart: ChartComponent,
+  dataTable: DataTableComponent,
 };
 
 /**

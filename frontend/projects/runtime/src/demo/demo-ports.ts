@@ -107,6 +107,25 @@ export class MockDataClient extends DataClient {
     'Marino Edilizia|Bari', 'Greco Trasporti|Palermo', 'Gallo Energia|Padova', 'Conti Software|Trento',
   ].map((entry, i) => ({ id: i + 1, nome: entry.split('|')[0], citta: entry.split('|')[1] }));
   private attachments = 0;
+  /** Movimenti per la datatable: 60 righe deterministiche su tre conti e sei categorie, da luglio a ottobre 2026. */
+  private readonly movements = Array.from({ length: 60 }, (_, i) => {
+    const categorie = ['Affitti', 'Utenze', 'Stipendi', 'Incassi clienti', 'Fornitori', 'Spese varie'];
+    const categoria = categorie[(i * 7) % categorie.length];
+    const entrata = categoria === 'Incassi clienti';
+    const base = { Affitti: 1800, Utenze: 240, Stipendi: 3100, 'Incassi clienti': 2600, Fornitori: 950, 'Spese varie': 75 }[categoria] ?? 100;
+    const importo = Math.round((base + ((i * 37) % 11) * (base / 20)) * 100) / 100;
+    const mese = 7 + (i % 4);
+    const giorno = 1 + ((i * 5) % 27);
+    return {
+      id: 1000 + i,
+      data: `2026-${String(mese).padStart(2, '0')}-${String(giorno).padStart(2, '0')}`,
+      conto: ['Banca Intesa', 'Banca Sella', 'Cassa'][i % 3 === 2 && categoria !== 'Spese varie' ? 0 : i % 3],
+      categoria,
+      descrizione: `${categoria} ${['luglio', 'agosto', 'settembre', 'ottobre'][mese - 7]} n. ${i + 1}`,
+      importo: entrata ? importo : -importo,
+      stato: i % 9 === 4 ? 'da-verificare' : 'registrato',
+    };
+  });
   private readonly contacts: { id: number; nome: string; email: string; ruolo: string }[] = [
     { id: 1, nome: 'Anna Conti', email: 'anna.conti@example.com', ruolo: 'acquisti' },
     { id: 2, nome: 'Luca Fabbri', email: 'luca.fabbri@example.com', ruolo: 'amministrazione' },
@@ -215,6 +234,7 @@ export class MockDataClient extends DataClient {
         { id: 'per', nome: 'Personale', voci: 35, figli: [{ id: 'per-tra', nome: 'Trasferte', voci: 25, figli: [leaf('per-tra-tre', 'Treni', 10), leaf('per-tra-hot', 'Hotel', 15)] }, leaf('per-for', 'Formazione', 10)] },
       ];
     }
+    if (path === '/api/movimenti' && req.method === 'GET') return this.movements.map((m) => ({ ...m }));
     if (path === '/api/vendite-mensili' && req.method === 'GET') {
       // Dodici mesi del 2026 con un andamento stagionale riconoscibile.
       return Array.from({ length: 12 }, (_, i) => ({
