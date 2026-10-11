@@ -1,0 +1,63 @@
+<nav class="outline" [attr.aria-label]="i18n.t('ed.outline')">
+  <h2 class="panel-title">{{ i18n.t('ed.outline') }}</h2>
+  <button type="button" class="row screen" [class.selected]="isSelected([])" [attr.aria-current]="isSelected([]) ? 'true' : null" (click)="store.select([])">
+    <span nz-icon nzType="layout" aria-hidden="true"></span>
+    <span class="label">{{ i18n.t('ed.screen') }}</span>
+    <span class="detail">{{ screenLabel() }}</span>
+    @if (screenSeverity(); as s) {
+      <span class="mark" [class]="s" [attr.title]="i18n.t('ed.has.' + s)" [attr.aria-label]="i18n.t('ed.has.' + s)"></span>
+    }
+  </button>
+  @if (items().length) {
+    <ng-container [ngTemplateOutlet]="branch" [ngTemplateOutletContext]="{ $implicit: items(), level: 1 }" />
+  } @else {
+    <p class="empty">{{ i18n.t('ed.outlineEmpty') }}</p>
+  }
+</nav>
+
+<ng-template #branch let-items let-level="level">
+  <ul class="branch">
+    @for (item of items; track item.path.join('/')) {
+      <li>
+        <div class="line" [class.selected]="isSelected(item.path)" [class.ancestor]="containsSelection(item.path)" [style.--level]="level">
+          <button type="button" class="row" [attr.aria-current]="isSelected(item.path) ? 'true' : null" (click)="store.select(item.path)" [attr.data-path]="item.path.join('/')">
+            <span class="label" [class.container-item]="item.kind !== 'node'">{{ item.label }}</span>
+            <span class="detail">{{ item.detail }}</span>
+            @if (item.severity; as s) {
+              <span class="mark" [class]="s" [attr.title]="i18n.t('ed.has.' + s)" [attr.aria-label]="i18n.t('ed.has.' + s)"></span>
+            }
+          </button>
+          @if (isSelected(item.path)) {
+            <span class="tools">
+              <button nz-button nzType="text" nzSize="small" type="button" [disabled]="item.first" (click)="store.move(item.path, -1)" [attr.aria-label]="i18n.t('ed.moveUp')" [nz-tooltip]="i18n.t('ed.moveUp')">
+                <span nz-icon nzType="arrow-up"></span>
+              </button>
+              <button nz-button nzType="text" nzSize="small" type="button" [disabled]="item.last" (click)="store.move(item.path, 1)" [attr.aria-label]="i18n.t('ed.moveDown')" [nz-tooltip]="i18n.t('ed.moveDown')">
+                <span nz-icon nzType="arrow-down"></span>
+              </button>
+              <button nz-button nzType="text" nzSize="small" type="button" (click)="store.duplicate(item.path)" [attr.aria-label]="i18n.t('ed.duplicate')" [nz-tooltip]="i18n.t('ed.duplicate')">
+                <span nz-icon nzType="copy"></span>
+              </button>
+              @if (item.kind === 'node') {
+                <button nz-button nzType="text" nzSize="small" type="button" (click)="store.cut(item.path)" [attr.aria-label]="i18n.t('ed.cut')" [nz-tooltip]="i18n.t('ed.cut')">
+                  <span nz-icon nzType="scissor"></span>
+                </button>
+              }
+              @if (item.canAddItem) {
+                <button nz-button nzType="text" nzSize="small" type="button" (click)="store.addContainerItem(item.path)" [attr.aria-label]="i18n.t(item.type === 'tabs' ? 'ed.addTab' : 'ed.addStep')" [nz-tooltip]="i18n.t(item.type === 'tabs' ? 'ed.addTab' : 'ed.addStep')">
+                  <span nz-icon nzType="plus"></span>
+                </button>
+              }
+              <button nz-button nzType="text" nzSize="small" nzDanger type="button" (click)="store.remove(item.path)" [attr.aria-label]="i18n.t('ed.delete')" [nz-tooltip]="i18n.t('ed.delete')">
+                <span nz-icon nzType="delete"></span>
+              </button>
+            </span>
+          }
+        </div>
+        @if (item.children.length) {
+          <ng-container [ngTemplateOutlet]="branch" [ngTemplateOutletContext]="{ $implicit: item.children, level: level + 1 }" />
+        }
+      </li>
+    }
+  </ul>
+</ng-template>

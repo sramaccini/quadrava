@@ -1,0 +1,16 @@
+:host { display: block; padding: 12px; overflow: auto; height: 100%; }
+.head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.intro { margin: 0; color: var(--lc-color-muted); font-size: 13px; max-width: 70ch; }
+.source { padding: 12px; margin-bottom: 12px; border: 1px solid var(--lc-color-border); border-radius: var(--lc-radius); background: var(--lc-color-surface); }
+.row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; }
+.cell { display: flex; flex-direction: column; gap: 2px; }
+.name { width: 160px; }
+.method, .paging { width: 110px; }
+.url { flex: 1; min-width: 200px; }
+label { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; font-weight: 600; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px; margin-top: 8px; }
+.sample label { font-family: var(--lc-font-family); }
+.help { margin: 2px 0 0; color: var(--lc-color-muted); font-size: 12px; }
+.issue { margin: 4px 0 0; color: var(--lc-color-danger); font-size: 12px; }
+.empty { color: var(--lc-color-muted); }
+nz-select { width: 100%; }

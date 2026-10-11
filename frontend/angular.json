@@ -105,7 +105,12 @@
               }
             ],
             "styles": [
+              "node_modules/ng-zorro-antd/ng-zorro-antd.variable.min.css",
               "projects/editor/src/styles.scss"
+            ],
+            "allowedCommonJsDependencies": [
+              "ajv",
+              "ajv/dist/2020.js"
             ]
           },
           "configurations": {
@@ -113,8 +118,8 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "500kB",
-                  "maximumError": "1MB"
+                  "maximumWarning": "2.5MB",
+                  "maximumError": "4MB"
                 },
                 {
                   "type": "anyComponentStyle",

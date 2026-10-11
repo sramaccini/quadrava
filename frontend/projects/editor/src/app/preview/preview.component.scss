@@ -1,0 +1,16 @@
+:host { display: flex; flex-direction: column; min-height: 0; height: 100%; }
+.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--lc-color-border); background: var(--lc-color-surface); }
+.switch { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+.params { padding: 8px 12px; border-bottom: 1px solid var(--lc-color-border); background: var(--lc-color-surface); font-size: 12px; }
+.log {
+  margin: 0; padding: 8px 12px 8px 32px; max-height: 160px; overflow: auto; border-bottom: 1px solid var(--lc-color-border);
+  background: var(--lc-color-surface); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px;
+}
+.log .kind { font-weight: 600; }
+.log .diagnostic { color: var(--lc-color-danger); }
+.log .none { list-style: none; margin-left: -20px; color: var(--lc-color-muted); font-family: var(--lc-font-family); }
+.stale { margin: 8px 12px 0; }
+.stage { flex: 1; min-height: 0; overflow: auto; background: var(--lc-color-background); }
+.frame { margin: 0 auto; min-height: 100%; background: var(--lc-color-background); }
+.frame.narrow { box-shadow: 0 0 0 1px var(--lc-color-border); }
+.empty { padding: 24px; color: var(--lc-color-muted); }

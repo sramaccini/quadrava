@@ -1,0 +1,63 @@
+<section class="sources" [attr.aria-label]="i18n.t('ed.tabs.sources')">
+  <div class="head">
+    <p class="intro">{{ i18n.t('ed.sources.intro') }}</p>
+    <button nz-button nzType="primary" nzSize="small" type="button" (click)="add()"><span nz-icon nzType="plus"></span>{{ i18n.t('ed.sources.add') }}</button>
+  </div>
+  @for (source of sources(); track source.name) {
+    <article class="source" [attr.aria-label]="source.name">
+      <div class="row">
+        <div class="cell name">
+          <label [attr.for]="'src-name-' + source.name">{{ i18n.t('ed.sources.name') }}</label>
+          <input #nameInput nz-input nzSize="small" [id]="'src-name-' + source.name" [value]="source.name" (change)="rename(source.name, nameInput)" spellcheck="false" />
+        </div>
+        <div class="cell method">
+          <label [attr.for]="'src-method-' + source.name">method</label>
+          <nz-select nzSize="small" [nzId]="'src-method-' + source.name" [ngModel]="source.value['method']" (ngModelChange)="set(source.name, 'method', $event)">
+            @for (m of methods; track m) {
+              <nz-option [nzValue]="m" [nzLabel]="m" />
+            }
+          </nz-select>
+        </div>
+        <div class="cell url">
+          <label [attr.for]="'src-url-' + source.name">url</label>
+          <input nz-input nzSize="small" [id]="'src-url-' + source.name" [value]="text(source.value['url'])" (input)="set(source.name, 'url', $any($event.target).value)" spellcheck="false" />
+        </div>
+        <div class="cell paging">
+          <label [attr.for]="'src-paging-' + source.name">paging</label>
+          <nz-select nzSize="small" nzAllowClear [nzId]="'src-paging-' + source.name" [nzPlaceHolder]="i18n.t('ed.unset')" [ngModel]="source.value['paging'] ?? null" (ngModelChange)="set(source.name, 'paging', $event ?? undefined)">
+            <nz-option nzValue="server" nzLabel="server" />
+            <nz-option nzValue="none" nzLabel="none" />
+          </nz-select>
+        </div>
+        <button nz-button nzType="text" nzDanger nzSize="small" type="button" class="remove" (click)="store.removeSource(source.name)" [attr.aria-label]="i18n.t('ed.sources.remove', { name: source.name })">
+          <span nz-icon nzType="delete"></span>
+        </button>
+      </div>
+      @if (renameError() === source.name) {
+        <p class="issue" role="alert">{{ i18n.t('ed.sources.nameInvalid') }}</p>
+      }
+      <div class="grid">
+        <div>
+          <label [attr.for]="'src-params-' + source.name">params</label>
+          <ed-json-field [fieldId]="'src-params-' + source.name" [value]="source.value['params']" [minRows]="2" (valueChange)="set(source.name, 'params', $event)" />
+        </div>
+        @if (source.hasBody) {
+          <div>
+            <label [attr.for]="'src-body-' + source.name">body</label>
+            <ed-json-field [fieldId]="'src-body-' + source.name" [value]="source.value['body']" [allowExpression]="true" [minRows]="2" (valueChange)="set(source.name, 'body', $event)" />
+          </div>
+        }
+        <div class="sample">
+          <label [attr.for]="'src-sample-' + source.name">{{ i18n.t('ed.sources.sample') }}</label>
+          <ed-json-field [fieldId]="'src-sample-' + source.name" [value]="store.samples()[source.name]" [minRows]="2" (valueChange)="store.setSample(source.name, $event)" />
+          <p class="help">{{ i18n.t('ed.sources.sampleHint') }}</p>
+        </div>
+      </div>
+      @for (message of source.issues; track $index) {
+        <p class="issue" role="alert">{{ message }}</p>
+      }
+    </article>
+  } @empty {
+    <p class="empty">{{ i18n.t('ed.sources.empty') }}</p>
+  }
+</section>

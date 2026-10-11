@@ -1,0 +1,45 @@
+<div class="bar" role="toolbar" [attr.aria-label]="i18n.t('ed.tabs.preview')">
+  <nz-segmented [nzOptions]="widthOptions()" [ngModel]="width()" (ngModelChange)="width.set($event)" nzSize="small" [attr.aria-label]="i18n.t('ed.preview.width')" />
+  <label class="switch">
+    <nz-switch nzSize="small" [ngModel]="session.grantAll()" (ngModelChange)="setGrantAll($event)" />
+    {{ i18n.t('ed.preview.grantAll') }}
+  </label>
+  <button nz-button nzSize="small" type="button" (click)="showParams.set(!showParams())" [attr.aria-expanded]="showParams()">{{ i18n.t('ed.preview.params') }}</button>
+  <button nz-button nzSize="small" type="button" (click)="showLog.set(!showLog())" [attr.aria-expanded]="showLog()">
+    {{ i18n.t('ed.preview.log') }} ({{ log.events().length }})
+  </button>
+  <button nz-button nzSize="small" type="button" (click)="reload()"><span nz-icon nzType="reload"></span>{{ i18n.t('ed.preview.reload') }}</button>
+</div>
+
+@if (showParams()) {
+  <div class="params">
+    <label for="preview-params">{{ i18n.t('ed.preview.paramsHint') }}</label>
+    <ed-json-field fieldId="preview-params" [value]="$any(params())" [minRows]="2" (valueChange)="setParams($event)" />
+  </div>
+}
+
+@if (showLog()) {
+  <ol class="log" [attr.aria-label]="i18n.t('ed.preview.log')">
+    @for (event of log.events(); track $index) {
+      <li [class]="event.kind"><span class="kind">{{ i18n.t('ed.preview.event.' + event.kind) }}</span> {{ event.text }}</li>
+    } @empty {
+      <li class="none">{{ i18n.t('ed.preview.noEvents') }}</li>
+    }
+  </ol>
+}
+
+@if (stale()) {
+  <nz-alert nzType="warning" nzShowIcon [nzMessage]="i18n.t('ed.preview.invalid')" class="stale" />
+}
+
+<div class="stage">
+  <div class="frame" [style.width.px]="frameWidth()" [class.narrow]="frameWidth() !== null">
+    @if (shown(); as definition) {
+      @for (v of [version()]; track v) {
+        <lc-screen [definition]="definition" [params]="params()" />
+      }
+    } @else {
+      <p class="empty">{{ i18n.t('ed.preview.empty') }}</p>
+    }
+  </div>
+</div>

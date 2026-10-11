@@ -6,6 +6,12 @@
       "runtimeExecutable": "cmd",
       "runtimeArgs": ["/c", "cd /d frontend && fnm exec --using=24.21.0 npx.cmd ng serve runtime --port 4300"],
       "port": 4300
+    },
+    {
+      "name": "editor",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "cd /d frontend && fnm exec --using=24.21.0 npx.cmd ng serve editor --port 4301"],
+      "port": 4301
     }
   ]
 }
