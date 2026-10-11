@@ -70,6 +70,7 @@ export const BUILTIN_MESSAGES: Record<string, Messages> = {
     'lc.to': 'A',
     'lc.reset': 'Azzera',
     'lc.toggleGroup': 'Apri o chiudi il gruppo {label}',
+    'lc.tree': 'Albero',
   },
   en: {
     'lc.all': 'All',
@@ -136,5 +137,6 @@ export const BUILTIN_MESSAGES: Record<string, Messages> = {
     'lc.to': 'To',
     'lc.reset': 'Reset',
     'lc.toggleGroup': 'Expand or collapse the group {label}',
+    'lc.tree': 'Tree',
   },
 };

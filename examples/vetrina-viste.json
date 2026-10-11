@@ -173,7 +173,7 @@
         {
           "id": "spiega-albero",
           "type": "text",
-          "text": "{{ t('vetrina_viste.albero_spiega', 'Categorie di spesa su più livelli. Scegli una categoria (anche con Invio) o cerca: le parti trovate sono evidenziate.') }}"
+          "text": "{{ t('vetrina_viste.albero_spiega', 'Categorie di spesa su più livelli. Scegli una categoria o cerca: le parti trovate sono evidenziate. Da tastiera: frecce per spostarsi, aprire e chiudere i rami, Home e Fine, Invio per scegliere.') }}"
         },
         {
           "id": "albero-categorie",

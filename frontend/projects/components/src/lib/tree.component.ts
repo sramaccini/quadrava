@@ -1,8 +1,8 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, input, linkedSignal, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { I18n, runSteps, type ScreenRuntime, type Scope } from 'core';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
-import type { NzTreeNodeOptions } from 'ng-zorro-antd/core/tree';
+import type { NzTreeNode, NzTreeNodeOptions } from 'ng-zorro-antd/core/tree';
 import { NzInputModule } from 'ng-zorro-antd/input';
 import { NzTreeModule } from 'ng-zorro-antd/tree';
 import type { TreeNode } from 'schema';
@@ -30,6 +30,9 @@ export function highlight(text: string, search: string): { text: string; match: 
  * Vista ad albero sui dati di un data source (nodi radice con i figli annidati). Il titolo dei nodi è sempre testo:
  * il titolo predefinito di NG-ZORRO, durante la ricerca, lo inserirebbe come HTML. La scelta di un nodo scrive la sua
  * chiave nello stato (`bind`) ed esegue `onSelect` con il nodo in `row`.
+ * Da tastiera (modello WAI-ARIA «tree»): frecce su e giù tra i nodi visibili, destra apre il ramo o entra nel primo
+ * figlio, sinistra chiude il ramo o risale al genitore, Home e Fine, Invio o spazio scelgono. Un solo nodo alla volta
+ * è raggiungibile con Tab.
  */
 @Component({
   selector: 'lc-tree',
@@ -59,11 +62,24 @@ export function highlight(text: string, search: string): { text: string; match: 
           [nzExpandedKeys]="expanded()"
           [nzSelectedKeys]="selected()"
           [nzTreeTemplate]="title"
+          role="tree"
+          [attr.aria-label]="i18n.t('lc.tree')"
           (nzExpandChange)="expanded.set($event.keys ?? [])"
           (nzClick)="choose($event.node?.key)"
         />
         <ng-template #title let-node>
-          <span class="title" tabindex="0" (keydown.enter)="choose(node.key)" (keydown.space)="$event.preventDefault(); choose(node.key)">
+          <span
+            class="title"
+            role="treeitem"
+            [attr.data-key]="node.key"
+            [attr.data-shown]="shown(node)"
+            [attr.aria-level]="node.level + 1"
+            [attr.aria-expanded]="node.isLeaf ? null : expanded().includes(node.key)"
+            [attr.aria-selected]="selected().includes(node.key)"
+            [attr.tabindex]="node.key === focusKey() ? 0 : -1"
+            (focus)="focusKey.set(node.key)"
+            (keydown)="onKey($event, node)"
+          >
             <!-- Parti su una sola riga: gli a capo diventerebbero spazi dentro le parole. -->
             @for (part of parts(node.title); track $index) {@if (part.match) {<mark>{{ part.text }}</mark>} @else {<span>{{ part.text }}</span>}}
           </span>
@@ -151,6 +167,63 @@ export class TreeComponent {
     const current = this.current();
     return current === null || current === undefined ? [] : [String(current)];
   });
+
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+  /** Nodo raggiungibile con Tab: quello scelto, altrimenti il primo; poi segue il focus. */
+  protected readonly focusKey = linkedSignal<string | null>(() => this.selected()[0] ?? this.nodes()[0]?.key ?? null);
+
+  protected onKey(event: KeyboardEvent, node: NzTreeNode): void {
+    // Solo i nodi visibili: i figli di un ramo chiuso possono restare nel documento durante l'animazione.
+    const titles = [...this.host.querySelectorAll<HTMLElement>('.title[data-key][data-shown="true"]')];
+    const index = titles.findIndex((t) => t.dataset['key'] === node.key);
+    const open = this.expanded().includes(node.key);
+    switch (event.key) {
+      case 'ArrowDown':
+        this.focus(titles[index + 1]);
+        break;
+      case 'ArrowUp':
+        this.focus(titles[index - 1]);
+        break;
+      case 'Home':
+        this.focus(titles[0]);
+        break;
+      case 'End':
+        this.focus(titles.at(-1));
+        break;
+      case 'ArrowRight':
+        if (node.isLeaf) break;
+        if (open) this.focus(titles[index + 1]);
+        else this.expanded.update((keys) => [...keys, node.key]);
+        break;
+      case 'ArrowLeft':
+        if (!node.isLeaf && open) this.expanded.update((keys) => keys.filter((k) => k !== node.key));
+        else if (node.parentNode) this.focus(titles.find((t) => t.dataset['key'] === node.parentNode!.key));
+        break;
+      case 'Enter':
+      case ' ':
+        void this.choose(node.key);
+        break;
+      default:
+        return;
+    }
+    event.preventDefault();
+  }
+
+  /** Un nodo si vede se tutti i suoi antenati sono aperti; durante una ricerca contano anche i rami aperti da NG-ZORRO. */
+  protected shown(node: NzTreeNode): boolean {
+    const open = this.expanded();
+    const searching = this.search().trim() !== '';
+    for (let parent = node.parentNode; parent; parent = parent.parentNode) {
+      if (!open.includes(parent.key) && !(searching && parent.isExpanded)) return false;
+    }
+    return true;
+  }
+
+  private focus(title: HTMLElement | undefined): void {
+    if (!title) return;
+    this.focusKey.set(title.dataset['key'] ?? null);
+    title.focus();
+  }
 
   protected parts(title: unknown): { text: string; match: boolean }[] {
     return highlight(String(title ?? ''), this.search());

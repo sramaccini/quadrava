@@ -61,4 +61,53 @@ describe('vista ad albero', () => {
     // Nessuno spazio aggiunto tra la parte trovata e il resto della parola.
     expect(h.el.querySelector('lc-tree mark')?.closest('.title')?.textContent?.trim()).toBe('Legali');
   });
+
+  it('da tastiera: frecce, Home e Fine si spostano, destra e sinistra aprono e chiudono, Invio sceglie; Tab raggiunge un solo nodo', async () => {
+    const h = await renderScreen({ components: [tree()], dataSources, respond: () => data });
+    await h.until(() => titles(h).length > 0, 'albero');
+    const key = (k: string, el: HTMLElement): void => {
+      el.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
+    };
+    const focused = (): string => plain((document.activeElement as HTMLElement | null)?.textContent);
+    const tabbable = (): string[] => [...h.el.querySelectorAll<HTMLElement>('lc-tree .title[tabindex="0"]')].map((t) => plain(t.textContent));
+    expect(h.el.querySelector('nz-tree')?.getAttribute('role')).toBe('tree');
+    expect(tabbable()).toEqual(['Acquisti']);
+    const acquisti = title(h, 'Acquisti');
+    expect(acquisti.getAttribute('aria-expanded')).toBe('true');
+    expect(acquisti.getAttribute('aria-level')).toBe('1');
+    acquisti.focus();
+    key('ArrowDown', acquisti);
+    await h.settle();
+    expect(focused()).toBe('Cancelleria <b>x</b>');
+    expect(tabbable()).toEqual(['Cancelleria <b>x</b>']);
+    key('ArrowLeft', document.activeElement as HTMLElement);
+    await h.settle();
+    expect(focused()).toBe('Acquisti');
+    // Sinistra su un ramo aperto lo chiude.
+    key('ArrowLeft', title(h, 'Acquisti'));
+    await h.settle();
+    expect(title(h, 'Acquisti').getAttribute('aria-expanded')).toBe('false');
+    expect(title(h, 'Informatica').getAttribute('data-shown')).toBe('false');
+    // Destra lo riapre, poi entra nel primo figlio.
+    key('ArrowRight', title(h, 'Acquisti'));
+    await h.settle();
+    expect(title(h, 'Informatica').getAttribute('data-shown')).toBe('true');
+    key('ArrowRight', title(h, 'Acquisti'));
+    await h.settle();
+    expect(focused()).toBe('Cancelleria <b>x</b>');
+    key('End', document.activeElement as HTMLElement);
+    await h.settle();
+    expect(focused()).toBe('Consulenze');
+    // Consulenze ha figli chiusi: destra apre il ramo e mostra «Legali».
+    key('ArrowRight', document.activeElement as HTMLElement);
+    await h.settle();
+    expect(titles(h)).toContain('Legali');
+    key('Home', document.activeElement as HTMLElement);
+    await h.settle();
+    expect(focused()).toBe('Acquisti');
+    key(' ', document.activeElement as HTMLElement);
+    await h.until(() => h.toasts.length === 1, 'scelta con lo spazio');
+    expect(h.toasts).toEqual(['scelta Acquisti']);
+    expect(title(h, 'Acquisti').getAttribute('aria-selected')).toBe('true');
+  });
 });

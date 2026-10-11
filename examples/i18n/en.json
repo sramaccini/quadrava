@@ -316,7 +316,7 @@
   "vetrina_tabelle.una_barra_di_filtri_scrive_nello": "A filter bar writes into the screen state; the table reloads by itself when the filters change. Rows have actions conditioned by permissions and by the row state.",
   "vetrina_tabelle.vetrina_filtri_e_tabelle": "Showcase: filters and tables",
   "vetrina_viste.albero": "Tree view",
-  "vetrina_viste.albero_spiega": "Expense categories on several levels. Pick a category (Enter works too) or search: matches are highlighted.",
+  "vetrina_viste.albero_spiega": "Expense categories on several levels. Pick a category or search: matches are highlighted. With the keyboard: arrows to move, expand and collapse, Home and End, Enter to pick.",
   "vetrina_viste.calendario": "Calendar",
   "vetrina_viste.calendario_spiega": "The month's due dates, coloured by status. When the month changes the calendar writes YYYY-MM to the state and the service loads only that month.",
   "vetrina_viste.categoria_corrente": "Chosen code: {c}",
