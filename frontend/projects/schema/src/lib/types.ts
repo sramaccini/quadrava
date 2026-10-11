@@ -276,7 +276,21 @@ export interface TreeNode extends NodeBase {
   onSelect?: Step[];
 }
 
-export type NodeDefinition = SectionNode | TextNode | ButtonNode | FilterBarNode | TableNode | FormNode | TabsNode | DetailNode | AlertNode | StatsNode | WizardNode | TreeNode;
+export interface CalendarNode extends NodeBase {
+  type: 'calendar';
+  source: string;
+  dateField: string;
+  labelField: string;
+  badgeField?: string;
+  badges?: Record<string, Tone>;
+  /** Stato con il mese visibile (AAAA-MM). */
+  bind?: StatePath;
+  maxPerDay?: number;
+  /** Passi al clic su un evento (l'evento è `row`). */
+  onSelect?: Step[];
+}
+
+export type NodeDefinition = SectionNode | TextNode | ButtonNode | FilterBarNode | TableNode | FormNode | TabsNode | DetailNode | AlertNode | StatsNode | WizardNode | TreeNode | CalendarNode;
 export type NodeType = NodeDefinition['type'];
 
 export interface ScreenDefinition {

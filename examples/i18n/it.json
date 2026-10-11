@@ -294,6 +294,8 @@
   "vetrina_tabelle.vetrina_filtri_e_tabelle": "Vetrina: filtri e tabelle",
   "vetrina_viste.albero": "Vista ad albero",
   "vetrina_viste.albero_spiega": "Categorie di spesa su più livelli. Scegli una categoria (anche con Invio) o cerca: le parti trovate sono evidenziate.",
+  "vetrina_viste.calendario": "Calendario",
+  "vetrina_viste.calendario_spiega": "Le scadenze del mese, colorate per stato. Cambiando mese il calendario scrive AAAA-MM nello stato e il servizio carica solo quel mese.",
   "vetrina_viste.categoria_corrente": "Codice scelto: {c}",
   "vetrina_viste.categoria_scelta": "{nome}: {n} voci di spesa",
   "vetrina_viste.continua": "Continua",
@@ -310,6 +312,7 @@
   "vetrina_viste.pronto_invio": "Tutto pronto: invia la richiesta.",
   "vetrina_viste.richiesta_inviata": "Richiesta inviata",
   "vetrina_viste.riepilogo": "Oggetto: {o}. Priorità: {p}.",
+  "vetrina_viste.scadenza": "{titolo}: {importo}",
   "vetrina_viste.titolo": "Vetrina: procedure e viste",
   "vetrina_viste.wizard": "Procedura a passi"
 }

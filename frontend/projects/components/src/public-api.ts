@@ -18,6 +18,7 @@ export * from './lib/alert.component';
 export * from './lib/stats.component';
 export * from './lib/wizard.component';
 export * from './lib/tree.component';
+export * from './lib/calendar.component';
 export * from './lib/tabs.component';
 export * from './lib/dialog-confirmation';
 export * from './lib/dialog-form';

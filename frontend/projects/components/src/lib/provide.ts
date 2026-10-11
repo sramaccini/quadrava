@@ -16,6 +16,7 @@ import { FormComponent } from './form.component';
 import { ICON_TYPES } from './icon.component';
 import { SectionComponent } from './section.component';
 import { StatsComponent } from './stats.component';
+import { CalendarComponent } from './calendar.component';
 import { TreeComponent } from './tree.component';
 import { WizardComponent } from './wizard.component';
 import { TableComponent } from './table.component';
@@ -61,6 +62,7 @@ export const STANDARD_COMPONENTS: ComponentCatalog = {
   stats: StatsComponent,
   wizard: WizardComponent,
   tree: TreeComponent,
+  calendar: CalendarComponent,
 };
 
 /**

@@ -299,5 +299,20 @@ describe('Vetrina: componenti avanzati', () => {
       await until(() => !!el.querySelector('main')?.textContent?.includes('Codice scelto: ser-man'), 'stato aggiornato');
       expect(TestBed.inject(DemoDiagnostics).events()).toEqual([]);
     });
+
+    it('calendario: scadenze del mese con «+n», apertura di una scadenza e mese successivo', async () => {
+      const { el, until } = await openShowcase('/vetrina/vetrina-viste');
+      const events = (): HTMLButtonElement[] => [...el.querySelectorAll<HTMLButtonElement>('main lc-calendar button.event')];
+      await until(() => events().length > 0, 'scadenze');
+      // Il giorno 8 ha quattro scadenze: tre visibili e «+1 altri».
+      expect(el.querySelector('main lc-calendar .more')?.textContent?.trim()).toBe('+1 altri');
+      events().find((b) => b.textContent?.includes('Stipendi'))!.click();
+      await until(() => !!document.querySelector('.ant-message-notice'), 'messaggio');
+      expect(document.querySelector('.ant-message-notice')?.textContent).toContain('Stipendi: 1470,00');
+      const title = el.querySelector('main lc-calendar .header h3')?.textContent;
+      (el.querySelector('main lc-calendar button[aria-label="Mese successivo"]') as HTMLButtonElement).click();
+      await until(() => el.querySelector('main lc-calendar .header h3')?.textContent !== title && events().length > 0, 'mese successivo');
+      expect(TestBed.inject(DemoDiagnostics).events()).toEqual([]);
+    });
   });
 });

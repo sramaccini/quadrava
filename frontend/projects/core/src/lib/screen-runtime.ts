@@ -111,6 +111,12 @@ export class ScreenRuntime {
         this.seedFilters(node.components);
       } else if (node.type === 'tabs') {
         for (const tab of node.tabs) this.seedFilters(tab.components);
+      } else if (node.type === 'calendar') {
+        // Il calendario parte dal mese corrente.
+        if (node.bind && this.getState(node.bind) === undefined) {
+          const now = new Date();
+          this.setState(node.bind, `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`);
+        }
       } else if (node.type === 'tree') {
         if (node.bind && this.getState(node.bind) === undefined) this.setState(node.bind, null);
       } else if (node.type === 'wizard') {

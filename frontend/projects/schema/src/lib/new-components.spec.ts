@@ -187,4 +187,15 @@ describe('schema dei componenti nuovi', () => {
       expect(issuesOf(screen([{ type: 'tree', source: 's', labelField: 'n', trascinabile: true }])).length).toBeGreaterThan(0);
     });
   });
+
+  describe('calendario', () => {
+    it('accetta un calendario con colori, stato del mese e passi al clic', () => {
+      expect(issuesOf(screen([{ type: 'calendar', source: 's', dateField: 'data', labelField: 'titolo', badgeField: 'stato', badges: { scaduta: 'danger' }, bind: 'state.mese', maxPerDay: 2, onSelect: [{ toast: 'x' }] }]))).toEqual([]);
+    });
+    it('rifiuta calendari senza campi essenziali, toni sconosciuti o limiti fuori misura', () => {
+      expect(issuesOf(screen([{ type: 'calendar', source: 's', labelField: 't' }])).length).toBeGreaterThan(0);
+      expect(issuesOf(screen([{ type: 'calendar', source: 's', dateField: 'd', labelField: 't', badges: { x: 'rosso' } }])).length).toBeGreaterThan(0);
+      expect(issuesOf(screen([{ type: 'calendar', source: 's', dateField: 'd', labelField: 't', maxPerDay: 0 }])).length).toBeGreaterThan(0);
+    });
+  });
 });

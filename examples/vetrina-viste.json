@@ -9,6 +9,14 @@
       "type": "rest",
       "method": "GET",
       "url": "/api/categorie"
+    },
+    "scadenze": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/scadenze",
+      "params": {
+        "mese": "{{ state.mese }}"
+      }
     }
   },
   "components": [
@@ -186,6 +194,38 @@
           "id": "categoria-corrente",
           "type": "text",
           "text": "{{ t('vetrina_viste.categoria_corrente', 'Codice scelto: {c}', {'c': state.categoria == null ? '—' : state.categoria}) }}"
+        }
+      ]
+    },
+    {
+      "id": "sezione-calendario",
+      "type": "section",
+      "title": "{{ t('vetrina_viste.calendario', 'Calendario') }}",
+      "components": [
+        {
+          "id": "spiega-calendario",
+          "type": "text",
+          "text": "{{ t('vetrina_viste.calendario_spiega', 'Le scadenze del mese, colorate per stato. Cambiando mese il calendario scrive AAAA-MM nello stato e il servizio carica solo quel mese.') }}"
+        },
+        {
+          "id": "calendario-scadenze",
+          "type": "calendar",
+          "source": "scadenze",
+          "dateField": "data",
+          "labelField": "titolo",
+          "badgeField": "stato",
+          "badges": {
+            "scaduta": "danger",
+            "pagata": "success",
+            "da-pagare": "primary"
+          },
+          "bind": "state.mese",
+          "maxPerDay": 3,
+          "onSelect": [
+            {
+              "toast": "{{ t('vetrina_viste.scadenza', '{titolo}: {importo}', {'titolo': dyn(row.titolo), 'importo': dyn(fmtCurrency(row.importo, 'EUR'))}) }}"
+            }
+          ]
         }
       ]
     }

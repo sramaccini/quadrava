@@ -56,6 +56,10 @@ export const BUILTIN_MESSAGES: Record<string, Messages> = {
     'lc.back': 'Indietro',
     'lc.stepOf': 'Passo {n} di {total}',
     'lc.search': 'Cerca',
+    'lc.previousMonth': 'Mese precedente',
+    'lc.nextMonth': 'Mese successivo',
+    'lc.today': 'Oggi',
+    'lc.moreEvents': '+{n} altri',
   },
   en: {
     'lc.all': 'All',
@@ -108,5 +112,9 @@ export const BUILTIN_MESSAGES: Record<string, Messages> = {
     'lc.back': 'Back',
     'lc.stepOf': 'Step {n} of {total}',
     'lc.search': 'Search',
+    'lc.previousMonth': 'Previous month',
+    'lc.nextMonth': 'Next month',
+    'lc.today': 'Today',
+    'lc.moreEvents': '+{n} more',
   },
 };

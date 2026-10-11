@@ -197,6 +197,16 @@ export class MockDataClient extends DataClient {
       invoice.stato = 'inviata';
       return {};
     }
+    if (path === '/api/scadenze' && req.method === 'GET') {
+      // Scadenze finte per qualunque mese AAAA-MM: sempre gli stessi giorni, con stati diversi.
+      const mese = String(req.query?.['mese'] ?? '');
+      if (!/^\d{4}-\d{2}$/.test(mese)) return [];
+      const voci: [number, string, string][] = [
+        [3, 'Affitto ufficio', 'pagata'], [8, 'F24 contributi', 'da-pagare'], [8, 'Fornitore Bruni', 'scaduta'], [8, 'Leasing auto', 'da-pagare'],
+        [8, 'Assicurazione', 'pagata'], [12, 'Utenze', 'da-pagare'], [15, 'Stipendi', 'da-pagare'], [22, 'Fornitore Colombo', 'scaduta'], [28, 'IVA trimestrale', 'da-pagare'],
+      ];
+      return voci.map(([giorno, titolo, stato], i) => ({ id: i + 1, data: `${mese}-${String(giorno).padStart(2, '0')}`, titolo, stato, importo: 150 + i * 220 }));
+    }
     if (path === '/api/categorie' && req.method === 'GET') {
       const leaf = (id: string, nome: string, voci: number): Record<string, unknown> => ({ id, nome, voci, figli: [] });
       return [
