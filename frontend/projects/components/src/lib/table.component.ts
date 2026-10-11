@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, linkedSignal, signal, untracked } from '@angular/core';
 import { I18n, formatValue, type FormatLabels, runSteps, type FormattedValue, type ScreenRuntime, type Scope } from 'core';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzButtonModule } from 'ng-zorro-antd/button';
@@ -27,6 +27,8 @@ const DEFAULT_PAGE_SIZE = 10;
     .wrap { overflow-x: auto; overflow-y: hidden; }
     .actions { display: flex; gap: 6px; flex-wrap: wrap; }
     .pager { display: flex; justify-content: flex-end; padding-top: var(--lc-gap, 12px); }
+    .bulk { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding-bottom: var(--lc-gap, 12px); }
+    .bulk .count { color: var(--lc-color-muted, #5d6b7a); margin-right: 4px; }
     .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   `,
   template: `
@@ -34,6 +36,20 @@ const DEFAULT_PAGE_SIZE = 10;
       @if (source().status === 'error') {
         <div role="alert"><nz-alert nzType="error" [nzMessage]="source().error ?? null" nzShowIcon /></div>
       } @else {
+        @if (node().bulkActions?.length) {
+          <div class="bulk" role="toolbar" [attr.aria-label]="i18n.t('lc.actions')">
+            <span class="count" aria-live="polite">{{ i18n.t('lc.selectedRows', { n: selectedRows().length }) }}</span>
+            @for (action of node().bulkActions; track $index) {
+              @if (runtime().isVisible(action, bulkScope())) {
+                <span nz-tooltip [nzTooltipTitle]="action.tooltip ? runtime().text(action.tooltip, bulkScope()) : null">
+                  <button nz-button type="button" [nzLoading]="busy()" [disabled]="busy() || !runtime().isEnabled(action, bulkScope())" (click)="runBulk(action)">
+                    {{ runtime().text(action.label, bulkScope()) }}
+                  </button>
+                </span>
+              }
+            }
+          </div>
+        }
         <div class="wrap">
         <nz-table
           nzSize="middle"
@@ -45,6 +61,9 @@ const DEFAULT_PAGE_SIZE = 10;
         >
           <thead>
             <tr>
+              @if (node().selection) {
+                <th nzWidth="48px" [nzChecked]="allSelected()" [nzIndeterminate]="someSelected()" [nzLabel]="i18n.t('lc.selectAll')" (nzCheckedChange)="selectAll($event)"></th>
+              }
               @for (column of columns(); track column.field) {
                 <th
                   scope="col"
@@ -59,13 +78,16 @@ const DEFAULT_PAGE_SIZE = 10;
                 >{{ runtime().text(column.label, scope()) || column.field }}</th>
               }
               @if (node().rowActions?.length) {
-                <th scope="col"><span class="visually-hidden">Azioni</span></th>
+                <th scope="col"><span class="visually-hidden">{{ i18n.t('lc.actions') }}</span></th>
               }
             </tr>
           </thead>
           <tbody>
             @for (row of rows(); track $index) {
-              <tr>
+              <tr [class.ant-table-row-selected]="isSelected(row)">
+                @if (node().selection) {
+                  <td [nzChecked]="isSelected(row)" [nzLabel]="i18n.t('lc.selectRow')" (nzCheckedChange)="toggle(row, $event)"></td>
+                }
                 @for (column of columns(); track column.field) {
                   <td [nzAlign]="numeric(column) ? 'right' : 'left'">
                     @if (cell(row, column); as view) {
@@ -166,6 +188,66 @@ export class TableComponent {
     const total = (this.source().data as { total?: unknown } | null)?.total;
     return typeof total === 'number' ? total : (this.page() + 1) * this.pageSize();
   });
+
+  /** Campo che identifica una riga nella selezione. */
+  private readonly key = computed(() => this.node().selection?.key ?? 'id');
+  /** Chiavi delle righe selezionate, dallo stato della schermata. */
+  private readonly selectedKeys = computed<unknown[]>(() => {
+    const selection = this.node().selection;
+    const value = selection ? this.runtime().getState(selection.bind) : null;
+    return Array.isArray(value) ? value : [];
+  });
+  protected readonly selectedRows = computed<Row[]>(() => {
+    const keys = new Set(this.selectedKeys());
+    const key = this.key();
+    return this.rows().filter((row) => keys.has(row[key]));
+  });
+  protected readonly allSelected = computed(() => this.rows().length > 0 && this.selectedRows().length === this.rows().length);
+  protected readonly someSelected = computed(() => this.selectedRows().length > 0 && !this.allSelected());
+  /** Le azioni multiple vedono le righe selezionate in `selection`. */
+  protected readonly bulkScope = computed<Scope>(() => ({ ...this.scope(), selection: this.selectedRows() }));
+
+  constructor() {
+    // La selezione vale per le righe caricate: le chiavi che non ci sono più (nuova pagina, nuovi filtri, righe tolte) si scartano.
+    effect(() => {
+      const selection = this.node().selection;
+      if (!selection || this.source().status !== 'ready') return;
+      const key = this.key();
+      const present = new Set(this.loaded().map((row) => row[key]));
+      const keys = untracked(() => this.selectedKeys());
+      const kept = keys.filter((k) => present.has(k));
+      if (kept.length !== keys.length) untracked(() => this.runtime().setState(selection.bind, kept));
+    });
+  }
+
+  protected isSelected(row: Row): boolean {
+    return this.node().selection ? this.selectedKeys().includes(row[this.key()]) : false;
+  }
+
+  protected toggle(row: Row, checked: boolean): void {
+    const selection = this.node().selection;
+    if (!selection) return;
+    const value = row[this.key()];
+    const keys = this.selectedKeys().filter((k) => k !== value);
+    this.runtime().setState(selection.bind, checked ? [...keys, value] : keys);
+  }
+
+  protected selectAll(checked: boolean): void {
+    const selection = this.node().selection;
+    if (!selection) return;
+    const key = this.key();
+    this.runtime().setState(selection.bind, checked ? this.rows().map((row) => row[key]) : []);
+  }
+
+  protected async runBulk(action: ActionDefinition): Promise<void> {
+    if (this.busy()) return;
+    this.busy.set(true);
+    try {
+      await runSteps(this.runtime(), action.onClick, this.bulkScope());
+    } finally {
+      this.busy.set(false);
+    }
+  }
 
   protected cell(row: Record<string, unknown>, column: ColumnDefinition): FormattedValue {
     return formatValue(row[column.field], column, this.i18n.intlLocale(), this.labels());

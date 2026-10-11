@@ -28,5 +28,28 @@ describe('Vetrina: componenti avanzati', () => {
       await until(() => /^1.?195/.test(cells(el, 1, 3)[0] ?? ''), 'importo decrescente');
       expect(diagnostics.events(), JSON.stringify(diagnostics.events())).toEqual([]);
     });
+
+    it('selezione: due bozze inviate insieme, con conferma; con una fattura già inviata l’azione resta disabilitata', async () => {
+      const { el, until } = await openShowcase('/vetrina/vetrina-tabelle-avanzate');
+      const table = (): Element => el.querySelectorAll('main nz-table')[2];
+      const boxes = (): HTMLInputElement[] => [...table().querySelectorAll<HTMLInputElement>('input[type="checkbox"]')];
+      const send = (): HTMLButtonElement => [...el.querySelectorAll<HTMLButtonElement>('main .bulk button')].find((b) => b.textContent?.includes('Invia le selezionate'))!;
+      await until(() => cells(el, 2, 1).length === 8, 'fatture');
+      expect(cells(el, 2, 3).slice(0, 4)).toEqual(['Bozza', 'Inviata', 'Pagata', 'Bozza']);
+      boxes()[2].click(); // riga 2: inviata
+      await until(() => !!el.querySelector('main .bulk .count')?.textContent?.includes('1 riga'), 'una riga');
+      expect(send().disabled).toBe(true);
+      boxes()[2].click();
+      boxes()[1].click();
+      boxes()[4].click();
+      await until(() => !!el.querySelector('main .bulk .count')?.textContent?.includes('2 righe'), 'due righe');
+      expect(send().disabled).toBe(false);
+      send().click();
+      await until(() => !!document.querySelector('.ant-modal-confirm-btns'), 'conferma');
+      expect(document.querySelector('.ant-modal-confirm-content')?.textContent).toContain('Inviare 2 fatture?');
+      ([...document.querySelectorAll('.ant-modal-confirm-btns')].at(-1)!.querySelectorAll('button')[1] as HTMLButtonElement).click();
+      await until(() => cells(el, 2, 3)[0] === 'Inviata' && cells(el, 2, 3)[3] === 'Inviata', 'fatture inviate');
+      expect(el.querySelector('main .bulk .count')?.textContent).toContain('Nessuna riga selezionata');
+    });
   });
 });

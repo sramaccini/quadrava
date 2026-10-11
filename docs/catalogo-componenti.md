@@ -35,7 +35,7 @@ L'ordine è quello di realizzazione. Lo stato si aggiorna a ogni componente comp
 | # | Componente | Area | Stato |
 | --- | --- | --- | --- |
 | 1 | Ordinamento delle colonne | tabella | realizzato |
-| 2 | Selezione delle righe e azioni multiple | tabella | da fare |
+| 2 | Selezione delle righe e azioni multiple | tabella | realizzato |
 | 3 | Menu delle azioni di riga | tabella | da fare |
 | 4 | Righe di dettaglio espandibili | tabella | da fare |
 | 5 | Formato numerico, celle cliccabili, riga dei totali | tabella | da fare |

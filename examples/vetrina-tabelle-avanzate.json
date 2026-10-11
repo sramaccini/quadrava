@@ -20,6 +20,14 @@
       "type": "rest",
       "method": "GET",
       "url": "/api/fatture"
+    },
+    "inviaFatture": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/fatture/invia",
+      "body": {
+        "ids": "{{ids}}"
+      }
     }
   },
   "components": [
@@ -111,6 +119,78 @@
               "label": "{{ t('comune.importo', 'Importo') }}",
               "format": "currency",
               "sortable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sezione-selezione",
+      "type": "section",
+      "title": "{{ t('vetrina_avanzate.selezione', 'Selezione e azioni multiple') }}",
+      "components": [
+        {
+          "id": "spiega-selezione",
+          "type": "text",
+          "text": "{{ t('vetrina_avanzate.selezione_spiega', 'Scegli le fatture con le caselle. «Invia le selezionate» si abilita solo se tutte le righe scelte sono bozze.') }}"
+        },
+        {
+          "id": "fatture-selezionabili",
+          "type": "table",
+          "source": "fatture",
+          "selection": {
+            "bind": "state.fattureScelte"
+          },
+          "columns": [
+            {
+              "field": "numero",
+              "label": "{{ t('comune.numero', 'Numero') }}"
+            },
+            {
+              "field": "cliente",
+              "label": "{{ t('comune.cliente', 'Cliente') }}"
+            },
+            {
+              "field": "stato",
+              "label": "{{ t('comune.stato', 'Stato') }}",
+              "format": "badge",
+              "badges": {
+                "bozza": "neutral",
+                "inviata": "primary",
+                "pagata": "success"
+              },
+              "valueKey": "valori.stato"
+            }
+          ],
+          "bulkActions": [
+            {
+              "id": "btn-invia-selezionate",
+              "label": "{{ t('vetrina_avanzate.invia_selezionate', 'Invia le selezionate') }}",
+              "tooltip": "{{ t('vetrina_avanzate.invia_selezionate_aiuto', 'Solo le bozze si possono inviare') }}",
+              "enabledIf": "{{ size(selection) > 0 && selection.all(r, r.stato == 'bozza') }}",
+              "onClick": [
+                {
+                  "confirm": "{{ t('vetrina_avanzate.conferma_invio', 'Inviare {n, plural, one {# fattura} other {# fatture}}?', {'n': size(selection)}) }}"
+                },
+                {
+                  "call": "inviaFatture",
+                  "args": {
+                    "ids": "{{ selection.map(r, r.id) }}"
+                  }
+                },
+                {
+                  "set": {
+                    "path": "state.fattureScelte",
+                    "value": []
+                  }
+                },
+                {
+                  "refresh": "fatture"
+                },
+                {
+                  "toast": "{{ t('vetrina_avanzate.fatture_inviate', 'Fatture inviate') }}"
+                }
+              ]
             }
           ]
         }

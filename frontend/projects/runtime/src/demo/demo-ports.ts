@@ -165,6 +165,13 @@ export class MockDataClient extends DataClient {
       this.invoices.unshift({ id, numero: String(body['numero']), cliente: String(body['cliente']), tipo: String(body['tipo'] ?? 'attiva'), importo: Number(body['importo'] ?? 0), stato: 'bozza', emessa: '2026-10-07', incassata: false });
       return { id };
     }
+    if (path === '/api/fatture/invia' && req.method === 'POST') {
+      const ids = Array.isArray(req.body?.['ids']) ? (req.body['ids'] as unknown[]) : [];
+      const drafts = this.invoices.filter((f) => ids.includes(f.id) && f.stato === 'bozza');
+      if (drafts.length !== ids.length) throw new Error('409');
+      drafts.forEach((f) => (f.stato = 'inviata'));
+      return { inviate: drafts.length };
+    }
     const send = /^\/api\/fatture\/(\d+)\/invia$/.exec(path);
     if (send && req.method === 'POST') {
       const invoice = this.invoices.find((f) => f.id === Number(send[1]));

@@ -552,6 +552,30 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                     "description": "Ordinamento all'apertura della schermata."
                   }
                 }
+              },
+              "selection": {
+                "type": "object",
+                "required": [
+                  "bind"
+                ],
+                "additionalProperties": false,
+                "description": "Selezione delle righe: le chiavi delle righe scelte stanno nello stato `bind`; le azioni multiple vedono le righe intere in `selection`.",
+                "properties": {
+                  "bind": {
+                    "$ref": "#/$defs/statePath"
+                  },
+                  "key": {
+                    "type": "string",
+                    "description": "Campo che identifica la riga (id se assente)."
+                  }
+                }
+              },
+              "bulkActions": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/action"
+                },
+                "description": "Azioni sulle righe selezionate, sopra la tabella. Le espressioni vedono `selection` (elenco delle righe scelte)."
               }
             }
           }

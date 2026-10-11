@@ -82,7 +82,7 @@ export class ScreenRuntime {
     }
   }
 
-  /** Filtri dichiarati (nulli) e ordinamenti predefiniti esistono nello stato prima del primo caricamento. */
+  /** Filtri dichiarati (nulli), ordinamenti predefiniti e selezioni (vuote) esistono nello stato prima del primo caricamento. */
   private seedFilters(nodes: readonly NodeDefinition[]): void {
     for (const node of nodes) {
       if (node.type === 'filterBar') {
@@ -93,6 +93,8 @@ export class ScreenRuntime {
       } else if (node.type === 'table') {
         const sort = node.sort;
         if (sort?.bind && this.getState(sort.bind) === undefined) this.setState(sort.bind, sort.default ? { ...sort.default } : null);
+        const selection = node.selection;
+        if (selection && this.getState(selection.bind) === undefined) this.setState(selection.bind, []);
       } else if (node.type === 'section') {
         this.seedFilters(node.components);
       } else if (node.type === 'tabs') {

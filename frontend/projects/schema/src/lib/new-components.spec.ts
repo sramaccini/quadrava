@@ -27,4 +27,16 @@ describe('schema dei componenti nuovi', () => {
       expect(issuesOf(screen([{ type: 'detail', source: 's', fields: [{ field: 'numero', sortable: true }] }])).length).toBeGreaterThan(0);
     });
   });
+
+  describe('selezione e azioni multiple', () => {
+    it('accetta selezione con chiave e azioni multiple', () => {
+      expect(issuesOf(table({ selection: { bind: 'state.scelte', key: 'codice' }, bulkActions: [{ label: 'Invia', onClick: [{ toast: 'ok' }] }] }))).toEqual([]);
+    });
+
+    it('rifiuta selezioni senza stato o con proprietà estranee', () => {
+      expect(issuesOf(table({ selection: { key: 'id' } })).length).toBeGreaterThan(0);
+      expect(issuesOf(table({ selection: { bind: 'state.x', multipla: true } })).length).toBeGreaterThan(0);
+      expect(issuesOf(table({ bulkActions: [{ label: 'Invia' }] })).length).toBeGreaterThan(0);
+    });
+  });
 });

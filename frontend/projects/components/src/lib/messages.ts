@@ -27,6 +27,10 @@ export const BUILTIN_MESSAGES: Record<string, Messages> = {
     'lc.forbidden': 'Non hai i permessi per visualizzare questa schermata.',
     'lc.operationFailed': 'Operazione non riuscita',
     'lc.loadFailed': 'Caricamento non riuscito',
+    'lc.actions': 'Azioni',
+    'lc.selectedRows': '{n, plural, =0 {Nessuna riga selezionata} one {# riga selezionata} other {# righe selezionate}}',
+    'lc.selectAll': 'Seleziona tutte le righe',
+    'lc.selectRow': 'Seleziona la riga',
   },
   en: {
     'lc.all': 'All',
@@ -50,5 +54,9 @@ export const BUILTIN_MESSAGES: Record<string, Messages> = {
     'lc.forbidden': 'You do not have permission to view this screen.',
     'lc.operationFailed': 'Operation failed',
     'lc.loadFailed': 'Loading failed',
+    'lc.actions': 'Actions',
+    'lc.selectedRows': '{n, plural, =0 {No rows selected} one {# row selected} other {# rows selected}}',
+    'lc.selectAll': 'Select all rows',
+    'lc.selectRow': 'Select the row',
   },
 };

@@ -15,6 +15,8 @@ export interface EvalContext {
   form?: Record<string, unknown>;
   /** Valore del campo in validazione. */
   value?: unknown;
+  /** Righe selezionate di una tabella (nelle azioni multiple). */
+  selection?: Record<string, unknown>[];
 }
 
 /** Fonte dei permessi dell'utente: nel runtime è il servizio di autorizzazione. */

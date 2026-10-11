@@ -137,6 +137,10 @@ export interface TableNode extends NodeBase {
   columns: TableColumnDefinition[];
   /** Ordinamento: con paging server lo scrive nello stato `bind` per il servizio, altrimenti ordina in pagina. */
   sort?: { bind?: StatePath; default?: SortSpec };
+  /** Selezione delle righe: chiavi nello stato `bind` (campo `key`, id se assente). */
+  selection?: { bind: StatePath; key?: string };
+  /** Azioni sulle righe selezionate; le espressioni vedono `selection`. */
+  bulkActions?: ActionDefinition[];
   rowActions?: ActionDefinition[];
 }
 export interface FormNode extends NodeBase {
