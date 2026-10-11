@@ -257,7 +257,8 @@ export class ScreenRuntime {
     const source = this.definition.dataSources?.[name];
     if (!source) return { ok: false, error: `data source sconosciuto: ${name}` };
     // Gli argomenti hanno la precedenza sulle variabili del punto da cui parte la chiamata (row, form).
-    const ctx = this.context({ ...scope, ...args });
+    // `search` (testo cercato da un campo lookup) esiste sempre, nullo finché nessuno cerca.
+    const ctx = this.context({ search: null, ...scope, ...args });
     const url = this.resolveUrl(source.url, ctx);
     if (!url.ok) return url;
     const resolved = (this.resolveIn(source.params ?? {}, ctx) ?? {}) as Record<string, unknown>;

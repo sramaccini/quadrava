@@ -23,6 +23,8 @@ export const SHOWCASE_FILES: Record<string, unknown> = {
 
 /** Prepara il modulo di test della demo: lingua italiana e `fetch` finto sui documenti della vetrina. */
 export function setupShowcase(): void {
+  // jsdom non ha scrollTo, che la lista delle opzioni di NG-ZORRO chiama con un ritardo.
+  if (typeof Element.prototype.scrollTo !== 'function') Element.prototype.scrollTo = () => undefined;
   localStorage.setItem('lc.language', 'it');
   vi.stubGlobal('fetch', async (url: string) => {
     const body = SHOWCASE_FILES[url];

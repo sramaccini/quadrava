@@ -87,4 +87,16 @@ describe('schema dei componenti nuovi', () => {
       expect(issuesOf(form([{ name: 'a', type: 'textarea', rows: 21 }])).length).toBeGreaterThan(0);
     });
   });
+
+  describe('campo lookup', () => {
+    const form = (fields: unknown[]) => screen([{ type: 'form', fields }]);
+    it('accetta un lookup con data source e campo del testo', () => {
+      expect(issuesOf(form([{ name: 'c', type: 'lookup', lookup: { source: 'clienti', labelField: 'nome', valueField: 'id', minChars: 0 } }]))).toEqual([]);
+    });
+    it('rifiuta lookup senza indicazioni, senza campo del testo o con soglie fuori misura', () => {
+      expect(issuesOf(form([{ name: 'c', type: 'lookup' }])).length).toBeGreaterThan(0);
+      expect(issuesOf(form([{ name: 'c', type: 'lookup', lookup: { source: 'clienti' } }])).length).toBeGreaterThan(0);
+      expect(issuesOf(form([{ name: 'c', type: 'lookup', lookup: { source: 'c', labelField: 'n', minChars: 6 } }])).length).toBeGreaterThan(0);
+    });
+  });
 });

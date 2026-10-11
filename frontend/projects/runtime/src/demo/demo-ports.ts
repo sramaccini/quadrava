@@ -100,6 +100,12 @@ export class MockDataClient extends DataClient {
     righe: 1 + (i % 5),
     aliquota: i % 4 === 3 ? 10 : 22,
   }));
+  /** Anagrafica clienti per i campi lookup: si cerca per nome o città. */
+  private readonly clients = [
+    'Rossi Srl|Milano', 'Bianchi SpA|Torino', 'Verdi & C.|Bologna', 'Neri Group|Roma', 'Rossetti SpA|Firenze', 'Bruni Logistica|Verona',
+    'Colombo Impianti|Bergamo', 'Ferrari Ricambi|Modena', 'Esposito Food|Napoli', 'Romano Tessuti|Prato', 'Ricci Consulting|Genova',
+    'Marino Edilizia|Bari', 'Greco Trasporti|Palermo', 'Gallo Energia|Padova', 'Conti Software|Trento',
+  ].map((entry, i) => ({ id: i + 1, nome: entry.split('|')[0], citta: entry.split('|')[1] }));
   private readonly packages: Package[] = [
     { id: 1, nome: 'Chiusura settembre', descrizione: 'Fatture attive del mese', creato: '2026-10-01' },
     { id: 2, nome: 'Fornitori Q3', descrizione: 'Fatture passive del trimestre', creato: '2026-09-28' },
@@ -161,7 +167,8 @@ export class MockDataClient extends DataClient {
       const stato = req.query?.['stato'];
       const stati = Array.isArray(stato) ? stato : stato ? [stato] : [];
       const tipo = req.query?.['tipo'];
-      const match = (f: Invoice): boolean => (stati.length === 0 || stati.includes(f.stato)) && (!tipo || f.tipo === tipo);
+      const cliente = req.query?.['cliente'];
+      const match = (f: Invoice): boolean => (stati.length === 0 || stati.includes(f.stato)) && (!tipo || f.tipo === tipo) && (!cliente || f.cliente === cliente);
       return this.page(this.invoices.filter(match).map((f) => ({ ...f })), req.query);
     }
     if (path === '/api/fatture' && req.method === 'POST') {
@@ -184,6 +191,11 @@ export class MockDataClient extends DataClient {
       if (!invoice || invoice.stato !== 'bozza') throw new Error('409');
       invoice.stato = 'inviata';
       return {};
+    }
+    if (path === '/api/clienti' && req.method === 'GET') {
+      // Ricerca senza distinzione tra maiuscole e minuscole su nome e città; al massimo 8 risultati.
+      const q = String(req.query?.['q'] ?? '').toLowerCase();
+      return this.clients.filter((c) => !q || c.nome.toLowerCase().includes(q) || c.citta.toLowerCase().includes(q)).slice(0, 8);
     }
     if (path === '/api/pacchetti' && req.method === 'GET') return this.packages.map((p) => ({ ...p }));
     if (path === '/api/pacchetti' && req.method === 'POST') {

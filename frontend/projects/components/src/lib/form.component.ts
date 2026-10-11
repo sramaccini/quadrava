@@ -11,12 +11,13 @@ import { NzSelectModule } from 'ng-zorro-antd/select';
 import { NzSwitchModule } from 'ng-zorro-antd/switch';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import type { ActionDefinition, FieldDefinition, FormNode } from 'schema';
+import { LookupComponent } from './lookup.component';
 import { nextId, parseIsoDate, parseIsoDateTime, toIsoDate, toIsoDateTime } from './shared';
 
 /** Form: i valori iniziali arrivano dal data source `source` (se restituisce un oggetto); le azioni ricevono `form` nello scope. */
 @Component({
   selector: 'lc-form',
-  imports: [FormsModule, NzFormModule, NzInputModule, NzSelectModule, NzCheckboxModule, NzDatePickerModule, NzButtonModule, NzTooltipModule, NzRadioModule, NzSwitchModule],
+  imports: [FormsModule, LookupComponent, NzFormModule, NzInputModule, NzSelectModule, NzCheckboxModule, NzDatePickerModule, NzButtonModule, NzTooltipModule, NzRadioModule, NzSwitchModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     form { max-width: 560px; }
@@ -71,6 +72,9 @@ import { nextId, parseIsoDate, parseIsoDateTime, toIsoDate, toIsoDateTime } from
                 }
                 @case ('switch') {
                   <nz-switch [nzId]="id + field.name" [nzDisabled]="readOnly(field)" [ngModel]="values()[field.name] === true" (ngModelChange)="set(field, $event)" />
+                }
+                @case ('lookup') {
+                  <lc-lookup [inputId]="id + field.name" [field]="field" [runtime]="runtime()" [scope]="fieldScope()" [value]="values()[field.name]" [disabled]="readOnly(field)" [placeholder]="'—'" (valueChange)="set(field, $event)" />
                 }
                 @case ('multiselect') {
                   <nz-select [nzId]="id + field.name" nzMode="multiple" nzAllowClear nzPlaceHolder="—" [nzDisabled]="readOnly(field)" [ngModel]="lists()[field.name]" (ngModelChange)="set(field, $event)">

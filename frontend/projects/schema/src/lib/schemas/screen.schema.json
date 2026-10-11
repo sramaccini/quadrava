@@ -284,9 +284,10 @@
             "datetime",
             "radio",
             "switch",
-            "multiselect"
+            "multiselect",
+            "lookup"
           ],
-          "description": "Tipo di campo. textarea: testo su più righe (`rows`); datetime: data e ora AAAA-MM-GGTHH:mm (ora locale); radio: scelta tra `options`; switch: interruttore vero/falso; multiselect: elenco di valori di `options`."
+          "description": "Tipo di campo. textarea: testo su più righe (`rows`); datetime: data e ora AAAA-MM-GGTHH:mm (ora locale); radio: scelta tra `options`; switch: interruttore vero/falso; multiselect: elenco di valori di `options`. lookup: valore scelto tra le righe di un data source cercate mentre si scrive (`lookup`)."
         },
         "label": {
           "type": "string"
@@ -345,8 +346,59 @@
           "minimum": 2,
           "maximum": 20,
           "description": "Righe visibili di un campo textarea (4 se assente)."
+        },
+        "lookup": {
+          "type": "object",
+          "required": [
+            "source",
+            "labelField"
+          ],
+          "additionalProperties": false,
+          "description": "Per type lookup: data source GET da interrogare con la variabile `search` (per esempio \"params\": { \"q\": \"{{ search }}\" }).",
+          "properties": {
+            "source": {
+              "type": "string",
+              "description": "Nome del data source (GET) che restituisce le righe proposte."
+            },
+            "valueField": {
+              "type": "string",
+              "description": "Campo della riga che diventa il valore (id se assente)."
+            },
+            "labelField": {
+              "type": "string",
+              "description": "Campo della riga mostrato come testo."
+            },
+            "minChars": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 5,
+              "description": "Caratteri minimi prima di cercare (1 se assente; 0 = cerca anche a campo vuoto)."
+            }
+          }
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "lookup"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "required": [
+              "lookup"
+            ],
+            "properties": {
+              "lookup": true
+            }
+          }
+        }
+      ]
     },
     "column": {
       "type": "object",

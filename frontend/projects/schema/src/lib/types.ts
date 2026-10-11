@@ -57,7 +57,9 @@ export interface ActionDefinition {
 
 export interface FieldDefinition {
   name: string;
-  type: 'text' | 'number' | 'select' | 'checkbox' | 'date' | 'textarea' | 'datetime' | 'radio' | 'switch' | 'multiselect';
+  type: 'text' | 'number' | 'select' | 'checkbox' | 'date' | 'textarea' | 'datetime' | 'radio' | 'switch' | 'multiselect' | 'lookup';
+  /** Per `lookup`: data source cercato mentre si scrive (variabile `search`), campo del valore e campo del testo. */
+  lookup?: { source: string; valueField?: string; labelField: string; minChars?: number };
   /** Righe visibili di un campo `textarea` (4 se assente). */
   rows?: number;
   label?: string;

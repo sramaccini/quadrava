@@ -138,5 +138,28 @@ describe('Vetrina: componenti avanzati', () => {
       radios[0].click();
       await until(() => cells(el, 0, 1).includes('Attiva'), 'tutti i tipi');
     });
+
+    it('lookup: cerca i clienti mentre si scrive, nel form e nei filtri', { timeout: 20000 }, async () => {
+      const { el, until, settle } = await openShowcase('/vetrina/vetrina-campi');
+      const form = el.querySelectorAll('main lc-form')[1] as HTMLElement;
+      await openSelect(form.querySelector('lc-lookup nz-select')!, settle);
+      const search = form.querySelector('input.ant-select-selection-search-input') as HTMLInputElement;
+      search.value = 'mila';
+      search.dispatchEvent(new Event('input'));
+      const options = (): HTMLElement[] => [...document.querySelectorAll<HTMLElement>('.ant-select-item-option')];
+      await until(() => options().length === 1 && options()[0].textContent?.trim() === 'Rossi Srl', 'risultato della ricerca');
+      options()[0].click();
+      ([...form.querySelectorAll('button')].find((b) => b.textContent?.trim() === 'Conferma') as HTMLButtonElement).click();
+      await until(() => !!document.querySelector('.ant-message-notice'), 'messaggio');
+      expect(document.querySelector('.ant-message-notice')?.textContent).toContain('Cliente scelto: id 1');
+      document.querySelectorAll('.cdk-overlay-container').forEach((c) => (c.innerHTML = ''));
+      // Nei filtri il valore è il nome del cliente e la tabella si filtra.
+      const bar = el.querySelector('main lc-filter-bar') as HTMLElement;
+      await openSelect(bar.querySelector('lc-lookup nz-select')!, settle);
+      await until(() => options().some((o) => o.textContent?.trim() === 'Bianchi SpA'), 'clienti');
+      options().find((o) => o.textContent?.trim() === 'Bianchi SpA')!.click();
+      await until(() => cells(el, 0, 0).length > 0 && cells(el, 0, 0).length < 8, 'fatture di Bianchi');
+      expect(cells(el, 0, 0)).toEqual(['FT-2026-002', 'FT-2026-006', 'FT-2026-010', 'FT-2026-014']);
+    });
   });
 });

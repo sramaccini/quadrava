@@ -9,12 +9,13 @@ import { NzRadioModule } from 'ng-zorro-antd/radio';
 import { NzSelectModule } from 'ng-zorro-antd/select';
 import { NzSwitchModule } from 'ng-zorro-antd/switch';
 import type { FieldDefinition, FilterBarNode } from 'schema';
+import { LookupComponent } from './lookup.component';
 import { nextId, parseIsoDate, parseIsoDateTime, toIsoDate, toIsoDateTime } from './shared';
 
 /** Barra dei filtri: scrive nello stato della schermata (`bind`), da cui i data source dipendono. */
 @Component({
   selector: 'lc-filter-bar',
-  imports: [FormsModule, NzFormModule, NzInputModule, NzSelectModule, NzCheckboxModule, NzDatePickerModule, NzRadioModule, NzSwitchModule],
+  imports: [FormsModule, LookupComponent, NzFormModule, NzInputModule, NzSelectModule, NzCheckboxModule, NzDatePickerModule, NzRadioModule, NzSwitchModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     nz-form-item { margin-bottom: 0; }
@@ -46,6 +47,9 @@ import { nextId, parseIsoDate, parseIsoDateTime, toIsoDate, toIsoDateTime } from
                 }
                 @case ('datetime') {
                   <nz-date-picker [nzId]="id + field.name" [nzShowTime]="{ nzFormat: 'HH:mm' }" nzFormat="dd/MM/yyyy HH:mm" [ngModel]="dates()[field.name]" (ngModelChange)="change(field, toIsoTime($event))" />
+                }
+                @case ('lookup') {
+                  <lc-lookup [inputId]="id + field.name" [field]="field" [runtime]="runtime()" [scope]="scope()" [value]="value(field)" [disabled]="false" [placeholder]="i18n.t('lc.all')" (valueChange)="change(field, $event)" />
                 }
                 @case ('multiselect') {
                   <nz-select class="many" [nzId]="id + field.name" nzMode="multiple" nzAllowClear [nzPlaceHolder]="i18n.t('lc.all')" [ngModel]="lists()[field.name]" (ngModelChange)="change(field, $event.length ? $event : null)">
