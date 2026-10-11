@@ -126,4 +126,17 @@ describe('schema dei componenti nuovi', () => {
       expect(issuesOf(screen([{ type: 'form', fields: [{ name: 'a', type: 'text', span: 0 }] }])).length).toBeGreaterThan(0);
     });
   });
+
+  describe('righe ripetibili', () => {
+    const form = (fields: unknown[]) => screen([{ type: 'form', fields }]);
+    it('accetta righe con campi semplici e limiti', () => {
+      expect(issuesOf(form([{ name: 'r', type: 'repeater', minRows: 1, maxRows: 5, addLabel: 'Aggiungi', fields: [{ name: 'a', type: 'text', required: true }, { name: 'b', type: 'switch' }] }]))).toEqual([]);
+    });
+    it('rifiuta righe senza campi, campi non semplici e limiti fuori misura', () => {
+      expect(issuesOf(form([{ name: 'r', type: 'repeater' }])).length).toBeGreaterThan(0);
+      expect(issuesOf(form([{ name: 'r', type: 'repeater', fields: [{ name: 'x', type: 'repeater', fields: [{ name: 'y', type: 'text' }] }] }])).length).toBeGreaterThan(0);
+      expect(issuesOf(form([{ name: 'r', type: 'repeater', fields: [{ name: 'x', type: 'file' }] }])).length).toBeGreaterThan(0);
+      expect(issuesOf(form([{ name: 'r', type: 'repeater', maxRows: 0, fields: [{ name: 'x', type: 'text' }] }])).length).toBeGreaterThan(0);
+    });
+  });
 });

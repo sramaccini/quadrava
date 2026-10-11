@@ -276,6 +276,81 @@
       ]
     },
     {
+      "id": "sezione-righe",
+      "type": "section",
+      "title": "{{ t('vetrina_campi.righe', 'Righe ripetibili') }}",
+      "components": [
+        {
+          "id": "spiega-righe",
+          "type": "text",
+          "text": "{{ t('vetrina_campi.righe_spiega', 'Le righe di un ordine: almeno una, al massimo dieci. Articolo obbligatorio e quantità maggiore di zero, controllati riga per riga al salvataggio.') }}"
+        },
+        {
+          "id": "form-righe",
+          "type": "form",
+          "initial": {
+            "righe": [
+              {
+                "articolo": "Risma carta A4",
+                "quantita": 5,
+                "prezzo": 4.9,
+                "omaggio": false
+              }
+            ]
+          },
+          "fields": [
+            {
+              "name": "righe",
+              "type": "repeater",
+              "label": "{{ t('vetrina_campi.righe_ordine', 'Righe dell’ordine') }}",
+              "minRows": 1,
+              "maxRows": 10,
+              "addLabel": "{{ t('vetrina_campi.aggiungi_articolo', 'Aggiungi un articolo') }}",
+              "fields": [
+                {
+                  "name": "articolo",
+                  "type": "text",
+                  "label": "{{ t('vetrina_campi.articolo', 'Articolo') }}",
+                  "required": true
+                },
+                {
+                  "name": "quantita",
+                  "type": "number",
+                  "label": "{{ t('vetrina_campi.quantita', 'Quantità') }}",
+                  "required": true,
+                  "validate": {
+                    "rule": "{{ value > 0 }}",
+                    "message": "{{ t('vetrina_campi.quantita_positiva', 'Deve essere maggiore di zero') }}"
+                  }
+                },
+                {
+                  "name": "prezzo",
+                  "type": "number",
+                  "label": "{{ t('vetrina_campi.prezzo', 'Prezzo (€)') }}"
+                },
+                {
+                  "name": "omaggio",
+                  "type": "checkbox",
+                  "label": "{{ t('vetrina_campi.omaggio', 'Omaggio') }}"
+                }
+              ]
+            }
+          ],
+          "actions": [
+            {
+              "id": "btn-salva-righe",
+              "label": "{{ t('comune.salva', 'Salva') }}",
+              "onClick": [
+                {
+                  "toast": "{{ t('vetrina_campi.righe_salvate', 'Ordine salvato con {n, plural, one {# riga} other {# righe}}', {'n': size(form.righe)}) }}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "sezione-filtri-nuovi",
       "type": "section",
       "title": "{{ t('vetrina_campi.filtri_nuovi', 'I nuovi tipi nella barra dei filtri') }}",

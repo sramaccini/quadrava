@@ -286,9 +286,10 @@
             "switch",
             "multiselect",
             "lookup",
-            "file"
+            "file",
+            "repeater"
           ],
-          "description": "Tipo di campo. textarea: testo su più righe (`rows`); datetime: data e ora AAAA-MM-GGTHH:mm (ora locale); radio: scelta tra `options`; switch: interruttore vero/falso; multiselect: elenco di valori di `options`. lookup: valore scelto tra le righe di un data source cercate mentre si scrive (`lookup`). file: un file scelto dall’utente (`accept`, `maxSizeKb`, `upload`)."
+          "description": "Tipo di campo. textarea: testo su più righe (`rows`); datetime: data e ora AAAA-MM-GGTHH:mm (ora locale); radio: scelta tra `options`; switch: interruttore vero/falso; multiselect: elenco di valori di `options`. lookup: valore scelto tra le righe di un data source cercate mentre si scrive (`lookup`). file: un file scelto dall’utente (`accept`, `maxSizeKb`, `upload`). repeater: elenco di righe, ognuna con i campi di `fields` (`minRows`, `maxRows`, `addLabel`)."
         },
         "label": {
           "type": "string"
@@ -397,6 +398,51 @@
           "minimum": 1,
           "maximum": 4,
           "description": "Colonne occupate dal campo nella griglia del form (1 se assente)."
+        },
+        "fields": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "description": "Per type repeater: i campi di ogni riga (solo tipi semplici). Le regole di validazione vedono la riga in `item`.",
+          "items": {
+            "allOf": [
+              {
+                "$ref": "#/$defs/field"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "enum": [
+                      "text",
+                      "number",
+                      "select",
+                      "checkbox",
+                      "date",
+                      "textarea",
+                      "switch"
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "minRows": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 50,
+          "description": "Per type repeater: righe minime (0 se assente)."
+        },
+        "maxRows": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200,
+          "description": "Per type repeater: righe massime (50 se assente)."
+        },
+        "addLabel": {
+          "type": "string",
+          "description": "Per type repeater: testo del pulsante che aggiunge una riga."
         }
       },
       "allOf": [
@@ -417,6 +463,26 @@
             ],
             "properties": {
               "lookup": true
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "repeater"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "required": [
+              "fields"
+            ],
+            "properties": {
+              "fields": true
             }
           }
         }

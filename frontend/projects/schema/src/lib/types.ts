@@ -57,7 +57,14 @@ export interface ActionDefinition {
 
 export interface FieldDefinition {
   name: string;
-  type: 'text' | 'number' | 'select' | 'checkbox' | 'date' | 'textarea' | 'datetime' | 'radio' | 'switch' | 'multiselect' | 'lookup' | 'file';
+  type: 'text' | 'number' | 'select' | 'checkbox' | 'date' | 'textarea' | 'datetime' | 'radio' | 'switch' | 'multiselect' | 'lookup' | 'file' | 'repeater';
+  /** Per `repeater`: i campi di ogni riga (solo tipi semplici). */
+  fields?: FieldDefinition[];
+  /** Per `repeater`: righe minime e massime. */
+  minRows?: number;
+  maxRows?: number;
+  /** Per `repeater`: testo del pulsante che aggiunge una riga. */
+  addLabel?: string;
   /** Per `file`: estensioni e tipi MIME ammessi, separati da virgole. */
   accept?: string;
   /** Per `file`: dimensione massima in KB (1024 se assente). */

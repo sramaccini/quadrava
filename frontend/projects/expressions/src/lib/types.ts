@@ -15,6 +15,8 @@ export interface EvalContext {
   form?: Record<string, unknown>;
   /** Valore del campo in validazione. */
   value?: unknown;
+  /** Riga corrente di un campo a righe ripetibili (nelle sue regole di validazione). */
+  item?: Record<string, unknown>;
   /** Righe selezionate di una tabella (nelle azioni multiple). */
   selection?: Record<string, unknown>[];
 }

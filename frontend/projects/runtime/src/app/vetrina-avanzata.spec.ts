@@ -182,5 +182,30 @@ describe('Vetrina: componenti avanzati', () => {
       const spans = [...form.querySelectorAll<HTMLElement>(':scope > nz-form-item')].map((i) => i.style.getPropertyValue('--lc-field-span'));
       expect(spans).toEqual(['2', '1', '2', '1', '1', '1', '1', '3']);
     });
+
+    it('righe ripetibili: una riga nuova va completata prima di salvare', async () => {
+      const { el, until, settle } = await openShowcase('/vetrina/vetrina-campi');
+      const repeater = el.querySelector('main lc-repeater') as HTMLElement;
+      const form = repeater.closest('lc-form') as HTMLElement;
+      const rows = (): HTMLElement[] => [...repeater.querySelectorAll<HTMLElement>('tbody tr')];
+      expect(rows()).toHaveLength(1);
+      expect((rows()[0].querySelector('input[type="text"]') as HTMLInputElement).value).toBe('Risma carta A4');
+      ([...repeater.querySelectorAll('button')].find((b) => b.textContent?.includes('Aggiungi un articolo')) as HTMLButtonElement).click();
+      await settle();
+      const save = (): void => ([...form.querySelectorAll(':scope > form > .actions button')].find((b) => b.textContent?.trim() === 'Salva') as HTMLButtonElement).click();
+      save();
+      await until(() => repeater.querySelectorAll('.cell-error').length === 2, 'errori della riga nuova');
+      const second = rows()[1];
+      const article = second.querySelector('input[type="text"]') as HTMLInputElement;
+      article.value = 'Graffette';
+      article.dispatchEvent(new Event('input'));
+      const quantity = second.querySelector('input[type="number"]') as HTMLInputElement;
+      quantity.value = '3';
+      quantity.dispatchEvent(new Event('input'));
+      await settle();
+      save();
+      await until(() => !!document.querySelector('.ant-message-notice'), 'messaggio');
+      expect(document.querySelector('.ant-message-notice')?.textContent).toContain('Ordine salvato con 2 righe');
+    });
   });
 });

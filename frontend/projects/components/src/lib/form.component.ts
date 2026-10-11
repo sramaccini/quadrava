@@ -12,13 +12,15 @@ import { NzSwitchModule } from 'ng-zorro-antd/switch';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import type { ActionDefinition, FieldDefinition, FormNode } from 'schema';
 import { FileFieldComponent } from './file-field.component';
+import { fieldError, repeaterError, repeaterRows } from './field-validation';
+import { RepeaterComponent } from './repeater.component';
 import { LookupComponent } from './lookup.component';
 import { nextId, parseIsoDate, parseIsoDateTime, toIsoDate, toIsoDateTime } from './shared';
 
 /** Form: i valori iniziali arrivano dal data source `source` (se restituisce un oggetto); le azioni ricevono `form` nello scope. */
 @Component({
   selector: 'lc-form',
-  imports: [FormsModule, LookupComponent, FileFieldComponent, NzFormModule, NzInputModule, NzSelectModule, NzCheckboxModule, NzDatePickerModule, NzButtonModule, NzTooltipModule, NzRadioModule, NzSwitchModule],
+  imports: [FormsModule, LookupComponent, FileFieldComponent, RepeaterComponent, NzFormModule, NzInputModule, NzSelectModule, NzCheckboxModule, NzDatePickerModule, NzButtonModule, NzTooltipModule, NzRadioModule, NzSwitchModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: block; container-type: inline-size; }
@@ -40,9 +42,9 @@ import { nextId, parseIsoDate, parseIsoDateTime, toIsoDate, toIsoDateTime } from
         @if (runtime().isVisible(field, fieldScope())) {
           <nz-form-item [style.--lc-field-span]="span(field)">
             @if (field.type !== 'checkbox') {
-              <nz-form-label [nzFor]="id + field.name" [nzRequired]="!!field.required" [nzTooltipTitle]="field.tooltip ? runtime().text(field.tooltip, fieldScope()) : undefined" [nzTooltipIcon]="'question-circle'">{{ runtime().text(field.label, fieldScope()) || field.name }}</nz-form-label>
+              <nz-form-label [nzFor]="id + field.name" [id]="id + field.name + '-label'" [nzRequired]="!!field.required" [nzTooltipTitle]="field.tooltip ? runtime().text(field.tooltip, fieldScope()) : undefined" [nzTooltipIcon]="'question-circle'">{{ runtime().text(field.label, fieldScope()) || field.name }}</nz-form-label>
             }
-            <nz-form-control [nzValidateStatus]="error(field) ? 'error' : ''" [nzErrorTip]="error(field) ?? undefined">
+            <nz-form-control [nzValidateStatus]="error(field) && field.type !== 'repeater' ? 'error' : ''" [nzErrorTip]="error(field) ?? undefined">
               @switch (field.type) {
                 @case ('select') {
                   <nz-select [nzId]="id + field.name" nzAllowClear nzPlaceHolder="—" [nzDisabled]="readOnly(field)" [ngModel]="selected(field)" (ngModelChange)="set(field, $event)">
@@ -82,6 +84,9 @@ import { nextId, parseIsoDate, parseIsoDateTime, toIsoDate, toIsoDateTime } from
                 }
                 @case ('switch') {
                   <nz-switch [nzId]="id + field.name" [nzDisabled]="readOnly(field)" [ngModel]="values()[field.name] === true" (ngModelChange)="set(field, $event)" />
+                }
+                @case ('repeater') {
+                  <lc-repeater [field]="field" [runtime]="runtime()" [scope]="fieldScope()" [value]="values()[field.name]" [disabled]="readOnly(field)" [submitted]="submitted()" [summary]="error(field)" [labelId]="id + field.name + '-label'" (valueChange)="set(field, $event)" />
                 }
                 @case ('file') {
                   <lc-file-field [inputId]="id + field.name" [field]="field" [runtime]="runtime()" [scope]="fieldScope()" [value]="values()[field.name]" [disabled]="readOnly(field)" (valueChange)="set(field, $event)" />
@@ -141,7 +146,7 @@ export class FormComponent {
   protected readonly id = nextId('lc-form') + '-';
   protected readonly values = signal<Record<string, unknown>>({});
   protected readonly busy = signal(false);
-  private readonly submitted = signal(false);
+  protected readonly submitted = signal(false);
 
   /** Le date dei campi `date`, calcolate una volta per valore: un oggetto nuovo a ogni rilevamento delle modifiche farebbe riscrivere il campo di continuo. */
   protected readonly dates = computed<Record<string, Date | null>>(() =>
@@ -166,13 +171,13 @@ export class FormComponent {
     // Valori iniziali dichiarati nel form (una sola volta), poi quelli del data source quando arriva.
     effect(() => {
       const initial = this.node().initial;
-      untracked(() => this.values.set({ ...this.empty(), ...((initial ? this.runtime().resolveValue(initial, this.scope()) : {}) as Record<string, unknown>) }));
+      untracked(() => this.values.set(this.normalize({ ...this.empty(), ...((initial ? this.runtime().resolveValue(initial, this.scope()) : {}) as Record<string, unknown>) })));
     });
     effect(() => {
       const source = this.node().source;
       const data = source ? this.runtime().source(source).data : null;
       if (data !== null && typeof data === 'object' && !Array.isArray(data)) {
-        untracked(() => this.values.set({ ...this.empty(), ...(data as Record<string, unknown>) }));
+        untracked(() => this.values.set(this.normalize({ ...this.empty(), ...(data as Record<string, unknown>) })));
       }
     });
   }
@@ -180,6 +185,20 @@ export class FormComponent {
   /** Ogni campo dichiarato esiste nei valori (nullo): le espressioni `form.campo` non vanno in errore prima che arrivino i dati. */
   private empty(): Record<string, unknown> {
     return Object.fromEntries(this.node().fields.map((f) => [f.name, null]));
+  }
+
+  /** I campi a righe ripetibili partono con almeno `minRows` righe, vuote. */
+  private normalize(values: Record<string, unknown>): Record<string, unknown> {
+    const out = { ...values };
+    for (const field of this.node().fields) {
+      if (field.type !== 'repeater') continue;
+      const rows = repeaterRows(out[field.name]);
+      while (rows.length < (field.minRows ?? 0)) {
+        rows.push(Object.fromEntries((field.fields ?? []).map((f) => [f.name, f.type === 'checkbox' || f.type === 'switch' ? false : null])));
+      }
+      out[field.name] = rows;
+    }
+    return out;
   }
 
   protected text(field: FieldDefinition): string {
@@ -230,17 +249,9 @@ export class FormComponent {
 
   private validate(field: FieldDefinition): string | null {
     const value = this.values()[field.name];
-    const empty = value === undefined || value === null || value === '' || (Array.isArray(value) && value.length === 0);
-    if (field.required && empty && field.type !== 'checkbox' && field.type !== 'switch') return this.i18n.t('lc.required');
-    if (field.validate && !empty) {
-      const result = this.runtime().engine.interpolate(field.validate.rule, {
-        ...this.runtime().context(this.fieldScope()),
-        value,
-      });
-      // regola in errore => non valido (fail-closed)
-      if (!result.ok || result.value !== true) return this.runtime().text(field.validate.message, this.fieldScope()) || this.i18n.t('lc.invalid');
-    }
-    return null;
+    return field.type === 'repeater'
+      ? repeaterError(field, value, this.runtime(), this.fieldScope(), this.i18n)
+      : fieldError(field, value, this.runtime(), this.fieldScope(), this.i18n);
   }
 
   protected async run(action: ActionDefinition): Promise<void> {

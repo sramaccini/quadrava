@@ -1,0 +1,183 @@
+import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal, output } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { I18n, type ScreenRuntime, type Scope } from 'core';
+import { NzButtonModule } from 'ng-zorro-antd/button';
+import { NzCheckboxModule } from 'ng-zorro-antd/checkbox';
+import { NzDatePickerModule } from 'ng-zorro-antd/date-picker';
+import { NzInputModule } from 'ng-zorro-antd/input';
+import { NzSelectModule } from 'ng-zorro-antd/select';
+import { NzSwitchModule } from 'ng-zorro-antd/switch';
+import type { FieldDefinition } from 'schema';
+import { repeaterCellErrors, repeaterRows } from './field-validation';
+import { IconComponent } from './icon.component';
+import { nextId, parseIsoDate, toIsoDate } from './shared';
+
+type Row = Record<string, unknown>;
+
+/**
+ * Campo `repeater`: un elenco di righe, ognuna con i campi semplici di `fields`. Il valore è un elenco di oggetti.
+ * Righe aggiunte e tolte con i pulsanti, nei limiti di `minRows` e `maxRows`; gli errori delle celle compaiono
+ * dopo il primo tentativo di invio del form (`submitted`).
+ */
+@Component({
+  selector: 'lc-repeater',
+  imports: [FormsModule, IconComponent, NzButtonModule, NzCheckboxModule, NzDatePickerModule, NzInputModule, NzSelectModule, NzSwitchModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: `
+    :host { display: block; }
+    .wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; font-weight: 500; padding: 0 8px 6px 0; color: var(--lc-color-muted, #5d6b7a); white-space: nowrap; }
+    th .required { color: var(--lc-color-danger, #c62828); margin-right: 2px; }
+    td { padding: 0 8px 8px 0; vertical-align: top; min-width: 110px; }
+    td.remove { min-width: 0; width: 40px; padding-right: 0; }
+    nz-select, nz-date-picker { width: 100%; }
+    .cell-error { margin: 2px 0 0; font-size: 12px; color: var(--lc-color-danger, #c62828); }
+    .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+    .summary { margin: 6px 0 0; color: var(--lc-color-danger, #c62828); }
+    .empty { margin: 0 0 8px; color: var(--lc-color-muted, #5d6b7a); }
+    button lc-icon { margin-right: 6px; }
+    td.remove button lc-icon { margin-right: 0; }
+  `,
+  template: `
+    <div class="wrap" role="group" [attr.aria-labelledby]="labelId()">
+      @if (rows().length) {
+        <table>
+          <thead>
+            <tr>
+              @for (sub of field().fields ?? []; track sub.name) {
+                <th scope="col">
+                  @if (sub.required) {
+                    <span class="required" aria-hidden="true">*</span>
+                  }
+                  {{ label(sub) }}
+                </th>
+              }
+              <th scope="col"><span class="visually-hidden">{{ i18n.t('lc.actions') }}</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of rows(); track $index; let i = $index) {
+              <tr>
+                @for (sub of field().fields ?? []; track sub.name) {
+                  <td>
+                    @let cellId = id + i + '-' + sub.name;
+                    @let err = submitted() ? errors()[i]?.[sub.name] : null;
+                    @switch (sub.type) {
+                      @case ('select') {
+                        <nz-select [nzId]="cellId" nzAllowClear nzPlaceHolder="—" [nzDisabled]="disabled()" [nzStatus]="err ? 'error' : ''" [ngModel]="row[sub.name] ?? null" (ngModelChange)="set(i, sub, $event)">
+                          @for (option of sub.options ?? []; track option) {
+                            <nz-option [nzValue]="option" [nzLabel]="optionLabel(sub, option)" />
+                          }
+                        </nz-select>
+                      }
+                      @case ('checkbox') {
+                        <label nz-checkbox [attr.aria-label]="label(sub)" [nzDisabled]="disabled()" [ngModel]="row[sub.name] === true" (ngModelChange)="set(i, sub, $event)"></label>
+                      }
+                      @case ('switch') {
+                        <nz-switch [nzId]="cellId" [nzDisabled]="disabled()" [ngModel]="row[sub.name] === true" (ngModelChange)="set(i, sub, $event)" />
+                      }
+                      @case ('date') {
+                        <nz-date-picker [nzId]="cellId" [nzDisabled]="disabled()" [nzStatus]="err ? 'error' : ''" [ngModel]="dates()[i]?.[sub.name] ?? null" (ngModelChange)="set(i, sub, toIso($event))" />
+                      }
+                      @case ('textarea') {
+                        <textarea nz-input [id]="cellId" [rows]="sub.rows ?? 2" [attr.aria-label]="label(sub)" [readOnly]="disabled()" [nzStatus]="err ? 'error' : ''" [value]="text(row, sub)" (input)="set(i, sub, $any($event.target).value)"></textarea>
+                      }
+                      @default {
+                        <input nz-input [id]="cellId" [type]="sub.type === 'number' ? 'number' : 'text'" [attr.aria-label]="label(sub)" [attr.aria-invalid]="!!err" [readOnly]="disabled()" [nzStatus]="err ? 'error' : ''" [value]="text(row, sub)" (input)="set(i, sub, $any($event.target).value)" />
+                      }
+                    }
+                    @if (err) {
+                      <p class="cell-error" role="alert">{{ err }}</p>
+                    }
+                  </td>
+                }
+                <td class="remove">
+                  <button nz-button nzType="text" type="button" [disabled]="disabled() || rows().length <= min()" [attr.aria-label]="i18n.t('lc.removeRow', { n: i + 1 })" (click)="remove(i)">
+                    <lc-icon name="delete" />
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      } @else {
+        <p class="empty">{{ i18n.t('lc.noRows') }}</p>
+      }
+      @if (!disabled()) {
+        <button nz-button nzType="dashed" type="button" [disabled]="rows().length >= max()" (click)="add()">
+          <lc-icon name="plus" />{{ field().addLabel ? runtime().text(field().addLabel, scope()) : i18n.t('lc.addRow') }}
+        </button>
+      }
+      @if (summary(); as message) {
+        <p class="summary" role="alert">{{ message }}</p>
+      }
+    </div>
+  `,
+})
+export class RepeaterComponent {
+  readonly field = input.required<FieldDefinition>();
+  readonly runtime = input.required<ScreenRuntime>();
+  readonly scope = input<Scope>({});
+  readonly value = input<unknown>(null);
+  readonly disabled = input(false);
+  readonly submitted = input(false);
+  /** Messaggio complessivo del campo (righe mancanti o non valide), mostrato sotto le righe. */
+  readonly summary = input<string | null>(null);
+  /** Id dell'etichetta del campo, per dare un nome al gruppo. */
+  readonly labelId = input<string | null>(null);
+  readonly valueChange = output<Row[]>();
+
+  protected readonly i18n = inject(I18n);
+  protected readonly id = nextId('lc-rep') + '-';
+  /** Righe correnti: seguono il valore del form, ma si aggiornano subito a ogni modifica (due modifiche ravvicinate non si perdono). */
+  protected readonly rows = linkedSignal(() => repeaterRows(this.value()));
+  protected readonly min = computed(() => this.field().minRows ?? 0);
+  protected readonly max = computed(() => this.field().maxRows ?? 50);
+  protected readonly errors = computed(() => repeaterCellErrors(this.field(), this.rows(), this.runtime(), this.scope(), this.i18n));
+  /** Date delle celle `date`, una volta per valore (vedi il form). */
+  protected readonly dates = computed(() =>
+    this.rows().map((row) => Object.fromEntries((this.field().fields ?? []).filter((f) => f.type === 'date').map((f) => [f.name, parseIsoDate(row[f.name])]))),
+  );
+
+  protected label(sub: FieldDefinition): string {
+    return this.runtime().text(sub.label, this.scope()) || sub.name;
+  }
+
+  protected optionLabel(sub: FieldDefinition, option: string): string {
+    return sub.optionKey ? this.i18n.t(`${sub.optionKey}.${option}`, {}, option) : option;
+  }
+
+  protected text(row: Row, sub: FieldDefinition): string {
+    const value = row[sub.name];
+    return value === null || value === undefined ? '' : String(value);
+  }
+
+  protected toIso(date: Date | null): string | null {
+    return toIsoDate(date);
+  }
+
+  private empty(): Row {
+    return Object.fromEntries((this.field().fields ?? []).map((f) => [f.name, f.type === 'checkbox' || f.type === 'switch' ? false : null]));
+  }
+
+  protected set(index: number, sub: FieldDefinition, raw: unknown): void {
+    const value = sub.type === 'number' && raw !== '' && raw !== null ? Number(raw) : raw === '' ? null : raw;
+    this.emit(this.rows().map((row, i) => (i === index ? { ...row, [sub.name]: value } : row)));
+  }
+
+  protected add(): void {
+    if (this.rows().length >= this.max()) return;
+    this.emit([...this.rows(), this.empty()]);
+  }
+
+  protected remove(index: number): void {
+    if (this.rows().length <= this.min()) return;
+    this.emit(this.rows().filter((_, i) => i !== index));
+  }
+
+  private emit(rows: Row[]): void {
+    this.rows.set(rows);
+    this.valueChange.emit(rows);
+  }
+}
