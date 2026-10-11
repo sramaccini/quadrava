@@ -18,6 +18,9 @@ import { JsonFieldComponent } from './json-field.component';
 /** Proprietà mostrate come area di testo su più righe anche se sono semplici testi. */
 const LONG_TEXT = new Set(['text', 'description', 'tooltip', 'title', 'confirm', 'toast', 'message']);
 
+/** Proprietà che nominano un data source della schermata. */
+const SOURCE_REFS = new Set(['source', 'call', 'refresh']);
+
 export interface FieldRow {
   info: PropertyInfo;
   value: Json | undefined;
@@ -98,6 +101,14 @@ export class FieldsComponent {
 
   protected isLong(row: FieldRow): boolean {
     return row.info.kind === 'expression' || LONG_TEXT.has(row.info.name) || (typeof row.value === 'string' && row.value.includes('{{'));
+  }
+
+  /** Valori suggeriti mentre si scrive (si può comunque scrivere altro): data source della schermata, schermate note. */
+  protected suggestions(row: FieldRow): string[] {
+    if (row.info.kind !== 'text') return [];
+    if (SOURCE_REFS.has(row.info.name)) return this.store.sourceNames();
+    if (row.info.name === 'navigate') return this.store.knownScreens();
+    return [];
   }
 
   protected setText(row: FieldRow, text: string): void {

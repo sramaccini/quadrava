@@ -68,7 +68,9 @@ export class App {
   protected readonly examples = resource({
     loader: async (): Promise<string[]> => {
       const response = await fetch('examples/index.json');
-      return response.ok ? ((await response.json()) as string[]) : [];
+      const names = response.ok ? ((await response.json()) as string[]) : [];
+      this.store.knownScreens.set(names);
+      return names;
     },
   });
 

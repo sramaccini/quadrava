@@ -118,7 +118,22 @@
             spellcheck="false"
           ></textarea>
         } @else {
-          <input nz-input nzSize="small" [id]="row.id" [value]="asText(row.value)" (input)="setText(row, $any($event.target).value)" spellcheck="false" />
+          <input
+            nz-input
+            nzSize="small"
+            [id]="row.id"
+            [attr.list]="suggestions(row).length ? row.id + '-options' : null"
+            [value]="asText(row.value)"
+            (input)="setText(row, $any($event.target).value)"
+            spellcheck="false"
+          />
+          @if (suggestions(row).length) {
+            <datalist [id]="row.id + '-options'">
+              @for (option of suggestions(row); track option) {
+                <option [value]="option"></option>
+              }
+            </datalist>
+          }
         }
       }
     }

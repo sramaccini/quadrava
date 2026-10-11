@@ -91,6 +91,9 @@ describe('editor delle schermate', () => {
   it('data source con dati di esempio: l’anteprima li mostra; rinominare aggiorna la tabella', async () => {
     (el.querySelector('ed-palette button[data-type="table"]') as HTMLButtonElement).click();
     await settle();
+    // Il campo source suggerisce i data source della schermata.
+    const source = el.querySelector('#prop-source') as HTMLInputElement;
+    expect([...document.querySelectorAll('#' + source.getAttribute('list') + ' option')].map((o) => (o as HTMLOptionElement).value)).toEqual(['elenco']);
     tab(2);
     await until(() => !!el.querySelector('ed-data-sources article'), 'pannello dei data source');
     expect(el.querySelector('ed-data-sources article')?.getAttribute('aria-label')).toBe('elenco');

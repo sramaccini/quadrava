@@ -61,6 +61,8 @@ export class EditorStore {
   /** Il documento come schermata valida, oppure null se ha errori (l'anteprima mostra allora l'ultima versione valida). */
   readonly definition = computed<ScreenDefinition | null>(() => (this.errorCount() === 0 ? (this.doc() as unknown as ScreenDefinition) : null));
   readonly target = computed(() => targetAt(this.doc(), this.selection()));
+  /** Schermate note (gli esempi), suggerite nei passi `navigate`. */
+  readonly knownScreens = signal<string[]>([]);
   /** Nomi dei data source della schermata. */
   readonly sourceNames = computed(() => {
     const sources = getIn(this.doc(), ['dataSources']);
