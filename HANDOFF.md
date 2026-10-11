@@ -1,10 +1,10 @@
 # HANDOFF — Piattaforma LowCode
 
-Documento di passaggio per continuare il lavoro con Claude Code in locale. Ultimo aggiornamento: 2026-10-11, dopo il commit `f42abdf` (grafici impilati e doppio asse) e l'aggiornamento della documentazione che lo segue.
+Documento di passaggio per continuare il lavoro con Claude Code in locale. Ultimo aggiornamento: 2026-10-11, dopo il commit `b3d7a5d` (editor: trascinamento) e l'aggiornamento della documentazione che lo segue.
 
 ## 1. Cos'è
 
-Piattaforma low-code per frontend gestionali/amministrativi **definiti da JSON** (schermate, data source, azioni, espressioni CEL), più un editor visuale (NON iniziato) e servizi di base. Il backend consiste in contratti OpenAPI e un'implementazione di riferimento Spring Boot non destinata alla produzione (moduli Java mai compilati).
+Piattaforma low-code per frontend gestionali/amministrativi **definiti da JSON** (schermate, data source, azioni, espressioni CEL), più un editor visuale (prima versione: solo schermate) e servizi di base. Il backend consiste in contratti OpenAPI e un'implementazione di riferimento Spring Boot non destinata alla produzione (moduli Java mai compilati).
 
 ## 2. Preferenze di Simone (rispettale)
 
@@ -26,20 +26,21 @@ Da `frontend/`:
 - `npm run schema:sync` — rigenera i `*.schema.ts` dagli schemi JSON
 - `npm run validate:examples` — valida gli esempi (schema + chiavi di traduzione)
 - `npm run demo:prepare` / `npm run start:runtime` — copia `examples/` in `projects/runtime/public/examples` e avvia la demo (porta 4200). Il dev server **non** ricarica `dist`: dopo modifiche a librerie o esempi va rilanciato.
-- `.claude/launch.json` avvia una copia della demo sulla porta 4300 (per l'anteprima nel pannello di Claude).
+- `npm run start:editor` — editor visuale sulla porta 4201 (prepara anche gli esempi, con `examples/index.json`).
+- `.claude/launch.json` avvia una copia della demo sulla porta 4300 e dell'editor sulla 4301 (per l'anteprima nel pannello di Claude).
 - test per progetto: `npx ng test <schema|expressions|core|components|services|runtime|editor> --watch=false`
 
-Stato test (tutti verdi): schema 62, expressions 39, core 61, components 128, services 19, runtime 66, editor 2 (**377**). Build di produzione della demo: 2,27 MB iniziali (avviso a 2,5 MB).
+Stato test (tutti verdi): schema 62, expressions 39, core 61, components 128, services 19, runtime 66, editor 29 (**404**). Build di produzione della demo: 2,27 MB iniziali (avviso a 2,5 MB).
 
 ## 4. Architettura in breve
 
-Librerie (`frontend/projects/`): `schema` (JSON Schema + tipi), `expressions` (CEL, template `{{ }}`, formattatore messaggi), `core` (ScreenRuntime, motore delle azioni, NavigationRuntime, I18n, porte astratte, catalogo, tema), `components` (NG-ZORRO), `services` (porte reali: HTTP/BFF/OIDC). App: `runtime` (demo/shell), `editor` (stub).
+Librerie (`frontend/projects/`): `schema` (JSON Schema + tipi), `expressions` (CEL, template `{{ }}`, formattatore messaggi), `core` (ScreenRuntime, motore delle azioni, NavigationRuntime, I18n, porte astratte, catalogo, tema), `components` (NG-ZORRO), `services` (porte reali: HTTP/BFF/OIDC). App: `runtime` (demo/shell), `editor` (editor visuale, vedi § 5b).
 
 - Porte (classi astratte come token DI): Authorization, UserProvider, DataClient, ScreenNavigator, Notifier, RuntimeDiagnostics, Confirmation, **FormDialog** (passo `dialog`).
 - Nodi: section, text, button, filterBar, table, **dataTable**, **serverDataTable**, form, tabs, detail, alert, **stats**, **wizard**, **tree**, **calendar**, **chart**. Passi: set, call, refresh, navigate, toast, confirm, **dialog**.
 - Campi: text, number, select, checkbox, date, **textarea, datetime, radio, switch, multiselect, lookup, file, repeater**. Formati: **number**, currency, percent, date, datetime, boolean, badge.
 - Tabella: ordinamento (in pagina o lato server con `sort.bind`), selezione + azioni multiple, menu azioni (`rowActionsInline`), righe espandibili, celle cliccabili, riga dei totali (`aggregate`).
-- `lc-node` applica `visibleIf/hiddenIf` e `tooltip`. Permessi `dominio.risorsa.azione`; espressioni **fail-closed**.
+- `lc-node` applica `visibleIf/hiddenIf` e `tooltip`, ed espone `data-node-id`/`data-node-type` (per l'editor e i test). Permessi `dominio.risorsa.azione`; espressioni **fail-closed**.
 - I data source GET si ricaricano **solo se cambia la richiesta risolta** (URL e parametri); `refresh` ricarica comunque. `ScreenRuntime.query` esegue un data source senza toccarne lo stato condiviso (usato dai lookup e dalla serverDataTable). `refresh` su un data source non GET incrementa solo `ScreenRuntime.refreshCount`, che la serverDataTable osserva per ricaricarsi.
 - `DataRequest.file`: invio multipart dei file (`HttpDataClient` usa `FormData`), fino a 100 MB; il base64 nel JSON resta per file fino a 10 MB.
 - Variabili sempre presenti nei data source: `search` e `lookupKey` (lookup), `request` (serverDataTable, contratto nel catalogo § 2.19), `file` nei data source di `upload`.
@@ -47,7 +48,11 @@ Librerie (`frontend/projects/`): `schema` (JSON Schema + tipi), `expressions` (C
 
 ## 5. Catalogo componenti
 
-`docs/catalogo-componenti.md`: specifica di ogni componente aggiunto (18, ottobre 2026), regole comuni e **limiti noti** (§ 3). La vetrina della demo ha nove schermate: Componenti base, Form, Campi e form, Filtri e tabelle, Tabelle avanzate, Datatable, Schede/dettaglio/messaggi, Cruscotto, Procedure e viste.
+`docs/catalogo-componenti.md`: specifica di ogni componente aggiunto (19, ottobre 2026; il 19 è la serverDataTable), regole comuni e **limiti noti** (§ 3). La vetrina della demo ha nove schermate: Componenti base, Form, Campi e form, Filtri e tabelle, Tabelle avanzate, Datatable, Schede/dettaglio/messaggi, Cruscotto, Procedure e viste.
+
+## 5b. Editor visuale
+
+`docs/editor.md` descrive tutto. In breve: tavolozza (clic o trascinamento), struttura (seleziona, sposta, duplica, taglia/incolla, trascina), pannello delle proprietà **generato da `screen.schema.json`** (elenchi di colonne/campi/azioni/passi modificabili elemento per elemento, passi per variante, oggetti come gruppi), anteprima con il runtime vero e porte finte (dati di esempio per data source, permessi, larghezze, parametri, registro; Alt+clic seleziona), vista JSON, pannello dei data source (rinomina con aggiornamento dei riferimenti), problemi (schema, CEL, id ripetuti, data source mancanti), cronologia di annullamento, bozza nel browser, apri esempio / importa / esporta. Un componente nuovo richiede solo il modello in `model/templates.ts`, il gruppo nella tavolozza e `ed.type.<tipo>` nei messaggi.
 
 ## 6. Trappole note (NG-ZORRO / Angular / strumenti)
 
@@ -60,6 +65,8 @@ Le principali sono nella DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In breve:
 - Script con espressioni regolari: scriverli in un file, non in un heredoc della shell (le doppie barre rovesciate si perdono).
 - CEL: `has(state.x)` per chiavi che non esistono ancora; `dyn(...)` nelle mappe di parametri miste di `t()`; `{n, number}` per i numeri nei messaggi.
 - Nei test: `stubViewportHeight` + attesa delle opzioni per `nz-select`; `Element.scrollTo` simulato; le finestre chiuse restano nel DOM.
+- NG-ZORRO 22: `NzTooltipModule` (non `NzToolTipModule`), `nz-tabs` (non `nz-tabset`), niente `nzAutosize` sulle textarea (si usa `field-sizing: content`). Angular non ha il modificatore `.capture` negli eventi: `addEventListener(..., true)`.
+- Messaggi con graffe letterali (`{{ }}`, JSON): vanno scritte `\\{` `\\}` nel sorgente TypeScript.
 
 ## 7. Limiti noti / debito
 
@@ -72,9 +79,9 @@ Le principali sono nella DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In breve:
 
 ## 8. Prossimi passi (nell'ordine suggerito)
 
-1. Review dei 18 componenti (commit da `4d224fb` a `47a96ee`), del fix del runtime `9d96798` e dei limiti superati (da `7907884` a `f42abdf`).
+1. Review dei 18 componenti (commit da `4d224fb` a `47a96ee`), del fix del runtime `9d96798`, dei limiti superati (da `7907884` a `f42abdf`), della serverDataTable (`9bae9b7`) e dell'editor (da `5840c9c` a `b3d7a5d`).
 2. Collegare `services` a `runtime` e completare il BFF (CSRF, forwarding, allow-list; il forwarding deve gestire anche i corpi multipart).
-3. **Editor visuale** (`projects/editor`): albero dei nodi, pannello proprietà, anteprima, temi e menu; scelta delle chiavi di traduzione.
+3. **Editor visuale**, seconda fase: navigazione e temi con la stessa tecnica; aiuto per le chiavi di traduzione; pubblicazione nel registro; completamento delle espressioni; apertura della scheda giusta nell'anteprima (vedi `docs/editor.md` § 6).
 4. Menu: navigazione da tastiera, badge, ricerca. CEL in `validate:examples`.
 
 ## 9. Convenzioni di lavoro
@@ -90,4 +97,4 @@ Le principali sono nella DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In breve:
 
 - `README.md`, `DEVELOPMENT-GUIDE.md` (inglese), `docs/README.md`, `docs/catalogo-componenti.md` (italiano).
 - Documenti Claude Docs: architettura `81cf6668-1f89-4814-aa01-06ef8b99ee8d`, funzionale `d3763c98-122d-4331-b9c4-2c4f18cffd1c`, linee guida `f286ccf2-9ad4-4470-8f34-da217be64031`, panoramica testi/i18n `b7da8557-c708-422d-be72-d1829a0b03e7`.
-- Cronologia recente: `f42abdf` grafici impilati e doppio asse, `4a8379c` datatable per grandi volumi, `e783fbb` albero da tastiera, `b130599` lookup e file nelle righe, `62fe0ee` file in multipart, `7907884` testo dei valori nel lookup; `47a96ee` datatable … `2b51e38` ordinamento, `4d224fb` catalogo; `9d96798` fix ricaricamento data source; `85d0409` guscio responsive; `5230022` i18n completo.
+- Cronologia recente: `b3d7a5d` editor: trascinamento, `221ae42` suggerimenti, `ab5057a` anteprima collegata, `8d7e462` elenchi campo per campo, `5840c9c` prima versione dell'editor; `9bae9b7` serverDataTable; `f42abdf` grafici impilati e doppio asse, `4a8379c` datatable per grandi volumi, `e783fbb` albero da tastiera, `b130599` lookup e file nelle righe, `62fe0ee` file in multipart, `7907884` testo dei valori nel lookup; `47a96ee` datatable … `2b51e38` ordinamento, `4d224fb` catalogo; `9d96798` fix ricaricamento data source; `85d0409` guscio responsive; `5230022` i18n completo.

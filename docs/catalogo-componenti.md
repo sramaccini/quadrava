@@ -37,7 +37,7 @@ Regole comuni a tutti i componenti, valide anche per i nuovi:
 
 ## 2. Aggiunti nell'ottobre 2026
 
-Realizzati in quest'ordine, uno per commit, ognuno con test (schema, componente e vetrina) e un esempio nella vetrina della demo: «Tabelle avanzate» (1–5), «Campi e form» (6–11), «Schede, dettaglio e messaggi» (12), «Cruscotto» (13, 17), «Procedure e viste» (14–16), «Datatable» (18).
+Realizzati in quest'ordine, uno per commit, ognuno con test (schema, componente e vetrina) e un esempio nella vetrina della demo: «Tabelle avanzate» (1–5), «Campi e form» (6–11), «Schede, dettaglio e messaggi» (12), «Cruscotto» (13, 17), «Procedure e viste» (14–16), «Datatable» (18, 19).
 
 | # | Componente | Area | Stato |
 | --- | --- | --- | --- |

@@ -31,7 +31,7 @@ Contributor documentation: [DEVELOPMENT-GUIDE.md](DEVELOPMENT-GUIDE.md). Design 
 | --- | --- | --- |
 | **Runtime** (`frontend/projects/runtime`) | Angular application that loads screens, theme and navigation, validates them, and renders them | Working demo, fake back end |
 | **Libraries** (`schema`, `expressions`, `core`, `components`, `services`) | JSON Schema and types, expression evaluator, interpreter, NG-ZORRO component catalogue, HTTP/session/authorization/telemetry services | Working, tested |
-| **Visual editor** (`frontend/projects/editor`) | Drag-and-drop editing of the JSON documents | Not started (empty scaffold) |
+| **Visual editor** (`frontend/projects/editor`) | Builds screens with a palette, an outline and a property panel generated from the JSON Schema, with a live preview rendered by the real runtime | First version: screens only (navigation and themes still by hand) |
 | **Contracts** (`contracts/`) | OpenAPI 3.1: authorization, telemetry ingestion, registry | Defined and validated |
 | **Reference implementation** (`reference/`) | Spring Boot BFF, registry, authorization and telemetry services that implement the contracts | Written, not yet compiled in CI |
 | **Identity provider** (`idp/`) | Keycloak with a sample realm for local development | Ready |
@@ -185,13 +185,22 @@ In the top bar choose the **user** (`operatore`, `responsabile`, `amministratore
 
 The libraries are not hot-reloaded: after changing anything in `frontend/projects/<library>` run `npm run build:libs` again.
 
+## Run the editor
+
+```bash
+cd frontend
+npm run start:editor         # builds the libraries, copies the examples, serves on http://localhost:4201
+```
+
+Open an example (*Apri esempio*) or start a new screen. The palette adds components (click, or drag into the outline); the outline selects, reorders, duplicates, cuts and pastes nodes; the property panel is generated from `screen.schema.json`, so columns, form fields, actions and steps are edited item by item; the *Data source* tab defines the services and the sample data the preview returns. The preview is the real `lc-screen` with fake ports: nothing leaves the browser, permissions can be switched off, and Alt+click on a component selects it. Problems (schema, CEL expressions, duplicate ids, missing data sources) are listed at the bottom; the draft is saved in the browser; *Esporta* downloads the JSON. Details, shortcuts and limits: [docs/editor.md](docs/editor.md) (Italian).
+
 ## Run the full stack
 
 Prerequisites: Node.js 22.22.3+, JDK 21, Maven 3.9+, Docker.
 
 1. Identity provider: `cd idp && docker compose up` (console at http://localhost:8180, user `admin`, password `admin`).
 2. Reference implementation: `cd reference && mvn verify`, then `mvn -pl <module> spring-boot:run` for each module. Ports: bff 8080, registry 8081, authz 8082, telemetry 8083.
-3. Front end: `cd frontend && npm ci`, then `npm run start:runtime` (port 4200) or `npm run start:editor` (port 4201, scaffold).
+3. Front end: `cd frontend && npm ci`, then `npm run start:runtime` (port 4200) or `npm run start:editor` (port 4201).
 4. Validate the examples against the schemas: `cd frontend && npm run validate:examples`.
 
 Development users in Keycloak: `operatore`, `responsabile`, `amministratore` (password equal to the user name). For local development only.
@@ -202,12 +211,12 @@ Development users in Keycloak: `operatore`, `responsabile`, `amministratore` (pa
 cd frontend
 npm run test:libs                     # schema, expressions, core, components, services
 npx ng test runtime --watch=false     # end-to-end demo tests (needs `npm run demo:prepare` once)
-npx ng test editor --watch=false      # scaffold
+npx ng test editor --watch=false      # visual editor
 npm run schema:check                  # generated schema constants are in sync
 npm run validate:examples             # examples are valid
 ```
 
-At the time of writing there are **377 automated tests**: schema 62, expressions 39, core 61, components 128, services 19, runtime 66, editor 2. They run in jsdom, so layout, real focus handling and pixel-level rendering are **not** covered; see the development guide for the helpers that make NG-ZORRO overlays testable.
+At the time of writing there are **404 automated tests**: schema 62, expressions 39, core 61, components 128, services 19, runtime 66, editor 29. They run in jsdom, so layout, real focus handling and pixel-level rendering are **not** covered; see the development guide for the helpers that make NG-ZORRO overlays testable.
 
 ## Security model
 
@@ -223,7 +232,7 @@ Open point: Ajv generates validators with `new Function`, so browser-side valida
 
 ## Status and roadmap
 
-**Verified:** the three JSON Schemas, the CEL evaluator, the interpreter, the NG-ZORRO component catalogue, the services library and the runtime demo, with the automated tests above; the build of every app and library; the validity of the three OpenAPI contracts and of the examples.
+**Verified:** the three JSON Schemas, the CEL evaluator, the interpreter, the NG-ZORRO component catalogue, the services library, the runtime demo and the visual editor, with the automated tests above; the build of every app and library; the validity of the three OpenAPI contracts and of the examples.
 
 **Not verified:**
 
@@ -234,11 +243,11 @@ Open point: Ajv generates validators with `new Function`, so browser-side valida
 **Next steps:**
 
 * Wire `services` into the `runtime` app (today it uses the demo's fake ports) and complete the BFF: CSRF protection, API forwarding with token and `traceparent`, host allow-list.
-* Visual editor (`editor`): node tree, property panel, preview, themes and menus.
+* Visual editor: navigation (use cases and menus) and themes, a helper for translation keys, publication to the registry, expression completion.
 * The October 2026 component batch is complete (see the catalogue for the specification and the known limits of each component).
 * Menu: arrow-key navigation, badges, search.
 * Check expressions in `validate:examples` too.
-* Language catalogues loaded from a service (today they are files shipped with the app) and an editor picker for translation keys.
+* Language catalogues loaded from a service (today they are files shipped with the app).
 
 ## License
 

@@ -24,7 +24,7 @@ Dependency order (an arrow means "depends on"); never introduce a cycle or an up
 runtime ──► components ──► core ──► expressions
    │                          └───► schema
    └──► services ──► core
-editor  (scaffold)
+editor  ──► components ──► core   (the preview renders screens with the real runtime)
 ```
 
 * `schema`: JSON Schemas (`screen`, `theme`, `navigation`), Ajv validators, TypeScript types. The `.schema.ts` files are **generated** from the JSON by `tools/sync-schema.mjs`.
@@ -33,6 +33,7 @@ editor  (scaffold)
 * `components`: everything that depends on NG-ZORRO (standard components, side menu, user menu, confirmation dialog, notifier, theme bridge).
 * `services`: production implementations of the ports.
 * `runtime`: the demo application; wiring only, plus `demo/` fakes.
+* `editor`: the visual editor. `model/` holds pure, tested logic (immutable document operations, schema reading, templates, drop positions, the `EditorStore`); `ui/` the panels; `preview/` the live preview and its fake ports. The property panel is generated from `screen.schema.json` (`model/schema-info.ts`): do not hand-write per-component forms. See `docs/editor.md`.
 
 ## 3. Daily commands
 
@@ -41,13 +42,14 @@ editor  (scaffold)
 | `npm run build:libs` | Builds all libraries in dependency order |
 | `npm run test:libs` | Unit tests for every library |
 | `npx ng test <project> --watch=false` | Tests of one project (`schema`, `expressions`, `core`, `components`, `services`, `runtime`, `editor`) |
-| `npm run demo:prepare` | Copies `examples/` into `projects/runtime/public/examples` (git-ignored); required by the runtime specs and the demo |
+| `npm run demo:prepare` | Copies `examples/` into `projects/runtime/public/examples` and `projects/editor/public/examples` (git-ignored), with an `index.json` of the screens; required by the runtime and editor specs |
 | `npm run start:runtime` | Builds libs, prepares examples and serves the demo on port 4200 |
+| `npm run start:editor` | Builds libs, prepares examples and serves the visual editor on port 4201 |
 | `npm run schema:sync` / `schema:check` | Regenerate / verify the generated schema constants |
 | `npm run validate:examples` | Validates every JSON in `examples/` against the schemas |
 | `npx ng build runtime` | Production build (budgets: warning 2.5 MB, error 4 MB initial) |
 
-Before opening a pull request, all of these must pass: `schema:check`, `validate:examples`, `build:libs`, `test:libs`, runtime tests, production build.
+Before opening a pull request, all of these must pass: `schema:check`, `validate:examples`, `build:libs`, `test:libs`, runtime and editor tests, production builds.
 
 ## 4. Adding or changing a component
 
@@ -58,7 +60,8 @@ Example: adding a `progress` node.
 3. **Register.** Add it to `STANDARD_COMPONENTS` (and export it from `public-api.ts`). Application-specific components are registered with `provideLowcodeComponents(extra)`.
 4. **Tests.** Cover rendering, expression-driven state (`visibleIf`, `enabledIf`, `can()`), the fail-closed behaviour, and any action it triggers.
 5. **Example.** Add the usage to a showcase screen in `examples/vetrina-*.json` and run `npm run validate:examples`.
-6. **Docs.** Update the component catalogue and, if the language changed, the functional document.
+6. **Editor.** Add a starting template in `projects/editor/src/app/model/templates.ts` (and its data source in `TEMPLATE_SOURCES` if it reads one), put the type in a palette group (`ui/palette.component.ts`) and add `ed.type.<type>` to the editor messages (it and en). A test fails if a schema type has no valid template or is missing from the palette. Properties need nothing: the panel reads them from the schema.
+7. **Docs.** Update the component catalogue and, if the language changed, the functional document.
 
 ## 5. NG-ZORRO rules
 
