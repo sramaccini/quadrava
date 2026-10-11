@@ -22,6 +22,12 @@
       "params": {
         "q": "{{ search }}"
       }
+    },
+    "caricaAllegato": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/allegati",
+      "body": "{{ file }}"
     }
   },
   "components": [
@@ -137,6 +143,49 @@
               "onClick": [
                 {
                   "toast": "{{ t('vetrina_campi.cliente_scelto', 'Cliente scelto: id {id}', {'id': form.cliente}) }}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sezione-file",
+      "type": "section",
+      "title": "{{ t('vetrina_campi.file', 'Caricamento di file') }}",
+      "components": [
+        {
+          "id": "spiega-file",
+          "type": "text",
+          "text": "{{ t('vetrina_campi.file_spiega', 'PDF o immagini fino a 2 MB. Il file parte subito verso il servizio, che risponde con un id; il form salva poi l’id insieme al nome.') }}"
+        },
+        {
+          "id": "form-file",
+          "type": "form",
+          "fields": [
+            {
+              "name": "allegato",
+              "type": "file",
+              "label": "{{ t('vetrina_campi.allegato', 'Allegato') }}",
+              "accept": ".pdf,image/*",
+              "maxSizeKb": 2048,
+              "upload": "caricaAllegato",
+              "required": true
+            },
+            {
+              "name": "descrizione",
+              "type": "text",
+              "label": "{{ t('comune.descrizione', 'Descrizione') }}"
+            }
+          ],
+          "actions": [
+            {
+              "id": "btn-salva-allegato",
+              "label": "{{ t('comune.salva', 'Salva') }}",
+              "onClick": [
+                {
+                  "toast": "{{ t('vetrina_campi.allegato_salvato', 'Allegato {nome} salvato (id {id})', {'nome': dyn(form.allegato.name), 'id': dyn(form.allegato.id)}) }}"
                 }
               ]
             }

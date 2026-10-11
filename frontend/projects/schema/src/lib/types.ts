@@ -57,7 +57,13 @@ export interface ActionDefinition {
 
 export interface FieldDefinition {
   name: string;
-  type: 'text' | 'number' | 'select' | 'checkbox' | 'date' | 'textarea' | 'datetime' | 'radio' | 'switch' | 'multiselect' | 'lookup';
+  type: 'text' | 'number' | 'select' | 'checkbox' | 'date' | 'textarea' | 'datetime' | 'radio' | 'switch' | 'multiselect' | 'lookup' | 'file';
+  /** Per `file`: estensioni e tipi MIME ammessi, separati da virgole. */
+  accept?: string;
+  /** Per `file`: dimensione massima in KB (1024 se assente). */
+  maxSizeKb?: number;
+  /** Per `file`: data source a cui inviare subito il file (variabile `file`). */
+  upload?: string;
   /** Per `lookup`: data source cercato mentre si scrive (variabile `search`), campo del valore e campo del testo. */
   lookup?: { source: string; valueField?: string; labelField: string; minChars?: number };
   /** Righe visibili di un campo `textarea` (4 se assente). */

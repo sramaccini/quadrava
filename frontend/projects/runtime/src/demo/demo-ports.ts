@@ -106,6 +106,7 @@ export class MockDataClient extends DataClient {
     'Colombo Impianti|Bergamo', 'Ferrari Ricambi|Modena', 'Esposito Food|Napoli', 'Romano Tessuti|Prato', 'Ricci Consulting|Genova',
     'Marino Edilizia|Bari', 'Greco Trasporti|Palermo', 'Gallo Energia|Padova', 'Conti Software|Trento',
   ].map((entry, i) => ({ id: i + 1, nome: entry.split('|')[0], citta: entry.split('|')[1] }));
+  private attachments = 0;
   private readonly packages: Package[] = [
     { id: 1, nome: 'Chiusura settembre', descrizione: 'Fatture attive del mese', creato: '2026-10-01' },
     { id: 2, nome: 'Fornitori Q3', descrizione: 'Fatture passive del trimestre', creato: '2026-09-28' },
@@ -191,6 +192,13 @@ export class MockDataClient extends DataClient {
       if (!invoice || invoice.stato !== 'bozza') throw new Error('409');
       invoice.stato = 'inviata';
       return {};
+    }
+    if (path === '/api/allegati' && req.method === 'POST') {
+      // Un vero servizio salverebbe il contenuto; qui basta verificare che sia base64 e rispondere con un id.
+      const content = req.body?.['content'];
+      if (typeof content !== 'string' || !/^[A-Za-z0-9+/]*={0,2}$/.test(content)) throw new Error('400');
+      this.attachments += 1;
+      return { id: this.attachments };
     }
     if (path === '/api/clienti' && req.method === 'GET') {
       // Ricerca senza distinzione tra maiuscole e minuscole su nome e città; al massimo 8 risultati.

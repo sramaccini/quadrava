@@ -287,9 +287,10 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
             "radio",
             "switch",
             "multiselect",
-            "lookup"
+            "lookup",
+            "file"
           ],
-          "description": "Tipo di campo. textarea: testo su più righe (`rows`); datetime: data e ora AAAA-MM-GGTHH:mm (ora locale); radio: scelta tra `options`; switch: interruttore vero/falso; multiselect: elenco di valori di `options`. lookup: valore scelto tra le righe di un data source cercate mentre si scrive (`lookup`)."
+          "description": "Tipo di campo. textarea: testo su più righe (`rows`); datetime: data e ora AAAA-MM-GGTHH:mm (ora locale); radio: scelta tra `options`; switch: interruttore vero/falso; multiselect: elenco di valori di `options`. lookup: valore scelto tra le righe di un data source cercate mentre si scrive (`lookup`). file: un file scelto dall’utente (`accept`, `maxSizeKb`, `upload`)."
         },
         "label": {
           "type": "string"
@@ -377,6 +378,21 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
               "description": "Caratteri minimi prima di cercare (1 se assente; 0 = cerca anche a campo vuoto)."
             }
           }
+        },
+        "accept": {
+          "type": "string",
+          "pattern": "^\\s*(\\.[A-Za-z0-9]+|[a-z]+/(\\*|[A-Za-z0-9.+-]+))(\\s*,\\s*(\\.[A-Za-z0-9]+|[a-z]+/(\\*|[A-Za-z0-9.+-]+)))*\\s*$",
+          "description": "Per type file: estensioni (.pdf) e tipi MIME (image/*, application/pdf) ammessi, separati da virgole."
+        },
+        "maxSizeKb": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10240,
+          "description": "Per type file: dimensione massima in KB (1024 se assente)."
+        },
+        "upload": {
+          "type": "string",
+          "description": "Per type file: data source (POST) a cui inviare subito il file; lo riceve nella variabile `file` ({ name, type, size, content in base64 }), per esempio \"body\": \"{{ file }}\"."
         }
       },
       "allOf": [
@@ -956,7 +972,7 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
     },
     "statePath": {
       "type": "string",
-      "pattern": "^state(.[A-Za-z][A-Za-z0-9]*)+$",
+      "pattern": "^state(\\.[A-Za-z][A-Za-z0-9]*)+$",
       "description": "Percorso nello stato della schermata, per esempio state.ordinamento."
     },
     "sortSpec": {

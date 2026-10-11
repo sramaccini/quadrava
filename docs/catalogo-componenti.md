@@ -41,7 +41,7 @@ L'ordine è quello di realizzazione. Lo stato si aggiorna a ogni componente comp
 | 5 | Formato numerico, celle cliccabili, riga dei totali | tabella | realizzato |
 | 6 | Nuovi tipi di campo: area di testo, data e ora, radio, interruttore, selezione multipla | campi | realizzato |
 | 7 | Campo con ricerca su data source (lookup) | campi | realizzato |
-| 8 | Caricamento di file | campi | da fare |
+| 8 | Caricamento di file | campi | realizzato |
 | 9 | Griglia a colonne nel form | form | da fare |
 | 10 | Righe ripetibili nel form | form | da fare |
 | 11 | Dialog con form (passo `dialog`) | azioni | da fare |
@@ -128,7 +128,7 @@ Mentre l'utente scrive, il campo esegue il data source `source` (GET) con la var
 ```
 
 - Un solo file per campo; `accept` e `maxSizeKb` (massimo 10240) sono controllati prima di qualunque invio.
-- Con `upload` il file viene inviato subito al data source (POST con `name`, `type`, `size`, `content` in base64) e il valore del campo diventa `{ name, type, size }` più la risposta del servizio (per esempio l'`id`). Senza `upload` il valore contiene anche `content`.
+- Con `upload` il file viene inviato subito al data source (POST): il data source lo riceve nella variabile `file` (`{ name, type, size, content }`, contenuto in base64), per esempio `"body": "{{ file }}"`. Il valore del campo diventa `{ name, type, size }` più la risposta del servizio (per esempio l'`id`). Senza `upload` il valore contiene anche `content`.
 - Il nome del file è sempre mostrato come testo.
 
 ### 2.9 Griglia a colonne nel form

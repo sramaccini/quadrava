@@ -99,4 +99,21 @@ describe('schema dei componenti nuovi', () => {
       expect(issuesOf(form([{ name: 'c', type: 'lookup', lookup: { source: 'c', labelField: 'n', minChars: 6 } }])).length).toBeGreaterThan(0);
     });
   });
+
+  describe('caricamento di file', () => {
+    const form = (fields: unknown[]) => screen([{ type: 'form', fields }]);
+    it('accetta tipi ammessi, dimensione massima e data source di invio', () => {
+      expect(issuesOf(form([{ name: 'f', type: 'file', accept: '.pdf, image/*,application/vnd.ms-excel', maxSizeKb: 2048, upload: 'carica' }]))).toEqual([]);
+    });
+    it('rifiuta elenchi di tipi malformati e dimensioni fuori misura', () => {
+      expect(issuesOf(form([{ name: 'f', type: 'file', accept: 'pdf' }])).length).toBeGreaterThan(0);
+      expect(issuesOf(form([{ name: 'f', type: 'file', accept: '.pdf;.doc' }])).length).toBeGreaterThan(0);
+      expect(issuesOf(form([{ name: 'f', type: 'file', maxSizeKb: 0 }])).length).toBeGreaterThan(0);
+      expect(issuesOf(form([{ name: 'f', type: 'file', maxSizeKb: 20000 }])).length).toBeGreaterThan(0);
+    });
+    it('lo stato deve iniziare da state. seguito da nomi', () => {
+      expect(issuesOf(screen([{ type: 'table', source: 's', columns: [{ field: 'n' }], sort: { bind: 'statex.y' } }])).length).toBeGreaterThan(0);
+      expect(issuesOf(screen([{ type: 'table', source: 's', columns: [{ field: 'n' }], sort: { bind: 'state.a.b' } }]))).toEqual([]);
+    });
+  });
 });

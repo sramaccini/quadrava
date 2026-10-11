@@ -161,5 +161,18 @@ describe('Vetrina: componenti avanzati', () => {
       await until(() => cells(el, 0, 0).length > 0 && cells(el, 0, 0).length < 8, 'fatture di Bianchi');
       expect(cells(el, 0, 0)).toEqual(['FT-2026-002', 'FT-2026-006', 'FT-2026-010', 'FT-2026-014']);
     });
+
+    it('caricamento di file: il file parte subito, il servizio risponde con un id e il form lo salva', async () => {
+      const { el, until } = await openShowcase('/vetrina/vetrina-campi');
+      const field = el.querySelector('main lc-file-field') as HTMLElement;
+      const input = field.querySelector('input[type="file"]') as HTMLInputElement;
+      Object.defineProperty(input, 'files', { configurable: true, value: [new File(['%PDF-1.7'], 'contratto.pdf', { type: 'application/pdf' })] });
+      input.dispatchEvent(new Event('change'));
+      await until(() => field.querySelector('.name')?.textContent?.trim() === 'contratto.pdf', 'file caricato');
+      const form = field.closest('lc-form') as HTMLElement;
+      ([...form.querySelectorAll('button')].find((b) => b.textContent?.trim() === 'Salva') as HTMLButtonElement).click();
+      await until(() => !!document.querySelector('.ant-message-notice'), 'messaggio');
+      expect(document.querySelector('.ant-message-notice')?.textContent).toContain('Allegato contratto.pdf salvato (id 1)');
+    });
   });
 });

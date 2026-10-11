@@ -24,8 +24,9 @@ import { nextId, parseIsoDate, parseIsoDateTime, toIsoDate, toIsoDateTime } from
   `,
   template: `
     <form nz-form ngNoForm nzLayout="inline" role="search" (submit)="$event.preventDefault()">
+      <!-- Un file non è un criterio di ricerca: nella barra dei filtri non si mostra. -->
       @for (field of node().fields; track field.name) {
-        @if (runtime().isVisible(field, scope())) {
+        @if (field.type !== 'file' && runtime().isVisible(field, scope())) {
           <nz-form-item>
             @if (field.type !== 'checkbox') {
               <nz-form-label [nzFor]="id + field.name" [nzTooltipTitle]="field.tooltip ? runtime().text(field.tooltip, scope()) : undefined" [nzTooltipIcon]="'question-circle'">{{ runtime().text(field.label, scope()) || field.name }}</nz-form-label>
