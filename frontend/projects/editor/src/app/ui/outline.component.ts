@@ -1,12 +1,14 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { I18n } from 'core';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import { getIn, isObject, samePath, startsWith, type Json, type Path } from '../model/doc-ops';
+import { dropPoint, zoneAt, type DropZone } from '../model/drop';
 import { EditorStore } from '../model/editor-store';
 import { childSlots, containerItems, targetAt } from '../model/schema-info';
+import { DRAG_NODE, DRAG_TYPE } from './palette.component';
 import { fallbackText } from '../model/templates';
 
 /** Una riga della struttura: un nodo, una scheda o un passo, con i propri figli. */
@@ -30,6 +32,7 @@ const DETAIL_KEYS = ['title', 'label', 'text', 'source', 'bind'];
 /**
  * Struttura della schermata: l'albero dei nodi (con schede e passi), selezionabile. L'elemento selezionato mostra
  * i comandi per spostarlo, duplicarlo, tagliarlo ed eliminarlo; i nodi con problemi hanno un segno accanto.
+ * Si può trascinare un componente dalla tavolozza o un nodo della struttura prima, dopo o dentro un'altra riga.
  */
 @Component({
   selector: 'ed-outline',
@@ -94,6 +97,71 @@ export class OutlineComponent {
     const own = this.store.issues().filter((i) => samePath(i.owner, path));
     if (own.some((i) => i.severity === 'error')) return 'error';
     return own.length ? 'warning' : null;
+  }
+
+  /** Riga sotto il puntatore durante un trascinamento, con la zona (prima, dopo, dentro). */
+  protected readonly dropHint = signal<{ key: string; zone: DropZone } | null>(null);
+  /** Nodo trascinato dalla struttura (per non farlo cadere dentro sé stesso). */
+  private dragged: Path | null = null;
+
+  protected dragStart(event: DragEvent, item: OutlineItem): void {
+    if (item.kind !== 'node' || !event.dataTransfer) return;
+    this.dragged = item.path;
+    event.dataTransfer.setData(DRAG_NODE, JSON.stringify(item.path));
+    event.dataTransfer.effectAllowed = 'move';
+  }
+
+  protected dragEnd(): void {
+    this.dragged = null;
+    this.dropHint.set(null);
+  }
+
+  protected dragOver(event: DragEvent, path: Path): void {
+    const types = event.dataTransfer?.types ?? [];
+    if (!types.includes(DRAG_TYPE) && !types.includes(DRAG_NODE)) return;
+    const zone = this.zone(event, path);
+    if (!dropPoint(this.store.doc(), path, zone, this.dragged ?? undefined)) return;
+    // Rilascio permesso qui.
+    event.preventDefault();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = types.includes(DRAG_NODE) ? 'move' : 'copy';
+    const key = path.join('/');
+    const hint = this.dropHint();
+    if (hint?.key !== key || hint.zone !== zone) this.dropHint.set({ key, zone });
+  }
+
+  protected dragLeave(event: DragEvent, path: Path): void {
+    const related = event.relatedTarget as Node | null;
+    if (related && (event.currentTarget as Node).contains(related)) return;
+    if (this.dropHint()?.key === path.join('/')) this.dropHint.set(null);
+  }
+
+  protected drop(event: DragEvent, path: Path): void {
+    event.preventDefault();
+    const data = event.dataTransfer;
+    const zone = this.zone(event, path);
+    this.dropHint.set(null);
+    if (!data) return;
+    const type = data.getData(DRAG_TYPE);
+    const node = data.getData(DRAG_NODE);
+    const from = node ? (JSON.parse(node) as Path) : null;
+    const point = dropPoint(this.store.doc(), path, zone, from ?? undefined);
+    if (!point) return;
+    if (type) this.store.addNode(type, point);
+    else if (from) this.store.moveNode(from, point.list, point.index);
+    this.dragged = null;
+  }
+
+  protected hintOf(path: Path): DropZone | null {
+    const hint = this.dropHint();
+    return hint && hint.key === path.join('/') ? hint.zone : null;
+  }
+
+  private zone(event: DragEvent, path: Path): DropZone {
+    const row = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    const doc = this.store.doc();
+    const target = targetAt(doc, path);
+    const canContain = !!target && (target.kind !== 'node' || childSlots(doc, path).length > 0);
+    return zoneAt(event.clientY - row.top, row.height, canContain);
   }
 
   protected isSelected(path: Path): boolean {

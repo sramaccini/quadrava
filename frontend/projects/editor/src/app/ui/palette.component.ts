@@ -4,6 +4,10 @@ import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import { EditorStore } from '../model/editor-store';
 import { NODE_TYPES } from '../model/schema-info';
 
+/** Tipi di dati trascinati: un tipo di componente dalla tavolozza, il percorso di un nodo dalla struttura. */
+export const DRAG_TYPE = 'application/x-lc-node-type';
+export const DRAG_NODE = 'application/x-lc-node-path';
+
 /** Gruppi della tavolozza. Un tipo dello schema non elencato qui finisce in «Altro», così nessun componente manca. */
 const GROUPS: { key: string; types: string[] }[] = [
   { key: 'layout', types: ['section', 'tabs', 'wizard', 'text', 'alert'] },
@@ -12,7 +16,10 @@ const GROUPS: { key: string; types: string[] }[] = [
   { key: 'view', types: ['stats', 'chart', 'tree', 'calendar'] },
 ];
 
-/** Tavolozza dei componenti: un clic aggiunge il nodo nel punto di inserimento (dentro il contenitore selezionato o dopo il nodo). */
+/**
+ * Tavolozza dei componenti: un clic aggiunge il nodo nel punto di inserimento (dentro il contenitore selezionato o dopo
+ * il nodo); in alternativa lo si trascina nella struttura.
+ */
 @Component({
   selector: 'ed-palette',
   imports: [NzTooltipModule],
@@ -36,7 +43,7 @@ const GROUPS: { key: string; types: string[] }[] = [
         <h3>{{ i18n.t('ed.group.' + group.key) }}</h3>
         <div class="items">
           @for (type of group.types; track type) {
-            <button type="button" (click)="store.addNode(type)" [attr.data-type]="type" [nz-tooltip]="i18n.t('ed.addHint')">
+            <button type="button" draggable="true" (dragstart)="drag($event, type)" (click)="store.addNode(type)" [attr.data-type]="type" [nz-tooltip]="i18n.t('ed.addHint')">
               {{ i18n.t('ed.type.' + type) }}
             </button>
           }
@@ -49,6 +56,11 @@ export class PaletteComponent {
   protected readonly store = inject(EditorStore);
   protected readonly i18n = inject(I18n);
   protected readonly groups = paletteGroups();
+
+  protected drag(event: DragEvent, type: string): void {
+    event.dataTransfer?.setData(DRAG_TYPE, type);
+    if (event.dataTransfer) event.dataTransfer.effectAllowed = 'copy';
+  }
 }
 
 export function paletteGroups(): { key: string; types: string[] }[] {
