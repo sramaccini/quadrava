@@ -29,20 +29,20 @@ Da `frontend/`:
 - `.claude/launch.json` avvia una copia della demo sulla porta 4300 (per l'anteprima nel pannello di Claude).
 - test per progetto: `npx ng test <schema|expressions|core|components|services|runtime|editor> --watch=false`
 
-Stato test (tutti verdi): schema 60, expressions 39, core 60, components 123, services 19, runtime 65, editor 2 (**368**). Build di produzione della demo: 2,27 MB iniziali (avviso a 2,5 MB).
+Stato test (tutti verdi): schema 62, expressions 39, core 61, components 128, services 19, runtime 66, editor 2 (**377**). Build di produzione della demo: 2,27 MB iniziali (avviso a 2,5 MB).
 
 ## 4. Architettura in breve
 
 Librerie (`frontend/projects/`): `schema` (JSON Schema + tipi), `expressions` (CEL, template `{{ }}`, formattatore messaggi), `core` (ScreenRuntime, motore delle azioni, NavigationRuntime, I18n, porte astratte, catalogo, tema), `components` (NG-ZORRO), `services` (porte reali: HTTP/BFF/OIDC). App: `runtime` (demo/shell), `editor` (stub).
 
 - Porte (classi astratte come token DI): Authorization, UserProvider, DataClient, ScreenNavigator, Notifier, RuntimeDiagnostics, Confirmation, **FormDialog** (passo `dialog`).
-- Nodi: section, text, button, filterBar, table, **dataTable**, form, tabs, detail, alert, **stats**, **wizard**, **tree**, **calendar**, **chart**. Passi: set, call, refresh, navigate, toast, confirm, **dialog**.
+- Nodi: section, text, button, filterBar, table, **dataTable**, **serverDataTable**, form, tabs, detail, alert, **stats**, **wizard**, **tree**, **calendar**, **chart**. Passi: set, call, refresh, navigate, toast, confirm, **dialog**.
 - Campi: text, number, select, checkbox, date, **textarea, datetime, radio, switch, multiselect, lookup, file, repeater**. Formati: **number**, currency, percent, date, datetime, boolean, badge.
 - Tabella: ordinamento (in pagina o lato server con `sort.bind`), selezione + azioni multiple, menu azioni (`rowActionsInline`), righe espandibili, celle cliccabili, riga dei totali (`aggregate`).
 - `lc-node` applica `visibleIf/hiddenIf` e `tooltip`. Permessi `dominio.risorsa.azione`; espressioni **fail-closed**.
-- I data source GET si ricaricano **solo se cambia la richiesta risolta** (URL e parametri); `refresh` ricarica comunque. `ScreenRuntime.query` esegue un data source senza toccarne lo stato condiviso (usato dai lookup).
+- I data source GET si ricaricano **solo se cambia la richiesta risolta** (URL e parametri); `refresh` ricarica comunque. `ScreenRuntime.query` esegue un data source senza toccarne lo stato condiviso (usato dai lookup e dalla serverDataTable). `refresh` su un data source non GET incrementa solo `ScreenRuntime.refreshCount`, che la serverDataTable osserva per ricaricarsi.
 - `DataRequest.file`: invio multipart dei file (`HttpDataClient` usa `FormData`), fino a 100 MB; il base64 nel JSON resta per file fino a 10 MB.
-- Variabili sempre presenti nei data source: `search` e `lookupKey` (lookup), `file` nei data source di `upload`.
+- Variabili sempre presenti nei data source: `search` e `lookupKey` (lookup), `request` (serverDataTable, contratto nel catalogo § 2.19), `file` nei data source di `upload`.
 - Shell responsive a tre fasce (≥1200 espansa, 768–1199 compressa, <768 cassetto); pulsante tondo accanto al logo.
 
 ## 5. Catalogo componenti

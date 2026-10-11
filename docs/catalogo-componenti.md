@@ -20,6 +20,7 @@ Regole comuni a tutti i componenti, valide anche per i nuovi:
 | `filterBar` | Barra di filtri che scrive nello stato della schermata (`bind`). |
 | `table` | Tabella con paginazione lato server, formati di cella, ordinamento, selezione e azioni multiple, menu delle azioni, righe espandibili, celle cliccabili e totali. |
 | `dataTable` | Datatable con filtri, ordinamento e raggruppamento in pagina (§ 2.18). |
+| `serverDataTable` | Stessa datatable, ma filtri, ordinamento, gruppi, totali e pagine li calcola il servizio (§ 2.19). |
 | `form` | Form con validazione, campi condizionali, griglia a colonne e azioni. |
 | `tabs` | Schede, ognuna con i propri nodi. |
 | `detail` | Scheda di dettaglio in sola lettura (etichetta e valore). |
@@ -58,6 +59,7 @@ Realizzati in quest'ordine, uno per commit, ognuno con test (schema, componente 
 | 16 | Calendario | visualizzazione | realizzato |
 | 17 | Grafici | visualizzazione | realizzato |
 | 18 | Datatable con colonne filtrabili, ordinabili e raggruppabili | tabella | realizzato |
+| 19 | Datatable pilotata dal servizio, per tabelle molto grandi | tabella | realizzato |
 
 ### 2.1 Ordinamento delle colonne
 
@@ -247,7 +249,46 @@ Tabella per analizzare in pagina un insieme di righe già caricato: ogni colonna
 - **Ordinamento** su una colonna alla volta, come nella tabella.
 - **Raggruppamento**: l'utente sceglie una o più colonne `groupable` (in ordine) da un selettore sopra la tabella; `groupBy` è la scelta iniziale. Ogni gruppo ha un'intestazione con il valore, il numero di righe e i totali delle colonne con `aggregate`; i gruppi si aprono e chiudono.
 - Totale generale in fondo, paginazione in pagina (`pageSize`), azioni di riga come nella tabella.
-- Filtri, ordinamento e gruppi lavorano sulle righe caricate. Si disegna solo la pagina corrente, i testi delle celle si calcolano una volta per riga e il filtro di testo aspetta 200 ms di pausa: con 20.000 righe, nel browser, ordinare richiede circa 20 ms e filtrare circa 40 ms oltre l'attesa. Per archivi da centinaia di migliaia di righe si usa `table` con paginazione, filtri e ordinamento lato server.
+- Filtri, ordinamento e gruppi lavorano sulle righe caricate. Si disegna solo la pagina corrente, i testi delle celle si calcolano una volta per riga e il filtro di testo aspetta 200 ms di pausa: con 20.000 righe, nel browser, ordinare richiede circa 20 ms e filtrare circa 40 ms oltre l'attesa. Per archivi da centinaia di migliaia di righe si usa `serverDataTable` (§ 2.19).
+
+### 2.19 Datatable pilotata dal servizio
+
+Stessa interfaccia della datatable (filtri dall'intestazione, ordinamento, scelta dei gruppi, totali, azioni di riga), ma il browser riceve solo la pagina e i gruppi visibili: tutto il calcolo è del servizio. Adatta ad archivi di centinaia di migliaia o milioni di righe.
+
+```json
+"dataSources": { "ricerca": { "type": "rest", "method": "POST", "url": "/api/movimenti/ricerca", "body": "{{ request }}" } },
+...
+{ "type": "serverDataTable", "source": "ricerca", "groupBy": ["conto"], "pageSize": 15,
+  "defaultSort": { "field": "data", "direction": "desc" }, "bind": "state.ricercaMovimenti",
+  "columns": [ ...come nella dataTable... ] }
+```
+
+**Richiesta.** La tabella esegue il data source con la variabile `request` (di solito tutto il corpo di una POST):
+
+```json
+{ "page": 0, "size": 15,
+  "sort": { "field": "data", "direction": "desc" },
+  "filters": [ { "field": "descrizione", "kind": "text", "text": "affitto" },
+               { "field": "conto", "kind": "select", "values": ["Cassa"] },
+               { "field": "importo", "kind": "number", "from": 100, "to": null },
+               { "field": "data", "kind": "date", "from": "2026-01-01", "to": "2026-03-31" } ],
+  "groupBy": ["conto"], "groupPath": [ { "field": "conto", "value": "Cassa" } ],
+  "distinct": "categoria" }
+```
+
+- `groupPath` indica in quale gruppo aperto si sta leggendo; vuoto al primo livello.
+- `distinct` c'è solo quando la tabella chiede i valori di un filtro a scelta: la risposta è `{ "values": [...] }`, calcolata con gli altri filtri applicati.
+
+**Risposta.**
+- Se `groupPath` è più corto di `groupBy`, il servizio risponde con i gruppi del livello successivo: `{ "groups": [ { "value": "Cassa", "count": 50000, "aggregates": { "importo": -1234.5 } } ], "total": 4, "totals": { "importo": ... } }`.
+- Altrimenti risponde con le righe: `{ "items": [...], "total": 50000, "totals": { "importo": ... } }`.
+- `total` è il numero di gruppi o di righe del livello (serve alla paginazione); `totals` sono i totali generali delle colonne con `aggregate`, mostrati in fondo.
+
+**Comportamento.**
+- Ordinamento, filtri e gruppi riportano alla prima pagina; il filtro di testo aspetta 300 ms di pausa. Una risposta arrivata dopo una più recente viene scartata.
+- Un gruppo aperto carica le sue righe (o i sottogruppi) a pagine, con il pulsante «Mostra altre». Il passo `refresh` sul data source e il cambio pagina lasciano aperti i gruppi e ne ricaricano il contenuto fino al punto raggiunto.
+- `bind` scrive nello stato `{ sort, filters, groupBy }`, utile per esportazioni o altre chiamate con gli stessi criteri.
+- Il servizio deve controllare i campi ricevuti (solo colonne note in `sort`, `filters`, `groupBy`, `distinct`) e limitare `size`: la richiesta arriva dal browser e non è affidabile.
 
 ## 3. Note di realizzazione e limiti noti
 
@@ -256,9 +297,10 @@ Tabella per analizzare in pagina un insieme di righe già caricato: ogni colonna
 - **Variabili dei campi lookup e file.** Nei data source esistono sempre `search` e `lookupKey` (nulle finché non servono); `file` esiste nei data source di `upload`.
 - **Lookup.** Il testo di un valore non caricato si risolve solo se il data source usa `{{ lookupKey }}`; altrimenti il campo mostra il valore stesso finché l'utente non cerca.
 - **Righe ripetibili.** Niente righe annidate dentro una riga.
-- **Datatable.** Lavora sulle righe caricate (provata fino a 50.000 righe nelle funzioni e 20.000 nel componente); oltre, `table` con le operazioni lato server.
+- **Datatable.** Lavora sulle righe caricate (provata fino a 50.000 righe nelle funzioni e 20.000 nel componente); oltre, `serverDataTable`.
+- **Datatable lato server.** Niente selezione di righe né righe espandibili; i gruppi aperti non si ricordano tra una visita e l'altra della schermata. Il passo `refresh` su un data source non GET non chiama nulla: avvisa solo i componenti che lo interrogano da sé.
 - **Grafici.** Niente zoom, aree riempite o più di due assi.
 
 ### 3.1 Limiti superati (ottobre 2026)
 
-Dopo la prima consegna sono stati risolti: testo dei valori non caricati nel lookup (`lookupKey`); file in multipart fino a 100 MB; lookup e file nelle righe ripetibili; albero del tutto usabile da tastiera; datatable per decine di migliaia di righe; barre impilate, asse destro e grafici combinati.
+Dopo la prima consegna sono stati risolti: testo dei valori non caricati nel lookup (`lookupKey`); file in multipart fino a 100 MB; lookup e file nelle righe ripetibili; albero del tutto usabile da tastiera; datatable per decine di migliaia di righe e, lato server, per archivi di qualsiasi dimensione; barre impilate, asse destro e grafici combinati.
