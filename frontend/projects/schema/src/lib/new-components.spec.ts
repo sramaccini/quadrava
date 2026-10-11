@@ -61,4 +61,18 @@ describe('schema dei componenti nuovi', () => {
       expect(issuesOf(table({ expand: { components: [{ type: 'text', text: 'x' }], aperta: true } })).length).toBeGreaterThan(0);
     });
   });
+
+  describe('formato numerico, celle cliccabili e totali', () => {
+    it('accetta number con decimali (anche nel dettaglio), onClick e aggregate nelle colonne di tabella', () => {
+      expect(issuesOf(table({}, [{ field: 'n', format: 'number', decimals: 2, aggregate: 'sum', onClick: [{ toast: '{{ row.n }}' }] }]))).toEqual([]);
+      expect(issuesOf(screen([{ type: 'detail', source: 's', fields: [{ field: 'n', format: 'number', decimals: 0 }] }]))).toEqual([]);
+    });
+
+    it('rifiuta decimali fuori misura, aggregati sconosciuti e onClick o aggregate nel dettaglio', () => {
+      expect(issuesOf(table({}, [{ field: 'n', format: 'number', decimals: 7 }])).length).toBeGreaterThan(0);
+      expect(issuesOf(table({}, [{ field: 'n', aggregate: 'median' }])).length).toBeGreaterThan(0);
+      expect(issuesOf(table({}, [{ field: 'n', onClick: [] }])).length).toBeGreaterThan(0);
+      expect(issuesOf(screen([{ type: 'detail', source: 's', fields: [{ field: 'n', aggregate: 'sum' }] }])).length).toBeGreaterThan(0);
+    });
+  });
 });

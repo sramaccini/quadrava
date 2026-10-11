@@ -50,3 +50,33 @@ export function asSort(value: unknown): SortSpec | null {
   const { field, direction } = value as Record<string, unknown>;
   return typeof field === 'string' && field && (direction === 'asc' || direction === 'desc') ? { field, direction } : null;
 }
+
+/** Numero di un valore di riga: numeri e testi numerici; tutto il resto non conta. */
+export function numeric(value: unknown): number | null {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (typeof value === 'string' && value.trim() !== '') {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+}
+
+/**
+ * Valore aggregato di un campo sulle righe date: `count` conta i valori non vuoti, gli altri considerano solo
+ * i valori numerici. Senza valori numerici restituisce `null` (cella vuota), mai `NaN`.
+ */
+export function aggregate(rows: readonly Row[], field: string, kind: 'sum' | 'avg' | 'min' | 'max' | 'count'): number | null {
+  if (kind === 'count') return rows.filter((r) => r[field] !== null && r[field] !== undefined && r[field] !== '').length;
+  const values = rows.map((r) => numeric(r[field])).filter((n): n is number => n !== null);
+  if (values.length === 0) return null;
+  switch (kind) {
+    case 'sum':
+      return values.reduce((a, b) => a + b, 0);
+    case 'avg':
+      return values.reduce((a, b) => a + b, 0) / values.length;
+    case 'min':
+      return Math.min(...values);
+    case 'max':
+      return Math.max(...values);
+  }
+}

@@ -2,7 +2,7 @@ import { Location } from '@angular/common';
 import { TestBed } from '@angular/core/testing';
 import { DemoDiagnostics } from '../demo/demo-ports';
 import { stubViewportHeight } from './select-testing';
-import { cells, headerCell, openShowcase, setupShowcase, teardownShowcase } from './showcase-testing';
+import { cells, headerCell, openShowcase, plainText, setupShowcase, teardownShowcase } from './showcase-testing';
 
 /** Le schermate della vetrina per i componenti aggiunti dopo la prima versione: si aprono senza errori e fanno quello che dicono. */
 describe('Vetrina: componenti avanzati', () => {
@@ -86,6 +86,17 @@ describe('Vetrina: componenti avanzati', () => {
       ([...areas[1].querySelectorAll('button')].find((b) => b.textContent?.includes('Apri l’ordine')) as HTMLButtonElement).click();
       await until(() => TestBed.inject(Location).path().startsWith('/vetrina/ordine-dettaglio'), 'navigazione');
       expect(TestBed.inject(Location).path()).toContain('id=19');
+    });
+
+    it('numeri, collegamenti e totali: riga dei totali sulle righe caricate e numero cliccabile', async () => {
+      const { el, until } = await openShowcase('/vetrina/vetrina-tabelle-avanzate');
+      await until(() => cells(el, 5, 0).length === 8, 'fatture');
+      expect(cells(el, 5, 2).slice(0, 3)).toEqual(['1', '2', '3']);
+      const totals = [...el.querySelectorAll('main nz-table')[5].querySelectorAll('tfoot tr.totals td')].map((td) => plainText(td.textContent));
+      expect(totals).toEqual(['Totale', 'N. 8', '21', 'Media 19 %', '5780,00 €']);
+      (el.querySelectorAll('main nz-table')[5].querySelector('tbody button.cell-link') as HTMLButtonElement).click();
+      await until(() => !!document.querySelector('.ant-message-notice'), 'messaggio');
+      expect(document.querySelector('.ant-message-notice')?.textContent).toContain('Hai aperto la fattura FT-2026-001');
     });
   });
 });

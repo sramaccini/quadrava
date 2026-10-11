@@ -8,10 +8,10 @@ import { NzPaginationModule } from 'ng-zorro-antd/pagination';
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
-import type { ActionDefinition, ColumnDefinition, SortSpec, TableColumnDefinition, TableNode } from 'schema';
+import type { ActionDefinition, ColumnDefinition, SortSpec, Step, TableColumnDefinition, TableNode } from 'schema';
 import { IconComponent } from './icon.component';
 import { TONE_COLORS } from './shared';
-import { asSort, sortRows, type Row } from './table-data';
+import { aggregate, asSort, sortRows, type Row } from './table-data';
 
 type NzSortOrder = 'ascend' | 'descend' | null;
 
@@ -31,6 +31,11 @@ const DEFAULT_PAGE_SIZE = 10;
     .actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
     .more { padding-inline: 6px; }
     .expand-cell { width: 48px; }
+    .cell-link { padding: 0; border: 0; background: none; font: inherit; color: var(--ant-primary-color, var(--lc-color-primary, #1f5fbf)); cursor: pointer; text-align: inherit; }
+    .cell-link:hover, .cell-link:focus-visible { text-decoration: underline; }
+    .cell-link:disabled { cursor: not-allowed; opacity: 0.6; }
+    .totals td { font-weight: 600; }
+    .totals .kind { font-weight: 400; color: var(--lc-color-muted, #5d6b7a); margin-right: 4px; }
     .expanded-body { display: flex; flex-direction: column; gap: var(--lc-gap, 12px); padding: 4px 0; }
     .menu-row { display: inline-flex; align-items: center; gap: 8px; }
     .pager { display: flex; justify-content: flex-end; padding-top: var(--lc-gap, 12px); }
@@ -116,7 +121,15 @@ const DEFAULT_PAGE_SIZE = 10;
                 @for (column of columns(); track column.field) {
                   <td [nzAlign]="numeric(column) ? 'right' : 'left'">
                     @if (cell(row, column); as view) {
-                      @if (view.tone) {
+                      @if (column.onClick) {
+                        <button type="button" class="cell-link" [disabled]="busy()" (click)="runCell(column.onClick, row)">
+                          @if (view.tone) {
+                            <nz-tag [nzColor]="color(view.tone)">{{ view.text }}</nz-tag>
+                          } @else {
+                            {{ view.text }}
+                          }
+                        </button>
+                      } @else if (view.tone) {
                         <nz-tag [nzColor]="color(view.tone)">{{ view.text }}</nz-tag>
                       } @else {
                         {{ view.text }}
@@ -168,6 +181,33 @@ const DEFAULT_PAGE_SIZE = 10;
               }
             }
           </tbody>
+          @if (hasTotals() && rows().length) {
+            <tfoot nzSummary>
+              <tr class="totals">
+                @if (node().expand) {
+                  <td></td>
+                }
+                @if (node().selection) {
+                  <td></td>
+                }
+                @for (column of columns(); track column.field; let first = $first) {
+                  <td [nzAlign]="numeric(column) ? 'right' : 'left'">
+                    @if (column.aggregate) {
+                      @if (column.aggregate !== 'sum') {
+                        <span class="kind">{{ i18n.t('lc.aggregate.' + column.aggregate) }}</span>
+                      }
+                      {{ totalOf(column) }}
+                    } @else if (first) {
+                      {{ i18n.t('lc.total') }}
+                    }
+                  </td>
+                }
+                @if (node().rowActions?.length) {
+                  <td></td>
+                }
+              </tr>
+            </tfoot>
+          }
         </nz-table>
         </div>
         <ng-template #empty>
@@ -335,7 +375,30 @@ export class TableComponent {
   }
 
   protected numeric(column: ColumnDefinition): boolean {
-    return column.format === 'currency' || column.format === 'percent';
+    return column.format === 'number' || column.format === 'currency' || column.format === 'percent';
+  }
+
+  /** C'è una riga dei totali se almeno una colonna visibile ha `aggregate`. */
+  protected readonly hasTotals = computed(() => this.columns().some((c) => !!c.aggregate));
+
+  /** Valore della riga dei totali per una colonna, con il formato della colonna (numero semplice per il conteggio). */
+  protected totalOf(column: TableColumnDefinition): string {
+    if (!column.aggregate) return '';
+    const value = aggregate(this.rows(), column.field, column.aggregate);
+    if (value === null) return '';
+    const spec: ColumnDefinition =
+      column.aggregate === 'count' ? { field: column.field, format: 'number', decimals: 0 } : this.numeric(column) ? column : { field: column.field, format: 'number' };
+    return formatValue(value, spec, this.i18n.intlLocale(), this.labels()).text;
+  }
+
+  protected async runCell(steps: Step[], row: Row): Promise<void> {
+    if (this.busy()) return;
+    this.busy.set(true);
+    try {
+      await runSteps(this.runtime(), steps, { ...this.scope(), row });
+    } finally {
+      this.busy.set(false);
+    }
   }
 
   protected goTo(page: number): void {

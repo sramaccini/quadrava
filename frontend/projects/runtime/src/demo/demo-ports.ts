@@ -47,7 +47,7 @@ export class DemoDiagnostics extends RuntimeDiagnostics {
   }
 }
 
-interface Invoice { id: number; numero: string; cliente: string; tipo: string; importo: number; stato: 'bozza' | 'inviata' | 'pagata'; emessa: string; incassata: boolean }
+interface Invoice { id: number; numero: string; cliente: string; tipo: string; importo: number; stato: 'bozza' | 'inviata' | 'pagata'; emessa: string; incassata: boolean; righe: number; aliquota: number }
 interface Package { id: number; nome: string; descrizione: string; creato: string }
 interface Expense { id: number; descrizione: string; dipendente: string; importo: number; stato: 'da-revisionare' | 'approvata' | 'respinta' }
 
@@ -97,6 +97,8 @@ export class MockDataClient extends DataClient {
     stato: (['bozza', 'inviata', 'pagata'] as const)[i % 3],
     emessa: `2026-09-${String(i + 1).padStart(2, '0')}`,
     incassata: i % 3 === 2,
+    righe: 1 + (i % 5),
+    aliquota: i % 4 === 3 ? 10 : 22,
   }));
   private readonly packages: Package[] = [
     { id: 1, nome: 'Chiusura settembre', descrizione: 'Fatture attive del mese', creato: '2026-10-01' },
@@ -162,7 +164,7 @@ export class MockDataClient extends DataClient {
       const body = req.body ?? {};
       if (!body['numero'] || !body['cliente']) throw new Error('400');
       const id = Math.max(...this.invoices.map((f) => f.id)) + 1;
-      this.invoices.unshift({ id, numero: String(body['numero']), cliente: String(body['cliente']), tipo: String(body['tipo'] ?? 'attiva'), importo: Number(body['importo'] ?? 0), stato: 'bozza', emessa: '2026-10-07', incassata: false });
+      this.invoices.unshift({ id, numero: String(body['numero']), cliente: String(body['cliente']), tipo: String(body['tipo'] ?? 'attiva'), importo: Number(body['importo'] ?? 0), stato: 'bozza', emessa: '2026-10-07', incassata: false, righe: 1, aliquota: 22 });
       return { id };
     }
     if (path === '/api/fatture/invia' && req.method === 'POST') {

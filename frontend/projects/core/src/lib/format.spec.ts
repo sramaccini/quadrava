@@ -13,6 +13,15 @@ describe('formatValue', () => {
     expect(plain(formatValue(10, { format: 'currency', currency: 'USD' }).text)).toMatch(/\$|USD/);
   });
 
+  it('mostra i numeri con i separatori della lingua e i decimali richiesti', () => {
+    expect(plain(formatValue(12500.5, { format: 'number' }).text)).toBe('12.500,5');
+    expect(plain(formatValue(3.14159, { format: 'number' }).text)).toBe('3,14');
+    expect(plain(formatValue(2, { format: 'number', decimals: 3 }).text)).toBe('2,000');
+    expect(plain(formatValue('1234567', { format: 'number', decimals: 0 }).text)).toBe('1.234.567');
+    expect(formatValue(12500.5, { format: 'number' }, 'en-GB').text).toBe('12,500.5');
+    expect(formatValue('n/d', { format: 'number' }).text).toBe('n/d');
+  });
+
   it('tratta la percentuale come punti percentuali, non come frazione', () => {
     expect(plain(formatValue(10, { format: 'percent' }).text)).toBe('10 %');
     expect(plain(formatValue(12.345, { format: 'percent' }).text)).toBe('12,35 %');

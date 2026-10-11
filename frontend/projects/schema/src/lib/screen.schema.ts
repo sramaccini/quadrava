@@ -810,6 +810,7 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
         "format": {
           "enum": [
             "text",
+            "number",
             "currency",
             "percent",
             "date",
@@ -817,7 +818,7 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
             "boolean",
             "badge"
           ],
-          "description": "Come mostrare il valore: currency (importo con simbolo), percent (il valore è già in punti percentuali, 10 = 10 %), date e datetime (testo ISO 8601), boolean (Sì/No), badge (etichetta colorata secondo `badges`)."
+          "description": "Come mostrare il valore: number (numero con le cifre separate secondo la lingua, `decimals` decimali), currency (importo con simbolo), percent (il valore è già in punti percentuali, 10 = 10 %), date e datetime (testo ISO 8601), boolean (Sì/No), badge (etichetta colorata secondo `badges`)."
         },
         "currency": {
           "type": "string",
@@ -847,6 +848,12 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
           "minLength": 1,
           "maxLength": 100,
           "description": "Prefisso delle chiavi di traduzione per i valori mostrati: il testo è t('<prefisso>.<valore>'), con il valore come ripiego. I colori dei badge restano legati al valore originale."
+        },
+        "decimals": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 6,
+          "description": "Decimali mostrati con format number (fino a 2 se assente)."
         }
       }
     },
@@ -857,6 +864,24 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
         "sortable": {
           "type": "boolean",
           "description": "La colonna si può ordinare (frecce nell'intestazione)."
+        },
+        "onClick": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/step"
+          },
+          "description": "Il valore diventa un collegamento che esegue questi passi con la riga in `row`."
+        },
+        "aggregate": {
+          "enum": [
+            "sum",
+            "avg",
+            "min",
+            "max",
+            "count"
+          ],
+          "description": "Valore della colonna nella riga dei totali (somma, media, minimo, massimo, conteggio), calcolato sulle righe caricate."
         }
       }
     },

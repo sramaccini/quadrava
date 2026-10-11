@@ -361,6 +361,58 @@
           }
         }
       ]
+    },
+    {
+      "id": "sezione-totali",
+      "type": "section",
+      "title": "{{ t('vetrina_avanzate.totali', 'Numeri, collegamenti e totali') }}",
+      "components": [
+        {
+          "id": "spiega-totali",
+          "type": "text",
+          "text": "{{ t('vetrina_avanzate.totali_spiega', 'Il numero della fattura è un collegamento (onClick sulla colonna). In fondo la riga dei totali: somma delle righe e degli importi, aliquota media e numero di clienti.') }}"
+        },
+        {
+          "id": "fatture-totali",
+          "type": "table",
+          "source": "fatture",
+          "columns": [
+            {
+              "field": "numero",
+              "label": "{{ t('comune.numero', 'Numero') }}",
+              "onClick": [
+                {
+                  "toast": "{{ t('vetrina_avanzate.aperta', 'Hai aperto la fattura {numero}', {'numero': row.numero}) }}"
+                }
+              ]
+            },
+            {
+              "field": "cliente",
+              "label": "{{ t('comune.cliente', 'Cliente') }}",
+              "aggregate": "count"
+            },
+            {
+              "field": "righe",
+              "label": "{{ t('vetrina_avanzate.righe', 'Righe') }}",
+              "format": "number",
+              "decimals": 0,
+              "aggregate": "sum"
+            },
+            {
+              "field": "aliquota",
+              "label": "{{ t('vetrina_avanzate.aliquota', 'Aliquota IVA') }}",
+              "format": "percent",
+              "aggregate": "avg"
+            },
+            {
+              "field": "importo",
+              "label": "{{ t('comune.importo', 'Importo') }}",
+              "format": "currency",
+              "aggregate": "sum"
+            }
+          ]
+        }
+      ]
     }
   ]
 }

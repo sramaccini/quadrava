@@ -73,7 +73,7 @@ export interface FieldDefinition {
 }
 
 export type Tone = 'neutral' | 'primary' | 'success' | 'danger';
-export type CellFormat = 'text' | 'currency' | 'percent' | 'date' | 'datetime' | 'boolean' | 'badge';
+export type CellFormat = 'text' | 'number' | 'currency' | 'percent' | 'date' | 'datetime' | 'boolean' | 'badge';
 
 /** Colonna di una tabella o campo di una scheda di dettaglio. */
 export interface ColumnDefinition {
@@ -83,6 +83,8 @@ export interface ColumnDefinition {
   format?: CellFormat;
   /** Prefisso delle chiavi di traduzione dei valori mostrati (`<prefisso>.<valore>`); i badge restano legati al valore originale. */
   valueKey?: string;
+  /** Decimali per `number` (fino a 2 se assente). */
+  decimals?: number;
   /** Codice ISO 4217 per `currency` (EUR se assente). */
   currency?: string;
   /** Per `badge`: tono per ogni valore. */
@@ -95,7 +97,13 @@ export interface ColumnDefinition {
 export interface TableColumnDefinition extends ColumnDefinition {
   /** La colonna si può ordinare. */
   sortable?: boolean;
+  /** Il valore diventa un collegamento che esegue i passi con la riga in `row`. */
+  onClick?: Step[];
+  /** Valore della colonna nella riga dei totali, calcolato sulle righe caricate. */
+  aggregate?: Aggregate;
 }
+
+export type Aggregate = 'sum' | 'avg' | 'min' | 'max' | 'count';
 
 /** Percorso nello stato della schermata, per esempio `state.ordinamento`. */
 export type StatePath = string;

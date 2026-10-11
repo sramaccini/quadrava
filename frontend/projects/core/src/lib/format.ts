@@ -6,7 +6,7 @@ export interface FormattedValue {
   tone?: Tone;
 }
 
-type FormatSpec = Pick<ColumnDefinition, 'format' | 'currency' | 'badges' | 'valueKey'>;
+type FormatSpec = Pick<ColumnDefinition, 'format' | 'currency' | 'badges' | 'valueKey' | 'decimals'>;
 
 /** Scritte che dipendono dalla lingua: sì/no e la traduzione dei valori (`valueKey`). */
 export interface FormatLabels {
@@ -44,6 +44,12 @@ export function formatValue(value: unknown, spec: FormatSpec, locale = 'it-IT', 
   if (value === null || value === undefined) return { text: '' };
   try {
     switch (spec.format) {
+      case 'number': {
+        const n = toNumber(value);
+        const digits = spec.decimals;
+        const options: Intl.NumberFormatOptions = digits === undefined ? { maximumFractionDigits: 2 } : { minimumFractionDigits: digits, maximumFractionDigits: digits };
+        return { text: n === null ? String(value) : number(locale, options).format(n) };
+      }
       case 'currency': {
         const n = toNumber(value);
         return { text: n === null ? String(value) : number(locale, { style: 'currency', currency: spec.currency ?? 'EUR' }).format(n) };

@@ -35,6 +35,11 @@ export const BUILTIN_MESSAGES: Record<string, Messages> = {
     'lc.details': 'Dettagli',
     'lc.expandRow': 'Mostra i dettagli della riga',
     'lc.collapseRow': 'Nascondi i dettagli della riga',
+    'lc.total': 'Totale',
+    'lc.aggregate.avg': 'Media',
+    'lc.aggregate.min': 'Min',
+    'lc.aggregate.max': 'Max',
+    'lc.aggregate.count': 'N.',
   },
   en: {
     'lc.all': 'All',
@@ -66,5 +71,10 @@ export const BUILTIN_MESSAGES: Record<string, Messages> = {
     'lc.details': 'Details',
     'lc.expandRow': 'Show row details',
     'lc.collapseRow': 'Hide row details',
+    'lc.total': 'Total',
+    'lc.aggregate.avg': 'Average',
+    'lc.aggregate.min': 'Min',
+    'lc.aggregate.max': 'Max',
+    'lc.aggregate.count': 'Count',
   },
 };
