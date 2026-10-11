@@ -49,4 +49,16 @@ describe('schema dei componenti nuovi', () => {
       expect(issuesOf(table({ rowActionsInline: 11 })).length).toBeGreaterThan(0);
     });
   });
+
+  describe('righe espandibili', () => {
+    it('accetta un’area con nodi e una condizione', () => {
+      expect(issuesOf(table({ expand: { expandIf: '{{ row.x > 0 }}', components: [{ type: 'text', text: '{{ row.note }}' }] } }))).toEqual([]);
+    });
+
+    it('rifiuta aree vuote, condizioni che non sono espressioni e proprietà estranee', () => {
+      expect(issuesOf(table({ expand: { components: [] } })).length).toBeGreaterThan(0);
+      expect(issuesOf(table({ expand: { components: [{ type: 'text', text: 'x' }], expandIf: 'sempre' } })).length).toBeGreaterThan(0);
+      expect(issuesOf(table({ expand: { components: [{ type: 'text', text: 'x' }], aperta: true } })).length).toBeGreaterThan(0);
+    });
+  });
 });

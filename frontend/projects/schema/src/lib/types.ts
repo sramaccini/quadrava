@@ -144,6 +144,8 @@ export interface TableNode extends NodeBase {
   rowActions?: ActionDefinition[];
   /** Quante azioni di riga visibili mostrare come pulsanti; le altre vanno nel menu «⋯» (0 = tutte nel menu). */
   rowActionsInline?: number;
+  /** Area che si apre sotto la riga; i nodi vedono la riga come `row`. */
+  expand?: { components: NodeDefinition[]; expandIf?: Expression };
 }
 export interface FormNode extends NodeBase {
   type: 'form';

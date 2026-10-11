@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, linkedSignal, signal, untracked } from '@angular/core';
-import { I18n, formatValue, type FormatLabels, runSteps, type FormattedValue, type ScreenRuntime, type Scope } from 'core';
+import { I18n, NodeHostComponent, formatValue, type FormatLabels, runSteps, type FormattedValue, type ScreenRuntime, type Scope } from 'core';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzDropdownModule } from 'ng-zorro-antd/dropdown';
@@ -24,12 +24,14 @@ const DEFAULT_PAGE_SIZE = 10;
  */
 @Component({
   selector: 'lc-table',
-  imports: [IconComponent, NzTableModule, NzTagModule, NzButtonModule, NzDropdownModule, NzMenuModule, NzPaginationModule, NzAlertModule, NzTooltipModule],
+  imports: [IconComponent, NodeHostComponent, NzTableModule, NzTagModule, NzButtonModule, NzDropdownModule, NzMenuModule, NzPaginationModule, NzAlertModule, NzTooltipModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     .wrap { overflow-x: auto; overflow-y: hidden; }
     .actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
     .more { padding-inline: 6px; }
+    .expand-cell { width: 48px; }
+    .expanded-body { display: flex; flex-direction: column; gap: var(--lc-gap, 12px); padding: 4px 0; }
     .menu-row { display: inline-flex; align-items: center; gap: 8px; }
     .pager { display: flex; justify-content: flex-end; padding-top: var(--lc-gap, 12px); }
     .bulk { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding-bottom: var(--lc-gap, 12px); }
@@ -66,6 +68,9 @@ const DEFAULT_PAGE_SIZE = 10;
         >
           <thead>
             <tr>
+              @if (node().expand) {
+                <th class="expand-cell"><span class="visually-hidden">{{ i18n.t('lc.details') }}</span></th>
+              }
               @if (node().selection) {
                 <th nzWidth="48px" [nzChecked]="allSelected()" [nzIndeterminate]="someSelected()" [nzLabel]="i18n.t('lc.selectAll')" (nzCheckedChange)="selectAll($event)"></th>
               }
@@ -90,6 +95,21 @@ const DEFAULT_PAGE_SIZE = 10;
           <tbody>
             @for (row of rows(); track $index) {
               <tr [class.ant-table-row-selected]="isSelected(row)">
+                @if (node().expand) {
+                  <td class="expand-cell">
+                    @if (canExpand(row)) {
+                      <button
+                        type="button"
+                        class="ant-table-row-expand-icon"
+                        [class.ant-table-row-expand-icon-expanded]="isExpanded(row)"
+                        [class.ant-table-row-expand-icon-collapsed]="!isExpanded(row)"
+                        [attr.aria-expanded]="isExpanded(row)"
+                        [attr.aria-label]="i18n.t(isExpanded(row) ? 'lc.collapseRow' : 'lc.expandRow')"
+                        (click)="toggleExpand(row)"
+                      ></button>
+                    }
+                  </td>
+                }
                 @if (node().selection) {
                   <td [nzChecked]="isSelected(row)" [nzLabel]="i18n.t('lc.selectRow')" (nzCheckedChange)="toggle(row, $event)"></td>
                 }
@@ -135,6 +155,17 @@ const DEFAULT_PAGE_SIZE = 10;
                   </td>
                 }
               </tr>
+              @if (node().expand && isExpanded(row)) {
+                <tr class="lc-extra-row ant-table-expanded-row">
+                  <td [attr.colspan]="colspan()">
+                    <div class="expanded-body">
+                      @for (child of node().expand!.components; track $index) {
+                        <lc-node [node]="child" [runtime]="runtime()" [scope]="rowScope(row)" />
+                      }
+                    </div>
+                  </td>
+                </tr>
+              }
             }
           </tbody>
         </nz-table>
@@ -309,6 +340,44 @@ export class TableComponent {
 
   protected goTo(page: number): void {
     this.runtime().setState('page', Math.max(0, page));
+  }
+
+  /** Righe aperte (per chiave, o per posizione se la riga non ha chiave). */
+  private readonly expanded = signal<ReadonlySet<unknown>>(new Set());
+  /** Scope di ogni riga, creato una volta per riga: un oggetto nuovo a ogni disegno ricostruirebbe i nodi dell'area aperta. */
+  private readonly scopes = new WeakMap<Row, Scope>();
+  protected readonly colspan = computed(
+    () => this.columns().length + (this.node().expand ? 1 : 0) + (this.node().selection ? 1 : 0) + (this.node().rowActions?.length ? 1 : 0),
+  );
+
+  private expandKey(row: Row): unknown {
+    const value = row[this.key()];
+    return value === undefined || value === null ? this.rows().indexOf(row) : value;
+  }
+
+  protected canExpand(row: Row): boolean {
+    const expandIf = this.node().expand?.expandIf;
+    return expandIf ? this.runtime().engine.evaluateCondition(expandIf, this.runtime().context(this.rowScope(row)), { whenMissing: true }) : true;
+  }
+
+  protected isExpanded(row: Row): boolean {
+    return this.expanded().has(this.expandKey(row));
+  }
+
+  protected toggleExpand(row: Row): void {
+    const key = this.expandKey(row);
+    this.expanded.update((set) => {
+      const next = new Set(set);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  protected rowScope(row: Row): Scope {
+    let scope = this.scopes.get(row);
+    if (!scope) this.scopes.set(row, (scope = { ...this.scope(), row }));
+    return scope;
   }
 
   /** Azioni visibili di una riga, divise tra pulsanti e menu «⋯» secondo `rowActionsInline`. */

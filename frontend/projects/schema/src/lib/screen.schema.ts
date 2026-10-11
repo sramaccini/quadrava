@@ -582,6 +582,27 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                 "minimum": 0,
                 "maximum": 10,
                 "description": "Quante azioni di riga (visibili) mostrare come pulsanti; le altre finiscono nel menu «⋯». 0 = tutte nel menu; se manca, tutte pulsanti."
+              },
+              "expand": {
+                "type": "object",
+                "required": [
+                  "components"
+                ],
+                "additionalProperties": false,
+                "description": "Area che si apre sotto la riga: i nodi vedono la riga come `row`. I data source sono della schermata: dentro l'area si usano i valori di `row`.",
+                "properties": {
+                  "components": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "$ref": "#/$defs/node"
+                    }
+                  },
+                  "expandIf": {
+                    "$ref": "#/$defs/expression",
+                    "description": "Quali righe si possono espandere (espressione con row); tutte se assente."
+                  }
+                }
               }
             }
           }

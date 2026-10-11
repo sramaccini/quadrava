@@ -1,3 +1,4 @@
+import { Location } from '@angular/common';
 import { TestBed } from '@angular/core/testing';
 import { DemoDiagnostics } from '../demo/demo-ports';
 import { stubViewportHeight } from './select-testing';
@@ -67,6 +68,24 @@ describe('Vetrina: componenti avanzati', () => {
       items()[1].click();
       await until(() => !!document.querySelector('.ant-message-notice'), 'messaggio');
       expect(document.querySelector('.ant-message-notice')?.textContent).toContain('Sollecito inviato a Bianchi SpA');
+    });
+
+    it('righe espandibili: l’area mostra i dati della riga e il pulsante apre l’ordine', async () => {
+      const { el, until } = await openShowcase('/vetrina/vetrina-tabelle-avanzate');
+      await until(() => cells(el, 4, 1).length === 8, 'ordini');
+      const rows = (): Element[] => [...el.querySelectorAll('main nz-table')[4].querySelectorAll('tbody tr:not(.lc-extra-row)')];
+      // ORD-0021 è approvato: non si espande.
+      expect(rows()[0].querySelector('button.ant-table-row-expand-icon')).toBeNull();
+      (rows()[1].querySelector('button.ant-table-row-expand-icon') as HTMLButtonElement).click();
+      (rows()[2].querySelector('button.ant-table-row-expand-icon') as HTMLButtonElement).click();
+      await until(() => el.querySelectorAll('main nz-table')[4].querySelectorAll('tr.lc-extra-row').length === 2, 'due aree aperte');
+      const areas = [...el.querySelectorAll('main nz-table')[4].querySelectorAll('tr.lc-extra-row')];
+      expect(areas[0].textContent).toContain('Cliente Neri Group, sconto 10 %.');
+      expect(areas[0].textContent).not.toContain('Ordine in bozza');
+      expect(areas[1].textContent).toContain('Ordine in bozza');
+      ([...areas[1].querySelectorAll('button')].find((b) => b.textContent?.includes('Apri l’ordine')) as HTMLButtonElement).click();
+      await until(() => TestBed.inject(Location).path().startsWith('/vetrina/ordine-dettaglio'), 'navigazione');
+      expect(TestBed.inject(Location).path()).toContain('id=19');
     });
   });
 });

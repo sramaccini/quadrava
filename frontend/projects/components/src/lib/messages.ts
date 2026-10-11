@@ -32,6 +32,9 @@ export const BUILTIN_MESSAGES: Record<string, Messages> = {
     'lc.selectAll': 'Seleziona tutte le righe',
     'lc.selectRow': 'Seleziona la riga',
     'lc.moreActions': 'Altre azioni',
+    'lc.details': 'Dettagli',
+    'lc.expandRow': 'Mostra i dettagli della riga',
+    'lc.collapseRow': 'Nascondi i dettagli della riga',
   },
   en: {
     'lc.all': 'All',
@@ -60,5 +63,8 @@ export const BUILTIN_MESSAGES: Record<string, Messages> = {
     'lc.selectAll': 'Select all rows',
     'lc.selectRow': 'Select the row',
     'lc.moreActions': 'More actions',
+    'lc.details': 'Details',
+    'lc.expandRow': 'Show row details',
+    'lc.collapseRow': 'Hide row details',
   },
 };

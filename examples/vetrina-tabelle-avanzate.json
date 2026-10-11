@@ -293,6 +293,74 @@
           ]
         }
       ]
+    },
+    {
+      "id": "sezione-espandibili",
+      "type": "section",
+      "title": "{{ t('vetrina_avanzate.espandibili', 'Righe di dettaglio espandibili') }}",
+      "components": [
+        {
+          "id": "spiega-espandibili",
+          "type": "text",
+          "text": "{{ t('vetrina_avanzate.espandibili_spiega', 'Il pulsante a sinistra apre sotto la riga un’area con altri componenti, che vedono la riga come row. Gli ordini approvati non si espandono (expandIf).') }}"
+        },
+        {
+          "id": "ordini-espandibili",
+          "type": "table",
+          "source": "ordini",
+          "columns": [
+            {
+              "field": "numero",
+              "label": "{{ t('comune.numero', 'Numero') }}"
+            },
+            {
+              "field": "cliente",
+              "label": "{{ t('comune.cliente', 'Cliente') }}"
+            },
+            {
+              "field": "stato",
+              "label": "{{ t('comune.stato', 'Stato') }}",
+              "format": "badge",
+              "badges": {
+                "bozza": "neutral",
+                "inviato": "primary",
+                "approvato": "success"
+              },
+              "valueKey": "valori.stato"
+            }
+          ],
+          "expand": {
+            "expandIf": "{{ row.stato != 'approvato' }}",
+            "components": [
+              {
+                "id": "riepilogo-ordine",
+                "type": "text",
+                "text": "{{ t('vetrina_avanzate.riepilogo_ordine', 'Cliente {cliente}, sconto {sconto} %.', {'cliente': row.cliente, 'sconto': row.sconto}) }}"
+              },
+              {
+                "id": "avviso-bozza",
+                "type": "alert",
+                "kind": "info",
+                "visibleIf": "{{ row.stato == 'bozza' }}",
+                "text": "{{ t('vetrina_avanzate.ordine_in_bozza', 'Ordine in bozza: non ancora inviato al cliente.') }}"
+              },
+              {
+                "id": "apri-ordine",
+                "type": "button",
+                "label": "{{ t('vetrina_avanzate.apri_ordine', 'Apri l’ordine') }}",
+                "onClick": [
+                  {
+                    "navigate": "ordine-dettaglio",
+                    "params": {
+                      "id": "{{row.id}}"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
     }
   ]
 }

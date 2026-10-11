@@ -37,7 +37,7 @@ L'ordine è quello di realizzazione. Lo stato si aggiorna a ogni componente comp
 | 1 | Ordinamento delle colonne | tabella | realizzato |
 | 2 | Selezione delle righe e azioni multiple | tabella | realizzato |
 | 3 | Menu delle azioni di riga | tabella | realizzato |
-| 4 | Righe di dettaglio espandibili | tabella | da fare |
+| 4 | Righe di dettaglio espandibili | tabella | realizzato |
 | 5 | Formato numerico, celle cliccabili, riga dei totali | tabella | da fare |
 | 6 | Nuovi tipi di campo: area di testo, data e ora, radio, interruttore, selezione multipla | campi | da fare |
 | 7 | Campo con ricerca su data source (lookup) | campi | da fare |
