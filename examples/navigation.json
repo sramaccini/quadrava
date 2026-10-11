@@ -179,6 +179,11 @@
               "id": "vetrina-cruscotto",
               "label": "{{ t('nav.cruscotto', 'Cruscotto') }}",
               "screen": "vetrina-cruscotto"
+            },
+            {
+              "id": "vetrina-viste",
+              "label": "{{ t('nav.procedure_e_viste', 'Procedure e viste') }}",
+              "screen": "vetrina-viste"
             }
           ]
         }

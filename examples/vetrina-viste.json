@@ -1,0 +1,155 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "vetrina-viste",
+  "title": "{{ t('vetrina_viste.titolo', 'Vetrina: procedure e viste') }}",
+  "description": "{{ t('vetrina_viste.descrizione', 'Procedura a passi, vista ad albero e calendario.') }}",
+  "requires": "vetrina.componenti.leggi",
+  "dataSources": {},
+  "components": [
+    {
+      "id": "titolo",
+      "type": "text",
+      "style": "heading",
+      "text": "{{ t('vetrina_viste.intestazione', 'Procedure e viste') }}"
+    },
+    {
+      "id": "sezione-wizard",
+      "type": "section",
+      "title": "{{ t('vetrina_viste.wizard', 'Procedura a passi') }}",
+      "components": [
+        {
+          "id": "wizard-richiesta",
+          "type": "wizard",
+          "bind": "state.passo",
+          "steps": [
+            {
+              "id": "passo-dati",
+              "label": "{{ t('vetrina_viste.passo_dati', 'Dati della richiesta') }}",
+              "description": "{{ t('vetrina_viste.passo_dati_nota', 'Oggetto e priorità') }}",
+              "nextIf": "{{ has(state.richiesta) && state.richiesta != null }}",
+              "components": [
+                {
+                  "id": "form-richiesta",
+                  "type": "form",
+                  "fields": [
+                    {
+                      "name": "oggetto",
+                      "type": "text",
+                      "label": "{{ t('vetrina_viste.oggetto', 'Oggetto') }}",
+                      "required": true
+                    },
+                    {
+                      "name": "priorita",
+                      "type": "radio",
+                      "label": "{{ t('vetrina_campi.priorita', 'Priorità') }}",
+                      "options": [
+                        "bassa",
+                        "normale",
+                        "alta"
+                      ],
+                      "optionKey": "valori.priorita",
+                      "required": true
+                    }
+                  ],
+                  "actions": [
+                    {
+                      "id": "btn-continua",
+                      "label": "{{ t('vetrina_viste.continua', 'Continua') }}",
+                      "onClick": [
+                        {
+                          "set": {
+                            "path": "state.richiesta",
+                            "value": "{{ form }}"
+                          }
+                        },
+                        {
+                          "set": {
+                            "path": "state.passo",
+                            "value": 1
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "passo-riepilogo",
+              "label": "{{ t('vetrina_viste.passo_riepilogo', 'Riepilogo') }}",
+              "components": [
+                {
+                  "id": "riepilogo-richiesta",
+                  "type": "text",
+                  "text": "{{ t('vetrina_viste.riepilogo', 'Oggetto: {o}. Priorità: {p}.', {'o': state.richiesta.oggetto, 'p': state.richiesta.priorita}) }}"
+                }
+              ]
+            },
+            {
+              "id": "passo-invio",
+              "label": "{{ t('vetrina_viste.passo_invio', 'Invio') }}",
+              "components": [
+                {
+                  "id": "spiega-invio",
+                  "type": "text",
+                  "hiddenIf": "{{ has(state.inviata) && state.inviata == true }}",
+                  "text": "{{ t('vetrina_viste.pronto_invio', 'Tutto pronto: invia la richiesta.') }}"
+                },
+                {
+                  "id": "btn-invia-richiesta",
+                  "type": "button",
+                  "label": "{{ t('vetrina_viste.invia_richiesta', 'Invia la richiesta') }}",
+                  "hiddenIf": "{{ has(state.inviata) && state.inviata == true }}",
+                  "onClick": [
+                    {
+                      "set": {
+                        "path": "state.inviata",
+                        "value": true
+                      }
+                    },
+                    {
+                      "toast": "{{ t('vetrina_viste.richiesta_inviata', 'Richiesta inviata') }}"
+                    }
+                  ]
+                },
+                {
+                  "id": "esito-richiesta",
+                  "type": "alert",
+                  "kind": "success",
+                  "visibleIf": "{{ has(state.inviata) && state.inviata == true }}",
+                  "text": "{{ t('vetrina_viste.esito', 'La richiesta «{o}» è stata inviata.', {'o': state.richiesta.oggetto}) }}"
+                },
+                {
+                  "id": "btn-nuova-richiesta",
+                  "type": "button",
+                  "label": "{{ t('vetrina_viste.nuova_richiesta', 'Nuova richiesta') }}",
+                  "visibleIf": "{{ has(state.inviata) && state.inviata == true }}",
+                  "onClick": [
+                    {
+                      "set": {
+                        "path": "state.passo",
+                        "value": 0
+                      }
+                    },
+                    {
+                      "set": {
+                        "path": "state.inviata",
+                        "value": false
+                      }
+                    },
+                    {
+                      "set": {
+                        "path": "state.richiesta",
+                        "value": null
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

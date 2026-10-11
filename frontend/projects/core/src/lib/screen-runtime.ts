@@ -101,6 +101,9 @@ export class ScreenRuntime {
         this.seedFilters(node.components);
       } else if (node.type === 'tabs') {
         for (const tab of node.tabs) this.seedFilters(tab.components);
+      } else if (node.type === 'wizard') {
+        if (node.bind && this.getState(node.bind) === undefined) this.setState(node.bind, 0);
+        for (const step of node.steps) this.seedFilters(step.components);
       }
     }
   }

@@ -265,4 +265,28 @@ describe('Vetrina: componenti avanzati', () => {
       expect(TestBed.inject(DemoDiagnostics).events()).toEqual([]);
     });
   });
+
+  describe('procedure e viste', () => {
+    it('procedura a passi: i dati del primo passo arrivano al riepilogo e la richiesta si invia', async () => {
+      const { el, until, settle } = await openShowcase('/vetrina/vetrina-viste');
+      const wizard = el.querySelector('main lc-wizard') as HTMLElement;
+      const button = (text: string): HTMLButtonElement | undefined => [...wizard.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.trim() === text);
+      expect(button('Avanti')!.disabled).toBe(true);
+      const input = wizard.querySelector('input[type="text"]') as HTMLInputElement;
+      input.value = 'Nuovo monitor';
+      input.dispatchEvent(new Event('input'));
+      (wizard.querySelectorAll<HTMLInputElement>('input[type="radio"]')[2]).click();
+      await settle();
+      button('Continua')!.click();
+      await until(() => !!wizard.querySelector('section')?.textContent?.includes('Oggetto: Nuovo monitor. Priorità: alta.'), 'riepilogo');
+      button('Avanti')!.click();
+      await until(() => !!button('Invia la richiesta'), 'passo di invio');
+      button('Invia la richiesta')!.click();
+      await until(() => !!wizard.querySelector('nz-alert')?.textContent?.includes('La richiesta «Nuovo monitor» è stata inviata.'), 'esito');
+      expect(button('Avanti')).toBeUndefined();
+      button('Nuova richiesta')!.click();
+      await until(() => !!wizard.querySelector('lc-form') && button('Avanti')?.disabled === true, 'di nuovo al primo passo, da compilare');
+      expect(TestBed.inject(DemoDiagnostics).events()).toEqual([]);
+    });
+  });
 });

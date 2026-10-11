@@ -6,6 +6,7 @@ import tabelleAvanzate from '../../public/examples/vetrina-tabelle-avanzate.json
 import campi from '../../public/examples/vetrina-campi.json';
 import layout from '../../public/examples/vetrina-layout.json';
 import cruscotto from '../../public/examples/vetrina-cruscotto.json';
+import viste from '../../public/examples/vetrina-viste.json';
 import chiaro from '../../public/examples/themes/chiaro.json';
 import catalogIt from '../../public/examples/i18n/it.json';
 import catalogEn from '../../public/examples/i18n/en.json';
@@ -20,6 +21,7 @@ export const SHOWCASE_FILES: Record<string, unknown> = {
   'examples/vetrina-campi.json': campi,
   'examples/vetrina-layout.json': layout,
   'examples/vetrina-cruscotto.json': cruscotto,
+  'examples/vetrina-viste.json': viste,
   'examples/i18n/it.json': catalogIt,
   'examples/i18n/en.json': catalogEn,
   'examples/themes/chiaro.json': chiaro,

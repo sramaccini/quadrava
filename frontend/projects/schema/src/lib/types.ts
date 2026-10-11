@@ -244,7 +244,24 @@ export interface StatsNode extends NodeBase {
   items: StatItem[];
 }
 
-export type NodeDefinition = SectionNode | TextNode | ButtonNode | FilterBarNode | TableNode | FormNode | TabsNode | DetailNode | AlertNode | StatsNode;
+export interface WizardStep {
+  id?: string;
+  label: string;
+  description?: string;
+  components: NodeDefinition[];
+  /** Avanti è abilitato solo se vera. */
+  nextIf?: Expression;
+}
+export interface WizardNode extends NodeBase {
+  type: 'wizard';
+  /** Stato con l'indice del passo corrente (da 0). */
+  bind?: StatePath;
+  steps: WizardStep[];
+  nextLabel?: string;
+  backLabel?: string;
+}
+
+export type NodeDefinition = SectionNode | TextNode | ButtonNode | FilterBarNode | TableNode | FormNode | TabsNode | DetailNode | AlertNode | StatsNode | WizardNode;
 export type NodeType = NodeDefinition['type'];
 
 export interface ScreenDefinition {

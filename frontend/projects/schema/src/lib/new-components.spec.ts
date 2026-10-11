@@ -164,4 +164,16 @@ describe('schema dei componenti nuovi', () => {
       expect(issuesOf(screen([{ type: 'stats', items: [{ label: 'A', field: 'a', icona: 'x' }] }])).length).toBeGreaterThan(0);
     });
   });
+
+  describe('procedura a passi', () => {
+    const step = (label: string) => ({ label, components: [{ type: 'text', text: label }] });
+    it('accetta da 2 a 10 passi con stato, condizioni ed etichette', () => {
+      expect(issuesOf(screen([{ type: 'wizard', bind: 'state.passo', nextLabel: 'Avanti', steps: [{ ...step('A'), nextIf: '{{ true }}', description: 'x' }, step('B')] }]))).toEqual([]);
+    });
+    it('rifiuta un solo passo, passi senza contenuto o con proprietà estranee', () => {
+      expect(issuesOf(screen([{ type: 'wizard', steps: [step('A')] }])).length).toBeGreaterThan(0);
+      expect(issuesOf(screen([{ type: 'wizard', steps: [{ label: 'A' }, step('B')] }])).length).toBeGreaterThan(0);
+      expect(issuesOf(screen([{ type: 'wizard', steps: [{ ...step('A'), icona: 'x' }, step('B')] }])).length).toBeGreaterThan(0);
+    });
+  });
 });

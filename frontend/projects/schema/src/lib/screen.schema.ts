@@ -518,7 +518,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
             "tabs",
             "detail",
             "alert",
-            "stats"
+            "stats",
+            "wizard"
           ]
         },
         "visibleIf": {
@@ -934,6 +935,44 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
               }
             }
           }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "wizard"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "required": [
+              "steps"
+            ],
+            "properties": {
+              "bind": {
+                "$ref": "#/$defs/statePath",
+                "description": "Stato con l’indice del passo corrente (da 0): anche un pulsante può spostarlo con set."
+              },
+              "steps": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 10,
+                "items": {
+                  "$ref": "#/$defs/wizardStep"
+                }
+              },
+              "nextLabel": {
+                "type": "string"
+              },
+              "backLabel": {
+                "type": "string"
+              }
+            }
+          }
         }
       ],
       "unevaluatedProperties": false
@@ -1244,6 +1283,35 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
           }
         }
       ]
+    },
+    "wizardStep": {
+      "type": "object",
+      "required": [
+        "label",
+        "components"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "label": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "components": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        },
+        "nextIf": {
+          "$ref": "#/$defs/expression",
+          "description": "Avanti è abilitato solo se l’espressione è vera (sempre, se assente)."
+        }
+      }
     }
   }
 };

@@ -52,6 +52,9 @@ export const BUILTIN_MESSAGES: Record<string, Messages> = {
     'lc.minRows': '{n, plural, one {Serve almeno una riga} other {Servono almeno # righe}}',
     'lc.maxRows': '{n, plural, one {Al massimo una riga} other {Al massimo # righe}}',
     'lc.rowsInvalid': 'Controlla le righe evidenziate',
+    'lc.next': 'Avanti',
+    'lc.back': 'Indietro',
+    'lc.stepOf': 'Passo {n} di {total}',
   },
   en: {
     'lc.all': 'All',
@@ -100,5 +103,8 @@ export const BUILTIN_MESSAGES: Record<string, Messages> = {
     'lc.minRows': '{n, plural, one {At least one row is needed} other {At least # rows are needed}}',
     'lc.maxRows': '{n, plural, one {At most one row} other {At most # rows}}',
     'lc.rowsInvalid': 'Check the highlighted rows',
+    'lc.next': 'Next',
+    'lc.back': 'Back',
+    'lc.stepOf': 'Step {n} of {total}',
   },
 };
