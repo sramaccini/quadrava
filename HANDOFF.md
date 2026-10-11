@@ -68,7 +68,7 @@ Le principali sono nella DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In breve:
 - Moduli Java mai compilati (`mvn verify` in sospeso).
 - `validate:examples` non controlla le espressioni CEL (lo fa il test `i18n-examples.spec.ts`).
 - Limiti dei componenti che restano: vedi catalogo § 3 (niente righe ripetibili annidate, datatable sulle righe caricate — provata fino a 20.000 nel componente —, grafici senza zoom né aree). I limiti della prima consegna (lookup, file, righe, albero da tastiera, volumi, grafici) sono stati superati: catalogo § 3.1.
-- Documenti Claude Docs (architettura, funzionale, linee guida) non aggiornati con i componenti di ottobre: la fonte aggiornata è `docs/catalogo-componenti.md`.
+- Documenti Claude Docs aggiornati l'11 ottobre 2026 con una sintesi (funzionale: RF-DEF-18…21; architettura: § 4 «Aggiornamenti di ottobre 2026»; linee guida: § 6 e § 11); il dettaglio resta in `docs/catalogo-componenti.md`.
 
 ## 8. Prossimi passi (nell'ordine suggerito)
 
@@ -76,7 +76,6 @@ Le principali sono nella DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In breve:
 2. Collegare `services` a `runtime` e completare il BFF (CSRF, forwarding, allow-list; il forwarding deve gestire anche i corpi multipart).
 3. **Editor visuale** (`projects/editor`): albero dei nodi, pannello proprietà, anteprima, temi e menu; scelta delle chiavi di traduzione.
 4. Menu: navigazione da tastiera, badge, ricerca. CEL in `validate:examples`.
-5. Aggiornare i documenti Claude Docs con il catalogo nuovo.
 
 ## 9. Convenzioni di lavoro
 
