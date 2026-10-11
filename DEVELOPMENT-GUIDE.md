@@ -53,8 +53,8 @@ Before opening a pull request, all of these must pass: `schema:check`, `validate
 
 Example: adding a `progress` node.
 
-1. **Schema.** Add the node definition in `projects/schema/src/lib/screen.schema.json` (properties, `required`, `additionalProperties: false`), run `npm run schema:sync`, and add the TypeScript type next to the others.
-2. **Component.** Create `projects/components/src/lib/progress.component.ts`: standalone, `ChangeDetectionStrategy.OnPush`, inputs through `input()` / `input.required()`. Resolve expressions through the screen runtime from `core`; never evaluate strings yourself.
+1. **Schema.** Add the node definition in `projects/schema/src/lib/screen.schema.json` (properties, `required`, `additionalProperties: false`), run `npm run schema:sync`, and add the TypeScript type next to the others. Columns are layered: `columnProps` (shared with detail fields) → `tableColumnProps` (`sortable`, `onClick`, `aggregate`) → `dataColumn` (`filter`, `groupable`); each closed variant uses `unevaluatedProperties: false`. State paths use `$defs/statePath`. Ajv runs in strict mode: a subschema with `properties` needs `type: object`, and a `required` inside `if/then` or `anyOf` needs the property declared there too. Write regex patterns from a script file, not a shell heredoc (double backslashes get collapsed).
+2. **Component.** Create `projects/components/src/lib/progress.component.ts`: standalone, `ChangeDetectionStrategy.OnPush`, inputs through `input()` / `input.required()`. Resolve expressions through the screen runtime from `core`; never evaluate strings yourself. Keep data logic in pure functions (see `table-data.ts`, `chart-geometry.ts`) so it can be tested without rendering. If the node writes to the screen state (`bind`), give the state an initial value in `ScreenRuntime.seedFilters`, so expressions and data sources never see a missing key.
 3. **Register.** Add it to `STANDARD_COMPONENTS` (and export it from `public-api.ts`). Application-specific components are registered with `provideLowcodeComponents(extra)`.
 4. **Tests.** Cover rendering, expression-driven state (`visibleIf`, `enabledIf`, `can()`), the fail-closed behaviour, and any action it triggers.
 5. **Example.** Add the usage to a showcase screen in `examples/vetrina-*.json` and run `npm run validate:examples`.
@@ -73,6 +73,11 @@ Example: adding a `progress` node.
 8. **Layout trap.** `nz-layout` stacks its children in a column and switches to a row only when it contains an `nz-sider`. The side menu here is our own `lc-sidebar`, so the app shell sets `flex-direction: row` explicitly.
 9. **Palette trap.** `@ant-design/colors` `generate` turns dark base colours into greyish tints; for the light theme the bridge derives success/error tag backgrounds by mixing the colour with white.
 10. **Scroll containers.** An `overflow-x: auto` wrapper also shows a vertical scrollbar when its content is one pixel too tall: keep pagination outside it.
+11. **Arrays in `ngModel`.** Like dates, a new array on every change detection (multi-select values, range pickers) makes NG-ZORRO re-render forever (NG0103): compute them once per value in a `computed` map.
+12. **Tree titles are HTML.** The default `nz-tree` title uses `innerHTML` while searching: render titles with `nzTreeTemplate` and plain text (see `tree.component.ts`).
+13. **Date picker language.** With the date-fns adapter, month and day names follow `NzDateAdapter.setLocale` (not `NzI18nService.setDateLocale`); `provide.ts` keeps it in step with the active language.
+14. **Content projection.** Elements meant for a NG-ZORRO slot (for example `nz-filter-trigger` in a `th`) must be the only root node of their `@if` block; put companion elements (the dropdown menu) inside them.
+15. **Sorting events.** Sorting one column makes `nz-table` emit "no sort" for the others: ignore a reset for a column that is not the sorted one.
 
 The Italian locale is patched in `provide.ts` (`rangeQuarterPlaceholder` is missing upstream); keep that patch when upgrading.
 
@@ -88,13 +93,13 @@ The Italian locale is patched in `provide.ts` (`rangeQuarterPlaceholder` is miss
 
 * Never write user-facing text in a component. Texts that come from the JSON go through `runtime().text(value, scope)`, which evaluates `{{ }}` (including `t()`); this includes labels of columns, fields and actions. The platform's own strings use `inject(I18n).t('lc.something')` and a key in `components/src/lib/messages.ts` (add it to both `it` and `en`).
 * `I18n` (core) holds the active language and two layers of messages: the application's (wins) and the built-in `lc.*` layer. Reading it inside a template or a `computed` is reactive: changing the language updates the screen without reloading.
-* Expression functions (`t`, `fmtCurrency`, `fmtNumber`, `fmtDate`, `plural`) live in `expressions` and have no side effects. CEL cannot register namespaced functions (`fmt.currency`), so the names are flat. A map with mixed value types in `t()` needs `dyn(...)` around the literals: `{'n': dyn(1), 'name': state.name}`.
+* Expression functions (`t`, `fmtCurrency`, `fmtNumber`, `fmtDate`, `plural`) live in `expressions` and have no side effects. CEL cannot register namespaced functions (`fmt.currency`), so the names are flat. A map with mixed value types in `t()` needs `dyn(...)` around the values: `{'n': dyn(1), 'name': state.name}`. A plain `{n}` placeholder is not localised: write `{n, number}` for numbers. Reading a state key that does not exist yet is an error (reported to diagnostics): guard with `has(state.key)`.
 * The result is always plain text. Never bind a translation to `innerHTML` or to NG-ZORRO modal/message strings without escaping.
 * NG-ZORRO's own locale follows the active language (`provide.ts`); an unknown language falls back to English.
 
 ## 7. Ports and dependency injection
 
-Everything external to the interpreter is an abstract class used as a DI token: `Authorization`, `UserProvider`, `DataClient`, `ScreenNavigator`, `Notifier`, `RuntimeDiagnostics`, `Confirmation`. To add one: declare the abstract class in `core`, inject it where needed, provide a fake in `runtime/demo`, and a real implementation in `services` (or `components` when it is UI). Components must depend on the abstraction only.
+Everything external to the interpreter is an abstract class used as a DI token: `Authorization`, `UserProvider`, `DataClient`, `ScreenNavigator`, `Notifier`, `RuntimeDiagnostics`, `Confirmation`, `FormDialog` (the `dialog` step; implemented by `DialogForm` in `components`). To add one: declare the abstract class in `core`, inject it where needed, provide a fake in `runtime/demo`, and a real implementation in `services` (or `components` when it is UI). Components must depend on the abstraction only.
 
 ## 8. Security rules (non-negotiable)
 
@@ -112,7 +117,9 @@ Vitest runs in jsdom through `ng test`. Conventions:
 * One `*.spec.ts` beside the unit; describe behaviour, not implementation.
 * Use `provideLowcodeComponents()` in any test that renders NG-ZORRO components (otherwise icons and the modal service are missing).
 * `settle(fixture)` flushes microtasks and change detection; prefer it to arbitrary timeouts.
-* `select-testing.ts` provides `stubViewportHeight()` and `openSelect(...)`: `nz-select` options use CDK virtual scroll and render nothing in jsdom unless the viewport height is stubbed.
+* `select-testing.ts` provides `stubViewportHeight()` and `openSelect(...)`: `nz-select` options use CDK virtual scroll and render nothing in jsdom unless the viewport height is stubbed; wait for the options before clicking them.
+* `components/src/lib/screen-testing.ts` renders a screen with the standard catalogue and recording fakes (`renderScreen`, with `requests`, `toasts`, `navigations`, `reports`, `settle`, `until`). `runtime/src/app/showcase-testing.ts` opens a demo screen with the showcase documents (`openShowcase`); it also stubs `Element.scrollTo`, which jsdom lacks and the select option list calls.
+* Showcase tests also assert that `DemoDiagnostics` stays empty: an expression error in an example is a bug.
 * Overlays: closed modals remain in the DOM during animation; select the **last** `.ant-modal-confirm`. Toasts are in `document.body .ant-message-notice`; tables exclude `.ant-table-placeholder` when counting rows.
 * Test the configuration of what jsdom cannot verify (for example `nzAutofocus: 'cancel'`), and note the limit in the test.
 * Runtime specs import the demo JSON, so run `npm run demo:prepare` first.
@@ -146,6 +153,7 @@ Layout, real focus and the dark theme are not covered by tests (the application 
 * `services` is not yet wired into `runtime`; the BFF lacks CSRF protection, API forwarding and a host allow-list.
 * Java modules are not yet compiled in CI.
 * Ajv needs `unsafe-eval` under CSP until validators are precompiled.
-* `validate:examples` checks translation keys but not CEL expressions.
+* `validate:examples` checks translation keys but not CEL expressions (the runtime test `i18n-examples.spec.ts` does).
+* Component limits of the October 2026 batch (lookup label of an unloaded value, file size in JSON, tree keyboard, data-table volume, chart types) are listed in the component catalogue.
 * Developer diagnostics are not translated and stay in Italian: schema and expression issues, navigation loading errors, and the messages of the `services` library. Everything the end user reads is translatable.
 * Adding a language means adding `examples/i18n/<code>.json` (same keys as `it.json`), an entry in `LANGUAGES` of the demo, and, for the platform strings, a block in `components/src/lib/messages.ts` and a NG-ZORRO locale in `provide.ts`.

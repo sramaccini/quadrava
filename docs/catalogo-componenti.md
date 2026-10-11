@@ -1,6 +1,6 @@
 # Catalogo dei componenti
 
-Elenco dei componenti del linguaggio JSON: quelli già realizzati e quelli in costruzione, con la specifica che l'implementazione segue. Ogni componente nuovo ha test unitari nella libreria `components` e un esempio nella **vetrina** della demo (caso d'uso «Vetrina componenti»).
+Elenco dei componenti del linguaggio JSON, con la specifica di quelli aggiunti nell'ottobre 2026. Ogni componente nuovo ha test unitari nella libreria `components` e un esempio nella **vetrina** della demo (caso d'uso «Vetrina componenti»).
 
 Regole comuni a tutti i componenti, valide anche per i nuovi:
 
@@ -18,19 +18,25 @@ Regole comuni a tutti i componenti, valide anche per i nuovi:
 | `text` | Testo semplice o titolo (`style: heading`). |
 | `button` | Pulsante che esegue una sequenza di passi (`onClick`). |
 | `filterBar` | Barra di filtri che scrive nello stato della schermata (`bind`). |
-| `table` | Tabella con paginazione lato server, formati di cella e azioni di riga. |
-| `form` | Form con validazione, campi condizionali e azioni. |
+| `table` | Tabella con paginazione lato server, formati di cella, ordinamento, selezione e azioni multiple, menu delle azioni, righe espandibili, celle cliccabili e totali. |
+| `dataTable` | Datatable con filtri, ordinamento e raggruppamento in pagina (§ 2.18). |
+| `form` | Form con validazione, campi condizionali, griglia a colonne e azioni. |
 | `tabs` | Schede, ognuna con i propri nodi. |
 | `detail` | Scheda di dettaglio in sola lettura (etichetta e valore). |
 | `alert` | Messaggio nella pagina (info, successo, errore). |
-| Campi | `text`, `number`, `select`, `checkbox`, `date`. |
-| Formati di cella | `text`, `currency`, `percent`, `date`, `datetime`, `boolean`, `badge`. |
-| Passi | `set`, `call`, `refresh`, `navigate`, `toast`, `confirm`. |
+| `stats` | Indicatori (KPI). |
+| `wizard` | Procedura a passi. |
+| `tree` | Vista ad albero. |
+| `calendar` | Calendario mensile con eventi. |
+| `chart` | Grafici a barre, linee e torta. |
+| Campi | `text`, `number`, `select`, `checkbox`, `date`, `textarea`, `datetime`, `radio`, `switch`, `multiselect`, `lookup`, `file`, `repeater`. |
+| Formati di cella | `text`, `number`, `currency`, `percent`, `date`, `datetime`, `boolean`, `badge`. |
+| Passi | `set`, `call`, `refresh`, `navigate`, `toast`, `confirm`, `dialog`. |
 | Guscio | Barra laterale (`lc-sidebar`), menu utente (`lc-user-menu`), barra superiore responsive. |
 
-## 2. In costruzione
+## 2. Aggiunti nell'ottobre 2026
 
-L'ordine è quello di realizzazione. Lo stato si aggiorna a ogni componente completato.
+Realizzati in quest'ordine, uno per commit, ognuno con test (schema, componente e vetrina) e un esempio nella vetrina della demo: «Tabelle avanzate» (1–5), «Campi e form» (6–11), «Schede, dettaglio e messaggi» (12), «Cruscotto» (13, 17), «Procedure e viste» (14–16), «Datatable» (18).
 
 | # | Componente | Area | Stato |
 | --- | --- | --- | --- |
@@ -230,3 +236,14 @@ Tabella per analizzare in pagina un insieme di righe già caricato: ogni colonna
 - **Raggruppamento**: l'utente sceglie una o più colonne `groupable` (in ordine) da un selettore sopra la tabella; `groupBy` è la scelta iniziale. Ogni gruppo ha un'intestazione con il valore, il numero di righe e i totali delle colonne con `aggregate`; i gruppi si aprono e chiudono.
 - Totale generale in fondo, paginazione in pagina (`pageSize`), azioni di riga come nella tabella.
 - Filtri, ordinamento e gruppi lavorano sulle righe caricate: è pensata per insiemi fino a qualche migliaio di righe; per volumi maggiori si usa `table` con paginazione e filtri lato server.
+
+## 3. Note di realizzazione e limiti noti
+
+- **Caricamento dei data source.** Un data source GET si ricarica da solo solo se cambia la richiesta risolta (URL e parametri). Un cambiamento dello stato che non tocca la richiesta (una selezione, un passo della procedura, un nodo scelto) non provoca nuove chiamate; per ricaricare comunque si usa il passo `refresh`.
+- **Espressioni prima dei dati.** Una variabile di stato che non esiste ancora fa fallire l'espressione, e l'errore finisce nelle segnalazioni tecniche: nelle condizioni si usa `has(state.x)`. Nelle mappe di parametri di `t()` con valori di tipo diverso serve `dyn(...)`; per i numeri formattati nella lingua si scrive `{n, number}`.
+- **Lookup.** Se il valore iniziale non è tra i risultati caricati, il campo mostra il valore stesso (per esempio l'id) finché l'utente non cerca.
+- **File.** Il contenuto viaggia in base64 nel corpo JSON, adatto a file piccoli (fino a 10 MB); per file più grandi servirà un caricamento multipart nella porta `DataClient`.
+- **Righe ripetibili.** Solo campi semplici nelle righe (niente lookup, file o righe annidate).
+- **Albero.** La scelta di un nodo funziona anche da tastiera; aprire e chiudere i rami resta col mouse (pulsante di NG-ZORRO).
+- **Datatable.** Lavora sulle righe caricate: pensata per qualche migliaio di righe al massimo; per volumi maggiori si usa `table` con paginazione, filtri e ordinamento lato server.
+- **Grafici.** Disegnati dalla piattaforma in SVG: barre raggruppate, linee e ciambella; niente assi doppi, barre impilate o zoom.

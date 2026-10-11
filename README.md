@@ -102,9 +102,9 @@ Key design choices:
 }
 ```
 
-**Components** (node `type`): `section`, `text`, `button`, `filterBar`, `table`, `form`, `tabs`, `detail`, `alert`. Forms and filters support `text`, `number`, `select`, `checkbox` and `date` fields, required fields, CEL validation rules, and conditional visibility / read-only state. Table columns and detail fields support cell formats (`currency`, `percent`, `date`, `datetime`, `boolean`, `badge`). The component catalogue ([docs/catalogo-componenti.md](docs/catalogo-componenti.md), in Italian) lists what exists and specifies what is being built.
+**Components** (node `type`): `section`, `text`, `button`, `filterBar`, `table`, `dataTable`, `form`, `tabs`, `detail`, `alert`, `stats`, `wizard`, `tree`, `calendar`, `chart`. Forms and filters support `text`, `number`, `select`, `checkbox`, `date`, `textarea`, `datetime`, `radio`, `switch`, `multiselect`, `lookup` (search on a data source), `file` and `repeater` (repeatable rows) fields, required fields, CEL validation rules, conditional visibility / read-only state and a column grid. Tables add sorting (in page or server side), row selection with bulk actions, row-action menus, expandable detail rows, clickable cells and a totals row; the data table filters, sorts and groups the loaded rows. Table columns and detail fields support cell formats (`number`, `currency`, `percent`, `date`, `datetime`, `boolean`, `badge`). The component catalogue ([docs/catalogo-componenti.md](docs/catalogo-componenti.md), in Italian) lists what exists and specifies what is being built.
 
-**Actions** are sequences of steps: `set` (screen state), `call` (a data source, with `onError`), `refresh`, `navigate`, `toast`, `confirm` (stops the sequence silently if the user cancels).
+**Actions** are sequences of steps: `set` (screen state), `call` (a data source, with `onError`), `refresh`, `navigate`, `toast`, `confirm` (stops the sequence silently if the user cancels), `dialog` (a modal form whose submit steps see `form`; cancelling stops the sequence). GET data sources reload by themselves only when their resolved request (URL and parameters) changes.
 
 **Expressions** are written in [CEL](https://github.com/google/cel-spec) inside `{{ ... }}` and see these variables: `user`, `state`, `params`, `row`, `form`, `value`, and the function `can('domain.resource.action')`. Visibility (`visibleIf`, `hiddenIf`), read-only (`readOnlyIf`), enablement (`enabledIf`) and permissions (`requires`) all use them.
 
@@ -180,7 +180,7 @@ In the top bar choose the **user** (`operatore`, `responsabile`, `amministratore
 * Switch users: the available use cases and menu entries follow the permissions of the profile. The URL of a screen you may not open shows a denial even if typed by hand.
 * *Inserimento Fattura*: a form with validation that saves a draft and navigates to the drafts list.
 * *Revisione Spese*: two menu entries open the same screen with different parameters; Approve and Reject only appear with the review permission.
-* **Component showcase** (visible to every profile): four screens, `examples/vetrina-*.json`, exercising every component: basics and actions, forms (all field types, validation, conditional fields), filters and tables (server paging, row actions, cell formats, confirmation), and tabs, detail view and in-page messages.
+* **Component showcase** (visible to every profile): nine screens, `examples/vetrina-*.json`, exercising every component: basics and actions; forms; fields and forms (new field types, lookup, file upload, grid, repeatable rows, form dialogs); filters and tables; advanced tables (sorting, selection, action menus, expandable rows, totals); the data table; tabs, detail view and in-page messages; a dashboard (KPI tiles and charts); procedures and views (wizard, tree, calendar).
 * The look follows Ant Design Pro and is entirely driven by the theme: full-height light side bar with the logo above the use-case selector and a round collapse button on its edge, top bar with the user menu (name, avatar, sign-out as the last entry), page header with breadcrumb, title and description, cards on a light grey background. Three themes are provided: `chiaro`, `classico` (dark navy side bar) and `scuro`. The round button on the side bar edge collapses it to icons (groups then open as pop-ups). *Sign out* in the user menu ends the demo session.
 
 The libraries are not hot-reloaded: after changing anything in `frontend/projects/<library>` run `npm run build:libs` again.
@@ -207,7 +207,7 @@ npm run schema:check                  # generated schema constants are in sync
 npm run validate:examples             # examples are valid
 ```
 
-At the time of writing there are **181 automated tests**: schema 25, expressions 27, core 42, components 44, services 18, runtime 23, editor 2. They run in jsdom, so layout, real focus handling and pixel-level rendering are **not** covered; see the development guide for the helpers that make NG-ZORRO overlays testable.
+At the time of writing there are **359 automated tests**: schema 60, expressions 39, core 60, components 115, services 18, runtime 65, editor 2. They run in jsdom, so layout, real focus handling and pixel-level rendering are **not** covered; see the development guide for the helpers that make NG-ZORRO overlays testable.
 
 ## Security model
 
@@ -235,7 +235,7 @@ Open point: Ajv generates validators with `new Function`, so browser-side valida
 
 * Wire `services` into the `runtime` app (today it uses the demo's fake ports) and complete the BFF: CSRF protection, API forwarding with token and `traceparent`, host allow-list.
 * Visual editor (`editor`): node tree, property panel, preview, themes and menus.
-* Components being built, in this order (see the catalogue): table sorting, row selection with bulk actions, row-action menus, expandable detail rows, number format / clickable cells / totals row; new field types (textarea, date-time, radio, switch, multi-select), lookup fields backed by a data source, file upload, form grid, repeatable form rows; a `dialog` step with a form; tooltips in detail cards; KPI tiles, wizard, tree view, calendar, charts; and a data table whose columns can be filtered, sorted and grouped.
+* The October 2026 component batch is complete (see the catalogue for the specification and the known limits of each component).
 * Menu: arrow-key navigation, badges, search.
 * Check expressions in `validate:examples` too.
 * Language catalogues loaded from a service (today they are files shipped with the app) and an editor picker for translation keys.
