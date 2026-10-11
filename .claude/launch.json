@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "runtime",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "cd /d frontend && fnm exec --using=24.21.0 npx.cmd ng serve runtime --port 4300"],
+      "port": 4300
+    }
+  ]
+}

@@ -5,6 +5,7 @@ import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzDropdownModule } from 'ng-zorro-antd/dropdown';
 import { NzMenuModule } from 'ng-zorro-antd/menu';
 import { NzSelectModule } from 'ng-zorro-antd/select';
+import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import { IconComponent, iconType } from './icon.component';
 import { nextId } from './shared';
 
@@ -20,7 +21,7 @@ export interface NavigateEvent {
  */
 @Component({
   selector: 'lc-sidebar',
-  imports: [FormsModule, IconComponent, NzButtonModule, NzDropdownModule, NzMenuModule, NzSelectModule],
+  imports: [FormsModule, IconComponent, NzButtonModule, NzDropdownModule, NzMenuModule, NzSelectModule, NzTooltipModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: block; position: sticky; top: 0; z-index: 2; align-self: flex-start; height: 100vh; flex: none; }
@@ -33,9 +34,10 @@ export interface NavigateEvent {
     .logo .mark { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; flex: none; border-radius: var(--lc-radius, 6px); background: var(--lc-color-primary, #1f5fbf); color: var(--lc-color-on-primary, #fff); font-size: 16px; }
     .collapsed .logo { padding: 0; justify-content: center; }
     .collapsed .logo .name { display: none; }
-    .usecase { display: flex; flex-direction: column; gap: 4px; padding: 4px 16px 12px; }
-    .usecase label { font-size: 12px; color: var(--lc-sider-muted, #5d6b7a); }
-    nz-select { width: 100%; }
+    .usecase { display: flex; align-items: center; gap: 8px; padding: 4px 16px 12px; }
+    .usecase-mark { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 32px; height: 32px; font-size: 16px; color: var(--lc-sider-muted, #5d6b7a); cursor: default; }
+    .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+    nz-select { flex: 1; min-width: 0; }
     .usecase-icon { display: flex; justify-content: center; padding: 4px 0 12px; }
     .usecase-trigger { color: var(--lc-sider-text); border: 1px solid var(--lc-sider-border); font-size: 16px; }
     .uc-row { display: flex; align-items: center; gap: 8px; }
@@ -57,7 +59,8 @@ export interface NavigateEvent {
     a.leaf { display: flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; }
     .collapsed .label { display: none; }
     .empty { margin: 0; padding: 0 16px; color: var(--lc-sider-muted); font-size: .9em; }
-    /* Pulsante tondo sul bordo della barra, come in Ant Design Pro. Sta fuori dall'area che scorre. */
+    /* Pulsante tondo sul bordo della barra, all'altezza del logo, come in Ant Design Pro. Sta fuori dall'area che scorre.
+       Sporge di 13px nella barra superiore: chi ospita la barra lascia quel margine prima del titolo. */
     .toggle { position: absolute; z-index: 3; top: calc(var(--lc-header-height, 56px) / 2 - 13px); right: -13px; width: 26px; height: 26px; min-width: 26px; padding: 0;
       display: inline-flex; align-items: center; justify-content: center; font-size: 12px; color: var(--lc-color-on-surface, #1b2430); background: var(--lc-color-surface, #fff);
       border: 1px solid var(--lc-sider-border, #d5dbe3); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); }
@@ -74,8 +77,10 @@ export interface NavigateEvent {
       </div>
       @if (useCases().length > 1) {
         @if (!collapsed()) {
+          <!-- La stessa icona a griglia della barra compressa; l'etichetta «Caso d'uso» diventa il suo tooltip (e resta per gli screen reader). -->
           <div class="usecase">
-            <label [for]="selectId">{{ i18n.t('lc.useCase') }}</label>
+            <span class="usecase-mark" aria-hidden="true" nz-tooltip [nzTooltipTitle]="i18n.t('lc.useCase')" nzTooltipPlacement="right"><lc-icon name="sections" /></span>
+            <label class="visually-hidden" [for]="selectId">{{ i18n.t('lc.useCase') }}</label>
             <nz-select [nzId]="selectId" [ngModel]="current()?.id" (ngModelChange)="useCaseChange.emit($event)">
               @for (u of useCases(); track u.id) {
                 <nz-option [nzValue]="u.id" [nzLabel]="u.label" />
@@ -86,7 +91,8 @@ export interface NavigateEvent {
           <!-- Da compressa il selettore diventa un'icona (sempre la stessa, a griglia: rappresenta le sezioni) con un menu a tendina. -->
           <div class="usecase-icon">
             <button nz-button nzType="text" class="usecase-trigger" type="button" nz-dropdown nzTrigger="click" nzPlacement="bottomLeft" [nzDropdownMenu]="useCaseMenu"
-              [attr.aria-label]="i18n.t('lc.useCase') + ': ' + (current()?.label ?? '')" [attr.title]="current()?.label ?? null" aria-haspopup="menu">
+              [attr.aria-label]="i18n.t('lc.useCase') + ': ' + (current()?.label ?? '')" aria-haspopup="menu"
+              nz-tooltip [nzTooltipTitle]="i18n.t('lc.useCase') + ': ' + (current()?.label ?? '')" nzTooltipPlacement="right">
               <lc-icon name="sections" />
             </button>
             <nz-dropdown-menu #useCaseMenu="nzDropdownMenu">

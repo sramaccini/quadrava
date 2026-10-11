@@ -79,6 +79,10 @@ describe('SidebarComponent', () => {
 
   it('con più casi d’uso mostra il selettore e segnala il cambio', async () => {
     const { fixture, el, changes } = await render(['fatture.fattura.crea', 'fatture.fattura.leggi']);
+    // Accanto al selettore c'è la stessa icona della barra compressa; l'etichetta resta solo per gli screen reader.
+    expect(el.querySelector('.usecase .usecase-mark [nztype="appstore"], .usecase .usecase-mark .anticon-appstore')).not.toBeNull();
+    expect(el.querySelector('.usecase label')?.classList.contains('visually-hidden')).toBe(true);
+    expect(text(el.querySelector('.usecase label'))).toBe('Caso d’uso');
     const options = await openSelect(el.querySelector('nz-select') as Element, () => flush(fixture));
     expect(options.map((o) => text(o))).toEqual(['Inserimento', 'Consultazione']);
     options[1].click();

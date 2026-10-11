@@ -1,41 +1,93 @@
 @if (session.loggedIn()) {
-  <nz-layout class="shell">
+  <nz-layout class="shell" [class]="viewport()">
     @if (navigation.runtime(); as nav) {
-      <lc-sidebar
-        [navigation]="nav"
-        brand="LowCode"
-        logo="logo.svg"
-        [tone]="siderTone()"
-        [(collapsed)]="collapsed"
-        [useCaseId]="navigation.current().useCase"
-        [active]="active()"
-        [hrefFor]="hrefFor"
-        (navigate)="navigation.open($event.useCase, $event.leaf.screen, $event.leaf.params)"
-        (useCaseChange)="navigation.switchUseCase($event)"
-      />
+      <ng-template #sidebar let-inDrawer>
+        <lc-sidebar
+          [navigation]="nav"
+          brand="LowCode"
+          logo="logo.svg"
+          [tone]="siderTone()"
+          [collapsed]="inDrawer ? false : collapsed()"
+          (collapsedChange)="collapsed.set($event)"
+          [showToggle]="!inDrawer"
+          [useCaseId]="navigation.current().useCase"
+          [active]="active()"
+          [hrefFor]="hrefFor"
+          (navigate)="open($event.useCase, $event.leaf)"
+          (useCaseChange)="navigation.switchUseCase($event)"
+        />
+      </ng-template>
+      @if (viewport() === 'narrow') {
+        <!-- Fascia stretta: la barra laterale vive in un cassetto sopra il contenuto. -->
+        <nz-drawer [nzVisible]="drawerOpen()" nzPlacement="left" [nzClosable]="false" nzWidth="var(--lc-sider-width, 256px)" [nzBodyStyle]="{ padding: '0' }" nzWrapClassName="lc-sider-drawer" (nzOnClose)="drawerOpen.set(false)">
+          <ng-container *nzDrawerContent>
+            <ng-container [ngTemplateOutlet]="sidebar" [ngTemplateOutletContext]="{ $implicit: true }" />
+          </ng-container>
+        </nz-drawer>
+      } @else {
+        <ng-container [ngTemplateOutlet]="sidebar" [ngTemplateOutletContext]="{ $implicit: false }" />
+      }
     }
     <nz-layout class="main">
       <nz-header class="bar">
+        @if (viewport() === 'narrow' && navigation.runtime()) {
+          <button nz-button nzType="text" class="menu-button" type="button" [attr.aria-label]="i18n.t('app.openMenu')" [attr.aria-expanded]="drawerOpen()" (click)="drawerOpen.set(true)">
+            <lc-icon name="menu" />
+          </button>
+        }
         <span class="crumb">{{ i18n.t('app.title') }}</span>
         <span class="spacer"></span>
-        <label for="lc-user">{{ i18n.t('app.profile') }}</label>
-        <nz-select nzId="lc-user" nzSize="small" class="pick" [ngModel]="session.username()" (ngModelChange)="session.username.set($event)">
-          @for (p of profiles; track p) {
-            <nz-option [nzValue]="p" [nzLabel]="p" />
-          }
-        </nz-select>
-        <label for="lc-theme">{{ i18n.t('app.theme') }}</label>
-        <nz-select nzId="lc-theme" nzSize="small" class="pick" [ngModel]="themeName()" (ngModelChange)="themeName.set($event)">
-          @for (t of themes; track t) {
-            <nz-option [nzValue]="t" [nzLabel]="i18n.t('app.theme.' + t, {}, t)" />
-          }
-        </nz-select>
-        <label for="lc-lang">{{ i18n.t('app.language') }}</label>
-        <nz-select nzId="lc-lang" nzSize="small" class="pick" [ngModel]="i18n.locale()" (ngModelChange)="i18n.setLocale($event)">
-          @for (l of languages; track l) {
-            <nz-option [nzValue]="l" [nzLabel]="i18n.t('app.lang.' + l, {}, l)" />
-          }
-        </nz-select>
+        @if (viewport() === 'wide') {
+          <label for="lc-user">{{ i18n.t('app.profile') }}</label>
+          <nz-select nzId="lc-user" nzSize="small" class="pick" [ngModel]="session.username()" (ngModelChange)="session.username.set($event)">
+            @for (p of profiles; track p) {
+              <nz-option [nzValue]="p" [nzLabel]="p" />
+            }
+          </nz-select>
+          <label for="lc-theme">{{ i18n.t('app.theme') }}</label>
+          <nz-select nzId="lc-theme" nzSize="small" class="pick" [ngModel]="themeName()" (ngModelChange)="themeName.set($event)">
+            @for (t of themes; track t) {
+              <nz-option [nzValue]="t" [nzLabel]="i18n.t('app.theme.' + t, {}, t)" />
+            }
+          </nz-select>
+          <label for="lc-lang">{{ i18n.t('app.language') }}</label>
+          <nz-select nzId="lc-lang" nzSize="small" class="pick" [ngModel]="i18n.locale()" (ngModelChange)="i18n.setLocale($event)">
+            @for (l of languages; track l) {
+              <nz-option [nzValue]="l" [nzLabel]="i18n.t('app.lang.' + l, {}, l)" />
+            }
+          </nz-select>
+        } @else {
+          <!-- Fasce più strette: profilo, tema e lingua in un menu, perché la barra superiore non vada mai a capo. -->
+          <button nz-button nzType="text" class="settings-button" type="button" nz-dropdown nzTrigger="click" nzPlacement="bottomRight" [nzDropdownMenu]="settingsMenu"
+            [attr.aria-label]="i18n.t('app.settings')" aria-haspopup="menu">
+            <lc-icon name="settings" />
+          </button>
+          <nz-dropdown-menu #settingsMenu="nzDropdownMenu">
+            <ul nz-menu>
+              <li nz-submenu [nzTitle]="i18n.t('app.profile') + ': ' + session.username()">
+                <ul>
+                  @for (p of profiles; track p) {
+                    <li nz-menu-item [nzSelected]="p === session.username()" (click)="session.username.set(p)">{{ p }}</li>
+                  }
+                </ul>
+              </li>
+              <li nz-submenu [nzTitle]="i18n.t('app.theme') + ': ' + i18n.t('app.theme.' + themeName(), {}, themeName())">
+                <ul>
+                  @for (t of themes; track t) {
+                    <li nz-menu-item [nzSelected]="t === themeName()" (click)="themeName.set(t)">{{ i18n.t('app.theme.' + t, {}, t) }}</li>
+                  }
+                </ul>
+              </li>
+              <li nz-submenu [nzTitle]="i18n.t('app.language') + ': ' + i18n.t('app.lang.' + i18n.locale(), {}, i18n.locale())">
+                <ul>
+                  @for (l of languages; track l) {
+                    <li nz-menu-item [nzSelected]="l === i18n.locale()" (click)="i18n.setLocale(l)">{{ i18n.t('app.lang.' + l, {}, l) }}</li>
+                  }
+                </ul>
+              </li>
+            </ul>
+          </nz-dropdown-menu>
+        }
         <lc-user-menu [name]="session.username()" [items]="userItems()" (logout)="session.logout()" />
       </nz-header>
       <nz-content>

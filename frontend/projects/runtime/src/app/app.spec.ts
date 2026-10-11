@@ -107,6 +107,37 @@ describe('App (demo)', () => {
     expect(el.querySelector('lc-sidebar a[aria-current="page"]')?.textContent).toContain('Elenco fatture');
   });
 
+  it('su schermo stretto il menu sta in un cassetto e le impostazioni della demo in un menu', async () => {
+    // jsdom non ha matchMedia: lo simulo con una finestra larga 390px.
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: /min-width: (\d+)px/.test(query) && 390 >= Number(/min-width: (\d+)px/.exec(query)![1]),
+      media: query,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+      addListener: () => undefined,
+      removeListener: () => undefined,
+    }));
+    const { fixture, el, url } = await start();
+    await until(fixture, () => rows(el) > 0, 'elenco fatture');
+    expect(el.querySelector('lc-sidebar')).toBeNull();
+    expect(el.querySelector('nz-header nz-select')).toBeNull();
+    // Qui i cataloghi della demo non sono caricati: basta che il pulsante abbia un nome accessibile.
+    expect(el.querySelector('nz-header button.settings-button')?.getAttribute('aria-label')).toBeTruthy();
+    const menuButton = el.querySelector('nz-header button.menu-button') as HTMLButtonElement;
+    expect(menuButton.getAttribute('aria-expanded')).toBe('false');
+    menuButton.click();
+    await until(fixture, () => !!document.querySelector('.lc-sider-drawer lc-sidebar a.leaf'), 'cassetto aperto');
+    expect(menuButton.getAttribute('aria-expanded')).toBe('true');
+    // Nel cassetto la barra è sempre espansa e senza pulsante tondo.
+    expect(document.querySelector('.lc-sider-drawer lc-sidebar .side')?.classList.contains('collapsed')).toBe(false);
+    expect(document.querySelector('.lc-sider-drawer lc-sidebar button.toggle')).toBeNull();
+    clickLabel(document.body, '.lc-sider-drawer lc-sidebar .ant-menu-submenu-title', 'Ordini collegati');
+    await until(fixture, () => [...document.querySelectorAll('.lc-sider-drawer a.leaf')].some((a) => a.textContent?.trim() === 'Ordini'), 'gruppo aperto');
+    clickLabel(document.body, '.lc-sider-drawer lc-sidebar a.leaf', 'Ordini');
+    await until(fixture, () => url().startsWith('/consultazione-fatture/ordini-elenco'), 'navigazione dal cassetto');
+    expect(menuButton.getAttribute('aria-expanded')).toBe('false');
+  });
+
   it('l’intestazione di pagina mostra le briciole di pane dal menu e il logo sta sopra il menu', async () => {
     const { fixture, el } = await start();
     await until(fixture, () => rows(el) > 0, 'elenco fatture');

@@ -27,6 +27,8 @@ export interface UserMenuItem {
     nz-avatar { background: var(--lc-color-primary, #1f5fbf); color: var(--lc-color-on-primary, #fff); }
     li a, li span.row { display: flex; align-items: center; gap: 8px; }
     ul { min-width: 160px; }
+    /* Su schermi stretti resta solo l'iniziale; il nome è comunque nell'aria-label. */
+    @media (max-width: 767px) { .name { display: none; } }
   `,
   template: `
     <button type="button" class="trigger" nz-dropdown [nzDropdownMenu]="menu" nzTrigger="click" nzPlacement="bottomRight" [attr.aria-label]="i18n.t('lc.userMenu') + ' ' + name()" aria-haspopup="menu">
