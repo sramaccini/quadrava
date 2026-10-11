@@ -102,7 +102,7 @@ Key design choices:
 }
 ```
 
-**Components** (node `type`): `section`, `text`, `button`, `filterBar`, `table`, `form`, `tabs`, `detail`, `alert`. Forms and filters support `text`, `number`, `select`, `checkbox` and `date` fields, required fields, CEL validation rules, and conditional visibility / read-only state. Table columns and detail fields support cell formats (`currency`, `percent`, `date`, `datetime`, `boolean`, `badge`). The component catalogue document lists what exists and what is planned.
+**Components** (node `type`): `section`, `text`, `button`, `filterBar`, `table`, `form`, `tabs`, `detail`, `alert`. Forms and filters support `text`, `number`, `select`, `checkbox` and `date` fields, required fields, CEL validation rules, and conditional visibility / read-only state. Table columns and detail fields support cell formats (`currency`, `percent`, `date`, `datetime`, `boolean`, `badge`). The component catalogue ([docs/catalogo-componenti.md](docs/catalogo-componenti.md), in Italian) lists what exists and specifies what is being built.
 
 **Actions** are sequences of steps: `set` (screen state), `call` (a data source, with `onError`), `refresh`, `navigate`, `toast`, `confirm` (stops the sequence silently if the user cancels).
 
@@ -235,7 +235,7 @@ Open point: Ajv generates validators with `new Function`, so browser-side valida
 
 * Wire `services` into the `runtime` app (today it uses the demo's fake ports) and complete the BFF: CSRF protection, API forwarding with token and `traceparent`, host allow-list.
 * Visual editor (`editor`): node tree, property panel, preview, themes and menus.
-* Components still to build (see the catalogue): sorting, selection, detail rows, dialog with form, row-action menus, repeatable form rows, tree and calendar views.
+* Components being built, in this order (see the catalogue): table sorting, row selection with bulk actions, row-action menus, expandable detail rows, number format / clickable cells / totals row; new field types (textarea, date-time, radio, switch, multi-select), lookup fields backed by a data source, file upload, form grid, repeatable form rows; a `dialog` step with a form; tooltips in detail cards; KPI tiles, wizard, tree view, calendar, charts; and a data table whose columns can be filtered, sorted and grouped.
 * Menu: arrow-key navigation, badges, search.
 * Check expressions in `validate:examples` too.
 * Language catalogues loaded from a service (today they are files shipped with the app) and an editor picker for translation keys.
