@@ -10,16 +10,13 @@ import { NzInputNumberModule } from 'ng-zorro-antd/input-number';
 import { NzMenuModule } from 'ng-zorro-antd/menu';
 import { NzSelectModule } from 'ng-zorro-antd/select';
 import { getIn, isObject, moveBy, setIn, toPointer, type Json, type JsonObject, type Path } from '../model/doc-ops';
-import { EditorStore } from '../model/editor-store';
+import { DocumentState } from '../model/document-state';
 import { listItem, objectFields, type ItemShape, type PropertyInfo, type Variant } from '../model/schema-info';
 import { defaultItem, summaryOf } from '../model/templates';
 import { JsonFieldComponent } from './json-field.component';
 
 /** Proprietà mostrate come area di testo su più righe anche se sono semplici testi. */
 const LONG_TEXT = new Set(['text', 'description', 'tooltip', 'title', 'confirm', 'toast', 'message']);
-
-/** Proprietà che nominano un data source della schermata. */
-const SOURCE_REFS = new Set(['source', 'call', 'refresh']);
 
 export interface FieldRow {
   info: PropertyInfo;
@@ -63,7 +60,7 @@ interface ListEntry {
   templateUrl: './fields.component.html',
 })
 export class FieldsComponent {
-  protected readonly store = inject(EditorStore);
+  protected readonly store = inject(DocumentState);
   protected readonly i18n = inject(I18n);
   protected readonly expressionHint = '{{ … }}';
 
@@ -103,12 +100,9 @@ export class FieldsComponent {
     return row.info.kind === 'expression' || LONG_TEXT.has(row.info.name) || (typeof row.value === 'string' && row.value.includes('{{'));
   }
 
-  /** Valori suggeriti mentre si scrive (si può comunque scrivere altro): data source della schermata, schermate note. */
+  /** Valori suggeriti mentre si scrive (si può comunque scrivere altro): li decide il documento. */
   protected suggestions(row: FieldRow): string[] {
-    if (row.info.kind !== 'text') return [];
-    if (SOURCE_REFS.has(row.info.name)) return this.store.sourceNames();
-    if (row.info.name === 'navigate') return this.store.knownScreens();
-    return [];
+    return row.info.kind === 'text' ? this.store.suggestions(row.info.name) : [];
   }
 
   protected setText(row: FieldRow, text: string): void {

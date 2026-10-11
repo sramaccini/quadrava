@@ -25,6 +25,8 @@ import { NzNotifier, provideLowcodeComponents } from 'components';
 import { Authorization, DataClient, I18n, Notifier, RuntimeDiagnostics, ScreenNavigator, UserProvider } from 'core';
 import { provideNzIcons } from 'ng-zorro-antd/icon';
 import { EDITOR_MESSAGES } from './messages';
+import { DocumentState } from './model/document-state';
+import { EditorStore } from './model/editor-store';
 import { PreviewDataClient, PreviewDiagnostics, PreviewNavigator, PreviewSession } from './preview/preview-ports';
 
 export const appConfig: ApplicationConfig = {
@@ -57,6 +59,8 @@ export const appConfig: ApplicationConfig = {
       const i18n = inject(I18n);
       for (const [locale, messages] of Object.entries(EDITOR_MESSAGES)) i18n.addMessages(locale, messages);
     }),
+    // I campi generati dallo schema lavorano sulla schermata; l'editor della navigazione li ridirige sul proprio documento.
+    { provide: DocumentState, useExisting: EditorStore },
     // L'anteprima usa porte proprie: nessuna chiamata esce dal browser.
     { provide: Authorization, useExisting: PreviewSession },
     { provide: UserProvider, useExisting: PreviewSession },

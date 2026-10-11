@@ -2,7 +2,7 @@ import { SCREEN_SCHEMA } from 'schema';
 import { getIn, isObject, type Json, type Path } from './doc-ops';
 
 /**
- * Lettura dello schema delle schermate: quali proprietà ha ogni tipo di nodo e come modificarle. L'editor non tiene
+ * Lettura degli schemi JSON: quali proprietà ha ogni tipo di nodo (o voce del menu) e come modificarle. L'editor non tiene
  * un elenco proprio dei componenti: tutto viene dallo schema, così un componente nuovo compare da solo nell'editor
  * (con un modello iniziale da aggiungere in `templates.ts`).
  */
@@ -24,6 +24,8 @@ export interface PropertyInfo {
   pattern?: string;
   /** Schema della proprietà, per leggere su richiesta i campi di un oggetto o degli elementi di un elenco. */
   schema?: Schema;
+  /** Lo schema (schermate, navigazione…) da cui viene la proprietà. */
+  reader?: SchemaReader;
 }
 
 /** Una variante di un elenco con elementi di forme diverse (i passi: `call`, `toast`…), riconosciuta dalla sua chiave. */
@@ -35,41 +37,6 @@ export interface Variant {
 /** Gli elementi di un elenco: una sola forma con i suoi campi, oppure più varianti. */
 export type ItemShape = { fields: PropertyInfo[] } | { variants: Variant[] };
 
-const root = SCREEN_SCHEMA as unknown as Schema;
-const defs = root['$defs'] as Record<string, Schema>;
-const nodeDef = defs['node'];
-
-function resolve(schema: Schema): { schema: Schema; ref?: string } {
-  const ref = schema['$ref'];
-  if (typeof ref === 'string' && ref.startsWith('#/$defs/')) {
-    const name = ref.slice('#/$defs/'.length);
-    // Le proprietà accanto a $ref (description) valgono sopra quelle della definizione.
-    const { $ref: _, ...rest } = schema;
-    return { schema: { ...resolve(defs[name]).schema, ...rest }, ref: name };
-  }
-  return { schema };
-}
-
-function kindOf(schema: Schema): Omit<PropertyInfo, 'name' | 'required'> {
-  const { schema: s, ref } = resolve(schema);
-  const description = typeof s['description'] === 'string' ? (s['description'] as string) : undefined;
-  if (Array.isArray(s['enum'])) return { kind: 'enum', options: (s['enum'] as unknown[]).map(String), description };
-  if (ref === 'expression') return { kind: 'expression', description };
-  if (s['type'] === 'string') return { kind: 'text', description, pattern: typeof s['pattern'] === 'string' ? (s['pattern'] as string) : undefined };
-  if (s['type'] === 'boolean') return { kind: 'boolean', description };
-  if (s['type'] === 'integer' || s['type'] === 'number') {
-    return { kind: 'number', description, minimum: s['minimum'] as number | undefined, maximum: s['maximum'] as number | undefined };
-  }
-  if (s['type'] === 'array' && isObject(s['items'] as Json)) {
-    const items = s['items'] as Schema;
-    if (items['$ref'] === '#/$defs/node') return { kind: 'children', description };
-    if (isListable(items)) return { kind: 'list', description, schema: s, minimum: s['minItems'] as number | undefined, maximum: s['maxItems'] as number | undefined };
-  }
-  // Oggetti con campi noti (non mappe libere come `params` o `badges`): un gruppo di campi.
-  if (shapeOf(s)?.closed) return { kind: 'object', description, schema: s };
-  return { kind: 'json', description };
-}
-
 interface Shape {
   properties: Record<string, Schema>;
   required: string[];
@@ -77,64 +44,147 @@ interface Shape {
   closed: boolean;
 }
 
-/** Proprietà di uno schema oggetto, seguendo `$ref` e `allOf` (le colonne ereditano da più definizioni). */
-function shapeOf(schema: Schema): Shape | null {
-  let properties: Record<string, Schema> = {};
-  let required: string[] = [];
-  let closed = schema['additionalProperties'] === false || schema['unevaluatedProperties'] === false;
-  let found = false;
-  const ref = schema['$ref'];
-  if (typeof ref === 'string' && ref.startsWith('#/$defs/')) {
-    const base = shapeOf(defs[ref.slice('#/$defs/'.length)]);
-    if (base) {
-      properties = { ...base.properties };
-      required = [...base.required];
-      closed ||= base.closed;
+/**
+ * Lettore di uno schema JSON (schermate, navigazione…): descrive le proprietà di oggetti, elenchi e varianti
+ * seguendo `$ref` e le definizioni dello schema stesso.
+ */
+export class SchemaReader {
+  readonly defs: Record<string, Schema>;
+
+  constructor(readonly root: Schema) {
+    this.defs = (root['$defs'] ?? {}) as Record<string, Schema>;
+  }
+
+  private resolve(schema: Schema): { schema: Schema; ref?: string } {
+    const ref = schema['$ref'];
+    if (typeof ref === 'string' && ref.startsWith('#/$defs/')) {
+      const name = ref.slice('#/$defs/'.length);
+      // Le proprietà accanto a $ref (description) valgono sopra quelle della definizione.
+      const { $ref: _, ...rest } = schema;
+      return { schema: { ...this.resolve(this.defs[name]).schema, ...rest }, ref: name };
+    }
+    return { schema };
+  }
+
+  private kindOf(schema: Schema): Omit<PropertyInfo, 'name' | 'required'> {
+    const { schema: s, ref } = this.resolve(schema);
+    const description = typeof s['description'] === 'string' ? (s['description'] as string) : undefined;
+    if (Array.isArray(s['enum'])) return { kind: 'enum', options: (s['enum'] as unknown[]).map(String), description };
+    if (ref === 'expression') return { kind: 'expression', description };
+    if (s['type'] === 'string') return { kind: 'text', description, pattern: typeof s['pattern'] === 'string' ? (s['pattern'] as string) : undefined };
+    if (s['type'] === 'boolean') return { kind: 'boolean', description };
+    if (s['type'] === 'integer' || s['type'] === 'number') {
+      return { kind: 'number', description, minimum: s['minimum'] as number | undefined, maximum: s['maximum'] as number | undefined };
+    }
+    if (s['type'] === 'array' && isObject(s['items'] as Json)) {
+      const items = s['items'] as Schema;
+      if (items['$ref'] === '#/$defs/node') return { kind: 'children', description };
+      if (this.isListable(items)) return { kind: 'list', description, schema: s, reader: this, minimum: s['minItems'] as number | undefined, maximum: s['maxItems'] as number | undefined };
+    }
+    // Oggetti con campi noti (non mappe libere come `params` o `badges`): un gruppo di campi.
+    if (this.shapeOf(s)?.closed) return { kind: 'object', description, schema: s, reader: this };
+    return { kind: 'json', description };
+  }
+
+  /** Proprietà di uno schema oggetto, seguendo `$ref` (le colonne ereditano da più definizioni). */
+  private shapeOf(schema: Schema): Shape | null {
+    let properties: Record<string, Schema> = {};
+    let required: string[] = [];
+    let closed = schema['additionalProperties'] === false || schema['unevaluatedProperties'] === false;
+    let found = false;
+    const ref = schema['$ref'];
+    if (typeof ref === 'string' && ref.startsWith('#/$defs/')) {
+      const base = this.shapeOf(this.defs[ref.slice('#/$defs/'.length)]);
+      if (base) {
+        properties = { ...base.properties };
+        required = [...base.required];
+        closed ||= base.closed;
+        found = true;
+      }
+    }
+    if (isObject(schema['properties'] as Json)) {
+      properties = { ...properties, ...(schema['properties'] as Record<string, Schema>) };
       found = true;
     }
+    if (Array.isArray(schema['required'])) required = [...new Set([...required, ...(schema['required'] as string[])])];
+    return found && Object.keys(properties).length ? { properties, required, closed } : null;
   }
-  if (isObject(schema['properties'] as Json)) {
-    properties = { ...properties, ...(schema['properties'] as Record<string, Schema>) };
-    found = true;
+
+  /** Le alternative di uno schema `oneOf` / `anyOf` (i passi, le voci del menu), o null. */
+  private alternatives(items: Schema): Schema[] | null {
+    const { schema: resolved } = this.resolve(items);
+    const options = resolved['oneOf'] ?? resolved['anyOf'];
+    return Array.isArray(options) ? (options as Schema[]) : null;
   }
-  if (Array.isArray(schema['required'])) required = [...new Set([...required, ...(schema['required'] as string[])])];
-  return found && Object.keys(properties).length ? { properties, required, closed } : null;
+
+  /** Gli elementi hanno una forma modificabile campo per campo? (Senza descriverli: i passi contengono altri passi.) */
+  private isListable(items: Schema): boolean {
+    const options = this.alternatives(items);
+    if (options) return options.every((option) => (this.shapeOf(option)?.required.length ?? 0) > 0);
+    return this.shapeOf(items)?.closed ?? false;
+  }
+
+  private itemShapeOf(items: Schema): ItemShape | null {
+    const options = this.alternatives(items);
+    if (options) {
+      const shapes = options.map((option) => this.shapeOf(option));
+      if (shapes.some((shape) => !shape)) return null;
+      // La chiave di una variante: la prima proprietà obbligatoria che non tutte le varianti hanno
+      // (`call`, `toast`… per i passi; `screen` o `children` per le voci del menu).
+      const common = (key: string): boolean => shapes.every((shape) => shape!.required.includes(key));
+      const variants = shapes.map((shape) => {
+        const key = shape!.required.find((k) => !common(k)) ?? shape!.required[0];
+        return key ? { key, fields: this.describe(shape!.properties, shape!.required) } : null;
+      });
+      return variants.every((v) => v !== null) ? { variants: variants as Variant[] } : null;
+    }
+    const shape = this.shapeOf(items);
+    return shape?.closed ? { fields: this.describe(shape.properties, shape.required) } : null;
+  }
+
+  /** I campi di una proprietà di tipo `object`. */
+  objectFields(info: PropertyInfo): PropertyInfo[] {
+    const shape = info.schema ? this.shapeOf(info.schema) : null;
+    return shape ? this.describe(shape.properties, shape.required) : [];
+  }
+
+  /** La forma degli elementi di una proprietà di tipo `list`. */
+  listItem(info: PropertyInfo): ItemShape | null {
+    const items = info.schema?.['items'];
+    return isObject(items as Json) ? this.itemShapeOf(items as Schema) : null;
+  }
+
+  describe(properties: Record<string, Schema>, required: string[]): PropertyInfo[] {
+    return Object.entries(properties).map(([name, schema]) => ({ name, required: required.includes(name), ...this.kindOf(schema) }));
+  }
+
+  /** Proprietà di una definizione dello schema (`tab`, `wizardStep`, `useCase`…), seguendo `$ref`. */
+  definitionProperties(name: string): PropertyInfo[] {
+    const shape = this.shapeOf(this.defs[name]);
+    return shape ? this.describe(shape.properties, shape.required) : [];
+  }
+
+  /** Proprietà della radice del documento. */
+  rootProperties(): PropertyInfo[] {
+    return this.describe((this.root['properties'] ?? {}) as Record<string, Schema>, (this.root['required'] ?? []) as string[]);
+  }
 }
 
-/** Gli elementi hanno una forma modificabile campo per campo? (Senza descriverli: i passi contengono altri passi.) */
-function isListable(items: Schema): boolean {
-  const { schema: resolved } = resolve(items);
-  if (Array.isArray(resolved['oneOf'])) return (resolved['oneOf'] as Schema[]).every((option) => (shapeOf(option)?.required.length ?? 0) > 0);
-  return shapeOf(items)?.closed ?? false;
-}
+/** Lo schema delle schermate. */
+export const SCREEN = new SchemaReader(SCREEN_SCHEMA as unknown as Schema);
+const root = SCREEN.root;
+const defs = SCREEN.defs;
+const nodeDef = defs['node'];
+const describeProperties = (properties: Record<string, Schema>, required: string[]): PropertyInfo[] => SCREEN.describe(properties, required);
 
-function itemShapeOf(items: Schema): ItemShape | null {
-  const { schema: resolved } = resolve(items);
-  if (Array.isArray(resolved['oneOf'])) {
-    const variants = (resolved['oneOf'] as Schema[]).map((option) => {
-      const shape = shapeOf(option);
-      return shape && shape.required.length ? { key: shape.required[0], fields: describeProperties(shape.properties, shape.required) } : null;
-    });
-    return variants.every((v) => v !== null) ? { variants: variants as Variant[] } : null;
-  }
-  const shape = shapeOf(items);
-  return shape?.closed ? { fields: describeProperties(shape.properties, shape.required) } : null;
-}
-
-/** I campi di una proprietà di tipo `object`. */
+/** I campi di una proprietà di tipo `object` (nello schema da cui viene la proprietà). */
 export function objectFields(info: PropertyInfo): PropertyInfo[] {
-  const shape = info.schema ? shapeOf(info.schema) : null;
-  return shape ? describeProperties(shape.properties, shape.required) : [];
+  return (info.reader ?? SCREEN).objectFields(info);
 }
 
-/** La forma degli elementi di una proprietà di tipo `list`. */
+/** La forma degli elementi di una proprietà di tipo `list` (nello schema da cui viene la proprietà). */
 export function listItem(info: PropertyInfo): ItemShape | null {
-  const items = info.schema?.['items'];
-  return isObject(items as Json) ? itemShapeOf(items as Schema) : null;
-}
-
-function describeProperties(properties: Record<string, Schema>, required: string[]): PropertyInfo[] {
-  return Object.entries(properties).map(([name, schema]) => ({ name, required: required.includes(name), ...kindOf(schema) }));
+  return (info.reader ?? SCREEN).listItem(info);
 }
 
 /** Tipi di nodo previsti dallo schema, nell'ordine dello schema. */
@@ -158,10 +208,9 @@ export function nodeProperties(type: string): PropertyInfo[] {
   return [id, ...own, ...rest];
 }
 
-/** Proprietà di una definizione dello schema (`tab`, `wizardStep`, `dataSource`…). */
+/** Proprietà di una definizione dello schema delle schermate (`tab`, `wizardStep`, `dataSource`…). */
 export function definitionProperties(name: string): PropertyInfo[] {
-  const def = defs[name];
-  return describeProperties((def['properties'] ?? {}) as Record<string, Schema>, (def['required'] ?? []) as string[]);
+  return SCREEN.definitionProperties(name);
 }
 
 /** Proprietà della schermata, escluse quelle con un editor dedicato (`components`, `dataSources`). */

@@ -3,20 +3,12 @@ import { I18n, checkScreenExpressions } from 'core';
 import { ExpressionEngine } from 'expressions';
 import { validateScreen, type ScreenDefinition } from 'schema';
 import { fromPointer, getIn, insertAt, isObject, moveBy, moveTo, removeAt, samePath, setIn, startsWith, toPointer, type Json, type JsonObject, type Path } from './doc-ops';
+import { DocumentState, type EditorIssue } from './document-state';
 import { childSlots, ownerOf, targetAt } from './schema-info';
 import { emptyScreen, ensureSource, freshId, nodeTemplate, usedIds, withFreshIds } from './templates';
 import { collectTexts, makeKey, translatable, usedKeys, type TextEntry } from './texts';
 
-/** Un problema del documento, collegato all'elemento (nodo, scheda, passo o schermata) che lo contiene. */
-export interface EditorIssue {
-  /** Elemento selezionabile a cui appartiene il problema. */
-  owner: Path;
-  /** Posizione precisa (JSON Pointer). */
-  pointer: string;
-  message: string;
-  /** Gli errori impediscono l'anteprima e la pubblicazione; gli avvisi no. */
-  severity: 'error' | 'warning';
-}
+export type { EditorIssue } from './document-state';
 
 /** Bozza salvata nel browser: il documento e i dati di esempio dell'anteprima. */
 interface Draft {
@@ -34,9 +26,6 @@ export const EDITOR_LOCALES = ['it', 'en'];
 const DRAFT_KEY = 'lc.editor.draft';
 /** Nome di un data source: lo si scrive nelle espressioni e nei passi, quindi un identificativo semplice. */
 export const SOURCE_NAME = /^[A-Za-z][A-Za-z0-9_]*$/;
-const HISTORY_LIMIT = 200;
-/** Modifiche alla stessa proprietà più vicine di così diventano un solo passo di annullamento (si scrive lettera per lettera). */
-const COALESCE_MS = 1000;
 
 /**
  * Stato dell'editor: il documento della schermata, l'elemento selezionato, la cronologia per annullare e ripetere,
@@ -44,15 +33,12 @@ const COALESCE_MS = 1000;
  * nel browser a ogni modifica.
  */
 @Injectable({ providedIn: 'root' })
-export class EditorStore {
+export class EditorStore extends DocumentState {
   private readonly i18n = inject(I18n);
   private readonly engine = new ExpressionEngine({ can: () => true });
   private readonly t = (key: string, params: Record<string, unknown> = {}): string => this.i18n.t(key, params);
 
   private readonly draft = readDraft();
-  readonly doc = signal<Json>(this.draft?.doc ?? emptyScreen((k) => this.t(k)));
-  /** Percorso dell'elemento selezionato; vuoto = la schermata. */
-  readonly selection = signal<Path>([]);
   /** Vista centrale dell'editor: anteprima, JSON o data source. */
   readonly view = signal<'preview' | 'json' | 'sources' | 'texts'>('preview');
   /** Risposte finte per data source, usate solo dall'anteprima. */
@@ -63,14 +49,6 @@ export class EditorStore {
    */
   readonly translations = signal<Translations>(this.draft?.translations ?? {});
 
-  private readonly past = signal<Json[]>([]);
-  private readonly future = signal<Json[]>([]);
-  readonly canUndo = computed(() => this.past().length > 0);
-  readonly canRedo = computed(() => this.future().length > 0);
-  private coalesce: { key: string; at: number } | null = null;
-
-  readonly issues = computed<EditorIssue[]>(() => this.check(this.doc()));
-  readonly errorCount = computed(() => this.issues().filter((i) => i.severity === 'error').length);
   /** Il documento come schermata valida, oppure null se ha errori (l'anteprima mostra allora l'ultima versione valida). */
   readonly definition = computed<ScreenDefinition | null>(() => (this.errorCount() === 0 ? (this.doc() as unknown as ScreenDefinition) : null));
   readonly target = computed(() => targetAt(this.doc(), this.selection()));
@@ -83,6 +61,8 @@ export class EditorStore {
   });
 
   constructor() {
+    super();
+    this.doc.set(this.draft?.doc ?? emptyScreen((k) => this.t(k)));
     // Le traduzioni della bozza valgono subito nell'anteprima.
     for (const [locale, messages] of Object.entries(this.translations())) this.i18n.addMessages(locale, messages);
     effect(() => {
@@ -95,8 +75,19 @@ export class EditorStore {
     });
   }
 
-  select(path: Path): void {
-    this.selection.set(targetAt(this.doc(), path) ? path : []);
+  protected selectable(doc: Json, path: Path): boolean {
+    return targetAt(doc, path) !== null;
+  }
+
+  ownerOf(doc: Json, path: Path): Path {
+    return ownerOf(doc, path);
+  }
+
+  /** `source`, `call`, `refresh` suggeriscono i data source della schermata, `navigate` le schermate note. */
+  override suggestions(property: string): string[] {
+    if (['source', 'call', 'refresh'].includes(property)) return this.sourceNames();
+    if (property === 'navigate') return this.knownScreens();
+    return [];
   }
 
   /** Percorso dell'elemento (nodo, scheda, passo) con questo identificativo, o null. */
@@ -120,45 +111,6 @@ export class EditorStore {
       return null;
     };
     return visit(doc, []);
-  }
-
-  /** Sostituisce il documento registrando il passo nella cronologia. `coalesce` unisce le modifiche ravvicinate alla stessa proprietà. */
-  apply(next: Json, options: { select?: Path; coalesce?: string } = {}): void {
-    const previous = this.doc();
-    if (next === previous) return;
-    const now = Date.now();
-    const merge = options.coalesce !== undefined && this.coalesce?.key === options.coalesce && now - this.coalesce.at < COALESCE_MS;
-    if (!merge) this.past.update((list) => [...list, previous].slice(-HISTORY_LIMIT));
-    this.coalesce = options.coalesce !== undefined ? { key: options.coalesce, at: now } : null;
-    this.future.set([]);
-    this.doc.set(next);
-    if (options.select) this.selection.set(options.select);
-    else if (!targetAt(next, this.selection())) this.selection.set(ownerOf(next, this.selection()));
-  }
-
-  /** Imposta (o con `undefined` toglie) il valore in un percorso. */
-  setValue(path: Path, value: Json | undefined): void {
-    this.apply(setIn(this.doc(), path, value), { coalesce: toPointer(path) });
-  }
-
-  undo(): void {
-    const past = this.past();
-    if (!past.length) return;
-    this.future.update((list) => [this.doc(), ...list]);
-    this.past.set(past.slice(0, -1));
-    this.coalesce = null;
-    this.doc.set(past.at(-1)!);
-    if (!targetAt(this.doc(), this.selection())) this.selection.set(ownerOf(this.doc(), this.selection()));
-  }
-
-  redo(): void {
-    const [next, ...rest] = this.future();
-    if (next === undefined) return;
-    this.past.update((list) => [...list, this.doc()]);
-    this.future.set(rest);
-    this.coalesce = null;
-    this.doc.set(next);
-    if (!targetAt(this.doc(), this.selection())) this.selection.set(ownerOf(this.doc(), this.selection()));
   }
 
   /** Dove va un nodo nuovo: dentro l'elemento selezionato se è un contenitore, altrimenti subito dopo. */
@@ -350,20 +302,16 @@ export class EditorStore {
 
   /** Apre un documento (file, esempio, nuova schermata): azzera cronologia e selezione. */
   load(doc: Json, samples: Record<string, Json> = {}): void {
-    this.doc.set(doc);
+    this.reset(doc);
     this.samples.set(samples);
     this.translations.set({});
-    this.past.set([]);
-    this.future.set([]);
-    this.coalesce = null;
-    this.selection.set([]);
   }
 
   newScreen(): void {
     this.load(emptyScreen((k) => this.t(k)));
   }
 
-  private check(doc: Json): EditorIssue[] {
+  protected check(doc: Json): EditorIssue[] {
     const issues: EditorIssue[] = [];
     const add = (pointer: string, message: string, severity: EditorIssue['severity']): void => {
       issues.push({ owner: ownerOf(doc, fromPointer(pointer)), pointer, message, severity });
