@@ -29,9 +29,10 @@ Avvio: `cd frontend && npm run start:editor` (porta 4201; costruisce le librerie
 - **Anteprima.** La schermata disegnata da `lc-screen` con porte proprie (§ 3). Il nodo selezionato è evidenziato da un riquadro tratteggiato (se sta in una scheda nascosta, l'anteprima apre quella scheda); Alt+clic su un componente, o un clic in modalità «Seleziona», lo seleziona invece di attivarlo.
 - **JSON.** Il documento intero, modificabile a mano; «Applica» lo sostituisce in un solo passo annullabile, il testo non valido non tocca nulla.
 - **Data source.** Metodo, URL, parametri, corpo e paginazione di ogni data source; rinominarlo aggiorna i nodi (`source`) e i passi (`call`, `refresh`) che lo usano. Accanto, i **dati di esempio** che l'anteprima restituisce al posto del servizio.
+- **Testi.** Tutti i testi che l'utente legge (titoli, etichette, messaggi, tooltip, conferme…), con dove stanno. Un testo semplice non cambia con la lingua: «Rendi traducibile» lo sostituisce con `{{ t('schermata.chiave', 'Testo') }}` (chiave dal prefisso della schermata e dalle prime parole, unica) e lo usa come traduzione italiana. Per ogni chiave si scrivono le traduzioni italiana e inglese, che valgono subito nell'anteprima; le traduzioni mancanti sono segnalate e contate nel titolo della scheda. «Esporta traduzioni» scarica `<schermata>.i18n.json` (`{ "it": {…}, "en": {…} }`) da unire ai cataloghi `examples/i18n/<lingua>.json`. I testi con graffe (parametri dei messaggi) e le espressioni più complesse si rendono traducibili a mano.
 - **Problemi.** Errori di schema, espressioni CEL non valide, identificativi ripetuti (errori) e data source non definiti (avvisi). Un clic porta all'elemento. Con errori l'anteprima resta all'ultima versione valida.
 
-La bozza (documento e dati di esempio) si salva da sola nel browser a ogni modifica e si riprende alla riapertura. «Apri esempio» offre le schermate di `examples/` (l'elenco `examples/index.json` lo scrive `tools/copy-examples.mjs`); «Importa» ed «Esporta» leggono e scrivono un file `.json`.
+La bozza (documento, dati di esempio e traduzioni scritte nell'editor) si salva da sola nel browser a ogni modifica e si riprende alla riapertura. «Apri esempio» offre le schermate di `examples/` (l'elenco `examples/index.json` lo scrive `tools/copy-examples.mjs`); «Importa» ed «Esporta» leggono e scrivono un file `.json`.
 
 ## 2. Pannello delle proprietà generato dallo schema
 
@@ -86,9 +87,10 @@ Fuori da annulla e ripeti, le scorciatoie valgono quando il fuoco non è in un c
 ```
 editor/src/app/
   model/      doc-ops (operazioni pure sul documento), schema-info (lettura dello schema),
-              templates (modelli, valori iniziali, riassunti), drop (trascinamento), editor-store (stato)
+              templates (modelli, valori iniziali, riassunti), drop (trascinamento),
+              texts (testi e chiavi di traduzione), editor-store (stato)
   ui/         palette, outline, inspector, fields (campi ricorsivi), json-field, json-view,
-              data-sources, issues
+              data-sources, texts, issues
   preview/    preview (anteprima), preview-ports (porte finte)
   app.*       guscio, barra degli strumenti, scorciatoie
   messages.ts scritte dell'editor (chiavi ed.*, it ed en)
@@ -101,7 +103,7 @@ editor/src/app/
 ## 6. Limiti e prossimi passi
 
 - **Solo schermate.** Navigazione (casi d'uso e menu) e temi si modificano ancora a mano; sono i prossimi documenti da portare nell'editor, con la stessa tecnica (pannello generato dallo schema).
-- **Traduzioni.** I testi si scrivono come testo semplice o come `{{ t('chiave', 'Ripiego') }}`; manca un aiuto per estrarre i testi in chiavi e per modificare i cataloghi `it`/`en`.
+- **Traduzioni.** Le traduzioni si esportano in un file da unire a mano ai cataloghi; quando i cataloghi verranno da un servizio, l'editor li aggiornerà direttamente. Le lingue sono quelle della demo (italiano e inglese).
 - **Pubblicazione.** Si esporta un file; il collegamento al registro (bozza, revisione, pubblicazione con versioni) è da fare, con la validazione lato servizio.
 - **Espressioni.** Sintassi controllata, ma nessun completamento delle variabili (`state`, `row`, `form`…) né dei nomi dei campi delle righe.
 - **Anteprima e procedure.** Selezionare un nodo in un passo successivo di un wizard non porta a quel passo (i passi si superano solo con le loro condizioni).

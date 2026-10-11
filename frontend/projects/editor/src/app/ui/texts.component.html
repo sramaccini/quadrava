@@ -1,0 +1,67 @@
+<section class="texts" [attr.aria-label]="i18n.t('ed.tabs.texts')">
+  <div class="head">
+    <p class="intro">{{ i18n.t('ed.texts.intro') }}</p>
+    <button nz-button nzSize="small" type="button" (click)="exportTranslations()"><span nz-icon nzType="download"></span>{{ i18n.t('ed.texts.export') }}</button>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th scope="col">{{ i18n.t('ed.texts.where') }}</th>
+        <th scope="col">{{ i18n.t('ed.texts.text') }}</th>
+        @for (locale of locales; track locale) {
+          <th scope="col" class="locale">{{ locale.toUpperCase() }}</th>
+        }
+      </tr>
+    </thead>
+    <tbody>
+      @for (row of rows(); track row.entry.path.join('/')) {
+        <tr [class.todo]="row.entry.kind === 'plain' || row.missing.length">
+          <td class="where">
+            <button type="button" class="link" (click)="select(row)">{{ row.where }}</button>
+          </td>
+          <td class="text">
+            @switch (row.entry.kind) {
+              @case ('plain') {
+                <span>{{ row.entry.value }}</span>
+                @if (row.convertible) {
+                  <button nz-button nzType="link" nzSize="small" type="button" class="convert" (click)="convert(row)">{{ i18n.t('ed.texts.convert') }}</button>
+                } @else {
+                  <nz-tag>{{ i18n.t('ed.texts.braces') }}</nz-tag>
+                }
+              }
+              @case ('key') {
+                <code class="key">{{ row.entry.key }}</code>
+                @if (row.entry.fallback) {
+                  <span class="fallback">{{ row.entry.fallback }}</span>
+                }
+              }
+              @default {
+                <code class="expression">{{ row.entry.value }}</code>
+              }
+            }
+          </td>
+          @for (locale of locales; track locale) {
+            <td class="locale">
+              @if (row.entry.kind === 'key') {
+                <input
+                  nz-input
+                  nzSize="small"
+                  [class.missing]="row.missing.includes(locale)"
+                  [attr.aria-label]="row.entry.key + ' ' + locale"
+                  [attr.aria-invalid]="row.missing.includes(locale) ? true : null"
+                  [placeholder]="row.missing.includes(locale) ? i18n.t('ed.texts.missing') : ''"
+                  [value]="row.values[locale]"
+                  (change)="setTranslation(row, locale, $any($event.target).value)"
+                />
+              }
+            </td>
+          }
+        </tr>
+      } @empty {
+        <tr>
+          <td [attr.colspan]="2 + locales.length" class="empty">{{ i18n.t('ed.texts.none') }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</section>

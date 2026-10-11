@@ -192,7 +192,7 @@ cd frontend
 npm run start:editor         # builds the libraries, copies the examples, serves on http://localhost:4201
 ```
 
-Open an example (*Apri esempio*) or start a new screen. The palette adds components (click, or drag into the outline); the outline selects, reorders, duplicates, cuts and pastes nodes; the property panel is generated from `screen.schema.json`, so columns, form fields, actions and steps are edited item by item; the *Data source* tab defines the services and the sample data the preview returns. The preview is the real `lc-screen` with fake ports: nothing leaves the browser, permissions can be switched off, and Alt+click on a component selects it. Problems (schema, CEL expressions, duplicate ids, missing data sources) are listed at the bottom; the draft is saved in the browser; *Esporta* downloads the JSON. Details, shortcuts and limits: [docs/editor.md](docs/editor.md) (Italian).
+Open an example (*Apri esempio*) or start a new screen. The palette adds components (click, or drag into the outline); the outline selects, reorders, duplicates, cuts and pastes nodes; the property panel is generated from `screen.schema.json`, so columns, form fields, actions and steps are edited item by item; the *Data source* tab defines the services and the sample data the preview returns; the *Testi* tab lists every user-facing text, turns plain texts into translation keys with one click, edits the Italian and English translations (applied to the preview at once) and exports them for the catalogues. The preview is the real `lc-screen` with fake ports: nothing leaves the browser, permissions can be switched off, and Alt+click on a component selects it. Problems (schema, CEL expressions, duplicate ids, missing data sources) are listed at the bottom; the draft is saved in the browser; *Esporta* downloads the JSON. Details, shortcuts and limits: [docs/editor.md](docs/editor.md) (Italian).
 
 ## Run the full stack
 
@@ -216,7 +216,7 @@ npm run schema:check                  # generated schema constants are in sync
 npm run validate:examples             # examples are valid
 ```
 
-At the time of writing there are **405 automated tests**: schema 62, expressions 39, core 61, components 128, services 19, runtime 66, editor 30. They run in jsdom, so layout, real focus handling and pixel-level rendering are **not** covered; see the development guide for the helpers that make NG-ZORRO overlays testable.
+At the time of writing there are **410 automated tests**: schema 62, expressions 39, core 61, components 128, services 19, runtime 66, editor 35. They run in jsdom, so layout, real focus handling and pixel-level rendering are **not** covered; see the development guide for the helpers that make NG-ZORRO overlays testable.
 
 ## Security model
 
@@ -243,7 +243,7 @@ Open point: Ajv generates validators with `new Function`, so browser-side valida
 **Next steps:**
 
 * Wire `services` into the `runtime` app (today it uses the demo's fake ports) and complete the BFF: CSRF protection, API forwarding with token and `traceparent`, host allow-list.
-* Visual editor: navigation (use cases and menus) and themes, a helper for translation keys, publication to the registry, expression completion.
+* Visual editor: navigation (use cases and menus) and themes, publication to the registry, expression completion.
 * The October 2026 component batch is complete (see the catalogue for the specification and the known limits of each component).
 * Menu: arrow-key navigation, badges, search.
 * Check expressions in `validate:examples` too.

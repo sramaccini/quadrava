@@ -55,6 +55,7 @@
       <nz-tab [nzTitle]="i18n.t('ed.tabs.preview')"></nz-tab>
       <nz-tab [nzTitle]="i18n.t('ed.tabs.json')"></nz-tab>
       <nz-tab [nzTitle]="i18n.t('ed.tabs.sources')"></nz-tab>
+      <nz-tab [nzTitle]="store.textsToFix() ? i18n.t('ed.tabs.textsTodo', { n: store.textsToFix() }) : i18n.t('ed.tabs.texts')"></nz-tab>
     </nz-tabs>
     <div class="view">
       @switch (store.view()) {
@@ -66,6 +67,9 @@
         }
         @case ('sources') {
           <ed-data-sources />
+        }
+        @case ('texts') {
+          <ed-texts />
         }
       }
     </div>

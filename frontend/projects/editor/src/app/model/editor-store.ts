@@ -5,6 +5,7 @@ import { validateScreen, type ScreenDefinition } from 'schema';
 import { fromPointer, getIn, insertAt, isObject, moveBy, moveTo, removeAt, samePath, setIn, startsWith, toPointer, type Json, type JsonObject, type Path } from './doc-ops';
 import { childSlots, ownerOf, targetAt } from './schema-info';
 import { emptyScreen, ensureSource, freshId, nodeTemplate, usedIds, withFreshIds } from './templates';
+import { collectTexts, makeKey, translatable, usedKeys, type TextEntry } from './texts';
 
 /** Un problema del documento, collegato all'elemento (nodo, scheda, passo o schermata) che lo contiene. */
 export interface EditorIssue {
@@ -21,7 +22,14 @@ export interface EditorIssue {
 interface Draft {
   doc: Json;
   samples: Record<string, Json>;
+  translations: Translations;
 }
+
+/** Traduzioni scritte nell'editor: lingua → chiave → testo. */
+export type Translations = Record<string, Record<string, string>>;
+
+/** Lingue in cui l'editor fa scrivere le traduzioni (le stesse della demo). */
+export const EDITOR_LOCALES = ['it', 'en'];
 
 const DRAFT_KEY = 'lc.editor.draft';
 /** Nome di un data source: lo si scrive nelle espressioni e nei passi, quindi un identificativo semplice. */
@@ -46,9 +54,14 @@ export class EditorStore {
   /** Percorso dell'elemento selezionato; vuoto = la schermata. */
   readonly selection = signal<Path>([]);
   /** Vista centrale dell'editor: anteprima, JSON o data source. */
-  readonly view = signal<'preview' | 'json' | 'sources'>('preview');
+  readonly view = signal<'preview' | 'json' | 'sources' | 'texts'>('preview');
   /** Risposte finte per data source, usate solo dall'anteprima. */
   readonly samples = signal<Record<string, Json>>(this.draft?.samples ?? {});
+  /**
+   * Traduzioni scritte nell'editor e non ancora nei cataloghi dell'applicazione: si esportano con «Esporta traduzioni»
+   * e intanto valgono già nell'anteprima.
+   */
+  readonly translations = signal<Translations>(this.draft?.translations ?? {});
 
   private readonly past = signal<Json[]>([]);
   private readonly future = signal<Json[]>([]);
@@ -70,8 +83,10 @@ export class EditorStore {
   });
 
   constructor() {
+    // Le traduzioni della bozza valgono subito nell'anteprima.
+    for (const [locale, messages] of Object.entries(this.translations())) this.i18n.addMessages(locale, messages);
     effect(() => {
-      const draft: Draft = { doc: this.doc(), samples: this.samples() };
+      const draft: Draft = { doc: this.doc(), samples: this.samples(), translations: this.translations() };
       try {
         localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
       } catch {
@@ -282,6 +297,48 @@ export class EditorStore {
     this.setSample(name, undefined);
   }
 
+  /** Lingue in cui manca la traduzione di un testo con chiave (nella predefinita basta il ripiego scritto nel testo). */
+  missingLocales(entry: TextEntry): string[] {
+    if (!entry.key) return [];
+    return EDITOR_LOCALES.filter((locale) => !this.translation(locale, entry.key!) && !(locale === this.i18n.defaultLocale() && entry.fallback));
+  }
+
+  /** Testi da sistemare: semplici (non traducibili) o con traduzioni mancanti. */
+  readonly textsToFix = computed(() => {
+    this.translations();
+    return collectTexts(this.doc()).filter((e) => e.kind === 'plain' || this.missingLocales(e).length).length;
+  });
+
+  /** Il testo di una chiave in una lingua: quello scritto nell'editor, altrimenti quello del catalogo. */
+  translation(locale: string, key: string): string | undefined {
+    return this.translations()[locale]?.[key] ?? this.i18n.raw(key, locale);
+  }
+
+  setTranslation(locale: string, key: string, text: string): void {
+    this.translations.update((all) => ({ ...all, [locale]: { ...all[locale], [key]: text } }));
+    // Un testo vuoto resta nella bozza (da completare) ma non sostituisce quello del catalogo nell'anteprima.
+    if (text) this.i18n.addMessages(locale, { [key]: text });
+  }
+
+  /**
+   * Rende traducibile un testo semplice: lo sostituisce con `{{ t('chiave', 'Testo') }}` (chiave nuova dal testo) e
+   * scrive il testo come traduzione nella lingua predefinita. Restituisce la chiave, o null se il testo non si converte.
+   */
+  makeTranslatable(path: Path): string | null {
+    const doc = this.doc();
+    const text = getIn(doc, path);
+    if (typeof text !== 'string' || text.includes('{{')) return null;
+    const used = usedKeys(collectTexts(doc));
+    for (const locale of Object.keys(this.translations())) Object.keys(this.translations()[locale]).forEach((k) => used.add(k));
+    const screen = isObject(doc) && typeof doc['screen'] === 'string' ? doc['screen'] : '';
+    const key = makeKey(screen, text, used);
+    const value = translatable(key, text);
+    if (!value) return null;
+    this.apply(setIn(doc, path, value));
+    this.setTranslation(this.i18n.defaultLocale(), key, text);
+    return key;
+  }
+
   setSample(source: string, value: Json | undefined): void {
     this.samples.update((all) => {
       const next = { ...all };
@@ -295,6 +352,7 @@ export class EditorStore {
   load(doc: Json, samples: Record<string, Json> = {}): void {
     this.doc.set(doc);
     this.samples.set(samples);
+    this.translations.set({});
     this.past.set([]);
     this.future.set([]);
     this.coalesce = null;
@@ -346,7 +404,9 @@ function readDraft(): Draft | null {
     const raw = localStorage.getItem(DRAFT_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Draft;
-    return isObject(parsed as unknown as Json) && parsed.doc !== undefined ? { doc: parsed.doc, samples: isObject(parsed.samples) ? parsed.samples : {} } : null;
+    if (!isObject(parsed as unknown as Json) || parsed.doc === undefined) return null;
+    const translations = isObject(parsed.translations as unknown as Json) ? parsed.translations : {};
+    return { doc: parsed.doc, samples: isObject(parsed.samples) ? parsed.samples : {}, translations };
   } catch {
     return null;
   }

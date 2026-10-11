@@ -120,6 +120,26 @@ describe('EditorStore', () => {
     expect(store.renameSource('dati', 'ordini')).toBe(false);
   });
 
+  it('rende traducibile un testo e tiene il conto delle traduzioni mancanti', () => {
+    store.addNode('text');
+    // Il titolo della schermata e il testo nuovo sono testi semplici.
+    expect(store.textsToFix()).toBe(2);
+    const key = store.makeTranslatable(['components', 0, 'text']);
+    expect(key).toBe('nuova_schermata.nuovo_testo');
+    expect(getIn(store.doc(), ['components', 0, 'text'])).toBe("{{ t('nuova_schermata.nuovo_testo', 'Nuovo testo') }}");
+    expect(store.translations()).toEqual({ it: { 'nuova_schermata.nuovo_testo': 'Nuovo testo' } });
+    // Manca l'inglese.
+    expect(store.textsToFix()).toBe(2);
+    store.setTranslation('en', key!, 'New text');
+    expect(store.textsToFix()).toBe(1);
+    expect(TestBed.inject(I18n).raw(key!, 'en')).toBe('New text');
+    // Un secondo testo uguale riceve una chiave diversa.
+    store.duplicate(['components', 0]);
+    store.setValue(['components', 1, 'text'], 'Nuovo testo');
+    expect(store.makeTranslatable(['components', 1, 'text'])).toBe('nuova_schermata.nuovo_testo_2');
+    expect(store.issues()).toEqual([]);
+  });
+
   it('salva la bozza nel browser e la riprende', () => {
     store.addNode('alert');
     TestBed.tick();

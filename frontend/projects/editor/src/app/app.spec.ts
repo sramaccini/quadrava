@@ -1,6 +1,7 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { vi } from 'vitest';
 import layout from '../../public/examples/vetrina-layout.json';
+import { I18n } from 'core';
 import { App } from './app';
 import { appConfig } from './app.config';
 import { getIn } from './model/doc-ops';
@@ -198,6 +199,27 @@ describe('editor delle schermate', () => {
     await until(() => preview().querySelector('.ant-tabs-tab-active')?.textContent?.trim() === 'Scheda 1', 'prima scheda attiva');
     store.select(['components', 0, 'tabs', 1, 'components', 0]);
     await until(() => preview().querySelector('.ant-tabs-tab-active')?.textContent?.trim() === 'Scheda 2', 'seconda scheda aperta');
+  });
+
+  it('testi: un testo semplice diventa traducibile, la traduzione inglese vale subito nell’anteprima', async () => {
+    (el.querySelector('ed-palette button[data-type="alert"]') as HTMLButtonElement).click();
+    await settle();
+    expect(el.querySelectorAll('.center .ant-tabs-tab')[3].textContent?.trim()).toBe('Testi (2)');
+    tab(3);
+    await until(() => !!el.querySelector('ed-texts tbody tr'), 'elenco dei testi');
+    const row = (): HTMLElement => [...el.querySelectorAll<HTMLElement>('ed-texts tbody tr')].find((r) => r.textContent?.includes('Messaggio'))!;
+    (row().querySelector('button.convert') as HTMLButtonElement).click();
+    await settle();
+    expect(getIn(store.doc(), ['components', 0, 'text'])).toBe("{{ t('nuova_schermata.messaggio_per_l_utente', 'Messaggio per l’utente') }}");
+    const english = row().querySelector('input[aria-label$=" en"]') as HTMLInputElement;
+    expect(english.getAttribute('aria-invalid')).toBe('true');
+    english.value = 'Message for the user';
+    english.dispatchEvent(new Event('change'));
+    await settle();
+    expect(row().querySelector('input[aria-label$=" en"]')?.getAttribute('aria-invalid')).toBeNull();
+    TestBed.inject(I18n).setLocale('en');
+    tab(0);
+    await until(() => !!preview().querySelector('lc-alert')?.textContent?.includes('Message for the user'), 'anteprima in inglese');
   });
 
   it('apre un esempio, e da tastiera elimina il nodo selezionato', async () => {

@@ -19,9 +19,10 @@ import { IssuesComponent } from './ui/issues.component';
 import { JsonViewComponent } from './ui/json-view.component';
 import { OutlineComponent } from './ui/outline.component';
 import { PaletteComponent } from './ui/palette.component';
+import { TextsComponent } from './ui/texts.component';
 
 const LANGUAGES = ['it', 'en'];
-const VIEWS = ['preview', 'json', 'sources'] as const;
+const VIEWS = ['preview', 'json', 'sources', 'texts'] as const;
 
 /**
  * Editor visuale delle schermate: tavolozza e struttura a sinistra, anteprima / JSON / data source al centro,
@@ -38,6 +39,7 @@ const VIEWS = ['preview', 'json', 'sources'] as const;
     OutlineComponent,
     PaletteComponent,
     PreviewComponent,
+    TextsComponent,
     NzButtonModule,
     NzDropdownModule,
     NzIconModule,
