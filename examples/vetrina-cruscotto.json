@@ -9,6 +9,16 @@
       "type": "rest",
       "method": "GET",
       "url": "/api/riepilogo"
+    },
+    "vendite": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/vendite-mensili"
+    },
+    "perStato": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/fatture-per-stato"
     }
   },
   "components": [
@@ -60,6 +70,74 @@
               "format": "currency"
             }
           ]
+        }
+      ]
+    },
+    {
+      "id": "sezione-grafici",
+      "type": "section",
+      "title": "{{ t('vetrina_cruscotto.grafici', 'Grafici') }}",
+      "components": [
+        {
+          "id": "spiega-grafici",
+          "type": "text",
+          "text": "{{ t('vetrina_cruscotto.grafici_spiega', 'Disegnati in SVG con i colori del tema: passa con il mouse su barre, punti e fette per leggere i valori. Per gli screen reader ogni grafico è anche una tabella.') }}"
+        },
+        {
+          "id": "grafico-barre",
+          "type": "chart",
+          "kind": "bar",
+          "source": "vendite",
+          "categoryField": "mese",
+          "categoryFormat": "month",
+          "series": [
+            {
+              "field": "attive",
+              "label": "{{ t('vetrina_cruscotto.attive', 'Fatture attive') }}"
+            },
+            {
+              "field": "passive",
+              "label": "{{ t('vetrina_cruscotto.passive', 'Fatture passive') }}",
+              "tone": "danger"
+            }
+          ],
+          "format": "currency",
+          "caption": "{{ t('vetrina_cruscotto.barre_didascalia', 'Fatture attive e passive per mese, 2026') }}"
+        },
+        {
+          "id": "grafico-linee",
+          "type": "chart",
+          "kind": "line",
+          "source": "vendite",
+          "categoryField": "mese",
+          "categoryFormat": "month",
+          "series": [
+            {
+              "field": "attive",
+              "label": "{{ t('vetrina_cruscotto.attive', 'Fatture attive') }}"
+            }
+          ],
+          "format": "currency",
+          "height": 220,
+          "caption": "{{ t('vetrina_cruscotto.linee_didascalia', 'Andamento delle fatture attive, 2026') }}"
+        },
+        {
+          "id": "grafico-torta",
+          "type": "chart",
+          "kind": "pie",
+          "source": "perStato",
+          "categoryField": "stato",
+          "categoryKey": "valori.stato",
+          "series": [
+            {
+              "field": "numero",
+              "label": "{{ t('vetrina_cruscotto.numero_fatture', 'Numero di fatture') }}"
+            }
+          ],
+          "format": "number",
+          "decimals": 0,
+          "height": 240,
+          "caption": "{{ t('vetrina_cruscotto.torta_didascalia', 'Fatture per stato') }}"
         }
       ]
     }

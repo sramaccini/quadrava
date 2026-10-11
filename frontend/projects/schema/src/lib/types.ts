@@ -290,7 +290,27 @@ export interface CalendarNode extends NodeBase {
   onSelect?: Step[];
 }
 
-export type NodeDefinition = SectionNode | TextNode | ButtonNode | FilterBarNode | TableNode | FormNode | TabsNode | DetailNode | AlertNode | StatsNode | WizardNode | TreeNode | CalendarNode;
+export interface ChartSeries {
+  field: string;
+  label?: string;
+  tone?: Tone;
+}
+export interface ChartNode extends NodeBase {
+  type: 'chart';
+  kind: 'bar' | 'line' | 'pie';
+  source: string;
+  categoryField: string;
+  categoryFormat?: 'text' | 'date' | 'month';
+  categoryKey?: string;
+  series: ChartSeries[];
+  format?: 'number' | 'currency' | 'percent';
+  currency?: string;
+  decimals?: number;
+  height?: number;
+  caption?: string;
+}
+
+export type NodeDefinition = SectionNode | TextNode | ButtonNode | FilterBarNode | TableNode | FormNode | TabsNode | DetailNode | AlertNode | StatsNode | WizardNode | TreeNode | CalendarNode | ChartNode;
 export type NodeType = NodeDefinition['type'];
 
 export interface ScreenDefinition {

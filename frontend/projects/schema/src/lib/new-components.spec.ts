@@ -198,4 +198,18 @@ describe('schema dei componenti nuovi', () => {
       expect(issuesOf(screen([{ type: 'calendar', source: 's', dateField: 'd', labelField: 't', maxPerDay: 0 }])).length).toBeGreaterThan(0);
     });
   });
+
+  describe('grafici', () => {
+    const chart = (extra: Record<string, unknown>) => screen([{ type: 'chart', kind: 'bar', source: 's', categoryField: 'c', series: [{ field: 'v' }], ...extra }]);
+    it('accetta barre, linee e torte con formati e serie colorate', () => {
+      expect(issuesOf(chart({ categoryFormat: 'month', format: 'currency', currency: 'EUR', height: 300, series: [{ field: 'a', label: 'A', tone: 'success' }, { field: 'b' }] }))).toEqual([]);
+      expect(issuesOf(chart({ kind: 'pie', categoryKey: 'valori.stato' }))).toEqual([]);
+    });
+    it('rifiuta tipi sconosciuti, serie vuote o troppe, altezze fuori misura', () => {
+      expect(issuesOf(chart({ kind: 'radar' })).length).toBeGreaterThan(0);
+      expect(issuesOf(chart({ series: [] })).length).toBeGreaterThan(0);
+      expect(issuesOf(chart({ series: Array.from({ length: 7 }, (_, i) => ({ field: 'f' + i })) })).length).toBeGreaterThan(0);
+      expect(issuesOf(chart({ height: 100 })).length).toBeGreaterThan(0);
+    });
+  });
 });

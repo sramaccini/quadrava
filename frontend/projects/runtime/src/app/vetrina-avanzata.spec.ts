@@ -264,6 +264,17 @@ describe('Vetrina: componenti avanzati', () => {
       await new Promise((r) => setTimeout(r, 0));
       expect(TestBed.inject(DemoDiagnostics).events()).toEqual([]);
     });
+
+    it('grafici: barre per due serie su dodici mesi, linea e torta per stato tradotta', async () => {
+      const { el, until } = await openShowcase('/vetrina/vetrina-cruscotto');
+      const charts = (): Element[] => [...el.querySelectorAll('main lc-chart')];
+      await until(() => charts().length === 3 && charts()[0].querySelectorAll('rect.mark').length === 24 && charts()[2].querySelectorAll('path.mark').length === 3, 'grafici');
+      expect(charts()[1].querySelectorAll('circle')).toHaveLength(12);
+      expect([...charts()[2].querySelectorAll('.legend li')].map((li) => li.textContent?.trim())).toEqual(['Bozza', 'Inviata', 'Pagata']);
+      expect(charts()[2].querySelector('text.total')?.textContent?.trim()).toBe('14');
+      expect(charts()[0].querySelector('table caption')?.textContent).toContain('Fatture attive e passive per mese');
+      expect(TestBed.inject(DemoDiagnostics).events()).toEqual([]);
+    });
   });
 
   describe('procedure e viste', () => {

@@ -521,7 +521,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
             "stats",
             "wizard",
             "tree",
-            "calendar"
+            "calendar",
+            "chart"
           ]
         },
         "visibleIf": {
@@ -1094,6 +1095,97 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
               }
             }
           }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "chart"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "required": [
+              "kind",
+              "source",
+              "categoryField",
+              "series"
+            ],
+            "properties": {
+              "kind": {
+                "enum": [
+                  "bar",
+                  "line",
+                  "pie"
+                ],
+                "description": "Barre, linee o torta (la torta usa la prima serie)."
+              },
+              "source": {
+                "type": "string",
+                "description": "Data source con le righe (una per categoria)."
+              },
+              "categoryField": {
+                "type": "string",
+                "description": "Campo con la categoria (asse orizzontale o fetta)."
+              },
+              "categoryFormat": {
+                "enum": [
+                  "text",
+                  "date",
+                  "month"
+                ],
+                "description": "Come mostrare la categoria: testo, data (AAAA-MM-GG) o mese (AAAA-MM)."
+              },
+              "categoryKey": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_.-]+$",
+                "minLength": 1,
+                "maxLength": 100,
+                "description": "Prefisso delle chiavi di traduzione delle categorie (t('<prefisso>.<valore>'))."
+              },
+              "series": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 6,
+                "items": {
+                  "$ref": "#/$defs/chartSeries"
+                }
+              },
+              "format": {
+                "enum": [
+                  "number",
+                  "currency",
+                  "percent"
+                ],
+                "description": "Formato dei valori (number se assente)."
+              },
+              "currency": {
+                "type": "string",
+                "pattern": "^[A-Z]{3}$",
+                "description": "Codice ISO 4217 per format currency (EUR se assente)."
+              },
+              "decimals": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 6,
+                "description": "Decimali mostrati con format number (fino a 2 se assente)."
+              },
+              "height": {
+                "type": "integer",
+                "minimum": 160,
+                "maximum": 600,
+                "description": "Altezza in pixel (280 se assente)."
+              },
+              "caption": {
+                "type": "string",
+                "description": "Didascalia della tabella equivalente letta dagli screen reader."
+              }
+            }
+          }
         }
       ],
       "unevaluatedProperties": false
@@ -1431,6 +1523,26 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
         "nextIf": {
           "$ref": "#/$defs/expression",
           "description": "Avanti è abilitato solo se l’espressione è vera (sempre, se assente)."
+        }
+      }
+    },
+    "chartSeries": {
+      "type": "object",
+      "required": [
+        "field"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "field": {
+          "type": "string",
+          "description": "Campo numerico delle righe."
+        },
+        "label": {
+          "type": "string"
+        },
+        "tone": {
+          "$ref": "#/$defs/tone",
+          "description": "Colore della serie dal tema (altrimenti la tavolozza del grafico)."
         }
       }
     }
