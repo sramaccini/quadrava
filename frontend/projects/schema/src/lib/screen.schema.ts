@@ -340,60 +340,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
     },
     "column": {
       "type": "object",
-      "required": [
-        "field"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "field": {
-          "type": "string",
-          "description": "Nome del campo nella riga restituita dal servizio."
-        },
-        "label": {
-          "type": "string"
-        },
-        "format": {
-          "enum": [
-            "text",
-            "currency",
-            "percent",
-            "date",
-            "datetime",
-            "boolean",
-            "badge"
-          ],
-          "description": "Come mostrare il valore: currency (importo con simbolo), percent (il valore è già in punti percentuali, 10 = 10 %), date e datetime (testo ISO 8601), boolean (Sì/No), badge (etichetta colorata secondo `badges`)."
-        },
-        "currency": {
-          "type": "string",
-          "pattern": "^[A-Z]{3}$",
-          "description": "Codice ISO 4217 per format currency (EUR se assente)."
-        },
-        "badges": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/$defs/tone"
-          },
-          "description": "Per format badge: colore per ogni valore; i valori non elencati sono neutri."
-        },
-        "visibleIf": {
-          "$ref": "#/$defs/expression"
-        },
-        "hiddenIf": {
-          "$ref": "#/$defs/expression"
-        },
-        "tooltip": {
-          "type": "string",
-          "description": "Testo di aiuto mostrato al passaggio del mouse o con il focus. Solo testo (mai HTML); può contenere {{ }}."
-        },
-        "valueKey": {
-          "type": "string",
-          "pattern": "^[A-Za-z0-9_.-]+$",
-          "minLength": 1,
-          "maxLength": 100,
-          "description": "Prefisso delle chiavi di traduzione per i valori mostrati: il testo è t('<prefisso>.<valore>'), con il valore come ripiego. I colori dei badge restano legati al valore originale."
-        }
-      }
+      "$ref": "#/$defs/columnProps",
+      "unevaluatedProperties": false
     },
     "node": {
       "type": "object",
@@ -582,13 +530,27 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                 "type": "array",
                 "minItems": 1,
                 "items": {
-                  "$ref": "#/$defs/column"
+                  "$ref": "#/$defs/tableColumn"
                 }
               },
               "rowActions": {
                 "type": "array",
                 "items": {
                   "$ref": "#/$defs/action"
+                }
+              },
+              "sort": {
+                "type": "object",
+                "additionalProperties": false,
+                "description": "Ordinamento. Con paging server lo fa il servizio: la tabella scrive { field, direction } nello stato `bind`; altrimenti ordina in pagina le righe caricate.",
+                "properties": {
+                  "bind": {
+                    "$ref": "#/$defs/statePath"
+                  },
+                  "default": {
+                    "$ref": "#/$defs/sortSpec",
+                    "description": "Ordinamento all'apertura della schermata."
+                  }
                 }
               }
             }
@@ -778,6 +740,101 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
           "items": {
             "$ref": "#/$defs/node"
           }
+        }
+      }
+    },
+    "columnProps": {
+      "type": "object",
+      "required": [
+        "field"
+      ],
+      "properties": {
+        "field": {
+          "type": "string",
+          "description": "Nome del campo nella riga restituita dal servizio."
+        },
+        "label": {
+          "type": "string"
+        },
+        "format": {
+          "enum": [
+            "text",
+            "currency",
+            "percent",
+            "date",
+            "datetime",
+            "boolean",
+            "badge"
+          ],
+          "description": "Come mostrare il valore: currency (importo con simbolo), percent (il valore è già in punti percentuali, 10 = 10 %), date e datetime (testo ISO 8601), boolean (Sì/No), badge (etichetta colorata secondo `badges`)."
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$",
+          "description": "Codice ISO 4217 per format currency (EUR se assente)."
+        },
+        "badges": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/tone"
+          },
+          "description": "Per format badge: colore per ogni valore; i valori non elencati sono neutri."
+        },
+        "visibleIf": {
+          "$ref": "#/$defs/expression"
+        },
+        "hiddenIf": {
+          "$ref": "#/$defs/expression"
+        },
+        "tooltip": {
+          "type": "string",
+          "description": "Testo di aiuto mostrato al passaggio del mouse o con il focus. Solo testo (mai HTML); può contenere {{ }}."
+        },
+        "valueKey": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_.-]+$",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "Prefisso delle chiavi di traduzione per i valori mostrati: il testo è t('<prefisso>.<valore>'), con il valore come ripiego. I colori dei badge restano legati al valore originale."
+        }
+      }
+    },
+    "tableColumnProps": {
+      "type": "object",
+      "$ref": "#/$defs/columnProps",
+      "properties": {
+        "sortable": {
+          "type": "boolean",
+          "description": "La colonna si può ordinare (frecce nell'intestazione)."
+        }
+      }
+    },
+    "tableColumn": {
+      "type": "object",
+      "$ref": "#/$defs/tableColumnProps",
+      "unevaluatedProperties": false
+    },
+    "statePath": {
+      "type": "string",
+      "pattern": "^state(.[A-Za-z][A-Za-z0-9]*)+$",
+      "description": "Percorso nello stato della schermata, per esempio state.ordinamento."
+    },
+    "sortSpec": {
+      "type": "object",
+      "required": [
+        "field",
+        "direction"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "field": {
+          "type": "string"
+        },
+        "direction": {
+          "enum": [
+            "asc",
+            "desc"
+          ]
         }
       }
     }

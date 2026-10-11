@@ -161,6 +161,11 @@
               "screen": "vetrina-tabelle"
             },
             {
+              "id": "vetrina-tabelle-avanzate",
+              "label": "{{ t('nav.tabelle_avanzate', 'Tabelle avanzate') }}",
+              "screen": "vetrina-tabelle-avanzate"
+            },
+            {
               "id": "vetrina-layout",
               "label": "{{ t('nav.schede_dettaglio_e_messaggi', 'Schede, dettaglio e messaggi') }}",
               "screen": "vetrina-layout"

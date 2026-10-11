@@ -91,6 +91,20 @@ export interface ColumnDefinition {
   hiddenIf?: Expression;
 }
 
+/** Colonna di una tabella: in più rispetto a un campo di dettaglio, le proprietà che hanno senso solo in tabella. */
+export interface TableColumnDefinition extends ColumnDefinition {
+  /** La colonna si può ordinare. */
+  sortable?: boolean;
+}
+
+/** Percorso nello stato della schermata, per esempio `state.ordinamento`. */
+export type StatePath = string;
+
+export interface SortSpec {
+  field: string;
+  direction: 'asc' | 'desc';
+}
+
 interface NodeBase extends ConditionalProps {
   id?: string;
   /** Testo di aiuto al passaggio del mouse o con il focus (solo testo, può contenere `{{ }}`). */
@@ -120,7 +134,9 @@ export interface FilterBarNode extends NodeBase {
 export interface TableNode extends NodeBase {
   type: 'table';
   source: string;
-  columns: ColumnDefinition[];
+  columns: TableColumnDefinition[];
+  /** Ordinamento: con paging server lo scrive nello stato `bind` per il servizio, altrimenti ordina in pagina. */
+  sort?: { bind?: StatePath; default?: SortSpec };
   rowActions?: ActionDefinition[];
 }
 export interface FormNode extends NodeBase {

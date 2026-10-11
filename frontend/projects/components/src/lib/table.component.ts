@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal, signal } from '@angular/core';
 import { I18n, formatValue, type FormatLabels, runSteps, type FormattedValue, type ScreenRuntime, type Scope } from 'core';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzButtonModule } from 'ng-zorro-antd/button';
@@ -6,8 +6,11 @@ import { NzPaginationModule } from 'ng-zorro-antd/pagination';
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
-import type { ActionDefinition, ColumnDefinition, TableNode } from 'schema';
+import type { ActionDefinition, ColumnDefinition, SortSpec, TableColumnDefinition, TableNode } from 'schema';
 import { TONE_COLORS } from './shared';
+import { asSort, sortRows, type Row } from './table-data';
+
+type NzSortOrder = 'ascend' | 'descend' | null;
 
 const DEFAULT_PAGE_SIZE = 10;
 
@@ -43,7 +46,17 @@ const DEFAULT_PAGE_SIZE = 10;
           <thead>
             <tr>
               @for (column of columns(); track column.field) {
-                <th scope="col" [nzAlign]="numeric(column) ? 'right' : 'left'" nz-tooltip [nzTooltipTitle]="column.tooltip ? runtime().text(column.tooltip, scope()) : null">{{ runtime().text(column.label, scope()) || column.field }}</th>
+                <th
+                  scope="col"
+                  [nzAlign]="numeric(column) ? 'right' : 'left'"
+                  [nzShowSort]="!!column.sortable"
+                  [nzSortFn]="!!column.sortable"
+                  [nzSortOrder]="order(column)"
+                  (nzSortOrderChange)="setSort(column, $event)"
+                  [attr.aria-sort]="ariaSort(column)"
+                  nz-tooltip
+                  [nzTooltipTitle]="column.tooltip ? runtime().text(column.tooltip, scope()) : null"
+                >{{ runtime().text(column.label, scope()) || column.field }}</th>
               }
               @if (node().rowActions?.length) {
                 <th scope="col"><span class="visually-hidden">Azioni</span></th>
@@ -112,13 +125,34 @@ export class TableComponent {
   protected readonly columns = computed(() => this.node().columns.filter((c) => this.runtime().isVisible(c, this.scope())));
 
   protected readonly source = computed(() => this.runtime().source(this.node().source));
-  protected readonly rows = computed<Record<string, unknown>[]>(() => {
+  /** Righe così come arrivano dal servizio. */
+  private readonly loaded = computed<Row[]>(() => {
     const data = this.source().data;
-    if (Array.isArray(data)) return data as Record<string, unknown>[];
+    if (Array.isArray(data)) return data as Row[];
     const items = (data as { items?: unknown } | null)?.items;
-    return Array.isArray(items) ? (items as Record<string, unknown>[]) : [];
+    return Array.isArray(items) ? (items as Row[]) : [];
   });
   protected readonly paged = computed(() => this.runtime().definition.dataSources?.[this.node().source]?.paging === 'server');
+  /** Ordinamento senza stato condiviso (nessun `sort.bind`): parte da `sort.default`. */
+  private readonly localSort = linkedSignal<SortSpec | null>(() => this.node().sort?.default ?? null);
+  /** Ordinamento corrente: dallo stato della schermata se c'è `sort.bind`, altrimenti locale. */
+  protected readonly sort = computed<SortSpec | null>(() => {
+    const bind = this.node().sort?.bind;
+    return bind ? asSort(this.runtime().getState(bind)) : this.localSort();
+  });
+  /** Con paging server e `sort.bind` l'ordine lo decide il servizio; in tutti gli altri casi si ordina in pagina. */
+  private readonly serverSorted = computed(() => this.paged() && !!this.node().sort?.bind);
+  private reportedLocalSort = false;
+  protected readonly rows = computed<Row[]>(() => {
+    const rows = this.loaded();
+    const sort = this.sort();
+    if (!sort || this.serverSorted()) return rows;
+    if (this.paged() && !this.reportedLocalSort) {
+      this.reportedLocalSort = true;
+      this.runtime().report(`tabella ${this.node().source}`, 'ordinamento senza sort.bind con paging server: ordinata solo la pagina corrente');
+    }
+    return sortRows(rows, sort, this.i18n.intlLocale());
+  });
   protected readonly page = computed(() => {
     const page = this.runtime().state()['page'];
     return typeof page === 'number' ? page : 0;
@@ -139,6 +173,32 @@ export class TableComponent {
 
   protected color(tone: NonNullable<FormattedValue['tone']>): string {
     return TONE_COLORS[tone];
+  }
+
+  protected order(column: TableColumnDefinition): NzSortOrder {
+    const sort = this.sort();
+    if (!column.sortable || sort?.field !== column.field) return null;
+    return sort.direction === 'asc' ? 'ascend' : 'descend';
+  }
+
+  protected ariaSort(column: TableColumnDefinition): string | null {
+    if (!column.sortable) return null;
+    const order = this.order(column);
+    return order === 'ascend' ? 'ascending' : order === 'descend' ? 'descending' : 'none';
+  }
+
+  protected setSort(column: TableColumnDefinition, order: string | null): void {
+    // Ordinando una colonna NG-ZORRO azzera anche le altre: l'azzeramento di una colonna che non è quella ordinata non conta.
+    if (!order && this.sort()?.field !== column.field) return;
+    const next: SortSpec | null = order === 'ascend' ? { field: column.field, direction: 'asc' } : order === 'descend' ? { field: column.field, direction: 'desc' } : null;
+    const bind = this.node().sort?.bind;
+    if (!bind) {
+      this.localSort.set(next);
+      return;
+    }
+    this.runtime().setState(bind, next);
+    // Un ordinamento nuovo riporta alla prima pagina, come un filtro nuovo.
+    if (this.paged()) this.runtime().setState('page', 0);
   }
 
   protected numeric(column: ColumnDefinition): boolean {

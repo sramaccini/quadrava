@@ -61,6 +61,19 @@ interface Order {
   iban: string;
 }
 
+/** Ordinamento lato server della demo: parametri `sort` (campo) e `dir` (`asc` o `desc`). */
+function sortBy<T extends object>(rows: T[], query: DataRequest['query']): T[] {
+  const field = query?.['sort'];
+  if (typeof field !== 'string' || !field) return rows;
+  const sign = query?.['dir'] === 'desc' ? -1 : 1;
+  const value = (row: T): unknown => (row as Record<string, unknown>)[field];
+  return [...rows].sort((a, b) => {
+    const x = value(a);
+    const y = value(b);
+    return sign * (typeof x === 'number' && typeof y === 'number' ? x - y : String(x ?? '').localeCompare(String(y ?? ''), 'it', { numeric: true }));
+  });
+}
+
 /** Backend finto in memoria: stessa forma delle risposte REST attese dal catalogo (items/total/size, _perm). */
 @Injectable({ providedIn: 'root' })
 export class MockDataClient extends DataClient {
@@ -104,7 +117,7 @@ export class MockDataClient extends DataClient {
     if (req.method === 'GET' && path === '/api/ordini') {
       const stato = req.query?.['stato'];
       const page = Number(req.query?.['page'] ?? 0);
-      const filtered = this.orders.filter((o) => !stato || o.stato === stato);
+      const filtered = sortBy(this.orders.filter((o) => !stato || o.stato === stato), req.query);
       const size = MockDataClient.PAGE_SIZE;
       return { items: filtered.slice(page * size, page * size + size).map((o) => this.view(o)), total: filtered.length, size };
     }

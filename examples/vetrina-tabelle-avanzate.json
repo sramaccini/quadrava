@@ -1,0 +1,120 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "vetrina-tabelle-avanzate",
+  "title": "{{ t('vetrina_avanzate.titolo', 'Vetrina: tabelle avanzate') }}",
+  "description": "{{ t('vetrina_avanzate.descrizione', 'Ordinamento, selezione, menu delle azioni, righe espandibili e totali.') }}",
+  "requires": "vetrina.componenti.leggi",
+  "dataSources": {
+    "ordini": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/ordini",
+      "params": {
+        "sort": "{{state.ordinamento.field}}",
+        "dir": "{{state.ordinamento.direction}}",
+        "page": "{{state.page}}"
+      },
+      "paging": "server"
+    },
+    "fatture": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/fatture"
+    }
+  },
+  "components": [
+    {
+      "id": "titolo",
+      "type": "text",
+      "style": "heading",
+      "text": "{{ t('vetrina_avanzate.intestazione', 'Tabelle avanzate') }}"
+    },
+    {
+      "id": "sezione-ordinamento",
+      "type": "section",
+      "title": "{{ t('vetrina_avanzate.ordinamento', 'Ordinamento') }}",
+      "components": [
+        {
+          "id": "spiega-ordinamento-server",
+          "type": "text",
+          "text": "{{ t('vetrina_avanzate.ordinamento_server', 'Ordini con paginazione lato server: l’ordinamento lo fa il servizio, che lo riceve dallo stato della schermata. All’apertura sono ordinati per numero decrescente.') }}"
+        },
+        {
+          "id": "ordini-ordinati",
+          "type": "table",
+          "source": "ordini",
+          "sort": {
+            "bind": "state.ordinamento",
+            "default": {
+              "field": "numero",
+              "direction": "desc"
+            }
+          },
+          "columns": [
+            {
+              "field": "numero",
+              "label": "{{ t('comune.numero', 'Numero') }}",
+              "sortable": true
+            },
+            {
+              "field": "cliente",
+              "label": "{{ t('comune.cliente', 'Cliente') }}",
+              "sortable": true
+            },
+            {
+              "field": "sconto",
+              "label": "{{ t('comune.sconto', 'Sconto') }}",
+              "format": "percent",
+              "sortable": true
+            },
+            {
+              "field": "stato",
+              "label": "{{ t('comune.stato', 'Stato') }}",
+              "format": "badge",
+              "badges": {
+                "bozza": "neutral",
+                "inviato": "primary",
+                "approvato": "success"
+              },
+              "valueKey": "valori.stato"
+            }
+          ]
+        },
+        {
+          "id": "spiega-ordinamento-pagina",
+          "type": "text",
+          "text": "{{ t('vetrina_avanzate.ordinamento_pagina', 'Fatture senza paginazione lato server: l’ordinamento avviene in pagina, sulle righe già caricate, senza nuove richieste.') }}"
+        },
+        {
+          "id": "fatture-ordinate",
+          "type": "table",
+          "source": "fatture",
+          "columns": [
+            {
+              "field": "numero",
+              "label": "{{ t('comune.numero', 'Numero') }}",
+              "sortable": true
+            },
+            {
+              "field": "cliente",
+              "label": "{{ t('comune.cliente', 'Cliente') }}",
+              "sortable": true
+            },
+            {
+              "field": "emessa",
+              "label": "{{ t('comune.emessa_il', 'Emessa il') }}",
+              "format": "date",
+              "sortable": true
+            },
+            {
+              "field": "importo",
+              "label": "{{ t('comune.importo', 'Importo') }}",
+              "format": "currency",
+              "sortable": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
