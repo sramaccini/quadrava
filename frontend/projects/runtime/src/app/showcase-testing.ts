@@ -3,6 +3,7 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import navigationDoc from '../../public/examples/navigation.json';
 import tabelleAvanzate from '../../public/examples/vetrina-tabelle-avanzate.json';
+import campi from '../../public/examples/vetrina-campi.json';
 import chiaro from '../../public/examples/themes/chiaro.json';
 import catalogIt from '../../public/examples/i18n/it.json';
 import catalogEn from '../../public/examples/i18n/en.json';
@@ -14,6 +15,7 @@ import { appConfig } from './app.config';
 export const SHOWCASE_FILES: Record<string, unknown> = {
   'examples/navigation.json': navigationDoc,
   'examples/vetrina-tabelle-avanzate.json': tabelleAvanzate,
+  'examples/vetrina-campi.json': campi,
   'examples/i18n/it.json': catalogIt,
   'examples/i18n/en.json': catalogEn,
   'examples/themes/chiaro.json': chiaro,

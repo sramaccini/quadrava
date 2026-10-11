@@ -6,15 +6,17 @@ import { NzCheckboxModule } from 'ng-zorro-antd/checkbox';
 import { NzDatePickerModule } from 'ng-zorro-antd/date-picker';
 import { NzFormModule } from 'ng-zorro-antd/form';
 import { NzInputModule } from 'ng-zorro-antd/input';
+import { NzRadioModule } from 'ng-zorro-antd/radio';
 import { NzSelectModule } from 'ng-zorro-antd/select';
+import { NzSwitchModule } from 'ng-zorro-antd/switch';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import type { ActionDefinition, FieldDefinition, FormNode } from 'schema';
-import { nextId, parseIsoDate, toIsoDate } from './shared';
+import { nextId, parseIsoDate, parseIsoDateTime, toIsoDate, toIsoDateTime } from './shared';
 
 /** Form: i valori iniziali arrivano dal data source `source` (se restituisce un oggetto); le azioni ricevono `form` nello scope. */
 @Component({
   selector: 'lc-form',
-  imports: [FormsModule, NzFormModule, NzInputModule, NzSelectModule, NzCheckboxModule, NzDatePickerModule, NzButtonModule, NzTooltipModule],
+  imports: [FormsModule, NzFormModule, NzInputModule, NzSelectModule, NzCheckboxModule, NzDatePickerModule, NzButtonModule, NzTooltipModule, NzRadioModule, NzSwitchModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     form { max-width: 560px; }
@@ -45,6 +47,37 @@ import { nextId, parseIsoDate, toIsoDate } from './shared';
                 }
                 @case ('date') {
                   <nz-date-picker [nzId]="id + field.name" [nzDisabled]="readOnly(field)" [ngModel]="dates()[field.name]" (ngModelChange)="set(field, toIso($event))" />
+                }
+                @case ('datetime') {
+                  <nz-date-picker [nzId]="id + field.name" [nzDisabled]="readOnly(field)" [nzShowTime]="{ nzFormat: 'HH:mm' }" nzFormat="dd/MM/yyyy HH:mm" [ngModel]="dates()[field.name]" (ngModelChange)="set(field, toIsoTime($event))" />
+                }
+                @case ('textarea') {
+                  <textarea
+                    nz-input
+                    [id]="id + field.name"
+                    [rows]="field.rows ?? 4"
+                    [value]="text(field)"
+                    [readOnly]="readOnly(field)"
+                    [attr.aria-invalid]="!!error(field)"
+                    (input)="set(field, $any($event.target).value)"
+                  ></textarea>
+                }
+                @case ('radio') {
+                  <nz-radio-group [attr.id]="id + field.name" role="radiogroup" [attr.aria-label]="runtime().text(field.label, fieldScope()) || field.name" [nzDisabled]="readOnly(field)" [ngModel]="selected(field)" (ngModelChange)="set(field, $event)">
+                    @for (option of field.options ?? []; track option) {
+                      <label nz-radio [nzValue]="option">{{ optionLabel(field, option) }}</label>
+                    }
+                  </nz-radio-group>
+                }
+                @case ('switch') {
+                  <nz-switch [nzId]="id + field.name" [nzDisabled]="readOnly(field)" [ngModel]="values()[field.name] === true" (ngModelChange)="set(field, $event)" />
+                }
+                @case ('multiselect') {
+                  <nz-select [nzId]="id + field.name" nzMode="multiple" nzAllowClear nzPlaceHolder="—" [nzDisabled]="readOnly(field)" [ngModel]="lists()[field.name]" (ngModelChange)="set(field, $event)">
+                    @for (option of field.options ?? []; track option) {
+                      <nz-option [nzValue]="option" [nzLabel]="optionLabel(field, option)" />
+                    }
+                  </nz-select>
                 }
                 @default {
                   <input
@@ -95,7 +128,11 @@ export class FormComponent {
 
   /** Le date dei campi `date`, calcolate una volta per valore: un oggetto nuovo a ogni rilevamento delle modifiche farebbe riscrivere il campo di continuo. */
   protected readonly dates = computed<Record<string, Date | null>>(() =>
-    Object.fromEntries(this.node().fields.filter((f) => f.type === 'date').map((f) => [f.name, parseIsoDate(this.values()[f.name])])),
+    Object.fromEntries(
+      this.node()
+        .fields.filter((f) => f.type === 'date' || f.type === 'datetime')
+        .map((f) => [f.name, f.type === 'date' ? parseIsoDate(this.values()[f.name]) : parseIsoDateTime(this.values()[f.name])]),
+    ),
   );
 
   protected readonly fieldScope = computed<Scope>(() => ({ ...this.scope(), form: this.values() }));
@@ -131,9 +168,26 @@ export class FormComponent {
   }
 
 
+  /** Valori delle selezioni multiple, calcolati una volta per valore: un elenco nuovo a ogni disegno farebbe ridisegnare la select senza fine. */
+  protected readonly lists = computed<Record<string, string[]>>(() =>
+    Object.fromEntries(
+      this.node()
+        .fields.filter((f) => f.type === 'multiselect')
+        .map((f) => {
+          const value = this.values()[f.name];
+          return [f.name, Array.isArray(value) ? value.map(String) : []];
+        }),
+    ),
+  );
+
   protected toIso(date: Date | null): string | null {
     return toIsoDate(date);
   }
+
+  protected toIsoTime(date: Date | null): string | null {
+    return toIsoDateTime(date);
+  }
+
 
   protected readOnly(field: FieldDefinition): boolean {
     return this.runtime().isReadOnly(field, this.fieldScope());
@@ -151,8 +205,8 @@ export class FormComponent {
 
   private validate(field: FieldDefinition): string | null {
     const value = this.values()[field.name];
-    const empty = value === undefined || value === null || value === '';
-    if (field.required && empty && field.type !== 'checkbox') return this.i18n.t('lc.required');
+    const empty = value === undefined || value === null || value === '' || (Array.isArray(value) && value.length === 0);
+    if (field.required && empty && field.type !== 'checkbox' && field.type !== 'switch') return this.i18n.t('lc.required');
     if (field.validate && !empty) {
       const result = this.runtime().engine.interpolate(field.validate.rule, {
         ...this.runtime().context(this.fieldScope()),

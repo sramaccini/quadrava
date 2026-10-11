@@ -75,4 +75,16 @@ describe('schema dei componenti nuovi', () => {
       expect(issuesOf(screen([{ type: 'detail', source: 's', fields: [{ field: 'n', aggregate: 'sum' }] }])).length).toBeGreaterThan(0);
     });
   });
+
+  describe('nuovi tipi di campo', () => {
+    const form = (fields: unknown[]) => screen([{ type: 'form', fields }]);
+    it('accetta i cinque tipi nuovi e le righe dell’area di testo', () => {
+      expect(issuesOf(form([{ name: 'a', type: 'textarea', rows: 5 }, { name: 'b', type: 'datetime' }, { name: 'c', type: 'radio', options: ['x'] }, { name: 'd', type: 'switch' }, { name: 'e', type: 'multiselect', options: ['x'] }]))).toEqual([]);
+    });
+    it('rifiuta tipi sconosciuti e righe fuori misura', () => {
+      expect(issuesOf(form([{ name: 'a', type: 'colore' }])).length).toBeGreaterThan(0);
+      expect(issuesOf(form([{ name: 'a', type: 'textarea', rows: 1 }])).length).toBeGreaterThan(0);
+      expect(issuesOf(form([{ name: 'a', type: 'textarea', rows: 21 }])).length).toBeGreaterThan(0);
+    });
+  });
 });

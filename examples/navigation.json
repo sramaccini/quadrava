@@ -156,6 +156,11 @@
               "screen": "vetrina-form"
             },
             {
+              "id": "vetrina-campi",
+              "label": "{{ t('nav.campi_e_form', 'Campi e form') }}",
+              "screen": "vetrina-campi"
+            },
+            {
               "id": "vetrina-tabelle",
               "label": "{{ t('nav.filtri_e_tabelle', 'Filtri e tabelle') }}",
               "screen": "vetrina-tabelle"

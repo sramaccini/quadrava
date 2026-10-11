@@ -281,8 +281,14 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
             "number",
             "select",
             "checkbox",
-            "date"
-          ]
+            "date",
+            "textarea",
+            "datetime",
+            "radio",
+            "switch",
+            "multiselect"
+          ],
+          "description": "Tipo di campo. textarea: testo su più righe (`rows`); datetime: data e ora AAAA-MM-GGTHH:mm (ora locale); radio: scelta tra `options`; switch: interruttore vero/falso; multiselect: elenco di valori di `options`."
         },
         "label": {
           "type": "string"
@@ -335,6 +341,12 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
           "minLength": 1,
           "maxLength": 100,
           "description": "Prefisso delle chiavi di traduzione per le etichette delle opzioni: l'etichetta di un'opzione è t('<prefisso>.<valore>'), con il valore come ripiego."
+        },
+        "rows": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 20,
+          "description": "Righe visibili di un campo textarea (4 se assente)."
         }
       }
     },

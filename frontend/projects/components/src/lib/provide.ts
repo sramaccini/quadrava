@@ -1,6 +1,7 @@
 import { effect, importProvidersFrom, inject, provideEnvironmentInitializer, type EnvironmentProviders, type Provider } from '@angular/core';
 import { Confirmation, I18n, provideComponentCatalog, type ComponentCatalog } from 'core';
-import { provideNzDateFnsAdapter } from 'ng-zorro-antd/core/time';
+import { enGB as dateEnglish, it as dateItalian, type Locale } from 'date-fns/locale';
+import { NzDateAdapter, provideNzDateFnsAdapter } from 'ng-zorro-antd/core/time';
 import { en_GB, it_IT, NzI18nService, provideNzI18n, type NzI18nInterface } from 'ng-zorro-antd/i18n';
 import { provideNzIcons } from 'ng-zorro-antd/icon';
 import { NzModalModule } from 'ng-zorro-antd/modal';
@@ -36,6 +37,9 @@ const ENGLISH: NzI18nInterface = {
   },
 };
 
+/** Nomi di mesi e giorni nei selettori di date (date-fns) per ogni lingua; una lingua senza voce usa l'inglese. */
+const DATE_LOCALES: Record<string, Locale> = { it: dateItalian, en: dateEnglish };
+
 /** Lingua di NG-ZORRO per ogni lingua dell'applicazione; una lingua senza voce usa l'inglese. */
 const NZ_LOCALES: Record<string, NzI18nInterface> = { it: ITALIAN, en: ENGLISH };
 
@@ -70,8 +74,12 @@ export function provideLowcodeComponents(extra: ComponentCatalog = {}): (Provide
     provideEnvironmentInitializer(() => {
       const i18n = inject(I18n);
       const nz = inject(NzI18nService);
+      const dates = inject(NzDateAdapter);
       for (const [locale, messages] of Object.entries(BUILTIN_MESSAGES)) i18n.addMessages(locale, messages, 'builtin');
-      effect(() => nz.setLocale(NZ_LOCALES[i18n.locale()] ?? ENGLISH));
+      effect(() => {
+        nz.setLocale(NZ_LOCALES[i18n.locale()] ?? ENGLISH);
+        dates.setLocale(DATE_LOCALES[i18n.locale()] ?? dateEnglish);
+      });
     }),
   ];
 }

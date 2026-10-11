@@ -5,18 +5,21 @@ import { NzCheckboxModule } from 'ng-zorro-antd/checkbox';
 import { NzDatePickerModule } from 'ng-zorro-antd/date-picker';
 import { NzFormModule } from 'ng-zorro-antd/form';
 import { NzInputModule } from 'ng-zorro-antd/input';
+import { NzRadioModule } from 'ng-zorro-antd/radio';
 import { NzSelectModule } from 'ng-zorro-antd/select';
+import { NzSwitchModule } from 'ng-zorro-antd/switch';
 import type { FieldDefinition, FilterBarNode } from 'schema';
-import { nextId, parseIsoDate, toIsoDate } from './shared';
+import { nextId, parseIsoDate, parseIsoDateTime, toIsoDate, toIsoDateTime } from './shared';
 
 /** Barra dei filtri: scrive nello stato della schermata (`bind`), da cui i data source dipendono. */
 @Component({
   selector: 'lc-filter-bar',
-  imports: [FormsModule, NzFormModule, NzInputModule, NzSelectModule, NzCheckboxModule, NzDatePickerModule],
+  imports: [FormsModule, NzFormModule, NzInputModule, NzSelectModule, NzCheckboxModule, NzDatePickerModule, NzRadioModule, NzSwitchModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     nz-form-item { margin-bottom: 0; }
     nz-select { min-width: 160px; }
+    nz-select.many { min-width: 220px; }
   `,
   template: `
     <form nz-form ngNoForm nzLayout="inline" role="search" (submit)="$event.preventDefault()">
@@ -41,8 +44,29 @@ import { nextId, parseIsoDate, toIsoDate } from './shared';
                 @case ('date') {
                   <nz-date-picker [nzId]="id + field.name" [ngModel]="dates()[field.name]" (ngModelChange)="change(field, toIso($event))" />
                 }
+                @case ('datetime') {
+                  <nz-date-picker [nzId]="id + field.name" [nzShowTime]="{ nzFormat: 'HH:mm' }" nzFormat="dd/MM/yyyy HH:mm" [ngModel]="dates()[field.name]" (ngModelChange)="change(field, toIsoTime($event))" />
+                }
+                @case ('multiselect') {
+                  <nz-select class="many" [nzId]="id + field.name" nzMode="multiple" nzAllowClear [nzPlaceHolder]="i18n.t('lc.all')" [ngModel]="lists()[field.name]" (ngModelChange)="change(field, $event.length ? $event : null)">
+                    @for (option of field.options ?? []; track option) {
+                      <nz-option [nzValue]="option" [nzLabel]="optionLabel(field, option)" />
+                    }
+                  </nz-select>
+                }
+                @case ('switch') {
+                  <nz-switch [nzId]="id + field.name" [ngModel]="value(field) === true" (ngModelChange)="change(field, $event || null)" />
+                }
+                @case ('radio') {
+                  <nz-radio-group [attr.id]="id + field.name" role="radiogroup" [attr.aria-label]="runtime().text(field.label, scope()) || field.name" [ngModel]="value(field) ?? ''" (ngModelChange)="change(field, $event)">
+                    <label nz-radio-button nzValue="">{{ i18n.t('lc.all') }}</label>
+                    @for (option of field.options ?? []; track option) {
+                      <label nz-radio-button [nzValue]="option">{{ optionLabel(field, option) }}</label>
+                    }
+                  </nz-radio-group>
+                }
                 @default {
-                  <input nz-input [id]="id + field.name" [type]="field.type" [value]="text(field)" (change)="change(field, $any($event.target).value)" />
+                  <input nz-input [id]="id + field.name" [type]="field.type === 'number' ? 'number' : 'text'" [value]="text(field)" (change)="change(field, $any($event.target).value)" />
                 }
               }
             </nz-form-control>
@@ -64,7 +88,11 @@ export class FilterBarComponent implements OnInit {
   protected readonly id = nextId('lc-filter') + '-';
   /** Date dei filtri `date`, calcolate una volta per valore (vedi il form). */
   protected readonly dates = computed<Record<string, Date | null>>(() =>
-    Object.fromEntries(this.node().fields.filter((f) => f.type === 'date').map((f) => [f.name, parseIsoDate(this.value(f))])),
+    Object.fromEntries(
+      this.node()
+        .fields.filter((f) => f.type === 'date' || f.type === 'datetime')
+        .map((f) => [f.name, f.type === 'date' ? parseIsoDate(this.value(f)) : parseIsoDateTime(this.value(f))]),
+    ),
   );
 
   ngOnInit(): void {
@@ -88,9 +116,26 @@ export class FilterBarComponent implements OnInit {
   }
 
 
+  /** Valori delle selezioni multiple, calcolati una volta per valore: un elenco nuovo a ogni disegno farebbe ridisegnare la select senza fine. */
+  protected readonly lists = computed<Record<string, string[]>>(() =>
+    Object.fromEntries(
+      this.node()
+        .fields.filter((f) => f.type === 'multiselect')
+        .map((f) => {
+          const value = this.value(f);
+          return [f.name, Array.isArray(value) ? value.map(String) : []];
+        }),
+    ),
+  );
+
   protected toIso(date: Date | null): string | null {
     return toIsoDate(date);
   }
+
+  protected toIsoTime(date: Date | null): string | null {
+    return toIsoDateTime(date);
+  }
+
 
   protected change(field: FieldDefinition, raw: unknown): void {
     let value: unknown = raw === '' || raw === undefined ? null : raw;

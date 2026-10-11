@@ -157,8 +157,12 @@ export class MockDataClient extends DataClient {
   /** Fatture, pacchetti e spese: i dati dei casi d'uso di esempio. */
   private handleBilling(req: DataRequest, path: string): unknown {
     if (path === '/api/fatture' && req.method === 'GET') {
+      // stato: un valore o un elenco (selezione multipla); tipo: attiva o passiva.
       const stato = req.query?.['stato'];
-      return this.page(this.invoices.filter((f) => !stato || f.stato === stato).map((f) => ({ ...f })), req.query);
+      const stati = Array.isArray(stato) ? stato : stato ? [stato] : [];
+      const tipo = req.query?.['tipo'];
+      const match = (f: Invoice): boolean => (stati.length === 0 || stati.includes(f.stato)) && (!tipo || f.tipo === tipo);
+      return this.page(this.invoices.filter(match).map((f) => ({ ...f })), req.query);
     }
     if (path === '/api/fatture' && req.method === 'POST') {
       const body = req.body ?? {};

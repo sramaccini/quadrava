@@ -57,7 +57,9 @@ export interface ActionDefinition {
 
 export interface FieldDefinition {
   name: string;
-  type: 'text' | 'number' | 'select' | 'checkbox' | 'date';
+  type: 'text' | 'number' | 'select' | 'checkbox' | 'date' | 'textarea' | 'datetime' | 'radio' | 'switch' | 'multiselect';
+  /** Righe visibili di un campo `textarea` (4 se assente). */
+  rows?: number;
   label?: string;
   tooltip?: string;
   required?: boolean;

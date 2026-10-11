@@ -1,0 +1,160 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "vetrina-campi",
+  "title": "{{ t('vetrina_campi.titolo', 'Vetrina: campi e form') }}",
+  "description": "{{ t('vetrina_campi.descrizione', 'Tipi di campo aggiuntivi, ricerca su data source, file, griglia, righe ripetibili e dialog con form.') }}",
+  "requires": "vetrina.componenti.leggi",
+  "dataSources": {
+    "fatture": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/fatture",
+      "params": {
+        "stato": "{{state.filtriCampi.stati}}",
+        "tipo": "{{state.filtriCampi.tipo}}"
+      }
+    }
+  },
+  "components": [
+    {
+      "id": "titolo",
+      "type": "text",
+      "style": "heading",
+      "text": "{{ t('vetrina_campi.intestazione', 'Campi e form') }}"
+    },
+    {
+      "id": "sezione-tipi",
+      "type": "section",
+      "title": "{{ t('vetrina_campi.nuovi_tipi', 'Nuovi tipi di campo') }}",
+      "components": [
+        {
+          "id": "form-tipi",
+          "type": "form",
+          "initial": {
+            "consegna": "2026-10-20T09:30",
+            "urgente": false,
+            "canali": [
+              "email"
+            ]
+          },
+          "fields": [
+            {
+              "name": "note",
+              "type": "textarea",
+              "label": "{{ t('vetrina_campi.note', 'Note per il corriere') }}",
+              "rows": 3,
+              "required": true
+            },
+            {
+              "name": "consegna",
+              "type": "datetime",
+              "label": "{{ t('vetrina_campi.consegna', 'Consegna') }}",
+              "tooltip": "{{ t('vetrina_campi.consegna_aiuto', 'Data e ora, nell’ora locale') }}"
+            },
+            {
+              "name": "priorita",
+              "type": "radio",
+              "label": "{{ t('vetrina_campi.priorita', 'Priorità') }}",
+              "options": [
+                "bassa",
+                "normale",
+                "alta"
+              ],
+              "optionKey": "valori.priorita"
+            },
+            {
+              "name": "urgente",
+              "type": "switch",
+              "label": "{{ t('vetrina_campi.urgente', 'Spedizione urgente') }}"
+            },
+            {
+              "name": "canali",
+              "type": "multiselect",
+              "label": "{{ t('vetrina_campi.canali', 'Avvisi via') }}",
+              "options": [
+                "email",
+                "sms",
+                "app"
+              ],
+              "optionKey": "valori.canale",
+              "required": true
+            }
+          ],
+          "actions": [
+            {
+              "id": "btn-invia-tipi",
+              "label": "{{ t('vetrina_campi.invia', 'Invia') }}",
+              "onClick": [
+                {
+                  "toast": "{{ t('vetrina_campi.inviato', 'Priorità {p}, {u, select, true {spedizione urgente} other {spedizione normale}}, avvisi su {n} canali', {'p': dyn(form.priorita == null ? '—' : form.priorita), 'u': dyn(string(form.urgente == true)), 'n': dyn(size(form.canali))}) }}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sezione-filtri-nuovi",
+      "type": "section",
+      "title": "{{ t('vetrina_campi.filtri_nuovi', 'I nuovi tipi nella barra dei filtri') }}",
+      "components": [
+        {
+          "id": "filtri-campi",
+          "type": "filterBar",
+          "bind": "state.filtriCampi",
+          "fields": [
+            {
+              "name": "stati",
+              "type": "multiselect",
+              "label": "{{ t('comune.stato', 'Stato') }}",
+              "options": [
+                "bozza",
+                "inviata",
+                "pagata"
+              ],
+              "optionKey": "valori.stato"
+            },
+            {
+              "name": "tipo",
+              "type": "radio",
+              "label": "{{ t('comune.tipo', 'Tipo') }}",
+              "options": [
+                "attiva",
+                "passiva"
+              ],
+              "optionKey": "valori.tipo"
+            }
+          ]
+        },
+        {
+          "id": "fatture-filtrate",
+          "type": "table",
+          "source": "fatture",
+          "columns": [
+            {
+              "field": "numero",
+              "label": "{{ t('comune.numero', 'Numero') }}"
+            },
+            {
+              "field": "tipo",
+              "label": "{{ t('comune.tipo', 'Tipo') }}",
+              "valueKey": "valori.tipo"
+            },
+            {
+              "field": "stato",
+              "label": "{{ t('comune.stato', 'Stato') }}",
+              "format": "badge",
+              "badges": {
+                "bozza": "neutral",
+                "inviata": "primary",
+                "pagata": "success"
+              },
+              "valueKey": "valori.stato"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

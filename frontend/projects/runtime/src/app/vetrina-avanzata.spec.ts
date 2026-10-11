@@ -1,7 +1,7 @@
 import { Location } from '@angular/common';
 import { TestBed } from '@angular/core/testing';
 import { DemoDiagnostics } from '../demo/demo-ports';
-import { stubViewportHeight } from './select-testing';
+import { openSelect, stubViewportHeight } from './select-testing';
 import { cells, headerCell, openShowcase, plainText, setupShowcase, teardownShowcase } from './showcase-testing';
 
 /** Le schermate della vetrina per i componenti aggiunti dopo la prima versione: si aprono senza errori e fanno quello che dicono. */
@@ -97,6 +97,46 @@ describe('Vetrina: componenti avanzati', () => {
       (el.querySelectorAll('main nz-table')[5].querySelector('tbody button.cell-link') as HTMLButtonElement).click();
       await until(() => !!document.querySelector('.ant-message-notice'), 'messaggio');
       expect(document.querySelector('.ant-message-notice')?.textContent).toContain('Hai aperto la fattura FT-2026-001');
+    });
+  });
+
+  describe('campi e form', () => {
+    const pick = async (until: (c: () => boolean, l: string) => Promise<void>, settle: () => Promise<void>, select: Element, labels: string[]): Promise<void> => {
+      await openSelect(select, settle);
+      await until(() => document.querySelectorAll('.ant-select-item-option').length > 0, 'opzioni');
+      const options = [...document.querySelectorAll<HTMLElement>('.ant-select-item-option')];
+      for (const label of labels) { const option = options.find((o) => o.textContent?.trim() === label); if (!option) throw new Error('opzioni: ' + JSON.stringify(options.map((o) => o.textContent))); option.click(); }
+      await until(() => true, 'scelta');
+    };
+
+    it('nuovi tipi di campo: il form raccoglie area di testo, radio, interruttore e selezione multipla', { timeout: 20000 }, async () => {
+      const { el, until, settle } = await openShowcase('/vetrina/vetrina-campi');
+      const form = el.querySelector('main lc-form') as HTMLElement;
+      expect((form.querySelector('nz-date-picker input') as HTMLInputElement).value).toBe('20/10/2026 09:30');
+      const textarea = form.querySelector('textarea') as HTMLTextAreaElement;
+      textarea.value = 'Citofonare Rossi';
+      textarea.dispatchEvent(new Event('input'));
+      const radios = [...form.querySelectorAll<HTMLElement>('label[nz-radio]')];
+      expect(radios.map((r) => r.textContent?.trim())).toEqual(['Bassa', 'Normale', 'Alta']);
+      (radios[2].querySelector('input') as HTMLInputElement).click();
+      (form.querySelector('nz-switch button') as HTMLButtonElement).click();
+      await pick(until, settle, form.querySelector('nz-select')!, ['SMS']);
+      ([...form.querySelectorAll('button')].find((b) => b.textContent?.trim() === 'Invia') as HTMLButtonElement).click();
+      await until(() => !!document.querySelector('.ant-message-notice'), 'messaggio');
+      expect(document.querySelector('.ant-message-notice')?.textContent).toContain('Priorità alta, spedizione urgente, avvisi su 2 canali');
+    });
+
+    it('nuovi tipi nei filtri: più stati insieme e tipo con «Tutti»', { timeout: 20000 }, async () => {
+      const { el, until, settle } = await openShowcase('/vetrina/vetrina-campi');
+      await until(() => cells(el, 0, 0).length === 8, 'fatture');
+      const bar = el.querySelector('main lc-filter-bar') as HTMLElement;
+      await pick(until, settle, bar.querySelector('nz-select')!, ['Bozza', 'Pagata']);
+      await until(() => cells(el, 0, 2).every((c) => c === 'Bozza' || c === 'Pagata') && cells(el, 0, 2).includes('Pagata'), 'due stati');
+      const radios = [...bar.querySelectorAll<HTMLInputElement>('nz-radio-group input')];
+      radios[2].click();
+      await until(() => cells(el, 0, 1).length > 0 && cells(el, 0, 1).every((c) => c === 'Passiva'), 'solo passive');
+      radios[0].click();
+      await until(() => cells(el, 0, 1).includes('Attiva'), 'tutti i tipi');
     });
   });
 });

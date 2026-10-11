@@ -261,7 +261,8 @@ export class ScreenRuntime {
     const url = this.resolveUrl(source.url, ctx);
     if (!url.ok) return url;
     const resolved = (this.resolveIn(source.params ?? {}, ctx) ?? {}) as Record<string, unknown>;
-    const params = Object.fromEntries(Object.entries(resolved).filter(([, v]) => v !== undefined && v !== null && v !== ''));
+    // I valori vuoti (anche gli elenchi vuoti di una selezione multipla) non diventano parametri.
+    const params = Object.fromEntries(Object.entries(resolved).filter(([, v]) => v !== undefined && v !== null && v !== '' && !(Array.isArray(v) && v.length === 0)));
     if (source.method === 'GET' || source.method === 'DELETE') {
       return { ok: true, request: { method: source.method, url: url.value, query: params } };
     }
