@@ -242,11 +242,12 @@ export class MockDataClient extends DataClient {
     }
     if (path === '/api/vendite-mensili' && req.method === 'GET') {
       // Dodici mesi del 2026 con un andamento stagionale riconoscibile.
-      return Array.from({ length: 12 }, (_, i) => ({
-        mese: `2026-${String(i + 1).padStart(2, '0')}`,
-        attive: 9000 + Math.round(4000 * Math.sin((i + 1) / 2)) + i * 600,
-        passive: 6000 + Math.round(2500 * Math.cos(i / 2)) + i * 300,
-      }));
+      return Array.from({ length: 12 }, (_, i) => {
+        const attive = 9000 + Math.round(4000 * Math.sin((i + 1) / 2)) + i * 600;
+        const passive = 6000 + Math.round(2500 * Math.cos(i / 2)) + i * 300;
+        // Margine in punti percentuali, con una cifra decimale.
+        return { mese: `2026-${String(i + 1).padStart(2, '0')}`, attive, passive, margine: Math.round(((attive - passive) / attive) * 1000) / 10 };
+      });
     }
     if (path === '/api/fatture-per-stato' && req.method === 'GET') {
       const count = (stato: string): number => this.invoices.filter((f) => f.stato === stato).length;

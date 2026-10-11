@@ -68,4 +68,47 @@ describe('grafici', () => {
     expect(plain(h.el.querySelector('lc-chart path.mark title')?.textContent)).toBe('gen 26: 1200,00 € (33,3%)');
     expect([...h.el.querySelectorAll('lc-chart .legend li')].map((li) => plain(li.textContent))).toEqual(['gen 26', 'feb 26', 'mar 26']);
   });
+
+  describe('impilati, doppio asse, combinati', () => {
+    const data = [
+      { mese: '2026-01', a: 100, b: 50, margine: 12.5 },
+      { mese: '2026-02', a: 200, b: -40, margine: 8 },
+    ];
+    const renderWith = (extra: Record<string, unknown>): Promise<ScreenHarness> =>
+      renderScreen({
+        components: [{ type: 'chart', kind: 'bar', source: 'vendite', categoryField: 'mese', categoryFormat: 'month', format: 'currency', ...extra } as NodeDefinition],
+        dataSources,
+        respond: () => data,
+      });
+    const rect = (el: Element): { y: number; h: number; x: number } => ({ x: Number(el.getAttribute('x')), y: Number(el.getAttribute('y')), h: Number(el.getAttribute('height')) });
+
+    it('barre impilate: una colonna per categoria, i pezzi uno sopra l’altro e i negativi verso il basso', async () => {
+      const h = await renderWith({ stacked: true, series: [{ field: 'a', label: 'A' }, { field: 'b', label: 'B' }] });
+      await h.until(() => h.el.querySelectorAll('lc-chart rect.mark').length === 4, 'barre');
+      const [a1, b1, a2, b2] = [...h.el.querySelectorAll('lc-chart rect.mark')].map(rect);
+      // Stessa colonna per le due serie della stessa categoria.
+      expect(b1.x).toBe(a1.x);
+      // B (positivo) sta sopra A: finisce dove A comincia.
+      expect(Math.abs(b1.y + b1.h - a1.y)).toBeLessThan(0.01);
+      // B negativo nel secondo mese parte dallo zero e scende: comincia dove finisce A (a partire dallo zero).
+      expect(Math.abs(b2.y - (a2.y + a2.h))).toBeLessThan(0.01);
+      // La scala comprende la somma impilata (100 + 50) e il negativo.
+      expect([...h.el.querySelectorAll('lc-chart text.axis')].map((t) => plain(t.textContent))).toContain('-100 €');
+    });
+
+    it('grafico combinato con asse destro: barre in euro e una linea in percentuale', async () => {
+      const h = await renderWith({
+        rightFormat: 'percent',
+        series: [{ field: 'a', label: 'Fatturato' }, { field: 'margine', label: 'Margine', kind: 'line', axis: 'right', tone: 'success' }],
+      });
+      await h.until(() => h.el.querySelectorAll('lc-chart rect.mark').length === 2, 'barre');
+      expect(h.el.querySelectorAll('lc-chart polyline')).toHaveLength(1);
+      const right = [...h.el.querySelectorAll('lc-chart text.axis.right')].map((t) => plain(t.textContent));
+      expect(right[0]).toBe('0 %');
+      expect(right.at(-1)).toMatch(/^\d+ %$/);
+      expect([...h.el.querySelectorAll('lc-chart .legend li')].map((li) => plain(li.textContent))).toEqual(['Fatturato', 'Margine (asse destro)']);
+      expect(plain(h.el.querySelector('lc-chart circle title')?.textContent)).toBe('gen 26 · Margine: 12,5 %');
+      expect([...(h.el.querySelector('lc-chart table') as HTMLTableElement).tBodies[0].rows[0].cells].map((c) => plain(c.textContent))).toEqual(['gen 26', '100,00 €', '12,5 %']);
+    });
+  });
 });

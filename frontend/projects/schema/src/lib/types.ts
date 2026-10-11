@@ -296,6 +296,10 @@ export interface ChartSeries {
   field: string;
   label?: string;
   tone?: Tone;
+  /** Come disegnare la serie (grafici combinati); se assente vale il tipo del grafico. */
+  kind?: 'bar' | 'line';
+  /** Asse dei valori: a destra per grandezze diverse. */
+  axis?: 'left' | 'right';
 }
 export interface ChartNode extends NodeBase {
   type: 'chart';
@@ -310,6 +314,10 @@ export interface ChartNode extends NodeBase {
   decimals?: number;
   height?: number;
   caption?: string;
+  /** Barre impilate invece che affiancate. */
+  stacked?: boolean;
+  /** Formato dei valori dell'asse destro (come `format` se assente). */
+  rightFormat?: 'number' | 'currency' | 'percent';
 }
 
 /** Colonna della datatable: in più filtro e raggruppamento. */

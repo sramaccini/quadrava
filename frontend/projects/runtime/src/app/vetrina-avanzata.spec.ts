@@ -272,10 +272,15 @@ describe('Vetrina: componenti avanzati', () => {
     it('grafici: barre per due serie su dodici mesi, linea e torta per stato tradotta', async () => {
       const { el, until } = await openShowcase('/vetrina/vetrina-cruscotto');
       const charts = (): Element[] => [...el.querySelectorAll('main lc-chart')];
-      await until(() => charts().length === 3 && charts()[0].querySelectorAll('rect.mark').length === 24 && charts()[2].querySelectorAll('path.mark').length === 3, 'grafici');
+      await until(() => charts().length === 4 && charts()[0].querySelectorAll('rect.mark').length === 24 && charts()[3].querySelectorAll('path.mark').length === 3, 'grafici');
+      // Combinato: 24 pezzi di barra impilati (12 colonne) e la linea del margine sull'asse destro.
+      expect(new Set([...charts()[1].querySelectorAll('rect.mark')].map((r) => r.getAttribute('x'))).size).toBe(12);
       expect(charts()[1].querySelectorAll('circle')).toHaveLength(12);
-      expect([...charts()[2].querySelectorAll('.legend li')].map((li) => li.textContent?.trim())).toEqual(['Bozza', 'Inviata', 'Pagata']);
-      expect(charts()[2].querySelector('text.total')?.textContent?.trim()).toBe('14');
+      expect(charts()[1].querySelector('text.axis.right')?.textContent?.trim()).toMatch(/%$/);
+      expect([...charts()[1].querySelectorAll('.legend li')].map((li) => li.textContent?.trim())).toEqual(['Fatture attive', 'Fatture passive', 'Margine (asse destro)']);
+      expect(charts()[2].querySelectorAll('circle')).toHaveLength(12);
+      expect([...charts()[3].querySelectorAll('.legend li')].map((li) => li.textContent?.trim())).toEqual(['Bozza', 'Inviata', 'Pagata']);
+      expect(charts()[3].querySelector('text.total')?.textContent?.trim()).toBe('14');
       expect(charts()[0].querySelector('table caption')?.textContent).toContain('Fatture attive e passive per mese');
       expect(TestBed.inject(DemoDiagnostics).events()).toEqual([]);
     });

@@ -105,6 +105,37 @@
           "caption": "{{ t('vetrina_cruscotto.barre_didascalia', 'Fatture attive e passive per mese, 2026') }}"
         },
         {
+          "id": "grafico-combinato",
+          "type": "chart",
+          "kind": "bar",
+          "stacked": true,
+          "source": "vendite",
+          "categoryField": "mese",
+          "categoryFormat": "month",
+          "format": "currency",
+          "rightFormat": "percent",
+          "decimals": 1,
+          "series": [
+            {
+              "field": "attive",
+              "label": "{{ t('vetrina_cruscotto.attive', 'Fatture attive') }}"
+            },
+            {
+              "field": "passive",
+              "label": "{{ t('vetrina_cruscotto.passive', 'Fatture passive') }}",
+              "tone": "danger"
+            },
+            {
+              "field": "margine",
+              "label": "{{ t('vetrina_cruscotto.margine', 'Margine') }}",
+              "kind": "line",
+              "axis": "right",
+              "tone": "success"
+            }
+          ],
+          "caption": "{{ t('vetrina_cruscotto.combinato_didascalia', 'Fatture attive e passive impilate per mese e margine percentuale sull’asse destro, 2026') }}"
+        },
+        {
           "id": "grafico-linee",
           "type": "chart",
           "kind": "line",

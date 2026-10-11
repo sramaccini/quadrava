@@ -71,6 +71,7 @@ export const BUILTIN_MESSAGES: Record<string, Messages> = {
     'lc.reset': 'Azzera',
     'lc.toggleGroup': 'Apri o chiudi il gruppo {label}',
     'lc.tree': 'Albero',
+    'lc.rightAxis': 'asse destro',
   },
   en: {
     'lc.all': 'All',
@@ -138,5 +139,6 @@ export const BUILTIN_MESSAGES: Record<string, Messages> = {
     'lc.reset': 'Reset',
     'lc.toggleGroup': 'Expand or collapse the group {label}',
     'lc.tree': 'Tree',
+    'lc.rightAxis': 'right axis',
   },
 };

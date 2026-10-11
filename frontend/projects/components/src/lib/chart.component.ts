@@ -23,6 +23,7 @@ const TONE_VARS: Record<Tone, string> = {
   danger: PALETTE[2],
 };
 const PAD = { left: 64, right: 12, top: 12, bottom: 30 };
+type Side = 'left' | 'right';
 
 interface Mark {
   x: number;
@@ -39,7 +40,8 @@ interface Line {
 }
 
 /**
- * Grafico a barre, a linee o a torta (ciambella) disegnato in SVG dalla piattaforma, con i colori del tema.
+ * Grafico a barre, a linee o a torta (ciambella) disegnato in SVG dalla piattaforma, con i colori del tema. Barre
+ * affiancate o impilate, serie su un secondo asse a destra, grafici combinati (barre e linee insieme).
  * Ogni elemento mostra il valore al passaggio del mouse; la legenda è testo; per gli screen reader il disegno è
  * nascosto e i dati sono in una tabella equivalente.
  */
@@ -78,23 +80,25 @@ interface Line {
           }
           <text class="total" [attr.x]="width() / 2" [attr.y]="height() / 2 + 6" text-anchor="middle">{{ pieTotal() }}</text>
         } @else {
-          @for (tick of axis().ticks; track $index) {
-            <line class="grid" [attr.x1]="pad.left" [attr.x2]="width() - pad.right" [attr.y1]="y(tick)" [attr.y2]="y(tick)" />
-            <text class="axis" [attr.x]="pad.left - 8" [attr.y]="y(tick) + 4" text-anchor="end">{{ short(tick) }}</text>
+          @for (tick of axes().left.ticks; track $index) {
+            <line class="grid" [attr.x1]="pad().left" [attr.x2]="width() - pad().right" [attr.y1]="y(tick)" [attr.y2]="y(tick)" />
+            <text class="axis" [attr.x]="pad().left - 8" [attr.y]="y(tick) + 4" text-anchor="end">{{ short(tick, 'left') }}</text>
+          }
+          @if (axes().right; as right) {
+            @for (tick of right.ticks; track $index) {
+              <text class="axis right" [attr.x]="width() - pad().right + 8" [attr.y]="y(tick, 'right') + 4" text-anchor="start">{{ short(tick, 'right') }}</text>
+            }
           }
           @for (label of categories(); track $index; let i = $index) {
             <text class="axis" [attr.x]="center(i)" [attr.y]="height() - 10" text-anchor="middle">{{ label }}</text>
           }
-          @if (node().kind === 'bar') {
-            @for (bar of bars(); track $index) {
-              <rect class="mark" [attr.x]="bar.x" [attr.y]="bar.y" [attr.width]="bar.width" [attr.height]="bar.height" [attr.fill]="bar.color" rx="2"><title>{{ bar.tip }}</title></rect>
-            }
-          } @else {
-            @for (line of lines(); track $index) {
-              <polyline class="line" [attr.points]="line.points" [attr.stroke]="line.color" />
-              @for (dot of line.dots; track $index) {
-                <circle class="dot mark" [attr.cx]="dot.x" [attr.cy]="dot.y" r="4" [attr.fill]="line.color"><title>{{ dot.tip }}</title></circle>
-              }
+          @for (bar of bars(); track $index) {
+            <rect class="mark" [attr.x]="bar.x" [attr.y]="bar.y" [attr.width]="bar.width" [attr.height]="bar.height" [attr.fill]="bar.color" rx="2"><title>{{ bar.tip }}</title></rect>
+          }
+          @for (line of lines(); track $index) {
+            <polyline class="line" [attr.points]="line.points" [attr.stroke]="line.color" />
+            @for (dot of line.dots; track $index) {
+              <circle class="dot mark" [attr.cx]="dot.x" [attr.cy]="dot.y" r="4" [attr.fill]="line.color"><title>{{ dot.tip }}</title></circle>
             }
           }
         }
@@ -121,7 +125,7 @@ interface Line {
             <tr>
               <th scope="row">{{ label }}</th>
               @for (s of node().series; track $index; let j = $index) {
-                <td>{{ text(values()[j][i]) }}</td>
+                <td>{{ text(values()[j][i], s.axis ?? 'left') }}</td>
               }
             </tr>
           }
@@ -136,7 +140,6 @@ export class ChartComponent {
   readonly scope = input<Scope>({});
 
   protected readonly i18n = inject(I18n);
-  protected readonly pad = PAD;
   /** Larghezza reale del contenitore (testi nitidi); 600 finché non è misurata. */
   protected readonly width = signal(600);
 
@@ -188,41 +191,92 @@ export class ChartComponent {
     return tone ? TONE_VARS[tone] : PALETTE[index % PALETTE.length];
   }
 
-  protected readonly axis = computed(() => niceScale(this.values().flat().filter((v): v is number => v !== null)));
-  protected y(value: number): number {
-    const { min, max } = this.axis();
+  private kindOf(index: number): 'bar' | 'line' {
+    return this.node().series[index].kind ?? (this.node().kind === 'line' ? 'line' : 'bar');
+  }
+  private sideOf(index: number): Side {
+    return this.node().series[index].axis ?? 'left';
+  }
+  protected readonly hasRight = computed(() => this.node().kind !== 'pie' && this.node().series.some((s) => s.axis === 'right'));
+  protected readonly pad = computed(() => ({ ...PAD, right: this.hasRight() ? 64 : PAD.right }));
+
+  /** Valori che una scala deve contenere: le somme impilate delle barre (positive e negative) e i valori delle linee. */
+  private extent(side: Side): number[] {
+    const values = this.values();
+    const out: number[] = [];
+    const bars = values.map((_, j) => j).filter((j) => this.kindOf(j) === 'bar' && this.sideOf(j) === side);
+    if (this.node().stacked) {
+      for (let i = 0; i < this.rows().length; i++) {
+        let up = 0;
+        let down = 0;
+        for (const j of bars) {
+          const v = values[j][i] ?? 0;
+          if (v >= 0) up += v;
+          else down += v;
+        }
+        out.push(up, down);
+      }
+    } else for (const j of bars) out.push(...values[j].filter((v): v is number => v !== null));
+    values.forEach((series, j) => {
+      if (this.kindOf(j) === 'line' && this.sideOf(j) === side) out.push(...series.filter((v): v is number => v !== null));
+    });
+    return out;
+  }
+  protected readonly axes = computed(() => ({ left: niceScale(this.extent('left')), right: this.hasRight() ? niceScale(this.extent('right')) : null }));
+
+  protected y(value: number, side: Side = 'left'): number {
+    const { min, max } = (side === 'right' ? this.axes().right : null) ?? this.axes().left;
     const top = PAD.top;
     const bottom = this.height() - PAD.bottom;
     return bottom - ((value - min) / (max - min)) * (bottom - top);
   }
   private band(): number {
-    return (this.width() - PAD.left - PAD.right) / Math.max(1, this.rows().length);
+    return (this.width() - this.pad().left - this.pad().right) / Math.max(1, this.rows().length);
   }
   protected center(index: number): number {
-    return PAD.left + this.band() * (index + 0.5);
+    return this.pad().left + this.band() * (index + 0.5);
   }
 
+  /** Barre: affiancate (una colonna per serie) o impilate (una colonna per asse, con i pezzi delle serie uno sopra l'altro). */
   protected readonly bars = computed<Mark[]>(() => {
+    const values = this.values();
+    const bars = values.map((_, j) => j).filter((j) => this.kindOf(j) === 'bar');
+    if (!bars.length) return [];
+    const stacked = !!this.node().stacked;
+    const groups = stacked ? [...new Set(bars.map((j) => this.sideOf(j)))].map((side) => bars.filter((j) => this.sideOf(j) === side)) : bars.map((j) => [j]);
     const band = this.band();
-    const groups = this.node().series.length;
-    const barWidth = Math.max(2, (band * 0.7) / groups);
-    const zero = this.y(Math.max(this.axis().min, 0));
+    const width = Math.max(2, (band * 0.7) / groups.length);
     const marks: Mark[] = [];
-    this.values().forEach((series, j) =>
-      series.forEach((value, i) => {
-        if (value === null) return;
-        const x = PAD.left + band * i + band * 0.15 + barWidth * j;
-        const y = this.y(value);
-        marks.push({ x, y: Math.min(y, zero), width: barWidth, height: Math.abs(zero - y), color: this.seriesColor(j), tip: this.tip(i, j, value) });
+    groups.forEach((group, g) =>
+      this.rows().forEach((_, i) => {
+        const x = this.pad().left + band * i + band * 0.15 + width * g;
+        let up = 0;
+        let down = 0;
+        for (const j of group) {
+          const value = values[j][i];
+          if (value === null) continue;
+          const side = this.sideOf(j);
+          const base = stacked ? (value >= 0 ? up : down) : 0;
+          const end = base + value;
+          if (stacked) {
+            if (value >= 0) up = end;
+            else down = end;
+          }
+          const y0 = this.y(base, side);
+          const y1 = this.y(end, side);
+          marks.push({ x, y: Math.min(y0, y1), width, height: Math.abs(y1 - y0), color: this.seriesColor(j), tip: this.tip(i, j, value) });
+        }
       }),
     );
     return marks;
   });
 
   protected readonly lines = computed<Line[]>(() =>
-    this.values().map((series, j) => {
-      const dots = series.flatMap((value, i) => (value === null ? [] : [{ x: this.center(i), y: this.y(value), tip: this.tip(i, j, value) }]));
-      return { color: this.seriesColor(j), points: dots.map((d) => `${d.x.toFixed(1)},${d.y.toFixed(1)}`).join(' '), dots };
+    this.values().flatMap((series, j) => {
+      if (this.kindOf(j) !== 'line') return [];
+      const side = this.sideOf(j);
+      const dots = series.flatMap((value, i) => (value === null ? [] : [{ x: this.center(i), y: this.y(value, side), tip: this.tip(i, j, value) }]));
+      return [{ color: this.seriesColor(j), points: dots.map((d) => `${d.x.toFixed(1)},${d.y.toFixed(1)}`).join(' '), dots }];
     }),
   );
 
@@ -240,26 +294,31 @@ export class ChartComponent {
   protected readonly legend = computed(() =>
     this.node().kind === 'pie'
       ? this.categories().map((label, i) => ({ label, color: PALETTE[i % PALETTE.length] }))
-      : this.seriesLabels().map((label, j) => ({ label, color: this.seriesColor(j) })),
+      : this.seriesLabels().map((label, j) => ({
+          label: this.sideOf(j) === 'right' ? `${label} (${this.i18n.t('lc.rightAxis')})` : label,
+          color: this.seriesColor(j),
+        })),
   );
 
-  private spec(): ColumnDefinition {
+  private spec(side: Side = 'left'): ColumnDefinition {
     const node = this.node();
-    return { field: '', format: node.format ?? 'number', currency: node.currency, decimals: node.decimals };
+    const format = side === 'right' ? (node.rightFormat ?? node.format) : node.format;
+    return { field: '', format: format ?? 'number', currency: node.currency, decimals: node.decimals };
   }
-  protected text(value: number | null | undefined): string {
-    return value === null || value === undefined ? '—' : formatValue(value, this.spec(), this.i18n.intlLocale()).text;
+  protected text(value: number | null | undefined, side: Side = 'left'): string {
+    return value === null || value === undefined ? '—' : formatValue(value, this.spec(side), this.i18n.intlLocale()).text;
   }
   /** Etichette dell'asse in forma breve (per esempio 12 Mln). */
-  protected short(value: number): string {
+  protected short(value: number, side: Side = 'left'): string {
     const node = this.node();
+    const format = this.spec(side).format;
     const options: Intl.NumberFormatOptions =
-      node.format === 'currency' ? { style: 'currency', currency: node.currency ?? 'EUR', notation: 'compact', maximumFractionDigits: 1 } : { notation: 'compact', maximumFractionDigits: 1 };
+      format === 'currency' ? { style: 'currency', currency: node.currency ?? 'EUR', notation: 'compact', maximumFractionDigits: 1 } : { notation: 'compact', maximumFractionDigits: 1 };
     const text = new Intl.NumberFormat(this.i18n.intlLocale(), options).format(value);
-    return node.format === 'percent' ? `${text} %` : text;
+    return format === 'percent' ? `${text} %` : text;
   }
   private tip(category: number, series: number, value: number): string {
     const label = this.node().series.length > 1 ? `${this.categories()[category]} · ${this.seriesLabels()[series]}` : this.categories()[category];
-    return `${label}: ${this.text(value)}`;
+    return `${label}: ${this.text(value, this.sideOf(series))}`;
   }
 }

@@ -1193,6 +1193,18 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
               "caption": {
                 "type": "string",
                 "description": "Didascalia della tabella equivalente letta dagli screen reader."
+              },
+              "stacked": {
+                "type": "boolean",
+                "description": "Barre impilate invece che affiancate (i valori negativi si impilano verso il basso)."
+              },
+              "rightFormat": {
+                "enum": [
+                  "number",
+                  "currency",
+                  "percent"
+                ],
+                "description": "Formato dei valori dell’asse destro (come format se assente)."
               }
             }
           }
@@ -1614,6 +1626,20 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
         "tone": {
           "$ref": "#/$defs/tone",
           "description": "Colore della serie dal tema (altrimenti la tavolozza del grafico)."
+        },
+        "kind": {
+          "enum": [
+            "bar",
+            "line"
+          ],
+          "description": "Come disegnare questa serie in un grafico a barre o a linee (grafici combinati); se assente vale il tipo del grafico."
+        },
+        "axis": {
+          "enum": [
+            "left",
+            "right"
+          ],
+          "description": "Asse dei valori della serie: a destra per grandezze diverse (per esempio una percentuale accanto a importi)."
         }
       }
     },

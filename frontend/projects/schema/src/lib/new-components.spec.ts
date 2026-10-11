@@ -207,6 +207,9 @@ describe('schema dei componenti nuovi', () => {
     it('accetta barre, linee e torte con formati e serie colorate', () => {
       expect(issuesOf(chart({ categoryFormat: 'month', format: 'currency', currency: 'EUR', height: 300, series: [{ field: 'a', label: 'A', tone: 'success' }, { field: 'b' }] }))).toEqual([]);
       expect(issuesOf(chart({ kind: 'pie', categoryKey: 'valori.stato' }))).toEqual([]);
+      expect(issuesOf(chart({ stacked: true, rightFormat: 'percent', series: [{ field: 'a' }, { field: 'm', kind: 'line', axis: 'right' }] }))).toEqual([]);
+      expect(issuesOf(chart({ series: [{ field: 'm', axis: 'top' }] })).length).toBeGreaterThan(0);
+      expect(issuesOf(chart({ series: [{ field: 'm', kind: 'pie' }] })).length).toBeGreaterThan(0);
     });
     it('rifiuta tipi sconosciuti, serie vuote o troppe, altezze fuori misura', () => {
       expect(issuesOf(chart({ kind: 'radar' })).length).toBeGreaterThan(0);
