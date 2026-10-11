@@ -1,6 +1,6 @@
 # HANDOFF — Piattaforma LowCode
 
-Documento di passaggio per continuare il lavoro con Claude Code in locale. Ultimo aggiornamento: 2026-10-11, dopo il commit `47a96ee` (datatable) e l'aggiornamento della documentazione che lo segue.
+Documento di passaggio per continuare il lavoro con Claude Code in locale. Ultimo aggiornamento: 2026-10-11, dopo il commit `f42abdf` (grafici impilati e doppio asse) e l'aggiornamento della documentazione che lo segue.
 
 ## 1. Cos'è
 
@@ -29,7 +29,7 @@ Da `frontend/`:
 - `.claude/launch.json` avvia una copia della demo sulla porta 4300 (per l'anteprima nel pannello di Claude).
 - test per progetto: `npx ng test <schema|expressions|core|components|services|runtime|editor> --watch=false`
 
-Stato test (tutti verdi): schema 60, expressions 39, core 60, components 115, services 18, runtime 65, editor 2 (**359**). Build di produzione della demo: 2,26 MB iniziali (avviso a 2,5 MB).
+Stato test (tutti verdi): schema 60, expressions 39, core 60, components 123, services 19, runtime 65, editor 2 (**368**). Build di produzione della demo: 2,27 MB iniziali (avviso a 2,5 MB).
 
 ## 4. Architettura in breve
 
@@ -40,7 +40,9 @@ Librerie (`frontend/projects/`): `schema` (JSON Schema + tipi), `expressions` (C
 - Campi: text, number, select, checkbox, date, **textarea, datetime, radio, switch, multiselect, lookup, file, repeater**. Formati: **number**, currency, percent, date, datetime, boolean, badge.
 - Tabella: ordinamento (in pagina o lato server con `sort.bind`), selezione + azioni multiple, menu azioni (`rowActionsInline`), righe espandibili, celle cliccabili, riga dei totali (`aggregate`).
 - `lc-node` applica `visibleIf/hiddenIf` e `tooltip`. Permessi `dominio.risorsa.azione`; espressioni **fail-closed**.
-- I data source GET si ricaricano **solo se cambia la richiesta risolta** (URL e parametri); `refresh` ricarica comunque.
+- I data source GET si ricaricano **solo se cambia la richiesta risolta** (URL e parametri); `refresh` ricarica comunque. `ScreenRuntime.query` esegue un data source senza toccarne lo stato condiviso (usato dai lookup).
+- `DataRequest.file`: invio multipart dei file (`HttpDataClient` usa `FormData`), fino a 100 MB; il base64 nel JSON resta per file fino a 10 MB.
+- Variabili sempre presenti nei data source: `search` e `lookupKey` (lookup), `file` nei data source di `upload`.
 - Shell responsive a tre fasce (≥1200 espansa, 768–1199 compressa, <768 cassetto); pulsante tondo accanto al logo.
 
 ## 5. Catalogo componenti
@@ -65,13 +67,13 @@ Le principali sono nella DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In breve:
 - BFF: mancano CSRF, forwarding delle API (con token e `traceparent`), allow-list degli host.
 - Moduli Java mai compilati (`mvn verify` in sospeso).
 - `validate:examples` non controlla le espressioni CEL (lo fa il test `i18n-examples.spec.ts`).
-- Limiti dei componenti nuovi: vedi catalogo § 3 (lookup e valori non caricati, file in base64 nel JSON, albero da tastiera parziale, datatable fino a qualche migliaio di righe, grafici senza impilati/assi doppi).
+- Limiti dei componenti che restano: vedi catalogo § 3 (niente righe ripetibili annidate, datatable sulle righe caricate — provata fino a 20.000 nel componente —, grafici senza zoom né aree). I limiti della prima consegna (lookup, file, righe, albero da tastiera, volumi, grafici) sono stati superati: catalogo § 3.1.
 - Documenti Claude Docs (architettura, funzionale, linee guida) non aggiornati con i componenti di ottobre: la fonte aggiornata è `docs/catalogo-componenti.md`.
 
 ## 8. Prossimi passi (nell'ordine suggerito)
 
-1. Review dei 18 componenti (commit da `4d224fb` a `47a96ee`) e del fix del runtime `9d96798`.
-2. Collegare `services` a `runtime` e completare il BFF (CSRF, forwarding, allow-list); caricamento file multipart nella porta `DataClient`.
+1. Review dei 18 componenti (commit da `4d224fb` a `47a96ee`), del fix del runtime `9d96798` e dei limiti superati (da `7907884` a `f42abdf`).
+2. Collegare `services` a `runtime` e completare il BFF (CSRF, forwarding, allow-list; il forwarding deve gestire anche i corpi multipart).
 3. **Editor visuale** (`projects/editor`): albero dei nodi, pannello proprietà, anteprima, temi e menu; scelta delle chiavi di traduzione.
 4. Menu: navigazione da tastiera, badge, ricerca. CEL in `validate:examples`.
 5. Aggiornare i documenti Claude Docs con il catalogo nuovo.
@@ -89,4 +91,4 @@ Le principali sono nella DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In breve:
 
 - `README.md`, `DEVELOPMENT-GUIDE.md` (inglese), `docs/README.md`, `docs/catalogo-componenti.md` (italiano).
 - Documenti Claude Docs: architettura `81cf6668-1f89-4814-aa01-06ef8b99ee8d`, funzionale `d3763c98-122d-4331-b9c4-2c4f18cffd1c`, linee guida `f286ccf2-9ad4-4470-8f34-da217be64031`, panoramica testi/i18n `b7da8557-c708-422d-be72-d1829a0b03e7`.
-- Cronologia recente: `47a96ee` datatable … `2b51e38` ordinamento, `4d224fb` catalogo; `9d96798` fix ricaricamento data source; `85d0409` guscio responsive; `5230022` i18n completo.
+- Cronologia recente: `f42abdf` grafici impilati e doppio asse, `4a8379c` datatable per grandi volumi, `e783fbb` albero da tastiera, `b130599` lookup e file nelle righe, `62fe0ee` file in multipart, `7907884` testo dei valori nel lookup; `47a96ee` datatable … `2b51e38` ordinamento, `4d224fb` catalogo; `9d96798` fix ricaricamento data source; `85d0409` guscio responsive; `5230022` i18n completo.

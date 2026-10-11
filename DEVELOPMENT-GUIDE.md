@@ -99,7 +99,9 @@ The Italian locale is patched in `provide.ts` (`rangeQuarterPlaceholder` is miss
 
 ## 7. Ports and dependency injection
 
-Everything external to the interpreter is an abstract class used as a DI token: `Authorization`, `UserProvider`, `DataClient`, `ScreenNavigator`, `Notifier`, `RuntimeDiagnostics`, `Confirmation`, `FormDialog` (the `dialog` step; implemented by `DialogForm` in `components`). To add one: declare the abstract class in `core`, inject it where needed, provide a fake in `runtime/demo`, and a real implementation in `services` (or `components` when it is UI). Components must depend on the abstraction only.
+Everything external to the interpreter is an abstract class used as a DI token: `Authorization`, `UserProvider`, `DataClient`, `ScreenNavigator`, `Notifier`, `RuntimeDiagnostics`, `Confirmation`, `FormDialog` (the `dialog` step; implemented by `DialogForm` in `components`).
+
+`DataRequest` may carry a `file` (`field`, `name`, `type`, `blob`): `HttpDataClient` then sends a multipart body (`FormData`) with the file in its part and each body entry as a text part. `ScreenRuntime.execute(name, args, scope, file)` attaches it; `ScreenRuntime.query(name, args, scope)` runs a data source without changing its shared state (used by lookup fields, so that two fields on the same source do not disturb each other). To add one: declare the abstract class in `core`, inject it where needed, provide a fake in `runtime/demo`, and a real implementation in `services` (or `components` when it is UI). Components must depend on the abstraction only.
 
 ## 8. Security rules (non-negotiable)
 
@@ -154,6 +156,6 @@ Layout, real focus and the dark theme are not covered by tests (the application 
 * Java modules are not yet compiled in CI.
 * Ajv needs `unsafe-eval` under CSP until validators are precompiled.
 * `validate:examples` checks translation keys but not CEL expressions (the runtime test `i18n-examples.spec.ts` does).
-* Component limits of the October 2026 batch (lookup label of an unloaded value, file size in JSON, tree keyboard, data-table volume, chart types) are listed in the component catalogue.
+* Component limits that remain (no nested repeaters, data table on loaded rows only, no chart zoom) are listed in the component catalogue, § 3.
 * Developer diagnostics are not translated and stay in Italian: schema and expression issues, navigation loading errors, and the messages of the `services` library. Everything the end user reads is translatable.
 * Adding a language means adding `examples/i18n/<code>.json` (same keys as `it.json`), an entry in `LANGUAGES` of the demo, and, for the platform strings, a block in `components/src/lib/messages.ts` and a NG-ZORRO locale in `provide.ts`.

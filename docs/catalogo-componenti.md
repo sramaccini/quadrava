@@ -125,16 +125,25 @@ Valgono nel form e, dove ha senso, nella barra dei filtri (`switch`, `multiselec
   "lookup": { "source": "clienti", "valueField": "id", "labelField": "nome", "minChars": 2 } }
 ```
 
-Mentre l'utente scrive, il campo esegue il data source `source` (GET) con la variabile `search` (`"params": { "q": "{{ search }}" }`) e propone le righe restituite. Il valore del campo è `valueField`; il testo mostrato è `labelField`. Le ricerche ravvicinate si accorpano (attesa di 300 ms) e una risposta vecchia non sovrascrive una più recente.
+```json
+"clienti": { "type": "rest", "method": "GET", "url": "/api/clienti",
+             "params": { "q": "{{ search }}", "id": "{{ lookupKey }}" } }
+```
+
+Mentre l'utente scrive, il campo esegue il data source `source` (GET) con la variabile `search` e propone le righe restituite. Il valore del campo è `valueField`; il testo mostrato è `labelField`. Le ricerche ravvicinate si accorpano (attesa di 300 ms) e una risposta vecchia non sovrascrive una più recente.
+
+Se il valore corrente non è tra le righe note (per esempio in un form di modifica) e il data source usa `{{ lookupKey }}`, il campo chiede al servizio la riga di quel valore, una volta sola, e ne mostra il testo invece dell'id. Le richieste del campo non cambiano le righe che lo stesso data source mostra agli altri componenti (`ScreenRuntime.query`).
 
 ### 2.8 Caricamento di file
 
 ```json
-{ "name": "allegato", "type": "file", "accept": ".pdf,image/*", "maxSizeKb": 2048, "upload": "caricaAllegato" }
+{ "name": "allegato", "type": "file", "accept": ".pdf,image/*", "maxSizeKb": 20480, "upload": "caricaAllegato" }
 ```
 
-- Un solo file per campo; `accept` e `maxSizeKb` (massimo 10240) sono controllati prima di qualunque invio.
-- Con `upload` il file viene inviato subito al data source (POST): il data source lo riceve nella variabile `file` (`{ name, type, size, content }`, contenuto in base64), per esempio `"body": "{{ file }}"`. Il valore del campo diventa `{ name, type, size }` più la risposta del servizio (per esempio l'`id`). Senza `upload` il valore contiene anche `content`.
+- Un solo file per campo; `accept` e `maxSizeKb` sono controllati prima di qualunque invio.
+- Con `upload` il file viene inviato subito al data source (POST). In **multipart** (`uploadAs: "multipart"`, predefinito) il file viaggia come file nella parte `file` della richiesta, fino a 100 MB; la variabile `file` ha `name`, `type` e `size`, e ogni voce del corpo (per esempio `"body": "{{ file }}"`) diventa una parte di testo. In **base64** (`uploadAs: "base64"`) il contenuto sta in `file.content` dentro il corpo JSON, fino a 10 MB.
+- Il valore del campo diventa `{ name, type, size }` più la risposta del servizio (per esempio l'`id`). Senza `upload` il valore contiene anche `content` (base64, fino a 10 MB).
+- La porta `DataClient` riceve il file in `DataRequest.file`; `HttpDataClient` lo invia come `FormData`.
 - Il nome del file è sempre mostrato come testo.
 
 ### 2.9 Griglia a colonne nel form
@@ -148,7 +157,7 @@ Mentre l'utente scrive, il campo esegue il data source `source` (GET) con la var
   "fields": [{ "name": "descrizione", "type": "text", "required": true }, { "name": "importo", "type": "number" }] }
 ```
 
-Il valore è un elenco di oggetti. Ogni riga ha i propri campi (solo tipi semplici: `text`, `number`, `select`, `checkbox`, `date`, `textarea`, `switch`) e un pulsante per toglierla; sotto c'è il pulsante per aggiungerne una. Obbligatorietà e regole di validazione valgono riga per riga.
+Il valore è un elenco di oggetti. Ogni riga ha i propri campi (`text`, `number`, `select`, `checkbox`, `date`, `textarea`, `switch`, `lookup`, `file`; niente righe annidate) e un pulsante per toglierla; sotto c'è il pulsante per aggiungerne una. Obbligatorietà e regole di validazione valgono riga per riga; regole e data source dei campi della riga vedono la riga in `item`. Un form con righe ripetibili si allarga fino a 880 px.
 
 ### 2.11 Dialog con form
 
@@ -197,6 +206,8 @@ Indicatore dei passi in alto, contenuto del passo corrente, pulsanti Indietro e 
 
 Il data source restituisce i nodi radice con i figli annidati. La scelta di un nodo scrive la sua chiave nello stato (`bind`) ed esegue `onSelect` con il nodo in `row`. Con `searchable` compare un campo che evidenzia e apre i rami corrispondenti.
 
+Da tastiera segue il modello WAI-ARIA «tree»: frecce su e giù tra i nodi visibili, destra apre il ramo o entra nel primo figlio, sinistra chiude il ramo o risale al genitore, Home e Fine, Invio o spazio scelgono; un solo nodo alla volta si raggiunge con Tab.
+
 ### 2.16 Calendario
 
 ```json
@@ -210,12 +221,13 @@ Vista mensile con gli eventi nei giorni (al massimo tre, poi «+n»). Cambiando 
 ### 2.17 Grafici
 
 ```json
-{ "type": "chart", "kind": "bar", "source": "vendite", "categoryField": "mese",
-  "series": [{ "field": "attive", "label": "Attive" }, { "field": "passive", "label": "Passive" }],
-  "format": "currency", "height": 280 }
+{ "type": "chart", "kind": "bar", "stacked": true, "source": "vendite", "categoryField": "mese", "categoryFormat": "month",
+  "series": [{ "field": "attive", "label": "Attive" }, { "field": "passive", "label": "Passive", "tone": "danger" },
+             { "field": "margine", "label": "Margine", "kind": "line", "axis": "right" }],
+  "format": "currency", "rightFormat": "percent", "height": 280 }
 ```
 
-Tipi `bar`, `line` e `pie`, disegnati in SVG dalla piattaforma (nessuna libreria esterna) con i colori del tema. Ogni grafico ha una legenda, i valori al passaggio del mouse e, per l'accessibilità, una tabella equivalente leggibile dagli screen reader.
+Tipi `bar`, `line` e `pie`, disegnati in SVG dalla piattaforma (nessuna libreria esterna) con i colori del tema. Le barre possono essere affiancate o impilate (`stacked`, i negativi verso il basso); una serie può stare su un secondo asse a destra (`axis: "right"`, formato `rightFormat`) e avere un suo tipo (`kind`), per grafici combinati come barre più una linea. Ogni grafico ha una legenda, i valori al passaggio del mouse e, per l'accessibilità, una tabella equivalente leggibile dagli screen reader.
 
 ### 2.18 Datatable
 
@@ -235,15 +247,18 @@ Tabella per analizzare in pagina un insieme di righe già caricato: ogni colonna
 - **Ordinamento** su una colonna alla volta, come nella tabella.
 - **Raggruppamento**: l'utente sceglie una o più colonne `groupable` (in ordine) da un selettore sopra la tabella; `groupBy` è la scelta iniziale. Ogni gruppo ha un'intestazione con il valore, il numero di righe e i totali delle colonne con `aggregate`; i gruppi si aprono e chiudono.
 - Totale generale in fondo, paginazione in pagina (`pageSize`), azioni di riga come nella tabella.
-- Filtri, ordinamento e gruppi lavorano sulle righe caricate: è pensata per insiemi fino a qualche migliaio di righe; per volumi maggiori si usa `table` con paginazione e filtri lato server.
+- Filtri, ordinamento e gruppi lavorano sulle righe caricate. Si disegna solo la pagina corrente, i testi delle celle si calcolano una volta per riga e il filtro di testo aspetta 200 ms di pausa: con 20.000 righe, nel browser, ordinare richiede circa 20 ms e filtrare circa 40 ms oltre l'attesa. Per archivi da centinaia di migliaia di righe si usa `table` con paginazione, filtri e ordinamento lato server.
 
 ## 3. Note di realizzazione e limiti noti
 
 - **Caricamento dei data source.** Un data source GET si ricarica da solo solo se cambia la richiesta risolta (URL e parametri). Un cambiamento dello stato che non tocca la richiesta (una selezione, un passo della procedura, un nodo scelto) non provoca nuove chiamate; per ricaricare comunque si usa il passo `refresh`.
 - **Espressioni prima dei dati.** Una variabile di stato che non esiste ancora fa fallire l'espressione, e l'errore finisce nelle segnalazioni tecniche: nelle condizioni si usa `has(state.x)`. Nelle mappe di parametri di `t()` con valori di tipo diverso serve `dyn(...)`; per i numeri formattati nella lingua si scrive `{n, number}`.
-- **Lookup.** Se il valore iniziale non è tra i risultati caricati, il campo mostra il valore stesso (per esempio l'id) finché l'utente non cerca.
-- **File.** Il contenuto viaggia in base64 nel corpo JSON, adatto a file piccoli (fino a 10 MB); per file più grandi servirà un caricamento multipart nella porta `DataClient`.
-- **Righe ripetibili.** Solo campi semplici nelle righe (niente lookup, file o righe annidate).
-- **Albero.** La scelta di un nodo funziona anche da tastiera; aprire e chiudere i rami resta col mouse (pulsante di NG-ZORRO).
-- **Datatable.** Lavora sulle righe caricate: pensata per qualche migliaio di righe al massimo; per volumi maggiori si usa `table` con paginazione, filtri e ordinamento lato server.
-- **Grafici.** Disegnati dalla piattaforma in SVG: barre raggruppate, linee e ciambella; niente assi doppi, barre impilate o zoom.
+- **Variabili dei campi lookup e file.** Nei data source esistono sempre `search` e `lookupKey` (nulle finché non servono); `file` esiste nei data source di `upload`.
+- **Lookup.** Il testo di un valore non caricato si risolve solo se il data source usa `{{ lookupKey }}`; altrimenti il campo mostra il valore stesso finché l'utente non cerca.
+- **Righe ripetibili.** Niente righe annidate dentro una riga.
+- **Datatable.** Lavora sulle righe caricate (provata fino a 50.000 righe nelle funzioni e 20.000 nel componente); oltre, `table` con le operazioni lato server.
+- **Grafici.** Niente zoom, aree riempite o più di due assi.
+
+### 3.1 Limiti superati (ottobre 2026)
+
+Dopo la prima consegna sono stati risolti: testo dei valori non caricati nel lookup (`lookupKey`); file in multipart fino a 100 MB; lookup e file nelle righe ripetibili; albero del tutto usabile da tastiera; datatable per decine di migliaia di righe; barre impilate, asse destro e grafici combinati.

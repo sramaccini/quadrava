@@ -102,7 +102,7 @@ Key design choices:
 }
 ```
 
-**Components** (node `type`): `section`, `text`, `button`, `filterBar`, `table`, `dataTable`, `form`, `tabs`, `detail`, `alert`, `stats`, `wizard`, `tree`, `calendar`, `chart`. Forms and filters support `text`, `number`, `select`, `checkbox`, `date`, `textarea`, `datetime`, `radio`, `switch`, `multiselect`, `lookup` (search on a data source), `file` and `repeater` (repeatable rows) fields, required fields, CEL validation rules, conditional visibility / read-only state and a column grid. Tables add sorting (in page or server side), row selection with bulk actions, row-action menus, expandable detail rows, clickable cells and a totals row; the data table filters, sorts and groups the loaded rows. Table columns and detail fields support cell formats (`number`, `currency`, `percent`, `date`, `datetime`, `boolean`, `badge`). The component catalogue ([docs/catalogo-componenti.md](docs/catalogo-componenti.md), in Italian) lists what exists and specifies what is being built.
+**Components** (node `type`): `section`, `text`, `button`, `filterBar`, `table`, `dataTable`, `form`, `tabs`, `detail`, `alert`, `stats`, `wizard`, `tree`, `calendar`, `chart`. Forms and filters support `text`, `number`, `select`, `checkbox`, `date`, `textarea`, `datetime`, `radio`, `switch`, `multiselect`, `lookup` (search on a data source, which also resolves the label of an unloaded value through `{{ lookupKey }}`), `file` (uploaded as multipart up to 100 MB, or base64) and `repeater` (repeatable rows, which may contain lookups and files) fields, required fields, CEL validation rules, conditional visibility / read-only state and a column grid. Tables add sorting (in page or server side), row selection with bulk actions, row-action menus, expandable detail rows, clickable cells and a totals row; the data table filters, sorts and groups the loaded rows (tens of thousands of rows). Charts draw grouped or stacked bars, lines and doughnuts, with an optional right axis and combined bar/line series; the tree view is fully keyboard operable. Table columns and detail fields support cell formats (`number`, `currency`, `percent`, `date`, `datetime`, `boolean`, `badge`). The component catalogue ([docs/catalogo-componenti.md](docs/catalogo-componenti.md), in Italian) lists what exists and specifies what is being built.
 
 **Actions** are sequences of steps: `set` (screen state), `call` (a data source, with `onError`), `refresh`, `navigate`, `toast`, `confirm` (stops the sequence silently if the user cancels), `dialog` (a modal form whose submit steps see `form`; cancelling stops the sequence). GET data sources reload by themselves only when their resolved request (URL and parameters) changes.
 
@@ -207,7 +207,7 @@ npm run schema:check                  # generated schema constants are in sync
 npm run validate:examples             # examples are valid
 ```
 
-At the time of writing there are **359 automated tests**: schema 60, expressions 39, core 60, components 115, services 18, runtime 65, editor 2. They run in jsdom, so layout, real focus handling and pixel-level rendering are **not** covered; see the development guide for the helpers that make NG-ZORRO overlays testable.
+At the time of writing there are **368 automated tests**: schema 60, expressions 39, core 60, components 123, services 19, runtime 65, editor 2. They run in jsdom, so layout, real focus handling and pixel-level rendering are **not** covered; see the development guide for the helpers that make NG-ZORRO overlays testable.
 
 ## Security model
 
