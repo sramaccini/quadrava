@@ -1,4 +1,4 @@
-import { distinctValues, filterRows, flattenGroups, groupRows, isActiveFilter, type DisplayItem } from './table-data';
+import { distinctValues, filterRows, flattenGroups, groupRows, isActiveFilter, sortRows, type DisplayItem } from './table-data';
 
 describe('datatable: filtri e gruppi', () => {
   const rows = [
@@ -42,5 +42,16 @@ describe('datatable: filtri e gruppi', () => {
       items.map((i) => (i.kind === 'group' ? `${'.'.repeat(i.group.level)}[${String(i.group.value)}]` : `${'.'.repeat(i.level)}#${String(i.row['id'])}`));
     expect(outline(flattenGroups(groups, new Set(), 2))).toEqual(['[Banca]', '.[Affitti]', '..#1', '.[Incassi]', '..#3', '.[Spese]', '..#4', '[Cassa]', '.[Spese]', '..#2']);
     expect(outline(flattenGroups(groups, new Set([groups[0].key]), 2))).toEqual(['[Banca]', '[Cassa]', '.[Spese]', '..#2']);
+  });
+
+  it('50.000 righe: filtro, ordinamento, gruppi e appiattimento in tempi da interfaccia', () => {
+    const big = Array.from({ length: 50000 }, (_, i) => ({ id: i, conto: ['A', 'B', 'C'][i % 3], cat: String(i % 40), importo: (i * 7919) % 10000, nota: 'riga ' + i }));
+    const t0 = performance.now();
+    const filtered = filterRows(big, { importo: { kind: 'number', from: 1000, to: null }, nota: { kind: 'text', text: '9' } }, (r, f) => String(r[f]));
+    const sorted = sortRows(filtered, { field: 'importo', direction: 'desc' });
+    const items = flattenGroups(groupRows(sorted, ['conto', 'cat']), new Set(), 2);
+    const elapsed = performance.now() - t0;
+    expect(items.length).toBeGreaterThan(filtered.length);
+    expect(elapsed).toBeLessThan(2000);
   });
 });

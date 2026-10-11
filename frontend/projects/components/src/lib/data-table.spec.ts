@@ -58,12 +58,12 @@ describe('datatable', () => {
     const input = text.querySelector('input') as HTMLInputElement;
     input.value = 'banco';
     input.dispatchEvent(new Event('input'));
-    await h.settle();
+    await h.until(() => bodyRows(h).length === 1, 'filtro di testo (dopo la pausa)');
     expect(bodyRows(h).map((r) => r[3])).toEqual(['Vendita al banco']);
     expect(header(h, 'Nota').querySelector('nz-filter-trigger .active, nz-filter-trigger .ant-table-filter-trigger.active')).not.toBeNull();
     input.value = '';
     input.dispatchEvent(new Event('input'));
-    await h.settle();
+    await h.until(() => bodyRows(h).length === 5, 'filtro di testo tolto');
     const select = await openFilter(h, 'Conto');
     const options = [...select.querySelectorAll<HTMLElement>('label[nz-checkbox]')];
     expect(options.map((o) => plain(o.textContent))).toEqual(['Banca', 'Cassa']);
@@ -109,5 +109,38 @@ describe('datatable', () => {
     (h.el.querySelectorAll('lc-data-table .ant-pagination-item')[1] as HTMLElement).click();
     await h.settle();
     expect(bodyRows(h)).toHaveLength(2);
+  });
+
+  describe('grandi volumi', () => {
+    const many = Array.from({ length: 20000 }, (_, i) => ({
+      id: i,
+      conto: ['Banca A', 'Banca B', 'Cassa'][i % 3],
+      categoria: ['Affitti', 'Utenze', 'Stipendi', 'Incassi', 'Fornitori', 'Varie'][i % 6],
+      importo: ((i * 37) % 5000) - 2500,
+      data: `2026-${String(1 + (i % 12)).padStart(2, '0')}-${String(1 + (i % 28)).padStart(2, '0')}`,
+      nota: `Movimento numero ${i}`,
+    }));
+
+    it('20.000 righe: si disegna solo la pagina; gruppi, filtri e ordinamento restano rapidi', async () => {
+      const started = performance.now();
+      const h = await renderScreen({ components: [table({ groupBy: ['conto', 'categoria'] })], dataSources, respond: () => many });
+      await h.until(() => bodyRows(h).length === 10, 'prima pagina');
+      const firstRender = performance.now() - started;
+      expect(count(h)).toBe('20000 di 20000 righe');
+      expect(h.el.querySelectorAll('lc-data-table tbody tr')).toHaveLength(10);
+      // Filtro di testo, ordinamento e cambio di raggruppamento su tutte le righe.
+      const t0 = performance.now();
+      const text = await openFilter(h, 'Nota');
+      const input = text.querySelector('input') as HTMLInputElement;
+      input.value = 'numero 19';
+      input.dispatchEvent(new Event('input'));
+      await h.until(() => count(h) === '1111 di 20000 righe', 'filtro');
+      header(h, 'Importo').click();
+      await h.settle();
+      const elapsed = performance.now() - t0;
+      // Limiti larghi: jsdom è molto più lento di un browser vero; servono a cogliere un peggioramento di scala.
+      expect(firstRender).toBeLessThan(8000);
+      expect(elapsed).toBeLessThan(4000);
+    }, 30000);
   });
 });

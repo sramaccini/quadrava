@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, input, linkedSignal, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { I18n, formatValue, runSteps, type FormatLabels, type FormattedValue, type ScreenRuntime, type Scope } from 'core';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
@@ -18,6 +18,8 @@ import { TONE_COLORS, nextId, parseIsoDate, toIsoDate } from './shared';
 import { aggregate, distinctValues, filterRows, flattenGroups, groupRows, isActiveFilter, sortRows, type ColumnFilter, type DisplayItem, type Row } from './table-data';
 
 const DEFAULT_PAGE_SIZE = 10;
+/** Attesa dopo l'ultima battuta prima di applicare un filtro di testo (con decine di migliaia di righe conta). */
+const TEXT_FILTER_DELAY_MS = 200;
 type NzSortOrder = 'ascend' | 'descend' | null;
 
 /**
@@ -25,6 +27,8 @@ type NzSortOrder = 'ascend' | 'descend' | null;
  * (testo, scelta, intervallo numerico o di date), essere ordinata e servire per raggruppare (fino a tre livelli,
  * scelti dall'utente); i gruppi mostrano conteggio e totali delle colonne con `aggregate` e si aprono e chiudono.
  * Paginazione in pagina, totale generale in fondo, azioni di riga come nella tabella.
+ * Pensata per decine di migliaia di righe: si disegna solo la pagina corrente, i testi formattati delle celle si
+ * calcolano una volta per riga e lingua, e il filtro di testo aspetta una breve pausa tra le battute.
  */
 @Component({
   selector: 'lc-data-table',
@@ -97,7 +101,7 @@ type NzSortOrder = 'ascend' | 'descend' | null;
                         <div class="filter-panel" role="group" [attr.aria-label]="i18n.t('lc.filterColumn', { label: label(column) })">
                           @switch (column.filter) {
                             @case ('text') {
-                              <input nz-input type="search" [placeholder]="i18n.t('lc.filterContains')" [attr.aria-label]="i18n.t('lc.filterContains')" [ngModel]="textFilter(column)" (ngModelChange)="setFilter(column, { kind: 'text', text: $event })" />
+                              <input nz-input type="search" [placeholder]="i18n.t('lc.filterContains')" [attr.aria-label]="i18n.t('lc.filterContains')" [ngModel]="textFilter(column)" (ngModelChange)="setTextFilter(column, $event)" />
                             }
                             @case ('select') {
                               <div class="options">
@@ -293,9 +297,20 @@ export class DataTableComponent {
     return this.format(row[column.field], column);
   }
 
+  /** Testi mostrati già calcolati, per riga e campo; si ricominciano al cambio di lingua. */
+  private readonly texts = computed(() => (this.i18n.locale(), new WeakMap<Row, Map<string, string>>()));
+
   private shownText(row: Row, field: string): string {
-    const column = this.byField().get(field);
-    return column ? this.format(row[field], column).text : String(row[field] ?? '');
+    const cache = this.texts();
+    let byField = cache.get(row);
+    if (!byField) cache.set(row, (byField = new Map()));
+    let text = byField.get(field);
+    if (text === undefined) {
+      const column = this.byField().get(field);
+      text = column ? this.format(row[field], column).text : String(row[field] ?? '');
+      byField.set(field, text);
+    }
+    return text;
   }
 
   protected groupLabel(field: string, value: unknown): string {
@@ -355,6 +370,14 @@ export class DataTableComponent {
   protected isFiltered(column: DataColumnDefinition): boolean {
     return isActiveFilter(this.filters()[column.field]);
   }
+  private textTimer: ReturnType<typeof setTimeout> | null = null;
+  private readonly cleanup = inject(DestroyRef).onDestroy(() => this.textTimer && clearTimeout(this.textTimer));
+
+  protected setTextFilter(column: DataColumnDefinition, text: string): void {
+    if (this.textTimer) clearTimeout(this.textTimer);
+    this.textTimer = setTimeout(() => this.setFilter(column, { kind: 'text', text }), TEXT_FILTER_DELAY_MS);
+  }
+
   protected setFilter(column: DataColumnDefinition, filter: ColumnFilter): void {
     this.filters.update((all) => ({ ...all, [column.field]: filter }));
   }

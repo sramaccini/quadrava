@@ -234,7 +234,12 @@ export class MockDataClient extends DataClient {
         { id: 'per', nome: 'Personale', voci: 35, figli: [{ id: 'per-tra', nome: 'Trasferte', voci: 25, figli: [leaf('per-tra-tre', 'Treni', 10), leaf('per-tra-hot', 'Hotel', 15)] }, leaf('per-for', 'Formazione', 10)] },
       ];
     }
-    if (path === '/api/movimenti' && req.method === 'GET') return this.movements.map((m) => ({ ...m }));
+    if (path === '/api/movimenti' && req.method === 'GET') {
+      // Con quanti=N (fino a 50.000) un archivio sintetico più grande, per provare la datatable con molti dati.
+      const quanti = Math.min(50000, Number(req.query?.['quanti'] ?? 0));
+      if (quanti > 0) return Array.from({ length: quanti }, (_, i) => ({ ...this.movements[i % this.movements.length], id: 100000 + i, descrizione: `Movimento ${i + 1}` }));
+      return this.movements.map((m) => ({ ...m }));
+    }
     if (path === '/api/vendite-mensili' && req.method === 'GET') {
       // Dodici mesi del 2026 con un andamento stagionale riconoscibile.
       return Array.from({ length: 12 }, (_, i) => ({
