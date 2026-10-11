@@ -142,13 +142,16 @@ describe('Vetrina: componenti avanzati', () => {
     it('lookup: cerca i clienti mentre si scrive, nel form e nei filtri', { timeout: 20000 }, async () => {
       const { el, until, settle } = await openShowcase('/vetrina/vetrina-campi');
       const form = el.querySelectorAll('main lc-form')[1] as HTMLElement;
+      // Il form parte con il cliente 12, che non è tra le prime righe: il campo ne mostra comunque il nome.
+      await until(() => form.querySelector('lc-lookup .ant-select-selection-item')?.textContent?.trim() === 'Marino Edilizia', 'nome del valore iniziale');
       await openSelect(form.querySelector('lc-lookup nz-select')!, settle);
       const search = form.querySelector('input.ant-select-selection-search-input') as HTMLInputElement;
       search.value = 'mila';
       search.dispatchEvent(new Event('input'));
       const options = (): HTMLElement[] => [...document.querySelectorAll<HTMLElement>('.ant-select-item-option')];
-      await until(() => options().length === 1 && options()[0].textContent?.trim() === 'Rossi Srl', 'risultato della ricerca');
-      options()[0].click();
+      // Il valore già scelto resta in elenco accanto ai risultati della ricerca.
+      await until(() => options().map((o) => o.textContent?.trim()).join('|') === 'Marino Edilizia|Rossi Srl', 'risultato della ricerca');
+      options()[1].click();
       ([...form.querySelectorAll('button')].find((b) => b.textContent?.trim() === 'Conferma') as HTMLButtonElement).click();
       await until(() => !!document.querySelector('.ant-message-notice'), 'messaggio');
       expect(document.querySelector('.ant-message-notice')?.textContent).toContain('Cliente scelto: id 1');

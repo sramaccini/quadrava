@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { I18n, type ScreenRuntime, type Scope } from 'core';
 import { NzSelectModule } from 'ng-zorro-antd/select';
@@ -15,7 +15,10 @@ const DEBOUNCE_MS = 300;
 /**
  * Campo `lookup`: propone le righe di un data source GET cercate mentre l'utente scrive (variabile `search`).
  * Il valore è `valueField` della riga scelta, il testo mostrato `labelField`. Una risposta più vecchia
- * di quella dell'ultima ricerca viene scartata. Usato sia dal form sia dalla barra dei filtri.
+ * di quella dell'ultima ricerca viene scartata. Se il valore corrente non è tra le righe note (per esempio in un
+ * form di modifica) e il data source usa `{{ lookupKey }}`, il campo chiede al servizio la riga di quel valore per
+ * mostrarne il testo. Le richieste del campo non cambiano le righe che il data source mostra agli altri componenti.
+ * Usato dal form, dalla barra dei filtri e dalle righe ripetibili.
  */
 @Component({
   selector: 'lc-lookup',
@@ -61,6 +64,8 @@ export class LookupComponent {
   private readonly labels = signal<ReadonlyMap<unknown, string>>(new Map());
   private timer: ReturnType<typeof setTimeout> | null = null;
   private sequence = 0;
+  /** Valori di cui si è già chiesto il testo al servizio (una volta sola per valore). */
+  private readonly asked = new Set<unknown>();
 
   private readonly spec = computed(() => {
     const lookup = this.field().lookup;
@@ -78,8 +83,30 @@ export class LookupComponent {
     return options;
   });
 
+  /** Il data source sa cercare per chiave? Solo allora vale la pena chiedere il testo di un valore. */
+  private readonly resolvable = computed(() => JSON.stringify(this.runtime().definition.dataSources?.[this.spec().source] ?? {}).includes('lookupKey'));
+
   constructor() {
     inject(DestroyRef).onDestroy(() => this.timer && clearTimeout(this.timer));
+    // Valore senza testo noto: si chiede al servizio la sua riga (dopo che il data source ha caricato le sue righe).
+    effect(() => {
+      const value = this.value();
+      if (value === null || value === undefined || value === '' || !this.resolvable()) return;
+      const status = this.runtime().source(this.spec().source).status;
+      if (status === 'loading') return;
+      const known = this.labels().has(value) || this.options().some((o) => o.value === value && o.label !== String(value));
+      if (known) return;
+      untracked(() => void this.resolve(value));
+    });
+  }
+
+  private async resolve(value: unknown): Promise<void> {
+    if (this.asked.has(value)) return;
+    this.asked.add(value);
+    const { source, valueField, labelField } = this.spec();
+    const result = await this.runtime().query(source, { search: null, lookupKey: value }, this.scope());
+    const row = result.ok ? rowsOf(result.data).find((r) => r[valueField] === value) : undefined;
+    if (row) this.labels.update((map) => new Map(map).set(value, textOf(row[labelField], value)));
   }
 
   protected search(text: string): void {
@@ -99,7 +126,7 @@ export class LookupComponent {
   private async run(text: string): Promise<void> {
     const seq = ++this.sequence;
     const { source, valueField, labelField } = this.spec();
-    const result = await this.runtime().execute(source, { search: text }, this.scope());
+    const result = await this.runtime().query(source, { search: text }, this.scope());
     if (seq !== this.sequence) return;
     this.loading.set(false);
     const rows = result.ok ? rowsOf(result.data) : [];

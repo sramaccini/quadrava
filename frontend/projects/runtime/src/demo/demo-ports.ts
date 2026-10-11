@@ -284,6 +284,9 @@ export class MockDataClient extends DataClient {
     }
     if (path === '/api/clienti' && req.method === 'GET') {
       // Ricerca senza distinzione tra maiuscole e minuscole su nome e città; al massimo 8 risultati.
+      // Con id: la riga di quel cliente (per mostrare il testo di un valore già scelto).
+      const id = req.query?.['id'];
+      if (id !== undefined) return this.clients.filter((c) => String(c.id) === String(id));
       const q = String(req.query?.['q'] ?? '').toLowerCase();
       return this.clients.filter((c) => !q || c.nome.toLowerCase().includes(q) || c.citta.toLowerCase().includes(q)).slice(0, 8);
     }

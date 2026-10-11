@@ -20,7 +20,8 @@
       "method": "GET",
       "url": "/api/clienti",
       "params": {
-        "q": "{{ search }}"
+        "q": "{{ search }}",
+        "id": "{{ lookupKey }}"
       }
     },
     "caricaAllegato": {
@@ -134,7 +135,7 @@
         {
           "id": "spiega-lookup",
           "type": "text",
-          "text": "{{ t('vetrina_campi.lookup_spiega', 'Scrivi almeno due lettere del nome o della città: il campo interroga il servizio dei clienti e propone i risultati. Il valore salvato è l’id del cliente.') }}"
+          "text": "{{ t('vetrina_campi.lookup_spiega', 'Scrivi almeno due lettere del nome o della città: il campo interroga il servizio dei clienti e propone i risultati. Il valore salvato è l’id del cliente; il form parte con un cliente che non è tra i primi risultati, e il campo ne chiede il nome al servizio.') }}"
         },
         {
           "id": "form-lookup",
@@ -163,7 +164,10 @@
                 }
               ]
             }
-          ]
+          ],
+          "initial": {
+            "cliente": 12
+          }
         }
       ]
     },

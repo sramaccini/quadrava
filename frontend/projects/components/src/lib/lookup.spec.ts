@@ -72,4 +72,24 @@ describe('campo lookup', () => {
     await h.settle();
     expect(options()).toEqual(['Bianchi SpA']);
   });
+
+  it('un valore iniziale che non è tra le righe caricate mostra il suo testo, chiesto al servizio con lookupKey', async () => {
+    const many = [...clients, { id: 42, nome: 'Zeta Logistica' }];
+    const h = await renderScreen({
+      components: [{ ...form, initial: { cliente: 42 } } as NodeDefinition],
+      dataSources: {
+        ...dataSources,
+        clienti: { type: 'rest', method: 'GET', url: '/api/clienti', params: { q: '{{ search }}', id: '{{ lookupKey }}' } },
+      },
+      // Senza filtri il servizio restituisce solo le prime righe: il cliente 42 non c'è.
+      respond: (r) => {
+        if (r.query?.['id'] !== undefined) return many.filter((c) => c.id === r.query?.['id']);
+        return clients;
+      },
+    });
+    await h.until(() => plain(h.el.querySelector('lc-lookup .ant-select-selection-item')?.textContent) === 'Zeta Logistica', 'testo del valore');
+    // Una sola richiesta per chiave, e le righe del data source per gli altri componenti non cambiano.
+    expect(h.requests.filter((r) => r.query?.['id'] === 42)).toHaveLength(1);
+    expect(h.requests[0].query).toEqual({});
+  });
 });

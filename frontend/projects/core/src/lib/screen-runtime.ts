@@ -214,6 +214,25 @@ export class ScreenRuntime {
     return this.run(name, built.request);
   }
 
+  /**
+   * Esegue un data source e restituisce la risposta senza toccare il suo stato condiviso (le righe mostrate dagli altri
+   * componenti restano quelle di prima). Serve per richieste di servizio, come risolvere il testo di un valore.
+   */
+  async query(name: string, args: Record<string, unknown> = {}, scope: Scope = {}): Promise<CallResult> {
+    const built = this.build(name, args, scope);
+    if (!built.ok) {
+      this.report(`call ${name}`, built.error);
+      return { ok: false, error: built.error };
+    }
+    try {
+      return { ok: true, data: await this.deps.data.request(built.request) };
+    } catch (e) {
+      const error = e instanceof Error ? e.message : String(e);
+      this.report(`data source ${name}`, error);
+      return { ok: false, error };
+    }
+  }
+
   /** Ricarica un data source GET. */
   async refresh(name: string): Promise<CallResult> {
     const source = this.definition.dataSources?.[name];
@@ -301,8 +320,9 @@ export class ScreenRuntime {
     const source = this.definition.dataSources?.[name];
     if (!source) return { ok: false, error: `data source sconosciuto: ${name}` };
     // Gli argomenti hanno la precedenza sulle variabili del punto da cui parte la chiamata (row, form).
-    // `search` (testo cercato da un campo lookup) esiste sempre, nullo finché nessuno cerca.
-    const ctx = this.context({ search: null, ...scope, ...args });
+    // Le variabili dei campi lookup esistono sempre, nulle finché non servono: `search` (testo cercato) e
+    // `lookupKey` (valore di cui serve il testo, quando non è tra le righe caricate).
+    const ctx = this.context({ search: null, lookupKey: null, ...scope, ...args });
     const url = this.resolveUrl(source.url, ctx);
     if (!url.ok) return url;
     const resolved = (this.resolveIn(source.params ?? {}, ctx) ?? {}) as Record<string, unknown>;

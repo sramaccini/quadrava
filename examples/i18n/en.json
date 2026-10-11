@@ -215,7 +215,7 @@
   "vetrina_campi.invia": "Send",
   "vetrina_campi.inviato": "Priority {p}, {u, select, true {express shipping} other {standard shipping}}, notifications on {n} channels",
   "vetrina_campi.lookup": "Data-source lookup",
-  "vetrina_campi.lookup_spiega": "Type at least two letters of the name or city: the field queries the customer service and suggests the results. The saved value is the customer id.",
+  "vetrina_campi.lookup_spiega": "Type at least two letters of the name or city: the field queries the customer service and suggests the results. The saved value is the customer id; the form starts with a customer that is not among the first results, and the field asks the service for its name.",
   "vetrina_campi.modifica": "Edit",
   "vetrina_campi.modifica_contatto": "Edit {nome}",
   "vetrina_campi.nome_cognome": "Full name",

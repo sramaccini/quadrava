@@ -15,6 +15,10 @@ export interface EvalContext {
   form?: Record<string, unknown>;
   /** Valore del campo in validazione. */
   value?: unknown;
+  /** Testo cercato in un campo lookup (nei parametri del suo data source). */
+  search?: string | null;
+  /** Valore di un campo lookup di cui serve il testo (nei parametri del suo data source). */
+  lookupKey?: unknown;
   /** Riga corrente di un campo a righe ripetibili (nelle sue regole di validazione). */
   item?: Record<string, unknown>;
   /** Righe selezionate di una tabella (nelle azioni multiple). */
