@@ -11,6 +11,7 @@
 .log .none { list-style: none; margin-left: -20px; color: var(--lc-color-muted); font-family: var(--lc-font-family); }
 .stale { margin: 8px 12px 0; }
 .stage { flex: 1; min-height: 0; overflow: auto; background: var(--lc-color-background); }
-.frame { margin: 0 auto; min-height: 100%; background: var(--lc-color-background); }
+.frame { position: relative; margin: 0 auto; min-height: 100%; background: var(--lc-color-background); }
+.highlight { position: absolute; pointer-events: none; border: 2px dashed var(--lc-color-primary); border-radius: var(--lc-radius); }
 .frame.narrow { box-shadow: 0 0 0 1px var(--lc-color-border); }
 .empty { padding: 24px; color: var(--lc-color-muted); }

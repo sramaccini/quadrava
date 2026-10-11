@@ -168,6 +168,25 @@ describe('editor delle schermate', () => {
     expect(store.issues()).toEqual([]);
   });
 
+  it('dall’anteprima alla struttura: Alt+clic o modalità selezione scelgono il componente senza attivarlo', async () => {
+    (el.querySelector('ed-palette button[data-type="button"]') as HTMLButtonElement).click();
+    store.select([]);
+    (el.querySelector('ed-palette button[data-type="alert"]') as HTMLButtonElement).click();
+    await until(() => !!preview().querySelector('lc-node[data-node-id="button-1"] button'), 'pulsante nell’anteprima');
+    expect(store.selection()).toEqual(['components', 1]);
+    const button = preview().querySelector('lc-node[data-node-id="button-1"] button') as HTMLButtonElement;
+    button.dispatchEvent(new MouseEvent('click', { bubbles: true, altKey: true }));
+    await settle();
+    expect(store.selection()).toEqual(['components', 0]);
+    expect(document.querySelector('.ant-message-notice')).toBeNull();
+    // Modalità selezione: un clic normale seleziona il messaggio.
+    ([...el.querySelectorAll('ed-preview .bar button')].find((b) => b.textContent?.includes('Seleziona')) as HTMLButtonElement).click();
+    await settle();
+    (preview().querySelector('lc-node[data-node-id="alert-1"] lc-alert') as HTMLElement).dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await settle();
+    expect(store.selection()).toEqual(['components', 1]);
+  });
+
   it('apre un esempio, e da tastiera elimina il nodo selezionato', async () => {
     store.load(layout as never);
     await until(() => outline().length > 5, 'struttura dell’esempio');

@@ -8,13 +8,15 @@ import type { Scope } from './types';
 
 /**
  * Disegna un nodo scegliendo il componente dal catalogo. Qui si applica in modo centralizzato
- * `visibleIf`/`hiddenIf`: un componente non può dimenticarsi di rispettarli.
+ * `visibleIf`/`hiddenIf`: un componente non può dimenticarsi di rispettarli. Gli attributi `data-node-id` e
+ * `data-node-type` servono all'anteprima dell'editor (selezione dal disegno) e ai test; non contengono dati.
  */
 @Component({
   selector: 'lc-node',
   imports: [NgComponentOutlet, NzTooltipModule],
   styles: `.tip { display: block; } .tip.fit { width: fit-content; }`,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { '[attr.data-node-id]': 'node().id ?? null', '[attr.data-node-type]': 'node().type' },
   template: `
     @if (component(); as c) {
       @if (visible()) {

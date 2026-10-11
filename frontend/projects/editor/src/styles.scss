@@ -7,3 +7,6 @@
 }
 html, body { margin: 0; }
 body { background: var(--lc-color-background); color: var(--lc-color-on-surface); font-family: var(--lc-font-family); font-size: var(--lc-font-size); }
+
+/* Anteprima dell'editor: in modalità selezione i componenti si scelgono con un clic. */
+.frame.selecting lc-node[data-node-id] { cursor: crosshair; }

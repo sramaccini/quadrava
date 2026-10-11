@@ -8,6 +8,9 @@
   <button nz-button nzSize="small" type="button" (click)="showLog.set(!showLog())" [attr.aria-expanded]="showLog()">
     {{ i18n.t('ed.preview.log') }} ({{ log.events().length }})
   </button>
+  <button nz-button nzSize="small" type="button" [nzType]="selectMode() ? 'primary' : 'default'" (click)="selectMode.set(!selectMode())" [attr.aria-pressed]="selectMode()" [attr.title]="i18n.t('ed.preview.selectHint')">
+    <span nz-icon nzType="select"></span>{{ i18n.t('ed.preview.select') }}
+  </button>
   <button nz-button nzSize="small" type="button" (click)="reload()"><span nz-icon nzType="reload"></span>{{ i18n.t('ed.preview.reload') }}</button>
 </div>
 
@@ -33,13 +36,16 @@
 }
 
 <div class="stage">
-  <div class="frame" [style.width.px]="frameWidth()" [class.narrow]="frameWidth() !== null">
+  <div #frame class="frame" [style.width.px]="frameWidth()" [class.narrow]="frameWidth() !== null" [class.selecting]="selectMode()">
     @if (shown(); as definition) {
       @for (v of [version()]; track v) {
         <lc-screen [definition]="definition" [params]="params()" />
       }
     } @else {
       <p class="empty">{{ i18n.t('ed.preview.empty') }}</p>
+    }
+    @if (highlight(); as box) {
+      <div class="highlight" aria-hidden="true" [style.top.px]="box.top - 3" [style.left.px]="box.left - 3" [style.width.px]="box.width + 6" [style.height.px]="box.height + 6"></div>
     }
   </div>
 </div>

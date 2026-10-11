@@ -82,6 +82,29 @@ export class EditorStore {
     this.selection.set(targetAt(this.doc(), path) ? path : []);
   }
 
+  /** Percorso dell'elemento (nodo, scheda, passo) con questo identificativo, o null. */
+  pathOfId(id: string): Path | null {
+    const doc = this.doc();
+    const visit = (value: Json, path: Path): Path | null => {
+      if (Array.isArray(value)) {
+        for (let i = 0; i < value.length; i++) {
+          const found = visit(value[i], [...path, i]);
+          if (found) return found;
+        }
+        return null;
+      }
+      if (!isObject(value)) return null;
+      if (value['id'] === id && targetAt(doc, path)) return path;
+      for (const [key, child] of Object.entries(value)) {
+        if (key === 'dataSources') continue;
+        const found = visit(child, [...path, key]);
+        if (found) return found;
+      }
+      return null;
+    };
+    return visit(doc, []);
+  }
+
   /** Sostituisce il documento registrando il passo nella cronologia. `coalesce` unisce le modifiche ravvicinate alla stessa proprietà. */
   apply(next: Json, options: { select?: Path; coalesce?: string } = {}): void {
     const previous = this.doc();
