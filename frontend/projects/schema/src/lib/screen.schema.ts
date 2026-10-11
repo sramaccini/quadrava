@@ -128,6 +128,9 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
         },
         {
           "$ref": "#/$defs/stepConfirm"
+        },
+        {
+          "$ref": "#/$defs/stepDialog"
         }
       ]
     },
@@ -1069,6 +1072,56 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
             "asc",
             "desc"
           ]
+        }
+      }
+    },
+    "stepDialog": {
+      "type": "object",
+      "required": [
+        "dialog"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "dialog": {
+          "type": "object",
+          "required": [
+            "title",
+            "fields",
+            "onSubmit"
+          ],
+          "additionalProperties": false,
+          "description": "Finestra con un form: i passi di onSubmit vedono i valori in `form`. Se riescono la finestra si chiude e la sequenza prosegue; se l’utente annulla la sequenza si ferma in silenzio.",
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "fields": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/field"
+              }
+            },
+            "initial": {
+              "type": "object",
+              "description": "Valori iniziali con espressioni (per esempio {\"nota\": \"{{ row.nota }}\"})."
+            },
+            "columns": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 4
+            },
+            "submitLabel": {
+              "type": "string"
+            },
+            "onSubmit": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/step"
+              }
+            }
+          }
         }
       }
     }

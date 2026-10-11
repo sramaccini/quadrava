@@ -17,5 +17,6 @@ export * from './lib/detail.component';
 export * from './lib/alert.component';
 export * from './lib/tabs.component';
 export * from './lib/dialog-confirmation';
+export * from './lib/dialog-form';
 export * from './lib/notifier';
 export * from './lib/theme-bridge';

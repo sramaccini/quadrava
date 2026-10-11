@@ -48,6 +48,10 @@ async function runStep(runtime: ScreenRuntime, step: Step, scope: Scope): Promis
     // Se l'utente rinuncia la sequenza si ferma in silenzio: non è un errore.
     return runtime.confirm(step.confirm, scope);
   }
+  if ('dialog' in step) {
+    // Come confirm: se l'utente annulla la sequenza si ferma in silenzio.
+    return runtime.openDialog(step.dialog, scope);
+  }
   if ('toast' in step) {
     runtime.toast(runtime.text(step.toast, scope));
     return true;

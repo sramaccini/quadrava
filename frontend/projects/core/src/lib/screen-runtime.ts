@@ -1,7 +1,7 @@
 import { effect, Injector, signal, computed, untracked, type EffectRef } from '@angular/core';
 import { ExpressionEngine, parseTemplate } from 'expressions';
-import type { NodeDefinition, ScreenDefinition } from 'schema';
-import { Authorization, Confirmation, DataClient, Notifier, RuntimeDiagnostics, ScreenNavigator, UserProvider, type DataRequest } from './ports';
+import type { DialogStep, NodeDefinition, ScreenDefinition } from 'schema';
+import { Authorization, Confirmation, DataClient, FormDialog, Notifier, RuntimeDiagnostics, ScreenNavigator, UserProvider, type DataRequest } from './ports';
 import type { I18n } from './i18n';
 import type { CallResult, DataSourceState, Scope } from './types';
 
@@ -14,6 +14,8 @@ export interface RuntimeDeps {
   diagnostics?: RuntimeDiagnostics | null;
   /** Se manca, i passi `confirm` non procedono (fail-closed). */
   confirmation?: Confirmation | null;
+  /** Se manca, i passi `dialog` non procedono (fail-closed). */
+  formDialog?: FormDialog | null;
   /** Lingua e traduzioni. Se manca, i testi restano in italiano e `t()` usa il ripiego. */
   i18n?: I18n | null;
 }
@@ -214,6 +216,27 @@ export class ScreenRuntime {
       return false;
     }
     return confirmation.confirm(this.text(message, scope));
+  }
+
+  /** Apre una finestra con un form. Senza servizio non si procede; se l'utente annulla restituisce false. */
+  async openDialog(spec: DialogStep['dialog'], scope: Scope = {}): Promise<boolean> {
+    const dialog = this.deps.formDialog;
+    if (!dialog) {
+      this.report('dialog', 'nessun servizio per le finestre con form: azione non eseguita');
+      return false;
+    }
+    return dialog.open({
+      title: this.text(spec.title, scope),
+      form: {
+        type: 'form',
+        fields: spec.fields,
+        initial: spec.initial,
+        columns: spec.columns,
+        actions: [{ label: spec.submitLabel ?? this.systemText('lc.confirm', 'Conferma'), onClick: spec.onSubmit }],
+      },
+      runtime: this,
+      scope,
+    });
   }
 
   toast(message: string, kind: 'info' | 'error' = 'info'): void {

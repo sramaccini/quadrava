@@ -139,4 +139,17 @@ describe('schema dei componenti nuovi', () => {
       expect(issuesOf(form([{ name: 'r', type: 'repeater', maxRows: 0, fields: [{ name: 'x', type: 'text' }] }])).length).toBeGreaterThan(0);
     });
   });
+
+  describe('passo dialog', () => {
+    const button = (onClick: unknown[]) => screen([{ type: 'button', label: 'Apri', onClick }]);
+    it('accetta una finestra con titolo, campi, valori iniziali e passi di invio', () => {
+      expect(issuesOf(button([{ dialog: { title: 'Nota', fields: [{ name: 'testo', type: 'textarea' }], initial: { testo: '{{ row.nota }}' }, columns: 2, submitLabel: 'Salva', onSubmit: [{ call: 'salva' }] } }, { refresh: 'x' }]))).toEqual([]);
+    });
+    it('rifiuta finestre senza titolo, senza campi, senza invio o con proprietà estranee', () => {
+      expect(issuesOf(button([{ dialog: { fields: [{ name: 'a', type: 'text' }], onSubmit: [{ toast: 'x' }] } }])).length).toBeGreaterThan(0);
+      expect(issuesOf(button([{ dialog: { title: 'T', fields: [], onSubmit: [{ toast: 'x' }] } }])).length).toBeGreaterThan(0);
+      expect(issuesOf(button([{ dialog: { title: 'T', fields: [{ name: 'a', type: 'text' }] } }])).length).toBeGreaterThan(0);
+      expect(issuesOf(button([{ dialog: { title: 'T', fields: [{ name: 'a', type: 'text' }], onSubmit: [{ toast: 'x' }], larghezza: 3 } }])).length).toBeGreaterThan(0);
+    });
+  });
 });

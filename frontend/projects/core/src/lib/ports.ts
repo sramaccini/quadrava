@@ -1,4 +1,6 @@
-import type { HttpMethod } from './types';
+import type { FormNode } from 'schema';
+import type { ScreenRuntime } from './screen-runtime';
+import type { HttpMethod, Scope } from './types';
 
 /*
  * Porte (interfacce verso l'esterno). Il core non conosce HTTP, router, notifiche o autenticazione:
@@ -48,4 +50,18 @@ export abstract class RuntimeDiagnostics {
 /** Chiede conferma all'utente prima di un'azione delicata. Risolve true solo se l'utente conferma esplicitamente. */
 export abstract class Confirmation {
   abstract confirm(message: string): Promise<boolean>;
+}
+
+/** Richiesta di una finestra con un form: il form (con l'azione di invio) e il punto della schermata da cui parte. */
+export interface FormDialogRequest {
+  /** Titolo già risolto, da mostrare come testo. */
+  title: string;
+  form: FormNode;
+  runtime: ScreenRuntime;
+  scope: Scope;
+}
+
+/** Finestra con un form. Risolve true se l'utente ha inviato e i passi di invio sono riusciti, false se ha annullato. */
+export abstract class FormDialog {
+  abstract open(request: FormDialogRequest): Promise<boolean>;
 }

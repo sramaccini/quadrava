@@ -107,6 +107,10 @@ export class MockDataClient extends DataClient {
     'Marino Edilizia|Bari', 'Greco Trasporti|Palermo', 'Gallo Energia|Padova', 'Conti Software|Trento',
   ].map((entry, i) => ({ id: i + 1, nome: entry.split('|')[0], citta: entry.split('|')[1] }));
   private attachments = 0;
+  private readonly contacts: { id: number; nome: string; email: string; ruolo: string }[] = [
+    { id: 1, nome: 'Anna Conti', email: 'anna.conti@example.com', ruolo: 'acquisti' },
+    { id: 2, nome: 'Luca Fabbri', email: 'luca.fabbri@example.com', ruolo: 'amministrazione' },
+  ];
   private readonly packages: Package[] = [
     { id: 1, nome: 'Chiusura settembre', descrizione: 'Fatture attive del mese', creato: '2026-10-01' },
     { id: 2, nome: 'Fornitori Q3', descrizione: 'Fatture passive del trimestre', creato: '2026-09-28' },
@@ -192,6 +196,22 @@ export class MockDataClient extends DataClient {
       if (!invoice || invoice.stato !== 'bozza') throw new Error('409');
       invoice.stato = 'inviata';
       return {};
+    }
+    if (path === '/api/contatti' && req.method === 'GET') return this.contacts.map((c) => ({ ...c }));
+    if (path === '/api/contatti' && req.method === 'POST') {
+      const body = req.body ?? {};
+      if (!body['nome'] || !String(body['email'] ?? '').includes('@')) throw new Error('400');
+      const id = Math.max(0, ...this.contacts.map((c) => c.id)) + 1;
+      this.contacts.push({ id, nome: String(body['nome']), email: String(body['email']), ruolo: String(body['ruolo'] ?? 'acquisti') });
+      return { id };
+    }
+    const contact = /^\/api\/contatti\/(\d+)$/.exec(path);
+    if (contact && req.method === 'PUT') {
+      const found = this.contacts.find((c) => c.id === Number(contact[1]));
+      const body = req.body ?? {};
+      if (!found || !body['nome'] || !String(body['email'] ?? '').includes('@')) throw new Error('400');
+      Object.assign(found, { nome: String(body['nome']), email: String(body['email']), ruolo: String(body['ruolo'] ?? found.ruolo) });
+      return { ...found };
     }
     if (path === '/api/allegati' && req.method === 'POST') {
       // Un vero servizio salverebbe il contenuto; qui basta verificare che sia base64 e rispondere con un id.

@@ -28,6 +28,23 @@
       "method": "POST",
       "url": "/api/allegati",
       "body": "{{ file }}"
+    },
+    "contatti": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/contatti"
+    },
+    "creaContatto": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/contatti",
+      "body": "{{ form }}"
+    },
+    "modificaContatto": {
+      "type": "rest",
+      "method": "PUT",
+      "url": "/api/contatti/{{ id }}",
+      "body": "{{ form }}"
     }
   },
   "components": [
@@ -343,6 +360,156 @@
               "onClick": [
                 {
                   "toast": "{{ t('vetrina_campi.righe_salvate', 'Ordine salvato con {n, plural, one {# riga} other {# righe}}', {'n': size(form.righe)}) }}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sezione-dialog",
+      "type": "section",
+      "title": "{{ t('vetrina_campi.dialog', 'Dialog con form') }}",
+      "components": [
+        {
+          "id": "spiega-dialog",
+          "type": "text",
+          "text": "{{ t('vetrina_campi.dialog_spiega', 'Il passo dialog apre una finestra con un form. Se il salvataggio riesce la finestra si chiude e la sequenza prosegue (ricarica e messaggio); Annulla la ferma.') }}"
+        },
+        {
+          "id": "btn-nuovo-contatto",
+          "type": "button",
+          "label": "{{ t('vetrina_campi.nuovo_contatto', 'Nuovo contatto') }}",
+          "onClick": [
+            {
+              "dialog": {
+                "title": "{{ t('vetrina_campi.nuovo_contatto', 'Nuovo contatto') }}",
+                "fields": [
+                  {
+                    "name": "nome",
+                    "type": "text",
+                    "label": "{{ t('vetrina_campi.nome_cognome', 'Nome e cognome') }}",
+                    "required": true
+                  },
+                  {
+                    "name": "email",
+                    "type": "text",
+                    "label": "{{ t('vetrina_campi.email', 'E-mail') }}",
+                    "required": true,
+                    "validate": {
+                      "rule": "{{ value.contains('@') }}",
+                      "message": "{{ t('vetrina_campi.email_non_valida', 'Indirizzo e-mail non valido') }}"
+                    }
+                  },
+                  {
+                    "name": "ruolo",
+                    "type": "radio",
+                    "label": "{{ t('vetrina_campi.ruolo', 'Ruolo') }}",
+                    "options": [
+                      "acquisti",
+                      "amministrazione",
+                      "tecnico"
+                    ],
+                    "optionKey": "valori.ruolo"
+                  }
+                ],
+                "initial": {
+                  "ruolo": "acquisti"
+                },
+                "submitLabel": "{{ t('comune.salva', 'Salva') }}",
+                "onSubmit": [
+                  {
+                    "call": "creaContatto"
+                  }
+                ]
+              }
+            },
+            {
+              "refresh": "contatti"
+            },
+            {
+              "toast": "{{ t('vetrina_campi.contatto_creato', 'Contatto creato') }}"
+            }
+          ]
+        },
+        {
+          "id": "tabella-contatti",
+          "type": "table",
+          "source": "contatti",
+          "columns": [
+            {
+              "field": "nome",
+              "label": "{{ t('vetrina_campi.nome_cognome', 'Nome e cognome') }}"
+            },
+            {
+              "field": "email",
+              "label": "{{ t('vetrina_campi.email', 'E-mail') }}"
+            },
+            {
+              "field": "ruolo",
+              "label": "{{ t('vetrina_campi.ruolo', 'Ruolo') }}",
+              "valueKey": "valori.ruolo"
+            }
+          ],
+          "rowActions": [
+            {
+              "id": "btn-modifica-contatto",
+              "label": "{{ t('vetrina_campi.modifica', 'Modifica') }}",
+              "onClick": [
+                {
+                  "dialog": {
+                    "title": "{{ t('vetrina_campi.modifica_contatto', 'Modifica {nome}', {'nome': row.nome}) }}",
+                    "fields": [
+                      {
+                        "name": "nome",
+                        "type": "text",
+                        "label": "{{ t('vetrina_campi.nome_cognome', 'Nome e cognome') }}",
+                        "required": true
+                      },
+                      {
+                        "name": "email",
+                        "type": "text",
+                        "label": "{{ t('vetrina_campi.email', 'E-mail') }}",
+                        "required": true,
+                        "validate": {
+                          "rule": "{{ value.contains('@') }}",
+                          "message": "{{ t('vetrina_campi.email_non_valida', 'Indirizzo e-mail non valido') }}"
+                        }
+                      },
+                      {
+                        "name": "ruolo",
+                        "type": "radio",
+                        "label": "{{ t('vetrina_campi.ruolo', 'Ruolo') }}",
+                        "options": [
+                          "acquisti",
+                          "amministrazione",
+                          "tecnico"
+                        ],
+                        "optionKey": "valori.ruolo"
+                      }
+                    ],
+                    "initial": {
+                      "nome": "{{ row.nome }}",
+                      "email": "{{ row.email }}",
+                      "ruolo": "{{ row.ruolo }}"
+                    },
+                    "submitLabel": "{{ t('comune.salva', 'Salva') }}",
+                    "onSubmit": [
+                      {
+                        "call": "modificaContatto",
+                        "args": {
+                          "id": "{{ row.id }}"
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "refresh": "contatti"
+                },
+                {
+                  "toast": "{{ t('vetrina_campi.contatto_aggiornato', 'Contatto aggiornato') }}"
                 }
               ]
             }

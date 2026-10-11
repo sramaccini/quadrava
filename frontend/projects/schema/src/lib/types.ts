@@ -36,7 +36,18 @@ export interface ConfirmStep {
   /** Domanda all'utente; se rinuncia la sequenza si ferma senza errori. */
   confirm: string;
 }
-export type Step = CallStep | RefreshStep | NavigateStep | ToastStep | SetStep | ConfirmStep;
+export interface DialogStep {
+  /** Finestra con un form; i passi di `onSubmit` vedono i valori in `form`. Se l'utente annulla la sequenza si ferma. */
+  dialog: {
+    title: string;
+    fields: FieldDefinition[];
+    initial?: Record<string, unknown>;
+    columns?: number;
+    submitLabel?: string;
+    onSubmit: Step[];
+  };
+}
+export type Step = CallStep | RefreshStep | NavigateStep | ToastStep | SetStep | ConfirmStep | DialogStep;
 
 export interface ConditionalProps {
   visibleIf?: Expression;

@@ -128,15 +128,15 @@ describe('Vetrina: componenti avanzati', () => {
 
     it('nuovi tipi nei filtri: più stati insieme e tipo con «Tutti»', { timeout: 20000 }, async () => {
       const { el, until, settle } = await openShowcase('/vetrina/vetrina-campi');
-      await until(() => cells(el, 0, 0).length === 8, 'fatture');
+      await until(() => cells(el, 1, 0).length === 8, 'fatture');
       const bar = el.querySelector('main lc-filter-bar') as HTMLElement;
       await pick(until, settle, bar.querySelector('nz-select')!, ['Bozza', 'Pagata']);
-      await until(() => cells(el, 0, 2).every((c) => c === 'Bozza' || c === 'Pagata') && cells(el, 0, 2).includes('Pagata'), 'due stati');
+      await until(() => cells(el, 1, 2).every((c) => c === 'Bozza' || c === 'Pagata') && cells(el, 1, 2).includes('Pagata'), 'due stati');
       const radios = [...bar.querySelectorAll<HTMLInputElement>('nz-radio-group input')];
       radios[2].click();
-      await until(() => cells(el, 0, 1).length > 0 && cells(el, 0, 1).every((c) => c === 'Passiva'), 'solo passive');
+      await until(() => cells(el, 1, 1).length > 0 && cells(el, 1, 1).every((c) => c === 'Passiva'), 'solo passive');
       radios[0].click();
-      await until(() => cells(el, 0, 1).includes('Attiva'), 'tutti i tipi');
+      await until(() => cells(el, 1, 1).includes('Attiva'), 'tutti i tipi');
     });
 
     it('lookup: cerca i clienti mentre si scrive, nel form e nei filtri', { timeout: 20000 }, async () => {
@@ -158,8 +158,8 @@ describe('Vetrina: componenti avanzati', () => {
       await openSelect(bar.querySelector('lc-lookup nz-select')!, settle);
       await until(() => options().some((o) => o.textContent?.trim() === 'Bianchi SpA'), 'clienti');
       options().find((o) => o.textContent?.trim() === 'Bianchi SpA')!.click();
-      await until(() => cells(el, 0, 0).length > 0 && cells(el, 0, 0).length < 8, 'fatture di Bianchi');
-      expect(cells(el, 0, 0)).toEqual(['FT-2026-002', 'FT-2026-006', 'FT-2026-010', 'FT-2026-014']);
+      await until(() => cells(el, 1, 0).length > 0 && cells(el, 1, 0).length < 8, 'fatture di Bianchi');
+      expect(cells(el, 1, 0)).toEqual(['FT-2026-002', 'FT-2026-006', 'FT-2026-010', 'FT-2026-014']);
     });
 
     it('caricamento di file: il file parte subito, il servizio risponde con un id e il form lo salva', async () => {
@@ -206,6 +206,39 @@ describe('Vetrina: componenti avanzati', () => {
       save();
       await until(() => !!document.querySelector('.ant-message-notice'), 'messaggio');
       expect(document.querySelector('.ant-message-notice')?.textContent).toContain('Ordine salvato con 2 righe');
+    });
+
+    it('dialog con form: nuovo contatto e modifica di una riga, con ricarica della tabella', { timeout: 20000 }, async () => {
+      const { el, until, settle } = await openShowcase('/vetrina/vetrina-campi');
+      await until(() => cells(el, 0, 0).length === 2, 'contatti');
+      const dialog = (): HTMLElement => [...document.querySelectorAll<HTMLElement>('.lc-dialog-form .ant-modal')].at(-1)!;
+      const fill = (name: string, value: string): void => {
+        const input = [...dialog().querySelectorAll<HTMLInputElement>('input')].find((i) => i.id.endsWith('-' + name))!;
+        input.value = value;
+        input.dispatchEvent(new Event('input'));
+      };
+      const save = (): void => ([...dialog().querySelectorAll('button')].find((b) => b.textContent?.trim() === 'Salva') as HTMLButtonElement).click();
+      ([...el.querySelectorAll('main button')].find((b) => b.textContent?.trim() === 'Nuovo contatto') as HTMLButtonElement).click();
+      await until(() => !!document.querySelector('.lc-dialog-form .ant-modal input'), 'finestra');
+      expect(dialog().querySelector('h2')?.textContent?.trim()).toBe('Nuovo contatto');
+      fill('nome', 'Sara Greco');
+      fill('email', 'sara.greco');
+      save();
+      await until(() => !!dialog().querySelector('.ant-form-item-explain-error'), 'e-mail non valida');
+      expect(dialog().querySelector('.ant-form-item-explain-error')?.textContent).toContain('Indirizzo e-mail non valido');
+      fill('email', 'sara.greco@example.com');
+      save();
+      await until(() => cells(el, 0, 0).includes('Sara Greco'), 'contatto creato');
+      expect(document.querySelector('.ant-message-notice')?.textContent).toContain('Contatto creato');
+      // Modifica: la finestra parte con i dati della riga.
+      const rows = [...el.querySelectorAll('main nz-table')[0].querySelectorAll('tbody tr')];
+      (rows[0].querySelector('.actions button') as HTMLButtonElement).click();
+      await until(() => dialog().querySelector('h2')?.textContent?.trim() === 'Modifica Anna Conti', 'finestra di modifica');
+      await settle();
+      expect([...dialog().querySelectorAll<HTMLInputElement>('input')].find((i) => i.id.endsWith('-email'))?.value).toBe('anna.conti@example.com');
+      fill('email', 'anna@example.com');
+      save();
+      await until(() => cells(el, 0, 1)[0] === 'anna@example.com', 'contatto aggiornato');
     });
   });
 });

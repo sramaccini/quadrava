@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { I18n, runSteps, type ScreenRuntime, type Scope } from 'core';
 import { NzButtonModule } from 'ng-zorro-antd/button';
@@ -128,6 +128,9 @@ import { nextId, parseIsoDate, parseIsoDateTime, toIsoDate, toIsoDateTime } from
             </span>
           }
         }
+        @if (cancelLabel(); as cancel) {
+          <button nz-button type="button" [disabled]="busy()" (click)="cancelled.emit()">{{ cancel }}</button>
+        }
       </div>
     </form>
   `,
@@ -136,6 +139,11 @@ export class FormComponent {
   readonly node = input.required<FormNode>();
   readonly runtime = input.required<ScreenRuntime>();
   readonly scope = input<Scope>({});
+  /** Se presente, accanto alle azioni compare un pulsante che annulla (usato dalle finestre con form). */
+  readonly cancelLabel = input<string | null>(null);
+  /** Dopo un'azione: true se i passi sono riusciti. Non si emette se la validazione blocca l'invio. */
+  readonly completed = output<boolean>();
+  readonly cancelled = output<void>();
 
   protected readonly i18n = inject(I18n);
 
@@ -261,7 +269,7 @@ export class FormComponent {
     if (visible.some((f) => this.validate(f) !== null)) return;
     this.busy.set(true);
     try {
-      await runSteps(this.runtime(), action.onClick, this.fieldScope());
+      this.completed.emit(await runSteps(this.runtime(), action.onClick, this.fieldScope()));
     } finally {
       this.busy.set(false);
     }
