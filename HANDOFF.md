@@ -78,7 +78,7 @@ Le principali sono nella DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In breve:
 - Moduli Java mai compilati (`mvn verify` in sospeso).
 - `validate:examples` non controlla le espressioni CEL (lo fa il test `i18n-examples.spec.ts`).
 - Limiti dei componenti che restano: vedi catalogo § 3 (niente righe ripetibili annidate, datatable sulle righe caricate — provata fino a 20.000 nel componente —, grafici senza zoom né aree). I limiti della prima consegna (lookup, file, righe, albero da tastiera, volumi, grafici) sono stati superati: catalogo § 3.1.
-- Documenti Claude Docs aggiornati l'11 ottobre 2026 con una sintesi (funzionale: RF-DEF-18…21; architettura: § 4 «Aggiornamenti di ottobre 2026»; linee guida: § 6 e § 11); il dettaglio resta in `docs/catalogo-componenti.md`.
+- Architettura (Claude Docs) § 9: paragrafo «Stato al 12 ottobre 2026» sull'editor e sugli scostamenti da ADR-08/09. Documenti Claude Docs aggiornati l'11 ottobre 2026 con una sintesi (funzionale: RF-DEF-18…21; architettura: § 4 «Aggiornamenti di ottobre 2026»; linee guida: § 6 e § 11); il dettaglio resta in `docs/catalogo-componenti.md`.
 
 ## 8. Prossimi passi (nell'ordine suggerito)
 
@@ -86,6 +86,7 @@ Le principali sono nella DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In breve:
 2. Collegare `services` a `runtime` e completare il BFF (CSRF, forwarding, allow-list; il forwarding deve gestire anche i corpi multipart).
 3. **Editor visuale**, seconda fase: pubblicazione nel registro — **decisione da prendere**: il contratto conserva un solo `AppDefinition` per applicazione, va deciso se schermate, navigazione e tema sono un pacchetto unico o documenti separati; completamento delle espressioni (vedi `docs/editor.md` § 6).
 4. Menu: navigazione da tastiera, badge, ricerca. CEL in `validate:examples`.
+5. **Decidere ADR-08 e ADR-09** (architettura § 9 e § 14): l'editor oggi ha l'anteprima nella stessa pagina (non in iframe) e una cronologia a versioni immutabili (non JSON Patch). Vedi `docs/editor.md` § 6.
 
 ## 9. Convenzioni di lavoro
 
