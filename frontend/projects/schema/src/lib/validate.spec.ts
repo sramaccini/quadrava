@@ -58,6 +58,15 @@ describe('validateScreen', () => {
     expect(issues).toContain('/components/0 proprietà non prevista: colore');
   });
 
+  it('un errore dentro un componente non fa segnalare come «non previste» le sue proprietà lecite', () => {
+    const table = { type: 'table', source: 'ordini', columns: [{ field: 'n' }], rowActions: [{ label: 'X', onClick: [] }] };
+    const issues = issuesOf({ ...minimal(), components: [table] });
+    expect(issues.some((i) => i.startsWith('/components/0/rowActions/0/onClick'))).toBe(true);
+    expect(issues.filter((i) => i.includes('non prevista'))).toEqual([]);
+    // Una proprietà davvero sconosciuta, senza altri errori, resta segnalata.
+    expect(issuesOf({ ...minimal(), components: [{ ...table, rowActions: [], colore: 'rosso' }] })).toContain('/components/0 proprietà non prevista: colore');
+  });
+
   it('richiede le proprietà specifiche del tipo', () => {
     const issues = issuesOf({ ...minimal(), components: [{ type: 'table', source: 'ordini' }] });
     expect(issues).toContain('/components/0 proprietà obbligatoria mancante: columns');

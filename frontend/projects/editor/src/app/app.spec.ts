@@ -270,6 +270,21 @@ describe('editor delle schermate', () => {
     expect(frame.style.getPropertyValue('--lc-color-primary')).toBe('#aa3300');
   });
 
+  it('espressioni: l’aiuto propone variabili e funzioni e le inserisce al cursore', async () => {
+    (el.querySelector('ed-palette button[data-type="button"]') as HTMLButtonElement).click();
+    await settle();
+    (el.querySelector('ed-inspector details.conditions') as HTMLDetailsElement).open = true;
+    const help = el.querySelector('ed-inspector [data-prop="visibleIf"] details.hints') as HTMLDetailsElement;
+    help.open = true;
+    help.dispatchEvent(new Event('toggle'));
+    await settle();
+    const chip = [...help.querySelectorAll<HTMLButtonElement>('.chip')].find((c) => c.textContent?.trim() === 'user.username')!;
+    chip.click();
+    await settle();
+    expect(getIn(store.doc(), ['components', 0, 'visibleIf'])).toBe('{{ user.username }}');
+    expect(store.issues()).toEqual([]);
+  });
+
   it('apre un esempio, e da tastiera elimina il nodo selezionato', async () => {
     store.load(layout as never);
     await until(() => outline().length > 5, 'struttura dell’esempio');

@@ -13,6 +13,7 @@ import { getIn, isObject, moveBy, setIn, toPointer, type Json, type JsonObject, 
 import { DocumentState } from '../model/document-state';
 import { listItem, objectFields, type ItemShape, type PropertyInfo, type Variant } from '../model/schema-info';
 import { defaultItem, summaryOf } from '../model/templates';
+import { expressionHints, insertHint, type Hint } from '../model/expression-help';
 import { JsonFieldComponent } from './json-field.component';
 
 /** Proprietà mostrate come area di testo su più righe anche se sono semplici testi. */
@@ -74,6 +75,8 @@ export class FieldsComponent {
 
   /** Elementi aperti degli elenchi (per percorso). */
   protected readonly open = signal<Set<string>>(new Set());
+  /** Espressioni con l'aiuto (variabili e funzioni) aperto. */
+  protected readonly hintsOpen = signal<Set<string>>(new Set());
   /** Elenchi mostrati come JSON invece che elemento per elemento. */
   protected readonly raw = signal<Set<string>>(new Set());
 
@@ -103,6 +106,30 @@ export class FieldsComponent {
   /** Valori suggeriti mentre si scrive (si può comunque scrivere altro): li decide il documento. */
   protected suggestions(row: FieldRow): string[] {
     return row.info.kind === 'text' ? this.store.suggestions(row.info.name) : [];
+  }
+
+  protected toggleHints(row: FieldRow, open: boolean): void {
+    const key = this.key(row.path);
+    this.hintsOpen.update((set) => {
+      const next = new Set(set);
+      if (open) next.add(key);
+      else next.delete(key);
+      return next;
+    });
+  }
+
+  /** Variabili e funzioni disponibili per questa espressione (calcolate solo quando l'aiuto è aperto). */
+  protected hints(row: FieldRow): Hint[] {
+    return expressionHints(this.store.doc(), row.path);
+  }
+
+  /** Inserisce una variabile o una funzione alla posizione del cursore e rimette il cursore subito dopo. */
+  protected insert(row: FieldRow, area: HTMLTextAreaElement, text: string): void {
+    const result = insertHint(area.value, area.selectionStart ?? area.value.length, area.selectionEnd ?? area.value.length, text);
+    this.setText(row, result.value);
+    area.value = result.value;
+    area.focus();
+    area.setSelectionRange(result.caret, result.caret);
   }
 
   protected setText(row: FieldRow, text: string): void {

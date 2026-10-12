@@ -216,7 +216,7 @@ npm run schema:check                  # generated schema constants are in sync
 npm run validate:examples             # examples are valid
 ```
 
-At the time of writing there are **415 automated tests**: schema 62, expressions 39, core 61, components 128, services 19, runtime 66, editor 40. They run in jsdom, so layout, real focus handling and pixel-level rendering are **not** covered; see the development guide for the helpers that make NG-ZORRO overlays testable.
+At the time of writing there are **419 automated tests**: schema 63, expressions 39, core 61, components 128, services 19, runtime 66, editor 43. They run in jsdom, so layout, real focus handling and pixel-level rendering are **not** covered; see the development guide for the helpers that make NG-ZORRO overlays testable.
 
 ## Security model
 
@@ -243,7 +243,7 @@ Open point: Ajv generates validators with `new Function`, so browser-side valida
 **Next steps:**
 
 * Wire `services` into the `runtime` app (today it uses the demo's fake ports) and complete the BFF: CSRF protection, API forwarding with token and `traceparent`, host allow-list.
-* Visual editor: publication to the registry, expression completion.
+* Visual editor: publication to the registry (first decide how an application's screens, navigation and theme map onto the registry's single `AppDefinition`), completion while typing expressions.
 * The October 2026 component batch is complete (see the catalogue for the specification and the known limits of each component).
 * Menu: arrow-key navigation, badges, search.
 * Check expressions in `validate:examples` too.

@@ -37,9 +37,14 @@ function run<T>(validator: ValidateFunction, document: unknown): ValidationResul
   if (validator(document)) {
     return { valid: true, value: document as T };
   }
-  const issues = (validator.errors ?? [])
+  const errors = (validator.errors ?? [])
     // I messaggi "must match then schema" duplicano l'errore specifico che li segue.
-    .filter((e) => e.keyword !== 'if')
+    .filter((e) => e.keyword !== 'if');
+  // Un errore dentro un oggetto fa fallire il ramo `then` che ne valuta le proprietà: Ajv segnala allora come «non
+  // previste» proprietà del tutto lecite. Se c'è un errore più preciso più in profondità, quelle segnalazioni si tolgono.
+  const deeper = (path: string): boolean => errors.some((e) => e.keyword !== 'unevaluatedProperties' && e.instancePath.startsWith(path + '/'));
+  const issues = errors
+    .filter((e) => e.keyword !== 'unevaluatedProperties' || !deeper(e.instancePath))
     .map((e) => ({ path: e.instancePath || '/', message: describe(e.keyword, e.message ?? 'non valido', e.params) }));
   return { valid: false, issues };
 }

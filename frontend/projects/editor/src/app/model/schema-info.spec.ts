@@ -41,6 +41,9 @@ describe('lettura dello schema', () => {
     expect(defaultItem(fields, 1, t)).toEqual({ name: 'campo2', type: 'text' });
     const columns = (listItem(nodeProperties('table').find((p) => p.name === 'columns')!) as { fields: PropertyInfo[] }).fields;
     expect(defaultItem(columns, 0, t)).toEqual({ field: 'campo1', label: 'Descrizione' });
+    // Un elenco obbligatorio con un minimo nasce con un elemento: un'azione ha già un passo (un messaggio).
+    const actions = (listItem(nodeProperties('table').find((p) => p.name === 'rowActions')!) as { fields: PropertyInfo[] }).fields;
+    expect(defaultItem(actions, 0, t)).toEqual({ label: 'Descrizione', onClick: [{ toast: '' }] });
     expect(summaryOf({ field: 'importo', label: "{{ t('x.importo', 'Importo') }}" })).toBe('Importo (importo)');
     expect(summaryOf({ name: 'cliente', type: 'lookup' })).toBe('cliente · lookup');
     expect(summaryOf({ toast: "{{ t('x.ok', 'Fatto') }}" }, 'toast')).toBe('toast: Fatto');

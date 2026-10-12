@@ -54,7 +54,7 @@ export class WizardComponent {
 
   protected readonly i18n = inject(I18n);
   protected readonly headingId = nextId('lc-wizard');
-  /** Passo corrente senza stato condiviso (nessun \`bind\`). */
+  /** Passo corrente senza stato condiviso (nessun `bind`). */
   private readonly local = linkedSignal(() => (this.node(), 0));
 
   /** Passo corrente, sempre dentro i limiti: un valore estraneo nello stato vale come il primo passo. */

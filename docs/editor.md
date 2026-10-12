@@ -41,12 +41,12 @@ L'editor non ha un elenco proprio delle proprietà dei componenti: le legge da `
 | Nello schema | Nel pannello |
 | --- | --- |
 | `enum` | scelta (vuota = proprietà assente, se facoltativa) |
-| `$ref: expression` | area di testo con `{{ … }}` |
+| `$ref: expression` | area di testo con `{{ … }}` e l'aiuto «Variabili e funzioni»: le variabili del punto in cui si scrive (`row.<campo>` nelle colonne e nelle azioni di riga, `form.<campo>` nei form e nelle finestre, `value` nelle regole di validazione, `search`/`lookupKey`/`request` nei data source), lo stato e i parametri già usati nel documento, l'utente, e le funzioni (`can`, `t`, `has`, `fmt*`, `plural`); un clic le inserisce al cursore |
 | `string` | testo; area di testo per testi lunghi e per ogni valore con `{{ }}`; `source`, `call`, `refresh` suggeriscono i data source, `navigate` le schermate note |
 | `boolean` | casella (deselezionata = proprietà assente) |
 | `integer` / `number` | numero con minimo e massimo dello schema |
 | oggetto chiuso (`sort`, `selection`, `lookup`, `dialog`…) | gruppo di campi, «Imposta» / «Togli» se facoltativo |
-| elenco di oggetti (`columns`, `fields`, `rowActions`, `items`, `series`…) | elementi apribili uno per uno, con sposta, elimina, aggiungi; vista JSON dell'elenco |
+| elenco di oggetti (`columns`, `fields`, `rowActions`, `items`, `series`…) | elementi apribili uno per uno, con sposta, elimina, aggiungi (un elemento nuovo ha già le proprietà obbligatorie, compreso un passo se l'elenco dei passi è obbligatorio); vista JSON dell'elenco |
 | elenco di passi (`onClick`, `onSubmit`, `onSelect`) | come sopra, e «Aggiungi» chiede la variante: `call`, `refresh`, `navigate`, `toast`, `set`, `confirm`, `dialog` |
 | elenco di nodi (`components`) | non nel pannello: si gestisce nella struttura |
 | mappe libere (`params`, `initial`, `badges`, `args`) e il resto | JSON |
@@ -120,7 +120,7 @@ editor/src/app/
 
 - **Temi scuri.** Il foglio di stile scuro di NG-ZORRO vale per tutta la pagina: nell'anteprima di un tema scuro i colori della piattaforma cambiano, ma alcune superfici dei componenti NG-ZORRO (schede, messaggi) restano chiare. Il runtime non ha questo limite.
 - **Traduzioni.** Le traduzioni si esportano in un file da unire a mano ai cataloghi; quando i cataloghi verranno da un servizio, l'editor li aggiornerà direttamente. Le lingue sono quelle della demo (italiano e inglese).
-- **Pubblicazione.** Si esporta un file; il collegamento al registro (bozza, revisione, pubblicazione con versioni) è da fare, con la validazione lato servizio.
-- **Espressioni.** Sintassi controllata, ma nessun completamento delle variabili (`state`, `row`, `form`…) né dei nomi dei campi delle righe.
+- **Espressioni.** Sintassi controllata e aiuto con le variabili del contesto, ma niente completamento mentre si scrive né controllo che i campi usati (`row.x`) esistano davvero nelle risposte dei servizi.
+- **Pubblicazione.** Il contratto del registro (`contracts/registry.yaml`) conserva un documento per applicazione: va deciso come schermate, navigazione e tema di un'applicazione diventano quel documento (un unico pacchetto o documenti separati) prima di collegare l'editor.
 - **Anteprima e procedure.** Selezionare un nodo in un passo successivo di un wizard non porta a quel passo (i passi si superano solo con le loro condizioni).
 - **Larghezza.** Sotto i 1100 px i pannelli si impilano; l'editor è pensato per schermi da desktop.

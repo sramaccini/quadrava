@@ -30,7 +30,7 @@ Da `frontend/`:
 - `.claude/launch.json` avvia una copia della demo sulla porta 4300 e dell'editor sulla 4301 (per l'anteprima nel pannello di Claude).
 - test per progetto: `npx ng test <schema|expressions|core|components|services|runtime|editor> --watch=false`
 
-Stato test (tutti verdi): schema 62, expressions 39, core 61, components 128, services 19, runtime 66, editor 40 (**415**). Build di produzione della demo: 2,27 MB iniziali (avviso a 2,5 MB).
+Stato test (tutti verdi): schema 63, expressions 39, core 61, components 128, services 19, runtime 66, editor 43 (**419**). Build di produzione della demo: 2,27 MB iniziali (avviso a 2,5 MB).
 
 ## 4. Architettura in breve
 
@@ -84,7 +84,7 @@ Le principali sono nella DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In breve:
 
 1. Review dei 18 componenti (commit da `4d224fb` a `47a96ee`), del fix del runtime `9d96798`, dei limiti superati (da `7907884` a `f42abdf`), della serverDataTable (`9bae9b7`) e dell'editor (da `5840c9c` a `b3d7a5d`).
 2. Collegare `services` a `runtime` e completare il BFF (CSRF, forwarding, allow-list; il forwarding deve gestire anche i corpi multipart).
-3. **Editor visuale**, seconda fase: pubblicazione nel registro; completamento delle espressioni (vedi `docs/editor.md` § 6).
+3. **Editor visuale**, seconda fase: pubblicazione nel registro — **decisione da prendere**: il contratto conserva un solo `AppDefinition` per applicazione, va deciso se schermate, navigazione e tema sono un pacchetto unico o documenti separati; completamento delle espressioni (vedi `docs/editor.md` § 6).
 4. Menu: navigazione da tastiera, badge, ricerca. CEL in `validate:examples`.
 
 ## 9. Convenzioni di lavoro

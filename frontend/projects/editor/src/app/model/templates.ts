@@ -1,5 +1,5 @@
 import { getIn, isObject, type Json, type JsonObject } from './doc-ops';
-import type { PropertyInfo } from './schema-info';
+import { listItem, type PropertyInfo } from './schema-info';
 
 /**
  * Modelli iniziali dei nodi aggiunti dalla tavolozza: il minimo valido per lo schema, con testi segnaposto nella
@@ -145,7 +145,15 @@ function defaultValue(info: PropertyInfo, index: number, t: Translate): Json {
       return '#000000';
     case 'number':
       return info.minimum ?? 0;
-    case 'list':
+    case 'list': {
+      // Un elenco che deve avere almeno un elemento nasce con uno (per i passi: un messaggio).
+      if (!info.minimum) return [];
+      const shape = listItem(info);
+      if (!shape) return [];
+      if ('fields' in shape) return [defaultItem(shape.fields, 0, t)];
+      const variant = shape.variants.find((v) => v.key === 'toast') ?? shape.variants[0];
+      return [defaultItem(variant.fields, 0, t)];
+    }
     case 'children':
       return [];
     case 'object':

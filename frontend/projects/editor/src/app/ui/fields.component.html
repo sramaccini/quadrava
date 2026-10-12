@@ -114,6 +114,7 @@
       @default {
         @if (isLong(row)) {
           <textarea
+            #area
             nz-input
             [id]="row.id"
             [class.code]="row.info.kind === 'expression'"
@@ -123,6 +124,20 @@
             [attr.placeholder]="row.info.kind === 'expression' ? expressionHint : null"
             spellcheck="false"
           ></textarea>
+          @if (row.info.kind === 'expression' || asText(row.value).includes('{{')) {
+            <details class="hints" (toggle)="toggleHints(row, $any($event.target).open)">
+              <summary>{{ i18n.t('ed.hints') }}</summary>
+              @if (hintsOpen().has(key(row.path))) {
+                <div class="chips">
+                  @for (hint of hints(row); track hint.label) {
+                    <button type="button" class="chip" [class.function]="hint.kind === 'function'" (mousedown)="$event.preventDefault()" (click)="insert(row, area, hint.insert)">
+                      {{ hint.label }}
+                    </button>
+                  }
+                </div>
+              }
+            </details>
+          }
         } @else {
           <input
             nz-input

@@ -99,7 +99,7 @@ export class CalendarComponent {
   protected readonly source = computed(() => this.runtime().source(this.node().source));
   protected readonly max = computed(() => this.node().maxPerDay ?? 3);
 
-  /** Primo giorno del mese visibile: dallo stato (\`bind\`) se valido, altrimenti locale. */
+  /** Primo giorno del mese visibile: dallo stato (`bind`) se valido, altrimenti locale. */
   protected readonly month = computed<Date>(() => {
     const bind = this.node().bind;
     return (bind ? parseMonth(this.runtime().getState(bind)) : null) ?? this.local();
@@ -112,7 +112,7 @@ export class CalendarComponent {
   });
   protected readonly title = computed(() => new Intl.DateTimeFormat(this.i18n.intlLocale(), { month: 'long', year: 'numeric' }).format(this.month()));
 
-  /** Eventi per giorno (\`AAAA-MM-GG\`), nell'ordine del servizio. */
+  /** Eventi per giorno (`AAAA-MM-GG`), nell'ordine del servizio. */
   protected readonly byDay = computed(() => {
     const map = new Map<string, Row[]>();
     const data = this.source().data;
