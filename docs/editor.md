@@ -1,6 +1,6 @@
 # Editor visuale
 
-L'editor (`frontend/projects/editor`) modifica le **schermate** e la **navigazione** (casi d'uso e menu); un selettore nella barra degli strumenti passa dall'una all'altra. Per le schermate produce lo stesso JSON che il runtime legge: chi lo usa compone la schermata con tavolozza, struttura e pannello delle proprietà, e vede subito il risultato disegnato dal runtime vero. Non esiste un formato intermedio: quello che si esporta si mette in `examples/` (o, in futuro, si pubblica nel registro) così com'è.
+L'editor (`frontend/projects/editor`) modifica le **schermate**, la **navigazione** (casi d'uso e menu) e il **tema**; un selettore nella barra degli strumenti passa dall'uno all'altro. Per le schermate produce lo stesso JSON che il runtime legge: chi lo usa compone la schermata con tavolozza, struttura e pannello delle proprietà, e vede subito il risultato disegnato dal runtime vero. Non esiste un formato intermedio: quello che si esporta si mette in `examples/` (o, in futuro, si pubblica nel registro) così com'è.
 
 Avvio: `cd frontend && npm run start:editor` (porta 4201; costruisce le librerie e copia gli esempi).
 
@@ -79,6 +79,10 @@ Modalità «Navigazione»: il documento `navigation.json` (casi d'uso, gruppi, s
 
 La bozza della navigazione si salva nel browser come quella della schermata; «Apri esempio» apre la navigazione della demo, «Esporta» scarica `<navigation>.json`.
 
+## 3c. Tema
+
+Modalità «Tema»: un file di `examples/themes/` (design token). Il pannello a destra mostra tutti i token, gruppo per gruppo (colori, tipografia, forma, densità, layout di barra laterale, intestazione, pagina), generati da `theme.schema.json`; i colori hanno un selettore accanto al testo (`#rrggbb`; `rgb()` e `hsl()` si scrivono nel testo). L'anteprima disegna **la schermata e il menu aperti nelle altre modalità** con il tema: le variabili (`--lc-*` e `--ant-*`) si impostano solo sul riquadro dell'anteprima, quindi l'editor resta leggibile anche provando un tema scuro. Con errori l'anteprima resta all'ultimo tema valido. «Apri esempio» elenca i temi della demo (`examples/themes/index.json`, scritto da `tools/copy-examples.mjs`).
+
 ## 4. Scorciatoie
 
 | Tasti | Azione |
@@ -99,10 +103,10 @@ Fuori da annulla e ripeti, le scorciatoie valgono quando il fuoco non è in un c
 editor/src/app/
   model/      doc-ops (operazioni pure sul documento), schema-info (SchemaReader: lettura di uno schema),
               document-state (documento, selezione, cronologia, problemi: comune ai documenti),
-              editor-store (la schermata), navigation-store (la navigazione),
+              editor-store (la schermata), navigation-store (la navigazione), theme-store (il tema),
               templates (modelli, valori iniziali, riassunti), drop (trascinamento), texts (testi e chiavi)
   ui/         palette, outline, inspector, fields (campi ricorsivi), json-field, json-view,
-              data-sources, texts, issues, navigation-editor
+              data-sources, texts, issues, navigation-editor, theme-editor
   preview/    preview (anteprima), preview-ports (porte finte)
   app.*       guscio, barra degli strumenti, scorciatoie
   messages.ts scritte dell'editor (chiavi ed.*, it ed en)
@@ -114,7 +118,7 @@ editor/src/app/
 
 ## 6. Limiti e prossimi passi
 
-- **Temi.** I temi si modificano ancora a mano; sono il prossimo documento da portare nell'editor, con la stessa tecnica (pannello generato dallo schema, anteprima con una schermata di prova).
+- **Temi scuri.** Il foglio di stile scuro di NG-ZORRO vale per tutta la pagina: nell'anteprima di un tema scuro i colori della piattaforma cambiano, ma alcune superfici dei componenti NG-ZORRO (schede, messaggi) restano chiare. Il runtime non ha questo limite.
 - **Traduzioni.** Le traduzioni si esportano in un file da unire a mano ai cataloghi; quando i cataloghi verranno da un servizio, l'editor li aggiornerà direttamente. Le lingue sono quelle della demo (italiano e inglese).
 - **Pubblicazione.** Si esporta un file; il collegamento al registro (bozza, revisione, pubblicazione con versioni) è da fare, con la validazione lato servizio.
 - **Espressioni.** Sintassi controllata, ma nessun completamento delle variabili (`state`, `row`, `form`…) né dei nomi dei campi delle righe.

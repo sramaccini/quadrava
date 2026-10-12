@@ -10,7 +10,7 @@ import { getIn, isObject, type Json, type Path } from './doc-ops';
 export type Schema = Record<string, unknown>;
 
 /** Come si modifica una proprietà nell'inspector. */
-export type PropertyKind = 'text' | 'expression' | 'enum' | 'boolean' | 'number' | 'json' | 'children' | 'object' | 'list';
+export type PropertyKind = 'text' | 'color' | 'expression' | 'enum' | 'boolean' | 'number' | 'json' | 'children' | 'object' | 'list';
 
 export interface PropertyInfo {
   name: string;
@@ -73,6 +73,7 @@ export class SchemaReader {
     // Un valore fisso (per esempio la versione dello schema) è una scelta con una sola opzione.
     if (typeof s['const'] === 'string') return { kind: 'enum', options: [s['const'] as string], description };
     if (ref === 'expression') return { kind: 'expression', description };
+    if (ref === 'color') return { kind: 'color', description, pattern: typeof s['pattern'] === 'string' ? (s['pattern'] as string) : undefined };
     if (s['type'] === 'string') return { kind: 'text', description, pattern: typeof s['pattern'] === 'string' ? (s['pattern'] as string) : undefined };
     if (s['type'] === 'boolean') return { kind: 'boolean', description };
     if (s['type'] === 'integer' || s['type'] === 'number') {

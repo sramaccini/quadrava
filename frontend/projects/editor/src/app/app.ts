@@ -15,12 +15,14 @@ import { isObject, type Json } from './model/doc-ops';
 import type { DocumentState } from './model/document-state';
 import { EditorStore } from './model/editor-store';
 import { NavigationStore } from './model/navigation-store';
+import { ThemeStore } from './model/theme-store';
 import { PreviewComponent } from './preview/preview.component';
 import { DataSourcesComponent } from './ui/data-sources.component';
 import { InspectorComponent } from './ui/inspector.component';
 import { IssuesComponent } from './ui/issues.component';
 import { JsonViewComponent } from './ui/json-view.component';
 import { NavigationEditorComponent } from './ui/navigation-editor.component';
+import { ThemeEditorComponent } from './ui/theme-editor.component';
 import { OutlineComponent } from './ui/outline.component';
 import { PaletteComponent } from './ui/palette.component';
 import { TextsComponent } from './ui/texts.component';
@@ -28,8 +30,9 @@ import { TextsComponent } from './ui/texts.component';
 const LANGUAGES = ['it', 'en'];
 const MODE_KEY = 'lc.editor.mode';
 
-/** Che cosa si modifica: una schermata o la navigazione dell'applicazione. */
-type Mode = 'screen' | 'navigation';
+/** Che cosa si modifica: una schermata, la navigazione o il tema dell'applicazione. */
+type Mode = 'screen' | 'navigation' | 'theme';
+const MODES: Mode[] = ['screen', 'navigation', 'theme'];
 const VIEWS = ['preview', 'json', 'sources', 'texts'] as const;
 
 /**
@@ -46,6 +49,7 @@ const VIEWS = ['preview', 'json', 'sources', 'texts'] as const;
     IssuesComponent,
     JsonViewComponent,
     NavigationEditorComponent,
+    ThemeEditorComponent,
     OutlineComponent,
     PaletteComponent,
     PreviewComponent,
@@ -68,13 +72,18 @@ const VIEWS = ['preview', 'json', 'sources', 'texts'] as const;
 export class App {
   protected readonly store = inject(EditorStore);
   protected readonly nav = inject(NavigationStore);
+  protected readonly theme = inject(ThemeStore);
   protected readonly mode = signal<Mode>(initialMode());
   protected readonly modeOptions = computed(() => [
     { value: 'screen', label: this.i18n.t('ed.mode.screen') },
     { value: 'navigation', label: this.i18n.t('ed.mode.navigation') },
+    { value: 'theme', label: this.i18n.t('ed.mode.theme') },
   ]);
   /** Il documento aperto nella modalità corrente: lo usano barra degli strumenti, scorciatoie e problemi. */
-  protected readonly active = computed<DocumentState>(() => (this.mode() === 'screen' ? this.store : this.nav));
+  protected readonly active = computed<DocumentState>(() => {
+    const mode = this.mode();
+    return mode === 'screen' ? this.store : mode === 'navigation' ? this.nav : this.theme;
+  });
   protected readonly i18n = inject(I18n);
   private readonly confirmation = inject(Confirmation);
   private readonly notifier = inject(Notifier);
@@ -93,6 +102,14 @@ export class App {
       this.store.knownScreens.set(names);
       this.nav.knownScreens.set(names);
       return names;
+    },
+  });
+
+  /** Temi della demo (`examples/themes/index.json`, scritto da tools/copy-examples.mjs). */
+  protected readonly themeNames = resource({
+    loader: async (): Promise<string[]> => {
+      const response = await fetch('examples/themes/index.json');
+      return response.ok ? ((await response.json()) as string[]) : [];
     },
   });
 
@@ -122,17 +139,23 @@ export class App {
 
   protected async newDocument(): Promise<void> {
     if (!(await this.confirmation.confirm(this.i18n.t('ed.confirmReplace')))) return;
-    if (this.mode() === 'screen') this.store.newScreen();
-    else this.nav.newNavigation();
+    const mode = this.mode();
+    if (mode === 'screen') this.store.newScreen();
+    else if (mode === 'navigation') this.nav.newNavigation();
+    else this.theme.newTheme();
   }
 
   /** Esempi apribili nella modalità corrente: le schermate, oppure la navigazione della demo. */
-  protected readonly exampleNames = computed(() => (this.mode() === 'screen' ? (this.examples.value() ?? []) : ['navigation']));
+  protected readonly exampleNames = computed(() => {
+    const mode = this.mode();
+    if (mode === 'screen') return this.examples.value() ?? [];
+    return mode === 'navigation' ? ['navigation'] : (this.themeNames.value() ?? []).map((name) => `themes/${name}`);
+  });
 
   protected async openExample(name: string): Promise<void> {
     if (!(await this.confirmation.confirm(this.i18n.t('ed.confirmReplace')))) return;
     try {
-      const response = await fetch(`examples/${encodeURIComponent(name)}.json`);
+      const response = await fetch(`examples/${name.split('/').map(encodeURIComponent).join('/')}.json`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       this.loadDocument((await response.json()) as Json);
       this.notifier.toast(this.i18n.t('ed.opened', { name }));
@@ -155,14 +178,16 @@ export class App {
   }
 
   private loadDocument(doc: Json): void {
-    if (this.mode() === 'screen') this.store.load(doc);
-    else this.nav.load(doc);
+    const mode = this.mode();
+    if (mode === 'screen') this.store.load(doc);
+    else if (mode === 'navigation') this.nav.load(doc);
+    else this.theme.load(doc);
   }
 
   protected exportFile(): void {
     const doc = this.active().doc();
-    const key = this.mode() === 'screen' ? 'screen' : 'navigation';
-    const name = isObject(doc) && typeof doc[key] === 'string' && doc[key] ? doc[key] : key === 'screen' ? 'schermata' : 'navigation';
+    const key = this.mode();
+    const name = isObject(doc) && typeof doc[key] === 'string' && doc[key] ? doc[key] : key;
     const blob = new Blob([JSON.stringify(doc, null, 2) + '\n'], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -181,6 +206,7 @@ export class App {
     if (ctrl && (key === 'y' || (key === 'z' && event.shiftKey))) return this.handled(event, () => active.redo());
     if (isEditable(event.target) || document.querySelector('.cdk-overlay-container .ant-modal-wrap')) return;
     if (this.mode() === 'navigation') return this.navigationKey(event, ctrl, key);
+    if (this.mode() === 'theme') return;
     const selection = this.store.selection();
     if (!selection.length) {
       if (ctrl && key === 'v') this.handled(event, () => this.store.paste());
@@ -218,7 +244,8 @@ function isEditable(target: EventTarget | null): boolean {
 
 function initialMode(): Mode {
   try {
-    return localStorage.getItem(MODE_KEY) === 'navigation' ? 'navigation' : 'screen';
+    const stored = localStorage.getItem(MODE_KEY) as Mode | null;
+    return stored && MODES.includes(stored) ? stored : 'screen';
   } catch {
     return 'screen';
   }

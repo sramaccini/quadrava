@@ -252,6 +252,24 @@ describe('editor delle schermate', () => {
     expect(el.querySelector('.bottom')?.textContent).toContain('Schermata «nuova-schermata» non trovata tra quelle note');
   });
 
+  it('tema: i token si modificano dai campi, l’anteprima li applica solo a sé stessa', async () => {
+    (el.querySelector('ed-palette button[data-type="alert"]') as HTMLButtonElement).click();
+    ([...el.querySelectorAll<HTMLElement>('.mode .ant-segmented-item')].find((i) => i.textContent?.includes('Tema')) as HTMLElement).click();
+    await until(() => !!el.querySelector('ed-theme-editor .frame lc-alert'), 'schermata nell’anteprima del tema');
+    const frame = el.querySelector('ed-theme-editor .frame') as HTMLElement;
+    expect(frame.style.getPropertyValue('--lc-color-primary')).toBe('#1f5fbf');
+    const primary = el.querySelector('ed-theme-editor #prop-tokens-colors-primary') as HTMLInputElement;
+    expect(primary.previousElementSibling?.getAttribute('type')).toBe('color');
+    type(primary, '#aa3300');
+    await until(() => frame.style.getPropertyValue('--lc-color-primary') === '#aa3300', 'colore nuovo nell’anteprima');
+    expect(document.documentElement.style.getPropertyValue('--lc-color-primary')).not.toBe('#aa3300');
+    // Un colore non valido è un errore e l'anteprima resta all'ultimo tema valido.
+    type(primary, 'rosso');
+    await settle();
+    expect(el.querySelector('.status')?.textContent).toContain('Errori: 1');
+    expect(frame.style.getPropertyValue('--lc-color-primary')).toBe('#aa3300');
+  });
+
   it('apre un esempio, e da tastiera elimina il nodo selezionato', async () => {
     store.load(layout as never);
     await until(() => outline().length > 5, 'struttura dell’esempio');

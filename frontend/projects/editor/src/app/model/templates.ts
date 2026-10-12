@@ -141,6 +141,8 @@ function defaultValue(info: PropertyInfo, index: number, t: Translate): Json {
       return info.options?.[0] ?? '';
     case 'boolean':
       return false;
+    case 'color':
+      return '#000000';
     case 'number':
       return info.minimum ?? 0;
     case 'list':

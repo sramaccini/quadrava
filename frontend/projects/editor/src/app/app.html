@@ -50,6 +50,8 @@
 
   @if (mode() === 'navigation') {
     <ed-navigation-editor class="nav-workspace" />
+  } @else if (mode() === 'theme') {
+    <ed-theme-editor class="nav-workspace" />
   } @else {
   <aside class="left">
     <ed-palette />

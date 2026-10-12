@@ -131,6 +131,14 @@ export class FieldsComponent {
     return typeof value === 'string' ? value : value === undefined || value === null ? '' : JSON.stringify(value);
   }
 
+  /** Il colore per il selettore del browser, che accetta solo #rrggbb (rgb() e hsl() si scrivono nel campo di testo). */
+  protected hexOf(value: Json | undefined): string {
+    if (typeof value !== 'string') return '#000000';
+    if (/^#[0-9a-f]{6}$/i.test(value)) return value.toLowerCase();
+    const short = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(value);
+    return short ? `#${short[1]}${short[1]}${short[2]}${short[2]}${short[3]}${short[3]}`.toLowerCase() : '#000000';
+  }
+
   protected asNumber(value: Json | undefined): number | null {
     return typeof value === 'number' ? value : null;
   }
