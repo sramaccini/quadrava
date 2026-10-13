@@ -12,6 +12,12 @@ export const PREVIEW_QUERY = 'anteprima';
 /** Tipo dei dati trascinati dalla tavolozza: un tipo di componente (anche `input.<tipo>`). Lo riconoscono struttura e anteprima. */
 export const PALETTE_DRAG_TYPE = 'application/x-lc-node-type';
 
+/** Tipo dei dati trascinati dentro l'anteprima: l'id di un componente già presente (spostamento). */
+export const NODE_DRAG_TYPE = 'application/x-lc-preview-node';
+
+/** Proprietà che la maniglia di ridimensionamento cambia: colonne in una griglia, quota in un box. */
+export type ResizeProperty = 'span' | 'grow';
+
 /** Dove cade un componente rilasciato rispetto a quello sotto il puntatore. */
 export type DropZone = 'before' | 'after' | 'inside';
 
@@ -55,7 +61,11 @@ export type FromPreview =
   | { type: 'lc-preview:select'; id: string }
   | { type: 'lc-preview:event'; event: PreviewEvent }
   /** Un componente della tavolozza rilasciato sul disegno: prima, dopo o dentro il nodo `targetId` (null = in fondo alla schermata). */
-  | { type: 'lc-preview:drop'; kind: string; targetId: string | null; zone: DropZone };
+  | { type: 'lc-preview:drop'; kind: string; targetId: string | null; zone: DropZone }
+  /** Un componente già presente trascinato sul disegno (modalità selezione): spostarlo rispetto a `targetId`. */
+  | { type: 'lc-preview:move'; id: string; targetId: string | null; zone: DropZone }
+  /** Maniglia del componente selezionato: nuovo valore di `span` (griglia) o `grow` (box). */
+  | { type: 'lc-preview:resize'; id: string; property: ResizeProperty; value: number };
 
 export function isToPreview(data: unknown): data is ToPreview {
   return typeof data === 'object' && data !== null && (data as ToPreview).type === 'lc-preview:state' && typeof (data as ToPreview).state === 'object';
@@ -67,6 +77,12 @@ export function isFromPreview(data: unknown): data is FromPreview {
   if (message.type === 'lc-preview:ready') return true;
   if (message.type === 'lc-preview:select') return typeof message.id === 'string';
   if (message.type === 'lc-preview:event') return typeof message.event?.kind === 'string' && typeof message.event?.text === 'string';
+  if (message.type === 'lc-preview:move') {
+    return typeof message.id === 'string' && (message.targetId === null || typeof message.targetId === 'string') && ['before', 'after', 'inside'].includes(message.zone);
+  }
+  if (message.type === 'lc-preview:resize') {
+    return typeof message.id === 'string' && ['span', 'grow'].includes(message.property) && Number.isInteger(message.value) && message.value >= 1 && message.value <= 12;
+  }
   if (message.type === 'lc-preview:drop') {
     return (
       typeof message.kind === 'string' &&

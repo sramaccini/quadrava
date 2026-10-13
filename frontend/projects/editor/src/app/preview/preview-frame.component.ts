@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, effect, inject, input, output, signal, viewChild } from '@angular/core';
 import { I18n } from 'core';
-import { isFromPreview, type DropZone, type PreviewEvent, type PreviewState, type ToPreview } from './protocol';
+import { isFromPreview, type DropZone, type PreviewEvent, type PreviewState, type ResizeProperty, type ToPreview } from './protocol';
 
 /**
  * L'anteprima vista dall'editor: un iframe isolato con l'applicazione avviata come anteprima. Gli manda lo stato
@@ -35,6 +35,10 @@ export class PreviewFrameComponent {
   readonly logged = output<PreviewEvent>();
   /** Un componente della tavolozza rilasciato sul disegno. */
   readonly dropped = output<{ kind: string; targetId: string | null; zone: DropZone }>();
+  /** Un componente già presente spostato sul disegno. */
+  readonly moved = output<{ id: string; targetId: string | null; zone: DropZone }>();
+  /** Un componente ridimensionato con la maniglia. */
+  readonly resized = output<{ id: string; property: ResizeProperty; value: number }>();
 
   private readonly frame = viewChild.required<ElementRef<HTMLIFrameElement>>('frame');
   private readonly ready = signal(false);
@@ -50,6 +54,8 @@ export class PreviewFrameComponent {
         this.post();
       } else if (message.type === 'lc-preview:select') this.selected.emit(message.id);
       else if (message.type === 'lc-preview:drop') this.dropped.emit({ kind: message.kind, targetId: message.targetId, zone: message.zone });
+      else if (message.type === 'lc-preview:move') this.moved.emit({ id: message.id, targetId: message.targetId, zone: message.zone });
+      else if (message.type === 'lc-preview:resize') this.resized.emit({ id: message.id, property: message.property, value: message.value });
       else this.logged.emit(message.event);
     };
     window.addEventListener('message', listener);

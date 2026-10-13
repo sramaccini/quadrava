@@ -114,6 +114,34 @@ describe('anteprima (dentro l’iframe)', () => {
     expect(el.querySelector('.drop')).toBeNull();
   });
 
+  it('in modalità selezione i componenti si trascinano per spostarli; dentro una griglia c’è la maniglia', async () => {
+    const withGrid: ScreenDefinition = { ...screen, components: [...screen.components, { id: 'griglia', type: 'grid', columns: 3, components: [{ id: 'cella', type: 'text', text: 'In griglia' }] }] };
+    await deliver({ screen: withGrid });
+    await until(() => !!el.querySelector('lc-node[data-node-id="cella"]'), 'griglia');
+    expect(el.querySelector('lc-node[data-node-id="pulsante"]')?.getAttribute('draggable')).toBeNull();
+    // In jsdom gli elementi non hanno dimensioni: senza misure non c'è riquadro né maniglia.
+    const rect = vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({ x: 0, y: 0, top: 0, left: 0, right: 100, bottom: 40, width: 100, height: 40, toJSON: () => ({}) } as DOMRect);
+    await deliver({ screen: withGrid, selectMode: true, selectedId: 'cella' });
+    expect(el.querySelector('lc-node[data-node-id="pulsante"]')?.getAttribute('draggable')).toBe('true');
+    expect(el.querySelector('.resize')).not.toBeNull();
+    // Il pulsante (fuori da griglie e box) non ha maniglia.
+    await deliver({ screen: withGrid, selectMode: true, selectedId: 'pulsante' });
+    expect(el.querySelector('.resize')).toBeNull();
+    const store = new Map<string, string>();
+    const data = { types: [] as string[], setData: (t: string, v: string) => (store.set(t, v), data.types.push(t)), getData: (t: string) => store.get(t) ?? '', dropEffect: '', effectAllowed: '' };
+    const drag = (type: string, target: Element) => {
+      const event = new MouseEvent(type, { bubbles: true, cancelable: true }) as DragEvent;
+      Object.defineProperty(event, 'dataTransfer', { value: data });
+      target.dispatchEvent(event);
+    };
+    drag('dragstart', el.querySelector('lc-node[data-node-id="pulsante"] button')!);
+    drag('dragover', el.querySelector('lc-node[data-node-id="tabella"]')!);
+    await settle();
+    drag('drop', el.querySelector('lc-node[data-node-id="tabella"]')!);
+    expect(sent).toContainEqual({ type: 'lc-preview:move', id: 'pulsante', targetId: 'tabella', zone: 'before' });
+    rect.mockRestore();
+  });
+
   it('il nodo selezionato in una scheda nascosta fa aprire quella scheda', async () => {
     await deliver({ screen });
     await until(() => el.querySelector('.ant-tabs-tab-active')?.textContent?.trim() === 'Prima', 'prima scheda');

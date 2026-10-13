@@ -232,6 +232,24 @@ describe('editor delle schermate', () => {
     expect((store.doc() as { components: unknown[] }).components.length).toBe(4);
   });
 
+  it('dall’anteprima: spostare un componente e cambiarne la larghezza in una griglia', async () => {
+    (el.querySelector('ed-palette button[data-type="button"]') as HTMLButtonElement).click();
+    store.select([]);
+    (el.querySelector('ed-palette button[data-type="grid"]') as HTMLButtonElement).click();
+    await untilState('ed-preview', (st) => !!st.screen, 'anteprima');
+    // Il pulsante entra nella griglia, poi occupa due colonne.
+    await fromFrame('ed-preview', { type: 'lc-preview:move', id: 'button-1', targetId: 'grid-1', zone: 'inside' });
+    expect(getAt(store.doc(), ['components', 0, 'type'])).toBe('grid');
+    expect(getAt(store.doc(), ['components', 0, 'components', 0, 'id'])).toBe('button-1');
+    await fromFrame('ed-preview', { type: 'lc-preview:resize', id: 'button-1', property: 'span', value: 2 });
+    expect(getAt(store.doc(), ['components', 0, 'components', 0, 'span'])).toBe(2);
+    // Un contenitore non entra in sé stesso; valori fuori misura non passano.
+    await fromFrame('ed-preview', { type: 'lc-preview:move', id: 'grid-1', targetId: 'button-1', zone: 'after' });
+    expect(getAt(store.doc(), ['components', 0, 'type'])).toBe('grid');
+    await fromFrame('ed-preview', { type: 'lc-preview:resize', id: 'button-1', property: 'span', value: 40 });
+    expect(getAt(store.doc(), ['components', 0, 'components', 0, 'span'])).toBe(2);
+  });
+
   it('dall’anteprima alla struttura: il componente scelto nell’iframe si seleziona; solo i messaggi del proprio iframe contano', async () => {
     (el.querySelector('ed-palette button[data-type="button"]') as HTMLButtonElement).click();
     store.select([]);

@@ -3,7 +3,8 @@ import { SidebarComponent, type NavigateEvent } from 'components';
 import { I18n, NavigationRuntime, Notifier, ScreenComponent, ThemeService, loadMessages } from 'core';
 import { validateTheme, type ThemeDefinition } from 'schema';
 import { PreviewChannel, PreviewSession } from './preview-ports';
-import { PALETTE_DRAG_TYPE, type DropZone } from './protocol';
+import { NODE_DRAG_TYPE, PALETTE_DRAG_TYPE, type DropZone, type ResizeProperty } from './protocol';
+import { resizeValue } from './resize';
 
 /** Componenti che ne contengono altri: un rilascio al centro li mette dentro. */
 const CONTAINERS = new Set(['section', 'box', 'grid', 'border', 'tabs', 'wizard']);
@@ -19,7 +20,9 @@ const sameJson = (a: unknown, b: unknown): boolean => a === b || JSON.stringify(
  * NG-ZORRO) valgono solo qui.
  *
  * Collegamento con l'editor: il nodo selezionato è evidenziato da un riquadro (e la sua scheda, se nascosta, viene
- * aperta); Alt+clic su un componente, o un clic in modalità selezione, lo seleziona invece di attivarlo.
+ * aperta); Alt+clic su un componente, o un clic in modalità selezione, lo seleziona invece di attivarlo. In modalità
+ * selezione i componenti si trascinano per spostarli, e quello selezionato dentro una griglia o un box ha una maniglia
+ * per cambiarne la larghezza (`span` o `grow`). Le modifiche le fa l'editor: l'anteprima manda solo messaggi.
  */
 @Component({
   selector: 'lc-root',
@@ -34,6 +37,9 @@ const sameJson = (a: unknown, b: unknown): boolean => a === b || JSON.stringify(
     .drop { position: absolute; pointer-events: none; z-index: 11; background: var(--lc-color-primary); border-radius: 2px; }
     .drop.inside { background: color-mix(in srgb, var(--lc-color-primary) 12%, transparent); outline: 2px solid var(--lc-color-primary); }
     .empty { padding: 24px; color: var(--lc-color-muted); }
+    .frame.selecting ::ng-deep lc-node[draggable='true'] { cursor: grab; }
+    .resize { position: absolute; z-index: 12; width: 8px; height: 28px; border-radius: 4px; cursor: ew-resize; touch-action: none;
+      background: var(--lc-color-primary); box-shadow: 0 0 0 2px var(--lc-color-surface); }
     lc-sidebar { min-height: 100vh; }
   `,
   template: `
@@ -42,7 +48,7 @@ const sameJson = (a: unknown, b: unknown): boolean => a === b || JSON.stringify(
     }
     @if (state(); as s) {
       @if (screen() || !navigation()) {
-        <main #frame class="frame" [class.selecting]="s.selectMode" (dragover)="dragOver($event)" (dragleave)="dragLeave($event)" (drop)="drop($event)">
+        <main #frame class="frame" [class.selecting]="s.selectMode" (dragstart)="dragStart($event)" (dragover)="dragOver($event)" (dragleave)="dragLeave($event)" (drop)="drop($event)">
           @if (screen(); as definition) {
             @for (v of [version()]; track v) {
               <lc-screen [definition]="definition" [params]="params()" />
@@ -62,7 +68,20 @@ const sameJson = (a: unknown, b: unknown): boolean => a === b || JSON.stringify(
             ></div>
           }
           @if (highlight(); as box) {
-            <div class="highlight" aria-hidden="true" [style.top.px]="box.top - 3" [style.left.px]="box.left - 3" [style.width.px]="box.width + 6" [style.height.px]="box.height + 6"></div>
+            <div class="highlight" aria-hidden="true" [style.top.px]="box.top - 3" [style.left.px]="box.left - 3" [style.width.px]="(resizing()?.width ?? box.width) + 6" [style.height.px]="box.height + 6"></div>
+            @if (s.selectMode && resizable()) {
+              <div
+                class="resize"
+                aria-hidden="true"
+                [attr.title]="i18n.t(resizable() === 'span' ? 'ed.preview.resizeSpan' : 'ed.preview.resizeGrow')"
+                [style.top.px]="box.top + box.height / 2 - 14"
+                [style.left.px]="box.left + (resizing()?.width ?? box.width) - 1"
+                (pointerdown)="startResize($event)"
+                (pointermove)="moveResize($event)"
+                (pointerup)="endResize($event)"
+                (pointercancel)="resizing.set(null)"
+              ></div>
+            }
           }
         </main>
       }
@@ -159,10 +178,74 @@ export class PreviewApp {
       }
       const box = frame && node ? boxOf(node, frame) : null;
       if (!sameBox(box, this.highlight())) this.highlight.set(box);
+      // In modalità selezione i componenti si trascinano; quello selezionato si ridimensiona se sta in una griglia o un box.
+      const selecting = !!state?.selectMode;
+      for (const el of frame?.querySelectorAll<HTMLElement>('lc-node[data-node-id]') ?? []) {
+        if (selecting && el.getAttribute('draggable') !== 'true') el.setAttribute('draggable', 'true');
+        else if (!selecting && el.hasAttribute('draggable')) el.removeAttribute('draggable');
+      }
+      const resizable = selecting && node ? resizeTarget(node) : null;
+      if (resizable !== this.resizable()) this.resizable.set(resizable);
       if (node && id !== scrolledTo) node.scrollIntoView?.({ block: 'nearest' });
       scrolledTo = node ? id : null;
       if (!id) revealedFor = null;
     });
+  }
+
+  /** Proprietà che la maniglia del nodo selezionato cambia (null = nessuna maniglia). */
+  protected readonly resizable = signal<ResizeProperty | null>(null);
+  /** Ridimensionamento in corso: larghezza mostrata e misure di partenza. */
+  protected readonly resizing = signal<{ width: number; startX: number; startWidth: number } | null>(null);
+
+  private selectedNode(): HTMLElement | null {
+    const id = this.state()?.selectedId;
+    const frame = this.frame()?.nativeElement;
+    return id && frame ? frame.querySelector<HTMLElement>(`lc-node[data-node-id="${CSS.escape(id)}"]`) : null;
+  }
+
+  protected startResize(event: PointerEvent): void {
+    const node = this.selectedNode();
+    if (!node) return;
+    event.preventDefault();
+    event.stopPropagation();
+    (event.target as HTMLElement).setPointerCapture?.(event.pointerId);
+    const width = node.getBoundingClientRect().width;
+    this.resizing.set({ width, startX: event.clientX, startWidth: width });
+  }
+
+  protected moveResize(event: PointerEvent): void {
+    const r = this.resizing();
+    if (r) this.resizing.set({ ...r, width: Math.max(20, r.startWidth + event.clientX - r.startX) });
+  }
+
+  protected endResize(event: PointerEvent): void {
+    const r = this.resizing();
+    this.resizing.set(null);
+    const node = this.selectedNode();
+    const property = this.resizable();
+    const id = this.state()?.selectedId;
+    if (!r || !node || !property || !id) return;
+    (event.target as HTMLElement).releasePointerCapture?.(event.pointerId);
+    const width = Math.max(20, r.startWidth + event.clientX - r.startX);
+    const grid = node.parentElement as HTMLElement;
+    const value = resizeValue({
+      property,
+      startWidth: r.startWidth,
+      width,
+      columns: Number(grid.style.getPropertyValue('--lc-grid-columns')) || undefined,
+      gridWidth: grid.getBoundingClientRect().width,
+      current: parseFloat(node.style.flexGrow) || undefined,
+    });
+    this.channel.send({ type: 'lc-preview:resize', id, property, value });
+  }
+
+  /** In modalità selezione un componente trascinato porta il suo id: al rilascio diventa uno spostamento. */
+  protected dragStart(event: DragEvent): void {
+    if (!this.state()?.selectMode) return;
+    const node = (event.target as Element | null)?.closest?.('lc-node[data-node-id]');
+    if (!node || !event.dataTransfer) return;
+    event.dataTransfer.setData(NODE_DRAG_TYPE, node.getAttribute('data-node-id')!);
+    event.dataTransfer.effectAllowed = 'move';
   }
 
   /** Dove andrebbe rilasciato il componente che si sta trascinando dalla tavolozza. */
@@ -173,9 +256,11 @@ export class PreviewApp {
    * alto prima, bordo basso dopo, centro dentro se è un contenitore); fuori dai nodi, in fondo alla schermata.
    */
   protected dragOver(event: DragEvent): void {
-    if (!event.dataTransfer?.types.includes(PALETTE_DRAG_TYPE)) return;
+    const types = event.dataTransfer?.types ?? [];
+    const moving = types.includes(NODE_DRAG_TYPE);
+    if (!event.dataTransfer || (!moving && !types.includes(PALETTE_DRAG_TYPE))) return;
     event.preventDefault();
-    event.dataTransfer.dropEffect = 'copy';
+    event.dataTransfer.dropEffect = moving ? 'move' : 'copy';
     const frame = this.frame()?.nativeElement;
     if (!frame) return;
     const node = (event.target as Element | null)?.closest?.('lc-node[data-node-id]') ?? null;
@@ -201,8 +286,15 @@ export class PreviewApp {
   protected drop(event: DragEvent): void {
     const at = this.dropAt();
     this.dropAt.set(null);
+    if (!at) return;
+    const moved = event.dataTransfer?.getData(NODE_DRAG_TYPE);
+    if (moved) {
+      event.preventDefault();
+      if (moved !== at.targetId) this.channel.send({ type: 'lc-preview:move', id: moved, targetId: at.targetId, zone: at.zone });
+      return;
+    }
     const kind = event.dataTransfer?.getData(PALETTE_DRAG_TYPE);
-    if (!kind || !at) return;
+    if (!kind) return;
     event.preventDefault();
     this.channel.send({ type: 'lc-preview:drop', kind, targetId: at.targetId, zone: at.zone });
   }
@@ -222,6 +314,14 @@ export class PreviewApp {
     this.channel.event({ kind: 'navigate', text: `${event.leaf.screen} ${JSON.stringify(event.leaf.params ?? {})}` });
     this.notifier.toast(this.i18n.t('ed.preview.navigated', { screen: event.leaf.screen }));
   }
+}
+
+/** La proprietà che si ridimensiona: `span` per un figlio diretto di una griglia, `grow` di un box; altrimenti null. */
+function resizeTarget(node: Element): ResizeProperty | null {
+  const parent = node.parentElement;
+  if (parent?.classList.contains('grid') && parent.parentElement?.tagName === 'LC-GRID') return 'span';
+  if (parent?.classList.contains('box') && parent.parentElement?.tagName === 'LC-BOX') return 'grow';
+  return null;
 }
 
 interface Box {

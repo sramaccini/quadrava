@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
 import { dropPoint } from '../model/drop';
-import type { DropZone } from './protocol';
+import type { DropZone, ResizeProperty } from './protocol';
 import { FormsModule } from '@angular/forms';
 import { I18n } from 'core';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
@@ -101,6 +101,23 @@ export class PreviewComponent {
     const components = isObject(doc) && Array.isArray(doc['components']) ? doc['components'] : [];
     const point = path ? dropPoint(doc, path, event.zone) : { list: ['components'], index: components.length };
     if (point) this.store.addNode(event.kind, point);
+  }
+
+  /** Un componente già presente spostato sul disegno: stesse regole della struttura (mai dentro sé stesso). */
+  protected moved(event: { id: string; targetId: string | null; zone: DropZone }): void {
+    const doc = this.store.doc();
+    const from = this.store.pathOfId(event.id);
+    if (!from) return;
+    const target = event.targetId ? this.store.pathOfId(event.targetId) : null;
+    const components = isObject(doc) && Array.isArray(doc['components']) ? doc['components'] : [];
+    const point = target ? dropPoint(doc, target, event.zone, from) : { list: ['components'], index: components.length };
+    if (point) this.store.moveNode(from, point.list, point.index);
+  }
+
+  /** La maniglia dell'anteprima: nuovo `span` (griglia) o `grow` (box) del componente. */
+  protected resized(event: { id: string; property: ResizeProperty; value: number }): void {
+    const path = this.store.pathOfId(event.id);
+    if (path) this.store.setValue([...path, event.property], event.value);
   }
 
   /** Un componente scelto nell'anteprima: si seleziona nella struttura. */
