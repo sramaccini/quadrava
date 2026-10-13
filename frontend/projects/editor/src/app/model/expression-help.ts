@@ -85,3 +85,43 @@ export function insertHint(value: string, start: number, end: number, text: stri
   const next = value.slice(0, start) + text + value.slice(end);
   return { value: next, caret: start + text.length };
 }
+
+/** Suggerimenti mentre si scrive: dove comincia la parola da completare e le voci che la continuano. */
+export interface Completion {
+  /** Posizione in cui comincia la parola scritta (da sostituire con la voce scelta). */
+  from: number;
+  items: Hint[];
+}
+
+/** Voci mostrate al massimo mentre si scrive. */
+const MAX_COMPLETIONS = 8;
+
+/**
+ * Completamento alla posizione del cursore: solo dentro `{{ … }}` e dopo almeno un carattere di un nome (`sta`,
+ * `row.cl`, `fmt`). Propone le variabili e le funzioni che cominciano con quanto scritto, senza ripetere la parola
+ * già completa; `null` se non c'è niente da proporre.
+ */
+export function completionAt(value: string, caret: number, hints: Hint[]): Completion | null {
+  const before = value.slice(0, caret);
+  const open = before.lastIndexOf('{{');
+  if (open < 0 || before.indexOf('}}', open) >= 0) return null;
+  const word = /[A-Za-z_][A-Za-z0-9_.]*$/.exec(before.slice(open + 2))?.[0];
+  if (!word) return null;
+  const items = hints.filter((h) => h.insert.startsWith(word) && h.insert !== word).slice(0, MAX_COMPLETIONS);
+  return items.length ? { from: caret - word.length, items } : null;
+}
+
+/**
+ * Sostituisce la parola scritta con la voce scelta. Per le funzioni il cursore va dentro le parentesi (o dentro il
+ * primo testo tra apici: `can('|')`), così si continua a scrivere l'argomento.
+ */
+export function applyCompletion(value: string, from: number, caret: number, hint: Hint): { value: string; caret: number } {
+  const next = value.slice(0, from) + hint.insert + value.slice(caret);
+  let offset = hint.insert.length;
+  if (hint.kind === 'function') {
+    const quote = hint.insert.indexOf("''");
+    const paren = hint.insert.indexOf('(');
+    offset = quote >= 0 ? quote + 1 : paren >= 0 ? paren + 1 : offset;
+  }
+  return { value: next, caret: from + offset };
+}

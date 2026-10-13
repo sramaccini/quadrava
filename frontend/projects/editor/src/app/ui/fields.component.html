@@ -120,10 +120,34 @@
             [class.code]="row.info.kind === 'expression'"
             rows="1"
             [value]="asText(row.value)"
-            (input)="setText(row, $any($event.target).value)"
+            (input)="setText(row, $any($event.target).value); suggest(row, area)"
+            (keydown)="completionKey(row, area, $event)"
+            (blur)="completion.set(null)"
             [attr.placeholder]="row.info.kind === 'expression' ? expressionHint : null"
+            [attr.aria-autocomplete]="'list'"
+            [attr.aria-expanded]="completion()?.key === key(row.path)"
+            [attr.aria-controls]="completion()?.key === key(row.path) ? row.id + '-completion' : null"
+            [attr.aria-activedescendant]="completion()?.key === key(row.path) ? row.id + '-completion-' + completion()!.active : null"
             spellcheck="false"
           ></textarea>
+          @if (completion(); as c) {
+            @if (c.key === key(row.path)) {
+              <ul class="completion" role="listbox" [id]="row.id + '-completion'" [attr.aria-label]="i18n.t('ed.hints')">
+                @for (item of c.items; track item.insert; let i = $index) {
+                  <li
+                    role="option"
+                    [id]="row.id + '-completion-' + i"
+                    [class.active]="i === c.active"
+                    [class.function]="item.kind === 'function'"
+                    [attr.aria-selected]="i === c.active"
+                    (mousedown)="$event.preventDefault(); choose(row, area, item)"
+                  >
+                    {{ item.label }}
+                  </li>
+                }
+              </ul>
+            }
+          }
           @if (row.info.kind === 'expression' || asText(row.value).includes('{{')) {
             <details class="hints" (toggle)="toggleHints(row, $any($event.target).open)">
               <summary>{{ i18n.t('ed.hints') }}</summary>

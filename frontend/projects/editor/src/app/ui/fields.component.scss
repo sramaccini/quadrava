@@ -39,3 +39,29 @@ nz-input-number, nz-select { width: 100%; }
 .summary { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .item-body { padding: 8px; border-top: 1px solid var(--lc-color-border); }
 .variant-key { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-weight: 600; }
+
+/* Completamento delle espressioni mentre si scrive. */
+.completion {
+  list-style: none;
+  margin: 2px 0 0;
+  padding: 2px;
+  max-height: 200px;
+  overflow: auto;
+  border: 1px solid var(--lc-color-border);
+  border-radius: var(--lc-radius);
+  background: var(--lc-color-surface);
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 12px;
+}
+.completion li {
+  padding: 2px 6px;
+  border-radius: var(--lc-radius);
+  cursor: pointer;
+}
+.completion li.function {
+  color: var(--lc-color-primary);
+}
+.completion li.active,
+.completion li:hover {
+  background: color-mix(in srgb, var(--lc-color-primary) 12%, transparent);
+}

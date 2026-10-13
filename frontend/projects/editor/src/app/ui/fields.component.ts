@@ -13,7 +13,7 @@ import { getIn, isObject, moveBy, setIn, toPointer, type Json, type JsonObject, 
 import { DocumentState } from '../model/document-state';
 import { listItem, objectFields, type ItemShape, type PropertyInfo, type Variant } from '../model/schema-info';
 import { defaultItem, summaryOf } from '../model/templates';
-import { expressionHints, insertHint, type Hint } from '../model/expression-help';
+import { applyCompletion, completionAt, expressionHints, insertHint, type Hint } from '../model/expression-help';
 import { JsonFieldComponent } from './json-field.component';
 
 /** Proprietà mostrate come area di testo su più righe anche se sono semplici testi. */
@@ -77,6 +77,8 @@ export class FieldsComponent {
   protected readonly open = signal<Set<string>>(new Set());
   /** Espressioni con l'aiuto (variabili e funzioni) aperto. */
   protected readonly hintsOpen = signal<Set<string>>(new Set());
+  /** Completamento aperto mentre si scrive un'espressione: in quale campo, da dove, le voci e quella attiva. */
+  protected readonly completion = signal<{ key: string; from: number; items: Hint[]; active: number } | null>(null);
   /** Elenchi mostrati come JSON invece che elemento per elemento. */
   protected readonly raw = signal<Set<string>>(new Set());
 
@@ -121,6 +123,50 @@ export class FieldsComponent {
   /** Variabili e funzioni disponibili per questa espressione (calcolate solo quando l'aiuto è aperto). */
   protected hints(row: FieldRow): Hint[] {
     return expressionHints(this.store.doc(), row.path);
+  }
+
+  /** Dopo ogni carattere: propone le variabili e le funzioni che continuano la parola scritta dentro `{{ }}`. */
+  protected suggest(row: FieldRow, area: HTMLTextAreaElement): void {
+    const caret = area.selectionStart ?? area.value.length;
+    const found = area.selectionStart === area.selectionEnd ? completionAt(area.value, caret, expressionHints(this.store.doc(), row.path)) : null;
+    this.completion.set(found ? { key: this.key(row.path), from: found.from, items: found.items, active: 0 } : null);
+  }
+
+  /** Frecce per scegliere, Invio o Tab per inserire, Esc per chiudere. Senza elenco aperto i tasti fanno il solito. */
+  protected completionKey(row: FieldRow, area: HTMLTextAreaElement, event: KeyboardEvent): void {
+    const c = this.completion();
+    if (!c || c.key !== this.key(row.path)) return;
+    const move = (delta: number) => this.completion.set({ ...c, active: (c.active + delta + c.items.length) % c.items.length });
+    switch (event.key) {
+      case 'ArrowDown':
+        move(1);
+        break;
+      case 'ArrowUp':
+        move(-1);
+        break;
+      case 'Enter':
+      case 'Tab':
+        this.choose(row, area, c.items[c.active]);
+        break;
+      case 'Escape':
+        this.completion.set(null);
+        break;
+      default:
+        return;
+    }
+    event.preventDefault();
+  }
+
+  protected choose(row: FieldRow, area: HTMLTextAreaElement, hint: Hint): void {
+    const c = this.completion();
+    if (!c) return;
+    const caret = area.selectionStart ?? area.value.length;
+    const result = applyCompletion(area.value, c.from, caret, hint);
+    this.completion.set(null);
+    this.setText(row, result.value);
+    area.value = result.value;
+    area.focus();
+    area.setSelectionRange(result.caret, result.caret);
   }
 
   /** Inserisce una variabile o una funzione alla posizione del cursore e rimette il cursore subito dopo. */
