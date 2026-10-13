@@ -9,9 +9,9 @@ import type { SectionNode } from 'schema';
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     .body { display: flex; flex-direction: column; gap: var(--lc-gap, 12px); }
-    /* Affiancati: ognuno largo quanto il suo contenuto (almeno 200px), a capo quando manca spazio, allineati in basso. */
+    /* Affiancati: da 200 a 360px ciascuno, a capo quando manca spazio, allineati in basso. */
     .body.row { flex-direction: row; flex-wrap: wrap; align-items: flex-end; }
-    .body.row > lc-node { flex: 0 1 auto; min-width: 200px; }
+    .body.row > lc-node { flex: 1 1 200px; max-width: 360px; }
   `,
   template: `
     <nz-card role="region" [attr.aria-label]="node().title ? runtime().text(node().title, scope()) : null" [nzTitle]="node().title ? runtime().text(node().title, scope())  : undefined">

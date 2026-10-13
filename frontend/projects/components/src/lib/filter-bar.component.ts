@@ -44,7 +44,7 @@ import { nextId, parseIsoDate, parseIsoDateTime, toIsoDate, toIsoDateTime } from
                   <label nz-checkbox [ngModel]="value(field) === true" (ngModelChange)="change(field, $event || null)">{{ runtime().text(field.label, scope()) || field.name }}</label>
                 }
                 @case ('date') {
-                  <nz-date-picker [nzId]="id + field.name" [ngModel]="dates()[field.name]" (ngModelChange)="change(field, toIso($event))" />
+                  <nz-date-picker [nzId]="id + field.name" nzFormat="dd/MM/yyyy" [ngModel]="dates()[field.name]" (ngModelChange)="change(field, toIso($event))" />
                 }
                 @case ('datetime') {
                   <nz-date-picker [nzId]="id + field.name" [nzShowTime]="{ nzFormat: 'HH:mm' }" nzFormat="dd/MM/yyyy HH:mm" [ngModel]="dates()[field.name]" (ngModelChange)="change(field, toIsoTime($event))" />

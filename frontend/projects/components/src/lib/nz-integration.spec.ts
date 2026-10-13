@@ -134,7 +134,7 @@ describe('integrazione con NG-ZORRO', () => {
     it('select, data e casella scrivono i valori nel form', async () => {
       const { fixture, el } = await render([form]);
       // la data iniziale compare nel selettore di date
-      expect((el.querySelector('nz-date-picker input') as HTMLInputElement).value).toBe('2026-10-07');
+      expect((el.querySelector('nz-date-picker input') as HTMLInputElement).value).toBe('07/10/2026');
       const options = await openSelect(el.querySelector('lc-form nz-select') as Element, () => settle(fixture));
       (options.find((o) => o.textContent?.trim() === 'business') as HTMLElement).click();
       await settle(fixture);

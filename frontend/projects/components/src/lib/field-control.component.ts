@@ -41,7 +41,7 @@ import { parseIsoDate, parseIsoDateTime, toIsoDate, toIsoDateTime } from './shar
         </label>
       }
       @case ('date') {
-        <nz-date-picker [nzId]="inputId()" [nzDisabled]="disabled()" [ngModel]="date()" (ngModelChange)="valueChange.emit(toIso($event))" />
+        <nz-date-picker [nzId]="inputId()" nzFormat="dd/MM/yyyy" [nzDisabled]="disabled()" [ngModel]="date()" (ngModelChange)="valueChange.emit(toIso($event))" />
       }
       @case ('datetime') {
         <nz-date-picker [nzId]="inputId()" [nzDisabled]="disabled()" [nzShowTime]="{ nzFormat: 'HH:mm' }" nzFormat="dd/MM/yyyy HH:mm" [ngModel]="date()" (ngModelChange)="valueChange.emit(toIsoTime($event))" />

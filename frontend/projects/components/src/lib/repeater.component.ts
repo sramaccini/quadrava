@@ -81,7 +81,7 @@ type Row = Record<string, unknown>;
                         <nz-switch [nzId]="cellId" [nzDisabled]="disabled()" [ngModel]="row[sub.name] === true" (ngModelChange)="set(i, sub, $event)" />
                       }
                       @case ('date') {
-                        <nz-date-picker [nzId]="cellId" [nzDisabled]="disabled()" [nzStatus]="err ? 'error' : ''" [ngModel]="dates()[i]?.[sub.name] ?? null" (ngModelChange)="set(i, sub, toIso($event))" />
+                        <nz-date-picker [nzId]="cellId" nzFormat="dd/MM/yyyy" [nzDisabled]="disabled()" [nzStatus]="err ? 'error' : ''" [ngModel]="dates()[i]?.[sub.name] ?? null" (ngModelChange)="set(i, sub, toIso($event))" />
                       }
                       @case ('lookup') {
                         <lc-lookup [inputId]="cellId" [field]="sub" [runtime]="runtime()" [scope]="cellScope(row)" [value]="row[sub.name]" [disabled]="disabled()" (valueChange)="set(i, sub, $event)" />
