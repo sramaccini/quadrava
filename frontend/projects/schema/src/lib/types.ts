@@ -154,6 +154,8 @@ interface NodeBase extends ConditionalProps {
 export interface SectionNode extends NodeBase {
   type: 'section';
   title?: string;
+  /** Componenti uno sotto l'altro (predefinito) o affiancati (`row`). */
+  layout?: 'column' | 'row';
   components: NodeDefinition[];
 }
 export interface TextNode extends NodeBase {
@@ -352,7 +354,20 @@ export interface ServerDataTableNode extends NodeBase {
   rowActionsInline?: number;
 }
 
-export type NodeDefinition = SectionNode | TextNode | ButtonNode | FilterBarNode | TableNode | FormNode | TabsNode | DetailNode | AlertNode | StatsNode | WizardNode | TreeNode | CalendarNode | ChartNode | DataTableNode | ServerDataTableNode;
+/** Campo a sé (casella di testo, elenco a discesa, data…) legato allo stato della schermata. */
+export interface InputNode extends NodeBase {
+  type: 'input';
+  /** Il campo, con le stesse proprietà dei campi del form. */
+  field: FieldDefinition;
+  /** Stato del valore (`state.<nome del campo>` se assente). */
+  bind?: StatePath;
+  /** Valore iniziale, se lo stato non ne ha già uno. */
+  default?: unknown;
+  /** Passi dopo ogni modifica; vedono il nuovo valore in `value`. */
+  onChange?: Step[];
+}
+
+export type NodeDefinition = SectionNode | TextNode | ButtonNode | FilterBarNode | TableNode | FormNode | TabsNode | DetailNode | AlertNode | StatsNode | WizardNode | TreeNode | CalendarNode | ChartNode | DataTableNode | ServerDataTableNode | InputNode;
 export type NodeType = NodeDefinition['type'];
 
 export interface ScreenDefinition {

@@ -1,6 +1,6 @@
 import { effect, Injector, signal, computed, untracked, type EffectRef } from '@angular/core';
 import { ExpressionEngine, parseTemplate } from 'expressions';
-import type { DialogStep, NodeDefinition, ScreenDefinition } from 'schema';
+import type { DialogStep, InputNode, NodeDefinition, ScreenDefinition } from 'schema';
 import { Authorization, Confirmation, DataClient, FormDialog, Notifier, RuntimeDiagnostics, ScreenNavigator, UserProvider, type DataRequest } from './ports';
 import type { I18n } from './i18n';
 import type { CallResult, DataSourceState, Scope } from './types';
@@ -119,6 +119,9 @@ export class ScreenRuntime {
           const now = new Date();
           this.setState(node.bind, `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`);
         }
+      } else if (node.type === 'input') {
+        const path = inputPath(node);
+        if (this.getState(path) === undefined) this.setState(path, initialInputValue(node));
       } else if (node.type === 'tree') {
         if (node.bind && this.getState(node.bind) === undefined) this.setState(node.bind, null);
       } else if (node.type === 'wizard') {
@@ -390,4 +393,15 @@ function assign(target: Record<string, unknown>, keys: string[], value: unknown)
   const child = target[head];
   const base = child !== null && typeof child === 'object' && !Array.isArray(child) ? (child as Record<string, unknown>) : {};
   return { ...target, [head]: assign(base, rest, value) };
+}
+
+/** Stato di un campo `input`: `bind`, oppure `state.<nome del campo>`. */
+export function inputPath(node: InputNode): string {
+  return node.bind ?? `state.${node.field.name}`;
+}
+
+/** Valore iniziale di un campo `input`: `default`, altrimenti falso per checkbox e switch e nullo per gli altri. */
+export function initialInputValue(node: InputNode): unknown {
+  if (node.default !== undefined) return node.default;
+  return node.field.type === 'checkbox' || node.field.type === 'switch' ? false : null;
 }

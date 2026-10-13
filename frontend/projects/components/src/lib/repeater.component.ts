@@ -90,10 +90,10 @@ type Row = Record<string, unknown>;
                         <lc-file-field [inputId]="cellId" [field]="sub" [runtime]="runtime()" [scope]="cellScope(row)" [value]="row[sub.name]" [disabled]="disabled()" (valueChange)="set(i, sub, $event)" />
                       }
                       @case ('textarea') {
-                        <textarea nz-input [id]="cellId" [rows]="sub.rows ?? 2" [attr.aria-label]="label(sub)" [readOnly]="disabled()" [nzStatus]="err ? 'error' : ''" [value]="text(row, sub)" (input)="set(i, sub, $any($event.target).value)"></textarea>
+                        <textarea nz-input [id]="cellId" [rows]="sub.rows ?? 2" [attr.aria-label]="label(sub)" [readonly]="disabled()" [nzStatus]="err ? 'error' : ''" [value]="text(row, sub)" (input)="set(i, sub, $any($event.target).value)"></textarea>
                       }
                       @default {
-                        <input nz-input [id]="cellId" [type]="sub.type === 'number' ? 'number' : 'text'" [attr.aria-label]="label(sub)" [attr.aria-invalid]="!!err" [readOnly]="disabled()" [nzStatus]="err ? 'error' : ''" [value]="text(row, sub)" (input)="set(i, sub, $any($event.target).value)" />
+                        <input nz-input [id]="cellId" [type]="sub.type === 'number' ? 'number' : 'text'" [attr.aria-label]="label(sub)" [attr.aria-invalid]="!!err" [readonly]="disabled()" [nzStatus]="err ? 'error' : ''" [value]="text(row, sub)" (input)="set(i, sub, $any($event.target).value)" />
                       }
                     }
                     @if (err) {

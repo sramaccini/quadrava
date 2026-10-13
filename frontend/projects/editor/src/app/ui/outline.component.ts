@@ -176,6 +176,12 @@ export class OutlineComponent {
 }
 
 function detailOf(value: Record<string, Json>): string {
+  // Un campo a sé: etichetta (o nome) e tipo del campo.
+  const field = value['field'];
+  if (value['type'] === 'input' && field !== null && typeof field === 'object' && !Array.isArray(field)) {
+    const text = typeof field['label'] === 'string' && field['label'].trim() ? field['label'] : field['name'];
+    return [typeof text === 'string' ? fallbackText(text) : '', field['type']].filter(Boolean).join(' · ');
+  }
   for (const key of DETAIL_KEYS) {
     const text = value[key];
     if (typeof text === 'string' && text.trim()) return fallbackText(text);

@@ -3,7 +3,7 @@ import { paletteGroups } from '../ui/palette.component';
 import { EDITOR_MESSAGES } from '../messages';
 import type { Json, JsonObject } from './doc-ops';
 import { childSlots, containerItems, definitionProperties, listItem, nodeProperties, NODE_TYPES, objectFields, ownerOf, screenProperties, targetAt, type PropertyInfo, type Variant } from './schema-info';
-import { defaultItem, emptyScreen, ensureSource, freshId, nodeTemplate, summaryOf, withFreshIds } from './templates';
+import { defaultItem, emptyScreen, ensureSource, freshId, INPUT_KINDS, nodeTemplate, summaryOf, uniqueInputName, withFreshIds } from './templates';
 
 const t = (key: string): string => EDITOR_MESSAGES['it'][key] ?? key;
 
@@ -65,14 +65,25 @@ describe('lettura dello schema', () => {
   });
 
   it('ogni tipo dello schema è nella tavolozza e ha un modello valido, con il data source che usa', () => {
-    expect(paletteGroups().flatMap((g) => g.types).sort()).toEqual([...NODE_TYPES].sort());
-    for (const type of NODE_TYPES) {
-      const node: JsonObject = { id: freshId({}, type), ...nodeTemplate(type, t) };
+    const kinds = paletteGroups().flatMap((g) => g.types);
+    expect([...new Set(kinds.map((k) => k.split('.')[0]))].sort()).toEqual([...NODE_TYPES].sort());
+    for (const type of [...NODE_TYPES, ...kinds.filter((k) => k.includes('.'))]) {
+      const node: JsonObject = { id: freshId({}, type.split('.')[0]), ...nodeTemplate(type, t) };
       const doc = ensureSource({ ...emptyScreen(t), components: [node] }, node);
       const result = validateScreen(doc);
       expect(result.valid ? [] : result.issues, type).toEqual([]);
       if (typeof node['source'] === 'string') expect(Object.keys((doc as { dataSources: object }).dataSources)).toContain(node['source']);
     }
+  });
+
+  it('la tavolozza offre ogni tipo di campo a sé; i nomi dei campi nuovi non si ripetono', () => {
+    expect(paletteGroups().find((g) => g.key === 'fields')?.types).toEqual(INPUT_KINDS.map((k) => 'input.' + k));
+    expect(nodeTemplate('input.select', t)).toMatchObject({ type: 'input', field: { name: 'scelta', type: 'select' } });
+    const lookup = nodeTemplate('input.lookup', t);
+    expect(Object.keys((ensureSource(emptyScreen(t), lookup) as { dataSources: object }).dataSources)).toEqual(['clienti']);
+    const doc: Json = { components: [{ type: 'input', field: { name: 'testo', type: 'text' } }, { type: 'input', field: { name: 'testo2', type: 'text' } }] };
+    expect(uniqueInputName(doc, nodeTemplate('input.text', t))).toMatchObject({ field: { name: 'testo3' } });
+    expect(uniqueInputName(doc, nodeTemplate('input.date', t))).toMatchObject({ field: { name: 'data' } });
   });
 
   it('identificativi nuovi in kebab-case e unici, anche per le copie', () => {

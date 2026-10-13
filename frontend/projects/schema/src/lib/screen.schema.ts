@@ -533,7 +533,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
             "calendar",
             "chart",
             "dataTable",
-            "serverDataTable"
+            "serverDataTable",
+            "input"
           ]
         },
         "visibleIf": {
@@ -579,6 +580,13 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                 "items": {
                   "$ref": "#/$defs/node"
                 }
+              },
+              "layout": {
+                "enum": [
+                  "column",
+                  "row"
+                ],
+                "description": "Disposizione dei componenti: uno sotto l’altro (column, predefinito) o affiancati e a capo quando manca spazio (row), per esempio più campi in una riga."
               }
             }
           }
@@ -1332,6 +1340,45 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                 "type": "integer",
                 "minimum": 0,
                 "maximum": 10
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "input"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "required": [
+              "field"
+            ],
+            "properties": {
+              "field": {
+                "$ref": "#/$defs/field",
+                "description": "Il campo da mostrare, con le stesse proprietà dei campi del form (tipo, etichetta, opzioni, obbligatorietà, regola di validazione, lookup, file…). Il nome identifica il campo e, senza `bind`, il valore nello stato."
+              },
+              "bind": {
+                "$ref": "#/$defs/statePath",
+                "description": "Stato in cui il campo legge e scrive il valore (state.<nome del campo> se assente). I data source che lo usano si ricaricano quando cambia."
+              },
+              "default": {
+                "description": "Valore iniziale, se lo stato non ne ha già uno (nullo se assente; falso per checkbox e switch)."
+              },
+              "onChange": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "$ref": "#/$defs/step"
+                },
+                "description": "Passi eseguiti dopo ogni modifica del valore, che vedono il nuovo valore in `value`. Il testo libero si scrive nello stato quando si esce dal campo o con Invio."
               }
             }
           }

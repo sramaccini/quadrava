@@ -19,7 +19,29 @@ export const TEMPLATE_SOURCES: Record<string, { name: string; method: 'GET' | 'P
   chart: { name: 'serie', method: 'GET' },
 };
 
-export function nodeTemplate(type: string, t: Translate): JsonObject {
+/** Tipi di campo che la tavolozza offre come componenti `input` a sé (voce `input.<tipo>`). */
+export const INPUT_KINDS = ['text', 'textarea', 'number', 'select', 'multiselect', 'radio', 'checkbox', 'switch', 'date', 'datetime', 'lookup', 'file'] as const;
+
+/** Nome iniziale del campo di un `input`, per tipo (reso unico nella schermata da `uniqueInputName`). */
+const INPUT_NAMES: Record<string, string> = {
+  text: 'testo', textarea: 'note', number: 'numero', select: 'scelta', multiselect: 'scelte', radio: 'opzione',
+  checkbox: 'conferma', switch: 'attivo', date: 'data', datetime: 'momento', lookup: 'cliente', file: 'allegato',
+};
+
+/** Il campo di partenza di un `input` del tipo dato. */
+function inputField(kind: string, label: string): JsonObject {
+  const field: JsonObject = { name: INPUT_NAMES[kind] ?? 'valore', type: kind, label };
+  if (kind === 'select' || kind === 'multiselect' || kind === 'radio') field['options'] = ['opzione1', 'opzione2', 'opzione3'];
+  if (kind === 'lookup') field['lookup'] = { source: 'clienti', labelField: 'nome' };
+  return field;
+}
+
+/**
+ * Modello di un nodo. `kind` è un tipo dello schema oppure `input.<tipo di campo>` per le voci della tavolozza che
+ * aggiungono un campo a sé (casella di testo, elenco a discesa…).
+ */
+export function nodeTemplate(kind: string, t: Translate): JsonObject {
+  const [type, variant] = kind.split('.');
   const source = TEMPLATE_SOURCES[type]?.name;
   const label = t('ed.tpl.label');
   switch (type) {
@@ -54,6 +76,8 @@ export function nodeTemplate(type: string, t: Translate): JsonObject {
       return { type, source, dateField: 'data', labelField: 'titolo' };
     case 'chart':
       return { type, kind: 'bar', source, categoryField: 'categoria', series: [{ field: 'valore', label }] };
+    case 'input':
+      return { type, field: inputField(variant ?? 'text', label) };
     default:
       return { type };
   }
@@ -66,12 +90,33 @@ export function sourceTemplate(name: string, method: 'GET' | 'POST'): JsonObject
 
 /** Aggiunge al documento il data source che il nodo usa, se non esiste ancora. */
 export function ensureSource(doc: Json, node: JsonObject): Json {
-  const name = node['source'];
+  // Il lookup di un campo a sé cerca in un data source GET.
+  const lookup = getIn(node, ['field', 'lookup', 'source']);
+  const name = node['source'] ?? lookup;
   if (typeof name !== 'string' || !isObject(doc)) return doc;
   const sources = isObject(getIn(doc, ['dataSources'])) ? (doc['dataSources'] as JsonObject) : {};
   if (name in sources) return doc;
   const method = TEMPLATE_SOURCES[String(node['type'])]?.method ?? 'GET';
   return { ...doc, dataSources: { ...sources, [name]: sourceTemplate(name, method) } };
+}
+
+/** Un `input` nuovo con un nome di campo che nessun altro `input` della schermata usa già (`testo`, `testo2`…). */
+export function uniqueInputName(doc: Json, node: JsonObject): JsonObject {
+  const field = node['field'];
+  if (node['type'] !== 'input' || !isObject(field) || typeof field['name'] !== 'string' || node['bind'] !== undefined) return node;
+  const used = new Set<string>();
+  const visit = (value: Json): void => {
+    if (Array.isArray(value)) value.forEach(visit);
+    else if (isObject(value)) {
+      if (value['type'] === 'input' && isObject(value['field']) && typeof value['field']['name'] === 'string') used.add(value['field']['name']);
+      Object.values(value).forEach(visit);
+    }
+  };
+  visit(doc);
+  const base = field['name'];
+  let name = base;
+  for (let n = 2; used.has(name); n++) name = base + n;
+  return name === base ? node : { ...node, field: { ...field, name } };
 }
 
 /** Identificativo libero per un nuovo nodo: `tipo-n` in kebab-case, unico nel documento. */

@@ -5,7 +5,7 @@ import { validateScreen, type ScreenDefinition } from 'schema';
 import { fromPointer, getIn, insertAt, isObject, moveBy, moveTo, removeAt, samePath, setIn, startsWith, toPointer, type Json, type JsonObject, type Path } from './doc-ops';
 import { DocumentState, type EditorIssue } from './document-state';
 import { childSlots, ownerOf, targetAt } from './schema-info';
-import { emptyScreen, ensureSource, freshId, nodeTemplate, usedIds, withFreshIds } from './templates';
+import { emptyScreen, ensureSource, freshId, nodeTemplate, uniqueInputName, usedIds, withFreshIds } from './templates';
 import { collectTexts, makeKey, translatable, usedKeys, type TextEntry } from './texts';
 
 export type { EditorIssue } from './document-state';
@@ -130,9 +130,10 @@ export class EditorStore extends DocumentState {
   }
 
   /** Aggiunge un nodo del tipo indicato (dal suo modello) e lo seleziona; crea il data source che usa, se manca. */
-  addNode(type: string, at = this.insertionPoint()): void {
+  addNode(kind: string, at = this.insertionPoint()): void {
     const doc = this.doc();
-    const node: JsonObject = { id: freshId(doc, type), ...nodeTemplate(type, (k) => this.t(k)) };
+    const template = uniqueInputName(doc, nodeTemplate(kind, (k) => this.t(k)));
+    const node: JsonObject = { id: freshId(doc, String(template['type'])), ...template };
     const next = insertAt(ensureSource(doc, node), at.list, at.index, node);
     const list = getIn(next, at.list) as Json[];
     this.apply(next, { select: [...at.list, Math.min(at.index, list.length - 1)] });

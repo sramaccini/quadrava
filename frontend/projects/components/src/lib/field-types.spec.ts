@@ -92,4 +92,23 @@ describe('nuovi tipi di campo', () => {
     radios[0].click();
     await h.until(() => h.requests.at(-1)?.query?.['tipo'] === undefined, 'tipo tolto');
   });
+
+  it('readOnlyIf rende davvero in sola lettura testo e area di testo del form e delle righe ripetibili', async () => {
+    const h = await renderScreen({
+      components: [
+        {
+          type: 'form',
+          initial: { righe: [{ voce: 'a' }] },
+          fields: [
+            { name: 'codice', type: 'text', label: 'Codice', readOnlyIf: '{{ true }}' },
+            { name: 'note', type: 'textarea', label: 'Note', readOnlyIf: '{{ true }}' },
+            { name: 'libero', type: 'text', label: 'Libero' },
+            { name: 'righe', type: 'repeater', label: 'Righe', readOnlyIf: '{{ true }}', fields: [{ name: 'voce', type: 'text', label: 'Voce' }] },
+          ],
+        },
+      ],
+    });
+    const inputs = [...h.el.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('lc-form input[nz-input], lc-form textarea[nz-input]')];
+    expect(inputs.map((i) => i.readOnly)).toEqual([true, true, false, true]);
+  });
 });

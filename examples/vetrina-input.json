@@ -1,0 +1,195 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "vetrina-input",
+  "title": "{{ t('vetrina_input.titolo', 'Vetrina: campi a sé') }}",
+  "description": "{{ t('vetrina_input.descrizione', 'Casella di testo, elenco a discesa, date, interruttori e altri campi usati da soli, legati allo stato della schermata.') }}",
+  "requires": "vetrina.componenti.leggi",
+  "dataSources": {
+    "fatture": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/fatture",
+      "params": {
+        "tipo": "{{ state.tipo }}",
+        "stato": "{{ state.stati }}",
+        "cliente": "{{ state.cliente }}"
+      }
+    },
+    "clienti": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/clienti",
+      "params": {
+        "q": "{{ search }}",
+        "id": "{{ lookupKey }}"
+      }
+    }
+  },
+  "components": [
+    {
+      "id": "titolo",
+      "type": "text",
+      "style": "heading",
+      "text": "{{ t('vetrina_input.intestazione', 'Campi a sé') }}"
+    },
+    {
+      "id": "sezione-ricerca",
+      "type": "section",
+      "title": "{{ t('vetrina_input.ricerca', 'Ricerca con campi affiancati') }}",
+      "layout": "row",
+      "components": [
+        {
+          "id": "campo-tipo",
+          "type": "input",
+          "field": {
+            "name": "tipo",
+            "type": "select",
+            "label": "{{ t('comune.tipo', 'Tipo') }}",
+            "options": ["attiva", "passiva"],
+            "optionKey": "valori.tipo"
+          }
+        },
+        {
+          "id": "campo-stati",
+          "type": "input",
+          "field": {
+            "name": "stati",
+            "type": "multiselect",
+            "label": "{{ t('comune.stato', 'Stato') }}",
+            "options": ["bozza", "inviata", "pagata"],
+            "optionKey": "valori.stato"
+          }
+        },
+        {
+          "id": "campo-cliente",
+          "type": "input",
+          "field": {
+            "name": "cliente",
+            "type": "select",
+            "label": "{{ t('comune.cliente', 'Cliente') }}",
+            "options": ["Rossi Srl", "Bianchi SpA", "Verdi & C.", "Neri Group"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "tabella-fatture",
+      "type": "table",
+      "source": "fatture",
+      "columns": [
+        {
+          "field": "numero",
+          "label": "{{ t('comune.numero', 'Numero') }}"
+        },
+        {
+          "field": "cliente",
+          "label": "{{ t('comune.cliente', 'Cliente') }}"
+        },
+        {
+          "field": "tipo",
+          "label": "{{ t('comune.tipo', 'Tipo') }}",
+          "valueKey": "valori.tipo"
+        },
+        {
+          "field": "stato",
+          "label": "{{ t('comune.stato', 'Stato') }}",
+          "valueKey": "valori.stato"
+        }
+      ]
+    },
+    {
+      "id": "sezione-tipi",
+      "type": "section",
+      "title": "{{ t('vetrina_input.tipi', 'Altri campi') }}",
+      "components": [
+        {
+          "id": "campo-nome",
+          "type": "input",
+          "field": {
+            "name": "nome",
+            "type": "text",
+            "label": "{{ t('vetrina_input.nome', 'Nome') }}",
+            "required": true,
+            "tooltip": "{{ t('vetrina_input.nome_aiuto', 'Il saluto qui sotto si aggiorna quando si esce dal campo') }}"
+          }
+        },
+        {
+          "id": "campo-email",
+          "type": "input",
+          "field": {
+            "name": "email",
+            "type": "text",
+            "label": "{{ t('vetrina_input.email', 'Email') }}",
+            "validate": {
+              "rule": "{{ value.matches('^[^@ ]+@[^@ ]+$') }}",
+              "message": "{{ t('vetrina_input.email_non_valida', 'Indirizzo email non valido') }}"
+            }
+          }
+        },
+        {
+          "id": "campo-quantita",
+          "type": "input",
+          "default": 1,
+          "field": {
+            "name": "quantita",
+            "type": "number",
+            "label": "{{ t('vetrina_input.quantita', 'Quantità') }}"
+          }
+        },
+        {
+          "id": "campo-data",
+          "type": "input",
+          "field": {
+            "name": "consegna",
+            "type": "date",
+            "label": "{{ t('vetrina_input.consegna', 'Data di consegna') }}"
+          }
+        },
+        {
+          "id": "campo-referente",
+          "type": "input",
+          "bind": "state.ordine.referente",
+          "field": {
+            "name": "referente",
+            "type": "lookup",
+            "label": "{{ t('vetrina_input.referente', 'Cliente (ricerca)') }}",
+            "lookup": {
+              "source": "clienti",
+              "labelField": "nome"
+            }
+          }
+        },
+        {
+          "id": "campo-urgente",
+          "type": "input",
+          "field": {
+            "name": "urgente",
+            "type": "switch",
+            "label": "{{ t('vetrina_input.urgente', 'Urgente') }}"
+          },
+          "onChange": [
+            {
+              "toast": "{{ value ? t('vetrina_input.urgente_si', 'Segnata come urgente') : t('vetrina_input.urgente_no', 'Non più urgente') }}"
+            }
+          ]
+        },
+        {
+          "id": "campo-note",
+          "type": "input",
+          "readOnlyIf": "{{ !state.urgente }}",
+          "field": {
+            "name": "note",
+            "type": "textarea",
+            "rows": 2,
+            "label": "{{ t('vetrina_input.note', 'Motivo dell’urgenza (attivo solo se urgente)') }}"
+          }
+        },
+        {
+          "id": "riepilogo",
+          "type": "text",
+          "text": "{{ t('vetrina_input.riepilogo', 'Ciao {nome}: {q, number} pezzi, consegna {d}', {'nome': dyn(state.nome == null ? '—' : state.nome), 'q': dyn(state.quantita == null ? 0 : state.quantita), 'd': dyn(state.consegna == null ? '—' : state.consegna)}) }}"
+        }
+      ]
+    }
+  ]
+}

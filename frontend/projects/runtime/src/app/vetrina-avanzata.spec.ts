@@ -246,6 +246,33 @@ describe('Vetrina: componenti avanzati', () => {
     });
   });
 
+  describe('campi a sé', () => {
+    it('i campi affiancati filtrano la tabella; gli altri scrivono nello stato che il testo mostra', { timeout: 20000 }, async () => {
+      const { el, until, settle } = await openShowcase('/vetrina/vetrina-input');
+      await until(() => cells(el, 0, 0).length === 8, 'fatture');
+      const row = el.querySelector('main lc-section .body.row') as HTMLElement;
+      expect([...row.querySelectorAll('nz-form-label')].map((l) => plainText(l.textContent))).toEqual(['Tipo', 'Stato', 'Cliente']);
+      // Tipo: Passiva.
+      await openSelect(row.querySelector('nz-select')!, settle);
+      await until(() => document.querySelectorAll('.ant-select-item-option').length > 0, 'opzioni');
+      const options = [...document.querySelectorAll<HTMLElement>('.ant-select-item-option')];
+      expect(options.map((o) => plainText(o.textContent))).toEqual(['Attiva', 'Passiva']);
+      options[1].click();
+      await until(() => cells(el, 0, 2).length > 0 && cells(el, 0, 2).every((c) => c === 'Passiva'), 'solo passive');
+      // Nome e quantità finiscono nel riepilogo; l'interruttore avvisa e sblocca le note.
+      const input = (label: string) => [...el.querySelectorAll('main lc-input')].find((i) => plainText(i.querySelector('nz-form-label')?.textContent) === label) as HTMLElement;
+      const nome = input('Nome').querySelector('input') as HTMLInputElement;
+      nome.value = 'Anna';
+      nome.dispatchEvent(new Event('change'));
+      await until(() => plainText(el.querySelector('[data-node-id="riepilogo"]')?.textContent) === 'Ciao Anna: 1 pezzi, consegna —', 'riepilogo');
+      const note = input('Motivo dell’urgenza (attivo solo se urgente)').querySelector('textarea') as HTMLTextAreaElement;
+      expect(note.readOnly).toBe(true);
+      (input('Urgente').querySelector('nz-switch button') as HTMLButtonElement).click();
+      await until(() => !note.readOnly && !!document.querySelector('.ant-message-notice'), 'urgente');
+      expect(document.querySelector('.ant-message-notice')?.textContent).toContain('Segnata come urgente');
+    });
+  });
+
   describe('dettaglio', () => {
     it('i campi con tooltip hanno l’icona di aiuto con il testo tradotto', async () => {
       const { el, until } = await openShowcase('/vetrina/vetrina-layout');

@@ -3,14 +3,19 @@ import { I18n } from 'core';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import { EditorStore } from '../model/editor-store';
 import { NODE_TYPES } from '../model/schema-info';
+import { INPUT_KINDS } from '../model/templates';
 
 /** Tipi di dati trascinati: un tipo di componente dalla tavolozza, il percorso di un nodo dalla struttura. */
 export const DRAG_TYPE = 'application/x-lc-node-type';
 export const DRAG_NODE = 'application/x-lc-node-path';
 
-/** Gruppi della tavolozza. Un tipo dello schema non elencato qui finisce in «Altro», così nessun componente manca. */
+/**
+ * Gruppi della tavolozza. Un tipo dello schema non elencato qui finisce in «Altro», così nessun componente manca. Le voci
+ * `input.<tipo>` aggiungono un campo a sé del tipo indicato.
+ */
 const GROUPS: { key: string; types: string[] }[] = [
   { key: 'layout', types: ['section', 'tabs', 'wizard', 'text', 'alert'] },
+  { key: 'fields', types: INPUT_KINDS.map((k) => 'input.' + k) },
   { key: 'input', types: ['form', 'filterBar', 'button'] },
   { key: 'data', types: ['table', 'dataTable', 'serverDataTable', 'detail'] },
   { key: 'view', types: ['stats', 'chart', 'tree', 'calendar'] },
@@ -64,8 +69,9 @@ export class PaletteComponent {
 }
 
 export function paletteGroups(): { key: string; types: string[] }[] {
-  const listed = new Set(GROUPS.flatMap((g) => g.types));
-  const known = GROUPS.map((g) => ({ key: g.key, types: g.types.filter((t) => NODE_TYPES.includes(t)) }));
+  const typeOf = (kind: string) => kind.split('.')[0];
+  const listed = new Set(GROUPS.flatMap((g) => g.types.map(typeOf)));
+  const known = GROUPS.map((g) => ({ key: g.key, types: g.types.filter((t) => NODE_TYPES.includes(typeOf(t))) }));
   const other = NODE_TYPES.filter((t) => !listed.has(t));
   return other.length ? [...known, { key: 'other', types: other }] : known;
 }

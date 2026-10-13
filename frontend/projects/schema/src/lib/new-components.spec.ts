@@ -245,4 +245,27 @@ describe('schema dei componenti nuovi', () => {
       expect(issuesOf(sdt({ paging: 'server' })).length).toBeGreaterThan(0);
     });
   });
+
+  describe('campo a sé (input) e sezione a riga', () => {
+    const input = (extra: Record<string, unknown>) => screen([{ type: 'input', field: { name: 'nome', type: 'text', label: 'Nome' }, ...extra }]);
+
+    it('accetta un campo con stato, valore iniziale e passi alla modifica', () => {
+      expect(issuesOf(input({}))).toEqual([]);
+      expect(issuesOf(input({ bind: 'state.cliente.nome', default: 'Anna', onChange: [{ refresh: 'elenco' }] }))).toEqual([]);
+      expect(issuesOf(screen([{ type: 'input', field: { name: 'c', type: 'lookup', lookup: { source: 'clienti', labelField: 'nome' } } }]))).toEqual([]);
+    });
+
+    it('rifiuta un input senza campo, con un campo non valido o uno stato fuori da state', () => {
+      expect(issuesOf(screen([{ type: 'input' }])).length).toBeGreaterThan(0);
+      expect(issuesOf(screen([{ type: 'input', field: { name: 'c', type: 'lookup' } }])).length).toBeGreaterThan(0);
+      expect(issuesOf(input({ bind: 'params.x' })).length).toBeGreaterThan(0);
+      expect(issuesOf(input({ onChange: [] })).length).toBeGreaterThan(0);
+      expect(issuesOf(input({ fields: [] })).length).toBeGreaterThan(0);
+    });
+
+    it('la sezione accetta layout row o column', () => {
+      expect(issuesOf(screen([{ type: 'section', layout: 'row', components: [] }]))).toEqual([]);
+      expect(issuesOf(screen([{ type: 'section', layout: 'griglia', components: [] }])).length).toBeGreaterThan(0);
+    });
+  });
 });

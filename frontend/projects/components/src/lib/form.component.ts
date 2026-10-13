@@ -1,26 +1,17 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { I18n, runSteps, type ScreenRuntime, type Scope } from 'core';
 import { NzButtonModule } from 'ng-zorro-antd/button';
-import { NzCheckboxModule } from 'ng-zorro-antd/checkbox';
-import { NzDatePickerModule } from 'ng-zorro-antd/date-picker';
 import { NzFormModule } from 'ng-zorro-antd/form';
-import { NzInputModule } from 'ng-zorro-antd/input';
-import { NzRadioModule } from 'ng-zorro-antd/radio';
-import { NzSelectModule } from 'ng-zorro-antd/select';
-import { NzSwitchModule } from 'ng-zorro-antd/switch';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import type { ActionDefinition, FieldDefinition, FormNode } from 'schema';
-import { FileFieldComponent } from './file-field.component';
+import { FieldControlComponent } from './field-control.component';
 import { fieldError, repeaterError, repeaterRows } from './field-validation';
-import { RepeaterComponent } from './repeater.component';
-import { LookupComponent } from './lookup.component';
-import { nextId, parseIsoDate, parseIsoDateTime, toIsoDate, toIsoDateTime } from './shared';
+import { nextId } from './shared';
 
 /** Form: i valori iniziali arrivano dal data source `source` (se restituisce un oggetto); le azioni ricevono `form` nello scope. */
 @Component({
   selector: 'lc-form',
-  imports: [FormsModule, LookupComponent, FileFieldComponent, RepeaterComponent, NzFormModule, NzInputModule, NzSelectModule, NzCheckboxModule, NzDatePickerModule, NzButtonModule, NzTooltipModule, NzRadioModule, NzSwitchModule],
+  imports: [FieldControlComponent, NzFormModule, NzButtonModule, NzTooltipModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: block; container-type: inline-size; }
@@ -35,7 +26,6 @@ import { nextId, parseIsoDate, parseIsoDateTime, toIsoDate, toIsoDateTime } from
       form.grid { grid-template-columns: minmax(0, 1fr); }
       form.grid > nz-form-item { grid-column: auto; }
     }
-    nz-select, nz-date-picker { width: 100%; }
     .actions { display: flex; gap: var(--lc-gap, 12px); }
   `,
   template: `
@@ -47,75 +37,19 @@ import { nextId, parseIsoDate, parseIsoDateTime, toIsoDate, toIsoDateTime } from
               <nz-form-label [nzFor]="id + field.name" [id]="id + field.name + '-label'" [nzRequired]="!!field.required" [nzTooltipTitle]="field.tooltip ? runtime().text(field.tooltip, fieldScope()) : undefined" [nzTooltipIcon]="'question-circle'">{{ runtime().text(field.label, fieldScope()) || field.name }}</nz-form-label>
             }
             <nz-form-control [nzValidateStatus]="error(field) && field.type !== 'repeater' ? 'error' : ''" [nzErrorTip]="error(field) ?? undefined">
-              @switch (field.type) {
-                @case ('select') {
-                  <nz-select [nzId]="id + field.name" nzAllowClear nzPlaceHolder="—" [nzDisabled]="readOnly(field)" [ngModel]="selected(field)" (ngModelChange)="set(field, $event)">
-                    @for (option of field.options ?? []; track option) {
-                      <nz-option [nzValue]="option" [nzLabel]="optionLabel(field, option)" />
-                    }
-                  </nz-select>
-                }
-                @case ('checkbox') {
-                  <label nz-checkbox [nzDisabled]="readOnly(field)" [ngModel]="values()[field.name] === true" (ngModelChange)="set(field, $event)">
-                    {{ runtime().text(field.label, fieldScope()) || field.name }}
-                  </label>
-                }
-                @case ('date') {
-                  <nz-date-picker [nzId]="id + field.name" [nzDisabled]="readOnly(field)" [ngModel]="dates()[field.name]" (ngModelChange)="set(field, toIso($event))" />
-                }
-                @case ('datetime') {
-                  <nz-date-picker [nzId]="id + field.name" [nzDisabled]="readOnly(field)" [nzShowTime]="{ nzFormat: 'HH:mm' }" nzFormat="dd/MM/yyyy HH:mm" [ngModel]="dates()[field.name]" (ngModelChange)="set(field, toIsoTime($event))" />
-                }
-                @case ('textarea') {
-                  <textarea
-                    nz-input
-                    [id]="id + field.name"
-                    [rows]="field.rows ?? 4"
-                    [value]="text(field)"
-                    [readOnly]="readOnly(field)"
-                    [attr.aria-invalid]="!!error(field)"
-                    (input)="set(field, $any($event.target).value)"
-                  ></textarea>
-                }
-                @case ('radio') {
-                  <nz-radio-group [attr.id]="id + field.name" role="radiogroup" [attr.aria-label]="runtime().text(field.label, fieldScope()) || field.name" [nzDisabled]="readOnly(field)" [ngModel]="selected(field)" (ngModelChange)="set(field, $event)">
-                    @for (option of field.options ?? []; track option) {
-                      <label nz-radio [nzValue]="option">{{ optionLabel(field, option) }}</label>
-                    }
-                  </nz-radio-group>
-                }
-                @case ('switch') {
-                  <nz-switch [nzId]="id + field.name" [nzDisabled]="readOnly(field)" [ngModel]="values()[field.name] === true" (ngModelChange)="set(field, $event)" />
-                }
-                @case ('repeater') {
-                  <lc-repeater [field]="field" [runtime]="runtime()" [scope]="fieldScope()" [value]="values()[field.name]" [disabled]="readOnly(field)" [submitted]="submitted()" [summary]="error(field)" [labelId]="id + field.name + '-label'" (valueChange)="set(field, $event)" />
-                }
-                @case ('file') {
-                  <lc-file-field [inputId]="id + field.name" [field]="field" [runtime]="runtime()" [scope]="fieldScope()" [value]="values()[field.name]" [disabled]="readOnly(field)" (valueChange)="set(field, $event)" />
-                }
-                @case ('lookup') {
-                  <lc-lookup [inputId]="id + field.name" [field]="field" [runtime]="runtime()" [scope]="fieldScope()" [value]="values()[field.name]" [disabled]="readOnly(field)" [placeholder]="'—'" (valueChange)="set(field, $event)" />
-                }
-                @case ('multiselect') {
-                  <nz-select [nzId]="id + field.name" nzMode="multiple" nzAllowClear nzPlaceHolder="—" [nzDisabled]="readOnly(field)" [ngModel]="lists()[field.name]" (ngModelChange)="set(field, $event)">
-                    @for (option of field.options ?? []; track option) {
-                      <nz-option [nzValue]="option" [nzLabel]="optionLabel(field, option)" />
-                    }
-                  </nz-select>
-                }
-                @default {
-                  <input
-                    nz-input
-                    [id]="id + field.name"
-                    [type]="field.type"
-                    [value]="text(field)"
-                    [readOnly]="readOnly(field)"
-                    [attr.autocomplete]="field.sensitive ? 'off' : null"
-                    [attr.aria-invalid]="!!error(field)"
-                    (input)="set(field, $any($event.target).value)"
-                  />
-                }
-              }
+              <lc-field-control
+                [field]="field"
+                [runtime]="runtime()"
+                [scope]="fieldScope()"
+                [value]="values()[field.name]"
+                [disabled]="readOnly(field)"
+                [inputId]="id + field.name"
+                [labelId]="id + field.name + '-label'"
+                [invalid]="!!error(field)"
+                [submitted]="submitted()"
+                [summary]="error(field)"
+                (valueChange)="set(field, $event)"
+              />
             </nz-form-control>
           </nz-form-item>
         }
@@ -149,23 +83,10 @@ export class FormComponent {
 
   protected readonly i18n = inject(I18n);
 
-  /** Etichetta di un'opzione: tradotta con `optionKey` (`<prefisso>.<valore>`), altrimenti il valore stesso. */
-  protected optionLabel(field: FieldDefinition, option: string): string {
-    return field.optionKey ? this.i18n.t(`${field.optionKey}.${option}`, {}, option) : option;
-  }
   protected readonly id = nextId('lc-form') + '-';
   protected readonly values = signal<Record<string, unknown>>({});
   protected readonly busy = signal(false);
   protected readonly submitted = signal(false);
-
-  /** Le date dei campi `date`, calcolate una volta per valore: un oggetto nuovo a ogni rilevamento delle modifiche farebbe riscrivere il campo di continuo. */
-  protected readonly dates = computed<Record<string, Date | null>>(() =>
-    Object.fromEntries(
-      this.node()
-        .fields.filter((f) => f.type === 'date' || f.type === 'datetime')
-        .map((f) => [f.name, f.type === 'date' ? parseIsoDate(this.values()[f.name]) : parseIsoDateTime(this.values()[f.name])]),
-    ),
-  );
 
   /** Il form contiene righe ripetibili. */
   protected readonly hasRows = computed(() => this.node().fields.some((f) => f.type === 'repeater'));
@@ -213,38 +134,6 @@ export class FormComponent {
     }
     return out;
   }
-
-  protected text(field: FieldDefinition): string {
-    const value = this.values()[field.name];
-    return value === null || value === undefined ? '' : String(value);
-  }
-
-  protected selected(field: FieldDefinition): string | null {
-    const value = this.values()[field.name];
-    return value === null || value === undefined || value === '' ? null : String(value);
-  }
-
-
-  /** Valori delle selezioni multiple, calcolati una volta per valore: un elenco nuovo a ogni disegno farebbe ridisegnare la select senza fine. */
-  protected readonly lists = computed<Record<string, string[]>>(() =>
-    Object.fromEntries(
-      this.node()
-        .fields.filter((f) => f.type === 'multiselect')
-        .map((f) => {
-          const value = this.values()[f.name];
-          return [f.name, Array.isArray(value) ? value.map(String) : []];
-        }),
-    ),
-  );
-
-  protected toIso(date: Date | null): string | null {
-    return toIsoDate(date);
-  }
-
-  protected toIsoTime(date: Date | null): string | null {
-    return toIsoDateTime(date);
-  }
-
 
   protected readOnly(field: FieldDefinition): boolean {
     return this.runtime().isReadOnly(field, this.fieldScope());
