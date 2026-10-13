@@ -7,14 +7,16 @@ Regole comuni a tutti i componenti, valide anche per i nuovi:
 - i testi passano da `{{ }}` e dal catalogo delle traduzioni (`t('chiave', 'ripiego')`); le scritte della piattaforma sono chiavi `lc.*` in italiano e inglese;
 - nessun HTML da dati o traduzioni: i valori si mostrano sempre come testo;
 - le espressioni sono **fail-closed**: se una condizione non si può valutare, il componente si nasconde o si disabilita;
-- `visibleIf`, `hiddenIf`, `tooltip` valgono per ogni nodo (li applica il contenitore `lc-node`);
+- `visibleIf`, `hiddenIf`, `tooltip` valgono per ogni nodo (li applica il contenitore `lc-node`); `grow`, `span` e `region` valgono per ogni nodo dentro un contenitore di layout (§ 2.21);
 - colori e misure solo dal tema (`var(--lc-*)` o i token NG-ZORRO).
 
 ## 1. Realizzati
 
 | Nodo / elemento | A cosa serve |
 | --- | --- |
-| `section` | Riquadro con titolo che raggruppa altri nodi. |
+| `section` | Riquadro con titolo che raggruppa altri nodi, uno sotto l'altro o affiancati (`layout: "row"`). |
+| `box`, `grid`, `border` | Contenitori di layout senza riquadro: riga o colonna, griglia a colonne, regioni nord/sud/ovest/est/centro (§ 2.21). |
+| `input` | Un campo a sé (casella di testo, elenco a discesa, data…) legato allo stato della schermata (§ 2.20). |
 | `text` | Testo semplice o titolo (`style: heading`). |
 | `button` | Pulsante che esegue una sequenza di passi (`onClick`). |
 | `filterBar` | Barra di filtri che scrive nello stato della schermata (`bind`). |
@@ -37,7 +39,7 @@ Regole comuni a tutti i componenti, valide anche per i nuovi:
 
 ## 2. Aggiunti nell'ottobre 2026
 
-Realizzati in quest'ordine, uno per commit, ognuno con test (schema, componente e vetrina) e un esempio nella vetrina della demo: «Tabelle avanzate» (1–5), «Campi e form» (6–11), «Schede, dettaglio e messaggi» (12), «Cruscotto» (13, 17), «Procedure e viste» (14–16), «Datatable» (18, 19).
+Realizzati in quest'ordine, uno per commit, ognuno con test (schema, componente e vetrina) e un esempio nella vetrina della demo: «Tabelle avanzate» (1–5), «Campi e form» (6–11), «Schede, dettaglio e messaggi» (12), «Cruscotto» (13, 17), «Procedure e viste» (14–16), «Datatable» (18, 19), «Campi a sé» (20), «Contenitori di layout» (21).
 
 | # | Componente | Area | Stato |
 | --- | --- | --- | --- |
@@ -60,6 +62,8 @@ Realizzati in quest'ordine, uno per commit, ognuno con test (schema, componente 
 | 17 | Grafici | visualizzazione | realizzato |
 | 18 | Datatable con colonne filtrabili, ordinabili e raggruppabili | tabella | realizzato |
 | 19 | Datatable pilotata dal servizio, per tabelle molto grandi | tabella | realizzato |
+| 20 | Campi a sé (`input`) e sezione a riga | campi | realizzato |
+| 21 | Contenitori di layout: box, griglia, border | layout | realizzato |
 
 ### 2.1 Ordinamento delle colonne
 
@@ -290,6 +294,63 @@ Stessa interfaccia della datatable (filtri dall'intestazione, ordinamento, scelt
 - `bind` scrive nello stato `{ sort, filters, groupBy }`, utile per esportazioni o altre chiamate con gli stessi criteri.
 - Il servizio deve controllare i campi ricevuti (solo colonne note in `sort`, `filters`, `groupBy`, `distinct`) e limitare `size`: la richiesta arriva dal browser e non è affidabile.
 
+### 2.20 Campi a sé (input)
+
+Un campo usato da solo, fuori da form e filtri: casella di testo, numero, elenco a discesa, scelta multipla, pulsanti di scelta, casella di spunta, interruttore, data, data e ora, ricerca (lookup), file, righe ripetibili. Il valore sta nello **stato della schermata**, quindi data source, espressioni, testi e passi lo leggono come ogni altro stato.
+
+```json
+{ "type": "input", "bind": "state.filtro.tipo", "default": "attiva",
+  "field": { "name": "tipo", "type": "select", "label": "Tipo", "options": ["attiva", "passiva"], "optionKey": "valori.tipo" },
+  "onChange": [ { "refresh": "fatture" } ] }
+```
+
+- `field` ha le stesse proprietà dei campi del form (tipo, etichetta, opzioni, `required`, `validate`, `readOnlyIf`, `lookup`, `upload`…). Form e campo a sé disegnano il controllo con lo stesso componente (`lc-field-control`).
+- `bind` è il percorso nello stato; se manca vale `state.<nome del campo>`. Il runtime crea lo stato **prima** del primo caricamento dei data source: `default`, altrimenti falso per checkbox e switch e nullo per gli altri.
+- Il testo libero (testo, numero, area di testo) si scrive nello stato quando si esce dal campo o con Invio, per non ricaricare i data source a ogni carattere; gli altri tipi a ogni scelta. Un campo svuotato vale `null`; i numeri arrivano come numeri.
+- `onChange`: passi eseguiti dopo ogni modifica, con il nuovo valore in `value`.
+- Errori di `required` e `validate` dopo la prima modifica. Il nodo accetta anche `enabledIf` e `readOnlyIf`, che si sommano a quelli del campo.
+- Nella tavolozza dell'editor ogni tipo è una voce del gruppo «Campi» (Casella di testo, Elenco a discesa…); i nomi dei campi nuovi non si ripetono nella schermata.
+
+Per affiancare più campi: una `section` con `layout: "row"` (larghezza da 200 a 360px ciascuno, a capo quando manca spazio) oppure un `box` o una `grid` (§ 2.21).
+
+### 2.21 Contenitori di layout
+
+Tre contenitori che decidono solo **dove** stanno i figli (nessun bordo né sfondo: per un riquadro con titolo c'è `section`). Le proprietà di posizione stanno sui **figli**, come i vincoli dei layout manager classici: così nell'editor si spostano i nodi nella struttura e si imposta la posizione nel pannello delle proprietà del figlio.
+
+```text
+ box (row)                  grid (columns: 3)          border
+ ┌────┬──────────┬────┐     ┌──────────────┬─────┐     ┌──────────── north ───────────┐
+ │ A  │ B grow 1 │ C  │     │ span 2       │     │     ├──────┬──────────────┬────────┤
+ └────┴──────────┴────┘     ├──────────────┴─────┤     │ west │    center    │  east  │
+                            │ span 3             │     ├──────┴──────────────┴────────┤
+                            └────────────────────┘     └──────────── south ───────────┘
+```
+
+**Box** (`box`): figli in riga (`direction: "row"`, predefinito) o in colonna.
+- `align`: allineamento trasversale (`start`, `center`, `end`, `stretch` predefinito); `justify`: distribuzione (`start`, `center`, `end`, `between`).
+- `wrap`: in riga va a capo quando manca spazio (vero se assente).
+- `gap`: `none`, `small`, `medium` (predefinito), `large`, ricavati da `--lc-gap` del tema.
+- Figli: `grow` (0–12) divide lo spazio libero in proporzione; chi ha `grow` in una riga che va a capo non scende sotto i 200px.
+
+```json
+{ "type": "box", "justify": "between", "align": "center", "components": [
+  { "type": "text", "style": "heading", "text": "Fatture" },
+  { "type": "box", "gap": "small", "components": [ { "type": "button", ... }, { "type": "button", ... } ] } ] }
+```
+
+**Griglia** (`grid`): `columns` colonne uguali (2 se assente, fino a 12); i figli ne occupano `span` (mai più delle colonne). Sotto i 600px di larghezza del contenitore diventa una colonna sola.
+
+**Border** (`border`): ogni figlio dichiara la `region`: `north` e `south` su tutta la larghezza, `west` ed `east` ai lati (`westWidth`, `eastWidth` in px, 240 se assenti), `center` (predefinita) prende il resto. Più figli nella stessa regione stanno uno sotto l'altro; una regione vuota non occupa spazio. Sotto i 768px di larghezza le regioni si impilano: nord, ovest, centro, est, sud.
+
+```json
+{ "type": "border", "westWidth": 220, "components": [
+  { "type": "alert", "region": "north", "kind": "info", "text": "..." },
+  { "type": "input", "region": "west", "field": { "name": "stato", "type": "radio", ... } },
+  { "type": "table", "source": "fatture", "columns": [ ... ] } ] }
+```
+
+Regole comuni: un figlio nascosto (`visibleIf`) non occupa spazio; nei contenitori i campi riempiono la cella (fuori restano larghi al massimo 560px); le sezioni affiancate si allungano fino all'altezza della riga. I contenitori si annidano liberamente (un box dentro una regione del border, una griglia in una sezione…). Nell'editor sono nel gruppo «Struttura e testi»; il border nasce con tre aree d'esempio (nord, ovest, centro).
+
 ## 3. Note di realizzazione e limiti noti
 
 - **Caricamento dei data source.** Un data source GET si ricarica da solo solo se cambia la richiesta risolta (URL e parametri). Un cambiamento dello stato che non tocca la richiesta (una selezione, un passo della procedura, un nodo scelto) non provoca nuove chiamate; per ricaricare comunque si usa il passo `refresh`.
@@ -300,6 +361,8 @@ Stessa interfaccia della datatable (filtri dall'intestazione, ordinamento, scelt
 - **Datatable.** Lavora sulle righe caricate (provata fino a 50.000 righe nelle funzioni e 20.000 nel componente); oltre, `serverDataTable`.
 - **Datatable lato server.** Niente selezione di righe né righe espandibili; i gruppi aperti non si ricordano tra una visita e l'altra della schermata. Il passo `refresh` su un data source non GET non chiama nulla: avvisa solo i componenti che lo interrogano da sé.
 - **Grafici.** Niente zoom, aree riempite o più di due assi.
+- **Campi a sé.** Gli errori di validazione si mostrano, ma non bloccano i pulsanti della schermata (per un invio con controllo dei campi c'è il form); come sempre il controllo vero spetta al servizio.
+- **Contenitori di layout.** Larghezze di ovest ed est fisse (niente divisori trascinabili), niente celle della griglia su più righe, soglie per impilare fisse (600px griglia, 768px border).
 
 ### 3.1 Limiti superati (ottobre 2026)
 

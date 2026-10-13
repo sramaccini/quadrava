@@ -147,6 +147,12 @@ export interface SortSpec {
 
 interface NodeBase extends ConditionalProps {
   id?: string;
+  /** In un `box`: quota dello spazio libero. */
+  grow?: number;
+  /** In una `grid`: colonne occupate. */
+  span?: number;
+  /** In un `border`: regione (center se assente). */
+  region?: BorderRegion;
   /** Testo di aiuto al passaggio del mouse o con il focus (solo testo, può contenere `{{ }}`). */
   tooltip?: string;
 }
@@ -354,6 +360,37 @@ export interface ServerDataTableNode extends NodeBase {
   rowActionsInline?: number;
 }
 
+export type LayoutGap = 'none' | 'small' | 'medium' | 'large';
+export type BorderRegion = 'north' | 'south' | 'west' | 'east' | 'center';
+
+/** Contenitore flessibile: figli in riga o in colonna. */
+export interface BoxNode extends NodeBase {
+  type: 'box';
+  components: NodeDefinition[];
+  direction?: 'row' | 'column';
+  gap?: LayoutGap;
+  align?: 'start' | 'center' | 'end' | 'stretch';
+  justify?: 'start' | 'center' | 'end' | 'between';
+  wrap?: boolean;
+}
+
+/** Griglia a colonne: i figli occupano `span` colonne. */
+export interface GridNode extends NodeBase {
+  type: 'grid';
+  components: NodeDefinition[];
+  columns?: number;
+  gap?: LayoutGap;
+}
+
+/** Border layout: regioni nord, sud, ovest, est e centro, scelte dai figli con `region`. */
+export interface BorderNode extends NodeBase {
+  type: 'border';
+  components: NodeDefinition[];
+  westWidth?: number;
+  eastWidth?: number;
+  gap?: LayoutGap;
+}
+
 /** Campo a sé (casella di testo, elenco a discesa, data…) legato allo stato della schermata. */
 export interface InputNode extends NodeBase {
   type: 'input';
@@ -367,7 +404,7 @@ export interface InputNode extends NodeBase {
   onChange?: Step[];
 }
 
-export type NodeDefinition = SectionNode | TextNode | ButtonNode | FilterBarNode | TableNode | FormNode | TabsNode | DetailNode | AlertNode | StatsNode | WizardNode | TreeNode | CalendarNode | ChartNode | DataTableNode | ServerDataTableNode | InputNode;
+export type NodeDefinition = SectionNode | TextNode | ButtonNode | FilterBarNode | TableNode | FormNode | TabsNode | DetailNode | AlertNode | StatsNode | WizardNode | TreeNode | CalendarNode | ChartNode | DataTableNode | ServerDataTableNode | InputNode | BoxNode | GridNode | BorderNode;
 export type NodeType = NodeDefinition['type'];
 
 export interface ScreenDefinition {

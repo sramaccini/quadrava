@@ -17,7 +17,8 @@ import { nextId } from './shared';
   imports: [FieldControlComponent, NzFormModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
-    :host { display: block; max-width: 560px; }
+    /* Da solo non supera i 560px; i contenitori di layout tolgono il limite (--lc-input-max: none) per riempire la cella. */
+    :host { display: block; max-width: var(--lc-input-max, 560px); }
     nz-form-item { margin-bottom: 0; }
   `,
   template: `

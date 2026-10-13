@@ -534,7 +534,10 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
             "chart",
             "dataTable",
             "serverDataTable",
-            "input"
+            "input",
+            "box",
+            "grid",
+            "border"
           ]
         },
         "visibleIf": {
@@ -552,6 +555,28 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
         "tooltip": {
           "type": "string",
           "description": "Testo di aiuto mostrato al passaggio del mouse o con il focus. Solo testo (mai HTML); può contenere {{ }}."
+        },
+        "grow": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 12,
+          "description": "Dentro un box: quota dello spazio libero che il componente prende rispetto ai fratelli (0 o assente = solo lo spazio che gli serve)."
+        },
+        "span": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12,
+          "description": "Dentro una griglia: colonne occupate (1 se assente, mai più di quelle della griglia)."
+        },
+        "region": {
+          "enum": [
+            "north",
+            "south",
+            "west",
+            "east",
+            "center"
+          ],
+          "description": "Dentro un border: la regione del componente (center se assente). Più componenti nella stessa regione stanno uno sotto l’altro."
         }
       },
       "allOf": [
@@ -1382,6 +1407,140 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
               }
             }
           }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "box"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "required": [
+              "components"
+            ],
+            "properties": {
+              "components": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/node"
+                }
+              },
+              "direction": {
+                "enum": [
+                  "row",
+                  "column"
+                ],
+                "description": "row: affiancati (predefinito); column: uno sotto l’altro."
+              },
+              "gap": {
+                "$ref": "#/$defs/gap"
+              },
+              "align": {
+                "enum": [
+                  "start",
+                  "center",
+                  "end",
+                  "stretch"
+                ],
+                "description": "Allineamento sull’asse trasversale: in riga è quello verticale (stretch se assente, end per allineare campi di altezza diversa)."
+              },
+              "justify": {
+                "enum": [
+                  "start",
+                  "center",
+                  "end",
+                  "between"
+                ],
+                "description": "Distribuzione sull’asse principale (start se assente; between = primo e ultimo agli estremi)."
+              },
+              "wrap": {
+                "type": "boolean",
+                "description": "In riga, va a capo quando manca spazio (vero se assente)."
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "grid"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "required": [
+              "components"
+            ],
+            "properties": {
+              "components": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/node"
+                }
+              },
+              "columns": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 12,
+                "description": "Colonne della griglia (2 se assente). Sotto i 600px di larghezza diventa una colonna sola."
+              },
+              "gap": {
+                "$ref": "#/$defs/gap"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "border"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "required": [
+              "components"
+            ],
+            "properties": {
+              "components": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/node"
+                }
+              },
+              "westWidth": {
+                "type": "integer",
+                "minimum": 120,
+                "maximum": 600,
+                "description": "Larghezza in px della regione west (240 se assente)."
+              },
+              "eastWidth": {
+                "type": "integer",
+                "minimum": 120,
+                "maximum": 600,
+                "description": "Larghezza in px della regione east (240 se assente)."
+              },
+              "gap": {
+                "$ref": "#/$defs/gap"
+              }
+            }
+          }
         }
       ],
       "unevaluatedProperties": false
@@ -1775,6 +1934,15 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
         }
       },
       "unevaluatedProperties": false
+    },
+    "gap": {
+      "enum": [
+        "none",
+        "small",
+        "medium",
+        "large"
+      ],
+      "description": "Spazio tra i componenti, ricavato dal tema (medium se assente)."
     }
   }
 };

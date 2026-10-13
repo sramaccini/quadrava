@@ -86,6 +86,14 @@ describe('lettura dello schema', () => {
     expect(uniqueInputName(doc, nodeTemplate('input.date', t))).toMatchObject({ field: { name: 'data' } });
   });
 
+  it('i contenitori di layout accolgono figli; il border nasce con tre aree', () => {
+    const doc: Json = { components: [{ type: 'box', components: [] }, { type: 'grid', components: [] }, { type: 'border', components: [] }, { type: 'text', text: 'x' }] };
+    for (const i of [0, 1, 2]) expect(childSlots(doc, ['components', i])).toEqual([{ path: ['components', i, 'components'] }]);
+    expect(childSlots(doc, ['components', 3])).toEqual([]);
+    const border = nodeTemplate('border', t) as { components: { region: string }[] };
+    expect(border.components.map((c) => c.region)).toEqual(['north', 'west', 'center']);
+  });
+
   it('identificativi nuovi in kebab-case e unici, anche per le copie', () => {
     const doc: Json = { components: [{ id: 'data-table-1', type: 'dataTable' }] };
     expect(freshId(doc, 'dataTable')).toBe('data-table-2');

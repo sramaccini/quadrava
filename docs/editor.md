@@ -23,7 +23,7 @@ Avvio: `cd frontend && npm run start:editor` (porta 4201; costruisce le librerie
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
-- **Tavolozza.** Un clic aggiunge il componente nel punto di inserimento: dentro il contenitore selezionato (schermata, sezione, scheda, passo), altrimenti subito dopo il nodo selezionato. In alternativa lo si trascina nella struttura. Ogni componente nasce da un modello valido; se usa un data source (`source`) e questo manca, l'editor lo crea (GET `/api/<nome>`, POST con `{{ request }}` per la datatable lato server).
+- **Tavolozza.** Gruppi: «Struttura e testi» (sezione, box, griglia, border layout, schede, procedura, testo, messaggio), «Campi» (un campo a sé per tipo: casella di testo, elenco a discesa, data…, con nomi che non si ripetono nella schermata), «Inserimento e azioni», «Dati», «Visualizzazione». Un clic aggiunge il componente nel punto di inserimento: dentro il contenitore selezionato (schermata, sezione, box, griglia, border, scheda, passo), altrimenti subito dopo il nodo selezionato. In alternativa lo si trascina nella struttura. Ogni componente nasce da un modello valido; se usa un data source (`source`) e questo manca, l'editor lo crea (GET `/api/<nome>`, POST con `{{ request }}` per la datatable lato server).
 - **Struttura.** L'albero dei nodi, con schede e passi. Il nodo selezionato mostra i comandi sposta su/giù, duplica (identificativi nuovi), taglia, elimina; tabs e wizard anche «aggiungi scheda/passo». I nodi si trascinano prima, dopo o dentro un'altra riga. Un pallino rosso o giallo segnala errori o avvisi del nodo.
 - **Proprietà.** I campi dell'elemento selezionato, generati dallo schema JSON (§ 2). Le condizioni (`visibleIf`, `hiddenIf`, `enabledIf`, `readOnlyIf`, `nextIf`) e il tooltip stanno in un gruppo a parte, aperto solo se ne è impostata una.
 - **Anteprima.** La schermata disegnata da `lc-screen`, con il tema in modifica, in un iframe isolato (§ 3). Il nodo selezionato è evidenziato da un riquadro tratteggiato (se sta in una scheda nascosta, l'anteprima apre quella scheda); Alt+clic su un componente, o un clic in modalità «Seleziona», lo seleziona invece di attivarlo.
@@ -38,7 +38,7 @@ La bozza (documento, dati di esempio e traduzioni scritte nell'editor) si salva 
 
 ## 2. Pannello delle proprietà generato dallo schema
 
-L'editor non ha un elenco proprio delle proprietà dei componenti: le legge da `screen.schema.json` (`model/schema-info.ts`). Così un componente o una proprietà nuova compare da sola nell'editor; basta aggiungere il modello iniziale in `model/templates.ts` e il nome nella tavolozza (un test fallisce se un tipo dello schema non ha modello valido o non è nella tavolozza).
+L'editor non ha un elenco proprio delle proprietà dei componenti: le legge da `screen.schema.json` (`model/schema-info.ts`). Così un componente o una proprietà nuova compare da sola nell'editor; basta aggiungere il modello iniziale in `model/templates.ts` e il nome nella tavolozza (un contenitore di nodi anche in `LAYOUT_CONTAINERS` di `model/schema-info.ts`). La posizione di un nodo dentro un contenitore di layout (`grow`, `span`, `region`) si imposta nel pannello delle proprietà del nodo stesso (un test fallisce se un tipo dello schema non ha modello valido o non è nella tavolozza).
 
 | Nello schema | Nel pannello |
 | --- | --- |

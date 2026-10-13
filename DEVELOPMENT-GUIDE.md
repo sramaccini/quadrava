@@ -165,6 +165,10 @@ Layout, real focus and the dark theme are not covered by tests (the application 
 * Ajv needs `unsafe-eval` under CSP until validators are precompiled.
 * `validate:examples` checks translation keys but not CEL expressions (the runtime test `i18n-examples.spec.ts` does).
 * Component limits that remain (no nested repeaters, no chart zoom, no row selection in the server data table) are listed in the component catalogue, § 3.
+* NG-ZORRO 22's `nz-input` has its own `readonly` input and writes the attribute from it: bind `[readonly]`, never `[readOnly]` (the property binding is overwritten and the field stays editable).
+* Single fields are drawn by `lc-field-control` (`components`), shared by `form` and `input`: a new field type goes there once. `filterBar` keeps its own template (placeholders and the "all" choice differ).
+* Layout containers (`box`, `grid`, `border`) read the position of each child from the child itself (`grow`, `span`, `region`, declared on every node in the schema). Inside them `--lc-input-max: none` lets fields fill the cell; a new container that holds nodes must also be added to `seedFilters` in `ScreenRuntime` (so that the state of nested fields exists before the first load) and to `LAYOUT_CONTAINERS` in the editor's `schema-info.ts`.
+* After `npm run build:libs` restart the dev servers: they do not reload `dist`, and one left running while `dist` is rebuilt fails with "module 'components' could not be found" until restarted.
 * `provideNzIcons` is not cumulative: a second call replaces the icons registered by `provideLowcodeComponents`. An app that registers its own icons must repeat `Object.values(ICON_TYPES).map((i) => i.icon)` (the editor does).
 * Developer diagnostics are not translated and stay in Italian: schema and expression issues, navigation loading errors, and the messages of the `services` library. Everything the end user reads is translatable.
 * Adding a language means adding `examples/i18n/<code>.json` (same keys as `it.json`), an entry in `LANGUAGES` of the demo, and, for the platform strings, a block in `components/src/lib/messages.ts` and a NG-ZORRO locale in `provide.ts`.

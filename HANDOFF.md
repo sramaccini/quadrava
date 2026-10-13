@@ -1,6 +1,6 @@
 # HANDOFF — Piattaforma LowCode
 
-Documento di passaggio per continuare il lavoro con Claude Code in locale. Ultimo aggiornamento: 2026-10-13, dopo il collegamento dei servizi reali al runtime e la prova dal vivo con Keycloak.
+Documento di passaggio per continuare il lavoro con Claude Code in locale. Ultimo aggiornamento: 2026-10-13, dopo i campi a sé (`input`) e i contenitori di layout (`box`, `grid`, `border`).
 
 ## 1. Cos'è
 
@@ -33,14 +33,14 @@ Da `frontend/`:
 - **Stack completo con Keycloak** (Docker Desktop avviato): `cd idp && docker compose up -d`; in `reference/` `mvn -q package -DskipTests` e `java -jar <modulo>/target/*.jar` per registry, authz, telemetry, bff; in `frontend/` `npm run demo-api` (8084), `npm run publish:examples -- --user amministratore --password amministratore`, poi `npm run start:runtime:bff` (4200) e `start:editor:bff` (4201). `.claude/launch.json` ha `runtime-bff` e `editor-bff` sulle stesse porte (le origini ammesse dal BFF sono 4200 e 4201). Il registro tiene i dati in memoria: dopo un riavvio va ripubblicato.
 - test per progetto: `npx ng test <schema|expressions|core|components|services|runtime|editor> --watch=false`
 
-Stato test (tutti verdi): schema 63, expressions 39, core 61, components 128, services 24, runtime 70, editor 54 (**439**); Java 20 (authz 4, bff 8, registry 5, telemetry 3). Build di produzione di runtime, editor e runtime `bff` riuscite.
+Stato test (tutti verdi): schema 68, expressions 39, core 61, components 141, services 24, runtime 74, editor 56 (**463**); Java 20 (authz 4, bff 8, registry 5, telemetry 3). Build di produzione riuscite: runtime 2,32 MB iniziali, editor 2,45 MB (avviso a 2,5 MB: vedi § 8b, punto 3).
 
 ## 4. Architettura in breve
 
 Librerie (`frontend/projects/`): `schema` (JSON Schema + tipi), `expressions` (CEL, template `{{ }}`, formattatore messaggi), `core` (ScreenRuntime, motore delle azioni, NavigationRuntime, I18n, porte astratte, catalogo, tema), `components` (NG-ZORRO), `services` (porte reali: HTTP/BFF/OIDC). App: `runtime` (demo/shell), `editor` (editor visuale, vedi § 5b).
 
 - Porte (classi astratte come token DI): Authorization, UserProvider, DataClient, ScreenNavigator, Notifier, RuntimeDiagnostics, Confirmation, **FormDialog** (passo `dialog`).
-- Nodi: section, text, button, filterBar, table, **dataTable**, **serverDataTable**, form, tabs, detail, alert, **stats**, **wizard**, **tree**, **calendar**, **chart**. Passi: set, call, refresh, navigate, toast, confirm, **dialog**.
+- Nodi: section (anche `layout: "row"`), **box, grid, border** (contenitori di layout; i figli dichiarano `grow`, `span`, `region`), **input** (campo a sé legato allo stato), text, button, filterBar, table, **dataTable**, **serverDataTable**, form, tabs, detail, alert, **stats**, **wizard**, **tree**, **calendar**, **chart**. Passi: set, call, refresh, navigate, toast, confirm, **dialog**.
 - Campi: text, number, select, checkbox, date, **textarea, datetime, radio, switch, multiselect, lookup, file, repeater**. Formati: **number**, currency, percent, date, datetime, boolean, badge.
 - Tabella: ordinamento (in pagina o lato server con `sort.bind`), selezione + azioni multiple, menu azioni (`rowActionsInline`), righe espandibili, celle cliccabili, riga dei totali (`aggregate`).
 - `lc-node` applica `visibleIf/hiddenIf` e `tooltip`, ed espone `data-node-id`/`data-node-type` (per l'editor e i test). Permessi `dominio.risorsa.azione`; espressioni **fail-closed**.
@@ -51,7 +51,7 @@ Librerie (`frontend/projects/`): `schema` (JSON Schema + tipi), `expressions` (C
 
 ## 5. Catalogo componenti
 
-`docs/catalogo-componenti.md`: specifica di ogni componente aggiunto (19, ottobre 2026; il 19 è la serverDataTable), regole comuni e **limiti noti** (§ 3). La vetrina della demo ha nove schermate: Componenti base, Form, Campi e form, Filtri e tabelle, Tabelle avanzate, Datatable, Schede/dettaglio/messaggi, Cruscotto, Procedure e viste.
+`docs/catalogo-componenti.md`: specifica di ogni componente aggiunto (21, ottobre 2026; 19 serverDataTable, 20 campi a sé, 21 contenitori di layout), regole comuni e **limiti noti** (§ 3). La vetrina della demo ha undici schermate: Componenti base, Form, Contenitori di layout, Campi a sé, Campi e form, Filtri e tabelle, Tabelle avanzate, Datatable, Schede/dettaglio/messaggi, Cruscotto, Procedure e viste.
 
 ## 5b. Editor visuale
 
@@ -72,6 +72,8 @@ Le principali sono nella DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In breve:
 - Nei test: `stubViewportHeight` + attesa delle opzioni per `nz-select`; `Element.scrollTo` simulato; le finestre chiuse restano nel DOM.
 - `provideNzIcons` non si somma: una seconda chiamata sostituisce le icone di `provideLowcodeComponents` (l'editor le ripete).
 - NG-ZORRO 22: `NzTooltipModule` (non `NzToolTipModule`), `nz-tabs` (non `nz-tabset`), niente `nzAutosize` sulle textarea (si usa `field-sizing: content`). Angular non ha il modificatore `.capture` negli eventi: `addEventListener(..., true)`.
+- `nz-input` (NG-ZORRO 22) ha un input `readonly` che scrive l'attributo: legare `[readonly]`, mai `[readOnly]`. Un campo si disegna in `lc-field-control`, condiviso da form e `input`.
+- Dopo `build:libs` riavviare i dev server: uno rimasto acceso mentre `dist` si ricompila fallisce («module 'components' could not be found») finché non si riavvia.
 - Messaggi con graffe letterali (`{{ }}`, JSON): vanno scritte `\\{` `\\}` nel sorgente TypeScript.
 
 ## 7. Limiti noti / debito
@@ -87,10 +89,30 @@ Le principali sono nella DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In breve:
 ## 8. Prossimi passi (nell'ordine suggerito)
 
 1. Review dei 18 componenti (commit da `4d224fb` a `47a96ee`), del fix del runtime `9d96798`, dei limiti superati (da `7907884` a `f42abdf`), della serverDataTable (`9bae9b7`) e dell'editor (da `5840c9c` a `b3d7a5d`).
-2. **Componenti di input autonomi ed editor grafico** (prossimo obiettivo indicato da Simone): oggi casella di testo, elenco a discesa ecc. esistono solo come campi di `form`/`filterBar`; valutare componenti di input a sé (legati allo stato) e la nuova fase dell'editor grafico.
+2. **Editor grafico**, prossima fase (vedi § 8b per l'elenco completo di cosa manca e delle ottimizzazioni proposte).
 3. **Editor visuale**, seconda fase: flusso di revisione prima della pubblicazione (stato `in-revisione` del contratto); completamento delle espressioni (vedi `docs/editor.md` § 6).
 4. Menu: navigazione da tastiera, badge, ricerca. CEL in `validate:examples`.
 5. Decise il 13 ottobre 2026: ADR-08 accettata (anteprima in iframe, fatta), ADR-09 modificata (cronologia a versioni immutabili), registro a documenti separati (schermate, navigazione, temi): contratto `registry.yaml` 0.2, registro di riferimento, pannello «Registro» dell'editor, inoltro nel BFF e runtime che carica dal registro fatti. Provato dal vivo senza Keycloak (profilo `senza-auth`) e, il 13 ottobre, con Keycloak e tutti i servizi dietro il BFF.
+
+## 8b. Cosa manca e ottimizzazioni proposte (13 ottobre 2026)
+
+**Cosa manca.**
+
+1. *Qualità e rilascio*: nessuna CI (né frontend né Java); nessun test end-to-end in un browser vero (Playwright): i difetti visti solo nel browser (readonly ignorato, campi stretti, formato delle date) lo dimostrano; nessun controllo automatico di accessibilità (axe); manca il kit di conformità ai contratti per i backend dei clienti.
+2. *Registro e ciclo di vita*: archivio in memoria (da rendere persistente); revisione prima della pubblicazione (stato `in-revisione`); confronto tra versioni; promozione tra ambienti (sviluppo → collaudo → produzione); validazione di schema ed espressioni **alla pubblicazione**, nel servizio.
+3. *Editor*: completamento delle espressioni; modifica diretta nell'anteprima (trascinare e ridimensionare sul disegno); anteprima con dati veri del backend (oggi solo dati d'esempio); avviso di modifiche concorrenti sullo stesso documento.
+4. *Componenti*: un gruppo di validazione a livello di schermata (oggi i campi a sé mostrano gli errori ma non bloccano i pulsanti); esportazione CSV/Excel e stampa; componenti di base ancora assenti (immagine, link, tag/badge, barra di avanzamento, timeline, kanban); divisori trascinabili nel border layout; menu con tastiera, badge e ricerca.
+5. *Piattaforma*: cataloghi delle lingue da un servizio; CSP senza `unsafe-eval` (Ajv precompilato); `.nvmrc`/`engines` per fissare Node 24.
+
+**Ottimizzazioni proposte**, in ordine di rapporto beneficio/costo:
+
+1. **CI e test e2e**: GitHub Actions con `validate:examples`, `schema:check`, test di tutti i progetti, `mvn verify`, build di produzione; più una suite Playwright minima sulla vetrina (con screenshot di confronto).
+2. **Validare una volta, alla pubblicazione**: il registro valida schema e CEL e marca la versione; il runtime non compila più Ajv nel browser (meno peso e niente `unsafe-eval`) e mette in cache le versioni pubblicate, immutabili per hash (`Cache-Control: immutable`).
+3. **Caricamento differito dei componenti pesanti**: grafici, calendario, datatable e albero caricati alla prima schermata che li usa (`import()` nel catalogo): il bundle iniziale (runtime 2,32 MB, editor 2,45 MB, avviso a 2,5 MB) scende sensibilmente.
+4. **Richieste dei data source**: annullare quella in corso quando la richiesta risolta cambia (`AbortController`), unire le richieste identiche contemporanee, attendere una breve pausa quando lo stato cambia in raffica. Oggi solo la datatable lato server scarta le risposte superate.
+5. **Espressioni**: cache delle espressioni CEL compilate per testo (oggi ogni valutazione analizza di nuovo); a regime, grafo delle dipendenze tra stato e data source per ricalcolare solo ciò che cambia.
+6. **Avvio in un comando**: un `docker compose` con Keycloak e i servizi di riferimento, e uno script che avvia demo-api e i due frontend.
+7. **Pulizia**: la barra dei filtri riusi `lc-field-control` come form e `input`; documentazione delle proprietà generata dallo schema (le descrizioni ci sono già).
 
 ## 9. Convenzioni di lavoro
 

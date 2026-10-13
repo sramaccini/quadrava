@@ -21,6 +21,7 @@ import { ChartComponent } from './chart.component';
 import { DataTableComponent } from './data-table.component';
 import { ServerDataTableComponent } from './server-data-table.component';
 import { InputComponent } from './input.component';
+import { BorderComponent, BoxComponent, GridComponent } from './layout.component';
 import { TreeComponent } from './tree.component';
 import { WizardComponent } from './wizard.component';
 import { TableComponent } from './table.component';
@@ -71,6 +72,9 @@ export const STANDARD_COMPONENTS: ComponentCatalog = {
   dataTable: DataTableComponent,
   serverDataTable: ServerDataTableComponent,
   input: InputComponent,
+  box: BoxComponent,
+  grid: GridComponent,
+  border: BorderComponent,
 };
 
 /**

@@ -1,0 +1,177 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "vetrina-contenitori",
+  "title": "{{ t('vetrina_contenitori.titolo', 'Vetrina: contenitori di layout') }}",
+  "description": "{{ t('vetrina_contenitori.descrizione', 'Box in riga o in colonna, griglia a colonne e border layout con regioni nord, sud, ovest, est e centro.') }}",
+  "requires": "vetrina.componenti.leggi",
+  "dataSources": {
+    "fatture": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/fatture",
+      "params": {
+        "stato": "{{ state.statoFattura }}"
+      }
+    }
+  },
+  "components": [
+    {
+      "id": "barra",
+      "type": "box",
+      "justify": "between",
+      "align": "center",
+      "components": [
+        {
+          "id": "titolo",
+          "type": "text",
+          "style": "heading",
+          "text": "{{ t('vetrina_contenitori.intestazione', 'Contenitori di layout') }}"
+        },
+        {
+          "id": "azioni",
+          "type": "box",
+          "gap": "small",
+          "components": [
+            {
+              "id": "btn-aggiorna",
+              "type": "button",
+              "label": "{{ t('vetrina_contenitori.aggiorna', 'Aggiorna') }}",
+              "onClick": [{ "refresh": "fatture" }]
+            },
+            {
+              "id": "btn-aiuto",
+              "type": "button",
+              "label": "{{ t('vetrina_contenitori.aiuto', 'Aiuto') }}",
+              "onClick": [{ "toast": "{{ t('vetrina_contenitori.aiuto_testo', 'Box in riga: titolo a sinistra, pulsanti a destra') }}" }]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sezione-border",
+      "type": "section",
+      "title": "{{ t('vetrina_contenitori.border', 'Border layout') }}",
+      "components": [
+        {
+          "id": "border",
+          "type": "border",
+          "westWidth": 220,
+          "eastWidth": 220,
+          "components": [
+            {
+              "id": "nord",
+              "type": "alert",
+              "region": "north",
+              "kind": "info",
+              "text": "{{ t('vetrina_contenitori.nord', 'Nord: su tutta la larghezza. Sotto i 768px le regioni si impilano.') }}"
+            },
+            {
+              "id": "filtro-stato",
+              "type": "input",
+              "region": "west",
+              "field": {
+                "name": "statoFattura",
+                "type": "radio",
+                "label": "{{ t('comune.stato', 'Stato') }}",
+                "options": ["bozza", "inviata", "pagata"],
+                "optionKey": "valori.stato"
+              }
+            },
+            {
+              "id": "tabella",
+              "type": "table",
+              "region": "center",
+              "source": "fatture",
+              "columns": [
+                { "field": "numero", "label": "{{ t('comune.numero', 'Numero') }}" },
+                { "field": "cliente", "label": "{{ t('comune.cliente', 'Cliente') }}" },
+                { "field": "stato", "label": "{{ t('comune.stato', 'Stato') }}", "valueKey": "valori.stato" }
+              ]
+            },
+            {
+              "id": "est",
+              "type": "text",
+              "region": "east",
+              "text": "{{ t('vetrina_contenitori.est', 'Est: una colonna laterale di larghezza fissa, per note o riepiloghi.') }}"
+            },
+            {
+              "id": "sud",
+              "type": "text",
+              "region": "south",
+              "text": "{{ t('vetrina_contenitori.sud', 'Sud: piè di pagina su tutta la larghezza.') }}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sezione-griglia",
+      "type": "section",
+      "title": "{{ t('vetrina_contenitori.griglia', 'Griglia a tre colonne') }}",
+      "components": [
+        {
+          "id": "griglia",
+          "type": "grid",
+          "columns": 3,
+          "components": [
+            {
+              "id": "campo-ragione",
+              "type": "input",
+              "span": 2,
+              "field": { "name": "ragioneSociale", "type": "text", "label": "{{ t('vetrina_contenitori.ragione', 'Ragione sociale (2 colonne)') }}" }
+            },
+            {
+              "id": "campo-piva",
+              "type": "input",
+              "field": { "name": "partitaIva", "type": "text", "label": "{{ t('vetrina_contenitori.piva', 'Partita IVA') }}" }
+            },
+            {
+              "id": "campo-indirizzo",
+              "type": "input",
+              "span": 3,
+              "field": { "name": "indirizzo", "type": "text", "label": "{{ t('vetrina_contenitori.indirizzo', 'Indirizzo (3 colonne)') }}" }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "box-proporzioni",
+      "type": "box",
+      "components": [
+        {
+          "id": "sezione-due-terzi",
+          "type": "section",
+          "grow": 2,
+          "title": "{{ t('vetrina_contenitori.due_terzi', 'Box: due terzi (grow 2)') }}",
+          "components": [
+            {
+              "id": "testo-due-terzi",
+              "type": "text",
+              "text": "{{ t('vetrina_contenitori.due_terzi_testo', 'In un box in riga, grow divide lo spazio libero: qui 2 contro 1.') }}"
+            }
+          ]
+        },
+        {
+          "id": "sezione-un-terzo",
+          "type": "section",
+          "grow": 1,
+          "title": "{{ t('vetrina_contenitori.un_terzo', 'Un terzo (grow 1)') }}",
+          "components": [
+            {
+              "id": "colonna",
+              "type": "box",
+              "direction": "column",
+              "gap": "small",
+              "components": [
+                { "id": "riga-1", "type": "text", "text": "{{ t('vetrina_contenitori.colonna_1', 'Box in colonna,') }}" },
+                { "id": "riga-2", "type": "text", "text": "{{ t('vetrina_contenitori.colonna_2', 'spazio piccolo') }}" }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

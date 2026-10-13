@@ -259,13 +259,16 @@ export interface ChildSlot {
   owner?: Path;
 }
 
+/** Nodi che contengono altri nodi in `components` (sezione e contenitori di layout). */
+const LAYOUT_CONTAINERS = new Set(['section', 'box', 'grid', 'border']);
+
 /** Elenchi di figli di un elemento: la schermata e le sezioni hanno `components`, schede e passi i propri. */
 export function childSlots(doc: Json, path: Path): ChildSlot[] {
   const target = targetAt(doc, path);
   const value = getIn(doc, path);
   if (!target || !isObject(value)) return [];
   if (target.kind === 'screen' || target.kind === 'tab' || target.kind === 'step') return [{ path: [...path, 'components'] }];
-  if (target.type === 'section') return [{ path: [...path, 'components'] }];
+  if (LAYOUT_CONTAINERS.has(target.type)) return [{ path: [...path, 'components'] }];
   if (target.type === 'table' && isObject(value['expand'])) return [{ path: [...path, 'expand', 'components'] }];
   return [];
 }

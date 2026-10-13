@@ -156,6 +156,11 @@
               "screen": "vetrina-form"
             },
             {
+              "id": "vetrina-contenitori",
+              "label": "{{ t('nav.contenitori', 'Contenitori di layout') }}",
+              "screen": "vetrina-contenitori"
+            },
+            {
               "id": "vetrina-input",
               "label": "{{ t('nav.campi_a_se', 'Campi a sé') }}",
               "screen": "vetrina-input"

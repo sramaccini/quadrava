@@ -11,6 +11,7 @@ export * from './lib/table.component';
 export * from './lib/form.component';
 export * from './lib/field-control.component';
 export * from './lib/input.component';
+export * from './lib/layout.component';
 export * from './lib/icon.component';
 export * from './lib/sidebar.component';
 export * from './lib/user-menu.component';

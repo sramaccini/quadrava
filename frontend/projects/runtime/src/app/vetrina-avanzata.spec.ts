@@ -273,6 +273,23 @@ describe('Vetrina: componenti avanzati', () => {
     });
   });
 
+  describe('contenitori di layout', () => {
+    it('border con filtro a ovest e tabella al centro, griglia e box con proporzioni', { timeout: 20000 }, async () => {
+      const { el, until } = await openShowcase('/vetrina/vetrina-contenitori');
+      await until(() => cells(el, 0, 0).length === 8, 'fatture');
+      const regions = [...el.querySelectorAll<HTMLElement>('main lc-border .region')];
+      expect(regions.map((r) => r.dataset['region'])).toEqual(['north', 'west', 'center', 'east', 'south']);
+      expect(regions[2].querySelector('nz-table')).not.toBeNull();
+      // Il filtro a ovest scrive nello stato da cui dipende la tabella al centro.
+      const radios = [...regions[1].querySelectorAll<HTMLElement>('label[nz-radio]')];
+      expect(radios.map((r) => plainText(r.textContent))).toEqual(['Bozza', 'Inviata', 'Pagata']);
+      (radios[2].querySelector('input') as HTMLInputElement).click();
+      await until(() => cells(el, 0, 2).length > 0 && cells(el, 0, 2).every((c) => c === 'Pagata'), 'solo pagate');
+      expect([...el.querySelectorAll<HTMLElement>('main lc-grid .grid > lc-node')].map((n) => n.style.getPropertyValue('--lc-span'))).toEqual(['2', '1', '3']);
+      expect((el.querySelector('[data-node-id="sezione-due-terzi"]') as HTMLElement).style.flex).toBe('2 1 0px');
+    });
+  });
+
   describe('dettaglio', () => {
     it('i campi con tooltip hanno l’icona di aiuto con il testo tradotto', async () => {
       const { el, until } = await openShowcase('/vetrina/vetrina-layout');

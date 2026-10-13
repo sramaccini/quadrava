@@ -47,6 +47,20 @@ export function nodeTemplate(kind: string, t: Translate): JsonObject {
   switch (type) {
     case 'section':
       return { type, title: t('ed.tpl.section'), components: [] };
+    case 'box':
+      return { type, direction: 'row', components: [] };
+    case 'grid':
+      return { type, columns: 2, components: [] };
+    case 'border':
+      // Con tre aree già indicate, così si vede subito come funziona; le altre si ottengono cambiando `region`.
+      return {
+        type,
+        components: [
+          { type: 'text', region: 'north', style: 'heading', text: t('ed.tpl.north') },
+          { type: 'text', region: 'west', text: t('ed.tpl.west') },
+          { type: 'text', region: 'center', text: t('ed.tpl.center') },
+        ],
+      };
     case 'text':
       return { type, text: t('ed.tpl.text') };
     case 'button':

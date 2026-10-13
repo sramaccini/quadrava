@@ -8,10 +8,13 @@ import type { SectionNode } from 'schema';
   imports: [NodeHostComponent, NzCardModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
+    /* Affiancata ad altre in un box o in una griglia, la scheda si allunga fino all'altezza della riga. */
+    :host { display: block; height: 100%; }
+    nz-card { height: 100%; }
     .body { display: flex; flex-direction: column; gap: var(--lc-gap, 12px); }
     /* Affiancati: da 200 a 360px ciascuno, a capo quando manca spazio, allineati in basso. */
     .body.row { flex-direction: row; flex-wrap: wrap; align-items: flex-end; }
-    .body.row > lc-node { flex: 1 1 200px; max-width: 360px; }
+    .body.row > lc-node { flex: 1 1 200px; max-width: 360px; --lc-input-max: none; }
   `,
   template: `
     <nz-card role="region" [attr.aria-label]="node().title ? runtime().text(node().title, scope()) : null" [nzTitle]="node().title ? runtime().text(node().title, scope())  : undefined">

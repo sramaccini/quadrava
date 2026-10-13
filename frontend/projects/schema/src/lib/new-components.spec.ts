@@ -268,4 +268,23 @@ describe('schema dei componenti nuovi', () => {
       expect(issuesOf(screen([{ type: 'section', layout: 'griglia', components: [] }])).length).toBeGreaterThan(0);
     });
   });
+
+  describe('contenitori di layout', () => {
+    it('accetta box, griglia e border con le proprietà di posizione dei figli', () => {
+      const text = { type: 'text', text: 'x' };
+      expect(issuesOf(screen([{ type: 'box', direction: 'column', gap: 'small', align: 'end', justify: 'between', wrap: false, components: [{ ...text, grow: 2 }] }]))).toEqual([]);
+      expect(issuesOf(screen([{ type: 'grid', columns: 3, components: [{ ...text, span: 2 }] }]))).toEqual([]);
+      expect(issuesOf(screen([{ type: 'border', westWidth: 200, components: [{ ...text, region: 'north' }, text] }]))).toEqual([]);
+    });
+
+    it('rifiuta valori fuori dai limiti e proprietà sconosciute', () => {
+      expect(issuesOf(screen([{ type: 'box', components: [], direction: 'diagonal' }])).length).toBeGreaterThan(0);
+      expect(issuesOf(screen([{ type: 'box', components: [], gap: 'enorme' }])).length).toBeGreaterThan(0);
+      expect(issuesOf(screen([{ type: 'grid', components: [], columns: 13 }])).length).toBeGreaterThan(0);
+      expect(issuesOf(screen([{ type: 'grid', components: [{ type: 'text', text: 'x', span: 0 }] }])).length).toBeGreaterThan(0);
+      expect(issuesOf(screen([{ type: 'border', components: [{ type: 'text', text: 'x', region: 'sopra' }] }])).length).toBeGreaterThan(0);
+      expect(issuesOf(screen([{ type: 'border', components: [], westWidth: 50 }])).length).toBeGreaterThan(0);
+      expect(issuesOf(screen([{ type: 'grid' }])).length).toBeGreaterThan(0);
+    });
+  });
 });
