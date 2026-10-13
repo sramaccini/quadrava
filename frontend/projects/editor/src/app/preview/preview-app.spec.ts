@@ -93,6 +93,27 @@ describe('anteprima (dentro l’iframe)', () => {
     expect(sent).toContainEqual({ type: 'lc-preview:select', id: 'testo-1' });
   });
 
+  it('un componente trascinato dalla tavolozza sul disegno: indicatore e messaggio di rilascio all’editor', async () => {
+    await deliver({ screen });
+    await until(() => !!el.querySelector('lc-node[data-node-id="pulsante"]'), 'pulsante');
+    const node = el.querySelector('lc-node[data-node-id="pulsante"]') as HTMLElement;
+    const drag = (type: string, target: Element, clientY = 0) => {
+      const data = { types: ['application/x-lc-node-type'], getData: (t: string) => (t === 'application/x-lc-node-type' ? 'input.select' : ''), dropEffect: '' };
+      const event = new MouseEvent(type, { bubbles: true, cancelable: true, clientY }) as DragEvent;
+      Object.defineProperty(event, 'dataTransfer', { value: data });
+      target.dispatchEvent(event);
+      return event;
+    };
+    // In jsdom i nodi non hanno dimensioni: il puntatore cade a metà, quindi «dopo».
+    expect(drag('dragover', node).defaultPrevented).toBe(true);
+    await settle();
+    expect(el.querySelector('.drop')).not.toBeNull();
+    drag('drop', node);
+    await settle();
+    expect(sent).toContainEqual({ type: 'lc-preview:drop', kind: 'input.select', targetId: 'pulsante', zone: 'after' });
+    expect(el.querySelector('.drop')).toBeNull();
+  });
+
   it('il nodo selezionato in una scheda nascosta fa aprire quella scheda', async () => {
     await deliver({ screen });
     await until(() => el.querySelector('.ant-tabs-tab-active')?.textContent?.trim() === 'Prima', 'prima scheda');

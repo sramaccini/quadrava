@@ -216,6 +216,22 @@ describe('editor delle schermate', () => {
     expect(store.issues()).toEqual([]);
   });
 
+  it('dalla tavolozza all’anteprima: un componente rilasciato sul disegno si inserisce prima, dopo o dentro il nodo', async () => {
+    (el.querySelector('ed-palette button[data-type="button"]') as HTMLButtonElement).click();
+    store.select([]);
+    (el.querySelector('ed-palette button[data-type="box"]') as HTMLButtonElement).click();
+    await untilState('ed-preview', (st) => !!st.screen, 'anteprima');
+    await fromFrame('ed-preview', { type: 'lc-preview:drop', kind: 'text', targetId: 'button-1', zone: 'before' });
+    expect((store.doc() as { components: { type: string }[] }).components.map((c) => c.type)).toEqual(['text', 'button', 'box']);
+    await fromFrame('ed-preview', { type: 'lc-preview:drop', kind: 'input.date', targetId: 'box-1', zone: 'inside' });
+    expect(getAt(store.doc(), ['components', 2, 'components', 0])).toMatchObject({ type: 'input', field: { type: 'date' } });
+    await fromFrame('ed-preview', { type: 'lc-preview:drop', kind: 'alert', targetId: null, zone: 'after' });
+    expect(getAt(store.doc(), ['components', 3, 'type'])).toBe('alert');
+    // Un messaggio non valido non fa nulla.
+    await fromFrame('ed-preview', { type: 'lc-preview:drop', kind: 'x<script>', targetId: null, zone: 'after' });
+    expect((store.doc() as { components: unknown[] }).components.length).toBe(4);
+  });
+
   it('dall’anteprima alla struttura: il componente scelto nell’iframe si seleziona; solo i messaggi del proprio iframe contano', async () => {
     (el.querySelector('ed-palette button[data-type="button"]') as HTMLButtonElement).click();
     store.select([]);

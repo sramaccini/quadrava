@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, effect, inject, input, output, signal, viewChild } from '@angular/core';
 import { I18n } from 'core';
-import { isFromPreview, type PreviewEvent, type PreviewState, type ToPreview } from './protocol';
+import { isFromPreview, type DropZone, type PreviewEvent, type PreviewState, type ToPreview } from './protocol';
 
 /**
  * L'anteprima vista dall'editor: un iframe isolato con l'applicazione avviata come anteprima. Gli manda lo stato
@@ -33,6 +33,8 @@ export class PreviewFrameComponent {
   /** Un componente scelto nell'anteprima (Alt+clic o modalità selezione): il suo id. */
   readonly selected = output<string>();
   readonly logged = output<PreviewEvent>();
+  /** Un componente della tavolozza rilasciato sul disegno. */
+  readonly dropped = output<{ kind: string; targetId: string | null; zone: DropZone }>();
 
   private readonly frame = viewChild.required<ElementRef<HTMLIFrameElement>>('frame');
   private readonly ready = signal(false);
@@ -47,6 +49,7 @@ export class PreviewFrameComponent {
         this.ready.set(true);
         this.post();
       } else if (message.type === 'lc-preview:select') this.selected.emit(message.id);
+      else if (message.type === 'lc-preview:drop') this.dropped.emit({ kind: message.kind, targetId: message.targetId, zone: message.zone });
       else this.logged.emit(message.event);
     };
     window.addEventListener('message', listener);

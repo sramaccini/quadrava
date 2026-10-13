@@ -36,5 +36,5 @@
 }
 
 <div class="stage">
-  <ed-preview-frame [state]="state()" [width]="frameWidth()" (selected)="picked($event)" (logged)="log.add($event)" />
+  <ed-preview-frame [state]="state()" [width]="frameWidth()" (selected)="picked($event)" (dropped)="dropped($event)" (logged)="log.add($event)" />
 </div>

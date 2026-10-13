@@ -3,6 +3,10 @@ import { SidebarComponent, type NavigateEvent } from 'components';
 import { I18n, NavigationRuntime, Notifier, ScreenComponent, ThemeService, loadMessages } from 'core';
 import { validateTheme, type ThemeDefinition } from 'schema';
 import { PreviewChannel, PreviewSession } from './preview-ports';
+import { PALETTE_DRAG_TYPE, type DropZone } from './protocol';
+
+/** Componenti che ne contengono altri: un rilascio al centro li mette dentro. */
+const CONTAINERS = new Set(['section', 'box', 'grid', 'border', 'tabs', 'wizard']);
 
 const LANGUAGES = ['it', 'en'];
 
@@ -26,6 +30,9 @@ const sameJson = (a: unknown, b: unknown): boolean => a === b || JSON.stringify(
     .frame { position: relative; flex: 1; min-width: 0; }
     .frame.selecting ::ng-deep lc-node[data-node-id] { cursor: crosshair; }
     .highlight { position: absolute; pointer-events: none; border: 2px dashed var(--lc-color-primary); border-radius: var(--lc-radius); z-index: 10; }
+    /* Dove andrebbe il componente trascinato dalla tavolozza: una linea prima o dopo, un riquadro pieno dentro. */
+    .drop { position: absolute; pointer-events: none; z-index: 11; background: var(--lc-color-primary); border-radius: 2px; }
+    .drop.inside { background: color-mix(in srgb, var(--lc-color-primary) 12%, transparent); outline: 2px solid var(--lc-color-primary); }
     .empty { padding: 24px; color: var(--lc-color-muted); }
     lc-sidebar { min-height: 100vh; }
   `,
@@ -35,13 +42,24 @@ const sameJson = (a: unknown, b: unknown): boolean => a === b || JSON.stringify(
     }
     @if (state(); as s) {
       @if (screen() || !navigation()) {
-        <main #frame class="frame" [class.selecting]="s.selectMode">
+        <main #frame class="frame" [class.selecting]="s.selectMode" (dragover)="dragOver($event)" (dragleave)="dragLeave($event)" (drop)="drop($event)">
           @if (screen(); as definition) {
             @for (v of [version()]; track v) {
               <lc-screen [definition]="definition" [params]="params()" />
             }
           } @else {
             <p class="empty">{{ i18n.t('ed.preview.empty') }}</p>
+          }
+          @if (dropAt(); as d) {
+            <div
+              class="drop"
+              [class.inside]="d.zone === 'inside'"
+              aria-hidden="true"
+              [style.top.px]="d.zone === 'after' ? d.box.top + d.box.height + 2 : d.zone === 'before' ? d.box.top - 5 : d.box.top"
+              [style.left.px]="d.box.left"
+              [style.width.px]="d.box.width"
+              [style.height.px]="d.zone === 'inside' ? d.box.height : 3"
+            ></div>
           }
           @if (highlight(); as box) {
             <div class="highlight" aria-hidden="true" [style.top.px]="box.top - 3" [style.left.px]="box.left - 3" [style.width.px]="box.width + 6" [style.height.px]="box.height + 6"></div>
@@ -145,6 +163,48 @@ export class PreviewApp {
       scrolledTo = node ? id : null;
       if (!id) revealedFor = null;
     });
+  }
+
+  /** Dove andrebbe rilasciato il componente che si sta trascinando dalla tavolozza. */
+  protected readonly dropAt = signal<{ box: Box; zone: DropZone; targetId: string | null } | null>(null);
+
+  /**
+   * Trascinamento dalla tavolozza dell'editor sul disegno: il nodo più interno sotto il puntatore decide dove (bordo
+   * alto prima, bordo basso dopo, centro dentro se è un contenitore); fuori dai nodi, in fondo alla schermata.
+   */
+  protected dragOver(event: DragEvent): void {
+    if (!event.dataTransfer?.types.includes(PALETTE_DRAG_TYPE)) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'copy';
+    const frame = this.frame()?.nativeElement;
+    if (!frame) return;
+    const node = (event.target as Element | null)?.closest?.('lc-node[data-node-id]') ?? null;
+    if (!node) {
+      const r = frame.getBoundingClientRect();
+      this.dropAt.set({ box: { top: frame.scrollHeight - 8, left: 0, width: r.width, height: 0 }, zone: 'after', targetId: null });
+      return;
+    }
+    const rect = node.getBoundingClientRect();
+    const ratio = rect.height > 0 ? (event.clientY - rect.top) / rect.height : 0.5;
+    const container = CONTAINERS.has(node.getAttribute('data-node-type') ?? '');
+    const zone: DropZone = container ? (ratio < 0.25 ? 'before' : ratio > 0.75 ? 'after' : 'inside') : ratio < 0.5 ? 'before' : 'after';
+    // Un nodo senza dimensioni (non ancora disegnato) vale comunque come punto di rilascio.
+    const box = boxOf(node, frame) ?? { top: 0, left: 0, width: 0, height: 0 };
+    this.dropAt.set({ box, zone, targetId: node.getAttribute('data-node-id') });
+  }
+
+  protected dragLeave(event: DragEvent): void {
+    const frame = this.frame()?.nativeElement;
+    if (!frame || !frame.contains(event.relatedTarget as Node | null)) this.dropAt.set(null);
+  }
+
+  protected drop(event: DragEvent): void {
+    const at = this.dropAt();
+    this.dropAt.set(null);
+    const kind = event.dataTransfer?.getData(PALETTE_DRAG_TYPE);
+    if (!kind || !at) return;
+    event.preventDefault();
+    this.channel.send({ type: 'lc-preview:drop', kind, targetId: at.targetId, zone: at.zone });
   }
 
   /** Con Alt o in modalità selezione un clic sceglie il componente (ne manda l'id all'editor) e non lo attiva. */

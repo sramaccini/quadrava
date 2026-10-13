@@ -1,4 +1,6 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
+import { dropPoint } from '../model/drop';
+import type { DropZone } from './protocol';
 import { FormsModule } from '@angular/forms';
 import { I18n } from 'core';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
@@ -84,6 +86,18 @@ export class PreviewComponent {
       if (definition) timer = setTimeout(() => this.shown.set(definition), DEBOUNCE_MS);
     });
     inject(DestroyRef).onDestroy(() => clearTimeout(timer));
+  }
+
+  /**
+   * Un componente della tavolozza rilasciato sul disegno: si inserisce prima, dopo o dentro il nodo indicato, con le
+   * stesse regole della struttura (in fondo alla schermata se il rilascio non è su un nodo).
+   */
+  protected dropped(event: { kind: string; targetId: string | null; zone: DropZone }): void {
+    const doc = this.store.doc();
+    const path = event.targetId ? this.store.pathOfId(event.targetId) : null;
+    const components = isObject(doc) && Array.isArray(doc['components']) ? doc['components'] : [];
+    const point = path ? dropPoint(doc, path, event.zone) : { list: ['components'], index: components.length };
+    if (point) this.store.addNode(event.kind, point);
   }
 
   /** Un componente scelto nell'anteprima: si seleziona nella struttura. */

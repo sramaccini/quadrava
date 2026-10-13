@@ -9,6 +9,12 @@ import type { NavigationDefinition, ScreenDefinition, ThemeDefinition } from 'sc
 /** Parametro dell'URL con cui l'applicazione parte come anteprima. */
 export const PREVIEW_QUERY = 'anteprima';
 
+/** Tipo dei dati trascinati dalla tavolozza: un tipo di componente (anche `input.<tipo>`). Lo riconoscono struttura e anteprima. */
+export const PALETTE_DRAG_TYPE = 'application/x-lc-node-type';
+
+/** Dove cade un componente rilasciato rispetto a quello sotto il puntatore. */
+export type DropZone = 'before' | 'after' | 'inside';
+
 /** Tutto quello che l'anteprima deve sapere per disegnare. */
 export interface PreviewState {
   /** Schermata da disegnare (null = nessuna). */
@@ -45,7 +51,9 @@ export type ToPreview = { type: 'lc-preview:state'; state: PreviewState };
 export type FromPreview =
   | { type: 'lc-preview:ready' }
   | { type: 'lc-preview:select'; id: string }
-  | { type: 'lc-preview:event'; event: PreviewEvent };
+  | { type: 'lc-preview:event'; event: PreviewEvent }
+  /** Un componente della tavolozza rilasciato sul disegno: prima, dopo o dentro il nodo `targetId` (null = in fondo alla schermata). */
+  | { type: 'lc-preview:drop'; kind: string; targetId: string | null; zone: DropZone };
 
 export function isToPreview(data: unknown): data is ToPreview {
   return typeof data === 'object' && data !== null && (data as ToPreview).type === 'lc-preview:state' && typeof (data as ToPreview).state === 'object';
@@ -57,6 +65,14 @@ export function isFromPreview(data: unknown): data is FromPreview {
   if (message.type === 'lc-preview:ready') return true;
   if (message.type === 'lc-preview:select') return typeof message.id === 'string';
   if (message.type === 'lc-preview:event') return typeof message.event?.kind === 'string' && typeof message.event?.text === 'string';
+  if (message.type === 'lc-preview:drop') {
+    return (
+      typeof message.kind === 'string' &&
+      /^[A-Za-z]+(\.[a-z]+)?$/.test(message.kind) &&
+      (message.targetId === null || typeof message.targetId === 'string') &&
+      ['before', 'after', 'inside'].includes(message.zone)
+    );
+  }
   return false;
 }
 

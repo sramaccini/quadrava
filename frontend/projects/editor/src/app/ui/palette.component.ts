@@ -4,9 +4,10 @@ import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import { EditorStore } from '../model/editor-store';
 import { NODE_TYPES } from '../model/schema-info';
 import { INPUT_KINDS } from '../model/templates';
+import { PALETTE_DRAG_TYPE } from '../preview/protocol';
 
 /** Tipi di dati trascinati: un tipo di componente dalla tavolozza, il percorso di un nodo dalla struttura. */
-export const DRAG_TYPE = 'application/x-lc-node-type';
+export const DRAG_TYPE = PALETTE_DRAG_TYPE;
 export const DRAG_NODE = 'application/x-lc-node-path';
 
 /**
