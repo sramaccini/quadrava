@@ -156,6 +156,11 @@
               "screen": "vetrina-form"
             },
             {
+              "id": "vetrina-attivita",
+              "label": "{{ t('nav.attivita', 'Attività e avanzamento') }}",
+              "screen": "vetrina-attivita"
+            },
+            {
               "id": "vetrina-contenitori",
               "label": "{{ t('nav.contenitori', 'Contenitori di layout') }}",
               "screen": "vetrina-contenitori"

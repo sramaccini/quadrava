@@ -403,6 +403,60 @@ export interface BorderNode extends NodeBase {
   gap?: LayoutGap;
 }
 
+/** Immagine con testo alternativo; solo indirizzi relativi, https o data:image. */
+export interface ImageNode extends NodeBase {
+  type: 'image';
+  src: string;
+  alt: string;
+  width?: number;
+  height?: number;
+  fit?: 'contain' | 'cover';
+}
+
+/** Collegamento a una schermata dell'applicazione o a un indirizzo esterno https. */
+export interface LinkNode extends NodeBase {
+  type: 'link';
+  label: string;
+  screen?: string;
+  params?: Record<string, unknown>;
+  href?: string;
+}
+
+/** Barra o cerchio di avanzamento. */
+export interface ProgressNode extends NodeBase {
+  type: 'progress';
+  value: string | number;
+  max?: string | number;
+  label?: string;
+  kind?: 'line' | 'circle';
+  tone?: Tone;
+}
+
+/** Eventi in ordine di data. */
+export interface TimelineNode extends NodeBase {
+  type: 'timeline';
+  source: string;
+  dateField: string;
+  labelField: string;
+  descriptionField?: string;
+  toneField?: string;
+  tones?: Record<string, Tone>;
+  order?: 'desc' | 'asc';
+  withTime?: boolean;
+}
+
+/** Schede in colonne secondo un campo (per esempio lo stato), spostabili con `onMove`. */
+export interface KanbanNode extends NodeBase {
+  type: 'kanban';
+  source: string;
+  columnField: string;
+  titleField: string;
+  descriptionField?: string;
+  columns: { value: string; label: string; tone?: Tone }[];
+  moveIf?: Expression;
+  onMove?: Step[];
+}
+
 /** Campo a sé (casella di testo, elenco a discesa, data…) legato allo stato della schermata. */
 export interface InputNode extends NodeBase {
   type: 'input';
@@ -418,7 +472,7 @@ export interface InputNode extends NodeBase {
   group?: string;
 }
 
-export type NodeDefinition = SectionNode | TextNode | ButtonNode | FilterBarNode | TableNode | FormNode | TabsNode | DetailNode | AlertNode | StatsNode | WizardNode | TreeNode | CalendarNode | ChartNode | DataTableNode | ServerDataTableNode | InputNode | BoxNode | GridNode | BorderNode;
+export type NodeDefinition = SectionNode | TextNode | ButtonNode | FilterBarNode | TableNode | FormNode | TabsNode | DetailNode | AlertNode | StatsNode | WizardNode | TreeNode | CalendarNode | ChartNode | DataTableNode | ServerDataTableNode | InputNode | BoxNode | GridNode | BorderNode | ImageNode | LinkNode | ProgressNode | TimelineNode | KanbanNode;
 export type NodeType = NodeDefinition['type'];
 
 export interface ScreenDefinition {

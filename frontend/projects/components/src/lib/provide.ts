@@ -22,6 +22,9 @@ import { DataTableComponent } from './data-table.component';
 import { ServerDataTableComponent } from './server-data-table.component';
 import { InputComponent } from './input.component';
 import { BorderComponent, BoxComponent, GridComponent } from './layout.component';
+import { ImageComponent, LinkComponent, ProgressComponent } from './display.component';
+import { KanbanComponent } from './kanban.component';
+import { TimelineComponent } from './timeline.component';
 import { TreeComponent } from './tree.component';
 import { WizardComponent } from './wizard.component';
 import { TableComponent } from './table.component';
@@ -75,6 +78,11 @@ export const STANDARD_COMPONENTS: ComponentCatalog = {
   box: BoxComponent,
   grid: GridComponent,
   border: BorderComponent,
+  image: ImageComponent,
+  link: LinkComponent,
+  progress: ProgressComponent,
+  timeline: TimelineComponent,
+  kanban: KanbanComponent,
 };
 
 /**

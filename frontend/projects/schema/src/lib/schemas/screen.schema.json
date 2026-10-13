@@ -544,7 +544,12 @@
             "input",
             "box",
             "grid",
-            "border"
+            "border",
+            "image",
+            "link",
+            "progress",
+            "timeline",
+            "kanban"
           ]
         },
         "visibleIf": {
@@ -1550,6 +1555,306 @@
               },
               "gap": {
                 "$ref": "#/$defs/gap"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "image"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "required": [
+              "src",
+              "alt"
+            ],
+            "properties": {
+              "src": {
+                "type": "string",
+                "description": "Indirizzo dell’immagine: relativo (/img/logo.png), https:// oppure data:image/…; può contenere {{ }}. Qualunque altro indirizzo non si mostra."
+              },
+              "alt": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Testo alternativo (obbligatorio per l’accessibilità); si mostra anche se l’immagine non si carica."
+              },
+              "width": {
+                "type": "integer",
+                "minimum": 16,
+                "maximum": 2000,
+                "description": "Larghezza massima in px (si adatta allo spazio disponibile)."
+              },
+              "height": {
+                "type": "integer",
+                "minimum": 16,
+                "maximum": 2000,
+                "description": "Altezza in px."
+              },
+              "fit": {
+                "enum": [
+                  "contain",
+                  "cover"
+                ],
+                "description": "Con larghezza e altezza: contain mostra tutta l’immagine, cover riempie ritagliando (contain se assente)."
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "link"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "required": [
+              "label"
+            ],
+            "anyOf": [
+              {
+                "required": [
+                  "screen"
+                ],
+                "properties": {
+                  "screen": true
+                }
+              },
+              {
+                "required": [
+                  "href"
+                ],
+                "properties": {
+                  "href": true
+                }
+              }
+            ],
+            "not": {
+              "required": [
+                "screen",
+                "href"
+              ],
+              "properties": {
+                "screen": true,
+                "href": true
+              }
+            },
+            "properties": {
+              "label": {
+                "type": "string"
+              },
+              "screen": {
+                "type": "string",
+                "description": "Schermata da aprire nell’applicazione (con params)."
+              },
+              "params": {
+                "type": "object",
+                "description": "Parametri della schermata; i valori possono contenere {{ }}."
+              },
+              "href": {
+                "type": "string",
+                "pattern": "^(https://[^\\s]+|/[^/\\s][^\\s]*)$",
+                "description": "Indirizzo esterno https:// (si apre in una nuova scheda, senza accesso a questa) o percorso relativo. Mai javascript: o altri protocolli."
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "progress"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "required": [
+              "value"
+            ],
+            "properties": {
+              "value": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "description": "Valore raggiunto, un numero o un’espressione (per esempio {{ row.completate }})."
+              },
+              "max": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "description": "Valore che corrisponde al 100% (100 se assente); numero o espressione."
+              },
+              "label": {
+                "type": "string"
+              },
+              "kind": {
+                "enum": [
+                  "line",
+                  "circle"
+                ],
+                "description": "Barra (line, predefinita) o cerchio."
+              },
+              "tone": {
+                "$ref": "#/$defs/tone"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "timeline"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "required": [
+              "source",
+              "dateField",
+              "labelField"
+            ],
+            "properties": {
+              "source": {
+                "type": "string",
+                "description": "Data source con gli eventi (un elenco di righe)."
+              },
+              "dateField": {
+                "type": "string",
+                "description": "Campo con la data (AAAA-MM-GG, anche con l’ora)."
+              },
+              "labelField": {
+                "type": "string",
+                "description": "Campo mostrato come titolo dell’evento."
+              },
+              "descriptionField": {
+                "type": "string",
+                "description": "Campo mostrato sotto il titolo."
+              },
+              "toneField": {
+                "type": "string",
+                "description": "Campo che decide il colore secondo tones."
+              },
+              "tones": {
+                "type": "object",
+                "additionalProperties": {
+                  "$ref": "#/$defs/tone"
+                }
+              },
+              "order": {
+                "enum": [
+                  "desc",
+                  "asc"
+                ],
+                "description": "Dal più recente (desc, predefinito) o dal più vecchio."
+              },
+              "withTime": {
+                "type": "boolean",
+                "description": "Mostra anche l’ora."
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "kanban"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "required": [
+              "source",
+              "columnField",
+              "titleField",
+              "columns"
+            ],
+            "properties": {
+              "source": {
+                "type": "string",
+                "description": "Data source con le schede (un elenco di righe)."
+              },
+              "columnField": {
+                "type": "string",
+                "description": "Campo della riga che decide la colonna (per esempio stato)."
+              },
+              "titleField": {
+                "type": "string"
+              },
+              "descriptionField": {
+                "type": "string"
+              },
+              "columns": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 10,
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "label"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "value": {
+                      "type": "string"
+                    },
+                    "label": {
+                      "type": "string"
+                    },
+                    "tone": {
+                      "$ref": "#/$defs/tone"
+                    }
+                  }
+                }
+              },
+              "moveIf": {
+                "$ref": "#/$defs/expression",
+                "description": "Condizione per spostare una scheda (vede la riga in row), per esempio un permesso."
+              },
+              "onMove": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "$ref": "#/$defs/step"
+                },
+                "description": "Passi per spostare una scheda (di solito call e refresh): vedono la riga in row, la colonna di partenza in from e quella di arrivo in to."
               }
             }
           }

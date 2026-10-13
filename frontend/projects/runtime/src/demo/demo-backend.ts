@@ -65,6 +65,14 @@ export class DemoBackend {
     'Marino Edilizia|Bari', 'Greco Trasporti|Palermo', 'Gallo Energia|Padova', 'Conti Software|Trento',
   ].map((entry, i) => ({ id: i + 1, nome: entry.split('|')[0], citta: entry.split('|')[1] }));
   private attachments = 0;
+  /** Attività del kanban della vetrina: lo stato cambia con /api/attivita/{id}/sposta. */
+  private readonly tasks: { id: number; titolo: string; chi: string; stato: string }[] = [
+    { id: 1, titolo: 'Preventivo Rossi Srl', chi: 'Anna', stato: 'da-fare' },
+    { id: 2, titolo: 'Contratto Bianchi SpA', chi: 'Luca', stato: 'da-fare' },
+    { id: 3, titolo: 'Fattura FT-2026-012', chi: 'Anna', stato: 'in-corso' },
+    { id: 4, titolo: 'Sollecito Verdi & C.', chi: 'Marta', stato: 'in-corso' },
+    { id: 5, titolo: 'Ordine 1001 spedito', chi: 'Luca', stato: 'fatto' },
+  ];
   /** Movimenti per la datatable: 60 righe deterministiche su tre conti e sei categorie, da luglio a ottobre 2026. */
   private readonly movements = Array.from({ length: 60 }, (_, i) => {
     const categorie = ['Affitti', 'Utenze', 'Stipendi', 'Incassi clienti', 'Fornitori', 'Spese varie'];
@@ -266,6 +274,24 @@ export class DemoBackend {
       }
       this.attachments += 1;
       return { id: this.attachments };
+    }
+    if (path === '/api/attivita' && req.method === 'GET') return this.tasks.map((t) => ({ ...t }));
+    const move = /^\/api\/attivita\/(\d+)\/sposta$/.exec(path);
+    if (move && req.method === 'POST') {
+      const task = this.tasks.find((t) => t.id === Number(move[1]));
+      const stato = req.body?.['stato'];
+      if (!task) throw new Error('404');
+      if (typeof stato !== 'string' || !['da-fare', 'in-corso', 'fatto'].includes(stato)) throw new Error('400');
+      task.stato = stato;
+      return {};
+    }
+    if (path === '/api/eventi' && req.method === 'GET') {
+      return [
+        { data: '2026-10-01T09:15', titolo: 'Ordine 1001 ricevuto', nota: 'Dal portale clienti', esito: 'ok' },
+        { data: '2026-10-02T11:40', titolo: 'Ordine 1001 approvato', nota: 'Da Luca, responsabile', esito: 'ok' },
+        { data: '2026-10-03T16:05', titolo: 'Spedizione in ritardo', nota: 'Il corriere segnala un giorno di ritardo', esito: 'ko' },
+        { data: '2026-10-05T10:00', titolo: 'Ordine 1001 consegnato', esito: 'ok' },
+      ];
     }
     if (path === '/api/clienti' && req.method === 'GET') {
       // Ricerca senza distinzione tra maiuscole e minuscole su nome e città; al massimo 8 risultati.

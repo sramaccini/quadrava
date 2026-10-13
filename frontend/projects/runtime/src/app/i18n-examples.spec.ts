@@ -16,6 +16,7 @@ import vetrinaTabelleAvanzate from '../../public/examples/vetrina-tabelle-avanza
 import vetrinaCampi from '../../public/examples/vetrina-campi.json';
 import vetrinaInput from '../../public/examples/vetrina-input.json';
 import vetrinaContenitori from '../../public/examples/vetrina-contenitori.json';
+import vetrinaAttivita from '../../public/examples/vetrina-attivita.json';
 import vetrinaCruscotto from '../../public/examples/vetrina-cruscotto.json';
 import vetrinaViste from '../../public/examples/vetrina-viste.json';
 import vetrinaDatatable from '../../public/examples/vetrina-datatable.json';
@@ -39,6 +40,7 @@ const SCREENS: Record<string, unknown> = {
   'vetrina-campi': vetrinaCampi,
   'vetrina-input': vetrinaInput,
   'vetrina-contenitori': vetrinaContenitori,
+  'vetrina-attivita': vetrinaAttivita,
   'vetrina-cruscotto': vetrinaCruscotto,
   'vetrina-viste': vetrinaViste,
   'vetrina-datatable': vetrinaDatatable,

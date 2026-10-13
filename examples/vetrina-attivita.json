@@ -1,0 +1,179 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "vetrina-attivita",
+  "title": "{{ t('vetrina_attivita.titolo', 'Vetrina: attività e avanzamento') }}",
+  "description": "{{ t('vetrina_attivita.descrizione', 'Kanban con le schede da spostare, timeline degli eventi, barre di avanzamento, immagini e collegamenti.') }}",
+  "requires": "vetrina.componenti.leggi",
+  "dataSources": {
+    "attivita": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/attivita"
+    },
+    "spostaAttivita": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/attivita/{{ id }}/sposta",
+      "body": {
+        "stato": "{{ stato }}"
+      }
+    },
+    "eventi": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/eventi"
+    }
+  },
+  "components": [
+    {
+      "id": "intestazione",
+      "type": "box",
+      "align": "center",
+      "components": [
+        {
+          "id": "logo",
+          "type": "image",
+          "src": "logo.svg",
+          "alt": "{{ t('vetrina_attivita.logo', 'Logo della piattaforma') }}",
+          "width": 40,
+          "height": 40
+        },
+        {
+          "id": "titolo",
+          "type": "text",
+          "style": "heading",
+          "text": "{{ t('vetrina_attivita.intestazione', 'Attività e avanzamento') }}"
+        }
+      ]
+    },
+    {
+      "id": "sezione-avanzamento",
+      "type": "section",
+      "title": "{{ t('vetrina_attivita.avanzamento', 'Avanzamento') }}",
+      "components": [
+        {
+          "id": "griglia-avanzamento",
+          "type": "grid",
+          "columns": 3,
+          "components": [
+            {
+              "id": "avanzamento-fatte",
+              "type": "progress",
+              "label": "{{ t('vetrina_attivita.completate', 'Passi completati (3 di 5)') }}",
+              "value": 3,
+              "max": 5,
+              "tone": "success"
+            },
+            {
+              "id": "avanzamento-budget",
+              "type": "progress",
+              "label": "{{ t('vetrina_attivita.budget', 'Budget usato') }}",
+              "value": 82,
+              "tone": "danger"
+            },
+            {
+              "id": "avanzamento-cerchio",
+              "type": "progress",
+              "label": "{{ t('vetrina_attivita.obiettivo', 'Obiettivo trimestrale') }}",
+              "value": 64,
+              "kind": "circle"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sezione-kanban",
+      "type": "section",
+      "title": "{{ t('vetrina_attivita.kanban', 'Kanban: trascina una scheda o usa «Sposta in»') }}",
+      "components": [
+        {
+          "id": "kanban",
+          "type": "kanban",
+          "source": "attivita",
+          "columnField": "stato",
+          "titleField": "titolo",
+          "descriptionField": "chi",
+          "columns": [
+            {
+              "value": "da-fare",
+              "label": "{{ t('vetrina_attivita.da_fare', 'Da fare') }}"
+            },
+            {
+              "value": "in-corso",
+              "label": "{{ t('vetrina_attivita.in_corso', 'In corso') }}",
+              "tone": "primary"
+            },
+            {
+              "value": "fatto",
+              "label": "{{ t('vetrina_attivita.fatto', 'Fatto') }}",
+              "tone": "success"
+            }
+          ],
+          "moveIf": "{{ can('vetrina.componenti.leggi') }}",
+          "onMove": [
+            {
+              "call": "spostaAttivita",
+              "args": {
+                "id": "{{ row.id }}",
+                "stato": "{{ to }}"
+              },
+              "onError": {
+                "toast": "{{ t('vetrina_attivita.spostamento_fallito', 'Spostamento non riuscito') }}"
+              }
+            },
+            {
+              "refresh": "attivita"
+            },
+            {
+              "toast": "{{ t('vetrina_attivita.spostata', '«{titolo}» spostata', {'titolo': row.titolo}) }}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sezione-eventi",
+      "type": "section",
+      "title": "{{ t('vetrina_attivita.eventi', 'Storia dell’ordine 1001') }}",
+      "components": [
+        {
+          "id": "timeline",
+          "type": "timeline",
+          "source": "eventi",
+          "dateField": "data",
+          "labelField": "titolo",
+          "descriptionField": "nota",
+          "toneField": "esito",
+          "tones": {
+            "ok": "success",
+            "ko": "danger"
+          },
+          "withTime": true
+        },
+        {
+          "id": "collegamenti",
+          "type": "box",
+          "gap": "large",
+          "components": [
+            {
+              "id": "link-ordine",
+              "type": "link",
+              "label": "{{ t('vetrina_attivita.apri_ordine', 'Apri l’ordine 1001') }}",
+              "screen": "ordine-dettaglio",
+              "params": {
+                "id": 1001
+              }
+            },
+            {
+              "id": "link-esterno",
+              "type": "link",
+              "label": "{{ t('vetrina_attivita.documentazione', 'Documentazione di NG-ZORRO') }}",
+              "href": "https://ng.ant.design/"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

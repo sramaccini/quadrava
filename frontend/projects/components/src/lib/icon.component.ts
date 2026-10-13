@@ -27,6 +27,8 @@ import {
   UnorderedListOutline,
   UploadOutline,
   UserOutline,
+  ExportOutline,
+  SwapOutline,
 } from '@ant-design/icons-angular/icons';
 import type { IconDefinition } from '@ant-design/icons-angular';
 import { NzIconModule } from 'ng-zorro-antd/icon';
@@ -63,6 +65,8 @@ export const ICON_TYPES: Record<string, { type: string; icon: IconDefinition }> 
   filter: { type: 'filter', icon: FilterOutline },
   attachment: { type: 'paper-clip', icon: PaperClipOutline },
   close: { type: 'close', icon: CloseOutline },
+  external: { type: 'export', icon: ExportOutline },
+  move: { type: 'swap', icon: SwapOutline },
 };
 
 /** Tipo NG-ZORRO di un nome di icona del set integrato, oppure `null` se il nome non è noto. */

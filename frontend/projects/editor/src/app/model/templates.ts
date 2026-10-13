@@ -17,6 +17,8 @@ export const TEMPLATE_SOURCES: Record<string, { name: string; method: 'GET' | 'P
   tree: { name: 'albero', method: 'GET' },
   calendar: { name: 'eventi', method: 'GET' },
   chart: { name: 'serie', method: 'GET' },
+  timeline: { name: 'eventi', method: 'GET' },
+  kanban: { name: 'attivita', method: 'GET' },
 };
 
 /** Tipi di campo che la tavolozza offre come componenti `input` a sé (voce `input.<tipo>`). */
@@ -90,6 +92,25 @@ export function nodeTemplate(kind: string, t: Translate): JsonObject {
       return { type, source, dateField: 'data', labelField: 'titolo' };
     case 'chart':
       return { type, kind: 'bar', source, categoryField: 'categoria', series: [{ field: 'valore', label }] };
+    case 'image':
+      return { type, src: 'logo.svg', alt: t('ed.tpl.image') };
+    case 'link':
+      return { type, label: t('ed.tpl.link'), href: 'https://example.com' };
+    case 'progress':
+      return { type, value: 50, label: t('ed.tpl.progress') };
+    case 'timeline':
+      return { type, source, dateField: 'data', labelField: 'titolo' };
+    case 'kanban':
+      return {
+        type,
+        source,
+        columnField: 'stato',
+        titleField: 'titolo',
+        columns: [
+          { value: 'da-fare', label: t('ed.tpl.todo') },
+          { value: 'fatto', label: t('ed.tpl.done') },
+        ],
+      };
     case 'input':
       return { type, field: inputField(variant ?? 'text', label) };
     default:

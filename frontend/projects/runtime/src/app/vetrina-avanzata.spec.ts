@@ -289,6 +289,27 @@ describe('Vetrina: componenti avanzati', () => {
     });
   });
 
+  describe('attività e avanzamento', () => {
+    it('kanban: «Sposta in» chiama il servizio, ricarica e la scheda cambia colonna; timeline e avanzamento', { timeout: 20000 }, async () => {
+      const { el, until, settle } = await openShowcase('/vetrina/vetrina-attivita');
+      const column = (label: string) => [...el.querySelectorAll<HTMLElement>('main lc-kanban section')].find((c) => c.getAttribute('aria-label') === label)!;
+      const titles = (label: string) => [...column(label).querySelectorAll('.title')].map((t) => plainText(t.textContent));
+      await until(() => el.querySelectorAll('main lc-kanban .card').length === 5, 'schede');
+      expect(titles('Da fare')).toEqual(['Preventivo Rossi Srl', 'Contratto Bianchi SpA']);
+      (column('Da fare').querySelector('.card button') as HTMLButtonElement).click();
+      await until(() => document.querySelectorAll('.ant-dropdown-menu-item').length > 0, 'menu');
+      ([...document.querySelectorAll<HTMLElement>('.ant-dropdown-menu-item')].find((i) => plainText(i.textContent) === 'Fatto') as HTMLElement).click();
+      await until(() => titles('Fatto').includes('Preventivo Rossi Srl'), 'spostata');
+      expect(titles('Da fare')).toEqual(['Contratto Bianchi SpA']);
+      await until(() => [...document.querySelectorAll('.ant-message-notice')].some((n) => n.textContent?.includes('«Preventivo Rossi Srl» spostata')), 'avviso');
+      // Timeline dal più recente e avanzamenti.
+      await until(() => el.querySelectorAll('main lc-timeline .title').length === 4, 'eventi');
+      expect(plainText(el.querySelector('main lc-timeline .title')?.textContent)).toBe('Ordine 1001 consegnato');
+      expect([...el.querySelectorAll('main lc-progress [role="progressbar"]')].map((b) => b.getAttribute('aria-valuenow'))).toEqual(['60', '82', '64']);
+      await settle();
+    });
+  });
+
   describe('contenitori di layout', () => {
     it('border con filtro a ovest e tabella al centro, griglia e box con proporzioni', { timeout: 20000 }, async () => {
       const { el, until } = await openShowcase('/vetrina/vetrina-contenitori');

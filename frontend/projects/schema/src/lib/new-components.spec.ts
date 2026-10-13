@@ -287,4 +287,27 @@ describe('schema dei componenti nuovi', () => {
       expect(issuesOf(screen([{ type: 'grid' }])).length).toBeGreaterThan(0);
     });
   });
+
+  describe('immagine, collegamento, avanzamento, timeline e kanban', () => {
+    it('accetta le forme previste', () => {
+      expect(issuesOf(screen([{ type: 'image', src: '/logo.png', alt: 'Logo', width: 100, height: 50, fit: 'cover' }]))).toEqual([]);
+      expect(issuesOf(screen([{ type: 'link', label: 'Ordine', screen: 'ordine-dettaglio', params: { id: 1 } }]))).toEqual([]);
+      expect(issuesOf(screen([{ type: 'link', label: 'Doc', href: 'https://example.com/doc' }]))).toEqual([]);
+      expect(issuesOf(screen([{ type: 'progress', value: '{{ 3 }}', max: 4, kind: 'circle', tone: 'success' }]))).toEqual([]);
+      expect(issuesOf(screen([{ type: 'timeline', source: 's', dateField: 'd', labelField: 'l', toneField: 't', tones: { ko: 'danger' }, order: 'asc' }]))).toEqual([]);
+      expect(issuesOf(screen([{ type: 'kanban', source: 's', columnField: 'stato', titleField: 't', columns: [{ value: 'a', label: 'A', tone: 'primary' }], moveIf: '{{ true }}', onMove: [{ refresh: 's' }] }]))).toEqual([]);
+    });
+
+    it('rifiuta immagini senza testo alternativo, collegamenti ambigui o pericolosi, colonne mancanti', () => {
+      expect(issuesOf(screen([{ type: 'image', src: '/logo.png' }])).length).toBeGreaterThan(0);
+      expect(issuesOf(screen([{ type: 'image', src: '/logo.png', alt: '' }])).length).toBeGreaterThan(0);
+      expect(issuesOf(screen([{ type: 'link', label: 'X' }])).length).toBeGreaterThan(0);
+      expect(issuesOf(screen([{ type: 'link', label: 'X', screen: 'a', href: 'https://x.test' }])).length).toBeGreaterThan(0);
+      for (const href of ['javascript:alert(1)', 'http://x.test', '//x.test', 'mailto:a@b.c']) {
+        expect(issuesOf(screen([{ type: 'link', label: 'X', href }])).length, href).toBeGreaterThan(0);
+      }
+      expect(issuesOf(screen([{ type: 'progress', value: true }])).length).toBeGreaterThan(0);
+      expect(issuesOf(screen([{ type: 'kanban', source: 's', columnField: 'c', titleField: 't', columns: [] }])).length).toBeGreaterThan(0);
+    });
+  });
 });
