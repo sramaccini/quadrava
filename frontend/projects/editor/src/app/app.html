@@ -17,6 +17,7 @@
       <button nz-button nzSize="small" type="button" (click)="fileInput.click()"><span nz-icon nzType="upload"></span>{{ i18n.t('ed.import') }}</button>
       <input #fileInput type="file" accept="application/json,.json" hidden (change)="importFile(fileInput)" />
       <button nz-button nzSize="small" type="button" (click)="exportFile()"><span nz-icon nzType="download"></span>{{ i18n.t('ed.export') }}</button>
+      <button nz-button nzSize="small" type="button" (click)="showRegistry.set(true)"><span nz-icon nzType="cloud"></span>{{ i18n.t('ed.registry.title') }}</button>
     </div>
     <div class="group">
       <button nz-button nzSize="small" type="button" [disabled]="!active().canUndo()" (click)="active().undo()" [attr.aria-label]="i18n.t('ed.undo')" [nz-tooltip]="i18n.t('ed.undo')">
@@ -86,6 +87,12 @@
     <ed-inspector />
   </aside>
   }
+
+  <nz-drawer [nzVisible]="showRegistry()" [nzTitle]="i18n.t('ed.registry.title')" [nzWidth]="380" (nzOnClose)="showRegistry.set(false)">
+    <ng-container *nzDrawerContent>
+      <ed-registry-panel [state]="loadable()" [kind]="mode()" />
+    </ng-container>
+  </nz-drawer>
 
   <footer class="bottom">
     <button type="button" class="issues-toggle" (click)="showIssues.set(!showIssues())" [attr.aria-expanded]="showIssues()">

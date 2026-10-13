@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, resource,
 import { FormsModule } from '@angular/forms';
 import { Confirmation, I18n, Notifier, ThemeService, loadMessages } from 'core';
 import { NzButtonModule } from 'ng-zorro-antd/button';
+import { NzDrawerModule } from 'ng-zorro-antd/drawer';
 import { NzDropdownModule } from 'ng-zorro-antd/dropdown';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzMenuModule } from 'ng-zorro-antd/menu';
@@ -25,6 +26,7 @@ import { NavigationEditorComponent } from './ui/navigation-editor.component';
 import { ThemeEditorComponent } from './ui/theme-editor.component';
 import { OutlineComponent } from './ui/outline.component';
 import { PaletteComponent } from './ui/palette.component';
+import { RegistryPanelComponent } from './ui/registry-panel.component';
 import { TextsComponent } from './ui/texts.component';
 
 const LANGUAGES = ['it', 'en'];
@@ -52,6 +54,8 @@ const VIEWS = ['preview', 'json', 'sources', 'texts'] as const;
     ThemeEditorComponent,
     OutlineComponent,
     PaletteComponent,
+    RegistryPanelComponent,
+    NzDrawerModule,
     PreviewComponent,
     TextsComponent,
     NzButtonModule,
@@ -91,6 +95,9 @@ export class App {
   protected readonly languages = LANGUAGES;
 
   protected readonly viewIndex = computed(() => VIEWS.indexOf(this.store.view()));
+  /** Il documento aperto con la sua apertura (per riaprire una versione dal registro). */
+  protected readonly loadable = computed(() => this.active() as DocumentState & { load(doc: Json): void });
+  protected readonly showRegistry = signal(false);
   protected readonly warningCount = computed(() => this.active().issues().length - this.active().errorCount());
   protected readonly showIssues = signal(true);
 

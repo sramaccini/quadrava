@@ -30,7 +30,7 @@ Da `frontend/`:
 - `.claude/launch.json` avvia una copia della demo sulla porta 4300 e dell'editor sulla 4301 (per l'anteprima nel pannello di Claude).
 - test per progetto: `npx ng test <schema|expressions|core|components|services|runtime|editor> --watch=false`
 
-Stato test (tutti verdi): schema 63, expressions 39, core 61, components 128, services 19, runtime 66, editor 47 (**423**). Build di produzione della demo: 2,27 MB iniziali (avviso a 2,5 MB).
+Stato test (tutti verdi): schema 63, expressions 39, core 61, components 128, services 19, runtime 66, editor 51 (**427**). Build di produzione della demo: 2,27 MB iniziali (avviso a 2,5 MB).
 
 ## 4. Architettura in breve
 
@@ -83,10 +83,10 @@ Le principali sono nella DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In breve:
 ## 8. Prossimi passi (nell'ordine suggerito)
 
 1. Review dei 18 componenti (commit da `4d224fb` a `47a96ee`), del fix del runtime `9d96798`, dei limiti superati (da `7907884` a `f42abdf`), della serverDataTable (`9bae9b7`) e dell'editor (da `5840c9c` a `b3d7a5d`).
-2. Collegare `services` a `runtime` e completare il BFF (CSRF, forwarding, allow-list; il forwarding deve gestire anche i corpi multipart).
-3. **Editor visuale**, seconda fase: client del registro (salva versione, storico, pubblica per ambiente) sul contratto 0.2 a documenti separati; completamento delle espressioni (vedi `docs/editor.md` § 6).
+2. Collegare `services` a `runtime` e completare il BFF (CSRF, forwarding, allow-list; il forwarding deve gestire anche i corpi multipart e `/registry` per l'editor). Il runtime dovrà caricare dal registro i documenti pubblicati (schermate, navigazione, tema) invece dei file di `examples/`.
+3. **Editor visuale**, seconda fase: flusso di revisione prima della pubblicazione (stato `in-revisione` del contratto); completamento delle espressioni (vedi `docs/editor.md` § 6).
 4. Menu: navigazione da tastiera, badge, ricerca. CEL in `validate:examples`.
-5. Decise il 13 ottobre 2026: ADR-08 accettata (anteprima in iframe, fatta), ADR-09 modificata (cronologia a versioni immutabili), registro a documenti separati (schermate, navigazione, temi): contratto `registry.yaml` 0.2 e registro di riferimento adeguati; resta il client nell'editor.
+5. Decise il 13 ottobre 2026: ADR-08 accettata (anteprima in iframe, fatta), ADR-09 modificata (cronologia a versioni immutabili), registro a documenti separati (schermate, navigazione, temi): contratto `registry.yaml` 0.2, registro di riferimento e pannello «Registro» dell'editor fatti; per l'uso reale serve l'inoltro di `/registry` nel BFF.
 
 ## 9. Convenzioni di lavoro
 

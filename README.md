@@ -192,7 +192,7 @@ cd frontend
 npm run start:editor         # builds the libraries, copies the examples, serves on http://localhost:4201
 ```
 
-Open an example (*Apri esempio*) or start a new screen. The palette adds components (click, or drag into the outline); the outline selects, reorders, duplicates, cuts and pastes nodes; the property panel is generated from `screen.schema.json`, so columns, form fields, actions and steps are edited item by item; the *Data source* tab defines the services and the sample data the preview returns; the *Testi* tab lists every user-facing text, turns plain texts into translation keys with one click, edits the Italian and English translations (applied to the preview at once) and exports them for the catalogues. The preview is the real `lc-screen` in an isolated iframe (the same app started with `?anteprima`, talking to the editor through a small postMessage protocol) with fake ports: nothing leaves the browser, permissions can be switched off, and Alt+click on a component selects it. Problems (schema, CEL expressions, duplicate ids, missing data sources) are listed at the bottom; the draft is saved in the browser; *Esporta* downloads the JSON. The *Navigazione* mode edits `navigation.json` the same way (outline of use cases, groups and items; schema-driven fields) and previews the real side menu with a simulated profile: switch permissions off to see what a user without them gets. The *Tema* mode edits a theme's tokens (with colour pickers) and previews the screen and menu being edited with that theme, applied to the preview only. Details, shortcuts and limits: [docs/editor.md](docs/editor.md) (Italian).
+Open an example (*Apri esempio*) or start a new screen. The palette adds components (click, or drag into the outline); the outline selects, reorders, duplicates, cuts and pastes nodes; the property panel is generated from `screen.schema.json`, so columns, form fields, actions and steps are edited item by item; the *Data source* tab defines the services and the sample data the preview returns; the *Testi* tab lists every user-facing text, turns plain texts into translation keys with one click, edits the Italian and English translations (applied to the preview at once) and exports them for the catalogues. The preview is the real `lc-screen` in an isolated iframe (the same app started with `?anteprima`, talking to the editor through a small postMessage protocol) with fake ports: nothing leaves the browser, permissions can be switched off, and Alt+click on a component selects it. Problems (schema, CEL expressions, duplicate ids, missing data sources) are listed at the bottom; the draft is saved in the browser; *Esporta* downloads the JSON. The *Navigazione* mode edits `navigation.json` the same way (outline of use cases, groups and items; schema-driven fields) and previews the real side menu with a simulated profile: switch permissions off to see what a user without them gets. The *Tema* mode edits a theme's tokens (with colour pickers) and previews the screen and menu being edited with that theme, applied to the preview only. The *Registro* panel saves the open document as a new immutable version, lists its history with the environments it is published to, reopens a version and publishes it. Details, shortcuts and limits: [docs/editor.md](docs/editor.md) (Italian).
 
 ## Run the full stack
 
@@ -216,7 +216,7 @@ npm run schema:check                  # generated schema constants are in sync
 npm run validate:examples             # examples are valid
 ```
 
-At the time of writing there are **423 automated tests**: schema 63, expressions 39, core 61, components 128, services 19, runtime 66, editor 47. They run in jsdom, so layout, real focus handling and pixel-level rendering are **not** covered; see the development guide for the helpers that make NG-ZORRO overlays testable.
+At the time of writing there are **427 automated tests**: schema 63, expressions 39, core 61, components 128, services 19, runtime 66, editor 51. They run in jsdom, so layout, real focus handling and pixel-level rendering are **not** covered; see the development guide for the helpers that make NG-ZORRO overlays testable.
 
 ## Security model
 
@@ -243,7 +243,7 @@ Open point: Ajv generates validators with `new Function`, so browser-side valida
 **Next steps:**
 
 * Wire `services` into the `runtime` app (today it uses the demo's fake ports) and complete the BFF: CSRF protection, API forwarding with token and `traceparent`, host allow-list.
-* Visual editor: publication to the registry (contract 0.2 stores screens, navigation and themes as separate documents, each with its own versions and publications; the reference registry implements it), completion while typing expressions.
+* Visual editor: a review flow before publication (the contract's `in-revisione` state), completion while typing expressions. The editor's *Registro* panel (save version, history, open, publish per environment on the 0.2 contract with separate documents) needs the BFF to forward `/registry` before it works end to end.
 * The October 2026 component batch is complete (see the catalogue for the specification and the known limits of each component).
 * Menu: arrow-key navigation, badges, search.
 * Check expressions in `validate:examples` too.

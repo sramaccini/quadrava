@@ -311,6 +311,46 @@ describe('editor delle schermate', () => {
     expect(store.issues()).toEqual([]);
   });
 
+  it('registro: salva una versione del documento aperto, mostra lo storico, pubblica; con errori non salva', async () => {
+    const calls: { url: string; method: string }[] = [];
+    const versions = [{ hash: 'a1b2c3d4e5f6', createdAt: '2026-10-13T08:00:00Z', author: 'mario' }];
+    vi.stubGlobal('fetch', async (url: string, init: RequestInit = {}) => {
+      const method = init.method ?? 'GET';
+      if (url.startsWith('/registry')) calls.push({ url, method });
+      const json = (body: unknown, status = 200) => ({ ok: true, status, json: async () => body });
+      if (url.endsWith('/versions') && method === 'POST') return json(versions[0], 201);
+      if (url.endsWith('/versions')) return json(versions);
+      if (url.endsWith('/documents')) return json([{ kind: 'screen', id: 'nuova-schermata', publishedEnvironments: { produzione: 'a1b2c3d4e5f6' } }]);
+      if (url.includes('/published')) return { ok: true, status: 204, json: async () => undefined };
+      const body = FILES[url];
+      return body ? json(body) : { ok: false, status: 404, json: async () => ({}) };
+    });
+    ([...el.querySelectorAll<HTMLButtonElement>('.toolbar button')].find((b) => b.textContent?.includes('Registro')) as HTMLButtonElement).click();
+    await until(() => !!document.querySelector('ed-registry-panel'), 'pannello del registro');
+    const panel = document.querySelector('ed-registry-panel') as HTMLElement;
+    const app = panel.querySelector('#registry-app') as HTMLInputElement;
+    type(app, 'ordini');
+    await settle();
+    expect(panel.textContent).toContain('screen / nuova-schermata');
+    const button = (label: string): HTMLButtonElement => [...panel.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.includes(label))!;
+    button('Salva versione').click();
+    await until(() => !!panel.querySelector('ol li .hash'), 'storico');
+    expect(calls.slice(0, 1)).toEqual([{ url: '/registry/apps/ordini/documents/screen/nuova-schermata/versions', method: 'POST' }]);
+    expect(panel.querySelector('ol li')?.textContent).toContain('a1b2c3d4e5');
+    expect(panel.querySelector('ol li nz-tag')?.textContent?.trim()).toBe('produzione');
+    // Pubblicare chiede conferma.
+    button('Pubblica in produzione').click();
+    await until(() => !!document.querySelector('.ant-modal-confirm, .ant-modal'), 'conferma');
+    ([...document.querySelectorAll<HTMLButtonElement>('.ant-modal button')].find((b) => b.textContent?.includes('Conferma')) as HTMLButtonElement).click();
+    await until(() => calls.some((c) => c.method === 'PUT'), 'pubblicazione');
+    expect(calls.find((c) => c.method === 'PUT')?.url).toBe('/registry/apps/ordini/documents/screen/nuova-schermata/published?env=produzione');
+    // Con errori il salvataggio è bloccato.
+    store.setValue(['screen'], 'Non Valido');
+    await settle();
+    expect(button('Salva versione').disabled).toBe(true);
+    expect(panel.textContent).toContain('Correggi gli errori');
+  });
+
   it('apre un esempio, e da tastiera elimina il nodo selezionato', async () => {
     store.load(layout as never);
     await until(() => outline().length > 5, 'struttura dell’esempio');
