@@ -61,46 +61,33 @@
   <div class="view">
     @if (view() === 'json') {
       <ed-json-view />
-    } @else {
-      <div class="preview">
-        <section class="profile" [attr.aria-label]="i18n.t('ed.nav.profile')">
-          <h2 class="panel-title">{{ i18n.t('ed.nav.profile') }}</h2>
-          <label class="switch">
-            <nz-switch nzSize="small" [ngModel]="granted() === null" (ngModelChange)="setGrantAll($event)" />
-            {{ i18n.t('ed.preview.grantAll') }}
-          </label>
-          @if (granted() !== null) {
-            <ul class="permissions">
-              @for (permission of store.permissions(); track permission) {
-                <li>
-                  <label nz-checkbox [ngModel]="has(permission)" (ngModelChange)="toggle(permission, $event)">
-                    <code>{{ permission }}</code>
-                  </label>
-                </li>
-              } @empty {
-                <li class="none">{{ i18n.t('ed.nav.noPermissions') }}</li>
-              }
-            </ul>
-          }
-          <p class="help">{{ i18n.t('ed.nav.profileHint') }}</p>
-        </section>
-        <div class="menu">
-          @if (runtime(); as nav) {
-            <lc-sidebar
-              [navigation]="nav"
-              brand="LowCode"
-              [useCaseId]="useCaseId()"
-              (useCaseChange)="useCaseId.set($event)"
-              (navigate)="navigated($event)"
-              [collapsed]="collapsed()"
-              (collapsedChange)="collapsed.set($event)"
-            />
-          } @else {
-            <p class="empty">{{ i18n.t('ed.preview.empty') }}</p>
-          }
-        </div>
-      </div>
     }
+    <div class="preview" [class.off]="view() === 'json'">
+      <section class="profile" [attr.aria-label]="i18n.t('ed.nav.profile')">
+        <h2 class="panel-title">{{ i18n.t('ed.nav.profile') }}</h2>
+        <label class="switch">
+          <nz-switch nzSize="small" [ngModel]="granted() === null" (ngModelChange)="setGrantAll($event)" />
+          {{ i18n.t('ed.preview.grantAll') }}
+        </label>
+        @if (granted() !== null) {
+          <ul class="permissions">
+            @for (permission of store.permissions(); track permission) {
+              <li>
+                <label nz-checkbox [ngModel]="has(permission)" (ngModelChange)="toggle(permission, $event)">
+                  <code>{{ permission }}</code>
+                </label>
+              </li>
+            } @empty {
+              <li class="none">{{ i18n.t('ed.nav.noPermissions') }}</li>
+            }
+          </ul>
+        }
+        <p class="help">{{ i18n.t('ed.nav.profileHint') }}</p>
+      </section>
+      <div class="menu">
+        <ed-preview-frame [state]="previewState()" />
+      </div>
+    </div>
   </div>
 </main>
 

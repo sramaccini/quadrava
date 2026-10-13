@@ -22,12 +22,11 @@ import {
   WarningOutline,
 } from '@ant-design/icons-angular/icons';
 import { ICON_TYPES, NzNotifier, provideLowcodeComponents } from 'components';
-import { Authorization, DataClient, I18n, Notifier, RuntimeDiagnostics, ScreenNavigator, UserProvider } from 'core';
+import { I18n, Notifier } from 'core';
 import { provideNzIcons } from 'ng-zorro-antd/icon';
 import { EDITOR_MESSAGES } from './messages';
 import { DocumentState } from './model/document-state';
 import { EditorStore } from './model/editor-store';
-import { PreviewDataClient, PreviewDiagnostics, PreviewNavigator, PreviewSession } from './preview/preview-ports';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -63,12 +62,7 @@ export const appConfig: ApplicationConfig = {
     }),
     // I campi generati dallo schema lavorano sulla schermata; l'editor della navigazione li ridirige sul proprio documento.
     { provide: DocumentState, useExisting: EditorStore },
-    // L'anteprima usa porte proprie: nessuna chiamata esce dal browser.
-    { provide: Authorization, useExisting: PreviewSession },
-    { provide: UserProvider, useExisting: PreviewSession },
-    { provide: DataClient, useExisting: PreviewDataClient },
-    { provide: ScreenNavigator, useExisting: PreviewNavigator },
+    // Le porte del runtime servono solo all'anteprima, che gira nel suo iframe (preview-config.ts).
     { provide: Notifier, useExisting: NzNotifier },
-    { provide: RuntimeDiagnostics, useExisting: PreviewDiagnostics },
   ],
 };

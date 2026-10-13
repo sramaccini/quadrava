@@ -30,7 +30,7 @@ Da `frontend/`:
 - `.claude/launch.json` avvia una copia della demo sulla porta 4300 e dell'editor sulla 4301 (per l'anteprima nel pannello di Claude).
 - test per progetto: `npx ng test <schema|expressions|core|components|services|runtime|editor> --watch=false`
 
-Stato test (tutti verdi): schema 63, expressions 39, core 61, components 128, services 19, runtime 66, editor 43 (**419**). Build di produzione della demo: 2,27 MB iniziali (avviso a 2,5 MB).
+Stato test (tutti verdi): schema 63, expressions 39, core 61, components 128, services 19, runtime 66, editor 47 (**423**). Build di produzione della demo: 2,27 MB iniziali (avviso a 2,5 MB).
 
 ## 4. Architettura in breve
 
@@ -54,7 +54,7 @@ Librerie (`frontend/projects/`): `schema` (JSON Schema + tipi), `expressions` (C
 
 `docs/editor.md` descrive tutto. In breve: tavolozza (clic o trascinamento), struttura (seleziona, sposta, duplica, taglia/incolla, trascina), pannello delle proprietà **generato da `screen.schema.json`** (elenchi di colonne/campi/azioni/passi modificabili elemento per elemento, passi per variante, oggetti come gruppi), anteprima con il runtime vero e porte finte (dati di esempio per data source, permessi, larghezze, parametri, registro; Alt+clic seleziona), vista JSON, pannello dei data source (rinomina con aggiornamento dei riferimenti), pannello dei testi (rendi traducibile, traduzioni it/en applicate all'anteprima, esportazione per i cataloghi), problemi (schema, CEL, id ripetuti, data source mancanti), cronologia di annullamento, bozza nel browser, apri esempio / importa / esporta. Un componente nuovo richiede solo il modello in `model/templates.ts`, il gruppo nella tavolozza e `ed.type.<tipo>` nei messaggi.
 
-Modalità «Navigazione» (selettore nella barra): struttura di casi d'uso/gruppi/voci con «+ Caso d'uso / Gruppo / Voce», campi da `navigation.schema.json`, anteprima del menu vero con profilo simulato (permessi da spegnere), problemi (schema, id ripetuti tra fratelli, schermate non note, default inesistente). Modalità «Tema»: token dai campi dello schema dei temi (selettore per i colori), anteprima della schermata e del menu correnti con il tema applicato solo al riquadro (`themeToCssVars` + `themeToNzVars`). `DocumentState` è la base comune; `ed-fields` e la vista JSON lo iniettano, e l'editor della navigazione lo ridirige su `NavigationStore` con un provider.
+Modalità «Navigazione» (selettore nella barra): struttura di casi d'uso/gruppi/voci con «+ Caso d'uso / Gruppo / Voce», campi da `navigation.schema.json`, anteprima del menu vero con profilo simulato (permessi da spegnere), problemi (schema, id ripetuti tra fratelli, schermate non note, default inesistente). Modalità «Tema»: token dai campi dello schema dei temi (selettore per i colori), anteprima della schermata e del menu correnti con il tema. **Anteprime in iframe** (ADR-08): la stessa app con `?anteprima` (`PreviewApp`, `preview-config.ts`), messaggi definiti in `preview/protocol.ts` (stato → anteprima; pronto, selezione, eventi → editor), solo stessa origine e proprio iframe; lo stato arriva clonato e l'anteprima confronta per contenuto per non ridisegnare a ogni selezione. `DocumentState` è la base comune; `ed-fields` e la vista JSON lo iniettano, e l'editor della navigazione lo ridirige su `NavigationStore` con un provider.
 
 ## 6. Trappole note (NG-ZORRO / Angular / strumenti)
 
@@ -84,9 +84,9 @@ Le principali sono nella DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In breve:
 
 1. Review dei 18 componenti (commit da `4d224fb` a `47a96ee`), del fix del runtime `9d96798`, dei limiti superati (da `7907884` a `f42abdf`), della serverDataTable (`9bae9b7`) e dell'editor (da `5840c9c` a `b3d7a5d`).
 2. Collegare `services` a `runtime` e completare il BFF (CSRF, forwarding, allow-list; il forwarding deve gestire anche i corpi multipart).
-3. **Editor visuale**, seconda fase: pubblicazione nel registro — **decisione da prendere**: il contratto conserva un solo `AppDefinition` per applicazione, va deciso se schermate, navigazione e tema sono un pacchetto unico o documenti separati; completamento delle espressioni (vedi `docs/editor.md` § 6).
+3. **Editor visuale**, seconda fase: pubblicazione nel registro a documenti separati (contratto da adeguare, poi client nell'editor e implementazione di riferimento); completamento delle espressioni (vedi `docs/editor.md` § 6).
 4. Menu: navigazione da tastiera, badge, ricerca. CEL in `validate:examples`.
-5. **Decidere ADR-08 e ADR-09** (architettura § 9 e § 14): l'editor oggi ha l'anteprima nella stessa pagina (non in iframe) e una cronologia a versioni immutabili (non JSON Patch). Vedi `docs/editor.md` § 6.
+5. Decise il 13 ottobre 2026: ADR-08 accettata (anteprima in iframe, fatta), ADR-09 modificata (cronologia a versioni immutabili), registro a documenti separati (schermate, navigazione, temi) — contratto e collegamento dell'editor da fare.
 
 ## 9. Convenzioni di lavoro
 

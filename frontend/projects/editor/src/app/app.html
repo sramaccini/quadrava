@@ -66,10 +66,9 @@
       <nz-tab [nzTitle]="store.textsToFix() ? i18n.t('ed.tabs.textsTodo', { n: store.textsToFix() }) : i18n.t('ed.tabs.texts')"></nz-tab>
     </nz-tabs>
     <div class="view">
+      <!-- L'anteprima resta viva (nascosta) nelle altre viste: il suo iframe non si ricarica a ogni cambio. -->
+      <div class="pane" [class.off]="store.view() !== 'preview'"><ed-preview /></div>
       @switch (store.view()) {
-        @case ('preview') {
-          <ed-preview />
-        }
         @case ('json') {
           <ed-json-view />
         }

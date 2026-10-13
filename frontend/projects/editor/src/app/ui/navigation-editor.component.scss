@@ -27,6 +27,7 @@
 .mark.warning { background: var(--lc-color-warning, #d48806); }
 .tools { display: flex; flex: none; }
 
+.preview.off { display: none; }
 .preview { display: flex; gap: 16px; height: 100%; padding: 12px; overflow: auto; background: var(--lc-color-background); }
 .profile { flex: 0 0 260px; padding: 12px; border: 1px solid var(--lc-color-border); border-radius: var(--lc-radius); background: var(--lc-color-surface); align-self: flex-start; }
 .switch { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
@@ -34,7 +35,7 @@
 .permissions code { font-size: 12px; }
 .help { margin: 8px 0 0; font-size: 12px; color: var(--lc-color-muted); }
 .none { color: var(--lc-color-muted); font-size: 12px; }
-.menu { flex: none; display: flex; height: 100%; min-height: 420px; box-shadow: 0 0 0 1px var(--lc-color-border); }
+.menu { flex: none; width: 300px; height: 100%; min-height: 420px; box-shadow: 0 0 0 1px var(--lc-color-border); }
 
 .kind { margin: 0 0 12px; font-size: 16px; font-weight: 600; }
 .issues { margin: 0 0 12px; padding-left: 18px; color: var(--lc-color-danger); font-size: 12px; }

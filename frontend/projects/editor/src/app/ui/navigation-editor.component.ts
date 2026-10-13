@@ -1,8 +1,8 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { SidebarComponent, type NavigateEvent } from 'components';
-import { I18n, NavigationRuntime, Notifier } from 'core';
+import { I18n } from 'core';
+import type { NavigationDefinition } from 'schema';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzCheckboxModule } from 'ng-zorro-antd/checkbox';
 import { NzIconModule } from 'ng-zorro-antd/icon';
@@ -11,6 +11,10 @@ import { NzTabsModule } from 'ng-zorro-antd/tabs';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import { fromPointer, getIn, isObject, samePath, startsWith, type Json, type Path } from '../model/doc-ops';
 import { DocumentState } from '../model/document-state';
+import { EditorStore } from '../model/editor-store';
+import { ThemeStore } from '../model/theme-store';
+import { PreviewFrameComponent } from '../preview/preview-frame.component';
+import { previewState, type PreviewState } from '../preview/protocol';
 import { navProperties, navTargetAt, NavigationStore, type NavTarget } from '../model/navigation-store';
 import { fallbackText } from '../model/templates';
 import { FieldsComponent } from './fields.component';
@@ -39,7 +43,7 @@ interface NavItem {
     NgTemplateOutlet,
     FieldsComponent,
     JsonViewComponent,
-    SidebarComponent,
+    PreviewFrameComponent,
     NzButtonModule,
     NzCheckboxModule,
     NzIconModule,
@@ -56,7 +60,8 @@ interface NavItem {
 export class NavigationEditorComponent {
   protected readonly store = inject(NavigationStore);
   protected readonly i18n = inject(I18n);
-  private readonly notifier = inject(Notifier);
+  private readonly screens = inject(EditorStore);
+  private readonly theme = inject(ThemeStore);
 
   protected readonly view = signal<'preview' | 'json'>('preview');
 
@@ -140,28 +145,21 @@ export class NavigationEditorComponent {
 
   /** Permessi del profilo simulato; null = tutti. */
   protected readonly granted = signal<Set<string> | null>(null);
-  protected readonly collapsed = signal(false);
   /** Il menu disegnato: l'ultima navigazione valida (con errori resta la precedente). */
-  protected readonly runtime = linkedSignal<NavigationRuntime | null, NavigationRuntime | null>({
-    source: () => {
-      const definition = this.store.definition();
-      return definition
-        ? new NavigationRuntime(definition, {
-            authorization: { can: (permission: string) => this.granted()?.has(permission) ?? true },
-            userProvider: { user: () => ({ username: 'anteprima', displayName: 'Anteprima', locale: this.i18n.locale() }) },
-            i18n: this.i18n,
-          })
-        : null;
-    },
+  private readonly shown = linkedSignal<NavigationDefinition | null, NavigationDefinition | null>({
+    source: () => this.store.definition(),
     computation: (next, previous) => next ?? previous?.value ?? null,
   });
-  protected readonly useCaseId = linkedSignal<NavigationRuntime | null, string | null>({
-    source: () => this.runtime(),
-    computation: (runtime, previous) => {
-      const visible = runtime?.useCases() ?? [];
-      const keep = previous?.value && visible.some((u) => u.id === previous.value);
-      return keep ? previous!.value : (visible[0]?.id ?? null);
-    },
+  /** Quello che l'iframe disegna: il menu vero (`lc-sidebar`) con il profilo simulato e il tema in modifica. */
+  protected readonly previewState = computed<PreviewState>(() => {
+    const granted = this.granted();
+    return previewState({
+      navigation: this.shown(),
+      theme: this.theme.definition(),
+      granted: granted ? [...granted] : null,
+      locale: this.i18n.locale(),
+      translations: this.screens.translations(),
+    });
   });
 
   protected setGrantAll(all: boolean): void {
@@ -179,10 +177,6 @@ export class NavigationEditorComponent {
 
   protected has(permission: string): boolean {
     return this.granted()?.has(permission) ?? true;
-  }
-
-  protected navigated(event: NavigateEvent): void {
-    this.notifier.toast(this.i18n.t('ed.preview.navigated', { screen: event.leaf.screen }));
   }
 
   protected setView(index: number): void {

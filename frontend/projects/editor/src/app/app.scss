@@ -20,6 +20,8 @@
 .center nz-tabs { padding: 0 12px; background: var(--lc-color-surface); }
 .center ::ng-deep .ant-tabs-nav { margin: 0; }
 .view { flex: 1; min-height: 0; }
+.pane { height: 100%; }
+.pane.off { display: none; }
 .bottom { grid-area: bottom; max-height: 180px; overflow: auto; border-top: 1px solid var(--lc-color-border); background: var(--lc-color-surface); }
 .issues-toggle {
   display: block; width: 100%; padding: 4px 12px; border: 0; background: none; color: var(--lc-color-muted);

@@ -4,9 +4,10 @@ import layout from '../../public/examples/vetrina-layout.json';
 import { I18n } from 'core';
 import { App } from './app';
 import { appConfig } from './app.config';
-import { getIn } from './model/doc-ops';
 import { EditorStore } from './model/editor-store';
+import { getIn as getAt, type Json } from './model/doc-ops';
 import { NavigationStore } from './model/navigation-store';
+import { isToPreview, type PreviewState } from './preview/protocol';
 
 const FILES: Record<string, unknown> = { 'examples/index.json': ['vetrina-layout'], 'examples/vetrina-layout.json': layout };
 
@@ -30,6 +31,7 @@ describe('editor delle schermate', () => {
   });
 
   afterEach(() => {
+    vi.restoreAllMocks();
     vi.unstubAllGlobals();
     document.body.querySelectorAll('.cdk-overlay-container').forEach((n) => n.remove());
   });
@@ -51,7 +53,39 @@ describe('editor delle schermate', () => {
   }
 
   const outline = (): string[] => [...el.querySelectorAll('ed-outline .branch button.row')].map((b) => b.querySelector('.label')!.textContent!.trim());
-  const preview = (): HTMLElement => el.querySelector('ed-preview .frame') as HTMLElement;
+  /**
+   * Stati mandati all'iframe di un'anteprima. In jsdom l'iframe non carica l'applicazione: si simula il suo «pronto»
+   * e si registra quello che l'editor gli manda.
+   */
+  const posted = new Map<Window, PreviewState[]>();
+  async function frameWindow(host: string): Promise<Window> {
+    await until(() => !!el.querySelector(`${host} iframe`), `iframe di ${host}`);
+    const win = (el.querySelector(`${host} iframe`) as HTMLIFrameElement).contentWindow!;
+    if (!posted.has(win)) {
+      posted.set(win, []);
+      vi.spyOn(win, 'postMessage').mockImplementation((message: unknown) => {
+        if (isToPreview(message)) posted.get(win)!.push(message.state);
+      });
+      window.dispatchEvent(new MessageEvent('message', { data: { type: 'lc-preview:ready' }, origin: location.origin, source: win }));
+      await settle();
+    }
+    return win;
+  }
+  async function untilState(host: string, condition: (state: PreviewState) => boolean, label: string): Promise<PreviewState> {
+    const win = await frameWindow(host);
+    await until(() => {
+      const last = posted.get(win)!.at(-1);
+      return !!last && condition(last);
+    }, label);
+    return posted.get(win)!.at(-1)!;
+  }
+  /** Un messaggio dall'iframe di un'anteprima all'editor. */
+  async function fromFrame(host: string, data: unknown): Promise<void> {
+    const win = await frameWindow(host);
+    window.dispatchEvent(new MessageEvent('message', { data, origin: location.origin, source: win }));
+    await settle();
+  }
+  const screenOf = (state: PreviewState): Json => state.screen as unknown as Json;
   const type = (input: HTMLInputElement | HTMLTextAreaElement, value: string): void => {
     input.value = value;
     input.dispatchEvent(new Event('input'));
@@ -65,24 +99,27 @@ describe('editor delle schermate', () => {
     expect(outline()).toEqual(['Sezione']);
     expect(el.querySelector('ed-inspector .kind')?.textContent).toBe('Sezione');
     type(el.querySelector('#prop-title') as HTMLTextAreaElement, 'Riepilogo');
-    await until(() => !!preview().textContent?.includes('Riepilogo'), 'titolo nell’anteprima');
+    await untilState('ed-preview', (st) => getAt(screenOf(st), ['components', 0, 'title']) === 'Riepilogo', 'titolo nell’anteprima');
     // Dentro la sezione selezionata finisce il nodo successivo.
     (el.querySelector('ed-palette button[data-type="alert"]') as HTMLButtonElement).click();
-    await until(() => !!preview().querySelector('lc-section lc-alert'), 'messaggio dentro la sezione');
+    await untilState('ed-preview', (st) => getAt(screenOf(st), ['components', 0, 'components', 0, 'type']) === 'alert', 'messaggio dentro la sezione');
     expect(store.selection()).toEqual(['components', 0, 'components', 0]);
     expect(el.querySelector('.status')?.textContent).toContain('Valida');
   });
 
   it('un errore si vede nelle proprietà, nell’elenco dei problemi e nella struttura; l’anteprima resta all’ultima versione valida', async () => {
     (el.querySelector('ed-palette button[data-type="text"]') as HTMLButtonElement).click();
-    await until(() => !!preview().querySelector('lc-text'), 'testo nell’anteprima');
+    await untilState('ed-preview', (st) => getAt(screenOf(st), ['components', 0, 'type']) === 'text', 'testo nell’anteprima');
     type(el.querySelector('#prop-text') as HTMLTextAreaElement, '{{ 1 + }}');
     await settle();
     expect(el.querySelector('.status')?.textContent).toContain('Errori: 1');
     expect(el.querySelector('ed-inspector .prop.invalid .issue')).not.toBeNull();
     expect(el.querySelector('ed-outline .mark.error')).not.toBeNull();
     expect(el.querySelector('ed-preview nz-alert')).not.toBeNull();
-    expect(preview().querySelector('lc-text')?.textContent).toContain('Nuovo testo');
+    // All'iframe resta l'ultima versione valida.
+    await new Promise((r) => setTimeout(r, 300));
+    const last = await untilState('ed-preview', () => true, 'stato');
+    expect(getAt(screenOf(last), ['components', 0, 'text'])).toBe('Nuovo testo');
     store.select([]);
     await settle();
     (el.querySelector('ed-issues button') as HTMLButtonElement).click();
@@ -106,9 +143,11 @@ describe('editor delle schermate', () => {
     name.value = 'ordini';
     name.dispatchEvent(new Event('change'));
     await settle();
-    expect(getIn(store.doc(), ['components', 0, 'source'])).toBe('ordini');
+    expect(getAt(store.doc(), ['components', 0, 'source'])).toBe('ordini');
     tab(0);
-    await until(() => !!preview().querySelector('lc-table tbody')?.textContent?.includes('Prima riga'), 'riga di esempio');
+    const shown = await untilState('ed-preview', (st) => getAt(screenOf(st), ['components', 0, 'source']) === 'ordini', 'tabella rinominata');
+    expect(shown.samples).toEqual({ ordini: [{ id: 1, descrizione: 'Prima riga' }] });
+    expect(getAt(screenOf(shown), ['dataSources', 'ordini', 'url'])).toBe('/api/elenco');
   });
 
   it('JSON: il testo non valido non tocca il documento; quello valido si applica e si annulla con Ctrl+Z', async () => {
@@ -125,10 +164,10 @@ describe('editor delle schermate', () => {
     await settle();
     apply.click();
     await settle();
-    expect(getIn(store.doc(), ['screen'])).toBe('da-json');
+    expect(getAt(store.doc(), ['screen'])).toBe('da-json');
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true }));
     await settle();
-    expect(getIn(store.doc(), ['screen'])).toBe('nuova-schermata');
+    expect(getAt(store.doc(), ['screen'])).toBe('nuova-schermata');
   });
 
   it('elenchi nelle proprietà: colonne campo per campo, passi per variante, e come JSON', async () => {
@@ -141,15 +180,15 @@ describe('editor delle schermate', () => {
     await settle();
     type(columns().querySelector('#prop-columns-1-label') as HTMLInputElement, 'Note');
     await settle();
-    expect(getIn(store.doc(), ['components', 0, 'columns', 1, 'label'])).toBe('Note');
+    expect(getAt(store.doc(), ['components', 0, 'columns', 1, 'label'])).toBe('Note');
     // Una colonna nuova in fondo, poi spostata in cima.
     (columns().querySelector(':scope > .list > button') as HTMLButtonElement).click();
     await settle();
-    expect(getIn(store.doc(), ['components', 0, 'columns', 2])).toEqual({ field: 'campo3', label: 'Descrizione' });
+    expect(getAt(store.doc(), ['components', 0, 'columns', 2])).toEqual({ field: 'campo3', label: 'Descrizione' });
     const up = columns().querySelectorAll(':scope > .list > .items > .item')[2].querySelector('button[aria-label^="Sposta su"]') as HTMLButtonElement;
     up.click();
     await settle();
-    expect(getIn(store.doc(), ['components', 0, 'columns', 1, 'field'])).toBe('campo3');
+    expect(getAt(store.doc(), ['components', 0, 'columns', 1, 'field'])).toBe('campo3');
     // Vista JSON dell'elenco.
     (columns().querySelector(':scope > .list > .list-head button') as HTMLButtonElement).click();
     await settle();
@@ -165,43 +204,32 @@ describe('editor delle schermate', () => {
     await until(() => document.querySelectorAll('.ant-dropdown-menu-item').length === 7, 'varianti dei passi');
     ([...document.querySelectorAll<HTMLElement>('.ant-dropdown-menu-item')].find((i) => i.textContent?.includes('refresh')) as HTMLElement).click();
     await settle();
-    expect(getIn(store.doc(), ['components', 1, 'onClick', 1])).toEqual({ refresh: '' });
+    expect(getAt(store.doc(), ['components', 1, 'onClick', 1])).toEqual({ refresh: '' });
     // Il passo nuovo è aperto: il data source si scrive nel suo campo.
     type(steps.querySelector('#prop-onClick-1-refresh') as HTMLInputElement, 'elenco');
     await settle();
-    expect(getIn(store.doc(), ['components', 1, 'onClick', 1])).toEqual({ refresh: 'elenco' });
+    expect(getAt(store.doc(), ['components', 1, 'onClick', 1])).toEqual({ refresh: 'elenco' });
     expect(store.issues()).toEqual([]);
   });
 
-  it('dall’anteprima alla struttura: Alt+clic o modalità selezione scelgono il componente senza attivarlo', async () => {
+  it('dall’anteprima alla struttura: il componente scelto nell’iframe si seleziona; solo i messaggi del proprio iframe contano', async () => {
     (el.querySelector('ed-palette button[data-type="button"]') as HTMLButtonElement).click();
     store.select([]);
     (el.querySelector('ed-palette button[data-type="alert"]') as HTMLButtonElement).click();
-    await until(() => !!preview().querySelector('lc-node[data-node-id="button-1"] button'), 'pulsante nell’anteprima');
-    expect(store.selection()).toEqual(['components', 1]);
-    const button = preview().querySelector('lc-node[data-node-id="button-1"] button') as HTMLButtonElement;
-    button.dispatchEvent(new MouseEvent('click', { bubbles: true, altKey: true }));
+    // Il nodo selezionato è quello da evidenziare nell'anteprima.
+    await untilState('ed-preview', (st) => st.selectedId === 'alert-1' && !!st.screen, 'nodo selezionato');
+    await fromFrame('ed-preview', { type: 'lc-preview:select', id: 'button-1' });
+    expect(store.selection()).toEqual(['components', 0]);
+    // Un messaggio da un'altra finestra non conta.
+    window.dispatchEvent(new MessageEvent('message', { data: { type: 'lc-preview:select', id: 'alert-1' }, origin: location.origin, source: window }));
     await settle();
     expect(store.selection()).toEqual(['components', 0]);
-    expect(document.querySelector('.ant-message-notice')).toBeNull();
-    // Modalità selezione: un clic normale seleziona il messaggio.
+    // Modalità selezione e registro.
     ([...el.querySelectorAll('ed-preview .bar button')].find((b) => b.textContent?.includes('Seleziona')) as HTMLButtonElement).click();
-    await settle();
-    (preview().querySelector('lc-node[data-node-id="alert-1"] lc-alert') as HTMLElement).dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    await settle();
-    expect(store.selection()).toEqual(['components', 1]);
+    await untilState('ed-preview', (st) => st.selectMode, 'modalità selezione');
+    await fromFrame('ed-preview', { type: 'lc-preview:event', event: { kind: 'request', text: 'GET /api/elenco' } });
+    expect(el.querySelector('ed-preview .bar')?.textContent).toContain('Registro (1)');
   });
-
-  it('selezionando un nodo in una scheda nascosta l’anteprima apre quella scheda', async () => {
-    (el.querySelector('ed-palette button[data-type="tabs"]') as HTMLButtonElement).click();
-    store.select(['components', 0, 'tabs', 1]);
-    (el.querySelector('ed-palette button[data-type="alert"]') as HTMLButtonElement).click();
-    store.select(['components', 0]);
-    await until(() => preview().querySelector('.ant-tabs-tab-active')?.textContent?.trim() === 'Scheda 1', 'prima scheda attiva');
-    store.select(['components', 0, 'tabs', 1, 'components', 0]);
-    await until(() => preview().querySelector('.ant-tabs-tab-active')?.textContent?.trim() === 'Scheda 2', 'seconda scheda aperta');
-  });
-
   it('testi: un testo semplice diventa traducibile, la traduzione inglese vale subito nell’anteprima', async () => {
     (el.querySelector('ed-palette button[data-type="alert"]') as HTMLButtonElement).click();
     await settle();
@@ -211,7 +239,7 @@ describe('editor delle schermate', () => {
     const row = (): HTMLElement => [...el.querySelectorAll<HTMLElement>('ed-texts tbody tr')].find((r) => r.textContent?.includes('Messaggio'))!;
     (row().querySelector('button.convert') as HTMLButtonElement).click();
     await settle();
-    expect(getIn(store.doc(), ['components', 0, 'text'])).toBe("{{ t('nuova_schermata.messaggio_per_l_utente', 'Messaggio per l’utente') }}");
+    expect(getAt(store.doc(), ['components', 0, 'text'])).toBe("{{ t('nuova_schermata.messaggio_per_l_utente', 'Messaggio per l’utente') }}");
     const english = row().querySelector('input[aria-label$=" en"]') as HTMLInputElement;
     expect(english.getAttribute('aria-invalid')).toBe('true');
     english.value = 'Message for the user';
@@ -220,56 +248,54 @@ describe('editor delle schermate', () => {
     expect(row().querySelector('input[aria-label$=" en"]')?.getAttribute('aria-invalid')).toBeNull();
     TestBed.inject(I18n).setLocale('en');
     tab(0);
-    await until(() => !!preview().querySelector('lc-alert')?.textContent?.includes('Message for the user'), 'anteprima in inglese');
+    await untilState('ed-preview', (st) => st.locale === 'en' && st.translations['en']?.['nuova_schermata.messaggio_per_l_utente'] === 'Message for the user', 'traduzione all’anteprima');
   });
 
   it('navigazione: struttura, campi dallo schema, menu vero con un profilo simulato', async () => {
     ([...el.querySelectorAll<HTMLElement>('.mode .ant-segmented-item')].find((i) => i.textContent?.includes('Navigazione')) as HTMLElement).click();
     await until(() => !!el.querySelector('ed-navigation-editor'), 'editor della navigazione');
     const nav = TestBed.inject(NavigationStore);
-    const menu = (): string => el.querySelector('ed-navigation-editor lc-sidebar')?.textContent?.replace(/\s+/g, ' ') ?? '';
-    await until(() => menu().includes('Nuova voce'), 'menu nell’anteprima');
+    const menu = (st: PreviewState): string => JSON.stringify(st.navigation);
+    await untilState('ed-navigation-editor', (st) => menu(st).includes('Nuova voce') && !st.screen, 'menu nell’anteprima');
     // Una voce che richiede un permesso.
     nav.select(['useCases', 0, 'items', 0]);
     await settle();
     expect(el.querySelector('ed-navigation-editor .kind')?.textContent).toBe('Voce');
     type(el.querySelector('ed-navigation-editor #prop-label') as HTMLInputElement, 'Ordini');
     type(el.querySelector('ed-navigation-editor #prop-requires') as HTMLInputElement, 'ordini.ordine.leggi');
-    await until(() => menu().includes('Ordini'), 'etichetta nuova nel menu');
+    await untilState('ed-navigation-editor', (st) => menu(st).includes('Ordini') && st.granted === null, 'etichetta nuova nel menu');
     // Profilo senza il permesso: la voce sparisce.
     (el.querySelector('ed-navigation-editor .profile nz-switch') as HTMLElement).click();
     await settle();
     (el.querySelector('ed-navigation-editor .permissions input') as HTMLInputElement).click();
-    await until(() => !menu().includes('Ordini'), 'voce nascosta');
+    await untilState('ed-navigation-editor', (st) => Array.isArray(st.granted) && !st.granted.includes('ordini.ordine.leggi'), 'profilo senza il permesso');
     // Il gruppo si aggiunge dalla barra della struttura; Ctrl+Z vale per la navigazione.
     ([...el.querySelectorAll<HTMLButtonElement>('ed-navigation-editor .add button')].find((b) => b.textContent?.includes('Gruppo')) as HTMLButtonElement).click();
     await settle();
     expect(nav.target()).toEqual({ kind: 'group', level: 1 });
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true }));
     await settle();
-    expect(getIn(nav.doc(), ['useCases', 0, 'items'])).toHaveLength(1);
+    expect(getAt(nav.doc(), ['useCases', 0, 'items'])).toHaveLength(1);
     // Problemi della navigazione in basso: la voce iniziale apre una schermata che non è tra quelle note.
     expect(el.querySelector('.bottom')?.textContent).toContain('Schermata «nuova-schermata» non trovata tra quelle note');
   });
 
-  it('tema: i token si modificano dai campi, l’anteprima li applica solo a sé stessa', async () => {
+  it('tema: i token si modificano dai campi e vanno all’anteprima con la schermata in modifica; con errori resta l’ultimo valido', async () => {
     (el.querySelector('ed-palette button[data-type="alert"]') as HTMLButtonElement).click();
     ([...el.querySelectorAll<HTMLElement>('.mode .ant-segmented-item')].find((i) => i.textContent?.includes('Tema')) as HTMLElement).click();
-    await until(() => !!el.querySelector('ed-theme-editor .frame lc-alert'), 'schermata nell’anteprima del tema');
-    const frame = el.querySelector('ed-theme-editor .frame') as HTMLElement;
-    expect(frame.style.getPropertyValue('--lc-color-primary')).toBe('#1f5fbf');
+    await untilState('ed-theme-editor', (st) => st.theme?.tokens.colors.primary === '#1f5fbf' && getAt(screenOf(st), ['components', 0, 'type']) === 'alert', 'tema e schermata');
     const primary = el.querySelector('ed-theme-editor #prop-tokens-colors-primary') as HTMLInputElement;
     expect(primary.previousElementSibling?.getAttribute('type')).toBe('color');
     type(primary, '#aa3300');
-    await until(() => frame.style.getPropertyValue('--lc-color-primary') === '#aa3300', 'colore nuovo nell’anteprima');
+    await untilState('ed-theme-editor', (st) => st.theme?.tokens.colors.primary === '#aa3300', 'colore nuovo');
+    // L'editor non cambia: il tema vale solo nell'iframe.
     expect(document.documentElement.style.getPropertyValue('--lc-color-primary')).not.toBe('#aa3300');
-    // Un colore non valido è un errore e l'anteprima resta all'ultimo tema valido.
     type(primary, 'rosso');
     await settle();
     expect(el.querySelector('.status')?.textContent).toContain('Errori: 1');
-    expect(frame.style.getPropertyValue('--lc-color-primary')).toBe('#aa3300');
+    const last = await untilState('ed-theme-editor', () => true, 'stato');
+    expect(last.theme?.tokens.colors.primary).toBe('#aa3300');
   });
-
   it('espressioni: l’aiuto propone variabili e funzioni e le inserisce al cursore', async () => {
     (el.querySelector('ed-palette button[data-type="button"]') as HTMLButtonElement).click();
     await settle();
@@ -281,7 +307,7 @@ describe('editor delle schermate', () => {
     const chip = [...help.querySelectorAll<HTMLButtonElement>('.chip')].find((c) => c.textContent?.trim() === 'user.username')!;
     chip.click();
     await settle();
-    expect(getIn(store.doc(), ['components', 0, 'visibleIf'])).toBe('{{ user.username }}');
+    expect(getAt(store.doc(), ['components', 0, 'visibleIf'])).toBe('{{ user.username }}');
     expect(store.issues()).toEqual([]);
   });
 

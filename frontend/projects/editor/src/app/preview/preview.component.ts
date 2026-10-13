@@ -1,6 +1,6 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterEveryRender, computed, effect, inject, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { I18n, ScreenComponent } from 'core';
+import { I18n } from 'core';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzIconModule } from 'ng-zorro-antd/icon';
@@ -9,8 +9,11 @@ import { NzSwitchModule } from 'ng-zorro-antd/switch';
 import type { ScreenDefinition } from 'schema';
 import { getIn, isObject, type Json } from '../model/doc-ops';
 import { EditorStore } from '../model/editor-store';
+import { ThemeStore } from '../model/theme-store';
 import { JsonFieldComponent } from '../ui/json-field.component';
-import { PreviewLog, PreviewSession } from './preview-ports';
+import { PreviewFrameComponent } from './preview-frame.component';
+import { PreviewLog } from './preview-log';
+import { previewState, type PreviewState } from './protocol';
 
 /** Pausa dopo l'ultima modifica prima di ridisegnare l'anteprima (ricrearla a ogni lettera sarebbe inutile e lento). */
 const DEBOUNCE_MS = 250;
@@ -19,24 +22,21 @@ const DEBOUNCE_MS = 250;
 const WIDTHS: Record<string, number | null> = { desktop: null, tablet: 768, mobile: 375 };
 
 /**
- * Anteprima dal vivo: la schermata disegnata dal runtime vero (`lc-screen`) con le porte dell'anteprima. Se il
- * documento ha errori resta l'ultima versione valida, con un avviso. Si possono simulare permessi, larghezza e
- * parametri della schermata; il registro mostra richieste, navigazioni e segnalazioni.
- *
- * Collegamento con la struttura: il nodo selezionato è evidenziato nel disegno; Alt+clic su un componente (o un clic
- * in modalità selezione) lo seleziona invece di attivarlo. Funziona per i nodi con `id`, che l'editor assegna sempre.
- * Se il nodo selezionato sta in una scheda non attiva, l'anteprima apre quella scheda.
+ * Anteprima dal vivo della schermata: la barra (larghezza, permessi, parametri, registro, selezione, ricarica) sta
+ * nell'editor, il disegno nell'iframe isolato (vedi `ed-preview-frame`), con il tema in modifica. Se il documento ha
+ * errori resta l'ultima versione valida, con un avviso. Un componente scelto nell'anteprima si seleziona nella
+ * struttura; il nodo selezionato nella struttura è evidenziato nell'anteprima.
  */
 @Component({
   selector: 'ed-preview',
-  imports: [FormsModule, ScreenComponent, JsonFieldComponent, NzAlertModule, NzButtonModule, NzIconModule, NzSegmentedModule, NzSwitchModule],
+  imports: [FormsModule, JsonFieldComponent, PreviewFrameComponent, NzAlertModule, NzButtonModule, NzIconModule, NzSegmentedModule, NzSwitchModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './preview.component.scss',
   templateUrl: './preview.component.html',
 })
 export class PreviewComponent {
   protected readonly store = inject(EditorStore);
-  protected readonly session = inject(PreviewSession);
+  private readonly theme = inject(ThemeStore);
   protected readonly log = inject(PreviewLog);
   protected readonly i18n = inject(I18n);
 
@@ -44,6 +44,7 @@ export class PreviewComponent {
   protected readonly shown = signal<ScreenDefinition | null>(this.store.definition());
   /** Cambia per ricreare la schermata da capo (pulsante Ricarica, permessi). */
   protected readonly version = signal(0);
+  protected readonly grantAll = signal(true);
   protected readonly width = signal('desktop');
   protected readonly widthOptions = computed(() => Object.keys(WIDTHS).map((value) => ({ value, label: this.i18n.t('ed.preview.' + value) })));
   protected readonly frameWidth = computed(() => WIDTHS[this.width()]);
@@ -53,14 +54,27 @@ export class PreviewComponent {
   protected readonly stale = computed(() => this.store.definition() === null && this.shown() !== null);
   /** In modalità selezione ogni clic seleziona il componente invece di attivarlo. */
   protected readonly selectMode = signal(false);
-  private readonly frame = viewChild<ElementRef<HTMLElement>>('frame');
-  /** Riquadro che evidenzia il nodo selezionato, in coordinate del contenuto dell'anteprima. */
-  protected readonly highlight = signal<Box | null>(null);
   /** Identificativo del nodo selezionato, da evidenziare nel disegno. */
   private readonly selectedId = computed(() => {
     const value = getIn(this.store.doc(), this.store.selection());
     return isObject(value) && typeof value['id'] === 'string' ? value['id'] : null;
   });
+
+  /** Quello che l'iframe disegna. */
+  protected readonly state = computed<PreviewState>(() =>
+    previewState({
+      screen: this.shown(),
+      theme: this.theme.definition(),
+      granted: this.grantAll() ? null : [],
+      samples: this.store.samples(),
+      params: this.params(),
+      locale: this.i18n.locale(),
+      translations: this.store.translations(),
+      selectedId: this.selectedId(),
+      selectMode: this.selectMode(),
+      version: this.version(),
+    }),
+  );
 
   constructor() {
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -70,52 +84,11 @@ export class PreviewComponent {
       if (definition) timer = setTimeout(() => this.shown.set(definition), DEBOUNCE_MS);
     });
     inject(DestroyRef).onDestroy(() => clearTimeout(timer));
-
-    // In fase di cattura, così il clic che seleziona non arriva al pulsante o al collegamento del componente.
-    effect((onCleanup) => {
-      const frame = this.frame()?.nativeElement;
-      if (!frame) return;
-      const listener = (event: MouseEvent): void => this.pick(event);
-      frame.addEventListener('click', listener, true);
-      onCleanup(() => frame.removeEventListener('click', listener, true));
-    });
-
-    // Riquadro sul nodo selezionato, ricalcolato dopo ogni disegno: i componenti cambiano dimensione quando arrivano
-    // i dati. Un riquadro sopra il disegno, invece di un bordo sul componente, non sposta nulla.
-    let scrolledTo: string | null = null;
-    // Una sola apertura delle schede per selezione, anche se il clic non riuscisse ad attivarle.
-    let revealedFor: string | null = null;
-    let lastDrawn: unknown[] = [];
-    afterEveryRender(() => {
-      const frame = this.frame()?.nativeElement;
-      const id = this.selectedId();
-      // Una schermata ridisegnata riparte dalla prima scheda: la scheda del nodo va riaperta.
-      const drawn = [this.shown(), this.version()];
-      if (drawn[0] !== lastDrawn[0] || drawn[1] !== lastDrawn[1]) {
-        lastDrawn = drawn;
-        revealedFor = null;
-      }
-      const node = frame && id ? frame.querySelector(`lc-node[data-node-id="${CSS.escape(id)}"]`) : null;
-      // Un nodo appena selezionato dentro una scheda non attiva: si apre la scheda (il riquadro arriva al disegno dopo).
-      if (node && id !== revealedFor) {
-        revealedFor = id;
-        if (revealTabs(node)) return;
-      }
-      const box = frame && node ? boxOf(node, frame) : null;
-      if (!sameBox(box, this.highlight())) this.highlight.set(box);
-      if (node && id !== scrolledTo) node.scrollIntoView?.({ block: 'nearest' });
-      scrolledTo = node ? id : null;
-      if (!id) revealedFor = null;
-    });
   }
 
-  /** Clic nel disegno, in fase di cattura: con Alt o in modalità selezione seleziona il nodo e non lo attiva. */
-  private pick(event: MouseEvent): void {
-    if (!event.altKey && !this.selectMode()) return;
-    const node = (event.target as Element | null)?.closest?.('lc-node[data-node-id]');
-    event.preventDefault();
-    event.stopPropagation();
-    const path = node ? this.store.pathOfId(node.getAttribute('data-node-id')!) : null;
+  /** Un componente scelto nell'anteprima: si seleziona nella struttura. */
+  protected picked(id: string): void {
+    const path = this.store.pathOfId(id);
     if (path) this.store.select(path);
   }
 
@@ -125,7 +98,7 @@ export class PreviewComponent {
   }
 
   protected setGrantAll(value: boolean): void {
-    this.session.grantAll.set(value);
+    this.grantAll.set(value);
     this.reload();
   }
 
@@ -133,46 +106,4 @@ export class PreviewComponent {
     this.params.set(isObject(value) ? value : {});
     this.reload();
   }
-}
-
-interface Box {
-  top: number;
-  left: number;
-  width: number;
-  height: number;
-}
-
-function boxOf(node: Element, frame: HTMLElement): Box | null {
-  const r = node.getBoundingClientRect();
-  if (!r.width && !r.height) return null;
-  const f = frame.getBoundingClientRect();
-  return { top: r.top - f.top, left: r.left - f.left, width: r.width, height: r.height };
-}
-
-function sameBox(a: Box | null, b: Box | null): boolean {
-  if (!a || !b) return a === b;
-  return Math.abs(a.top - b.top) < 0.5 && Math.abs(a.left - b.left) < 0.5 && Math.abs(a.width - b.width) < 0.5 && Math.abs(a.height - b.height) < 0.5;
-}
-
-/**
- * Apre le schede (anche annidate) che contengono il nodo, cliccandone il titolo come farebbe l'utente. Le schede
- * restano tutte nella pagina, quindi il nodo esiste anche in una scheda nascosta. Restituisce true se ha aperto qualcosa.
- */
-function revealTabs(node: Element): boolean {
-  let opened = false;
-  let pane = node.closest('.ant-tabs-tabpane');
-  while (pane) {
-    if (!pane.classList.contains('ant-tabs-tabpane-active') && pane.parentElement) {
-      const index = [...pane.parentElement.children].indexOf(pane);
-      const tabs = pane.closest('.ant-tabs');
-      const nav = tabs ? [...tabs.children].find((c) => c.classList.contains('ant-tabs-nav')) : null;
-      const title = nav?.querySelectorAll<HTMLElement>('.ant-tabs-tab .ant-tabs-tab-btn')[index];
-      if (title) {
-        title.click();
-        opened = true;
-      }
-    }
-    pane = pane.parentElement?.closest('.ant-tabs-tabpane') ?? null;
-  }
-  return opened;
 }

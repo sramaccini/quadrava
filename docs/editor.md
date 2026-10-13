@@ -26,7 +26,7 @@ Avvio: `cd frontend && npm run start:editor` (porta 4201; costruisce le librerie
 - **Tavolozza.** Un clic aggiunge il componente nel punto di inserimento: dentro il contenitore selezionato (schermata, sezione, scheda, passo), altrimenti subito dopo il nodo selezionato. In alternativa lo si trascina nella struttura. Ogni componente nasce da un modello valido; se usa un data source (`source`) e questo manca, l'editor lo crea (GET `/api/<nome>`, POST con `{{ request }}` per la datatable lato server).
 - **Struttura.** L'albero dei nodi, con schede e passi. Il nodo selezionato mostra i comandi sposta su/giù, duplica (identificativi nuovi), taglia, elimina; tabs e wizard anche «aggiungi scheda/passo». I nodi si trascinano prima, dopo o dentro un'altra riga. Un pallino rosso o giallo segnala errori o avvisi del nodo.
 - **Proprietà.** I campi dell'elemento selezionato, generati dallo schema JSON (§ 2). Le condizioni (`visibleIf`, `hiddenIf`, `enabledIf`, `readOnlyIf`, `nextIf`) e il tooltip stanno in un gruppo a parte, aperto solo se ne è impostata una.
-- **Anteprima.** La schermata disegnata da `lc-screen` con porte proprie (§ 3). Il nodo selezionato è evidenziato da un riquadro tratteggiato (se sta in una scheda nascosta, l'anteprima apre quella scheda); Alt+clic su un componente, o un clic in modalità «Seleziona», lo seleziona invece di attivarlo.
+- **Anteprima.** La schermata disegnata da `lc-screen`, con il tema in modifica, in un iframe isolato (§ 3). Il nodo selezionato è evidenziato da un riquadro tratteggiato (se sta in una scheda nascosta, l'anteprima apre quella scheda); Alt+clic su un componente, o un clic in modalità «Seleziona», lo seleziona invece di attivarlo.
 - **JSON.** Il documento intero, modificabile a mano; «Applica» lo sostituisce in un solo passo annullabile, il testo non valido non tocca nulla.
 - **Data source.** Metodo, URL, parametri, corpo e paginazione di ogni data source; rinominarlo aggiorna i nodi (`source`) e i passi (`call`, `refresh`) che lo usano. Accanto, i **dati di esempio** che l'anteprima restituisce al posto del servizio.
 - **Testi.** Tutti i testi che l'utente legge (titoli, etichette, messaggi, tooltip, conferme…), con dove stanno. Un testo semplice non cambia con la lingua: «Rendi traducibile» lo sostituisce con `{{ t('schermata.chiave', 'Testo') }}` (chiave dal prefisso della schermata e dalle prime parole, unica) e lo usa come traduzione italiana. Per ogni chiave si scrivono le traduzioni italiana e inglese, che valgono subito nell'anteprima; le traduzioni mancanti sono segnalate e contate nel titolo della scheda. «Esporta traduzioni» scarica `<schermata>.i18n.json` (`{ "it": {…}, "en": {…} }`) da unire ai cataloghi `examples/i18n/<lingua>.json`. I testi con graffe (parametri dei messaggi) e le espressioni più complesse si rendono traducibili a mano.
@@ -57,12 +57,23 @@ Un testo vuoto toglie la proprietà facoltativa; quella obbligatoria resta vuota
 
 ## 3. Anteprima
 
-Nessuna chiamata esce dal browser. Le porte dell'anteprima (`preview/preview-ports.ts`):
+Le anteprime (schermata, menu, tema) girano in un **iframe isolato** (ADR-08): la stessa applicazione dell'editor, avviata con `?anteprima`, con la propria radice (`PreviewApp`) e il runtime vero. Essendo una pagina a sé, tema, stili e foglio scuro di NG-ZORRO valgono solo lì, come in produzione. Editor e anteprima si parlano con messaggi di formato definito (`preview/protocol.ts`), solo tra finestre della stessa origine e solo con il proprio iframe:
+
+| Da → a | Messaggio | Contenuto |
+| --- | --- | --- |
+| anteprima → editor | `lc-preview:ready` | l'iframe è pronto: l'editor gli manda lo stato (anche dopo un ricaricamento) |
+| editor → anteprima | `lc-preview:state` | schermata, menu, tema (validi), profilo simulato, dati di esempio, parametri, lingua, traduzioni della bozza, nodo selezionato, modalità selezione, versione (Ricarica) |
+| anteprima → editor | `lc-preview:select` | id del componente scelto con Alt+clic o in modalità selezione |
+| anteprima → editor | `lc-preview:event` | riga del registro: richiesta, navigazione, segnalazione |
+
+Ogni messaggio arriva clonato: l'anteprima confronta schermata, parametri, menu e tema per contenuto, così un messaggio che cambia solo la selezione non ridisegna la schermata (le schede restano dove sono, i form non si svuotano). L'iframe resta vivo nelle altre viste (JSON, data source, testi) e non si ricarica a ogni cambio.
+
+Nessuna chiamata esce dal browser. Le porte dell'anteprima (`preview/preview-ports.ts`, dentro l'iframe):
 
 - **DataClient**: riconosce il data source dalla richiesta (metodo e URL, con le parti `{{ }}` libere) e risponde con i suoi dati di esempio; senza dati, `[]` per le letture e `{}` per le scritture. Ogni richiesta finisce nel registro.
-- **Authorization / UserProvider**: tutti i permessi (interruttore «Tutti i permessi» per vedere la schermata come un utente senza permessi); utente `anteprima` nella lingua dell'editor.
-- **ScreenNavigator**: non cambia pagina; scrive la navigazione nel registro e mostra un messaggio.
-- **RuntimeDiagnostics**: le segnalazioni tecniche finiscono nel registro.
+- **Authorization / UserProvider**: i permessi del profilo simulato che manda l'editor (tutti, oppure nessuno con l'interruttore «Tutti i permessi» spento; nella navigazione quelli scelti uno per uno); utente `anteprima` nella lingua dell'editor.
+- **ScreenNavigator**: non cambia pagina; manda la navigazione al registro dell'editor e mostra un messaggio.
+- **RuntimeDiagnostics**: le segnalazioni tecniche finiscono nel registro dell'editor.
 
 Si possono provare le larghezze (desktop, tablet 768 px, telefono 375 px) e i parametri della schermata (`params`, per esempio `{"id": 1}`). Il ridisegno parte 250 ms dopo l'ultima modifica.
 
@@ -81,7 +92,7 @@ La bozza della navigazione si salva nel browser come quella della schermata; «A
 
 ## 3c. Tema
 
-Modalità «Tema»: un file di `examples/themes/` (design token). Il pannello a destra mostra tutti i token, gruppo per gruppo (colori, tipografia, forma, densità, layout di barra laterale, intestazione, pagina), generati da `theme.schema.json`; i colori hanno un selettore accanto al testo (`#rrggbb`; `rgb()` e `hsl()` si scrivono nel testo). L'anteprima disegna **la schermata e il menu aperti nelle altre modalità** con il tema: le variabili (`--lc-*` e `--ant-*`) si impostano solo sul riquadro dell'anteprima, quindi l'editor resta leggibile anche provando un tema scuro. Con errori l'anteprima resta all'ultimo tema valido. «Apri esempio» elenca i temi della demo (`examples/themes/index.json`, scritto da `tools/copy-examples.mjs`).
+Modalità «Tema»: un file di `examples/themes/` (design token). Il pannello a destra mostra tutti i token, gruppo per gruppo (colori, tipografia, forma, densità, layout di barra laterale, intestazione, pagina), generati da `theme.schema.json`; i colori hanno un selettore accanto al testo (`#rrggbb`; `rgb()` e `hsl()` si scrivono nel testo). L'anteprima disegna **la schermata e il menu aperti nelle altre modalità** con il tema, nel suo iframe: i temi scuri sono completi (anche le superfici di NG-ZORRO) e l'editor resta com'è. Anche le anteprime della schermata e del menu usano il tema in modifica (quello chiaro della demo, se il tema ha errori fin dall'inizio). Con errori l'anteprima resta all'ultimo tema valido. «Apri esempio» elenca i temi della demo (`examples/themes/index.json`, scritto da `tools/copy-examples.mjs`).
 
 ## 4. Scorciatoie
 
@@ -107,22 +118,22 @@ editor/src/app/
               templates (modelli, valori iniziali, riassunti), drop (trascinamento), texts (testi e chiavi)
   ui/         palette, outline, inspector, fields (campi ricorsivi), json-field, json-view,
               data-sources, texts, issues, navigation-editor, theme-editor
-  preview/    preview (anteprima), preview-ports (porte finte)
+  preview/    protocol (messaggi), preview-frame (l'iframe, lato editor), preview (barra dell'anteprima della
+              schermata), preview-log (registro); dentro l'iframe: preview-app, preview-config, preview-ports
   app.*       guscio, barra degli strumenti, scorciatoie
   messages.ts scritte dell'editor (chiavi ed.*, it ed en)
 ```
 
 - Il documento è **immutabile**: ogni operazione restituisce una copia che condivide le parti non toccate, così la cronologia (200 passi) costa poco.
 - `DocumentState` contiene documento, selezione (un percorso come `['components', 0, 'tabs', 1]`), cronologia e problemi calcolati (`computed`); `EditorStore` (schermata, con dati di esempio e traduzioni) e `NavigationStore` lo estendono. `ed-fields` e la vista JSON lavorano su `DocumentState`: l'editor della navigazione li ridirige sul proprio documento con un provider.
-- I test: operazioni sul documento, lettura dello schema (ogni tipo ha un modello valido), stato dell'editor, trascinamento, porte dell'anteprima e un test d'insieme che usa l'interfaccia vera (tavolozza → struttura → proprietà → anteprima, errori, data source, JSON, elenchi, selezione dall'anteprima).
+- I test: operazioni sul documento, lettura dello schema (ogni tipo ha un modello valido), stato dell'editor, trascinamento, porte dell'anteprima; l'anteprima dentro l'iframe guidata con i suoi messaggi (disegno, dati di esempio, selezione, schede, menu e profilo, tema scuro, messaggi estranei ignorati); un test d'insieme che usa l'interfaccia vera e controlla gli stati mandati all'iframe (in jsdom l'iframe non carica l'applicazione: il test ne simula il «pronto»).
 
 ## 6. Limiti e prossimi passi
 
-- **Temi scuri.** Il foglio di stile scuro di NG-ZORRO vale per tutta la pagina: nell'anteprima di un tema scuro i colori della piattaforma cambiano, ma alcune superfici dei componenti NG-ZORRO (schede, messaggi) restano chiare. Il runtime non ha questo limite.
 - **Traduzioni.** Le traduzioni si esportano in un file da unire a mano ai cataloghi; quando i cataloghi verranno da un servizio, l'editor li aggiornerà direttamente. Le lingue sono quelle della demo (italiano e inglese).
 - **Espressioni.** Sintassi controllata e aiuto con le variabili del contesto, ma niente completamento mentre si scrive né controllo che i campi usati (`row.x`) esistano davvero nelle risposte dei servizi.
-- **Pubblicazione.** Il contratto del registro (`contracts/registry.yaml`) conserva un documento per applicazione: va deciso come schermate, navigazione e tema di un'applicazione diventano quel documento (un unico pacchetto o documenti separati) prima di collegare l'editor.
+- **Pubblicazione.** Deciso: schermate, navigazione e tema sono **documenti separati** nel registro, ognuno con le proprie versioni. Il contratto del registro va adeguato (oggi conserva un solo documento per applicazione) e l'editor va collegato.
 - **Anteprima e procedure.** Selezionare un nodo in un passo successivo di un wizard non porta a quel passo (i passi si superano solo con le loro condizioni).
 - **Larghezza.** Sotto i 1100 px i pannelli si impilano; l'editor è pensato per schermi da desktop.
 
-**Scostamenti dall'architettura (da decidere).** Il documento di architettura propone l'anteprima in un iframe isolato (ADR-08) e le modifiche come operazioni JSON Patch (ADR-09). Questa versione disegna l'anteprima nella stessa pagina (più semplice, collegata direttamente a selezione ed evidenziazione; il prezzo è che gli stili globali, come il foglio scuro di NG-ZORRO, non si confinano all'anteprima) e conserva nella cronologia versioni immutabili del documento (le patch si possono ricavare per differenza quando serviranno diff e lock). Entrambe le ADR sono «Proposta»: o si confermano e l'editor si adegua, o si aggiornano.
+**Decisioni (13 ottobre 2026).** ADR-08 accettata: anteprima in iframe isolato (realizzata). ADR-09 modificata: la cronologia conserva versioni immutabili del documento invece di operazioni JSON Patch; le patch si ricavano per differenza quando serviranno diff tra versioni e lock. Registro: un documento per schermata, uno per la navigazione, uno per tema.
