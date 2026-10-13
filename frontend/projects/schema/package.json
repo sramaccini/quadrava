@@ -1,10 +1,7 @@
 {
   "name": "schema",
   "version": "0.0.1",
-  "description": "Schema JSON e tipi del linguaggio di definizione delle applicazioni LowCode, con validazione.",
-  "peerDependencies": {
-    "ajv": "^8.17.0"
-  },
+  "description": "Schema JSON e tipi del linguaggio di definizione delle applicazioni LowCode, con validatori precompilati (nessuna dipendenza da Ajv a runtime).",
   "dependencies": {
     "tslib": "^2.3.0"
   },

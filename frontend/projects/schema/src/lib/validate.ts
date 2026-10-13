@@ -1,8 +1,4 @@
-import Ajv2020 from 'ajv/dist/2020.js';
-import type { ValidateFunction } from 'ajv/dist/2020.js';
-import { SCREEN_SCHEMA } from './screen.schema';
-import { THEME_SCHEMA } from './theme.schema';
-import { NAVIGATION_SCHEMA } from './navigation.schema';
+import { navigationValidator, screenValidator, themeValidator } from './validators.generated';
 import type { NavigationDefinition, ScreenDefinition, ThemeDefinition } from './types';
 
 export interface ValidationIssue {
@@ -13,10 +9,16 @@ export interface ValidationIssue {
 
 export type ValidationResult<T = ScreenDefinition> = { valid: true; value: T } | { valid: false; issues: ValidationIssue[] };
 
-const ajv = new Ajv2020({ allErrors: true, strict: true });
-const screenValidator = ajv.compile(SCREEN_SCHEMA);
-const themeValidator = ajv.compile(THEME_SCHEMA);
-const navigationValidator = ajv.compile(NAVIGATION_SCHEMA);
+/** Errore di un validatore precompilato (stessa forma degli errori di Ajv). */
+interface SchemaError {
+  keyword: string;
+  instancePath: string;
+  message?: string;
+  params: Record<string, unknown>;
+}
+
+/** Validatore precompilato da `tools/sync-schema.mjs` (Ajv standalone): nessuna compilazione nel browser. */
+type ValidateFunction = ((data: unknown) => boolean) & { errors?: SchemaError[] | null };
 
 /** Valida una definizione di schermata contro lo schema del nucleo. Non lancia eccezioni. */
 export function validateScreen(document: unknown): ValidationResult<ScreenDefinition> {
