@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, input, linkedSignal, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, afterEveryRender, computed, inject, input, linkedSignal, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { I18n, runSteps, type ScreenRuntime, type Scope } from 'core';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
@@ -169,6 +169,22 @@ export class TreeComponent {
   });
 
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+
+  constructor() {
+    // nz-tree mette dentro l'albero un input invisibile per la tastiera: qui la tastiera la gestiscono le voci
+    // (treeitem con tabindex), quindi l'input esce dall'ordine di tabulazione e dall'albero accessibile.
+    afterEveryRender(() => {
+      for (const hidden of this.host.querySelectorAll<HTMLInputElement>('nz-tree input')) {
+        if (hidden.getAttribute('aria-hidden') !== 'true') hidden.setAttribute('aria-hidden', 'true');
+        if (hidden.tabIndex !== -1) hidden.tabIndex = -1;
+      }
+      // Le icone di espansione sono decorative: lo stato aperto/chiuso lo dice aria-expanded sulla voce.
+      for (const icon of this.host.querySelectorAll<HTMLElement>('nz-tree [role="img"]')) {
+        if (icon.getAttribute('aria-hidden') !== 'true') icon.setAttribute('aria-hidden', 'true');
+        if (icon.getAttribute('role') === 'img') icon.removeAttribute('role');
+      }
+    });
+  }
   /** Nodo raggiungibile con Tab: quello scelto, altrimenti il primo; poi segue il focus. */
   protected readonly focusKey = linkedSignal<string | null>(() => this.selected()[0] ?? this.nodes()[0]?.key ?? null);
 

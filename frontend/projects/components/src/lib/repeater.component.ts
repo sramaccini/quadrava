@@ -78,12 +78,15 @@ type Row = Record<string, unknown>;
                         <label nz-checkbox [attr.aria-label]="label(sub)" [nzDisabled]="disabled()" [ngModel]="row[sub.name] === true" (ngModelChange)="set(i, sub, $event)"></label>
                       }
                       @case ('switch') {
+                        <label class="visually-hidden" [for]="cellId">{{ label(sub) }}</label>
                         <nz-switch [nzId]="cellId" [nzDisabled]="disabled()" [ngModel]="row[sub.name] === true" (ngModelChange)="set(i, sub, $event)" />
                       }
                       @case ('date') {
+                        <label class="visually-hidden" [for]="cellId">{{ label(sub) }}</label>
                         <nz-date-picker [nzId]="cellId" nzFormat="dd/MM/yyyy" [nzDisabled]="disabled()" [nzStatus]="err ? 'error' : ''" [ngModel]="dates()[i]?.[sub.name] ?? null" (ngModelChange)="set(i, sub, toIso($event))" />
                       }
                       @case ('lookup') {
+                        <label class="visually-hidden" [for]="cellId">{{ label(sub) }}</label>
                         <lc-lookup [inputId]="cellId" [field]="sub" [runtime]="runtime()" [scope]="cellScope(row)" [value]="row[sub.name]" [disabled]="disabled()" (valueChange)="set(i, sub, $event)" />
                       }
                       @case ('file') {

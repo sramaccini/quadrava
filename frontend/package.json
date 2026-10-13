@@ -51,6 +51,7 @@
     "@angular/build": "^22.2.2",
     "@angular/cli": "^22.2.1",
     "@angular/compiler-cli": "^22.2.0",
+    "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.64.0",
     "ajv": "^8.20.0",
     "esbuild": "^0.28.2",

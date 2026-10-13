@@ -22,7 +22,8 @@ import { nextId } from './shared';
     .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   `,
   template: `
-    <nz-steps [nzCurrent]="current()" nzSize="small" [attr.aria-hidden]="true">
+    <!-- Solo indicazione visiva: nascosta ai lettori di schermo e non raggiungibile (inert); il passo lo annuncia il titolo sotto. -->
+    <nz-steps [nzCurrent]="current()" nzSize="small" aria-hidden="true" inert>
       @for (step of node().steps; track $index) {
         <nz-step [nzTitle]="runtime().text(step.label, scope())" [nzDescription]="step.description ? runtime().text(step.description, scope()) : undefined" />
       }
