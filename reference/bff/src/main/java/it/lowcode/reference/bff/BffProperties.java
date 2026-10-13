@@ -11,14 +11,17 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  *                        raggiungibile dal browser attraverso il BFF.
  * @param frontendOrigins origini delle applicazioni (runtime, editor) verso cui si può tornare dopo il login.
  * @param maxBodyBytes    dimensione massima del corpo inoltrato (i file arrivano fino a 100 MB).
+ * @param home            dove va l'utente dopo un login senza pagina di ritorno, e chi apre la radice del BFF.
+ * @param endSessionUri   logout OIDC di Keycloak, per chiudere anche la sua sessione all'uscita.
  */
 @ConfigurationProperties("lowcode.bff")
-public record BffProperties(List<Route> routes, List<String> frontendOrigins, Long maxBodyBytes) {
+public record BffProperties(List<Route> routes, List<String> frontendOrigins, Long maxBodyBytes, String home, String endSessionUri) {
 
     public BffProperties {
         routes = routes == null ? List.of() : List.copyOf(routes);
         frontendOrigins = frontendOrigins == null ? List.of() : List.copyOf(frontendOrigins);
         maxBodyBytes = maxBodyBytes == null ? 110L * 1024 * 1024 : maxBodyBytes;
+        home = home == null ? "/" : home;
     }
 
     /**

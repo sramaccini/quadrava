@@ -30,10 +30,21 @@ lowcode:
     routes:
       - prefix: /registry
         target: ${LOWCODE_REGISTRY_URL:http://localhost:8081}
+      - prefix: /authz
+        target: ${LOWCODE_AUTHZ_URL:http://localhost:8082}
+      - prefix: /telemetry
+        target: ${LOWCODE_TELEMETRY_URL:http://localhost:8083}
+      # Backend dell'applicazione: nella demo il server di esempio (frontend/tools/demo-api.mjs).
+      - prefix: /api
+        target: ${LOWCODE_API_URL:http://localhost:8084}
     # Applicazioni verso cui si torna dopo il login (/bff/login?return=...).
     frontend-origins:
       - http://localhost:4200
       - http://localhost:4201
+    # Dopo un login senza pagina di ritorno, e aprendo la radice del BFF.
+    home: ${LOWCODE_HOME:http://localhost:4200/}
+    # Uscendo si chiude anche la sessione in Keycloak.
+    end-session-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/lowcode}/protocol/openid-connect/logout
 
 management:
   endpoints:

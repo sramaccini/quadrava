@@ -1,12 +1,13 @@
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { DefinitionSource } from 'core';
-import { RegistryDefinitions } from 'services';
+import { Authorization, DataClient, DefinitionSource, RuntimeDiagnostics } from 'core';
+import { HttpAuthorization, HttpDataClient, HttpDiagnostics, RegistryDefinitions } from 'services';
 import { vi } from 'vitest';
 import navigationDoc from '../../public/examples/navigation.json';
 import { ExampleDefinitions } from '../demo/example-definitions';
 import { appConfigFor } from './app.config';
 import { NavigationService } from './navigation.service';
+import { BffShellSession, ShellSession } from './shell-session';
 import { DEFAULT_RUNTIME_CONFIG, loadRuntimeConfig, type RuntimeConfig } from './runtime-config';
 
 const registry: RuntimeConfig = { definitions: { source: 'registry', app: 'demo', env: 'sviluppo', navigation: 'fatturazione', themes: ['chiaro', 'scuro'] } };
@@ -31,6 +32,15 @@ describe('configurazione del runtime: da dove vengono le definizioni', () => {
   it('demo: le definizioni sono gli esempi', () => {
     TestBed.configureTestingModule({ providers: appConfigFor(DEFAULT_RUNTIME_CONFIG).providers });
     expect(TestBed.inject(DefinitionSource)).toBeInstanceOf(ExampleDefinitions);
+  });
+
+  it('servizi del BFF: sessione, permessi, dati e telemetria veri; il guscio usa l’utente della sessione', () => {
+    TestBed.configureTestingModule({ providers: appConfigFor({ ...registry, services: { source: 'bff', appId: 'demo' } }).providers });
+    expect(TestBed.inject(DataClient)).toBeInstanceOf(HttpDataClient);
+    expect(TestBed.inject(Authorization)).toBeInstanceOf(HttpAuthorization);
+    expect(TestBed.inject(RuntimeDiagnostics)).toBeInstanceOf(HttpDiagnostics);
+    expect(TestBed.inject(ShellSession)).toBeInstanceOf(BffShellSession);
+    expect(TestBed.inject(ShellSession).profiles).toEqual([]);
   });
 
   it('registro: menu e temi arrivano dalle versioni pubblicate nell’ambiente', async () => {

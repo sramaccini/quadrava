@@ -11,8 +11,8 @@ import { NzLayoutModule } from 'ng-zorro-antd/layout';
 import { NzSelectModule } from 'ng-zorro-antd/select';
 import { DefinitionSource, I18n, ThemeService, loadMessages, type VisibleLeaf } from 'core';
 import { validateTheme } from 'schema';
-import { DEMO_PROFILES, DemoDiagnostics, DemoSession } from '../demo/demo-ports';
 import { NavigationService } from './navigation.service';
+import { ShellSession } from './shell-session';
 
 /** Lingue della demo: per ciascuna esiste `examples/i18n/<lingua>.json`. */
 const LANGUAGES = ['it', 'en'];
@@ -67,14 +67,13 @@ function initialLanguage(): string {
   templateUrl: './app.html',
 })
 export class App {
-  protected readonly session = inject(DemoSession);
-  protected readonly diagnostics = inject(DemoDiagnostics);
+  protected readonly session = inject(ShellSession);
   protected readonly navigation = inject(NavigationService);
   private readonly themeService = inject(ThemeService);
   protected readonly i18n = inject(I18n);
   protected readonly languages = LANGUAGES;
 
-  protected readonly profiles = Object.keys(DEMO_PROFILES);
+  protected readonly profiles = this.session.profiles;
   private readonly definitions = inject(DefinitionSource);
   protected readonly themes = this.definitions.themes();
   protected readonly themeName = signal(this.themes[0]);
@@ -83,13 +82,12 @@ export class App {
   /** Cassetto con la barra laterale, solo nella fascia stretta. */
   protected readonly drawerOpen = signal(false);
   /** Voci del menu utente prima dell'uscita, che il componente aggiunge da sé come ultima. */
-  protected readonly userItems = computed<UserMenuItem[]>(() => [{ id: 'permessi', label: this.i18n.t('app.permissions', { n: this.permissions().length }), icon: 'safety', disabled: true }]);
+  protected readonly userItems = computed<UserMenuItem[]>(() => [{ id: 'permessi', label: this.i18n.t('app.permissions', { n: this.session.permissionCount() }), icon: 'safety', disabled: true }]);
   /** Stile del menu: lo dice il tema (barra laterale chiara o scura). */
   protected readonly siderTone = computed(() => {
     const theme = this.themeService.current();
     return theme?.tokens.layout?.sider?.tone ?? (theme?.mode === 'dark' ? 'dark' : 'light');
   });
-  protected readonly permissions = computed(() => DEMO_PROFILES[this.session.username()] ?? []);
   protected readonly active = computed(() => {
     const here = this.navigation.current();
     return here.screen ? { screen: here.screen, params: here.params } : null;

@@ -37,11 +37,25 @@ export class HttpSession extends UserProvider {
     return u ? { name: u.name ?? '', username: u.username ?? '', roles: u.roles ?? [] } : {};
   }
 
-  /** Sessione assente o scaduta: si svuota l'utente e si riparte dal login. */
+  /** Sessione assente o scaduta: si svuota l'utente e si riparte dal login, che poi riporta a questa pagina. */
   markExpired(): void {
     if (this.state() === 'expired') return;
     this.info.set(null);
     this.state.set('expired');
-    this.redirect(this.config.loginUrl);
+    this.redirect(`${this.config.loginUrl}?return=${encodeURIComponent(globalThis.location?.href ?? '/')}`);
+  }
+
+  /**
+   * Uscita: un POST al BFF (HttpClient vi aggiunge il token CSRF del cookie), che chiude la sessione e risponde con
+   * l'indirizzo di fine sessione del provider di identità; la pagina ci va, e da lì si torna al login.
+   */
+  async logout(): Promise<void> {
+    try {
+      const reply = await firstValueFrom(this.http.post<{ redirect?: string }>(this.config.logoutUrl, null, { headers: { Accept: 'application/json' } }));
+      this.redirect(typeof reply?.redirect === 'string' ? reply.redirect : '/');
+    } catch {
+      // Sessione già chiusa: si riparte dal login.
+      this.markExpired();
+    }
   }
 }

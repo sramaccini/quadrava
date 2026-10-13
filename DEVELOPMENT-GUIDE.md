@@ -46,7 +46,9 @@ editor  ──► components ──► core   (the preview renders screens with 
 | `npm run start:runtime` | Builds libs, prepares examples and serves the demo on port 4200 |
 | `npm run start:editor` | Builds libs, prepares examples and serves the visual editor on port 4201 |
 | `npm run start:runtime:registro` / `start:editor:registro` | Same apps, with `/registry` proxied to the reference registry on 8081 (run it with the `senza-auth` profile); the runtime loads its definitions from the registry |
-| `npm run start:runtime:bff` / `start:editor:bff` | Same apps behind the BFF on 8080 (needs Keycloak): `/registry`, `/bff`, `/oauth2`, `/logout` are proxied |
+| `npm run start:runtime:bff` / `start:editor:bff` | Same apps behind the BFF on 8080 (needs Keycloak and the reference services): `/registry`, `/api`, `/authz`, `/telemetry`, `/bff`, `/oauth2`, `/logout` are proxied; the runtime uses the real `services` ports (`projects/runtime/config/bff/runtime-config.json`) |
+| `npm run demo-api` | Demo application back end on 8084 (the `/api` route of the BFF): the in-browser demo logic (`runtime/src/demo/demo-backend.ts`, bundled with esbuild at start-up) behind RS256 token verification against the local realm; `-- --senza-auth` switches it off |
+| `npm run publish:examples -- --user <u> --password <p>` | Publishes every example into the registry with a token from the development client `lowcode-strumenti` (local realm only); without arguments it works against the `senza-auth` registry |
 | `npm run publish:examples` | Publishes every example screen, the navigation and every theme to a registry (`--registry`, `--app`, `--env`, `--token`) |
 | `npm run schema:sync` / `schema:check` | Regenerate / verify the generated schema constants |
 | `npm run validate:examples` | Validates every JSON in `examples/` against the schemas |
@@ -107,7 +109,7 @@ The Italian locale is patched in `provide.ts` (`rangeQuarterPlaceholder` is miss
 
 Everything external to the interpreter is an abstract class used as a DI token: `Authorization`, `UserProvider`, `DataClient`, `ScreenNavigator`, `Notifier`, `RuntimeDiagnostics`, `Confirmation`, `FormDialog` (the `dialog` step; implemented by `DialogForm` in `components`).
 
-`DataRequest` may carry a `file` (`field`, `name`, `type`, `blob`): `HttpDataClient` then sends a multipart body (`FormData`) with the file in its part and each body entry as a text part. `ScreenRuntime.execute(name, args, scope, file)` attaches it; `ScreenRuntime.query(name, args, scope)` runs a data source without changing its shared state (used by lookup fields and by the server data table, so that two components on the same source do not disturb each other). Components that query a source themselves should watch `ScreenRuntime.refreshCount()[source]`: the `refresh` step increments it for every source, and on non-GET sources that is all it does (it returns `{ ok: true, data: null }`). Data source expressions always see `search`, `lookupKey` and `request` (null until a component sets them). To add one: declare the abstract class in `core`, inject it where needed, provide a fake in `runtime/demo`, and a real implementation in `services` (or `components` when it is UI). Components must depend on the abstraction only.
+`DataRequest` may carry a `file` (`field`, `name`, `type`, `blob`): `HttpDataClient` then sends a multipart body (`FormData`) with the file in its part and each body entry as a text part. `ScreenRuntime.execute(name, args, scope, file)` attaches it; `ScreenRuntime.query(name, args, scope)` runs a data source without changing its shared state (used by lookup fields and by the server data table, so that two components on the same source do not disturb each other). Components that query a source themselves should watch `ScreenRuntime.refreshCount()[source]`: the `refresh` step increments it for every source, and on non-GET sources that is all it does (it returns `{ ok: true, data: null }`). Data source expressions always see `search`, `lookupKey` and `request` (null until a component sets them). The runtime chooses the implementations at start-up from `runtime-config.json`: without `services` it plugs in the demo fakes and `DemoShellSession` (profile selector); with `services: { source: 'bff', appId }` it calls `provideLowcodeServices` and uses `BffShellSession` (user name, permission count, logout). In a `provideAppInitializer` callback call every `inject()` before the first `await`: afterwards the injection context is gone (NG0203) and the app does not start. To add one: declare the abstract class in `core`, inject it where needed, provide a fake in `runtime/demo`, and a real implementation in `services` (or `components` when it is UI). Components must depend on the abstraction only.
 
 ## 8. Security rules (non-negotiable)
 
@@ -157,8 +159,8 @@ Layout, real focus and the dark theme are not covered by tests (the application 
 
 ## 13. Known limits
 
-* No real-browser check of the NG-ZORRO migration yet; the collapsed side menu now opens groups in a popup.
-* `runtime` takes only its definitions from `services` (`provideRegistryDefinitions`, chosen by `runtime-config.json`); session, authorization, data client and telemetry are still the demo's fakes. The BFF forwards only the routes listed in `lowcode.bff.routes` (today `/registry`).
+* The collapsed side menu opens groups in a popup.
+* The reference services keep their data in memory: after restarting the registry, publish the examples again. Logout from the apps is a JSON call (`Accept: application/json`, CSRF header) answered with `{"redirect": …}`: with `csrf().spa()` a form field would need the masked token.
 * Java modules are built and tested locally with `mvn verify` (JDK 21, Maven 3.9) but not yet in CI.
 * Ajv needs `unsafe-eval` under CSP until validators are precompiled.
 * `validate:examples` checks translation keys but not CEL expressions (the runtime test `i18n-examples.spec.ts` does).

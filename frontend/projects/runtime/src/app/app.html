@@ -38,12 +38,14 @@
         <span class="crumb">{{ i18n.t('app.title') }}</span>
         <span class="spacer"></span>
         @if (viewport() === 'wide') {
-          <label for="lc-user">{{ i18n.t('app.profile') }}</label>
-          <nz-select nzId="lc-user" nzSize="small" class="pick" [ngModel]="session.username()" (ngModelChange)="session.username.set($event)">
-            @for (p of profiles; track p) {
-              <nz-option [nzValue]="p" [nzLabel]="p" />
-            }
-          </nz-select>
+          @if (profiles.length) {
+            <label for="lc-user">{{ i18n.t('app.profile') }}</label>
+            <nz-select nzId="lc-user" nzSize="small" class="pick" [ngModel]="session.username()" (ngModelChange)="session.selectProfile($event)">
+              @for (p of profiles; track p) {
+                <nz-option [nzValue]="p" [nzLabel]="p" />
+              }
+            </nz-select>
+          }
           <label for="lc-theme">{{ i18n.t('app.theme') }}</label>
           <nz-select nzId="lc-theme" nzSize="small" class="pick" [ngModel]="themeName()" (ngModelChange)="themeName.set($event)">
             @for (t of themes; track t) {
@@ -64,13 +66,15 @@
           </button>
           <nz-dropdown-menu #settingsMenu="nzDropdownMenu">
             <ul nz-menu>
-              <li nz-submenu [nzTitle]="i18n.t('app.profile') + ': ' + session.username()">
-                <ul>
-                  @for (p of profiles; track p) {
-                    <li nz-menu-item [nzSelected]="p === session.username()" (click)="session.username.set(p)">{{ p }}</li>
-                  }
-                </ul>
-              </li>
+              @if (profiles.length) {
+                <li nz-submenu [nzTitle]="i18n.t('app.profile') + ': ' + session.username()">
+                  <ul>
+                    @for (p of profiles; track p) {
+                      <li nz-menu-item [nzSelected]="p === session.username()" (click)="session.selectProfile(p)">{{ p }}</li>
+                    }
+                  </ul>
+                </li>
+              }
               <li nz-submenu [nzTitle]="i18n.t('app.theme') + ': ' + i18n.t('app.theme.' + themeName(), {}, themeName())">
                 <ul>
                   @for (t of themes; track t) {
@@ -95,8 +99,8 @@
           <router-outlet />
         </main>
       </nz-content>
-      @if (diagnostics.events().length) {
-        <nz-footer class="diag">{{ i18n.t('app.diagnostics', { n: diagnostics.events().length }) }}</nz-footer>
+      @if (session.diagnosticsCount()) {
+        <nz-footer class="diag">{{ i18n.t('app.diagnostics', { n: session.diagnosticsCount() }) }}</nz-footer>
       }
     </nz-layout>
   </nz-layout>

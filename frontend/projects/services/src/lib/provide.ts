@@ -21,9 +21,11 @@ export function provideLowcodeServices(config: LowcodeServicesConfig): Environme
     { provide: DataClient, useExisting: HttpDataClient },
     { provide: RuntimeDiagnostics, useExisting: HttpDiagnostics },
     provideAppInitializer(async () => {
+      // Tutte le dipendenze prima del primo await: dopo, inject() non è più nel contesto di iniezione.
       const session = inject(HttpSession);
+      const authorization = inject(HttpAuthorization);
       await session.load();
-      if (session.state() === 'authenticated') await inject(HttpAuthorization).load();
+      if (session.state() === 'authenticated') await authorization.load();
     }),
   ]);
 }

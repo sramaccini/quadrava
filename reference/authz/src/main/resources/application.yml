@@ -21,10 +21,12 @@ lowcode:
   authz:
     role-permissions:
       operatore:
+        - vetrina.componenti.leggi
         - fatture.fattura.leggi
         - fatture.fattura.crea
         - ordini.ordine.leggi
       responsabile:
+        - vetrina.componenti.leggi
         - fatture.fattura.leggi
         - fatture.fattura.crea
         - ordini.ordine.leggi
@@ -35,6 +37,7 @@ lowcode:
         - spese.spesa.leggi
         - spese.spesa.revisiona
       amministratore:
+        - vetrina.componenti.leggi
         - fatture.fattura.leggi
         - fatture.fattura.crea
         - ordini.ordine.leggi

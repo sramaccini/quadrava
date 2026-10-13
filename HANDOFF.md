@@ -1,6 +1,6 @@
 # HANDOFF — Piattaforma LowCode
 
-Documento di passaggio per continuare il lavoro con Claude Code in locale. Ultimo aggiornamento: 2026-10-11, dopo il commit `b3d7a5d` (editor: trascinamento) e l'aggiornamento della documentazione che lo segue.
+Documento di passaggio per continuare il lavoro con Claude Code in locale. Ultimo aggiornamento: 2026-10-13, dopo il collegamento dei servizi reali al runtime e la prova dal vivo con Keycloak.
 
 ## 1. Cos'è
 
@@ -29,10 +29,11 @@ Da `frontend/`:
 - `npm run start:editor` — editor visuale sulla porta 4201 (prepara anche gli esempi, con `examples/index.json`).
 - `.claude/launch.json` avvia una copia della demo sulla porta 4300, dell'editor sulla 4301 e delle due app in modalità registro sulla 4302 e 4303 (per l'anteprima nel pannello di Claude).
 - Registro locale senza Keycloak: `java -jar reference/registry/target/lowcode-registry-0.1.0-SNAPSHOT.jar --spring.profiles.active=senza-auth`, poi `npm run publish:examples`, poi `npm run start:runtime:registro` / `start:editor:registro`.
-- `runtime-config.json` (cartella pubblica del runtime) decide da dove vengono le definizioni: `examples` (demo) o `registry` (app, ambiente, navigazione, temi); la configurazione `registro` di angular.json usa `projects/runtime/config/registro/`.
+- `runtime-config.json` (cartella pubblica del runtime) decide da dove vengono le definizioni: `examples` (demo) o `registry` (app, ambiente, navigazione, temi); la configurazione `registro` di angular.json usa `projects/runtime/config/registro/`. Con `services: { source: 'bff', appId }` il runtime usa le porte vere di `services` (configurazione `bff`, `projects/runtime/config/bff/`).
+- **Stack completo con Keycloak** (Docker Desktop avviato): `cd idp && docker compose up -d`; in `reference/` `mvn -q package -DskipTests` e `java -jar <modulo>/target/*.jar` per registry, authz, telemetry, bff; in `frontend/` `npm run demo-api` (8084), `npm run publish:examples -- --user amministratore --password amministratore`, poi `npm run start:runtime:bff` (4200) e `start:editor:bff` (4201). `.claude/launch.json` ha `runtime-bff` e `editor-bff` sulle stesse porte (le origini ammesse dal BFF sono 4200 e 4201). Il registro tiene i dati in memoria: dopo un riavvio va ripubblicato.
 - test per progetto: `npx ng test <schema|expressions|core|components|services|runtime|editor> --watch=false`
 
-Stato test (tutti verdi): schema 63, expressions 39, core 61, components 128, services 22, runtime 69, editor 54 (**436**); Java 19 (authz 4, bff 7, registry 5, telemetry 3). Build di produzione della demo: 2,27 MB iniziali (avviso a 2,5 MB).
+Stato test (tutti verdi): schema 63, expressions 39, core 61, components 128, services 24, runtime 70, editor 54 (**439**); Java 20 (authz 4, bff 8, registry 5, telemetry 3). Build di produzione di runtime, editor e runtime `bff` riuscite.
 
 ## 4. Architettura in breve
 
@@ -75,9 +76,10 @@ Le principali sono nella DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In breve:
 
 ## 7. Limiti noti / debito
 
-- `services` **non è collegato** a `runtime` (la demo usa porte finte).
-- BFF (`reference/bff`): inoltro delle rotte di `lowcode.bff.routes` (oggi `/registry`) con il token dell'utente (rinnovato) e `traceparent`, senza cookie né `Authorization` del browser, solo intestazioni sicure al ritorno, 502 se il servizio non risponde; 401 per le API senza sessione; CSRF per SPA (cookie `XSRF-TOKEN` leggibile, intestazione `X-XSRF-TOKEN`); `/bff/login?return=` solo verso `lowcode.bff.frontend-origins`. Indirizzi espliciti di Keycloak (parte anche se Keycloak è spento). Il login vero con Keycloak non è stato provato (niente Docker qui).
-- Moduli Java: `mvn verify` passa in locale (authz 4, registry 5, telemetry 3 test; bff senza test); manca la CI e una prova contro Keycloak.
+- Runtime: in modalità `bff` usa `provideLowcodeServices` (sessione, autorizzazione, data client, telemetria) e `BffShellSession` (nome utente, numero di permessi, «Esci»); in demo le porte finte e `DemoShellSession`. La logica dei dati della demo sta in `runtime/src/demo/demo-backend.ts`, usata sia da `MockDataClient` sia da `tools/demo-api.mjs` (backend `/api` di sviluppo, verifica dei JWT RS256 sul JWKS del realm).
+- BFF (`reference/bff`): rotte `/registry`, `/authz`, `/telemetry`, `/api` (8081–8084) con il token dell'utente (rinnovato) e `traceparent`; 401 per le API senza sessione, login diretto per le pagine; CSRF per SPA; `/bff/login?return=` solo verso `frontend-origins`; radice → `lowcode.bff.home`; uscita con logout OIDC di Keycloak (risposta JSON `{"redirect"}` alle chiamate delle app). **Provato dal vivo il 13 ottobre 2026** con Keycloak 26.8: login, ritorno al runtime, definizioni dal registro, permessi da authz, dati e scrittura con CSRF, uscita che chiude la sessione Keycloak, nuovo accesso con un altro utente; editor dietro il BFF che salva e pubblica (autore = nome utente).
+- Moduli Java: `mvn verify` passa in locale (authz 4, bff 8, registry 5, telemetry 3); manca la CI e il kit di conformità per i backend dei clienti. Archivi in memoria.
+- Realm di sviluppo: client pubblico `lowcode-strumenti` (solo password grant) per gli script; il permesso `vetrina.componenti.leggi` è nei tre ruoli di authz.
 - `validate:examples` non controlla le espressioni CEL (lo fa il test `i18n-examples.spec.ts`).
 - Limiti dei componenti che restano: vedi catalogo § 3 (niente righe ripetibili annidate, datatable sulle righe caricate — provata fino a 20.000 nel componente —, grafici senza zoom né aree). I limiti della prima consegna (lookup, file, righe, albero da tastiera, volumi, grafici) sono stati superati: catalogo § 3.1.
 - Architettura (Claude Docs) § 9: paragrafo «Stato al 12 ottobre 2026» sull'editor e sugli scostamenti da ADR-08/09. Documenti Claude Docs aggiornati l'11 ottobre 2026 con una sintesi (funzionale: RF-DEF-18…21; architettura: § 4 «Aggiornamenti di ottobre 2026»; linee guida: § 6 e § 11); il dettaglio resta in `docs/catalogo-componenti.md`.
@@ -85,10 +87,10 @@ Le principali sono nella DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In breve:
 ## 8. Prossimi passi (nell'ordine suggerito)
 
 1. Review dei 18 componenti (commit da `4d224fb` a `47a96ee`), del fix del runtime `9d96798`, dei limiti superati (da `7907884` a `f42abdf`), della serverDataTable (`9bae9b7`) e dell'editor (da `5840c9c` a `b3d7a5d`).
-2. Collegare a `runtime` il resto di `services` (sessione, autorizzazione, data client, telemetria); le definizioni vengono già dal registro con `runtime-config.json`. Provare il login vero (Keycloak in Docker) con `start:runtime:bff` / `start:editor:bff`; aggiungere ai `routes` del BFF i backend delle applicazioni.
+2. **Componenti di input autonomi ed editor grafico** (prossimo obiettivo indicato da Simone): oggi casella di testo, elenco a discesa ecc. esistono solo come campi di `form`/`filterBar`; valutare componenti di input a sé (legati allo stato) e la nuova fase dell'editor grafico.
 3. **Editor visuale**, seconda fase: flusso di revisione prima della pubblicazione (stato `in-revisione` del contratto); completamento delle espressioni (vedi `docs/editor.md` § 6).
 4. Menu: navigazione da tastiera, badge, ricerca. CEL in `validate:examples`.
-5. Decise il 13 ottobre 2026: ADR-08 accettata (anteprima in iframe, fatta), ADR-09 modificata (cronologia a versioni immutabili), registro a documenti separati (schermate, navigazione, temi): contratto `registry.yaml` 0.2, registro di riferimento, pannello «Registro» dell'editor, inoltro nel BFF e runtime che carica dal registro fatti. Provato dal vivo senza Keycloak: modifica nell'editor → salva e pubblica → il runtime la mostra.
+5. Decise il 13 ottobre 2026: ADR-08 accettata (anteprima in iframe, fatta), ADR-09 modificata (cronologia a versioni immutabili), registro a documenti separati (schermate, navigazione, temi): contratto `registry.yaml` 0.2, registro di riferimento, pannello «Registro» dell'editor, inoltro nel BFF e runtime che carica dal registro fatti. Provato dal vivo senza Keycloak (profilo `senza-auth`) e, il 13 ottobre, con Keycloak e tutti i servizi dietro il BFF.
 
 ## 9. Convenzioni di lavoro
 

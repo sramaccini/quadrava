@@ -2,9 +2,17 @@ import type { RegistryDefinitionsConfig } from 'services';
 
 /**
  * Configurazione letta all'avvio da `runtime-config.json` (cartella pubblica): da dove vengono schermate,
- * navigazione e temi. Nella demo dagli esempi; altrimenti dal registro, con le versioni pubblicate nell'ambiente.
+ * navigazione e temi (esempi o versioni pubblicate nel registro) e quali porte usare (demo o servizi veri attraverso il
+ * BFF). Le configurazioni `registro` e `bff` di angular.json usano i file di `projects/runtime/config/`.
  */
-export type RuntimeConfig = { definitions: { source: 'examples' } } | { definitions: { source: 'registry' } & RegistryDefinitionsConfig };
+export interface RuntimeConfig {
+  definitions: { source: 'examples' } | ({ source: 'registry' } & RegistryDefinitionsConfig);
+  /**
+   * Porte del runtime: `demo` (profili, dati e segnalazioni finti nel browser) oppure `bff` (sessione, permessi,
+   * dati e telemetria attraverso il BFF, libreria `services`). Se manca: demo.
+   */
+  services?: { source: 'demo' } | { source: 'bff'; appId: string };
+}
 
 export const DEFAULT_RUNTIME_CONFIG: RuntimeConfig = { definitions: { source: 'examples' } };
 
@@ -14,6 +22,11 @@ export async function loadRuntimeConfig(url = 'runtime-config.json'): Promise<Ru
     const response = await fetch(url);
     if (!response.ok) return DEFAULT_RUNTIME_CONFIG;
     const config = (await response.json()) as RuntimeConfig;
+    const services = config?.services as Record<string, unknown> | undefined;
+    if (services && services['source'] === 'bff' && typeof services['appId'] !== 'string') {
+      console.warn('[runtime-config] servizi bff senza appId: si usa la demo');
+      return DEFAULT_RUNTIME_CONFIG;
+    }
     const definitions = config?.definitions as Record<string, unknown> | undefined;
     if (definitions?.['source'] === 'registry') {
       const ok =
@@ -29,7 +42,7 @@ export async function loadRuntimeConfig(url = 'runtime-config.json'): Promise<Ru
       }
       return config;
     }
-    return DEFAULT_RUNTIME_CONFIG;
+    return { ...DEFAULT_RUNTIME_CONFIG, services: config?.services };
   } catch {
     return DEFAULT_RUNTIME_CONFIG;
   }

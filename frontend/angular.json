@@ -76,6 +76,22 @@
                   "output": "/"
                 }
               ]
+            },
+            "bff": {
+              "assets": [
+                {
+                  "glob": "**/*",
+                  "input": "projects/runtime/public",
+                  "ignore": [
+                    "runtime-config.json"
+                  ]
+                },
+                {
+                  "glob": "runtime-config.json",
+                  "input": "projects/runtime/config/bff",
+                  "output": "/"
+                }
+              ]
             }
           },
           "defaultConfiguration": "production"
@@ -94,7 +110,7 @@
               "proxyConfig": "proxy.registry.json"
             },
             "bff": {
-              "buildTarget": "runtime:build:development,registro",
+              "buildTarget": "runtime:build:development,bff",
               "proxyConfig": "proxy.bff.json"
             }
           },

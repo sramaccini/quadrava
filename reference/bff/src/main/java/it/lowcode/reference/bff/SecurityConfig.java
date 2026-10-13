@@ -36,7 +36,8 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 public class SecurityConfig {
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http, BffProperties properties, LoginController.ReturnToFrontend returnToFrontend)
+    SecurityFilterChain securityFilterChain(HttpSecurity http, BffProperties properties, LoginController.ReturnToFrontend returnToFrontend,
+                                            EndSessionLogout endSessionLogout)
             throws Exception {
         RequestMatcher api = apiMatcher(properties);
         http.authorizeHttpRequests(a -> a
@@ -47,7 +48,7 @@ public class SecurityConfig {
                 .csrf(c -> c.spa().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
                 .addFilterAfter(new CsrfCookieFilter(), CsrfFilter.class)
                 .oauth2Login(o -> o.successHandler(returnToFrontend))
-                .logout(l -> l.logoutSuccessUrl("/"));
+                .logout(l -> l.logoutSuccessHandler(endSessionLogout));
         return http.build();
     }
 

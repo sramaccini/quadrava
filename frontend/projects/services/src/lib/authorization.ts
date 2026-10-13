@@ -1,5 +1,5 @@
 import { HttpClient, HttpResponse } from '@angular/common/http';
-import { DestroyRef, Injectable, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { Authorization } from 'core';
 import { firstValueFrom } from 'rxjs';
 import { LOWCODE_SERVICES_CONFIG } from './config';
@@ -31,6 +31,8 @@ export class HttpAuthorization extends Authorization {
 
   readonly status = signal<Status>('idle');
   readonly version = signal<string | null>(null);
+  /** Quanti permessi ha l'utente (per il menu utente). */
+  readonly count = computed(() => this.permissions().size);
 
   constructor() {
     super();

@@ -199,9 +199,14 @@ Open an example (*Apri esempio*) or start a new screen. The palette adds compone
 Prerequisites: Node.js 22.22.3+, JDK 21, Maven 3.9+, Docker.
 
 1. Identity provider: `cd idp && docker compose up` (console at http://localhost:8180, user `admin`, password `admin`).
-2. Reference implementation: `cd reference && mvn verify`, then `mvn -pl <module> spring-boot:run` for each module. Ports: bff 8080, registry 8081, authz 8082, telemetry 8083.
-3. Front end through the BFF: `cd frontend && npm ci`, then `npm run start:runtime:bff` (port 4200) and `npm run start:editor:bff` (port 4201). The dev servers proxy `/registry`, `/bff`, `/oauth2` and `/logout` to the BFF, which keeps the session, adds the user's access token and `traceparent` to the forwarded calls and protects writes with CSRF (`XSRF-TOKEN` cookie, `X-XSRF-TOKEN` header). The editor's *Registro* panel offers *Accedi* when there is no session: the BFF logs in with Keycloak and returns to the editor (only to the origins listed in `lowcode.bff.frontend-origins`). The runtime loads screens, navigation and themes published in the registry (`projects/runtime/config/registro/runtime-config.json`: application `demo`, environment `sviluppo`).
-4. Validate the examples against the schemas: `cd frontend && npm run validate:examples`.
+2. Reference implementation: `cd reference && mvn verify`, then `mvn -pl <module> spring-boot:run` for each module (or `java -jar <module>/target/*.jar`). Ports: bff 8080, registry 8081, authz 8082, telemetry 8083.
+3. Demo application back end: `cd frontend && npm run demo-api` (port 8084). It serves the data of the demo screens (the same logic as the in-browser demo, `projects/runtime/src/demo/demo-backend.ts`) and accepts only access tokens signed by the local Keycloak realm (RS256, issuer, expiry); `--senza-auth` switches the check off.
+4. Publish the examples into the registry with a real token: `npm run publish:examples -- --user amministratore --password amministratore` (the script gets the token from the development client `lowcode-strumenti`, local realm only).
+5. Front end through the BFF: `npm run start:runtime:bff` (port 4200) and `npm run start:editor:bff` (port 4201). The dev servers proxy `/registry`, `/api`, `/authz`, `/telemetry`, `/bff`, `/oauth2` and `/logout` to the BFF, which keeps the session, adds the user's access token and `traceparent` to the forwarded calls and protects writes with CSRF (`XSRF-TOKEN` cookie, `X-XSRF-TOKEN` header). BFF routes (`lowcode.bff.routes`): `/registry` → registry, `/authz` → authorization, `/telemetry` → telemetry, `/api` → the application back end.
+   * **Runtime** (`projects/runtime/config/bff/runtime-config.json`): without a session it goes straight to the Keycloak login and comes back; then it loads navigation, theme and screens published in the registry (application `demo`, environment `sviluppo`), the user's permissions from the authorization service, the data from `/api`, and sends diagnostics to the telemetry service. The header shows the user name, the number of permissions and an *Esci* button: logout closes the BFF session and the Keycloak session (OIDC end-session), so the next login asks for the password again.
+   * **Editor**: the *Registro* panel offers *Accedi* when there is no session; versions are recorded with the user name as author.
+   * After login the BFF returns only to the origins listed in `lowcode.bff.frontend-origins`; a visit to the BFF root goes to `lowcode.bff.home` (the runtime).
+6. Validate the examples against the schemas: `cd frontend && npm run validate:examples`.
 
 **Registry only, without Keycloak** (local development): start the registry with authentication switched off and publish the examples into it, then run the runtime and the editor against it.
 
@@ -228,7 +233,7 @@ npm run schema:check                  # generated schema constants are in sync
 npm run validate:examples             # examples are valid
 ```
 
-At the time of writing there are **436 automated tests**: schema 63, expressions 39, core 61, components 128, services 22, runtime 69, editor 54. The Java modules add 19 (`mvn verify`: authz 4, bff 7, registry 5, telemetry 3). They run in jsdom, so layout, real focus handling and pixel-level rendering are **not** covered; see the development guide for the helpers that make NG-ZORRO overlays testable.
+At the time of writing there are **439 automated tests**: schema 63, expressions 39, core 61, components 128, services 24, runtime 70, editor 54. The Java modules add 20 (`mvn verify`: authz 4, bff 8, registry 5, telemetry 3). They run in jsdom, so layout, real focus handling and pixel-level rendering are **not** covered; see the development guide for the helpers that make NG-ZORRO overlays testable.
 
 ## Security model
 
@@ -244,17 +249,16 @@ Open point: Ajv generates validators with `new Function`, so browser-side valida
 
 ## Status and roadmap
 
-**Verified:** the three JSON Schemas, the CEL evaluator, the interpreter, the NG-ZORRO component catalogue, the services library, the runtime demo and the visual editor, with the automated tests above; the build of every app and library; the validity of the three OpenAPI contracts and of the examples. End to end in a browser, without Keycloak: an editor change saved and published in the reference registry (`senza-auth` profile) appears in the runtime, which loads its navigation, theme and screens from the registry.
+**Verified:** the three JSON Schemas, the CEL evaluator, the interpreter, the NG-ZORRO component catalogue, the services library, the runtime demo and the visual editor, with the automated tests above; the build of every app and library; the validity of the three OpenAPI contracts and of the examples. End to end in a browser, with Keycloak 26.8 in Docker and every reference service started (October 13, 2026): login through the BFF, return to the runtime, navigation/theme/screens from the registry, permissions from the authorization service, data and a write (with CSRF) through the BFF to the demo back end, logout that ends the Keycloak session, login as another user; in the editor behind the BFF a change saved and published in the registry appears in the runtime. Also without Keycloak, with the registry's `senza-auth` profile.
 
 **Not verified:**
 
-* The Java modules compile and their tests pass with `mvn verify` (the BFF forwarding is tested against a stub service with a fake token), but they are not built in CI, and the login through Keycloak has not been run (no Docker here).
-* The `services` library is tested against simulated HTTP only, not against the real BFF.
-* The demo has not been run in a real browser after the move to NG-ZORRO: it is covered by jsdom tests, so the visual result (including the dark theme stylesheet) still needs a manual look.
+* The Java modules are not built in CI; the conformance test kit for customer back ends does not exist yet.
+* The reference services keep their data in memory: restarting the registry empties it (publish the examples again).
 
 **Next steps:**
 
-* Wire the rest of `services` into the `runtime` app (session, authorization, data client and telemetry still use the demo's fake ports; definitions can already come from the registry), and add application back ends to the BFF routes.
+* Visual editor and component catalogue: standalone input components (text box, dropdown and the like, today available as form fields only) and the next editor phase.
 * Visual editor: a review flow before publication (the contract's `in-revisione` state), completion while typing expressions.
 * The October 2026 component batch is complete (see the catalogue for the specification and the known limits of each component).
 * Menu: arrow-key navigation, badges, search.

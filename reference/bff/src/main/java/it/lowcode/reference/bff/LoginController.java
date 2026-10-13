@@ -59,9 +59,21 @@ public class LoginController {
         }
     }
 
-    /** Dopo il login: alla pagina di ritorno salvata, altrimenti alla radice del BFF. */
+    /** La radice del BFF rimanda alle applicazioni (dopo l'uscita da Keycloak si arriva qui). */
+    @GetMapping("/")
+    public void home(HttpServletResponse response) throws IOException {
+        response.sendRedirect(properties.home());
+    }
+
+    /** Dopo il login: alla pagina di ritorno salvata, altrimenti alla home delle applicazioni. */
     @Component
     static class ReturnToFrontend implements AuthenticationSuccessHandler {
+
+        private final BffProperties properties;
+
+        ReturnToFrontend(BffProperties properties) {
+            this.properties = properties;
+        }
 
         @Override
         public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication)
@@ -71,7 +83,7 @@ public class LoginController {
             if (session != null) {
                 session.removeAttribute(RETURN_ATTRIBUTE);
             }
-            response.sendRedirect(target instanceof String url ? url : request.getContextPath() + "/");
+            response.sendRedirect(target instanceof String url ? url : properties.home());
         }
     }
 }

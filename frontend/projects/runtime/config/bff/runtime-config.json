@@ -1,0 +1,17 @@
+{
+  "definitions": {
+    "source": "registry",
+    "app": "demo",
+    "env": "sviluppo",
+    "navigation": "fatturazione",
+    "themes": [
+      "chiaro",
+      "classico",
+      "scuro"
+    ]
+  },
+  "services": {
+    "source": "bff",
+    "appId": "demo"
+  }
+}

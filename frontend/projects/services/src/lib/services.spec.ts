@@ -1,5 +1,6 @@
 import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { ApplicationInitStatus } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Authorization, DataClient, RuntimeDiagnostics, UserProvider } from 'core';
 import { HttpAuthorization } from './authorization';
@@ -8,6 +9,7 @@ import { HttpDiagnostics, redact } from './diagnostics';
 import { DataError } from './errors';
 import { HttpDataClient } from './http-data-client';
 import { lowcodeHttpInterceptor } from './interceptor';
+import { provideLowcodeServices } from './provide';
 import { HttpSession } from './session';
 import { isSameOriginRelative, newTraceparent } from './trace';
 
@@ -59,7 +61,7 @@ describe('interceptor', () => {
     http.expectOne('/api/a').flush({}, { status: 401, statusText: 'Unauthorized' });
     http.expectOne('/api/b').flush({}, { status: 401, statusText: 'Unauthorized' });
     expect(TestBed.inject(HttpSession).state()).toBe('expired');
-    expect(redirects).toEqual(['/oauth2/authorization/keycloak']);
+    expect(redirects).toEqual(['/bff/login?return=' + encodeURIComponent(location.href)]);
   });
 });
 
@@ -80,6 +82,16 @@ describe('HttpSession', () => {
     await p;
     expect(redirects).toHaveLength(1);
     expect(TestBed.inject(HttpSession).user()).toEqual({});
+  });
+  it('l’uscita chiama il BFF e poi va all’indirizzo di fine sessione del provider', async () => {
+    const { http, redirects } = setup();
+    const done = TestBed.inject(HttpSession).logout();
+    const request = http.expectOne('/logout');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.headers.get('Accept')).toBe('application/json');
+    request.flush({ redirect: 'http://idp.test/logout?id_token_hint=x' });
+    await done;
+    expect(redirects).toEqual(['http://idp.test/logout?id_token_hint=x']);
   });
 });
 
@@ -237,5 +249,21 @@ describe('HttpDiagnostics', () => {
 
   it('redact tronca i testi lunghi', () => {
     expect(redact('x'.repeat(500))).toHaveLength(200);
+  });
+});
+
+describe('provideLowcodeServices', () => {
+  it('all’avvio carica la sessione e poi i permessi', async () => {
+    TestBed.configureTestingModule({
+      providers: [provideLowcodeServices({ appId: 'demo' }), provideHttpClientTesting(), { provide: LOWCODE_REDIRECT, useValue: () => undefined }],
+    });
+    const http = TestBed.inject(HttpTestingController);
+    const ready = TestBed.inject(ApplicationInitStatus).donePromise;
+    http.expectOne('/bff/user').flush({ name: 'Mario Rossi', username: 'mrossi' });
+    await new Promise((r) => setTimeout(r, 0));
+    http.expectOne((r) => r.url === '/authz/capabilities').flush(caps(['ordini.ordine.leggi'], 'v1'));
+    await ready;
+    expect(TestBed.inject(Authorization).can('ordini.ordine.leggi')).toBe(true);
+    expect(TestBed.inject(HttpAuthorization).count()).toBe(1);
   });
 });

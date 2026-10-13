@@ -5,8 +5,10 @@ export interface LowcodeServicesConfig {
   appId: string;
   /** Endpoint del BFF con i dati dell'utente autenticato. */
   sessionUrl?: string;
-  /** Dove mandare l'utente se la sessione manca o è scaduta (il BFF avvia il login OIDC). */
+  /** Dove mandare l'utente se la sessione manca o è scaduta: il BFF avvia il login OIDC e poi riporta alla pagina (`?return=`). */
   loginUrl?: string;
+  /** Uscita: POST al BFF, che chiude anche la sessione del provider di identità. */
+  logoutUrl?: string;
   /** Base del contratto di autorizzazione. */
   authzBase?: string;
   /** Base del contratto di telemetria. */
@@ -21,6 +23,7 @@ export interface ResolvedServicesConfig {
   appId: string;
   sessionUrl: string;
   loginUrl: string;
+  logoutUrl: string;
   authzBase: string;
   telemetryBase: string;
   telemetry: boolean;
@@ -33,7 +36,8 @@ export function resolveConfig(config: LowcodeServicesConfig): ResolvedServicesCo
   return {
     appId: config.appId,
     sessionUrl: config.sessionUrl ?? '/bff/user',
-    loginUrl: config.loginUrl ?? '/oauth2/authorization/keycloak',
+    loginUrl: config.loginUrl ?? '/bff/login',
+    logoutUrl: config.logoutUrl ?? '/logout',
     authzBase: config.authzBase ?? '/authz',
     telemetryBase: config.telemetryBase ?? '/telemetry/v1',
     telemetry: config.telemetry ?? true,

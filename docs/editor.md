@@ -134,7 +134,7 @@ editor/src/app/
 
 - **Traduzioni.** Le traduzioni si esportano in un file da unire a mano ai cataloghi; quando i cataloghi verranno da un servizio, l'editor li aggiornerà direttamente. Le lingue sono quelle della demo (italiano e inglese).
 - **Espressioni.** Sintassi controllata e aiuto con le variabili del contesto, ma niente completamento mentre si scrive né controllo che i campi usati (`row.x`) esistano davvero nelle risposte dei servizi.
-- **Pubblicazione.** Manca la revisione: lo stato `in-revisione` del contratto non ha ancora un flusso nell'editor. Il login con Keycloak attraverso il BFF è coperto dai test del BFF ma non è ancora stato provato dal vivo.
+- **Pubblicazione.** Manca la revisione: lo stato `in-revisione` del contratto non ha ancora un flusso nell'editor. Il login con Keycloak attraverso il BFF è stato provato dal vivo il 13 ottobre 2026 (`npm run start:editor:bff`): salvataggio e pubblicazione con il nome utente come autore.
 - **Anteprima e procedure.** Selezionare un nodo in un passo successivo di un wizard non porta a quel passo (i passi si superano solo con le loro condizioni).
 - **Larghezza.** Sotto i 1100 px i pannelli si impilano; l'editor è pensato per schermi da desktop.
 

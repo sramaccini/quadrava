@@ -9,6 +9,8 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/lowcode}
+          # Autore delle versioni: il nome utente, non l'identificativo interno di Keycloak.
+          principal-claim-name: preferred_username
 
 management:
   endpoints:

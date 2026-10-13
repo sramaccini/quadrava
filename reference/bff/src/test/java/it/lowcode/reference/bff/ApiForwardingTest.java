@@ -3,6 +3,7 @@ package it.lowcode.reference.bff;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oauth2Login;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oidcLogin;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -85,6 +86,8 @@ class ApiForwardingTest {
         registry.add("lowcode.bff.routes[1].prefix", () -> "/spento");
         registry.add("lowcode.bff.routes[1].target", () -> "http://localhost:1");
         registry.add("lowcode.bff.frontend-origins[0]", () -> "http://localhost:4201");
+        registry.add("lowcode.bff.home", () -> "http://localhost:4200/");
+        registry.add("lowcode.bff.end-session-uri", () -> "http://idp.test/logout");
     }
 
     @TestConfiguration
@@ -105,6 +108,9 @@ class ApiForwardingTest {
 
     @Autowired
     ApiForwardingFilter forwarding;
+
+    @Autowired
+    BffProperties properties;
 
     MockMvc mvc;
 
@@ -194,11 +200,25 @@ class ApiForwardingTest {
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.getSession(true).setAttribute(LoginController.RETURN_ATTRIBUTE, "http://localhost:4201/");
         MockHttpServletResponse response = new MockHttpServletResponse();
-        new LoginController.ReturnToFrontend().onAuthenticationSuccess(request, response, null);
+        new LoginController.ReturnToFrontend(properties).onAuthenticationSuccess(request, response, null);
         assertThat(response.getRedirectedUrl()).isEqualTo("http://localhost:4201/");
-        // Senza pagina salvata: la radice.
+        // Senza pagina salvata: la home delle applicazioni.
         MockHttpServletResponse other = new MockHttpServletResponse();
-        new LoginController.ReturnToFrontend().onAuthenticationSuccess(new MockHttpServletRequest(), other, null);
-        assertThat(other.getRedirectedUrl()).isEqualTo("/");
+        new LoginController.ReturnToFrontend(properties).onAuthenticationSuccess(new MockHttpServletRequest(), other, null);
+        assertThat(other.getRedirectedUrl()).isEqualTo("http://localhost:4200/");
+    }
+
+    @Test
+    void uscireChiudeAncheLaSessioneDiKeycloak() throws Exception {
+        mvc.perform(post("/logout").with(oidcLogin()).with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(result -> assertThat(result.getResponse().getRedirectedUrl())
+                        .startsWith("http://idp.test/logout?id_token_hint=")
+                        .endsWith("&post_logout_redirect_uri=http%3A%2F%2Flocalhost%2F"));
+        mvc.perform(get("/").with(oidcLogin())).andExpect(redirectedUrl("http://localhost:4200/"));
+        // Dalle applicazioni: una chiamata JSON, che riceve l'indirizzo dove andare.
+        mvc.perform(post("/logout").with(oidcLogin()).with(csrf()).accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(result -> assertThat(result.getResponse().getContentAsString()).startsWith("{\"redirect\":\"http://idp.test/logout?id_token_hint="));
     }
 }

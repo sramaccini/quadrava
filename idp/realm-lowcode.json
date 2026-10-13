@@ -6,9 +6,18 @@
   "loginWithEmailAllowed": true,
   "roles": {
     "realm": [
-      { "name": "operatore", "description": "Legge e modifica gli ordini" },
-      { "name": "responsabile", "description": "Come operatore, e approva gli ordini" },
-      { "name": "amministratore", "description": "Tutti i permessi dell'applicazione di esempio" }
+      {
+        "name": "operatore",
+        "description": "Legge e modifica gli ordini"
+      },
+      {
+        "name": "responsabile",
+        "description": "Come operatore, e approva gli ordini"
+      },
+      {
+        "name": "amministratore",
+        "description": "Tutti i permessi dell'applicazione di esempio"
+      }
     ]
   },
   "clients": [
@@ -22,12 +31,27 @@
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": false,
       "serviceAccountsEnabled": false,
-      "redirectUris": ["http://localhost:8080/login/oauth2/code/keycloak"],
-      "webOrigins": ["http://localhost:4200", "http://localhost:4201"],
+      "redirectUris": [
+        "http://localhost:8080/login/oauth2/code/keycloak"
+      ],
+      "webOrigins": [
+        "http://localhost:4200",
+        "http://localhost:4201"
+      ],
       "attributes": {
         "pkce.code.challenge.method": "S256",
         "post.logout.redirect.uris": "http://localhost:8080/*"
       }
+    },
+    {
+      "clientId": "lowcode-strumenti",
+      "name": "LowCode strumenti di sviluppo (script locali, mai in produzione)",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false
     }
   ],
   "users": [
@@ -38,8 +62,16 @@
       "emailVerified": true,
       "firstName": "Utente",
       "lastName": "Operatore",
-      "credentials": [{ "type": "password", "value": "operatore", "temporary": false }],
-      "realmRoles": ["operatore"]
+      "credentials": [
+        {
+          "type": "password",
+          "value": "operatore",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "operatore"
+      ]
     },
     {
       "username": "responsabile",
@@ -48,8 +80,16 @@
       "emailVerified": true,
       "firstName": "Utente",
       "lastName": "Responsabile",
-      "credentials": [{ "type": "password", "value": "responsabile", "temporary": false }],
-      "realmRoles": ["responsabile"]
+      "credentials": [
+        {
+          "type": "password",
+          "value": "responsabile",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "responsabile"
+      ]
     },
     {
       "username": "amministratore",
@@ -58,8 +98,16 @@
       "emailVerified": true,
       "firstName": "Utente",
       "lastName": "Amministratore",
-      "credentials": [{ "type": "password", "value": "amministratore", "temporary": false }],
-      "realmRoles": ["amministratore"]
+      "credentials": [
+        {
+          "type": "password",
+          "value": "amministratore",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "amministratore"
+      ]
     }
   ]
 }
