@@ -72,6 +72,15 @@ export interface NavigateEvent {
       background: var(--lc-color-primary, #1f5fbf); color: var(--lc-color-on-primary, #fff); }
     a.leaf { position: relative; }
     .collapsed .badge { position: absolute; top: 2px; left: 14px; min-width: 8px; width: 8px; height: 8px; padding: 0; font-size: 0; }
+    /* Somma dei contatori sul titolo di un gruppo chiuso (aperto, i numeri sono sulle voci); a barra compressa un pallino. */
+    :host ::ng-deep .ant-menu-submenu-title[data-lc-badge]::after {
+      content: attr(data-lc-badge); position: absolute; right: 40px; top: 50%; transform: translateY(-50%);
+      min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; font-size: 12px; line-height: 20px; text-align: center;
+      background: var(--lc-color-primary, #1f5fbf); color: var(--lc-color-on-primary, #fff);
+    }
+    :host ::ng-deep .collapsed .ant-menu-submenu-title[data-lc-badge]::after {
+      right: auto; left: 44px; top: 10px; transform: none; min-width: 8px; width: 8px; height: 8px; padding: 0; font-size: 0;
+    }
     :host ::ng-deep .ant-menu-submenu-title:focus-visible, a.leaf:focus-visible { outline: 2px solid var(--lc-sider-active-text, #1f5fbf); outline-offset: -2px; }
     /* Pulsante tondo sul bordo della barra, all'altezza del logo, come in Ant Design Pro. Sta fuori dall'area che scorre.
        Sporge di 13px nella barra superiore: chi ospita la barra lascia quel margine prima del titolo. */
@@ -167,11 +176,11 @@ export interface NavigateEvent {
           <ul nz-menu nzMode="inline" [nzTheme]="tone()" [nzInlineCollapsed]="collapsed()" [nzInlineIndent]="18">
             @for (g1 of uc.items; track g1.id) {
               @if (g1.kind === 'group') {
-                <li nz-submenu class="group" [nzTitle]="g1.label" [nzIcon]="type(g1.icon)" [nzOpen]="isExpanded(g1.id)" (nzOpenChange)="setOpen(g1.id, $event)">
+                <li nz-submenu class="group" [attr.data-group]="g1.id" [nzTitle]="g1.label" [nzIcon]="type(g1.icon)" [nzOpen]="isExpanded(g1.id)" (nzOpenChange)="setOpen(g1.id, $event)">
                   <ul>
                     @for (g2 of g1.children; track g2.id) {
                       @if (g2.kind === 'group') {
-                        <li nz-submenu class="group" [nzTitle]="g2.label" [nzIcon]="type(g2.icon)" [nzOpen]="isExpanded(g2.id)" (nzOpenChange)="setOpen(g2.id, $event)">
+                        <li nz-submenu class="group" [attr.data-group]="g2.id" [nzTitle]="g2.label" [nzIcon]="type(g2.icon)" [nzOpen]="isExpanded(g2.id)" (nzOpenChange)="setOpen(g2.id, $event)">
                           <ul>
                             @for (l3 of leaves(g2.children); track l3.id) {
                               <li nz-menu-item [nzSelected]="isActive(l3)">
@@ -259,6 +268,21 @@ export class SidebarComponent {
     return uc && active ? (this.navigation().locate(uc.id, active.screen, active.params) ?? []) : [];
   });
 
+  /** Per ogni gruppo del caso d'uso corrente: il nome e la somma dei contatori delle sue voci (anche nei sottogruppi). */
+  private readonly groupBadges = computed(() => {
+    const badges = this.badges();
+    const out: Record<string, { label: string; count: number }> = {};
+    const sum = (items: VisibleItem[]): number =>
+      items.reduce((total, item) => {
+        if (item.kind !== 'group') return total + (badges[item.id] ?? 0);
+        const count = sum(item.children);
+        out[item.id] = { label: item.label, count };
+        return total + count;
+      }, 0);
+    sum(this.current()?.items ?? []);
+    return out;
+  });
+
   /** Voci del caso d'uso corrente che contengono il testo cercato (senza badare a maiuscole e accenti), con il loro percorso. */
   protected readonly results = computed(() => {
     const q = plainText(this.query());
@@ -278,11 +302,25 @@ export class SidebarComponent {
   constructor() {
     // I titoli dei gruppi di NG-ZORRO non si raggiungono da tastiera e non dicono se sono aperti: lo si aggiunge qui.
     afterEveryRender(() => {
+      const groups = this.groupBadges();
       for (const title of this.host.nativeElement.querySelectorAll<HTMLElement>('.ant-menu-submenu-title')) {
         const open = title.parentElement?.classList.contains('ant-menu-submenu-open') ?? false;
         if (title.getAttribute('tabindex') !== '0') title.setAttribute('tabindex', '0');
         if (title.getAttribute('role') !== 'button') title.setAttribute('role', 'button');
         if (title.getAttribute('aria-expanded') !== String(open)) title.setAttribute('aria-expanded', String(open));
+        // Contatore del gruppo: chiuso, o a barra compressa (le voci stanno in un menu a parte).
+        const group = groups[title.parentElement?.getAttribute('data-group') ?? ''];
+        const show = !!group && group.count > 0 && (!open || this.collapsed());
+        const text = show ? (group.count > 99 ? '99+' : String(group.count)) : null;
+        if (title.getAttribute('data-lc-badge') !== text) {
+          if (text) title.setAttribute('data-lc-badge', text);
+          else title.removeAttribute('data-lc-badge');
+        }
+        const label = show ? `${group.label}, ${this.i18n.t('lc.badge', { n: group.count })}` : null;
+        if (title.getAttribute('aria-label') !== label) {
+          if (label) title.setAttribute('aria-label', label);
+          else title.removeAttribute('aria-label');
+        }
       }
     });
     // I gruppi che contengono la voce attiva si aprono da soli; l'utente poi li può chiudere.

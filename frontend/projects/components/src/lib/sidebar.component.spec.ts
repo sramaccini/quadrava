@@ -254,4 +254,23 @@ describe('SidebarComponent', () => {
       expect(title.getAttribute('aria-expanded')).toBe('false');
     });
   });
+
+  it('contatori sui gruppi chiusi: la somma delle voci (anche dei sottogruppi); aperto, i numeri passano alle voci', async () => {
+    const { fixture, el } = await render(['fatture.fattura.crea']);
+    fixture.componentRef.setInput('badges', { attiva: 2, scegli: 3, bozze: 1 });
+    await flush(fixture);
+    const title = () => el.querySelector('li[data-group="nuova"] > .ant-menu-submenu-title') as HTMLElement;
+    expect(title().getAttribute('data-lc-badge')).toBe('5');
+    expect(title().getAttribute('aria-label')).toBe('Nuova fattura, 5 da gestire');
+    title().click();
+    await flush(fixture);
+    expect(title().getAttribute('data-lc-badge')).toBeNull();
+    expect(title().getAttribute('aria-label')).toBeNull();
+    // Il sottogruppo chiuso mostra i suoi.
+    expect(el.querySelector('li[data-group="da-ordine"] > .ant-menu-submenu-title')?.getAttribute('data-lc-badge')).toBe('3');
+    // A barra compressa il contatore resta sul gruppo anche se era aperto.
+    fixture.componentRef.setInput('collapsed', true);
+    await flush(fixture);
+    expect(title().getAttribute('data-lc-badge')).toBe('5');
+  });
 });
