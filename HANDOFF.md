@@ -25,7 +25,7 @@ Da `frontend/`:
 - `npm run build:libs` — **prima** di build e test delle app: i path di tsconfig puntano a `./dist/*`
 - **`npm run stack`** — tutto lo stack con il login vero in un comando (Keycloak in Docker, servizi Java, backend della demo, esempi pubblicati, runtime 4200 ed editor 4201 dietro il BFF); log in `.stack/logs`, dati del registro in `data/registry`; Ctrl+C ferma tutto tranne Keycloak
 - `npm run schema:sync` — rigenera i `*.schema.ts` e i validatori precompilati (`validators.generated.ts`) dagli schemi JSON; `schema:docs` rigenera `docs/riferimento-schema.md`
-- `npm run conformance:registry` — kit di conformità del registro al contratto (vedi README)
+- `npm run conformance:registry` / `conformance:authz` / `conformance:telemetry` — kit di conformità dei servizi ai contratti (vedi README)
 - `npm run e2e` — Playwright (campi a sé, border layout, accessibilità axe su tutta la vetrina)
 - `npm run validate:examples` — valida gli esempi (schema + chiavi di traduzione)
 - `npm run demo:prepare` / `npm run start:runtime` — copia `examples/` in `projects/runtime/public/examples` e avvia la demo (porta 4200). Il dev server **non** ricarica `dist`: dopo modifiche a librerie o esempi va rilanciato.
@@ -36,7 +36,7 @@ Da `frontend/`:
 - **Stack completo con Keycloak passo per passo** (Docker Desktop avviato): `cd idp && docker compose up -d`; in `reference/` `mvn -q package -DskipTests` e `java -jar <modulo>/target/*.jar` per registry (con `--lowcode.registry.storage-dir=<cartella>` per non perdere i dati), authz, telemetry, bff; in `frontend/` `npm run demo-api` (8084), `npm run publish:examples -- --user amministratore --password amministratore`, poi `npm run start:runtime:bff` (4200) e `start:editor:bff` (4201). Le origini ammesse dal BFF sono 4200 e 4201.
 - test per progetto: `npx ng test <schema|expressions|core|components|services|runtime|editor> --watch=false`
 
-Stato test (tutti verdi): schema 71, expressions 42, core 71, components 155, services 27, runtime 78, editor 68 (**512**); Java 33 (authz 4, bff 8, registry 18, telemetry 3); Playwright 16 (di cui 12 di accessibilità); kit di conformità del registro 17/17. Build di produzione: runtime 2,46 MB iniziali (422 kB trasferiti), editor 818 kB iniziali (l'anteprima e l'editor si caricano a parte).
+Stato test (tutti verdi): schema 71, expressions 42, core 71, components 156, services 27, runtime 78, editor 72 (**517**); Java 39 (authz 7, bff 8, registry 18, telemetry 6); Playwright 16 (di cui 12 di accessibilità); kit di conformità: registro 17/17, autorizzazioni 11/11, telemetria 6/6. Build di produzione: runtime 2,46 MB iniziali (422 kB trasferiti), editor 818 kB iniziali (l'anteprima e l'editor si caricano a parte).
 
 ## 4. Architettura in breve
 
@@ -84,20 +84,18 @@ Le principali sono nella DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In breve:
 - Runtime: in modalità `bff` usa `provideLowcodeServices` (sessione, autorizzazione, data client, telemetria) e `BffShellSession`; in demo le porte finte e `DemoShellSession`. La logica dei dati della demo sta in `runtime/src/demo/demo-backend.ts`, usata da `MockDataClient` e da `tools/demo-api.mjs`.
 - BFF: rotte `/registry`, `/authz`, `/telemetry`, `/api`; CSRF per SPA; logout OIDC. Provato dal vivo il 13 ottobre 2026 (anche con `npm run stack`).
 - Registro di riferimento (contratto 0.3): validazione con gli stessi JSON Schema del frontend (networknt), revisione a quattro occhi (ruoli `responsabile`, `amministratore`), ambienti protetti `collaudo` e `produzione`, If-Match, archivio su file opzionale, documenti `messages` per le traduzioni. Le espressioni CEL **non** si controllano lato server (le controllano editor e runtime).
-- Kit di conformità solo per il registro; authz e telemetria ancora senza.
 - e2e solo in Chromium; il controllo automatico di accessibilità non sostituisce le prove a mano.
-- I contatori del menu si vedono sulle voci; a barra compressa con il gruppo chiuso non compaiono sul titolo del gruppo.
-- Editor: l'anteprima accetta componenti dalla tavolozza ma non sposta né ridimensiona quelli già presenti; il confronto è tra una versione e il documento aperto, non tra due versioni.
+- Editor: sull'anteprima si aggiungono, spostano e ridimensionano (span, grow) i componenti; i lati del border si ridimensionano solo nel runtime; il confronto è tra una versione e il documento aperto, non tra due versioni.
 - `validate:examples` non controlla le espressioni CEL (lo fa il test `i18n-examples.spec.ts`).
 - Limiti dei componenti: catalogo § 3.
 - Documenti Claude Docs (architettura `81cf6668-…` e gli altri): non aggiornati dopo l'11–12 ottobre; il dettaglio è nel repository.
 
 ## 8. Prossimi passi (nell'ordine suggerito)
 
-1. Review del lavoro del 13 ottobre (commit da `64be1d5` a quello di questo aggiornamento): servizi reali nel runtime, campi a sé, contenitori, ottimizzazioni, registro 0.3, editor, componenti nuovi, menu, traduzioni dal registro, stack in un comando, accessibilità.
-2. Kit di conformità per authz e telemetria (sul modello di `tools/conformance-registry.mjs`).
-3. Editor: spostare e ridimensionare i componenti già presenti direttamente sull'anteprima; confronto tra due versioni del registro.
-4. Contatori del menu anche sui titoli dei gruppi chiusi; e2e in Firefox e WebKit.
+1. Review del lavoro del 13 ottobre (commit da `64be1d5` in poi).
+2. Kit di conformità in CI contro i servizi di riferimento (oggi si eseguono a mano, per esempio dopo `npm run stack`).
+3. Editor: confronto tra due versioni del registro; larghezze dei lati del border dall'anteprima.
+4. e2e in Firefox e WebKit.
 5. CEL in `validate:examples` e, a regime, nel registro.
 6. Aggiornare i documenti Claude Docs (architettura § 9, funzionale, linee guida) con lo stato di ottobre.
 
@@ -109,13 +107,13 @@ Elenco redatto il 13 ottobre e **realizzato lo stesso giorno** (lavoro autonomo 
 | --- | --- |
 | CI e prima suite e2e | fatto (sessione dedicata): `.github/workflows/ci.yml`, `frontend/e2e` |
 | Controllo di accessibilità (axe) | fatto: `e2e/accessibilita.spec.ts` su 12 schermate; corretti contrasti, etichette, `nz-steps`, `nz-tree`, titoli dei gruppi del menu |
-| Kit di conformità | fatto per il registro (`npm run conformance:registry`, 17/17); da fare per authz e telemetria |
+| Kit di conformità | fatto per registro (17/17), autorizzazioni (11/11) e telemetria (6/6); hanno trovato e fatto correggere differenze nei servizi di riferimento |
 | Registro persistente, revisione, confronto, promozione, validazione al salvataggio | fatto: registro 0.3 (archivio su file, quattro occhi, ambienti protetti, If-Match, JSON Schema lato server); confronto nell'editor |
-| Completamento delle espressioni, modifica diretta nell'anteprima, dati veri, modifiche concorrenti | fatto (la modifica diretta è il rilascio dalla tavolozza; spostare e ridimensionare restano da fare) |
+| Completamento delle espressioni, modifica diretta nell'anteprima, dati veri, modifiche concorrenti | fatto (sull'anteprima si aggiungono, spostano e ridimensionano i componenti) |
 | Validazione a livello di schermata, CSV, stampa | fatto: passi `validate`, `export`, `print` |
 | Immagine, link, avanzamento, timeline, kanban | fatto (`image`, `link`, `progress`, `timeline`, `kanban`); i tag colorati esistono già come formato `badge` |
 | Border con divisori trascinabili | fatto (`resizable`) |
-| Menu con tastiera, badge, ricerca | fatto |
+| Menu con tastiera, badge, ricerca | fatto, con i contatori anche sui gruppi chiusi |
 | Cataloghi delle lingue da un servizio | fatto: documenti `messages` nel registro |
 | CSP senza `unsafe-eval` | fatto: validatori precompilati (Ajv standalone) |
 | Node fissato | fatto (`.nvmrc`, `engines`) |

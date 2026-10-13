@@ -398,7 +398,7 @@ Regole comuni: un figlio nascosto (`visibleIf`) non occupa spazio; nei contenito
 ### 2.25 Menu: ricerca, contatori, tastiera
 
 - **Ricerca**: casella in cima al menu (barra espansa). Trova le voci del caso d'uso il cui nome, o quello del gruppo, contiene il testo, senza badare a maiuscole e accenti; ogni risultato mostra il percorso. Invio apre il primo, Freccia giù passa ai risultati, Esc pulisce.
-- **Contatori**: nella navigazione `"badges": { "url": "/api/menu/contatori", "refreshSeconds": 60 }`. Il servizio (GET relativo, attraverso il BFF) risponde `{ "<id della voce>": numero }`; si tengono gli interi positivi, oltre 99 «99+», a barra compressa un pallino. Si rileggono a intervalli (solo con la pagina visibile) e al ritorno sulla pagina. I lettori di schermo leggono «Bozze, 3 da gestire».
+- **Contatori**: nella navigazione `"badges": { "url": "/api/menu/contatori", "refreshSeconds": 60 }`. Il servizio (GET relativo, attraverso il BFF) risponde `{ "<id della voce>": numero }`; si tengono gli interi positivi, oltre 99 «99+», a barra compressa un pallino. Un gruppo chiuso mostra la somma dei contatori delle sue voci (anche dei sottogruppi); aperto, i numeri passano alle voci. Si rileggono a intervalli (solo con la pagina visibile) e al ritorno sulla pagina. I lettori di schermo leggono «Bozze, 3 da gestire».
 - **Tastiera**: frecce su e giù tra voci e gruppi visibili, Home e Fine, destra apre un gruppo (o entra nella prima voce), sinistra lo chiude (o torna al gruppo), Invio e Spazio sui gruppi. I titoli dei gruppi si raggiungono con Tab e dicono se sono aperti (`aria-expanded`).
 
 ## 3. Note di realizzazione e limiti noti
@@ -415,7 +415,6 @@ Regole comuni: un figlio nascosto (`visibleIf`) non occupa spazio; nei contenito
 - **Contenitori di layout.** Le larghezze scelte con i divisori valgono per la visita della schermata (non si ricordano); niente celle della griglia su più righe; soglie per impilare fisse (600px griglia, 768px border).
 - **Kanban.** Niente riordino delle schede dentro una colonna né limiti per colonna; lo spostamento aspetta la risposta del servizio (nessun aggiornamento ottimistico).
 - **Esportazione.** Le righe sono quelle che il data source restituisce in una chiamata: per archivi a pagine il servizio deve offrire una lettura completa (o un'esportazione propria).
-- **Menu.** A barra compressa con il gruppo chiuso i contatori non compaiono sul titolo del gruppo.
 
 ### 3.1 Limiti superati (ottobre 2026)
 
