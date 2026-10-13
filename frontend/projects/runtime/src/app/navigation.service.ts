@@ -2,7 +2,7 @@ import { Location } from '@angular/common';
 import { Injectable, inject, signal } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { ExpressionEngine } from 'expressions';
-import { Authorization, I18n, NavigationRuntime, RuntimeDiagnostics, ScreenNavigator, UserProvider, checkNavigation, type VisibleLeaf } from 'core';
+import { Authorization, DefinitionSource, I18n, NavigationRuntime, RuntimeDiagnostics, ScreenNavigator, UserProvider, checkNavigation, type VisibleLeaf } from 'core';
 import { validateNavigation } from 'schema';
 
 export interface RouteLocation {
@@ -23,6 +23,7 @@ export class NavigationService {
   private readonly userProvider = inject(UserProvider);
   private readonly diagnostics = inject(RuntimeDiagnostics, { optional: true });
   private readonly i18n = inject(I18n);
+  private readonly definitions = inject(DefinitionSource);
 
   readonly runtime = signal<NavigationRuntime | null>(null);
   readonly problems = signal<string[]>([]);
@@ -39,9 +40,7 @@ export class NavigationService {
   /** Carica il documento di navigazione, lo valida (schema e coerenza) e prepara il menu. */
   private async load(): Promise<void> {
     try {
-      const response = await fetch('examples/navigation.json');
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const result = validateNavigation(await response.json());
+      const result = validateNavigation(await this.definitions.navigation());
       if (!result.valid) {
         this.problems.set(result.issues.map((i) => `${i.path} ${i.message}`));
         return;

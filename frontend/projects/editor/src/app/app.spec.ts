@@ -7,6 +7,7 @@ import { appConfig } from './app.config';
 import { EditorStore } from './model/editor-store';
 import { getIn as getAt, type Json } from './model/doc-ops';
 import { NavigationStore } from './model/navigation-store';
+import { EDITOR_REDIRECT } from './model/registry-client';
 import { isToPreview, type PreviewState } from './preview/protocol';
 
 const FILES: Record<string, unknown> = { 'examples/index.json': ['vetrina-layout'], 'examples/vetrina-layout.json': layout };
@@ -15,6 +16,8 @@ describe('editor delle schermate', () => {
   let fixture: ComponentFixture<App>;
   let el: HTMLElement;
   let store: EditorStore;
+  /** Cambi di pagina chiesti dall'editor (login del BFF). */
+  let redirects: string[];
 
   beforeEach(async () => {
     localStorage.clear();
@@ -23,7 +26,8 @@ describe('editor delle schermate', () => {
       const body = FILES[url];
       return body ? { ok: true, status: 200, json: async () => body } : { ok: false, status: 404, json: async () => ({}) };
     });
-    TestBed.configureTestingModule({ providers: appConfig.providers });
+    redirects = [];
+    TestBed.configureTestingModule({ providers: [...appConfig.providers, { provide: EDITOR_REDIRECT, useValue: (url: string) => redirects.push(url) }] });
     fixture = TestBed.createComponent(App);
     el = fixture.nativeElement as HTMLElement;
     store = TestBed.inject(EditorStore);
@@ -349,6 +353,23 @@ describe('editor delle schermate', () => {
     await settle();
     expect(button('Salva versione').disabled).toBe(true);
     expect(panel.textContent).toContain('Correggi gli errori');
+  });
+
+  it('registro senza sessione: il pannello propone l’accesso attraverso il BFF e poi si torna all’editor', async () => {
+    vi.stubGlobal('fetch', async (url: string) => {
+      if (url.startsWith('/registry')) return { ok: false, status: 401, json: async () => ({ title: 'Sessione scaduta' }) };
+      const body = FILES[url];
+      return body ? { ok: true, status: 200, json: async () => body } : { ok: false, status: 404, json: async () => ({}) };
+    });
+    ([...el.querySelectorAll<HTMLButtonElement>('.toolbar button')].find((b) => b.textContent?.includes('Registro')) as HTMLButtonElement).click();
+    await until(() => !!document.querySelector('ed-registry-panel'), 'pannello del registro');
+    const panel = document.querySelector('ed-registry-panel') as HTMLElement;
+    type(panel.querySelector('#registry-app') as HTMLInputElement, 'ordini');
+    await settle();
+    ([...panel.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.includes('Storico')) as HTMLButtonElement).click();
+    await until(() => !!panel.querySelector('.login'), 'richiesta di accesso');
+    ([...panel.querySelectorAll<HTMLButtonElement>('.login button')][0]).click();
+    expect(redirects).toEqual(['/bff/login?return=' + encodeURIComponent(location.href)]);
   });
 
   it('apre un esempio, e da tastiera elimina il nodo selezionato', async () => {

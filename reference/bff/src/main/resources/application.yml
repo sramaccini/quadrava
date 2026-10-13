@@ -12,10 +12,28 @@ spring:
             client-id: lowcode-bff
             client-secret: ${LOWCODE_BFF_CLIENT_SECRET:dev-only-secret}
             authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
             scope: openid,profile,email
+        # Indirizzi espliciti invece della scoperta all'avvio (issuer-uri): il BFF parte anche se Keycloak non è
+        # ancora acceso. Sono quelli standard di Keycloak sotto l'issuer del realm.
         provider:
           keycloak:
-            issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/lowcode}
+            authorization-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/lowcode}/protocol/openid-connect/auth
+            token-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/lowcode}/protocol/openid-connect/token
+            jwk-set-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/lowcode}/protocol/openid-connect/certs
+            user-info-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/lowcode}/protocol/openid-connect/userinfo
+            user-name-attribute: preferred_username
+
+lowcode:
+  bff:
+    # API inoltrate dal BFF ai servizi, con il token dell'utente. Solo questi prefissi e questi host.
+    routes:
+      - prefix: /registry
+        target: ${LOWCODE_REGISTRY_URL:http://localhost:8081}
+    # Applicazioni verso cui si torna dopo il login (/bff/login?return=...).
+    frontend-origins:
+      - http://localhost:4200
+      - http://localhost:4201
 
 management:
   endpoints:

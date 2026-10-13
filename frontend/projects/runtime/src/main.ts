@@ -1,5 +1,9 @@
 import { bootstrapApplication } from '@angular/platform-browser';
-import { appConfig } from './app/app.config';
+import { appConfigFor } from './app/app.config';
 import { App } from './app/app';
+import { loadRuntimeConfig } from './app/runtime-config';
 
-bootstrapApplication(App, appConfig).catch((err) => console.error(err));
+// Prima la configurazione (da dove vengono le definizioni), poi l'applicazione.
+loadRuntimeConfig()
+  .then((config) => bootstrapApplication(App, appConfigFor(config)))
+  .catch((err) => console.error(err));

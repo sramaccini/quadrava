@@ -9,12 +9,11 @@ import { NzDropdownModule } from 'ng-zorro-antd/dropdown';
 import { NzMenuModule } from 'ng-zorro-antd/menu';
 import { NzLayoutModule } from 'ng-zorro-antd/layout';
 import { NzSelectModule } from 'ng-zorro-antd/select';
-import { I18n, ThemeService, loadMessages, type VisibleLeaf } from 'core';
+import { DefinitionSource, I18n, ThemeService, loadMessages, type VisibleLeaf } from 'core';
 import { validateTheme } from 'schema';
 import { DEMO_PROFILES, DemoDiagnostics, DemoSession } from '../demo/demo-ports';
 import { NavigationService } from './navigation.service';
 
-const THEMES = ['chiaro', 'classico', 'scuro'];
 /** Lingue della demo: per ciascuna esiste `examples/i18n/<lingua>.json`. */
 const LANGUAGES = ['it', 'en'];
 
@@ -76,8 +75,9 @@ export class App {
   protected readonly languages = LANGUAGES;
 
   protected readonly profiles = Object.keys(DEMO_PROFILES);
-  protected readonly themes = THEMES;
-  protected readonly themeName = signal(THEMES[0]);
+  private readonly definitions = inject(DefinitionSource);
+  protected readonly themes = this.definitions.themes();
+  protected readonly themeName = signal(this.themes[0]);
   protected readonly viewport = viewportSignal(inject(DestroyRef));
   protected readonly collapsed = signal(false);
   /** Cassetto con la barra laterale, solo nella fascia stretta. */
@@ -119,12 +119,13 @@ export class App {
     });
     effect(() => {
       const name = this.themeName();
-      void fetch(`examples/themes/${name}.json`)
-        .then((response) => response.json())
+      this.definitions
+        .theme(name)
         .then((doc: unknown) => {
           const result = validateTheme(doc);
           if (result.valid) this.themeService.apply(result.value);
-        });
+        })
+        .catch((e: unknown) => console.warn('[tema]', name, e instanceof Error ? e.message : e));
     });
   }
 

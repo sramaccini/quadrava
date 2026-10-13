@@ -70,3 +70,16 @@ export interface FormDialogRequest {
 export abstract class FormDialog {
   abstract open(request: FormDialogRequest): Promise<boolean>;
 }
+
+/**
+ * Fonte delle definizioni: schermate, navigazione e temi. In produzione il registro (i documenti pubblicati in un
+ * ambiente), nella demo i file degli esempi. Restituisce il JSON così com'è: lo valida chi lo usa. Lancia un errore
+ * se il documento non c'è o non si può caricare.
+ */
+export abstract class DefinitionSource {
+  abstract screen(id: string): Promise<unknown>;
+  abstract navigation(): Promise<unknown>;
+  abstract theme(id: string): Promise<unknown>;
+  /** Temi tra cui l'utente può scegliere, il primo è quello iniziale. */
+  abstract themes(): string[];
+}

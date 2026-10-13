@@ -45,6 +45,9 @@ editor  ──► components ──► core   (the preview renders screens with 
 | `npm run demo:prepare` | Copies `examples/` into `projects/runtime/public/examples` and `projects/editor/public/examples` (git-ignored), with an `index.json` of the screens; required by the runtime and editor specs |
 | `npm run start:runtime` | Builds libs, prepares examples and serves the demo on port 4200 |
 | `npm run start:editor` | Builds libs, prepares examples and serves the visual editor on port 4201 |
+| `npm run start:runtime:registro` / `start:editor:registro` | Same apps, with `/registry` proxied to the reference registry on 8081 (run it with the `senza-auth` profile); the runtime loads its definitions from the registry |
+| `npm run start:runtime:bff` / `start:editor:bff` | Same apps behind the BFF on 8080 (needs Keycloak): `/registry`, `/bff`, `/oauth2`, `/logout` are proxied |
+| `npm run publish:examples` | Publishes every example screen, the navigation and every theme to a registry (`--registry`, `--app`, `--env`, `--token`) |
 | `npm run schema:sync` / `schema:check` | Regenerate / verify the generated schema constants |
 | `npm run validate:examples` | Validates every JSON in `examples/` against the schemas |
 | `npx ng build runtime` | Production build (budgets: warning 2.5 MB, error 4 MB initial) |
@@ -155,7 +158,7 @@ Layout, real focus and the dark theme are not covered by tests (the application 
 ## 13. Known limits
 
 * No real-browser check of the NG-ZORRO migration yet; the collapsed side menu now opens groups in a popup.
-* `services` is not yet wired into `runtime`; the BFF lacks CSRF protection, API forwarding and a host allow-list.
+* `runtime` takes only its definitions from `services` (`provideRegistryDefinitions`, chosen by `runtime-config.json`); session, authorization, data client and telemetry are still the demo's fakes. The BFF forwards only the routes listed in `lowcode.bff.routes` (today `/registry`).
 * Java modules are built and tested locally with `mvn verify` (JDK 21, Maven 3.9) but not yet in CI.
 * Ajv needs `unsafe-eval` under CSP until validators are precompiled.
 * `validate:examples` checks translation keys but not CEL expressions (the runtime test `i18n-examples.spec.ts` does).

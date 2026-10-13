@@ -78,7 +78,9 @@ public class RegistryController {
         if (invalid.isPresent()) {
             return problem(HttpStatus.BAD_REQUEST, invalid.get());
         }
-        return ResponseEntity.status(HttpStatus.CREATED).body(store.save(key.get(), content, principal.getName()));
+        // Senza autenticazione (profilo senza-auth) l'autore è «sviluppo».
+        String author = principal == null ? "sviluppo" : principal.getName();
+        return ResponseEntity.status(HttpStatus.CREATED).body(store.save(key.get(), content, author));
     }
 
     @GetMapping(path = "/registry/apps/{appId}/documents/{kind}/{documentId}/versions/{hash}", produces = MediaType.APPLICATION_JSON_VALUE)

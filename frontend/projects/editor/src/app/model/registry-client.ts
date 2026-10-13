@@ -1,11 +1,34 @@
-import { Injectable } from '@angular/core';
+import { Injectable, InjectionToken } from '@angular/core';
 import type { Json } from './doc-ops';
 
 /**
  * Client del registro (contracts/registry.yaml 0.2): ogni schermata, la navigazione e ogni tema sono documenti
  * separati, con versioni immutabili e pubblicazioni per ambiente. Le chiamate sono relative all'origine dell'editor,
  * che in produzione è servito dal BFF (sessione nel cookie, niente token nel browser).
+ *
+ * Protezione CSRF del BFF: le scritture rimandano il token del cookie `XSRF-TOKEN` nell'intestazione `X-XSRF-TOKEN`.
+ * Se il cookie non c'era ancora, il BFF risponde 403 e lo crea: la scrittura si ripete una volta.
  */
+
+/** Cambio di pagina (verso il login del BFF). Sostituibile nei test. */
+export const EDITOR_REDIRECT = new InjectionToken<(url: string) => void>('EDITOR_REDIRECT', {
+  providedIn: 'root',
+  factory: () => (url: string) => globalThis.location.assign(url),
+});
+
+/** Pagina del BFF che avvia il login e poi riporta l'utente all'indirizzo indicato. */
+export function loginUrl(returnTo: string): string {
+  return `/bff/login?return=${encodeURIComponent(returnTo)}`;
+}
+
+/** Il token CSRF dal cookie del BFF, se c'è. */
+export function csrfToken(cookies: string): string | null {
+  for (const part of cookies.split(';')) {
+    const [name, ...value] = part.trim().split('=');
+    if (name === 'XSRF-TOKEN') return decodeURIComponent(value.join('='));
+  }
+  return null;
+}
 
 export type DocumentKind = 'screen' | 'navigation' | 'theme';
 
@@ -66,21 +89,28 @@ export class RegistryClient {
     await this.call<void>('PUT', this.path(appId, kind, id, `/published?env=${enc(env)}`), { hash });
   }
 
+  private async send(method: string, path: string, body?: unknown): Promise<Response> {
+    const headers: Record<string, string> = { Accept: 'application/json' };
+    if (body !== undefined) headers['Content-Type'] = 'application/json';
+    const token = method === 'GET' ? null : csrfToken(document.cookie);
+    if (token) headers['X-XSRF-TOKEN'] = token;
+    try {
+      return await fetch(this.base + path, { method, credentials: 'same-origin', headers, body: body === undefined ? undefined : JSON.stringify(body) });
+    } catch {
+      throw new RegistryError(0, '');
+    }
+  }
+
   private path(appId: string, kind: DocumentKind, id: string, rest: string): string {
     return `/apps/${enc(appId)}/documents/${enc(kind)}/${enc(id)}${rest}`;
   }
 
   private async call<T>(method: string, path: string, body?: unknown): Promise<T> {
-    let response: Response;
-    try {
-      response = await fetch(this.base + path, {
-        method,
-        credentials: 'same-origin',
-        headers: body === undefined ? { Accept: 'application/json' } : { Accept: 'application/json', 'Content-Type': 'application/json' },
-        body: body === undefined ? undefined : JSON.stringify(body),
-      });
-    } catch {
-      throw new RegistryError(0, '');
+    const hadToken = csrfToken(document.cookie) !== null;
+    let response = await this.send(method, path, body);
+    // Prima scrittura senza cookie CSRF: il BFF risponde 403 e intanto lo crea. Si riprova una volta, con il token.
+    if (response.status === 403 && method !== 'GET' && !hadToken && csrfToken(document.cookie)) {
+      response = await this.send(method, path, body);
     }
     if (!response.ok) {
       let title = '';

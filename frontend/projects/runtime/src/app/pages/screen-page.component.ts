@@ -2,14 +2,14 @@ import { ChangeDetectionStrategy, Component, computed, inject, resource } from '
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { ExpressionEngine } from 'expressions';
-import { I18n, ScreenComponent, checkScreenExpressions } from 'core';
+import { DefinitionSource, I18n, ScreenComponent, checkScreenExpressions } from 'core';
 import { NavigationService } from '../navigation.service';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { validateScreen, type ScreenDefinition } from 'schema';
 
 type Loaded = { ok: true; definition: ScreenDefinition } | { ok: false; issues: string[] };
 
-/** Pagina del router: carica la schermata indicata nell'URL, la valida e la mostra con i parametri della query. */
+/** Pagina del router: carica (dalla fonte delle definizioni) la schermata indicata nell'URL, la valida e la mostra con i parametri della query. */
 @Component({
   selector: 'lc-screen-page',
   imports: [ScreenComponent, NzAlertModule],
@@ -45,6 +45,7 @@ export class ScreenPage {
 
   protected readonly i18n = inject(I18n);
   private readonly navigation = inject(NavigationService);
+  private readonly definitions = inject(DefinitionSource);
 
   /** Percorso nel menu (caso d'uso, gruppi, voce) mostrato come briciole di pane sopra il titolo. */
   protected readonly breadcrumb = computed<string[]>(() => {
@@ -63,9 +64,13 @@ export class ScreenPage {
   protected readonly screen = resource<Loaded, string>({
     params: () => this.name(),
     loader: async ({ params: name }): Promise<Loaded> => {
-      const response = await fetch(`examples/${encodeURIComponent(name)}.json`);
-      if (!response.ok) throw new Error(`${name}: HTTP ${response.status}`);
-      const result = validateScreen(await response.json());
+      let document: unknown;
+      try {
+        document = await this.definitions.screen(name);
+      } catch (e) {
+        throw new Error(`${name}: ${e instanceof Error ? e.message : String(e)}`);
+      }
+      const result = validateScreen(document);
       if (!result.valid) return { ok: false, issues: result.issues.map((i) => `${i.path} ${i.message}`) };
       const problems = checkScreenExpressions(result.value, new ExpressionEngine({ can: () => false }));
       if (problems.length) return { ok: false, issues: problems.map((p) => `${p.path}: ${p.message}`) };

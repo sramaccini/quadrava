@@ -7,3 +7,4 @@ export * from './lib/interceptor';
 export * from './lib/provide';
 export * from './lib/session';
 export * from './lib/trace';
+export * from './lib/registry-definitions';

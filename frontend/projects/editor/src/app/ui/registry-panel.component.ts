@@ -7,7 +7,7 @@ import { NzInputModule } from 'ng-zorro-antd/input';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 import type { Json } from '../model/doc-ops';
 import type { DocumentState } from '../model/document-state';
-import { RegistryClient, RegistryError, documentRef, type DocumentKind, type DocumentVersion } from '../model/registry-client';
+import { EDITOR_REDIRECT, RegistryClient, RegistryError, documentRef, loginUrl, type DocumentKind, type DocumentVersion } from '../model/registry-client';
 
 const SETTINGS_KEY = 'lc.editor.registry';
 
@@ -39,6 +39,7 @@ interface Settings {
     .meta { color: var(--lc-color-muted); }
     .item-actions { display: flex; gap: 4px; margin-top: 6px; }
     .empty { color: var(--lc-color-muted); font-size: 12px; margin: 0; }
+    .login { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
   `,
   template: `
     <div class="row">
@@ -53,6 +54,12 @@ interface Settings {
       <p class="doc">{{ i18n.t('ed.registry.document') }} <code>{{ r.kind }} / {{ r.id }}</code></p>
     } @else {
       <p class="warn">{{ i18n.t('ed.registry.noId') }}</p>
+    }
+    @if (needsLogin()) {
+      <div class="login" role="alert">
+        <p class="warn">{{ i18n.t('ed.registry.loginNeeded') }}</p>
+        <button nz-button nzType="primary" nzSize="small" type="button" (click)="login()">{{ i18n.t('ed.registry.login') }}</button>
+      </div>
     }
     @if (state().errorCount()) {
       <p class="warn">{{ i18n.t('ed.registry.hasErrors') }}</p>
@@ -92,6 +99,7 @@ export class RegistryPanelComponent {
   private readonly client = inject(RegistryClient);
   private readonly notifier = inject(Notifier);
   private readonly confirmation = inject(Confirmation);
+  private readonly redirect = inject(EDITOR_REDIRECT);
   protected readonly i18n = inject(I18n);
 
   /** Il documento aperto e il suo tipo. */
@@ -103,6 +111,8 @@ export class RegistryPanelComponent {
   protected readonly env = signal(this.settings.env);
   protected readonly busy = signal(false);
   protected readonly loaded = signal(false);
+  /** Il registro ha risposto 401: serve il login (attraverso il BFF), poi si torna qui. */
+  protected readonly needsLogin = signal(false);
   protected readonly versions = signal<DocumentVersion[]>([]);
   /** Ambiente → hash pubblicato, per il documento aperto. */
   private readonly published = signal<Record<string, string>>({});
@@ -131,6 +141,10 @@ export class RegistryPanelComponent {
   protected when(iso: string): string {
     const date = new Date(iso);
     return Number.isNaN(date.getTime()) ? iso : new Intl.DateTimeFormat(this.i18n.intlLocale(), { dateStyle: 'short', timeStyle: 'short' }).format(date);
+  }
+
+  protected login(): void {
+    this.redirect(loginUrl(globalThis.location.href));
   }
 
   protected envsOf(hash: string): string[] {
@@ -186,8 +200,13 @@ export class RegistryPanelComponent {
     this.busy.set(true);
     try {
       await action();
+      this.needsLogin.set(false);
     } catch (e) {
       const status = e instanceof RegistryError ? e.status : 0;
+      if (status === 401) {
+        this.needsLogin.set(true);
+        return;
+      }
       const key = status === 0 ? 'ed.registry.unreachable' : status === 401 || status === 403 ? 'ed.registry.forbidden' : status === 404 ? 'ed.registry.notFound' : 'ed.registry.rejected';
       // Il titolo del Problem è un testo pensato per l'autore (per esempio «identificativo diverso dal percorso»).
       this.notifier.toast(this.i18n.t(key, { reason: e instanceof RegistryError ? e.message : '' }), 'error');

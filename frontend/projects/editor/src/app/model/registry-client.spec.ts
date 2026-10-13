@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
-import { RegistryClient, RegistryError, documentRef } from './registry-client';
+import { RegistryClient, RegistryError, csrfToken, documentRef, loginUrl } from './registry-client';
 
 describe('client del registro', () => {
   let calls: { url: string; method: string; body?: string }[];
@@ -40,6 +40,34 @@ describe('client del registro', () => {
       throw new TypeError('rete');
     });
     await expect(client.documents('a')).rejects.toMatchObject({ status: 0 });
+  });
+
+  it('CSRF del BFF: le scritture mandano il token del cookie; senza cookie, al 403 si riprova una volta con il token', async () => {
+    const sent: (string | null)[] = [];
+    let status = 403;
+    vi.stubGlobal('fetch', async (_url: string, init: RequestInit) => {
+      sent.push(((init.headers ?? {}) as Record<string, string>)['X-XSRF-TOKEN'] ?? null);
+      // Il BFF crea il cookie insieme al primo 403.
+      if (status === 403) document.cookie = 'XSRF-TOKEN=abc%3D1';
+      const reply = { ok: status < 400, status, json: async () => ({ hash: 'h', createdAt: '', author: 'a' }) };
+      status = 201;
+      return reply;
+    });
+    document.cookie = 'XSRF-TOKEN=; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    await client.save('a', 'screen', 'x', {});
+    expect(sent).toEqual([null, 'abc=1']);
+    // Con il token già presente un 403 è un vero divieto: niente seconda prova.
+    sent.length = 0;
+    status = 403;
+    await expect(client.publish('a', 'screen', 'x', 'prod', 'h')).rejects.toMatchObject({ status: 403 });
+    expect(sent).toEqual(['abc=1']);
+    document.cookie = 'XSRF-TOKEN=; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+  });
+
+  it('il token CSRF si legge dal cookie; il login torna alla pagina indicata', () => {
+    expect(csrfToken('a=1; XSRF-TOKEN=x%2By; b=2')).toBe('x+y');
+    expect(csrfToken('a=1')).toBeNull();
+    expect(loginUrl('http://localhost:4201/?x=1')).toBe('/bff/login?return=http%3A%2F%2Flocalhost%3A4201%2F%3Fx%3D1');
   });
 
   it('il documento si riconosce dalla sua proprietà identificativo', () => {

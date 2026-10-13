@@ -60,6 +60,22 @@
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
+            },
+            "registro": {
+              "assets": [
+                {
+                  "glob": "**/*",
+                  "input": "projects/runtime/public",
+                  "ignore": [
+                    "runtime-config.json"
+                  ]
+                },
+                {
+                  "glob": "runtime-config.json",
+                  "input": "projects/runtime/config/registro",
+                  "output": "/"
+                }
+              ]
             }
           },
           "defaultConfiguration": "production"
@@ -72,6 +88,14 @@
             },
             "development": {
               "buildTarget": "runtime:build:development"
+            },
+            "registro": {
+              "buildTarget": "runtime:build:development,registro",
+              "proxyConfig": "proxy.registry.json"
+            },
+            "bff": {
+              "buildTarget": "runtime:build:development,registro",
+              "proxyConfig": "proxy.bff.json"
             }
           },
           "defaultConfiguration": "development"
@@ -150,6 +174,14 @@
             },
             "development": {
               "buildTarget": "editor:build:development"
+            },
+            "registro": {
+              "buildTarget": "editor:build:development",
+              "proxyConfig": "proxy.registry.json"
+            },
+            "bff": {
+              "buildTarget": "editor:build:development",
+              "proxyConfig": "proxy.bff.json"
             }
           },
           "defaultConfiguration": "development"
