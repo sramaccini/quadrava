@@ -46,3 +46,7 @@ Thumbs.db
 # copiati da ../examples da tools/copy-examples.mjs
 projects/runtime/public/examples/
 projects/editor/public/examples/
+
+# rapporti di Playwright
+/playwright-report/
+/test-results/

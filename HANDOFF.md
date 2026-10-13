@@ -4,7 +4,7 @@ Documento di passaggio per continuare il lavoro con Claude Code in locale. Ultim
 
 ## 1. Cos'è
 
-Piattaforma low-code per frontend gestionali/amministrativi **definiti da JSON** (schermate, data source, azioni, espressioni CEL), più un editor visuale (schermate, navigazione, temi) e servizi di base. Il backend consiste in contratti OpenAPI e un'implementazione di riferimento Spring Boot non destinata alla produzione (compila e i test passano con `mvn verify`, JDK 21 e Maven 3.9 presenti in locale; non ancora in CI).
+Piattaforma low-code per frontend gestionali/amministrativi **definiti da JSON** (schermate, data source, azioni, espressioni CEL), più un editor visuale (schermate, navigazione, temi) e servizi di base. Il backend consiste in contratti OpenAPI e un'implementazione di riferimento Spring Boot non destinata alla produzione (compila e i test passano con `mvn verify`, JDK 21 e Maven 3.9, anche in CI).
 
 ## 2. Preferenze di Simone (rispettale)
 
@@ -80,7 +80,7 @@ Le principali sono nella DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In breve:
 
 - Runtime: in modalità `bff` usa `provideLowcodeServices` (sessione, autorizzazione, data client, telemetria) e `BffShellSession` (nome utente, numero di permessi, «Esci»); in demo le porte finte e `DemoShellSession`. La logica dei dati della demo sta in `runtime/src/demo/demo-backend.ts`, usata sia da `MockDataClient` sia da `tools/demo-api.mjs` (backend `/api` di sviluppo, verifica dei JWT RS256 sul JWKS del realm).
 - BFF (`reference/bff`): rotte `/registry`, `/authz`, `/telemetry`, `/api` (8081–8084) con il token dell'utente (rinnovato) e `traceparent`; 401 per le API senza sessione, login diretto per le pagine; CSRF per SPA; `/bff/login?return=` solo verso `frontend-origins`; radice → `lowcode.bff.home`; uscita con logout OIDC di Keycloak (risposta JSON `{"redirect"}` alle chiamate delle app). **Provato dal vivo il 13 ottobre 2026** con Keycloak 26.8: login, ritorno al runtime, definizioni dal registro, permessi da authz, dati e scrittura con CSRF, uscita che chiude la sessione Keycloak, nuovo accesso con un altro utente; editor dietro il BFF che salva e pubblica (autore = nome utente).
-- Moduli Java: `mvn verify` passa in locale (authz 4, bff 8, registry 5, telemetry 3); manca la CI e il kit di conformità per i backend dei clienti. Archivi in memoria.
+- Moduli Java: `mvn verify` passa in locale (authz 4, bff 8, registry 5, telemetry 3); in CI dal 13 ottobre 2026 (`.github/workflows/ci.yml`); manca il kit di conformità per i backend dei clienti. Archivi in memoria.
 - Realm di sviluppo: client pubblico `lowcode-strumenti` (solo password grant) per gli script; il permesso `vetrina.componenti.leggi` è nei tre ruoli di authz.
 - `validate:examples` non controlla le espressioni CEL (lo fa il test `i18n-examples.spec.ts`).
 - Limiti dei componenti che restano: vedi catalogo § 3 (niente righe ripetibili annidate, datatable sulle righe caricate — provata fino a 20.000 nel componente —, grafici senza zoom né aree). I limiti della prima consegna (lookup, file, righe, albero da tastiera, volumi, grafici) sono stati superati: catalogo § 3.1.
@@ -98,15 +98,15 @@ Le principali sono nella DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In breve:
 
 **Cosa manca.**
 
-1. *Qualità e rilascio*: nessuna CI (né frontend né Java); nessun test end-to-end in un browser vero (Playwright): i difetti visti solo nel browser (readonly ignorato, campi stretti, formato delle date) lo dimostrano; nessun controllo automatico di accessibilità (axe); manca il kit di conformità ai contratti per i backend dei clienti.
+1. *Qualità e rilascio*: CI su GitHub Actions (frontend, e2e, Java) e una prima suite Playwright (`frontend/e2e`, 4 test: campi a sé e border layout), da allargare ad altre schermate e browser; nessun controllo automatico di accessibilità (axe); manca il kit di conformità ai contratti per i backend dei clienti.
 2. *Registro e ciclo di vita*: archivio in memoria (da rendere persistente); revisione prima della pubblicazione (stato `in-revisione`); confronto tra versioni; promozione tra ambienti (sviluppo → collaudo → produzione); validazione di schema ed espressioni **alla pubblicazione**, nel servizio.
 3. *Editor*: completamento delle espressioni; modifica diretta nell'anteprima (trascinare e ridimensionare sul disegno); anteprima con dati veri del backend (oggi solo dati d'esempio); avviso di modifiche concorrenti sullo stesso documento.
 4. *Componenti*: un gruppo di validazione a livello di schermata (oggi i campi a sé mostrano gli errori ma non bloccano i pulsanti); esportazione CSV/Excel e stampa; componenti di base ancora assenti (immagine, link, tag/badge, barra di avanzamento, timeline, kanban); divisori trascinabili nel border layout; menu con tastiera, badge e ricerca.
-5. *Piattaforma*: cataloghi delle lingue da un servizio; CSP senza `unsafe-eval` (Ajv precompilato); `.nvmrc`/`engines` per fissare Node 24.
+5. *Piattaforma*: cataloghi delle lingue da un servizio; CSP senza `unsafe-eval` (Ajv precompilato).
 
 **Ottimizzazioni proposte**, in ordine di rapporto beneficio/costo:
 
-1. **CI e test e2e**: GitHub Actions con `validate:examples`, `schema:check`, test di tutti i progetti, `mvn verify`, build di produzione; più una suite Playwright minima sulla vetrina (con screenshot di confronto).
+1. **Test e2e più ampi**: CI e prima suite Playwright ci sono (13 ottobre 2026); allargarla alle altre schermate della vetrina, a Firefox/WebKit e agli screenshot di confronto.
 2. **Validare una volta, alla pubblicazione**: il registro valida schema e CEL e marca la versione; il runtime non compila più Ajv nel browser (meno peso e niente `unsafe-eval`) e mette in cache le versioni pubblicate, immutabili per hash (`Cache-Control: immutable`).
 3. **Caricamento differito dei componenti pesanti**: grafici, calendario, datatable e albero caricati alla prima schermata che li usa (`import()` nel catalogo): il bundle iniziale (runtime 2,32 MB, editor 2,45 MB, avviso a 2,5 MB) scende sensibilmente.
 4. **Richieste dei data source**: annullare quella in corso quando la richiesta risolta cambia (`AbortController`), unire le richieste identiche contemporanee, attendere una breve pausa quando lo stato cambia in raffica. Oggi solo la datatable lato server scarta le risposte superate.

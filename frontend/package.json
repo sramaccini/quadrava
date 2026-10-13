@@ -14,6 +14,7 @@
     "build:libs": "ng build schema && ng build expressions && ng build core && ng build components && ng build services",
     "demo:prepare": "npm run build:libs && node tools/copy-examples.mjs",
     "test:libs": "ng test schema --watch=false && ng test expressions --watch=false && ng test core --watch=false && ng test components --watch=false && ng test services --watch=false",
+    "e2e": "playwright test",
     "start:runtime:registro": "npm run demo:prepare && ng serve runtime --port 4200 -c registro",
     "start:editor:registro": "npm run demo:prepare && ng serve editor --port 4201 -c registro",
     "start:runtime:bff": "npm run demo:prepare && ng serve runtime --port 4200 -c bff",
@@ -22,6 +23,9 @@
     "demo-api": "node tools/demo-api.mjs"
   },
   "private": true,
+  "engines": {
+    "node": ">=24 <25"
+  },
   "packageManager": "npm@10.9.8",
   "dependencies": {
     "@angular/cdk": "^22.2.2",
@@ -43,6 +47,7 @@
     "@angular/build": "^22.2.2",
     "@angular/cli": "^22.2.1",
     "@angular/compiler-cli": "^22.2.0",
+    "@playwright/test": "^1.64.0",
     "ajv": "^8.20.0",
     "esbuild": "^0.28.2",
     "jsdom": "^30.0.0",

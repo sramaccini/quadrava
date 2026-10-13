@@ -4,7 +4,7 @@ How to work on the LowCode Platform: set up, build, test, extend and contribute.
 
 ## 1. Prerequisites and setup
 
-* Node.js 22.22.3+ (or 24.15+) and npm.
+* Node.js 24 and npm (pinned in `.nvmrc` and in `engines` of `frontend/package.json`; `nvm use` or `fnm use` from the repository root picks it).
 * JDK 21 and Maven 3.9+ (only for `reference/`).
 * Docker (only for the Keycloak in `idp/`).
 
@@ -53,8 +53,9 @@ editor  ──► components ──► core   (the preview renders screens with 
 | `npm run schema:sync` / `schema:check` | Regenerate / verify the generated schema constants |
 | `npm run validate:examples` | Validates every JSON in `examples/` against the schemas |
 | `npx ng build runtime` | Production build (budgets: warning 2.5 MB, error 4 MB initial) |
+| `npm run e2e` | Playwright end-to-end tests (`e2e/`) in Chromium against the demo; starts `ng serve runtime` on port 4300 (`E2E_PORT` to change it) unless a server is already running there. Needs `npm run demo:prepare` and, once, `npx playwright install chromium` |
 
-Before opening a pull request, all of these must pass: `schema:check`, `validate:examples`, `build:libs`, `test:libs`, runtime and editor tests, production builds.
+Before opening a pull request, all of these must pass: `schema:check`, `validate:examples`, `build:libs`, `test:libs`, runtime and editor tests, production builds, `npm run e2e`. CI (`.github/workflows/ci.yml`) runs the same checks on every push to `main` and every pull request, in three jobs: `frontend`, `e2e` and `java` (`mvn -B verify`). When the e2e job fails, the Playwright report and traces are uploaded as the `playwright-report` artifact (open a trace with `npx playwright show-trace <trace.zip>`).
 
 ## 4. Adding or changing a component
 
@@ -134,7 +135,16 @@ Vitest runs in jsdom through `ng test`. Conventions:
 * Test the configuration of what jsdom cannot verify (for example `nzAutofocus: 'cancel'`), and note the limit in the test.
 * Runtime specs import the demo JSON, so run `npm run demo:prepare` first.
 
-Layout, real focus and the dark theme are not covered by tests (the application shell follows the Ant Design Pro look, driven by the theme); check them manually with `npm run start:runtime` for UI changes.
+### End-to-end tests (Playwright)
+
+What jsdom cannot see (layout, real NG-ZORRO overlays, attributes as the browser applies them) is tested with Playwright in `frontend/e2e/`, against the demo with its in-browser fake back end (`playwright.config.ts`).
+
+* One `*.spec.ts` per showcase screen; open it by URL (`/vetrina/<screen>`) after fixing the language with `page.addInitScript(() => localStorage.setItem('lc.language', 'it'))`.
+* Prefer user-facing locators: `getByLabel` (field labels are `<label for>`; for `nz-select` and `nz-switch` they point at the control), `getByRole`, the visible text of `nz-option-item`. Use `data-region`, `data-node-id` and `data-node-type` when there is no accessible name.
+* Check layout with `boundingBox()` at explicit viewport sizes (`page.setViewportSize`), with a tolerance of a pixel or two, not with full-page screenshots.
+* Rely on Playwright's auto-waiting assertions (`toBeVisible`, `toBeEditable`, `toHaveCount`), never on fixed timeouts.
+
+Real focus handling and the dark theme are not covered yet (the application shell follows the Ant Design Pro look, driven by the theme); check them manually with `npm run start:runtime` for UI changes.
 
 ## 10. Code style
 
@@ -161,7 +171,7 @@ Layout, real focus and the dark theme are not covered by tests (the application 
 
 * The collapsed side menu opens groups in a popup.
 * The reference services keep their data in memory: after restarting the registry, publish the examples again. Logout from the apps is a JSON call (`Accept: application/json`, CSRF header) answered with `{"redirect": …}`: with `csrf().spa()` a form field would need the masked token.
-* Java modules are built and tested locally with `mvn verify` (JDK 21, Maven 3.9) but not yet in CI.
+* The Playwright suite runs in Chromium only and covers two showcase screens.
 * Ajv needs `unsafe-eval` under CSP until validators are precompiled.
 * `validate:examples` checks translation keys but not CEL expressions (the runtime test `i18n-examples.spec.ts` does).
 * Component limits that remain (no nested repeaters, no chart zoom, no row selection in the server data table) are listed in the component catalogue, § 3.

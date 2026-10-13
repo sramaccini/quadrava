@@ -33,7 +33,7 @@ Contributor documentation: [DEVELOPMENT-GUIDE.md](DEVELOPMENT-GUIDE.md). Design 
 | **Libraries** (`schema`, `expressions`, `core`, `components`, `services`) | JSON Schema and types, expression evaluator, interpreter, NG-ZORRO component catalogue, HTTP/session/authorization/telemetry services | Working, tested |
 | **Visual editor** (`frontend/projects/editor`) | Builds screens and the navigation (use cases and menus) with property panels generated from the JSON Schemas and live previews rendered by the real runtime | Screens, navigation and themes |
 | **Contracts** (`contracts/`) | OpenAPI 3.1: authorization, telemetry ingestion, registry | Defined and validated |
-| **Reference implementation** (`reference/`) | Spring Boot BFF, registry, authorization and telemetry services that implement the contracts | Compiles and its unit tests pass locally (JDK 21, Maven 3.9); not yet in CI |
+| **Reference implementation** (`reference/`) | Spring Boot BFF, registry, authorization and telemetry services that implement the contracts | Compiles and its unit tests pass (JDK 21, Maven 3.9), in CI too |
 | **Identity provider** (`idp/`) | Keycloak with a sample realm for local development | Ready |
 | **Examples** (`examples/`) | Reference applications used by tests and by the demo | Working |
 
@@ -161,11 +161,11 @@ Frontend libraries, from the bottom up:
 | UI library | NG-ZORRO (`ng-zorro-antd`) 22.1 on Angular CDK, date-fns for dates, Italian locale |
 | Validation | JSON Schema 2020-12 with Ajv 8 (strict) |
 | Expressions | CEL via `@marcbachmann/cel-js` 8 |
-| Tests (front end) | Vitest 5 through `ng test`, jsdom |
+| Tests (front end) | Vitest 5 through `ng test`, jsdom; Playwright for end-to-end tests in Chromium |
 | Telemetry | OpenTelemetry-style signals sent as OTLP/HTTP JSON |
 | Back end (reference) | Spring Boot 4.1.1, Java 21 |
 | Identity | Keycloak 26.8, OIDC with PKCE through the BFF |
-| Node.js | 22.22.3 or later (or 24.15+) |
+| Node.js | 24 (pinned in `.nvmrc` and in `engines` of `frontend/package.json`) |
 
 TypeScript 7 is not usable: Angular 22.2 declares compatibility with `>=6.0 <6.1`.
 
@@ -235,9 +235,15 @@ npx ng test runtime --watch=false     # end-to-end demo tests (needs `npm run de
 npx ng test editor --watch=false      # visual editor
 npm run schema:check                  # generated schema constants are in sync
 npm run validate:examples             # examples are valid
+npx playwright install chromium       # once: the browser used by the end-to-end tests
+npm run e2e                           # Playwright end-to-end tests in a real browser (needs `npm run demo:prepare`)
 ```
 
-At the time of writing there are **463 automated tests**: schema 68, expressions 39, core 61, components 141, services 24, runtime 74, editor 56. The Java modules add 20 (`mvn verify`: authz 4, bff 8, registry 5, telemetry 3). They run in jsdom, so layout, real focus handling and pixel-level rendering are **not** covered; see the development guide for the helpers that make NG-ZORRO overlays testable.
+`npm run e2e` starts the demo itself (`ng serve runtime` on port 4300, override with `E2E_PORT`; outside CI a server already running on that port is reused) and runs the suites in `frontend/e2e/` against the in-browser fake back end.
+
+Every push to `main` and every pull request runs [`.github/workflows/ci.yml`](.github/workflows/ci.yml) on GitHub Actions: the front-end job (`schema:check`, `validate:examples`, `build:libs`, the tests of every project, the production builds of runtime and editor), the end-to-end job (Playwright in Chromium; report uploaded as an artifact when it fails) and the Java job (`mvn -B verify`).
+
+At the time of writing there are **463 automated tests**: schema 68, expressions 39, core 61, components 141, services 24, runtime 74, editor 56. The Java modules add 20 (`mvn verify`: authz 4, bff 8, registry 5, telemetry 3). They run in jsdom, so layout, real focus handling and pixel-level rendering are **not** covered there; see the development guide for the helpers that make NG-ZORRO overlays testable. A first Playwright suite (4 tests) checks in a real browser what jsdom cannot see: the standalone fields showcase (the *Tipo* select filters the table, *Urgente* makes the read-only notes editable) and the border layout at 1400 px and 375 px.
 
 ## Security model
 
@@ -257,7 +263,7 @@ Open point: Ajv generates validators with `new Function`, so browser-side valida
 
 **Not verified:**
 
-* The Java modules are not built in CI; the conformance test kit for customer back ends does not exist yet.
+* The browser end-to-end suite is minimal (two showcase screens, Chromium only); the conformance test kit for customer back ends does not exist yet.
 * The reference services keep their data in memory: restarting the registry empties it (publish the examples again).
 
 **Next steps:**
@@ -265,7 +271,7 @@ Open point: Ajv generates validators with `new Function`, so browser-side valida
 * Visual editor: a review flow before publication (the contract's `in-revisione` state), completion while typing expressions.
 * The October 2026 component batch is complete, including standalone fields and layout containers (see the catalogue for the specification and the known limits of each component).
 * Menu: arrow-key navigation, badges, search.
-* The full list of gaps and proposed optimizations (CI and browser end-to-end tests, validation at publication time, lazy-loaded components, request cancellation, expression cache) is in [HANDOFF.md](HANDOFF.md) § 8b (Italian).
+* The full list of gaps and proposed optimizations (wider browser end-to-end coverage, validation at publication time, lazy-loaded components, request cancellation, expression cache) is in [HANDOFF.md](HANDOFF.md) § 8b (Italian).
 * Check expressions in `validate:examples` too.
 * Language catalogues loaded from a service (today they are files shipped with the app).
 
