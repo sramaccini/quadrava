@@ -39,6 +39,7 @@ editor  ──► components ──► core   (the preview renders screens with 
 
 | Command | What it does |
 | --- | --- |
+| `npm run stack` | The whole development stack with the real login in one command (Keycloak in Docker, reference services, demo back end, examples published, runtime on 4200 and editor on 4201 behind the BFF); `-- --solo-servizi`, `-- --ricompila`; logs in `.stack/logs`, registry data in `data/registry` |
 | `npm run build:libs` | Builds all libraries in dependency order |
 | `npm run test:libs` | Unit tests for every library |
 | `npx ng test <project> --watch=false` | Tests of one project (`schema`, `expressions`, `core`, `components`, `services`, `runtime`, `editor`) |
@@ -49,13 +50,15 @@ editor  ──► components ──► core   (the preview renders screens with 
 | `npm run start:runtime:bff` / `start:editor:bff` | Same apps behind the BFF on 8080 (needs Keycloak and the reference services): `/registry`, `/api`, `/authz`, `/telemetry`, `/bff`, `/oauth2`, `/logout` are proxied; the runtime uses the real `services` ports (`projects/runtime/config/bff/runtime-config.json`) |
 | `npm run demo-api` | Demo application back end on 8084 (the `/api` route of the BFF): the in-browser demo logic (`runtime/src/demo/demo-backend.ts`, bundled with esbuild at start-up) behind RS256 token verification against the local realm; `-- --senza-auth` switches it off |
 | `npm run publish:examples -- --user <u> --password <p>` | Publishes every example into the registry with a token from the development client `lowcode-strumenti` (local realm only); without arguments it works against the `senza-auth` registry |
-| `npm run publish:examples` | Publishes every example screen, the navigation and every theme to a registry (`--registry`, `--app`, `--env`, `--token`) |
-| `npm run schema:sync` / `schema:check` | Regenerate / verify the generated schema constants |
+| `npm run publish:examples` | Publishes every example screen, the navigation, every theme and every language catalogue (as `messages` documents) to a registry (`--registry`, `--app`, `--env`, `--token`) |
+| `npm run schema:sync` / `schema:check` | Regenerate / verify the generated schema constants and the precompiled validators (`validators.generated.ts`, Ajv standalone) |
+| `npm run schema:docs` / `schema:docs:check` | Regenerate / verify `docs/riferimento-schema.md` from the schema descriptions |
+| `npm run conformance:registry` | Conformance kit: checks a registry over HTTP against `registry.yaml` (`--registry`, `--user`/`--password` or `--token`, `--reviewer-user`/`--reviewer-password`) in a fresh application |
 | `npm run validate:examples` | Validates every JSON in `examples/` against the schemas |
 | `npx ng build runtime` | Production build (budgets: warning 2.5 MB, error 4 MB initial) |
-| `npm run e2e` | Playwright end-to-end tests (`e2e/`) in Chromium against the demo; starts `ng serve runtime` on port 4300 (`E2E_PORT` to change it) unless a server is already running there. Needs `npm run demo:prepare` and, once, `npx playwright install chromium` |
+| `npm run e2e` | Playwright end-to-end tests (`e2e/`, including the axe-core accessibility check of every showcase screen) in Chromium against the demo; starts `ng serve runtime` on port 4300 (`E2E_PORT` to change it) unless a server is already running there. Needs `npm run demo:prepare` and, once, `npx playwright install chromium` |
 
-Before opening a pull request, all of these must pass: `schema:check`, `validate:examples`, `build:libs`, `test:libs`, runtime and editor tests, production builds, `npm run e2e`. CI (`.github/workflows/ci.yml`) runs the same checks on every push to `main` and every pull request, in three jobs: `frontend`, `e2e` and `java` (`mvn -B verify`). When the e2e job fails, the Playwright report and traces are uploaded as the `playwright-report` artifact (open a trace with `npx playwright show-trace <trace.zip>`).
+Before opening a pull request, all of these must pass: `schema:check`, `schema:docs:check`, `validate:examples`, `build:libs`, `test:libs`, runtime and editor tests, production builds, `npm run e2e`. CI (`.github/workflows/ci.yml`) runs the same checks on every push to `main` and every pull request, in three jobs: `frontend`, `e2e` and `java` (`mvn -B verify`). When the e2e job fails, the Playwright report and traces are uploaded as the `playwright-report` artifact (open a trace with `npx playwright show-trace <trace.zip>`).
 
 ## 4. Adding or changing a component
 
@@ -170,13 +173,18 @@ Real focus handling and the dark theme are not covered yet (the application shel
 ## 13. Known limits
 
 * The collapsed side menu opens groups in a popup.
-* The reference services keep their data in memory: after restarting the registry, publish the examples again. Logout from the apps is a JSON call (`Accept: application/json`, CSRF header) answered with `{"redirect": …}`: with `csrf().spa()` a form field would need the masked token.
-* The Playwright suite runs in Chromium only and covers two showcase screens.
-* Ajv needs `unsafe-eval` under CSP until validators are precompiled.
+* The reference registry keeps its data in memory unless `lowcode.registry.storage-dir` is set (`npm run stack` sets it to `data/registry`). Logout from the apps is a JSON call (`Accept: application/json`, CSRF header) answered with `{"redirect": …}`: with `csrf().spa()` a form field would need the masked token.
+* The Playwright suite runs in Chromium only.
 * `validate:examples` checks translation keys but not CEL expressions (the runtime test `i18n-examples.spec.ts` does).
 * Component limits that remain (no nested repeaters, no chart zoom, no row selection in the server data table) are listed in the component catalogue, § 3.
 * NG-ZORRO 22's `nz-input` has its own `readonly` input and writes the attribute from it: bind `[readonly]`, never `[readOnly]` (the property binding is overwritten and the field stays editable).
-* Single fields are drawn by `lc-field-control` (`components`), shared by `form` and `input`: a new field type goes there once. `filterBar` keeps its own template (placeholders and the "all" choice differ).
+* Single fields are drawn by `lc-field-control` (`components`), shared by `form`, `input` and `filterBar` (`variant="filter"`: "all" placeholder and choice, switched-off checkboxes mean no filter): a new field type goes there once.
+* `DataClient.request(request, { signal })`: the runtime aborts a GET that a newer one supersedes (and all of them when the screen is left); writes are never aborted. Identical concurrent `query` GETs share one call. A custom `DataClient` should honour the signal.
+* The expression engine caches compiled CEL and parsed templates (2000 entries, least recently used evicted): evaluating the same text again costs no parsing.
+* NG-ZORRO parts with fixed or too light colours (tag text, select placeholders and arrows, waiting steps, out-of-month calendar days) are overridden by a stylesheet the theme bridge adds (`NZ_CONTRAST_CSS`); tag text colours are computed from the theme to reach 4.5:1. Group titles of the side menu get `tabindex`, `role` and `aria-expanded` after every render, and `nz-tree`'s hidden input and icons leave the accessibility tree: NG-ZORRO does not provide them.
+* The editor bootstraps lazily: `main.ts` imports either the editor app or the preview app (`?anteprima`), so the iframe does not download the editor UI.
+* Steps `validate`, `print` and `export` live in `core/action-engine.ts`; standalone fields register their check with `ScreenRuntime.registerValidator(group, check)` while they are on screen.
+* `DefinitionSource.messages(locale)` returns a catalogue (key → text): the demo reads `examples/i18n`, the registry the published `messages` document. A new language needs its catalogue in both places (`publish:examples` publishes the files).
 * Layout containers (`box`, `grid`, `border`) read the position of each child from the child itself (`grow`, `span`, `region`, declared on every node in the schema). Inside them `--lc-input-max: none` lets fields fill the cell; a new container that holds nodes must also be added to `seedFilters` in `ScreenRuntime` (so that the state of nested fields exists before the first load) and to `LAYOUT_CONTAINERS` in the editor's `schema-info.ts`.
 * After `npm run build:libs` restart the dev servers: they do not reload `dist`, and one left running while `dist` is rebuilt fails with "module 'components' could not be found" until restarted.
 * `provideNzIcons` is not cumulative: a second call replaces the icons registered by `provideLowcodeComponents`. An app that registers its own icons must repeat `Object.values(ICON_TYPES).map((i) => i.icon)` (the editor does).

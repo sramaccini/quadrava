@@ -17,6 +17,9 @@ Regole comuni a tutti i componenti, valide anche per i nuovi:
 | `section` | Riquadro con titolo che raggruppa altri nodi, uno sotto l'altro o affiancati (`layout: "row"`). |
 | `box`, `grid`, `border` | Contenitori di layout senza riquadro: riga o colonna, griglia a colonne, regioni nord/sud/ovest/est/centro (§ 2.21). |
 | `input` | Un campo a sé (casella di testo, elenco a discesa, data…) legato allo stato della schermata (§ 2.20). |
+| `image`, `link` | Immagine con testo alternativo; collegamento a una schermata o a un indirizzo https (§ 2.23). |
+| `progress` | Barra o cerchio di avanzamento (§ 2.23). |
+| `timeline`, `kanban` | Eventi in ordine di data; schede in colonne da spostare (§ 2.24). |
 | `text` | Testo semplice o titolo (`style: heading`). |
 | `button` | Pulsante che esegue una sequenza di passi (`onClick`). |
 | `filterBar` | Barra di filtri che scrive nello stato della schermata (`bind`). |
@@ -34,12 +37,12 @@ Regole comuni a tutti i componenti, valide anche per i nuovi:
 | `chart` | Grafici a barre, linee e torta. |
 | Campi | `text`, `number`, `select`, `checkbox`, `date`, `textarea`, `datetime`, `radio`, `switch`, `multiselect`, `lookup`, `file`, `repeater`. |
 | Formati di cella | `text`, `number`, `currency`, `percent`, `date`, `datetime`, `boolean`, `badge`. |
-| Passi | `set`, `call`, `refresh`, `navigate`, `toast`, `confirm`, `dialog`. |
-| Guscio | Barra laterale (`lc-sidebar`), menu utente (`lc-user-menu`), barra superiore responsive. |
+| Passi | `set`, `call`, `refresh`, `navigate`, `toast`, `confirm`, `dialog`, `validate`, `print`, `export` (§ 2.22). |
+| Guscio | Barra laterale (`lc-sidebar`, con ricerca, contatori e tastiera: § 2.25), menu utente (`lc-user-menu`), barra superiore responsive. |
 
 ## 2. Aggiunti nell'ottobre 2026
 
-Realizzati in quest'ordine, uno per commit, ognuno con test (schema, componente e vetrina) e un esempio nella vetrina della demo: «Tabelle avanzate» (1–5), «Campi e form» (6–11), «Schede, dettaglio e messaggi» (12), «Cruscotto» (13, 17), «Procedure e viste» (14–16), «Datatable» (18, 19), «Campi a sé» (20), «Contenitori di layout» (21).
+Realizzati in quest'ordine, uno per commit, ognuno con test (schema, componente e vetrina) e un esempio nella vetrina della demo: «Tabelle avanzate» (1–5), «Campi e form» (6–11), «Schede, dettaglio e messaggi» (12), «Cruscotto» (13, 17), «Procedure e viste» (14–16), «Datatable» (18, 19), «Campi a sé» (20, 22), «Contenitori di layout» (21, 22), «Attività e avanzamento» (23, 24); il menu (25) si vede in tutte.
 
 | # | Componente | Area | Stato |
 | --- | --- | --- | --- |
@@ -63,7 +66,11 @@ Realizzati in quest'ordine, uno per commit, ognuno con test (schema, componente 
 | 18 | Datatable con colonne filtrabili, ordinabili e raggruppabili | tabella | realizzato |
 | 19 | Datatable pilotata dal servizio, per tabelle molto grandi | tabella | realizzato |
 | 20 | Campi a sé (`input`) e sezione a riga | campi | realizzato |
-| 21 | Contenitori di layout: box, griglia, border | layout | realizzato |
+| 21 | Contenitori di layout: box, griglia, border (con lati ridimensionabili) | layout | realizzato |
+| 22 | Passi validate, print ed export (CSV) | azioni | realizzato |
+| 23 | Immagine, collegamento, avanzamento | visualizzazione | realizzato |
+| 24 | Timeline e kanban | visualizzazione | realizzato |
+| 25 | Menu: ricerca, contatori, tastiera | guscio | realizzato |
 
 ### 2.1 Ordinamento delle colonne
 
@@ -340,7 +347,7 @@ Tre contenitori che decidono solo **dove** stanno i figli (nessun bordo né sfon
 
 **Griglia** (`grid`): `columns` colonne uguali (2 se assente, fino a 12); i figli ne occupano `span` (mai più delle colonne). Sotto i 600px di larghezza del contenitore diventa una colonna sola.
 
-**Border** (`border`): ogni figlio dichiara la `region`: `north` e `south` su tutta la larghezza, `west` ed `east` ai lati (`westWidth`, `eastWidth` in px, 240 se assenti), `center` (predefinita) prende il resto. Più figli nella stessa regione stanno uno sotto l'altro; una regione vuota non occupa spazio. Sotto i 768px di larghezza le regioni si impilano: nord, ovest, centro, est, sud.
+**Border** (`border`): ogni figlio dichiara la `region`: `north` e `south` su tutta la larghezza, `west` ed `east` ai lati (`westWidth`, `eastWidth` in px, 240 se assenti), `center` (predefinita) prende il resto. Con `resizable: true` tra il centro e i lati ci sono divisori da trascinare (anche al tocco) o da spostare con le frecce (16px, con Maiusc 64px; Home e Fine ai limiti), tra 120 e 600px; sono accessibili (`role="separator"` con il valore corrente). Più figli nella stessa regione stanno uno sotto l'altro; una regione vuota non occupa spazio. Sotto i 768px di larghezza le regioni si impilano: nord, ovest, centro, est, sud.
 
 ```json
 { "type": "border", "westWidth": 220, "components": [
@@ -350,6 +357,49 @@ Tre contenitori che decidono solo **dove** stanno i figli (nessun bordo né sfon
 ```
 
 Regole comuni: un figlio nascosto (`visibleIf`) non occupa spazio; nei contenitori i campi riempiono la cella (fuori restano larghi al massimo 560px); le sezioni affiancate si allungano fino all'altezza della riga. I contenitori si annidano liberamente (un box dentro una regione del border, una griglia in una sezione…). Nell'editor sono nel gruppo «Struttura e testi»; il border nasce con tre aree d'esempio (nord, ovest, centro).
+
+### 2.22 Passi validate, print ed export
+
+```json
+"onClick": [
+  { "validate": "ordine" },
+  { "call": "salva", "args": { "nome": "{{ state.nome }}" } },
+  { "export": { "source": "fatture", "fileName": "fatture",
+                "columns": [ { "field": "numero", "label": "{{ t('comune.numero', 'Numero') }}" }, { "field": "importo" } ] } },
+  { "print": true }
+]
+```
+
+- **validate**: controlla i campi a sé del gruppo indicato (`group` dei nodi `input`, `default` se non indicato; `*` = tutti quelli sullo schermo). Ogni campo mostra i propri errori; se uno non è valido compare l'avviso «Controlla i campi evidenziati» e la sequenza si ferma. Un campo nascosto non conta.
+- **print**: apre la stampa del browser; il foglio di stampa del runtime nasconde menu, barra superiore, pulsanti e paginazione.
+- **export**: esegue il data source (GET; `args` come in `call`) e scarica le righe (un elenco, oppure `items` di una risposta a pagine) in CSV per Excel in italiano: punto e virgola, righe CRLF, BOM UTF-8. Le intestazioni passano da `t()`; i valori sono quelli grezzi (numeri non formattati). Le celle che cominciano con `=`, `+`, `-`, `@` (o tabulazione e ritorno a capo) si fanno precedere da un apice: un foglio di calcolo non le esegue come formule. Il nome del file si ripulisce e prende `.csv`.
+
+### 2.23 Immagine, collegamento, avanzamento
+
+- **image**: `src` (relativo, `https://` o `data:image/png|jpeg|gif|webp|svg+xml;base64`; può contenere `{{ }}`), `alt` obbligatorio, `width`/`height` in px, `fit` (`contain` o `cover`). Ogni altro indirizzo (javascript:, http:, `//`, `..`) non si carica: si vede il testo alternativo, come quando l'immagine non si carica. Caricamento differito, nessun `Referer`.
+- **link**: `label` e `screen` (+ `params`) per aprire una schermata dell'applicazione, **oppure** `href`: `https://…` (nuova scheda, `noopener noreferrer`, icona di collegamento esterno) o un percorso relativo (stessa scheda). Lo schema rifiuta gli altri protocolli e la presenza di entrambi.
+- **progress**: `value` e `max` (100 se assente) numeri o espressioni, `label`, `kind` (`line` o `circle`), `tone`. Percentuale arrotondata tra 0 e 100; un valore non numerico mostra «—». Accessibile come `progressbar` con valore corrente.
+
+### 2.24 Timeline e kanban
+
+```json
+{ "type": "timeline", "source": "eventi", "dateField": "data", "labelField": "titolo", "descriptionField": "nota",
+  "toneField": "esito", "tones": { "ok": "success", "ko": "danger" }, "withTime": true }
+
+{ "type": "kanban", "source": "attivita", "columnField": "stato", "titleField": "titolo", "descriptionField": "chi",
+  "columns": [ { "value": "da-fare", "label": "Da fare" }, { "value": "fatto", "label": "Fatto", "tone": "success" } ],
+  "moveIf": "{{ can('attivita.attivita.modifica') }}",
+  "onMove": [ { "call": "sposta", "args": { "id": "{{ row.id }}", "stato": "{{ to }}" } }, { "refresh": "attivita" } ] }
+```
+
+- **timeline**: le righe del data source in ordine di data (`order`: `desc` predefinito, `asc`); una data senza ora vale come giorno locale; le righe senza data valida non si mostrano.
+- **kanban**: colonne nell'ordine di `columns`, con conteggio; le righe con un valore che non è una colonna non si mostrano. Con `onMove` una scheda si sposta trascinandola in un'altra colonna oppure, da tastiera, con il pulsante «Sposta «…» in…» (menu delle altre colonne). I passi vedono `row`, `from` e `to`; la scheda cambia colonna quando i dati ricaricati lo dicono (lo spostamento vero è del servizio). `moveIf` decide per ogni riga, fail-closed.
+
+### 2.25 Menu: ricerca, contatori, tastiera
+
+- **Ricerca**: casella in cima al menu (barra espansa). Trova le voci del caso d'uso il cui nome, o quello del gruppo, contiene il testo, senza badare a maiuscole e accenti; ogni risultato mostra il percorso. Invio apre il primo, Freccia giù passa ai risultati, Esc pulisce.
+- **Contatori**: nella navigazione `"badges": { "url": "/api/menu/contatori", "refreshSeconds": 60 }`. Il servizio (GET relativo, attraverso il BFF) risponde `{ "<id della voce>": numero }`; si tengono gli interi positivi, oltre 99 «99+», a barra compressa un pallino. Si rileggono a intervalli (solo con la pagina visibile) e al ritorno sulla pagina. I lettori di schermo leggono «Bozze, 3 da gestire».
+- **Tastiera**: frecce su e giù tra voci e gruppi visibili, Home e Fine, destra apre un gruppo (o entra nella prima voce), sinistra lo chiude (o torna al gruppo), Invio e Spazio sui gruppi. I titoli dei gruppi si raggiungono con Tab e dicono se sono aperti (`aria-expanded`).
 
 ## 3. Note di realizzazione e limiti noti
 
@@ -361,8 +411,11 @@ Regole comuni: un figlio nascosto (`visibleIf`) non occupa spazio; nei contenito
 - **Datatable.** Lavora sulle righe caricate (provata fino a 50.000 righe nelle funzioni e 20.000 nel componente); oltre, `serverDataTable`.
 - **Datatable lato server.** Niente selezione di righe né righe espandibili; i gruppi aperti non si ricordano tra una visita e l'altra della schermata. Il passo `refresh` su un data source non GET non chiama nulla: avvisa solo i componenti che lo interrogano da sé.
 - **Grafici.** Niente zoom, aree riempite o più di due assi.
-- **Campi a sé.** Gli errori di validazione si mostrano, ma non bloccano i pulsanti della schermata (per un invio con controllo dei campi c'è il form); come sempre il controllo vero spetta al servizio.
-- **Contenitori di layout.** Larghezze di ovest ed est fisse (niente divisori trascinabili), niente celle della griglia su più righe, soglie per impilare fisse (600px griglia, 768px border).
+- **Campi a sé.** Per bloccare un'azione finché i campi non sono validi si usa il passo `validate` (§ 2.22); come sempre il controllo vero spetta al servizio.
+- **Contenitori di layout.** Le larghezze scelte con i divisori valgono per la visita della schermata (non si ricordano); niente celle della griglia su più righe; soglie per impilare fisse (600px griglia, 768px border).
+- **Kanban.** Niente riordino delle schede dentro una colonna né limiti per colonna; lo spostamento aspetta la risposta del servizio (nessun aggiornamento ottimistico).
+- **Esportazione.** Le righe sono quelle che il data source restituisce in una chiamata: per archivi a pagine il servizio deve offrire una lettura completa (o un'esportazione propria).
+- **Menu.** A barra compressa con il gruppo chiuso i contatori non compaiono sul titolo del gruppo.
 
 ### 3.1 Limiti superati (ottobre 2026)
 

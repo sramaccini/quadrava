@@ -102,13 +102,15 @@ Key design choices:
 }
 ```
 
-**Components** (node `type`): `section`, `box`, `grid`, `border`, `text`, `button`, `input`, `filterBar`, `table`, `dataTable`, `serverDataTable`, `form`, `tabs`, `detail`, `alert`, `stats`, `wizard`, `tree`, `calendar`, `chart`.
+**Components** (node `type`): `section`, `box`, `grid`, `border`, `text`, `image`, `link`, `button`, `input`, `filterBar`, `table`, `dataTable`, `serverDataTable`, `form`, `tabs`, `detail`, `alert`, `stats`, `progress`, `timeline`, `kanban`, `wizard`, `tree`, `calendar`, `chart`. Every property of every component is listed in [docs/riferimento-schema.md](docs/riferimento-schema.md) (Italian, generated from the schema).
 
-**Layout containers** place their children without drawing a frame: `box` puts them in a row (wrapping) or a column, with alignment, distribution, gap and a `grow` share per child; `grid` has 1–12 equal columns, each child taking `span` of them, and becomes a single column below 600 px; `border` is a border layout where each child picks a `region` (`north`, `south`, `west`, `east`, `center`), with fixed-width sides, stacking below 768 px. The position properties live on the children, like the constraints of classic layout managers. `section` is the framed group with a title (`layout: "row"` puts its children side by side).
+**Display components**: `image` (mandatory alternative text; only relative, `https` or `data:image` addresses), `link` (to a screen with parameters, or to an `https` address opened in a new tab without access to the opener), `progress` (bar or circle), `timeline` (events of a data source ordered by date, coloured by a field) and `kanban` (cards in columns by a field, moved by dragging or with a keyboard-accessible *Sposta in* menu, which runs the `onMove` steps with `row`, `from` and `to`; `moveIf` decides which cards can move).
 
-**Standalone fields** (`input`) are single fields outside forms (text box, dropdown, date, switch, lookup…) bound to the screen state (`bind`, default `state.<name>`), with a `default` value and `onChange` steps; data sources depending on that state reload when it changes. Forms and filters support `text`, `number`, `select`, `checkbox`, `date`, `textarea`, `datetime`, `radio`, `switch`, `multiselect`, `lookup` (search on a data source, which also resolves the label of an unloaded value through `{{ lookupKey }}`), `file` (uploaded as multipart up to 100 MB, or base64) and `repeater` (repeatable rows, which may contain lookups and files) fields, required fields, CEL validation rules, conditional visibility / read-only state and a column grid. Tables add sorting (in page or server side), row selection with bulk actions, row-action menus, expandable detail rows, clickable cells and a totals row; the data table filters, sorts and groups the loaded rows (tens of thousands of rows), and the server data table offers the same interface for archives of any size by sending a `{{ request }}` (page, sort, filters, grouping) to the service, which returns pages, groups with counts and totals. Charts draw grouped or stacked bars, lines and doughnuts, with an optional right axis and combined bar/line series; the tree view is fully keyboard operable. Table columns and detail fields support cell formats (`number`, `currency`, `percent`, `date`, `datetime`, `boolean`, `badge`). The component catalogue ([docs/catalogo-componenti.md](docs/catalogo-componenti.md), in Italian) lists what exists and specifies what is being built.
+**Layout containers** place their children without drawing a frame: `box` puts them in a row (wrapping) or a column, with alignment, distribution, gap and a `grow` share per child; `grid` has 1–12 equal columns, each child taking `span` of them, and becomes a single column below 600 px; `border` is a border layout where each child picks a `region` (`north`, `south`, `west`, `east`, `center`), with fixed-width sides (draggable with the mouse or the arrow keys when `resizable`), stacking below 768 px. The position properties live on the children, like the constraints of classic layout managers. `section` is the framed group with a title (`layout: "row"` puts its children side by side).
 
-**Actions** are sequences of steps: `set` (screen state), `call` (a data source, with `onError`), `refresh`, `navigate`, `toast`, `confirm` (stops the sequence silently if the user cancels), `dialog` (a modal form whose submit steps see `form`; cancelling stops the sequence). GET data sources reload by themselves only when their resolved request (URL and parameters) changes; `refresh` on a non-GET source only notifies the components that query it themselves (such as the server data table).
+**Standalone fields** (`input`) are single fields outside forms (text box, dropdown, date, switch, lookup…) bound to the screen state (`bind`, default `state.<name>`), with a `default` value, `onChange` steps and a validation `group` checked by the `validate` step; data sources depending on that state reload when it changes. Forms and filters support `text`, `number`, `select`, `checkbox`, `date`, `textarea`, `datetime`, `radio`, `switch`, `multiselect`, `lookup` (search on a data source, which also resolves the label of an unloaded value through `{{ lookupKey }}`), `file` (uploaded as multipart up to 100 MB, or base64) and `repeater` (repeatable rows, which may contain lookups and files) fields, required fields, CEL validation rules, conditional visibility / read-only state and a column grid. Tables add sorting (in page or server side), row selection with bulk actions, row-action menus, expandable detail rows, clickable cells and a totals row; the data table filters, sorts and groups the loaded rows (tens of thousands of rows), and the server data table offers the same interface for archives of any size by sending a `{{ request }}` (page, sort, filters, grouping) to the service, which returns pages, groups with counts and totals. Charts draw grouped or stacked bars, lines and doughnuts, with an optional right axis and combined bar/line series; the tree view is fully keyboard operable. Table columns and detail fields support cell formats (`number`, `currency`, `percent`, `date`, `datetime`, `boolean`, `badge`). The component catalogue ([docs/catalogo-componenti.md](docs/catalogo-componenti.md), in Italian) lists what exists and specifies what is being built.
+
+**Actions** are sequences of steps: `set` (screen state), `call` (a data source, with `onError`), `refresh`, `navigate`, `toast`, `confirm` (stops the sequence silently if the user cancels), `dialog` (a modal form whose submit steps see `form`; cancelling stops the sequence), `validate` (checks the standalone fields of a group, shows their errors and stops the sequence if one is invalid), `print` (the browser print dialog; the print stylesheet hides menu, header and buttons) and `export` (downloads the rows of a GET data source as CSV: semicolon separator and UTF-8 BOM for Excel, cells starting with `=`, `+`, `-` or `@` neutralised against formula injection). GET data sources reload by themselves only when their resolved request (URL and parameters) changes; `refresh` on a non-GET source only notifies the components that query it themselves (such as the server data table).
 
 **Expressions** are written in [CEL](https://github.com/google/cel-spec) inside `{{ ... }}` and see these variables: `user`, `state`, `params`, `row`, `form`, `value`, and the function `can('domain.resource.action')`. Visibility (`visibleIf`, `hiddenIf`), read-only (`readOnlyIf`), enablement (`enabledIf`) and permissions (`requires`) all use them.
 
@@ -120,11 +122,11 @@ A theme is a document of **design tokens only** (colours, typography, radius, de
 
 ### Navigation
 
-A navigation document lists **use cases** (functional areas), each with a menu of up to three levels (group → subgroup → item). Items point to a screen with optional parameters and may carry `requires` (a permission) and `visibleIf`. Groups and use cases with no visible items disappear. The platform has no built-in use cases; those in the examples are only examples.
+A navigation document lists **use cases** (functional areas), each with a menu of up to three levels (group → subgroup → item). Items point to a screen with optional parameters and may carry `requires` (a permission) and `visibleIf`. Groups and use cases with no visible items disappear. The platform has no built-in use cases; those in the examples are only examples. An optional `badges.url` (a relative GET returning `{ "<item id>": number }`) shows counters next to the items, refreshed periodically and when the page becomes visible again. The side menu has a search box (case- and accent-insensitive, also by group name) and full keyboard navigation (arrows, Home/End, left/right to close and open groups; group titles are focusable and announce whether they are open).
 
 ### Texts, tooltips and languages
 
-Every text is a string that may contain `{{ … }}` expressions, and every component (and every action, field and column) accepts an optional `tooltip` (plain text, never HTML). Translations live in **catalogues**, one flat JSON file per language (`examples/i18n/it.json`, `en.json`), and a screen refers to them with `t('key', 'fallback text', {params})`:
+Every text is a string that may contain `{{ … }}` expressions, and every component (and every action, field and column) accepts an optional `tooltip` (plain text, never HTML). Translations live in **catalogues**, one per language: flat JSON files in the demo (`examples/i18n/it.json`, `en.json`) and `messages` documents in the registry (versioned, reviewed and published like screens; the runtime loads them from the same source as the definitions). A screen refers to them with `t('key', 'fallback text', {params})`:
 
 ```json
 { "type": "button", "label": "{{ t('fatture.nuova', 'Nuova fattura') }}", "tooltip": "{{ t('fatture.nuova_aiuto', 'Crea una fattura') }}" }
@@ -196,11 +198,21 @@ cd frontend
 npm run start:editor         # builds the libraries, copies the examples, serves on http://localhost:4201
 ```
 
-Open an example (*Apri esempio*) or start a new screen. The palette adds components (click, or drag into the outline); the outline selects, reorders, duplicates, cuts and pastes nodes; the property panel is generated from `screen.schema.json`, so columns, form fields, actions and steps are edited item by item; the *Data source* tab defines the services and the sample data the preview returns; the *Testi* tab lists every user-facing text, turns plain texts into translation keys with one click, edits the Italian and English translations (applied to the preview at once) and exports them for the catalogues. The preview is the real `lc-screen` in an isolated iframe (the same app started with `?anteprima`, talking to the editor through a small postMessage protocol) with fake ports: nothing leaves the browser, permissions can be switched off, and Alt+click on a component selects it. Problems (schema, CEL expressions, duplicate ids, missing data sources) are listed at the bottom; the draft is saved in the browser; *Esporta* downloads the JSON. The *Navigazione* mode edits `navigation.json` the same way (outline of use cases, groups and items; schema-driven fields) and previews the real side menu with a simulated profile: switch permissions off to see what a user without them gets. The *Tema* mode edits a theme's tokens (with colour pickers) and previews the screen and menu being edited with that theme, applied to the preview only. The *Registro* panel saves the open document as a new immutable version, lists its history with the environments it is published to, reopens a version and publishes it. Details, shortcuts and limits: [docs/editor.md](docs/editor.md) (Italian).
+Open an example (*Apri esempio*) or start a new screen. The palette adds components (click, or drag into the outline); the outline selects, reorders, duplicates, cuts and pastes nodes; the property panel is generated from `screen.schema.json`, so columns, form fields, actions and steps are edited item by item; the *Data source* tab defines the services and the sample data the preview returns; the *Testi* tab lists every user-facing text, turns plain texts into translation keys with one click, edits the Italian and English translations (applied to the preview at once), exports them, or saves them to the registry (merged into the latest catalogue version) and publishes them. Inside `{{ }}` the property panel completes variables and functions while typing (arrows, Enter or Tab, Escape). The preview is the real `lc-screen` in an isolated iframe (the same app started with `?anteprima`, talking to the editor through a small postMessage protocol) with fake ports: nothing leaves the browser, permissions can be switched off, and Alt+click on a component selects it. Components can be dragged from the palette straight onto the preview (before, after or inside the component under the pointer). With *Dati veri* the preview reads from the real services (editor behind the BFF); writes stay blocked. Problems (schema, CEL expressions, duplicate ids, missing data sources) are listed at the bottom; the draft is saved in the browser; *Esporta* downloads the JSON. The *Navigazione* mode edits `navigation.json` the same way (outline of use cases, groups and items; schema-driven fields) and previews the real side menu with a simulated profile: switch permissions off to see what a user without them gets. The *Tema* mode edits a theme's tokens (with colour pickers) and previews the screen and menu being edited with that theme, applied to the preview only. The *Registro* panel saves the open document as a new immutable version (warning when someone else saved in the meantime, and listing the registry validation errors point by point), lists its history with the review state and the environments it is published to, compares a version with the open document, requests a review, approves or rejects it (reviewers only, never the author), reopens a version and publishes it (protected environments accept approved versions only). Details, shortcuts and limits: [docs/editor.md](docs/editor.md) (Italian).
 
 ## Run the full stack
 
-Prerequisites: Node.js 22.22.3+, JDK 21, Maven 3.9+, Docker.
+Prerequisites: Node.js 24, JDK 21, Maven 3.9+, Docker.
+
+**One command:**
+
+```bash
+cd frontend && npm run stack
+```
+
+`tools/stack.mjs` starts Keycloak in Docker, builds the Java modules when their jars are missing (`-- --ricompila` forces it), starts registry (file storage in `data/registry`), authorization, telemetry, BFF and the demo back end waiting for each to answer, publishes the examples with a real user, then serves the runtime (http://localhost:4200) and the editor (http://localhost:4201) behind the BFF (`-- --solo-servizi` skips them). Logs go to `.stack/logs/`; Ctrl+C stops everything except Keycloak (`cd idp && docker compose down`).
+
+**Step by step:**
 
 1. Identity provider: `cd idp && docker compose up` (console at http://localhost:8180, user `admin`, password `admin`).
 2. Reference implementation: `cd reference && mvn verify`, then `mvn -pl <module> spring-boot:run` for each module (or `java -jar <module>/target/*.jar`). Ports: bff 8080, registry 8081, authz 8082, telemetry 8083.
@@ -217,12 +229,12 @@ Prerequisites: Node.js 22.22.3+, JDK 21, Maven 3.9+, Docker.
 ```bash
 cd reference && mvn -q -pl registry -am package -DskipTests
 java -jar registry/target/lowcode-registry-0.1.0-SNAPSHOT.jar --spring.profiles.active=senza-auth
-cd frontend && npm run publish:examples      # every screen, the navigation and every theme, published in "sviluppo"
+cd frontend && npm run publish:examples      # every screen, the navigation, every theme and catalogue, published in "sviluppo"
 npm run start:runtime:registro               # port 4200: definitions from the registry
 npm run start:editor:registro                # port 4201: Registro panel → save, publish → reload the runtime
 ```
 
-The `senza-auth` profile logs a warning at start-up and must never be used outside a developer's machine.
+The `senza-auth` profile logs a warning at start-up and must never be used outside a developer's machine. Add `--lowcode.registry.storage-dir=<folder>` to keep the registry data across restarts.
 
 Development users in Keycloak: `operatore`, `responsabile`, `amministratore` (password equal to the user name). For local development only.
 
@@ -233,17 +245,20 @@ cd frontend
 npm run test:libs                     # schema, expressions, core, components, services
 npx ng test runtime --watch=false     # end-to-end demo tests (needs `npm run demo:prepare` once)
 npx ng test editor --watch=false      # visual editor
-npm run schema:check                  # generated schema constants are in sync
+npm run schema:check                  # generated schema constants and precompiled validators are in sync
+npm run schema:docs:check             # docs/riferimento-schema.md is in sync (npm run schema:docs regenerates it)
 npm run validate:examples             # examples are valid
 npx playwright install chromium       # once: the browser used by the end-to-end tests
 npm run e2e                           # Playwright end-to-end tests in a real browser (needs `npm run demo:prepare`)
+npm run conformance:registry -- --user operatore --password operatore --reviewer-user responsabile --reviewer-password responsabile
+                                      # conformance kit: checks a registry (reference or customer) against registry.yaml
 ```
 
 `npm run e2e` starts the demo itself (`ng serve runtime` on port 4300, override with `E2E_PORT`; outside CI a server already running on that port is reused) and runs the suites in `frontend/e2e/` against the in-browser fake back end.
 
 Every push to `main` and every pull request runs [`.github/workflows/ci.yml`](.github/workflows/ci.yml) on GitHub Actions: the front-end job (`schema:check`, `validate:examples`, `build:libs`, the tests of every project, the production builds of runtime and editor), the end-to-end job (Playwright in Chromium; report uploaded as an artifact when it fails) and the Java job (`mvn -B verify`).
 
-At the time of writing there are **463 automated tests**: schema 68, expressions 39, core 61, components 141, services 24, runtime 74, editor 56. The Java modules add 20 (`mvn verify`: authz 4, bff 8, registry 5, telemetry 3). They run in jsdom, so layout, real focus handling and pixel-level rendering are **not** covered there; see the development guide for the helpers that make NG-ZORRO overlays testable. A first Playwright suite (4 tests) checks in a real browser what jsdom cannot see: the standalone fields showcase (the *Tipo* select filters the table, *Urgente* makes the read-only notes editable) and the border layout at 1400 px and 375 px.
+At the time of writing there are **512 automated tests**: schema 71, expressions 42, core 71, components 155, services 27, runtime 78, editor 68. The Java modules add 33 (`mvn verify`: authz 4, bff 8, registry 18 — including the parity of the server-side schema validation with Ajv on every example and the coherence between controller and contract —, telemetry 3). They run in jsdom, so layout, real focus handling and pixel-level rendering are **not** covered there; see the development guide for the helpers that make NG-ZORRO overlays testable. The Playwright suite (16 tests) checks in a real browser what jsdom cannot see: the standalone fields showcase, the border layout at 1400 px and 375 px, and **accessibility** with axe-core (WCAG 2.1 A/AA, no serious or critical violation) on all twelve showcase screens. The registry conformance kit passes 17 of 17 checks against the reference registry.
 
 ## Security model
 
@@ -255,25 +270,31 @@ At the time of writing there are **463 automated tests**: schema 68, expressions
 * **Authorization is enforced by the back end.** The front end hides and disables for usability; permission versions (`X-Permissions-Version`) make the client refresh when permissions change.
 * **Sensitive fields** marked `sensitive` never reach traces or logs; the ingestion endpoint applies a second layer of redaction.
 
-Open point: Ajv generates validators with `new Function`, so browser-side validation needs `unsafe-eval` in the Content-Security-Policy. Before production, precompile the validators (Ajv standalone) or validate at publication time in the registry.
+* **Definitions are validated twice**: in the browser by validators precompiled at build time (Ajv standalone: no `new Function`, so the Content-Security-Policy does not need `unsafe-eval`) and by the registry on every save, against the same JSON Schemas.
+* **URLs in components** are restricted: images accept relative, `https` and `data:image` addresses only; links accept screens, relative paths and `https` (opened with `noopener noreferrer`); never `javascript:` or other protocols.
+* **CSV exports** neutralise cells that a spreadsheet would run as formulas.
+* **The editor preview with live data** only reads (GET, same origin); writes are blocked.
+
+Recommended Content-Security-Policy for the runtime and the editor served behind the BFF: `default-src 'self'; img-src 'self' https: data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; frame-ancestors 'self'` (`unsafe-inline` styles are needed by Angular's inlined critical CSS and NG-ZORRO).
 
 ## Status and roadmap
 
-**Verified:** the three JSON Schemas, the CEL evaluator, the interpreter, the NG-ZORRO component catalogue, the services library, the runtime demo and the visual editor, with the automated tests above; the build of every app and library; the validity of the three OpenAPI contracts and of the examples. End to end in a browser, with Keycloak 26.8 in Docker and every reference service started (October 13, 2026): login through the BFF, return to the runtime, navigation/theme/screens from the registry, permissions from the authorization service, data and a write (with CSRF) through the BFF to the demo back end, logout that ends the Keycloak session, login as another user; in the editor behind the BFF a change saved and published in the registry appears in the runtime. Also without Keycloak, with the registry's `senza-auth` profile.
+**Verified:** the four JSON Schemas (screens, navigation, themes, catalogues), the CEL evaluator, the interpreter, the NG-ZORRO component catalogue, the services library, the runtime and the visual editor, with the automated tests above; the build of every app and library; the validity of the three OpenAPI contracts and of the examples. End to end in a browser with Keycloak 26.8 in Docker and every reference service started by `npm run stack` (October 13, 2026): login through the BFF, navigation, themes, screens and catalogues from the registry, permissions from the authorization service, data, writes with CSRF and menu counters through the BFF, logout that ends the Keycloak session; in the editor behind the BFF saving, review (request, approval, protected environment), comparison, publishing and the live-data preview (writes blocked). Also without Keycloak, with the registry's `senza-auth` profile and file storage.
 
-**Not verified:**
+**Not verified / known limits:**
 
-* The browser end-to-end suite is minimal (two showcase screens, Chromium only); the conformance test kit for customer back ends does not exist yet.
-* The reference services keep their data in memory: restarting the registry empties it (publish the examples again).
+* The conformance kit covers the registry; the authorization and telemetry contracts do not have one yet.
+* The end-to-end suite runs in Chromium only; automatic accessibility checks find only part of the problems (keyboard and screen-reader checks by hand are still needed).
+* Expressions are not checked by the registry (the editor and the runtime do it, fail-closed); a real implementation can add a server-side CEL check.
+* Component limits are listed in the catalogue (§ 3), editor limits in [docs/editor.md](docs/editor.md).
 
 **Next steps:**
 
-* Visual editor: a review flow before publication (the contract's `in-revisione` state), completion while typing expressions.
-* The October 2026 component batch is complete, including standalone fields and layout containers (see the catalogue for the specification and the known limits of each component).
-* Menu: arrow-key navigation, badges, search.
-* The full list of gaps and proposed optimizations (wider browser end-to-end coverage, validation at publication time, lazy-loaded components, request cancellation, expression cache) is in [HANDOFF.md](HANDOFF.md) § 8b (Italian).
-* Check expressions in `validate:examples` too.
-* Language catalogues loaded from a service (today they are files shipped with the app).
+* Conformance kits for the authorization and telemetry contracts.
+* Editor: resizing and moving components directly in the preview (today the preview accepts drops from the palette), version comparison between two registry versions (today: a version against the open document).
+* Menu counters on group titles when the group is closed.
+* Firefox and WebKit in the end-to-end suite.
+* The full list of what was done and what remains is in [HANDOFF.md](HANDOFF.md) (Italian).
 
 ## License
 
