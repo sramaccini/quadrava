@@ -23,7 +23,8 @@
     "demo-api": "node tools/demo-api.mjs",
     "stack": "node tools/stack.mjs",
     "schema:docs": "node tools/schema-docs.mjs",
-    "schema:docs:check": "node tools/schema-docs.mjs --check"
+    "schema:docs:check": "node tools/schema-docs.mjs --check",
+    "conformance:registry": "node tools/conformance-registry.mjs"
   },
   "private": true,
   "engines": {
