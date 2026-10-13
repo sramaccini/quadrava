@@ -38,6 +38,8 @@ export interface PreviewState {
   selectMode: boolean;
   /** Cambia per ricreare la schermata da capo (Ricarica). */
   version: number;
+  /** Letture dai servizi veri (stessa origine) invece dei dati di esempio; le scritture restano bloccate. */
+  liveData: boolean;
 }
 
 /** Riga del registro dell'anteprima. */
@@ -90,6 +92,7 @@ export function previewState(partial: Partial<PreviewState>): PreviewState {
     selectedId: null,
     selectMode: false,
     version: 0,
+    liveData: false,
     ...partial,
   };
 }

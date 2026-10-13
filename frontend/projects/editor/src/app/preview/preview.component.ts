@@ -47,6 +47,8 @@ export class PreviewComponent {
   /** Cambia per ricreare la schermata da capo (pulsante Ricarica, permessi). */
   protected readonly version = signal(0);
   protected readonly grantAll = signal(true);
+  /** Letture dai servizi veri invece dei dati di esempio (le scritture restano bloccate). */
+  protected readonly liveData = signal(false);
   protected readonly width = signal('desktop');
   protected readonly widthOptions = computed(() => Object.keys(WIDTHS).map((value) => ({ value, label: this.i18n.t('ed.preview.' + value) })));
   protected readonly frameWidth = computed(() => WIDTHS[this.width()]);
@@ -75,6 +77,7 @@ export class PreviewComponent {
       selectedId: this.selectedId(),
       selectMode: this.selectMode(),
       version: this.version(),
+      liveData: this.liveData(),
     }),
   );
 
@@ -109,6 +112,11 @@ export class PreviewComponent {
   protected reload(): void {
     this.log.clear();
     this.version.update((v) => v + 1);
+  }
+
+  protected setLiveData(value: boolean): void {
+    this.liveData.set(value);
+    this.reload();
   }
 
   protected setGrantAll(value: boolean): void {

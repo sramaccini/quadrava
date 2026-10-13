@@ -4,6 +4,10 @@
     <nz-switch nzSize="small" [ngModel]="grantAll()" (ngModelChange)="setGrantAll($event)" />
     {{ i18n.t('ed.preview.grantAll') }}
   </label>
+  <label class="switch" [attr.title]="i18n.t('ed.preview.liveDataHint')">
+    <nz-switch nzSize="small" [ngModel]="liveData()" (ngModelChange)="setLiveData($event)" />
+    {{ i18n.t('ed.preview.liveData') }}
+  </label>
   <button nz-button nzSize="small" type="button" (click)="showParams.set(!showParams())" [attr.aria-expanded]="showParams()">{{ i18n.t('ed.preview.params') }}</button>
   <button nz-button nzSize="small" type="button" (click)="showLog.set(!showLog())" [attr.aria-expanded]="showLog()">
     {{ i18n.t('ed.preview.log') }} ({{ log.events().length }})

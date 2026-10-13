@@ -70,11 +70,44 @@ export class PreviewDataClient implements DataClient {
   async request(request: DataRequest): Promise<unknown> {
     const state = this.channel.state();
     const name = matchSource((state?.screen?.dataSources ?? {}) as Record<string, unknown>, request);
+    if (state?.liveData) return this.live(request, name);
     this.channel.event({ kind: 'request', text: `${request.method} ${request.url}${name ? ` → ${name}` : ''}` });
     const sample = name ? state?.samples[name] : undefined;
     // Senza dati di esempio: elenco vuoto per le letture, oggetto vuoto per le scritture.
     return structuredClone(sample ?? (request.method === 'GET' ? [] : {}));
   }
+
+  private async live(request: DataRequest, name: string | null): Promise<unknown> {
+    const label = `${request.method} ${request.url}${name ? ` → ${name}` : ''}`;
+    let result: { status: number; body: unknown };
+    try {
+      result = await liveRequest(request);
+    } catch {
+      result = { status: 0, body: null };
+    }
+    const outcome = result.status === -1 ? 'bloccata (dati veri: solo letture)' : result.status === 0 ? 'servizio non raggiungibile' : `HTTP ${result.status}`;
+    this.channel.event({ kind: 'request', text: `${label} · ${outcome}` });
+    if (result.status < 200 || result.status >= 300) throw new Error(result.status === -1 ? '403' : String(result.status));
+    return result.body;
+  }
+}
+
+/**
+ * Lettura dai servizi veri: solo GET, solo percorsi relativi della stessa origine (l'editor dietro il BFF, che aggiunge
+ * il token). Le scritture si bloccano: provare una schermata non deve cambiare i dati veri.
+ */
+async function liveRequest(request: DataRequest): Promise<{ status: number; body: unknown }> {
+  if (request.method !== 'GET') return { status: -1, body: null };
+  const path = request.url.split(/[?#]/)[0];
+  if (!/^\/(?!\/)/.test(request.url) || path.split('/').includes('..')) return { status: 0, body: null };
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(request.query ?? {})) {
+    if (value === null || value === undefined) continue;
+    for (const item of Array.isArray(value) ? value : [value]) params.append(key, String(item));
+  }
+  const query = params.toString();
+  const response = await fetch(query ? `${request.url}?${query}` : request.url, { credentials: 'same-origin', headers: { Accept: 'application/json' } });
+  return { status: response.status, body: response.ok ? await response.json().catch(() => null) : null };
 }
 
 @Injectable({ providedIn: 'root' })
