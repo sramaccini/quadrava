@@ -17,3 +17,12 @@ management:
     web:
       exposure:
         include: health
+
+lowcode:
+  registry:
+    # Cartella dell'archivio su file (vuota = in memoria, si perde al riavvio). Per esempio data/registry.
+    storage-dir: ${LOWCODE_REGISTRY_DIR:}
+    # Qui si pubblicano solo versioni approvate.
+    protected-environments: [collaudo, produzione]
+    # Ruoli del realm che possono approvare o respingere (mai l'autore della versione).
+    approver-roles: [responsabile, amministratore]

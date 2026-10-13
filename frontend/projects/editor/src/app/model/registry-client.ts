@@ -2,7 +2,7 @@ import { Injectable, InjectionToken } from '@angular/core';
 import type { Json } from './doc-ops';
 
 /**
- * Client del registro (contracts/registry.yaml 0.2): ogni schermata, la navigazione e ogni tema sono documenti
+ * Client del registro (contracts/registry.yaml 0.3): ogni schermata, la navigazione e ogni tema sono documenti
  * separati, con versioni immutabili e pubblicazioni per ambiente. Le chiamate sono relative all'origine dell'editor,
  * che in produzione è servito dal BFF (sessione nel cookie, niente token nel browser).
  *
@@ -32,11 +32,24 @@ export function csrfToken(cookies: string): string | null {
 
 export type DocumentKind = 'screen' | 'navigation' | 'theme';
 
+/** Stato di revisione di una versione. */
+export type ReviewState = 'bozza' | 'in-revisione' | 'approvata' | 'respinta';
+export type ReviewAction = 'richiedi' | 'approva' | 'respingi';
+
 export interface DocumentVersion {
   hash: string;
   createdAt: string;
   author: string;
-  state?: string;
+  state?: ReviewState;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  reviewNote?: string;
+}
+
+/** Un problema di validazione segnalato dal registro. */
+export interface RegistryIssue {
+  path: string;
+  message: string;
 }
 
 export interface DocumentSummary {
@@ -52,6 +65,10 @@ export class RegistryError extends Error {
   constructor(
     readonly status: number,
     message: string,
+    /** Con 400: i problemi di validazione del documento. */
+    readonly issues: RegistryIssue[] = [],
+    /** Con 412: chi ha salvato l'ultima versione. */
+    readonly latestAuthor: string | null = null,
   ) {
     super(message);
   }
@@ -77,8 +94,17 @@ export class RegistryClient {
     return this.call<DocumentVersion[]>('GET', this.path(appId, kind, id, '/versions'));
   }
 
-  async save(appId: string, kind: DocumentKind, id: string, content: Json): Promise<DocumentVersion> {
-    return this.call<DocumentVersion>('POST', this.path(appId, kind, id, '/versions'), content);
+  /**
+   * Salva una versione. Con `basedOn` (l'hash della versione da cui si è partiti) il registro accetta il salvataggio
+   * solo se nessuno ha salvato nel frattempo; altrimenti RegistryError 412 con l'autore dell'ultima versione.
+   */
+  async save(appId: string, kind: DocumentKind, id: string, content: Json, basedOn?: string | null): Promise<DocumentVersion> {
+    return this.call<DocumentVersion>('POST', this.path(appId, kind, id, '/versions'), content, basedOn ? { 'If-Match': `"${basedOn}"` } : {});
+  }
+
+  /** Revisione: chiedila (bozza o respinta), approva o respingi (solo i revisori, mai l'autore). */
+  async review(appId: string, kind: DocumentKind, id: string, hash: string, action: ReviewAction, note?: string): Promise<DocumentVersion> {
+    return this.call<DocumentVersion>('POST', this.path(appId, kind, id, `/versions/${enc(hash)}/review`), note ? { action, note } : { action });
   }
 
   async version(appId: string, kind: DocumentKind, id: string, hash: string): Promise<Json> {
@@ -89,8 +115,8 @@ export class RegistryClient {
     await this.call<void>('PUT', this.path(appId, kind, id, `/published?env=${enc(env)}`), { hash });
   }
 
-  private async send(method: string, path: string, body?: unknown): Promise<Response> {
-    const headers: Record<string, string> = { Accept: 'application/json' };
+  private async send(method: string, path: string, body?: unknown, extra: Record<string, string> = {}): Promise<Response> {
+    const headers: Record<string, string> = { Accept: 'application/json', ...extra };
     if (body !== undefined) headers['Content-Type'] = 'application/json';
     const token = method === 'GET' ? null : csrfToken(document.cookie);
     if (token) headers['X-XSRF-TOKEN'] = token;
@@ -105,23 +131,32 @@ export class RegistryClient {
     return `/apps/${enc(appId)}/documents/${enc(kind)}/${enc(id)}${rest}`;
   }
 
-  private async call<T>(method: string, path: string, body?: unknown): Promise<T> {
+  private async call<T>(method: string, path: string, body?: unknown, headers: Record<string, string> = {}): Promise<T> {
     const hadToken = csrfToken(document.cookie) !== null;
-    let response = await this.send(method, path, body);
+    let response = await this.send(method, path, body, headers);
     // Prima scrittura senza cookie CSRF: il BFF risponde 403 e intanto lo crea. Si riprova una volta, con il token.
     if (response.status === 403 && method !== 'GET' && !hadToken && csrfToken(document.cookie)) {
-      response = await this.send(method, path, body);
+      response = await this.send(method, path, body, headers);
     }
     if (!response.ok) {
       let title = '';
+      let issues: RegistryIssue[] = [];
+      let latestAuthor: string | null = null;
       try {
-        const problem = (await response.json()) as { title?: unknown };
-        // Solo il titolo del Problem, come testo: mai HTML, mai il dettaglio tecnico.
+        const problem = (await response.json()) as { title?: unknown; errors?: unknown; latestAuthor?: unknown };
+        // Solo testi pensati per l'autore (titolo, problemi di validazione, autore): mai HTML, mai il dettaglio tecnico.
         if (typeof problem.title === 'string') title = problem.title;
+        if (Array.isArray(problem.errors)) {
+          issues = problem.errors
+            .filter((e): e is RegistryIssue => typeof e?.path === 'string' && typeof e?.message === 'string')
+            .slice(0, 20)
+            .map((e) => ({ path: e.path, message: e.message }));
+        }
+        if (typeof problem.latestAuthor === 'string') latestAuthor = problem.latestAuthor;
       } catch {
         // Corpo assente o non JSON.
       }
-      throw new RegistryError(response.status, title);
+      throw new RegistryError(response.status, title, issues, latestAuthor);
     }
     if (response.status === 204) return undefined as T;
     return (await response.json()) as T;

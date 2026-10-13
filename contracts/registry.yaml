@@ -1,13 +1,17 @@
 openapi: 3.1.0
 info:
   title: Piattaforma LowCode - Contratto del registry
-  version: 0.2.0
+  version: 0.3.0
   description: >
     Registro delle definizioni delle applicazioni. Un'applicazione è fatta di documenti separati: ogni schermata,
     la navigazione e ogni tema sono un documento a sé, con le proprie versioni e le proprie pubblicazioni.
     Le versioni sono immutabili e identificate dall'hash del contenuto; pubblicare significa far puntare un ambiente
     a una versione di un documento. Il registry valida il contenuto contro lo schema del tipo di documento
     (screen.schema.json, navigation.schema.json, theme.schema.json) e rifiuta i documenti non validi.
+
+    0.3: revisione delle versioni (bozza → in-revisione → approvata o respinta, con il principio dei quattro occhi),
+    ambienti protetti in cui si pubblicano solo versioni approvate, salvataggio condizionato da If-Match per non
+    sovrascrivere le modifiche di altri, errori di validazione dettagliati (`errors` nel Problem).
   license:
     name: Proprietaria
     identifier: LicenseRef-Proprietary
@@ -80,10 +84,18 @@ paths:
       tags: [registry]
       operationId: saveVersion
       summary: Salva una nuova versione del documento (immutabile)
+      parameters:
+        - name: If-Match
+          in: header
+          required: false
+          description: Hash (tra virgolette) dell'ultima versione nota al client.
+          schema: { type: string }
       description: >
-        Il contenuto si valida contro lo schema del tipo di documento. L'identificativo nel contenuto (`screen`,
-        `navigation` o `theme`) deve coincidere con `documentId`. Salvare due volte lo stesso contenuto restituisce
-        la stessa versione.
+        Il contenuto si valida contro lo schema del tipo di documento (se non è valido: 400 con `errors`).
+        L'identificativo nel contenuto (`screen`, `navigation` o `theme`) deve coincidere con `documentId`.
+        Salvare due volte lo stesso contenuto restituisce la stessa versione. Con `If-Match` (l'hash dell'ultima
+        versione che il client conosce) il salvataggio riesce solo se nessuno ha salvato nel frattempo; altrimenti 412.
+        La versione nuova è una bozza.
       requestBody:
         required: true
         content:
@@ -98,6 +110,48 @@ paths:
         '400': { $ref: '#/components/responses/Problem' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
+        '412':
+          description: Un altro salvataggio è arrivato prima; il Problem indica `latest` e `latestAuthor`.
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+  /registry/apps/{appId}/documents/{kind}/{documentId}/versions/{hash}/review:
+    parameters:
+      - $ref: '#/components/parameters/AppId'
+      - $ref: '#/components/parameters/Kind'
+      - $ref: '#/components/parameters/DocumentId'
+      - name: hash
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      tags: [registry]
+      operationId: reviewVersion
+      summary: Cambia lo stato di revisione di una versione
+      description: >
+        `richiedi`: da bozza o respinta a in-revisione (chiunque possa scrivere). `approva` e `respingi`: da
+        in-revisione ad approvata o respinta; solo chi ha un ruolo di revisore e non è l'autore della versione.
+        Il contenuto della versione non cambia mai.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReviewRequest' }
+      responses:
+        '200':
+          description: Versione con il nuovo stato.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DocumentVersion' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409':
+          description: Azione non ammessa nello stato attuale (per esempio approvare una bozza).
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
   /registry/apps/{appId}/documents/{kind}/{documentId}/versions/{hash}:
     parameters:
       - $ref: '#/components/parameters/AppId'
@@ -148,6 +202,7 @@ paths:
       tags: [registry]
       operationId: publish
       summary: Pubblica una versione del documento in un ambiente
+      description: Negli ambienti protetti (di norma collaudo e produzione) si pubblicano solo versioni approvate (altrimenti 409).
       requestBody:
         required: true
         content:
@@ -158,6 +213,11 @@ paths:
         '400': { $ref: '#/components/responses/Problem' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
+        '409':
+          description: Ambiente protetto e versione non approvata.
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
 components:
   securitySchemes:
     cookieAuth: { type: apiKey, in: cookie, name: LOWCODE_SESSION }
@@ -227,7 +287,17 @@ components:
         author: { type: string }
         state:
           type: string
-          enum: [bozza, in-revisione, pubblicata, ritirata]
+          enum: [bozza, in-revisione, approvata, respinta]
+          description: Stato di revisione. Dove è pubblicata lo dice `publishedEnvironments` del documento.
+        reviewedBy: { type: string, description: Chi ha approvato o respinto. }
+        reviewedAt: { type: string, format: date-time }
+        reviewNote: { type: string, maxLength: 500 }
+    ReviewRequest:
+      type: object
+      required: [action]
+      properties:
+        action: { type: string, enum: [richiedi, approva, respingi] }
+        note: { type: string, maxLength: 500 }
     PublishRequest:
       type: object
       required: [hash]
@@ -242,3 +312,14 @@ components:
         status: { type: integer }
         detail: { type: string }
         correlationId: { type: string }
+        errors:
+          type: array
+          description: Problemi di validazione del documento (posizione JSON Pointer e messaggio).
+          items:
+            type: object
+            required: [path, message]
+            properties:
+              path: { type: string }
+              message: { type: string }
+        latest: { type: string, description: Con 412, hash dell'ultima versione. }
+        latestAuthor: { type: string, description: Con 412, autore dell'ultima versione. }

@@ -324,7 +324,7 @@ describe('editor delle schermate', () => {
       const json = (body: unknown, status = 200) => ({ ok: true, status, json: async () => body });
       if (url.endsWith('/versions') && method === 'POST') return json(versions[0], 201);
       if (url.endsWith('/versions')) return json(versions);
-      if (url.endsWith('/documents')) return json([{ kind: 'screen', id: 'nuova-schermata', publishedEnvironments: { produzione: 'a1b2c3d4e5f6' } }]);
+      if (url.endsWith('/documents')) return json([{ kind: 'screen', id: 'nuova-schermata', publishedEnvironments: { sviluppo: 'a1b2c3d4e5f6' } }]);
       if (url.includes('/published')) return { ok: true, status: 204, json: async () => undefined };
       const body = FILES[url];
       return body ? json(body) : { ok: false, status: 404, json: async () => ({}) };
@@ -341,18 +341,97 @@ describe('editor delle schermate', () => {
     await until(() => !!panel.querySelector('ol li .hash'), 'storico');
     expect(calls.slice(0, 1)).toEqual([{ url: '/registry/apps/ordini/documents/screen/nuova-schermata/versions', method: 'POST' }]);
     expect(panel.querySelector('ol li')?.textContent).toContain('a1b2c3d4e5');
-    expect(panel.querySelector('ol li nz-tag')?.textContent?.trim()).toBe('produzione');
+    expect(panel.querySelector('ol li nz-tag')?.textContent?.trim()).toBe('sviluppo');
     // Pubblicare chiede conferma.
-    button('Pubblica in produzione').click();
+    button('Pubblica in sviluppo').click();
     await until(() => !!document.querySelector('.ant-modal-confirm, .ant-modal'), 'conferma');
     ([...document.querySelectorAll<HTMLButtonElement>('.ant-modal button')].find((b) => b.textContent?.includes('Conferma')) as HTMLButtonElement).click();
     await until(() => calls.some((c) => c.method === 'PUT'), 'pubblicazione');
-    expect(calls.find((c) => c.method === 'PUT')?.url).toBe('/registry/apps/ordini/documents/screen/nuova-schermata/published?env=produzione');
+    expect(calls.find((c) => c.method === 'PUT')?.url).toBe('/registry/apps/ordini/documents/screen/nuova-schermata/published?env=sviluppo');
     // Con errori il salvataggio è bloccato.
     store.setValue(['screen'], 'Non Valido');
     await settle();
     expect(button('Salva versione').disabled).toBe(true);
     expect(panel.textContent).toContain('Correggi gli errori');
+  });
+
+  it('registro: revisione, confronto con il documento aperto, salvataggio in conflitto ed errori di validazione', async () => {
+    const calls: { url: string; method: string; body?: string; ifMatch?: string }[] = [];
+    let state = 'bozza';
+    let conflict = true;
+    vi.stubGlobal('fetch', async (url: string, init: RequestInit = {}) => {
+      const method = init.method ?? 'GET';
+      const headers = (init.headers ?? {}) as Record<string, string>;
+      if (url.startsWith('/registry')) calls.push({ url, method, body: init.body as string | undefined, ifMatch: headers['If-Match'] });
+      const json = (body: unknown, status = 200) => ({ ok: status < 400, status, json: async () => body });
+      const version = () => ({ hash: 'a1b2c3d4e5f6', createdAt: '2026-10-13T08:00:00Z', author: 'mario', state, ...(state === 'respinta' ? { reviewedBy: 'luisa', reviewedAt: '2026-10-13T09:00:00Z', reviewNote: 'Titolo da rivedere' } : {}) });
+      if (url.endsWith('/review')) {
+        const action = JSON.parse(init.body as string).action;
+        state = action === 'richiedi' ? 'in-revisione' : action === 'approva' ? 'approvata' : 'respinta';
+        return json(version());
+      }
+      if (url.includes('/versions/a1b2c3d4e5f6')) return json({ schemaVersion: '1.0', screen: 'nuova-schermata', title: 'Vecchio titolo', components: [] });
+      if (url.endsWith('/versions') && method === 'POST') {
+        const body = JSON.parse(init.body as string);
+        if (body.title === 'Rotto') return json({ title: 'Il documento non rispetta lo schema', errors: [{ path: '/components/0/type', message: 'valore non ammesso' }] }, 400);
+        if (headers['If-Match'] && conflict) return json({ title: 'Il documento è stato modificato', latest: 'ffff', latestAuthor: 'luisa' }, 412);
+        return json(version(), 201);
+      }
+      if (url.endsWith('/versions')) return json([version()]);
+      if (url.endsWith('/documents')) return json([{ kind: 'screen', id: 'nuova-schermata', publishedEnvironments: {} }]);
+      const body = FILES[url];
+      return body ? json(body) : { ok: false, status: 404, json: async () => ({}) };
+    });
+    ([...el.querySelectorAll<HTMLButtonElement>('.toolbar button')].find((b) => b.textContent?.includes('Registro')) as HTMLButtonElement).click();
+    await until(() => !!document.querySelector('ed-registry-panel'), 'pannello del registro');
+    const panel = document.querySelector('ed-registry-panel') as HTMLElement;
+    type(panel.querySelector('#registry-app') as HTMLInputElement, 'ordini');
+    await settle();
+    const button = (label: string): HTMLButtonElement => [...panel.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.trim().startsWith(label))!;
+    const confirm = async (): Promise<void> => {
+      // Le finestre chiuse restano nel DOM: conta l'ultima aperta.
+      const last = () => [...document.querySelectorAll<HTMLElement>('.ant-modal')].at(-1);
+      await until(() => !!last()?.querySelector('button'), 'conferma');
+      ([...last()!.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.includes('Conferma')) as HTMLButtonElement).click();
+    };
+
+    // Storico: la versione è una bozza; si chiede la revisione, poi la si respinge con una nota.
+    button('Storico').click();
+    await until(() => panel.textContent!.includes('bozza'), 'stato bozza');
+    button('Chiedi revisione').click();
+    await until(() => panel.textContent!.includes('in revisione'), 'in revisione');
+    type(panel.querySelector('#registry-note') as HTMLInputElement, 'Titolo da rivedere');
+    await settle();
+    button('Respingi').click();
+    await until(() => panel.textContent!.includes('respinta') && panel.textContent!.includes('Decisa da luisa'), 'respinta con nota');
+    expect(JSON.parse(calls.filter((c) => c.url.endsWith('/review')).at(-1)!.body!)).toEqual({ action: 'respingi', note: 'Titolo da rivedere' });
+
+    // Confronto: la versione salvata contro il documento aperto.
+    button('Confronta').click();
+    await until(() => !!panel.querySelector('.diff li'), 'differenze');
+    expect(panel.querySelector('.diff')?.textContent).toContain('/title');
+    expect(panel.querySelector('.diff')?.textContent).toContain('"Vecchio titolo"');
+
+    // Aperta quella versione, il salvataggio indica da dove si parte; se un altro ha salvato, si chiede conferma.
+    button('Apri').click();
+    await confirm();
+    await until(() => store.doc() !== null && (store.doc() as { title?: string }).title === 'Vecchio titolo', 'versione aperta');
+    store.setValue(['title'], 'Nuovo titolo');
+    await settle();
+    button('Salva versione').click();
+    await until(() => [...document.querySelectorAll('.ant-modal')].some((m) => m.textContent?.includes('luisa ha salvato')), 'avviso di conflitto');
+    expect(calls.filter((c) => c.method === 'POST' && c.url.endsWith('/versions')).at(-1)?.ifMatch).toBe('"a1b2c3d4e5f6"');
+    conflict = false;
+    await confirm();
+    await until(() => calls.filter((c) => c.method === 'POST' && c.url.endsWith('/versions')).length === 2, 'salvataggio comunque');
+    expect(calls.filter((c) => c.method === 'POST' && c.url.endsWith('/versions')).at(-1)?.ifMatch).toBeUndefined();
+
+    // Gli errori di validazione del registro si mostrano punto per punto.
+    store.setValue(['title'], 'Rotto');
+    await settle();
+    button('Salva versione').click();
+    await until(() => !!panel.querySelector('.issues li'), 'errori del registro');
+    expect(panel.querySelector('.issues li')?.textContent).toContain('/components/0/type');
   });
 
   it('registro senza sessione: il pannello propone l’accesso attraverso il BFF e poi si torna all’editor', async () => {

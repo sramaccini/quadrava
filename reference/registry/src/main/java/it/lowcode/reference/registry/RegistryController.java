@@ -1,8 +1,13 @@
 package it.lowcode.reference.registry;
 
 import it.lowcode.reference.registry.Model.DocumentKey;
+import it.lowcode.reference.registry.Model.DocumentVersion;
+import it.lowcode.reference.registry.Model.Issue;
 import it.lowcode.reference.registry.Model.Kind;
+import it.lowcode.reference.registry.Model.State;
+import it.lowcode.reference.registry.VersionStore.ReviewOutcome;
 import java.security.Principal;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,18 +28,29 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Registry secondo contracts/registry.yaml: documenti separati per schermate, navigazione e temi, ognuno con le
- * proprie versioni e pubblicazioni. Al salvataggio controlla che il contenuto sia un oggetto JSON con
- * {@code schemaVersion} e con l'identificativo uguale a quello del percorso. La validazione completa contro lo schema
- * del tipo di documento (screen/navigation/theme.schema.json) spetta a un'implementazione reale, qui al salvataggio.
+ * Registry secondo contracts/registry.yaml (0.3): documenti separati per schermate, navigazione e temi, ognuno con le
+ * proprie versioni e pubblicazioni.
+ *
+ * <ul>
+ *   <li>Al salvataggio il contenuto si valida contro lo schema del tipo di documento; con {@code If-Match} il
+ *       salvataggio riesce solo se l'ultima versione è ancora quella indicata (modifiche concorrenti).</li>
+ *   <li>Revisione: chi scrive chiede la revisione; approva o respinge solo chi ha un ruolo di
+ *       {@code lowcode.registry.approver-roles}, e mai l'autore della versione (quattro occhi).</li>
+ *   <li>Negli ambienti protetti ({@code lowcode.registry.protected-environments}) si pubblicano solo versioni
+ *       approvate.</li>
+ * </ul>
  */
 @RestController
 public class RegistryController {
 
     private final VersionStore store;
+    private final SchemaValidation validation;
+    private final RegistryProperties properties;
 
-    public RegistryController(VersionStore store) {
+    public RegistryController(VersionStore store, SchemaValidation validation, RegistryProperties properties) {
         this.store = store;
+        this.validation = validation;
+        this.properties = properties;
     }
 
     @GetMapping("/registry/apps")
@@ -54,8 +71,7 @@ public class RegistryController {
         List<Model.DocumentSummary> result = store.documents(appId).stream()
                 .filter(k -> only.map(k.kind()::equals).orElse(true))
                 .sorted(Comparator.comparing((DocumentKey k) -> k.kind().ordinal()).thenComparing(DocumentKey::documentId))
-                .map(k -> new Model.DocumentSummary(k.kind().value(), k.documentId(),
-                        store.versions(k).stream().findFirst().orElse(null), store.publishedEnvironments(k)))
+                .map(k -> new Model.DocumentSummary(k.kind().value(), k.documentId(), store.latest(k).orElse(null), store.publishedEnvironments(k)))
                 .toList();
         return ResponseEntity.ok(result);
     }
@@ -64,23 +80,44 @@ public class RegistryController {
     public ResponseEntity<?> versions(@PathVariable String appId, @PathVariable String kind, @PathVariable String documentId) {
         return key(appId, kind, documentId)
                 .<ResponseEntity<?>>map(k -> ResponseEntity.ok(store.versions(k)))
-                .orElseGet(() -> problem(HttpStatus.NOT_FOUND, "Tipo di documento sconosciuto"));
+                .orElseGet(() -> problem(HttpStatus.NOT_FOUND, "Documento sconosciuto"));
     }
 
     @PostMapping(path = "/registry/apps/{appId}/documents/{kind}/{documentId}/versions", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> save(@PathVariable String appId, @PathVariable String kind, @PathVariable String documentId,
-                                  @RequestBody String content, Principal principal) {
+                                  @RequestBody String content,
+                                  @RequestHeader(value = "If-Match", required = false) String ifMatch,
+                                  Principal principal) {
         Optional<DocumentKey> key = key(appId, kind, documentId);
         if (key.isEmpty()) {
-            return problem(HttpStatus.BAD_REQUEST, "Tipo di documento sconosciuto");
+            return problem(HttpStatus.BAD_REQUEST, "Tipo di documento o identificativo non valido");
         }
         Optional<String> invalid = checkContent(key.get(), content);
         if (invalid.isPresent()) {
             return problem(HttpStatus.BAD_REQUEST, invalid.get());
         }
-        // Senza autenticazione (profilo senza-auth) l'autore è «sviluppo».
-        String author = principal == null ? "sviluppo" : principal.getName();
-        return ResponseEntity.status(HttpStatus.CREATED).body(store.save(key.get(), content, author));
+        List<Issue> issues = validation.validate(key.get().kind(), content);
+        if (!issues.isEmpty()) {
+            ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+            problem.setTitle("Il documento non rispetta lo schema");
+            problem.setProperty("errors", issues);
+            return ResponseEntity.badRequest().body(problem);
+        }
+        // Modifiche concorrenti: chi salva indica l'ultima versione che conosce.
+        if (ifMatch != null && !ifMatch.isBlank() && !ifMatch.trim().equals("*")) {
+            String expected = ifMatch.trim().replaceAll("^W/", "").replace("\"", "");
+            Optional<DocumentVersion> latest = store.latest(key.get());
+            if (latest.isEmpty() || !latest.get().hash().equals(expected)) {
+                ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.PRECONDITION_FAILED);
+                problem.setTitle("Il documento è stato modificato da un altro salvataggio");
+                latest.ifPresent(v -> {
+                    problem.setProperty("latest", v.hash());
+                    problem.setProperty("latestAuthor", v.author());
+                });
+                return ResponseEntity.status(HttpStatus.PRECONDITION_FAILED).body(problem);
+            }
+        }
+        return ResponseEntity.status(HttpStatus.CREATED).body(store.save(key.get(), content, Actor.of(principal).name()));
     }
 
     @GetMapping(path = "/registry/apps/{appId}/documents/{kind}/{documentId}/versions/{hash}", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -90,6 +127,41 @@ public class RegistryController {
                 .flatMap(k -> store.content(k, hash))
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/registry/apps/{appId}/documents/{kind}/{documentId}/versions/{hash}/review")
+    public ResponseEntity<?> review(@PathVariable String appId, @PathVariable String kind, @PathVariable String documentId,
+                                    @PathVariable String hash, @RequestBody Model.ReviewRequest request, Principal principal) {
+        Optional<DocumentKey> key = key(appId, kind, documentId);
+        if (key.isEmpty()) {
+            return problem(HttpStatus.NOT_FOUND, "Documento sconosciuto");
+        }
+        String action = request.action() == null ? "" : request.action();
+        if (!List.of("richiedi", "approva", "respingi").contains(action)) {
+            return problem(HttpStatus.BAD_REQUEST, "Azione di revisione sconosciuta");
+        }
+        Actor actor = Actor.of(principal);
+        if (!action.equals("richiedi")) {
+            Optional<DocumentVersion> version = store.version(key.get(), hash);
+            if (version.isEmpty()) {
+                return problem(HttpStatus.NOT_FOUND, "Versione inesistente");
+            }
+            if (actor.authenticated() && !actor.hasAnyRole(properties.approverRoles())) {
+                return problem(HttpStatus.FORBIDDEN, "Solo un revisore può approvare o respingere");
+            }
+            if (actor.authenticated() && actor.name().equals(version.get().author())) {
+                return problem(HttpStatus.FORBIDDEN, "L'autore di una versione non può approvarla né respingerla");
+            }
+        }
+        String note = request.note() == null ? null : request.note().strip();
+        if (note != null && note.length() > 500) {
+            return problem(HttpStatus.BAD_REQUEST, "Nota troppo lunga (al massimo 500 caratteri)");
+        }
+        return switch (store.review(key.get(), hash, action, actor.name(), note)) {
+            case ReviewOutcome.Done done -> ResponseEntity.ok(done.version());
+            case ReviewOutcome.NotFound ignored -> problem(HttpStatus.NOT_FOUND, "Versione inesistente");
+            case ReviewOutcome.NotAllowed notAllowed -> problem(HttpStatus.CONFLICT, notAllowed.reason());
+        };
     }
 
     @GetMapping(path = "/registry/apps/{appId}/documents/{kind}/{documentId}/published", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -112,14 +184,26 @@ public class RegistryController {
                                      @RequestParam("env") String env, @RequestBody Model.PublishRequest request) {
         Optional<DocumentKey> key = key(appId, kind, documentId);
         if (key.isEmpty()) {
-            return problem(HttpStatus.BAD_REQUEST, "Tipo di documento sconosciuto");
+            return problem(HttpStatus.BAD_REQUEST, "Tipo di documento o identificativo non valido");
         }
-        return store.publish(key.get(), env, request.hash())
-                ? ResponseEntity.noContent().build()
-                : problem(HttpStatus.BAD_REQUEST, "Versione inesistente");
+        if (!Model.IDENTIFIER.matcher(env).matches()) {
+            return problem(HttpStatus.BAD_REQUEST, "Ambiente non valido");
+        }
+        Optional<DocumentVersion> version = request.hash() == null ? Optional.empty() : store.version(key.get(), request.hash());
+        if (version.isEmpty()) {
+            return problem(HttpStatus.BAD_REQUEST, "Versione inesistente");
+        }
+        if (properties.protectedEnvironments().contains(env) && !version.get().state().equals(State.APPROVATA.value())) {
+            return problem(HttpStatus.CONFLICT, "Nell'ambiente «" + env + "» si pubblicano solo versioni approvate");
+        }
+        store.publish(key.get(), env, request.hash());
+        return ResponseEntity.noContent().build();
     }
 
     private static Optional<DocumentKey> key(String appId, String kind, String documentId) {
+        if (!Model.IDENTIFIER.matcher(appId).matches() || !Model.IDENTIFIER.matcher(documentId).matches()) {
+            return Optional.empty();
+        }
         return Kind.parse(kind).map(k -> new DocumentKey(appId, k, documentId));
     }
 
@@ -146,5 +230,28 @@ public class RegistryController {
         ProblemDetail problem = ProblemDetail.forStatus(status);
         problem.setTitle(title);
         return ResponseEntity.status(status).body(problem);
+    }
+
+    /**
+     * Chi fa la richiesta: nome utente e ruoli del realm di Keycloak ({@code realm_access.roles}). Senza autenticazione
+     * (profilo senza-auth) è «sviluppo», senza ruoli né controlli di revisione.
+     */
+    record Actor(String name, List<String> roles, boolean authenticated) {
+
+        static Actor of(Principal principal) {
+            if (principal == null) {
+                return new Actor("sviluppo", List.of(), false);
+            }
+            List<String> roles = List.of();
+            if (principal instanceof JwtAuthenticationToken jwt && jwt.getToken().getClaim("realm_access") instanceof Map<?, ?> access
+                    && access.get("roles") instanceof Collection<?> values) {
+                roles = values.stream().map(String::valueOf).toList();
+            }
+            return new Actor(principal.getName(), roles, true);
+        }
+
+        boolean hasAnyRole(List<String> wanted) {
+            return roles.stream().anyMatch(wanted::contains);
+        }
     }
 }

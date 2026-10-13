@@ -42,6 +42,30 @@ describe('client del registro', () => {
     await expect(client.documents('a')).rejects.toMatchObject({ status: 0 });
   });
 
+  it('0.3: salvataggio con If-Match, revisione, problemi di validazione e autore del conflitto', async () => {
+    const seen: Record<string, string>[] = [];
+    vi.stubGlobal('fetch', async (url: string, init: RequestInit) => {
+      seen.push((init.headers ?? {}) as Record<string, string>);
+      calls.push({ url, method: init.method ?? 'GET', body: init.body as string | undefined });
+      const { status, body } = reply(url);
+      return { ok: status < 400, status, json: async () => body };
+    });
+    reply = () => ({ status: 201, body: { hash: 'def', createdAt: '2026-10-13T08:00:00Z', author: 'mario', state: 'bozza' } });
+    await client.save('ordini', 'screen', 'x', { schemaVersion: '1.0', screen: 'x' }, 'abc');
+    expect(seen.at(-1)?.['If-Match']).toBe('"abc"');
+    await client.save('ordini', 'screen', 'x', { schemaVersion: '1.0', screen: 'x' });
+    expect(seen.at(-1)?.['If-Match']).toBeUndefined();
+    reply = () => ({ status: 200, body: { hash: 'def', createdAt: '2026-10-13T08:00:00Z', author: 'mario', state: 'in-revisione' } });
+    await client.review('ordini', 'screen', 'x', 'def', 'respingi', 'Manca il titolo');
+    expect(calls.at(-1)).toEqual({ url: '/registry/apps/ordini/documents/screen/x/versions/def/review', method: 'POST', body: '{"action":"respingi","note":"Manca il titolo"}' });
+    reply = () => ({ status: 400, body: { title: 'Il documento non rispetta lo schema', errors: [{ path: '/components/0', message: 'tipo sconosciuto' }, { path: 1 }, 'x'] } });
+    const invalid = (await client.save('o', 'screen', 'x', {}).catch((e: unknown) => e)) as RegistryError;
+    expect(invalid.issues).toEqual([{ path: '/components/0', message: 'tipo sconosciuto' }]);
+    reply = () => ({ status: 412, body: { title: 'Modificato', latest: 'fff', latestAuthor: 'luisa' } });
+    const conflict = (await client.save('o', 'screen', 'x', {}, 'abc').catch((e: unknown) => e)) as RegistryError;
+    expect([conflict.status, conflict.latestAuthor]).toEqual([412, 'luisa']);
+  });
+
   it('CSRF del BFF: le scritture mandano il token del cookie; senza cookie, al 403 si riprova una volta con il token', async () => {
     const sent: (string | null)[] = [];
     let status = 403;

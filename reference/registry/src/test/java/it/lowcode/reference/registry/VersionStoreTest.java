@@ -1,10 +1,15 @@
 package it.lowcode.reference.registry;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import it.lowcode.reference.registry.Model.DocumentKey;
 import it.lowcode.reference.registry.Model.Kind;
+import it.lowcode.reference.registry.VersionStore.ReviewOutcome;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 class VersionStoreTest {
 
@@ -34,6 +39,7 @@ class VersionStoreTest {
         // Ripristino = ripubblicare una versione: la precedente resta disponibile.
         assertThat(store.publish(elenco, "produzione", v2.hash())).isTrue();
         assertThat(store.content(elenco, v1.hash())).isPresent();
+        assertThat(store.latest(elenco)).contains(v2);
     }
 
     @Test
@@ -55,5 +61,52 @@ class VersionStoreTest {
         assertThat(RegistryController.checkContent(elenco, "{\"schemaVersion\":\"1.0\",\"screen\":\"altro\"}")).isPresent();
         assertThat(RegistryController.checkContent(menu, "{\"navigation\":\"ordini\"}")).isPresent();
         assertThat(RegistryController.checkContent(menu, "[1, 2]")).isPresent();
+    }
+
+    @Test
+    void revisioneDaBozzaAdApprovataORespinta() {
+        var v = store.save(elenco, "{\"schemaVersion\":\"1.0\"}", "mario");
+        assertThat(v.state()).isEqualTo("bozza");
+        // Non si approva una bozza: prima si chiede la revisione.
+        assertThat(store.review(elenco, v.hash(), "approva", "luisa", null)).isInstanceOf(ReviewOutcome.NotAllowed.class);
+        assertThat(store.review(elenco, v.hash(), "richiedi", "mario", null)).isInstanceOf(ReviewOutcome.Done.class);
+        var respinta = (ReviewOutcome.Done) store.review(elenco, v.hash(), "respingi", "luisa", "Manca il filtro per stato");
+        assertThat(respinta.version().state()).isEqualTo("respinta");
+        assertThat(respinta.version().reviewedBy()).isEqualTo("luisa");
+        assertThat(respinta.version().reviewNote()).isEqualTo("Manca il filtro per stato");
+        // Respinta, si può chiedere di nuovo; poi approvare.
+        store.review(elenco, v.hash(), "richiedi", "mario", null);
+        var approvata = (ReviewOutcome.Done) store.review(elenco, v.hash(), "approva", "luisa", null);
+        assertThat(approvata.version().state()).isEqualTo("approvata");
+        assertThat(approvata.version().hash()).isEqualTo(v.hash());
+        assertThat(store.review(elenco, "inesistente", "richiedi", "mario", null)).isInstanceOf(ReviewOutcome.NotFound.class);
+    }
+
+    @Test
+    void archivioSuFileSopravviveAlRiavvio(@TempDir Path dir) throws Exception {
+        var first = new VersionStore(dir);
+        var v1 = first.save(elenco, "{\"schemaVersion\":\"1.0\",\"n\":1}", "mario");
+        var v2 = first.save(elenco, "{\"schemaVersion\":\"1.0\",\"n\":2}", "mario");
+        first.review(elenco, v1.hash(), "richiedi", "mario", null);
+        first.review(elenco, v1.hash(), "approva", "luisa", "ok");
+        first.publish(elenco, "produzione", v1.hash());
+        first.save(menu, "{\"schemaVersion\":\"1.0\",\"navigation\":\"ordini\"}", "mario");
+        assertThat(Files.exists(dir.resolve("ordini/screen/ordini-elenco/index.json"))).isTrue();
+        assertThat(Files.exists(dir.resolve("ordini/screen/ordini-elenco/" + v1.hash() + ".json"))).isTrue();
+
+        var second = new VersionStore(dir);
+        assertThat(second.documents("ordini")).containsExactlyInAnyOrder(elenco, menu);
+        assertThat(second.versions(elenco)).extracting(Model.DocumentVersion::hash).containsExactly(v2.hash(), v1.hash());
+        assertThat(second.version(elenco, v1.hash()).orElseThrow().state()).isEqualTo("approvata");
+        assertThat(second.version(elenco, v1.hash()).orElseThrow().reviewedBy()).isEqualTo("luisa");
+        assertThat(second.publishedHash(elenco, "produzione")).contains(v1.hash());
+        assertThat(second.content(elenco, v2.hash())).contains("{\"schemaVersion\":\"1.0\",\"n\":2}");
+    }
+
+    @Test
+    void identificativiNonValidiNonDiventanoPercorsi(@TempDir Path dir) {
+        var onDisk = new VersionStore(dir);
+        assertThatThrownBy(() -> onDisk.save(new DocumentKey("..", Kind.SCREEN, "x"), "{}", "mario")).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> onDisk.save(new DocumentKey("app", Kind.SCREEN, "../fuori"), "{}", "mario")).isInstanceOf(IllegalArgumentException.class);
     }
 }
