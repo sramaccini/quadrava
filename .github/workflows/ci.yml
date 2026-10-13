@@ -29,6 +29,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
       - run: npm run schema:check
+      - run: npm run schema:docs:check
       - run: npm run validate:examples
       - run: npm run build:libs
       - run: node tools/copy-examples.mjs
