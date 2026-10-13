@@ -1,4 +1,4 @@
-import { ExpressionEngine } from './engine';
+import { BoundedCache, ExpressionEngine } from './engine';
 import { formatMessage } from './message-format';
 import { parseTemplate } from './template';
 import type { EvalContext } from './types';
@@ -206,5 +206,37 @@ describe('funzioni di presentazione', () => {
   it('check() conosce le funzioni di presentazione', () => {
     expect(new ExpressionEngine(none).check("t('a', 'b')").valid).toBe(true);
     expect(new ExpressionEngine(none).check("t(1)").valid).toBe(false);
+  });
+});
+
+describe('cache delle espressioni', () => {
+  const engine = new ExpressionEngine({ can: (p) => p === 'a.b.c' });
+  const value = (r: ReturnType<ExpressionEngine['evaluate']>): unknown => (r.ok ? r.value : r.error);
+
+  it('la stessa espressione compilata vale con contesti diversi', () => {
+    expect(value(engine.interpolate('{{ state.n * 2 }}', { state: { n: 2 } }))).toBe(4);
+    expect(value(engine.interpolate('{{ state.n * 2 }}', { state: { n: 5 } }))).toBe(10);
+    expect(value(engine.interpolate('Totale {{ state.n }}', { state: { n: 7 } }))).toBe('Totale 7');
+    expect(value(engine.evaluate("can('a.b.c')"))).toBe(true);
+  });
+
+  it('un errore di sintassi resta un errore anche dalla cache', () => {
+    const errors: string[] = [];
+    const reporting = new ExpressionEngine({ can: () => false }, { onError: (e) => errors.push(e.source) });
+    expect(reporting.evaluate('1 +').ok).toBe(false);
+    expect(reporting.evaluate('1 +').ok).toBe(false);
+    expect(errors).toEqual(['1 +', '1 +']);
+  });
+
+  it('la cache tiene al massimo il numero di voci indicato, togliendo la meno usata', () => {
+    const cache = new BoundedCache<string, number>(2);
+    cache.set('a', 1);
+    cache.set('b', 2);
+    cache.get('a');
+    cache.set('c', 3);
+    expect(cache.size).toBe(2);
+    expect(cache.get('b')).toBeUndefined();
+    expect(cache.get('a')).toBe(1);
+    expect(cache.get('c')).toBe(3);
   });
 });

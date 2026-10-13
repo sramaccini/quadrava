@@ -21,6 +21,9 @@ export class ExpressionEngine {
   private readonly env: Environment;
   private readonly onError?: ExpressionErrorHandler;
   private readonly i18n?: ExpressionI18n;
+  /** Espressioni già compilate e modelli già scomposti, per testo: le stesse condizioni si valutano a ogni disegno. */
+  private readonly compiled = new BoundedCache<string, CompiledExpression>(CACHE_SIZE);
+  private readonly templates = new BoundedCache<string, Segments>(CACHE_SIZE);
 
   constructor(
     private readonly permissions: PermissionChecker,
@@ -96,7 +99,18 @@ export class ExpressionEngine {
   /** Valuta un'espressione CEL "nuda", senza doppie graffe. */
   evaluate(source: string, context: EvalContext = {}): EvalResult {
     try {
-      const value = this.env.evaluate(source, context as Record<string, unknown>);
+      let compiled = this.compiled.get(source);
+      if (!compiled) {
+        try {
+          compiled = { run: this.env.parse(source) };
+        } catch (e) {
+          // Anche un errore di sintassi si ricorda: la stessa espressione rotta non si rianalizza a ogni disegno.
+          compiled = { error: e };
+        }
+        this.compiled.set(source, compiled);
+      }
+      if ('error' in compiled) throw compiled.error;
+      const value = compiled.run(context as Record<string, unknown>);
       return { ok: true, value: toPlain(value) };
     } catch (e) {
       return this.fail(source, e);
@@ -108,11 +122,14 @@ export class ExpressionEngine {
    * Se il modello è una sola espressione restituisce il valore con il suo tipo; altrimenti una stringa.
    */
   interpolate(template: string, context: EvalContext = {}): EvalResult {
-    let segments;
-    try {
-      segments = parseTemplate(template);
-    } catch (e) {
-      return this.fail(template, e);
+    let segments = this.templates.get(template);
+    if (!segments) {
+      try {
+        segments = parseTemplate(template);
+      } catch (e) {
+        return this.fail(template, e);
+      }
+      this.templates.set(template, segments);
     }
     if (segments.length === 1 && segments[0].kind === 'expr') {
       return this.evaluate(segments[0].source, context);
@@ -210,4 +227,34 @@ export function toPlain(value: unknown): unknown {
     return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, toPlain(v)]));
   }
   return value;
+}
+
+const CACHE_SIZE = 2000;
+type Segments = ReturnType<typeof parseTemplate>;
+type CompiledExpression = { run: (context?: Record<string, unknown>) => unknown } | { error: unknown };
+
+/** Mappa con un numero massimo di voci: oltre il limite toglie la meno usata di recente. */
+export class BoundedCache<K, V> {
+  private readonly map = new Map<K, V>();
+  constructor(private readonly max: number) {}
+
+  get(key: K): V | undefined {
+    const value = this.map.get(key);
+    if (value !== undefined) {
+      // In fondo: è la più recente.
+      this.map.delete(key);
+      this.map.set(key, value);
+    }
+    return value;
+  }
+
+  set(key: K, value: V): void {
+    this.map.delete(key);
+    this.map.set(key, value);
+    if (this.map.size > this.max) this.map.delete(this.map.keys().next().value as K);
+  }
+
+  get size(): number {
+    return this.map.size;
+  }
 }
