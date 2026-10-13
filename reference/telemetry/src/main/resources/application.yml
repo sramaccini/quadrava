@@ -4,6 +4,10 @@ server:
 spring:
   application:
     name: lowcode-telemetry
+  # Gli errori del framework (parametro mancante, corpo non leggibile) in formato Problem (RFC 9457), come dice il contratto.
+  mvc:
+    problemdetails:
+      enabled: true
   security:
     oauth2:
       resourceserver:

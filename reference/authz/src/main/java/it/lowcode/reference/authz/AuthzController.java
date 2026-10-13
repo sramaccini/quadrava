@@ -3,6 +3,9 @@ package it.lowcode.reference.authz;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -16,6 +19,10 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthzController {
 
     private static final String VERSION_HEADER = "X-Permissions-Version";
+    /** Formato dei permessi (dominio.risorsa.azione, minuscolo), come nel contratto. */
+    private static final Pattern PERMISSION = Pattern.compile("^[a-z0-9]+\\.[a-z0-9]+\\.[a-z0-9]+$");
+    /** Verifiche al massimo in un lotto (maxItems del contratto). */
+    static final int MAX_CHECKS = 200;
 
     private final CapabilitiesService service;
 
@@ -31,12 +38,28 @@ public class AuthzController {
     }
 
     @PostMapping("/authz/check")
-    public ResponseEntity<Model.CheckResponse> check(@RequestBody Model.CheckRequest request,
-                                                     @AuthenticationPrincipal Jwt jwt) {
+    public ResponseEntity<?> check(@RequestBody Model.CheckRequest request, @AuthenticationPrincipal Jwt jwt) {
+        if (request == null || request.checks() == null) {
+            return problem("Manca l'elenco checks");
+        }
+        if (request.checks().size() > MAX_CHECKS) {
+            return problem("Troppe verifiche in un lotto (al massimo " + MAX_CHECKS + ")");
+        }
+        for (Model.CheckItem item : request.checks()) {
+            if (item == null || item.permission() == null || !PERMISSION.matcher(item.permission()).matches()) {
+                return problem("Permesso non valido: il formato è dominio.risorsa.azione, minuscolo");
+            }
+        }
         List<String> roles = rolesOf(jwt);
         return ResponseEntity.ok()
                 .header(VERSION_HEADER, service.forRoles(roles).version())
                 .body(service.check(roles, request));
+    }
+
+    private static ResponseEntity<ProblemDetail> problem(String title) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        problem.setTitle(title);
+        return ResponseEntity.badRequest().body(problem);
     }
 
     /** Ruoli del realm Keycloak (claim realm_access.roles). */

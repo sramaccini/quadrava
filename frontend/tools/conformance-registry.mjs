@@ -9,61 +9,16 @@
 // Lavora in un'applicazione nuova (conformita-<data>), così non tocca i dati esistenti. Senza revisore le prove di
 // approvazione si saltano. Esce con codice 1 se una prova fallisce.
 import { randomUUID } from 'node:crypto';
+import { call as httpCall, expect, isProblem, parseArgs, suite, tokenFromArgs } from './conformance-lib.mjs';
 
-const args = Object.fromEntries(
-  process.argv.slice(2).reduce((pairs, value, i, all) => (value.startsWith('--') ? [...pairs, [value.slice(2), all[i + 1]]] : pairs), []),
-);
+const args = parseArgs();
 const registry = (args.registry ?? 'http://localhost:8081').replace(/\/+$/, '');
-const issuer = (args.issuer ?? 'http://localhost:8180/realms/lowcode').replace(/\/+$/, '');
 const protectedEnv = args['protected-env'] ?? 'produzione';
 const app = `conformita-${new Date().toISOString().slice(0, 10).replaceAll('-', '')}-${randomUUID().slice(0, 6)}`;
-
-async function tokenFor(user, password) {
-  const response = await fetch(`${issuer}/protocol/openid-connect/token`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ grant_type: 'password', client_id: 'lowcode-strumenti', username: user, password: password ?? '' }),
-  });
-  if (!response.ok) throw new Error(`token non ottenuto per ${user}: HTTP ${response.status}`);
-  return (await response.json()).access_token;
-}
-
-const author = args.token ?? (args.user ? await tokenFor(args.user, args.password) : null);
-const reviewer = args['reviewer-token'] ?? (args['reviewer-user'] ? await tokenFor(args['reviewer-user'], args['reviewer-password']) : null);
-
-async function call(method, path, { body, token = author, headers = {} } = {}) {
-  const response = await fetch(registry + path, {
-    method,
-    headers: { Accept: 'application/json', ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}), ...(token ? { Authorization: `Bearer ${token}` } : {}), ...headers },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
-  const text = await response.text();
-  let json = null;
-  try {
-    json = text ? JSON.parse(text) : null;
-  } catch {
-    // corpo non JSON
-  }
-  return { status: response.status, headers: response.headers, json };
-}
-
-const results = [];
-async function check(name, run, { skip = false } = {}) {
-  if (skip) {
-    results.push({ name, outcome: 'saltata' });
-    return;
-  }
-  try {
-    await run();
-    results.push({ name, outcome: 'ok' });
-  } catch (e) {
-    results.push({ name, outcome: 'FALLITA', reason: e instanceof Error ? e.message : String(e) });
-  }
-}
-function expect(condition, message) {
-  if (!condition) throw new Error(message);
-}
-const isProblem = (r) => (r.headers.get('content-type') ?? '').includes('json') && typeof r.json?.title === 'string' && r.json?.status === r.status;
+const author = await tokenFromArgs(args);
+const reviewer = await tokenFromArgs(args, 'reviewer-');
+const call = (method, path, { body, token = author, headers = {} } = {}) => httpCall(registry, method, path, { body, token, headers });
+const { check, report } = suite();
 
 const doc = (title) => ({ schemaVersion: '1.0', screen: 'prova', title, components: [{ type: 'text', text: title }] });
 const base = `/registry/apps/${app}/documents/screen/prova`;
@@ -171,11 +126,4 @@ await check('il revisore approva; poi la versione si pubblica nell’ambiente pr
   expect(p.status === 204, `atteso 204, ricevuto ${p.status}`);
 }, { skip: !reviewer });
 
-let failed = 0;
-console.log(`Conformità al contratto del registro (${registry}, applicazione ${app})\n`);
-for (const r of results) {
-  if (r.outcome === 'FALLITA') failed++;
-  console.log(`${r.outcome === 'ok' ? '  ok     ' : r.outcome === 'saltata' ? '  saltata' : '  FALLITA'}  ${r.name}${r.reason ? `\n           ${r.reason}` : ''}`);
-}
-console.log(`\n${results.length - failed} su ${results.length} prove senza errori${failed ? `, ${failed} fallite` : ''}.`);
-process.exit(failed ? 1 : 0);
+report(`Conformità al contratto del registro (${registry}, applicazione ${app})`);
