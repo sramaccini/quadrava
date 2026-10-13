@@ -1,7 +1,20 @@
 <section class="texts" [attr.aria-label]="i18n.t('ed.tabs.texts')">
   <div class="head">
     <p class="intro">{{ i18n.t('ed.texts.intro') }}</p>
-    <button nz-button nzSize="small" type="button" (click)="exportTranslations()"><span nz-icon nzType="download"></span>{{ i18n.t('ed.texts.export') }}</button>
+    <div class="head-actions">
+      <button nz-button nzSize="small" type="button" (click)="exportTranslations()"><span nz-icon nzType="download"></span>{{ i18n.t('ed.texts.export') }}</button>
+      <button
+        nz-button
+        nzSize="small"
+        type="button"
+        [disabled]="saving() || !registry.appId"
+        [nzLoading]="saving()"
+        [attr.title]="registry.appId ? null : i18n.t('ed.texts.registryHint')"
+        (click)="saveToRegistry()"
+      >
+        <span nz-icon nzType="upload"></span>{{ i18n.t('ed.texts.saveRegistry', { env: registry.env }) }}
+      </button>
+    </div>
   </div>
   <table>
     <thead>

@@ -67,6 +67,32 @@ export function intlTag(locale: string): string {
  * Non lancia: restituisce l'elenco dei problemi (file mancante, JSON non valido, valori non testuali) da mostrare in diagnostica.
  * Una lingua senza file non è un errore bloccante: ripiega sulla lingua predefinita.
  */
+/**
+ * Carica i cataloghi delle lingue indicate da una funzione che restituisce, per lingua, l'oggetto chiave → testo (per
+ * esempio `DefinitionSource.messages`). Le voci che non sono testi si scartano e si segnalano; un catalogo che non si
+ * carica non blocca gli altri. Restituisce i problemi incontrati (per le segnalazioni tecniche).
+ */
+export async function loadCatalogs(i18n: I18n, locales: readonly string[], load: (locale: string) => Promise<unknown>): Promise<string[]> {
+  const problems: string[] = [];
+  await Promise.all(
+    locales.map(async (locale) => {
+      try {
+        const doc = await load(locale);
+        if (doc === null || typeof doc !== 'object' || Array.isArray(doc)) throw new Error('il catalogo deve essere un oggetto chiave → testo');
+        const messages: Messages = {};
+        for (const [key, value] of Object.entries(doc)) {
+          if (typeof value === 'string') messages[key] = value;
+          else problems.push(`${locale}: la chiave ${key} non è un testo`);
+        }
+        i18n.addMessages(locale, messages);
+      } catch (e) {
+        problems.push(`${locale}: catalogo non caricato (${e instanceof Error ? e.message : String(e)})`);
+      }
+    }),
+  );
+  return problems;
+}
+
 export async function loadMessages(
   i18n: I18n,
   locales: readonly string[],

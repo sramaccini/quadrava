@@ -1,5 +1,5 @@
-import { navigationValidator, screenValidator, themeValidator } from './validators.generated';
-import type { NavigationDefinition, ScreenDefinition, ThemeDefinition } from './types';
+import { messagesValidator, navigationValidator, screenValidator, themeValidator } from './validators.generated';
+import type { MessagesDefinition, NavigationDefinition, ScreenDefinition, ThemeDefinition } from './types';
 
 export interface ValidationIssue {
   /** Posizione nel documento, per esempio `/components/0/columns`. */
@@ -33,6 +33,11 @@ export function validateTheme(document: unknown): ValidationResult<ThemeDefiniti
 /** Valida un documento di navigazione (casi d'uso e menu a tre livelli). Non lancia eccezioni. */
 export function validateNavigation(document: unknown): ValidationResult<NavigationDefinition> {
   return run<NavigationDefinition>(navigationValidator, document);
+}
+
+/** Valida un catalogo di traduzioni (una lingua) contro lo schema dei cataloghi. Non lancia eccezioni. */
+export function validateMessages(document: unknown): ValidationResult<MessagesDefinition> {
+  return run<MessagesDefinition>(messagesValidator, document);
 }
 
 function run<T>(validator: ValidateFunction, document: unknown): ValidationResult<T> {

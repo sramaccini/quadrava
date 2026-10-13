@@ -51,4 +51,12 @@ describe('definizioni dal registro', () => {
     http.expectOne((r) => r.url.endsWith('/screen/manca/published')).flush({ detail: 'interno' }, { status: 404, statusText: 'Not Found' });
     await expect(missing).rejects.toEqual(new DefinitionLoadError(404));
   });
+
+  it('il catalogo di una lingua è il documento messages pubblicato: se ne restituiscono i testi', async () => {
+    const p = source.messages('en');
+    const req = http.expectOne((r) => r.url === '/registry/apps/gestione%20ordini/documents/messages/en/published');
+    expect(req.request.params.get('env')).toBe('produzione');
+    req.flush({ schemaVersion: '1.0', messages: 'en', texts: { 'app.title': 'Hello' } }, { headers: { ETag: '"m1"' } });
+    expect(await p).toEqual({ 'app.title': 'Hello' });
+  });
 });

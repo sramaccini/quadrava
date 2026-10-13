@@ -14,3 +14,9 @@ tr.todo .where { box-shadow: inset 3px 0 0 var(--lc-color-warning, #d48806); }
 .convert { padding: 0 0 0 8px; }
 input.missing { border-color: var(--lc-color-warning, #d48806); }
 .empty { color: var(--lc-color-muted); }
+
+.head-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}

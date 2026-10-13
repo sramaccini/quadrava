@@ -234,6 +234,42 @@ describe('editor delle schermate', () => {
     await fromFrame('ed-preview', { type: 'lc-preview:event', event: { kind: 'request', text: 'GET /api/elenco' } });
     expect(el.querySelector('ed-preview .bar')?.textContent).toContain('Registro (1)');
   });
+  it('testi: le traduzioni si salvano nel registro unite al catalogo esistente e si pubblicano', async () => {
+    localStorage.setItem('lc.editor.registry', JSON.stringify({ appId: 'demo', env: 'sviluppo' }));
+    const calls: { url: string; method: string; body?: string; ifMatch?: string }[] = [];
+    vi.stubGlobal('fetch', async (url: string, init: RequestInit = {}) => {
+      const method = init.method ?? 'GET';
+      const headers = (init.headers ?? {}) as Record<string, string>;
+      if (url.startsWith('/registry')) calls.push({ url, method, body: init.body as string | undefined, ifMatch: headers['If-Match'] });
+      const json = (body: unknown, status = 200) => ({ ok: status < 400, status, json: async () => body });
+      if (url === '/registry/apps/demo/documents/messages/it/versions' && method === 'GET') return json([{ hash: 'h-it', createdAt: '2026-10-13T08:00:00Z', author: 'mario' }]);
+      if (url.endsWith('/versions') && method === 'GET') return json([]);
+      if (url.endsWith('/versions/h-it')) return json({ schemaVersion: '1.0', messages: 'it', texts: { 'app.title': 'Titolo', 'x.y': 'vecchio' } });
+      if (url.endsWith('/versions') && method === 'POST') return json({ hash: 'nuovo', createdAt: '2026-10-13T09:00:00Z', author: 'mario' }, 201);
+      if (url.includes('/published')) return { ok: true, status: 204, json: async () => undefined };
+      const body = FILES[url];
+      return body ? json(body) : { ok: false, status: 404, json: async () => ({}) };
+    });
+    store.setTranslation('it', 'x.y', 'nuovo');
+    store.setTranslation('en', 'x.y', 'new');
+    tab(3);
+    await until(() => !!el.querySelector('ed-texts .head-actions'), 'pannello dei testi');
+    ([...el.querySelectorAll<HTMLButtonElement>('ed-texts .head-actions button')].find((b) => b.textContent?.includes('Salva nel registro')) as HTMLButtonElement).click();
+    await until(() => calls.filter((c) => c.method === 'PUT').length === 2, 'pubblicazioni');
+    const saves = calls.filter((c) => c.method === 'POST');
+    expect(saves.map((c) => [c.url, c.ifMatch])).toEqual([
+      ['/registry/apps/demo/documents/messages/it/versions', '"h-it"'],
+      ['/registry/apps/demo/documents/messages/en/versions', undefined],
+    ]);
+    // Le chiavi già nel catalogo restano; quelle modificate si sostituiscono.
+    expect(JSON.parse(saves[0].body!)).toEqual({ schemaVersion: '1.0', messages: 'it', texts: { 'app.title': 'Titolo', 'x.y': 'nuovo' } });
+    expect(calls.filter((c) => c.method === 'PUT').map((c) => c.url)).toEqual([
+      '/registry/apps/demo/documents/messages/it/published?env=sviluppo',
+      '/registry/apps/demo/documents/messages/en/published?env=sviluppo',
+    ]);
+    localStorage.removeItem('lc.editor.registry');
+  });
+
   it('testi: un testo semplice diventa traducibile, la traduzione inglese vale subito nell’anteprima', async () => {
     (el.querySelector('ed-palette button[data-type="alert"]') as HTMLButtonElement).click();
     await settle();

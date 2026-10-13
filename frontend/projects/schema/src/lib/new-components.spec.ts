@@ -1,4 +1,4 @@
-import { validateScreen } from './validate';
+import { validateMessages, validateScreen } from './validate';
 
 /** Schema dei componenti aggiunti al catalogo dopo la prima versione (uno spazio per componente). */
 const screen = (components: unknown[], dataSources: Record<string, unknown> = {}) => ({ schemaVersion: '1.0', screen: 'prova', dataSources, components });
@@ -308,6 +308,17 @@ describe('schema dei componenti nuovi', () => {
       }
       expect(issuesOf(screen([{ type: 'progress', value: true }])).length).toBeGreaterThan(0);
       expect(issuesOf(screen([{ type: 'kanban', source: 's', columnField: 'c', titleField: 't', columns: [] }])).length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('cataloghi delle traduzioni', () => {
+    it('accetta un catalogo per lingua; rifiuta lingue, chiavi o testi non validi', () => {
+      const ok = validateMessages({ schemaVersion: '1.0', messages: 'pt-br', texts: { 'app.title': 'Olá', 'comune.n': '{n, number}' } });
+      expect(ok.valid).toBe(true);
+      expect(validateMessages({ schemaVersion: '1.0', messages: 'IT', texts: {} }).valid).toBe(false);
+      expect(validateMessages({ schemaVersion: '1.0', messages: 'it', texts: { 'chiave con spazi': 'x' } }).valid).toBe(false);
+      expect(validateMessages({ schemaVersion: '1.0', messages: 'it', texts: { a: 1 } }).valid).toBe(false);
+      expect(validateMessages({ schemaVersion: '1.0', messages: 'it' }).valid).toBe(false);
     });
   });
 });

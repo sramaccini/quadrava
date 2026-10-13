@@ -34,6 +34,16 @@ class SchemaValidationTest {
     }
 
     @Test
+    void iCataloghiDegliEsempiSonoDocumentiMessagesValidi() throws IOException {
+        for (String locale : List.of("it", "en")) {
+            String texts = Files.readString(EXAMPLES.resolve("i18n").resolve(locale + ".json"), StandardCharsets.UTF_8);
+            String document = "{\"schemaVersion\":\"1.0\",\"messages\":\"" + locale + "\",\"texts\":" + texts + "}";
+            assertThat(validation.validate(Kind.MESSAGES, document)).as(locale).isEmpty();
+        }
+        assertThat(validation.validate(Kind.MESSAGES, "{\"schemaVersion\":\"1.0\",\"messages\":\"it\",\"texts\":{\"a b\":\"x\"}}")).isNotEmpty();
+    }
+
+    @Test
     void segnalaPosizioneEMotivo() {
         List<Issue> issues = validation.validate(Kind.SCREEN, """
                 {"schemaVersion":"1.0","screen":"x","components":[{"type":"grid","columns":13,"components":[]}]}""");

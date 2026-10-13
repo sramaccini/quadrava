@@ -20,6 +20,11 @@ export class ExampleDefinitions extends DefinitionSource {
     return ['chiaro', 'classico', 'scuro'];
   }
 
+  /** Nella demo i cataloghi sono i file `examples/i18n/<lingua>.json` (chiave → testo). */
+  messages(locale: string): Promise<unknown> {
+    return this.load(`examples/i18n/${encodeURIComponent(locale)}.json`);
+  }
+
   private async load(url: string): Promise<unknown> {
     const response = await fetch(url);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);

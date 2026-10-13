@@ -25,7 +25,7 @@ describe('NavigationStore', () => {
     expect(canAddGroup(doc, ['useCases', 0, 'items', 0])).toBe(true);
     expect(canAddGroup(doc, ['useCases', 0, 'items', 0, 'children', 2])).toBe(false);
     expect(navProperties({ kind: 'leaf' }).map((p) => p.name)).toEqual(['id', 'label', 'icon', 'screen', 'params', 'requires', 'visibleIf']);
-    expect(navProperties({ kind: 'root' }).map((p) => p.name)).toEqual(['schemaVersion', 'navigation', 'default']);
+    expect(navProperties({ kind: 'root' }).map((p) => p.name)).toEqual(['schemaVersion', 'navigation', 'default', 'badges']);
     store.load(doc);
     expect(store.issues()).toEqual([]);
   });

@@ -584,3 +584,12 @@ export interface NavigationDefinition {
   badges?: { url: string; refreshSeconds?: number };
   useCases: NavigationUseCase[];
 }
+
+/** Catalogo delle traduzioni di una lingua (documento `messages` del registro). */
+export interface MessagesDefinition {
+  schemaVersion: string;
+  /** Lingua, che è anche l'identificativo del documento. */
+  messages: string;
+  /** Chiave → testo. */
+  texts: Record<string, string>;
+}

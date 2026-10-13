@@ -18,14 +18,10 @@ import {
   type DocumentVersion,
   type RegistryIssue,
   type ReviewAction,
+  REGISTRY_SETTINGS_KEY,
+  readRegistrySettings,
+  type RegistrySettings,
 } from '../model/registry-client';
-
-const SETTINGS_KEY = 'lc.editor.registry';
-
-interface Settings {
-  appId: string;
-  env: string;
-}
 
 /** Colore dell'etichetta di ogni stato di revisione. */
 const STATE_COLORS: Record<string, string> = { bozza: 'default', 'in-revisione': 'orange', approvata: 'cyan', respinta: 'red' };
@@ -192,7 +188,7 @@ export class RegistryPanelComponent {
   readonly state = input.required<DocumentState & { load(doc: Json): void }>();
   readonly kind = input.required<DocumentKind>();
 
-  private readonly settings = readSettings();
+  private readonly settings = readRegistrySettings();
   protected readonly appId = signal(this.settings.appId);
   protected readonly env = signal(this.settings.env);
   protected readonly busy = signal(false);
@@ -217,9 +213,9 @@ export class RegistryPanelComponent {
 
   constructor() {
     effect(() => {
-      const settings: Settings = { appId: this.appId(), env: this.env() };
+      const settings: RegistrySettings = { appId: this.appId(), env: this.env() };
       try {
-        localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+        localStorage.setItem(REGISTRY_SETTINGS_KEY, JSON.stringify(settings));
       } catch {
         // vedi la bozza
       }
@@ -368,12 +364,3 @@ export class RegistryPanelComponent {
   }
 }
 
-function readSettings(): Settings {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? '{}') as Partial<Settings>;
-    // Ambiente iniziale: sviluppo, dove si pubblica senza revisione (collaudo e produzione chiedono versioni approvate).
-    return { appId: typeof parsed.appId === 'string' ? parsed.appId : '', env: typeof parsed.env === 'string' ? parsed.env : 'sviluppo' };
-  } catch {
-    return { appId: '', env: 'sviluppo' };
-  }
-}

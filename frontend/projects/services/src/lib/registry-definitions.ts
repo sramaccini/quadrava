@@ -27,7 +27,7 @@ export class DefinitionLoadError extends Error {
 }
 
 /**
- * Definizioni dal registro (contracts/registry.yaml 0.2): ogni schermata, la navigazione e ogni tema sono documenti
+ * Definizioni dal registro (contracts/registry.yaml 0.3): ogni schermata, la navigazione, ogni tema e il catalogo di ogni lingua sono documenti
  * separati, e il runtime carica la versione pubblicata nell'ambiente configurato. Le risposte si ricordano con il
  * loro ETag: ricaricando lo stesso documento il registro risponde 304 e si riusa la copia già scaricata.
  */
@@ -53,7 +53,13 @@ export class RegistryDefinitions extends DefinitionSource {
     return this.config.themes;
   }
 
-  private async published(kind: 'screen' | 'navigation' | 'theme', id: string): Promise<unknown> {
+  /** Catalogo pubblicato della lingua (documento `messages`): si restituiscono i testi, chiave → testo. */
+  async messages(locale: string): Promise<unknown> {
+    const doc = (await this.published('messages', locale)) as { texts?: unknown } | null;
+    return doc && typeof doc === 'object' ? doc.texts : null;
+  }
+
+  private async published(kind: 'screen' | 'navigation' | 'theme' | 'messages', id: string): Promise<unknown> {
     const base = (this.config.base ?? '/registry').replace(/\/+$/, '');
     const url = `${base}/apps/${encodeURIComponent(this.config.app)}/documents/${kind}/${encodeURIComponent(id)}/published`;
     const cached = this.cache.get(url);

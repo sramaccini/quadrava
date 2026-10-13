@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { I18n } from 'core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { I18n, Notifier } from 'core';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzInputModule } from 'ng-zorro-antd/input';
@@ -9,6 +9,7 @@ import { EDITOR_LOCALES, EditorStore } from '../model/editor-store';
 import { ownerOf, targetAt } from '../model/schema-info';
 import { fallbackText } from '../model/templates';
 import { collectTexts, translatable, usedKeys, type TextEntry } from '../model/texts';
+import { RegistryClient, RegistryError, readRegistrySettings } from '../model/registry-client';
 
 interface TextRow {
   entry: TextEntry;
@@ -37,6 +38,11 @@ export class TextsComponent {
   protected readonly store = inject(EditorStore);
   protected readonly i18n = inject(I18n);
   protected readonly locales = EDITOR_LOCALES;
+  private readonly client = inject(RegistryClient);
+  private readonly notifier = inject(Notifier);
+  /** Applicazione e ambiente scelti nel pannello del registro. */
+  protected registry = readRegistrySettings();
+  protected readonly saving = signal(false);
 
   protected readonly rows = computed<TextRow[]>(() => {
     const doc = this.store.doc();
@@ -83,6 +89,44 @@ export class TextsComponent {
 
   protected setTranslation(row: TextRow, locale: string, text: string): void {
     if (row.entry.key) this.store.setTranslation(locale, row.entry.key, text);
+  }
+
+  /**
+   * Salva nel registro le traduzioni scritte nell'editor e le pubblica nell'ambiente scelto: per ogni lingua si parte
+   * dall'ultima versione del catalogo (documento `messages`), si aggiungono o sostituiscono le chiavi modificate e si
+   * salva una versione nuova, indicando quella di partenza (se qualcuno ha salvato nel frattempo il registro rifiuta e
+   * si riprova). Le altre chiavi del catalogo restano com'erano.
+   */
+  protected async saveToRegistry(): Promise<void> {
+    this.registry = readRegistrySettings();
+    const { appId, env } = this.registry;
+    const changed = Object.entries(this.store.translations()).filter(([locale, texts]) => (this.locales as readonly string[]).includes(locale) && Object.keys(texts).length > 0);
+    if (!appId || changed.length === 0) {
+      this.notifier.toast(this.i18n.t(appId ? 'ed.texts.nothingToSave' : 'ed.texts.registryHint'));
+      return;
+    }
+    this.saving.set(true);
+    const done: string[] = [];
+    try {
+      for (const [locale, texts] of changed) {
+        const latest = (await this.client.versions(appId, 'messages', locale))[0];
+        const current = latest ? ((await this.client.version(appId, 'messages', locale, latest.hash)) as { texts?: Record<string, string> }) : null;
+        const merged = { ...(current?.texts ?? {}), ...texts };
+        const saved = await this.client.save(appId, 'messages', locale, { schemaVersion: '1.0', messages: locale, texts: merged }, latest?.hash);
+        await this.client.publish(appId, 'messages', locale, env, saved.hash);
+        done.push(locale);
+      }
+      this.notifier.toast(this.i18n.t('ed.texts.savedRegistry', { locales: done.join(', '), env }));
+    } catch (e) {
+      const reason = e instanceof RegistryError ? e.message : '';
+      const status = e instanceof RegistryError ? e.status : 0;
+      this.notifier.toast(
+        status === 0 ? this.i18n.t('ed.registry.unreachable') : status === 412 ? this.i18n.t('ed.texts.conflict') : this.i18n.t('ed.registry.rejected', { reason }),
+        'error',
+      );
+    } finally {
+      this.saving.set(false);
+    }
   }
 
   /** Scarica le traduzioni delle chiavi usate dalla schermata, per lingua, da unire ai cataloghi. */

@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lowcode.example/schemas/messages.schema.json",
+  "title": "Catalogo delle traduzioni",
+  "description": "Testi di un'applicazione in una lingua: chiave → testo nel formato dei messaggi ({n, number}, {n, plural, …}, {x, select, …}). Un documento per lingua; i testi sono sempre solo testo, mai HTML.",
+  "type": "object",
+  "required": ["schemaVersion", "messages", "texts"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "messages": {
+      "type": "string",
+      "pattern": "^[a-z]{2,3}(-[a-z0-9]{2,8})?$",
+      "description": "Lingua del catalogo (it, en, pt-br…), che è anche l'identificativo del documento nel registro."
+    },
+    "texts": {
+      "type": "object",
+      "maxProperties": 20000,
+      "propertyNames": { "pattern": "^[A-Za-z0-9_.-]{1,200}$" },
+      "additionalProperties": { "type": "string", "maxLength": 5000 },
+      "description": "Chiave → testo."
+    }
+  }
+}

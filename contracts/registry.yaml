@@ -9,7 +9,7 @@ info:
     a una versione di un documento. Il registry valida il contenuto contro lo schema del tipo di documento
     (screen.schema.json, navigation.schema.json, theme.schema.json) e rifiuta i documenti non validi.
 
-    0.3: revisione delle versioni (bozza → in-revisione → approvata o respinta, con il principio dei quattro occhi),
+    0.3: cataloghi delle traduzioni come documenti (kind messages, un documento per lingua); revisione delle versioni (bozza → in-revisione → approvata o respinta, con il principio dei quattro occhi),
     ambienti protetti in cui si pubblicano solo versioni approvate, salvataggio condizionato da If-Match per non
     sovrascrivere le modifiche di altri, errori di validazione dettagliati (`errors` nel Problem).
   license:
@@ -248,8 +248,8 @@ components:
   schemas:
     DocumentKind:
       type: string
-      enum: [screen, navigation, theme]
-      description: Tipo di documento, che decide lo schema di validazione.
+      enum: [screen, navigation, theme, messages]
+      description: Tipo di documento, che decide lo schema di validazione (messages = catalogo delle traduzioni di una lingua, schema messages.schema.json).
     AppSummary:
       type: object
       required: [id, name]

@@ -91,4 +91,6 @@ export abstract class DefinitionSource {
   abstract theme(id: string): Promise<unknown>;
   /** Temi tra cui l'utente può scegliere, il primo è quello iniziale. */
   abstract themes(): string[];
+  /** Catalogo delle traduzioni di una lingua: un oggetto chiave → testo. */
+  abstract messages(locale: string): Promise<unknown>;
 }

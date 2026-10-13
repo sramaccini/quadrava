@@ -30,7 +30,25 @@ export function csrfToken(cookies: string): string | null {
   return null;
 }
 
-export type DocumentKind = 'screen' | 'navigation' | 'theme';
+export type DocumentKind = 'screen' | 'navigation' | 'theme' | 'messages';
+
+/** Applicazione e ambiente del registro scelti nell'editor (ricordati nel browser), condivisi dai pannelli. */
+export interface RegistrySettings {
+  appId: string;
+  env: string;
+}
+
+export const REGISTRY_SETTINGS_KEY = 'lc.editor.registry';
+
+/** Impostazioni del registro salvate; ambiente iniziale sviluppo (collaudo e produzione chiedono versioni approvate). */
+export function readRegistrySettings(): RegistrySettings {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(REGISTRY_SETTINGS_KEY) ?? '{}') as Partial<RegistrySettings>;
+    return { appId: typeof parsed.appId === 'string' ? parsed.appId : '', env: typeof parsed.env === 'string' ? parsed.env : 'sviluppo' };
+  } catch {
+    return { appId: '', env: 'sviluppo' };
+  }
+}
 
 /** Stato di revisione di una versione. */
 export type ReviewState = 'bozza' | 'in-revisione' | 'approvata' | 'respinta';

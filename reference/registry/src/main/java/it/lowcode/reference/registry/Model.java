@@ -21,7 +21,9 @@ public final class Model {
     public enum Kind {
         SCREEN("screen"),
         NAVIGATION("navigation"),
-        THEME("theme");
+        THEME("theme"),
+        /** Catalogo delle traduzioni di una lingua: l'identificativo è la lingua (it, en, pt-br). */
+        MESSAGES("messages");
 
         private final String idProperty;
 

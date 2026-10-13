@@ -1,5 +1,5 @@
-// Pubblica gli esempi (../examples) in un registro: ogni schermata, la navigazione e ogni tema come documenti separati
-// (contracts/registry.yaml 0.2). Serve a provare il runtime che carica dal registro.
+// Pubblica gli esempi (../examples) in un registro: ogni schermata, la navigazione, ogni tema e ogni catalogo delle
+// traduzioni come documenti separati (contracts/registry.yaml 0.3). Serve a provare il runtime che carica dal registro.
 //
 //   node tools/publish-examples.mjs [--registry http://localhost:8081] [--app demo] [--env sviluppo]
 //                                   [--token <JWT> | --user <utente> --password <password> [--issuer <realm>]]
@@ -47,6 +47,11 @@ for (const file of readdirSync(examples).filter((f) => f.endsWith('.json'))) {
 for (const file of readdirSync(join(examples, 'themes')).filter((f) => f.endsWith('.json'))) {
   const doc = read(join(examples, 'themes', file));
   documents.push({ kind: 'theme', id: doc.theme, doc });
+}
+// Cataloghi delle traduzioni: un documento messages per lingua (i file degli esempi sono solo chiave → testo).
+for (const file of readdirSync(join(examples, 'i18n')).filter((f) => f.endsWith('.json'))) {
+  const locale = file.replace(/\.json$/, '');
+  documents.push({ kind: 'messages', id: locale, doc: { schemaVersion: '1.0', messages: locale, texts: read(join(examples, 'i18n', file)) } });
 }
 
 let failed = 0;

@@ -1,4 +1,4 @@
-import { I18n, loadMessages } from './i18n';
+import { I18n, loadMessages, loadCatalogs } from './i18n';
 
 describe('I18n', () => {
   function make(): I18n {
@@ -49,5 +49,16 @@ describe('loadMessages', () => {
     expect(problems.join('|')).toContain('it: la chiave bad non è un testo');
     expect(problems.join('|')).toContain('en: catalogo non caricato (HTTP 404)');
     expect(i18n.raw('ok', 'it')).toBe('x');
+  });
+
+  it('loadCatalogs: cataloghi da una funzione qualsiasi; voci non testuali e cataloghi mancanti segnalati senza bloccare gli altri', async () => {
+    const i18n = new I18n();
+    const problems = await loadCatalogs(i18n, ['it', 'en', 'fr'], async (l) => {
+      if (l === 'fr') throw new Error('HTTP 404');
+      return l === 'it' ? { saluto: 'Ciao', n: 3 } : { saluto: 'Hello' };
+    });
+    expect(problems).toEqual(['it: la chiave n non è un testo', 'fr: catalogo non caricato (HTTP 404)']);
+    expect(i18n.raw('saluto', 'it')).toBe('Ciao');
+    expect(i18n.raw('saluto', 'en')).toBe('Hello');
   });
 });

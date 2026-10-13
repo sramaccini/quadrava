@@ -9,7 +9,7 @@ import { NzDropdownModule } from 'ng-zorro-antd/dropdown';
 import { NzMenuModule } from 'ng-zorro-antd/menu';
 import { NzLayoutModule } from 'ng-zorro-antd/layout';
 import { NzSelectModule } from 'ng-zorro-antd/select';
-import { DefinitionSource, I18n, ThemeService, loadMessages, type VisibleLeaf } from 'core';
+import { DefinitionSource, I18n, ThemeService, loadCatalogs, type VisibleLeaf } from 'core';
 import { validateTheme } from 'schema';
 import { NavigationService } from './navigation.service';
 import { ShellSession } from './shell-session';
@@ -95,7 +95,8 @@ export class App {
   protected readonly hrefFor = (useCase: string, leaf: VisibleLeaf): string => this.navigation.href(useCase, leaf);
 
   constructor() {
-    void loadMessages(this.i18n, LANGUAGES, (l) => `examples/i18n/${l}.json`).then((problems) => problems.forEach((p) => console.warn('[i18n]', p)));
+    // I cataloghi vengono dalla stessa fonte delle definizioni: i file della demo oppure le versioni pubblicate nel registro.
+    void loadCatalogs(this.i18n, LANGUAGES, (l) => this.definitions.messages(l)).then((problems) => problems.forEach((p) => console.warn('[i18n]', p)));
     this.i18n.setLocale(initialLanguage());
     effect(() => {
       const locale = this.i18n.locale();
