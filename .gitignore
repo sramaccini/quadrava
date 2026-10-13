@@ -19,3 +19,7 @@ target/
 Thumbs.db
 .env
 *.log
+
+# Stack di sviluppo locale (npm run stack): dati del registro e log
+data/
+.stack/

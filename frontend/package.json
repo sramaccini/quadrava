@@ -20,7 +20,8 @@
     "start:runtime:bff": "npm run demo:prepare && ng serve runtime --port 4200 -c bff",
     "start:editor:bff": "npm run demo:prepare && ng serve editor --port 4201 -c bff",
     "publish:examples": "node tools/publish-examples.mjs",
-    "demo-api": "node tools/demo-api.mjs"
+    "demo-api": "node tools/demo-api.mjs",
+    "stack": "node tools/stack.mjs"
   },
   "private": true,
   "engines": {

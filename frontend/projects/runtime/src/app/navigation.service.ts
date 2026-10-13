@@ -62,14 +62,15 @@ export class NavigationService {
   }
 
   /**
-   * Contatori del menu: si leggono subito, poi a intervalli (solo con la pagina visibile) e quando si torna sulla
+   * Contatori del menu: si leggono subito (anche con la pagina in secondo piano), poi a intervalli (solo con la pagina visibile) e quando si torna sulla
    * pagina. Si tengono solo i numeri interi positivi; un errore lascia i contatori di prima e finisce nelle
    * segnalazioni tecniche, senza disturbare l'utente.
    */
   private watchBadges(badges: NavigationDefinition['badges']): void {
     if (!badges || typeof document === 'undefined') return;
-    const read = async () => {
-      if (document.visibilityState === 'hidden') return;
+    // La prima lettura avviene sempre; quelle periodiche solo con la pagina visibile.
+    const read = async (always = false) => {
+      if (!always && document.visibilityState === 'hidden') return;
       try {
         const reply = await this.data.request({ method: 'GET', url: badges.url });
         const counts: Record<string, number> = {};
@@ -81,8 +82,8 @@ export class NavigationService {
         this.diagnostics?.report({ screen: 'navigazione', source: 'contatori del menu', error: e instanceof Error ? e.message : String(e) });
       }
     };
-    void read();
-    const timer = setInterval(read, (badges.refreshSeconds ?? 60) * 1000);
+    void read(true);
+    const timer = setInterval(() => void read(), (badges.refreshSeconds ?? 60) * 1000);
     const onVisible = () => void read();
     document.addEventListener('visibilitychange', onVisible);
     this.destroyRef.onDestroy(() => {
