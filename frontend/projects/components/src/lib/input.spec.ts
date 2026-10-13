@@ -133,4 +133,31 @@ describe('campi a sé (input)', () => {
     expect(h.el.querySelector('lc-section .body')?.classList).toContain('row');
     expect(h.el.querySelectorAll('lc-section lc-input').length).toBe(2);
   });
+
+  it('il passo validate controlla i campi del gruppo: errori visibili e sequenza ferma finché non sono validi', async () => {
+    const h = await renderScreen({
+      components: [
+        { type: 'input', group: 'ordine', field: { name: 'cliente', type: 'text', label: 'Cliente', required: true } },
+        { type: 'input', group: 'ordine', field: { name: 'codice', type: 'text', label: 'Codice', validate: { rule: '{{ value.size() == 3 }}', message: 'Tre caratteri' } } },
+        { type: 'input', group: 'altro', field: { name: 'nota', type: 'text', label: 'Nota', required: true } },
+        { type: 'button', label: 'Invia', onClick: [{ validate: 'ordine' }, { toast: 'inviato' }] },
+      ],
+    });
+    const [cliente, codice] = [...h.el.querySelectorAll<HTMLInputElement>('lc-input input')];
+    const send = h.el.querySelector('lc-button button') as HTMLButtonElement;
+    send.click();
+    await h.until(() => h.toasts.length === 1, 'avviso');
+    expect(h.toasts).toEqual(['Controlla i campi evidenziati']);
+    // Solo il campo del gruppo mostra l'errore (codice è vuoto: la regola non si applica ai campi vuoti).
+    expect([...h.el.querySelectorAll('.ant-form-item-explain-error')].map((e) => plain(e.textContent))).toEqual(['Campo obbligatorio']);
+    type(cliente, 'Rossi', 'change');
+    type(codice, 'ab', 'change');
+    await h.settle();
+    send.click();
+    await h.until(() => h.toasts.length === 2, 'secondo avviso');
+    type(codice, 'abc', 'change');
+    await h.settle();
+    send.click();
+    await h.until(() => h.toasts.at(-1) === 'inviato', 'invio');
+  });
 });

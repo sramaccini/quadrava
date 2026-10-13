@@ -47,7 +47,19 @@ export interface DialogStep {
     onSubmit: Step[];
   };
 }
-export type Step = CallStep | RefreshStep | NavigateStep | ToastStep | SetStep | ConfirmStep | DialogStep;
+/** Controlla i campi a sé di un gruppo (`*` = tutti): se uno non è valido mostra gli errori e ferma la sequenza. */
+export interface ValidateStep {
+  validate: string;
+}
+/** Apre la stampa del browser. */
+export interface PrintStep {
+  print: true;
+}
+/** Scarica in CSV le righe di un data source. */
+export interface ExportStep {
+  export: { source: string; fileName?: string; args?: Record<string, unknown>; columns: { field: string; label?: string }[] };
+}
+export type Step = CallStep | RefreshStep | NavigateStep | ToastStep | SetStep | ConfirmStep | DialogStep | ValidateStep | PrintStep | ExportStep;
 
 export interface ConditionalProps {
   visibleIf?: Expression;
@@ -402,6 +414,8 @@ export interface InputNode extends NodeBase {
   default?: unknown;
   /** Passi dopo ogni modifica; vedono il nuovo valore in `value`. */
   onChange?: Step[];
+  /** Gruppo di validazione per il passo `validate`. */
+  group?: string;
 }
 
 export type NodeDefinition = SectionNode | TextNode | ButtonNode | FilterBarNode | TableNode | FormNode | TabsNode | DetailNode | AlertNode | StatsNode | WizardNode | TreeNode | CalendarNode | ChartNode | DataTableNode | ServerDataTableNode | InputNode | BoxNode | GridNode | BorderNode;

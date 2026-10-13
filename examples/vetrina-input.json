@@ -45,7 +45,10 @@
             "name": "tipo",
             "type": "select",
             "label": "{{ t('comune.tipo', 'Tipo') }}",
-            "options": ["attiva", "passiva"],
+            "options": [
+              "attiva",
+              "passiva"
+            ],
             "optionKey": "valori.tipo"
           }
         },
@@ -56,7 +59,11 @@
             "name": "stati",
             "type": "multiselect",
             "label": "{{ t('comune.stato', 'Stato') }}",
-            "options": ["bozza", "inviata", "pagata"],
+            "options": [
+              "bozza",
+              "inviata",
+              "pagata"
+            ],
             "optionKey": "valori.stato"
           }
         },
@@ -67,7 +74,12 @@
             "name": "cliente",
             "type": "select",
             "label": "{{ t('comune.cliente', 'Cliente') }}",
-            "options": ["Rossi Srl", "Bianchi SpA", "Verdi & C.", "Neri Group"]
+            "options": [
+              "Rossi Srl",
+              "Bianchi SpA",
+              "Verdi & C.",
+              "Neri Group"
+            ]
           }
         }
       ]
@@ -111,7 +123,8 @@
             "label": "{{ t('vetrina_input.nome', 'Nome') }}",
             "required": true,
             "tooltip": "{{ t('vetrina_input.nome_aiuto', 'Il saluto qui sotto si aggiorna quando si esce dal campo') }}"
-          }
+          },
+          "group": "ordine"
         },
         {
           "id": "campo-email",
@@ -124,7 +137,8 @@
               "rule": "{{ value.matches('^[^@ ]+@[^@ ]+$') }}",
               "message": "{{ t('vetrina_input.email_non_valida', 'Indirizzo email non valido') }}"
             }
-          }
+          },
+          "group": "ordine"
         },
         {
           "id": "campo-quantita",
@@ -188,6 +202,19 @@
           "id": "riepilogo",
           "type": "text",
           "text": "{{ t('vetrina_input.riepilogo', 'Ciao {nome}: {q, number} pezzi, consegna {d}', {'nome': dyn(state.nome == null ? '—' : state.nome), 'q': dyn(state.quantita == null ? 0 : state.quantita), 'd': dyn(state.consegna == null ? '—' : state.consegna)}) }}"
+        },
+        {
+          "id": "btn-conferma",
+          "type": "button",
+          "label": "{{ t('vetrina_input.conferma', 'Conferma (controlla nome ed email)') }}",
+          "onClick": [
+            {
+              "validate": "ordine"
+            },
+            {
+              "toast": "{{ t('vetrina_input.confermato', 'Dati corretti') }}"
+            }
+          ]
         }
       ]
     }

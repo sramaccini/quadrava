@@ -199,7 +199,7 @@ function defaultValue(info: PropertyInfo, index: number, t: Translate): Json {
     case 'enum':
       return info.options?.[0] ?? '';
     case 'boolean':
-      return false;
+      return info.fixed ?? false;
     case 'color':
       return '#000000';
     case 'number':

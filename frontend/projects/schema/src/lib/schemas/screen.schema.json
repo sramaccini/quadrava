@@ -129,6 +129,15 @@
         },
         {
           "$ref": "#/$defs/stepDialog"
+        },
+        {
+          "$ref": "#/$defs/stepValidate"
+        },
+        {
+          "$ref": "#/$defs/stepPrint"
+        },
+        {
+          "$ref": "#/$defs/stepExport"
         }
       ]
     },
@@ -1402,6 +1411,11 @@
                   "$ref": "#/$defs/step"
                 },
                 "description": "Passi eseguiti dopo ogni modifica del valore, che vedono il nuovo valore in `value`. Il testo libero si scrive nello stato quando si esce dal campo o con Invio."
+              },
+              "group": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9-]*$",
+                "description": "Gruppo di validazione: il passo { \"validate\": \"<gruppo>\" } controlla insieme i campi dello stesso gruppo."
               }
             }
           }
@@ -1941,6 +1955,87 @@
         "large"
       ],
       "description": "Spazio tra i componenti, ricavato dal tema (medium se assente)."
+    },
+    "stepValidate": {
+      "type": "object",
+      "required": [
+        "validate"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "validate": {
+          "type": "string",
+          "pattern": "^(\\*|[A-Za-z][A-Za-z0-9-]*)$",
+          "description": "Gruppo di campi a sé (`group` dei nodi input) da controllare, oppure * per tutti quelli visibili. Se un campo non è valido gli errori si mostrano e la sequenza si ferma."
+        }
+      }
+    },
+    "stepPrint": {
+      "type": "object",
+      "required": [
+        "print"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "print": {
+          "const": true,
+          "description": "Apre la stampa del browser: menu, barre e pulsanti non si stampano."
+        }
+      }
+    },
+    "stepExport": {
+      "type": "object",
+      "required": [
+        "export"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "export": {
+          "type": "object",
+          "required": [
+            "source",
+            "columns"
+          ],
+          "additionalProperties": false,
+          "description": "Scarica in CSV le righe di un data source GET (un elenco, oppure items di una risposta a pagine): separatore punto e virgola, UTF-8 con BOM per Excel, celle che cominciano con = + - @ neutralizzate.",
+          "properties": {
+            "source": {
+              "type": "string",
+              "description": "Data source GET che restituisce le righe."
+            },
+            "fileName": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9 _.-]{1,80}$",
+              "description": "Nome del file (export.csv se assente; l’estensione .csv si aggiunge se manca)."
+            },
+            "args": {
+              "type": "object",
+              "description": "Variabili per url e params del data source (come in call)."
+            },
+            "columns": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": [
+                  "field"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "field": {
+                    "type": "string",
+                    "description": "Campo della riga."
+                  },
+                  "label": {
+                    "type": "string",
+                    "description": "Intestazione della colonna (il campo se assente); può contenere {{ }}."
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

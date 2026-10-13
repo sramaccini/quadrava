@@ -1,4 +1,5 @@
 import type { Step } from 'schema';
+import { csvFileName, downloadText, rowsOf, toCsv } from './csv';
 import type { ScreenRuntime } from './screen-runtime';
 import type { Scope } from './types';
 
@@ -54,6 +55,29 @@ async function runStep(runtime: ScreenRuntime, step: Step, scope: Scope): Promis
   }
   if ('toast' in step) {
     runtime.toast(runtime.text(step.toast, scope));
+    return true;
+  }
+  if ('validate' in step) {
+    // I campi mostrano i propri errori; un avviso dice perché non si procede.
+    if (runtime.validate(step.validate)) return true;
+    runtime.toast(runtime.systemText('lc.checkFields', 'Controlla i campi evidenziati'), 'error');
+    return false;
+  }
+  if ('print' in step) {
+    runtime.print();
+    return true;
+  }
+  if ('export' in step) {
+    const spec = step.export;
+    const args = (runtime.resolveValue(spec.args ?? {}, scope) ?? {}) as Record<string, unknown>;
+    const result = await runtime.query(spec.source, args, scope);
+    if (!result.ok) {
+      runtime.toast(genericError(runtime), 'error');
+      return false;
+    }
+    const header = spec.columns.map((c) => (c.label ? runtime.text(c.label, scope) : c.field));
+    const rows = rowsOf(result.data).map((row) => spec.columns.map((c) => row[c.field]));
+    downloadText(csvFileName(spec.fileName), 'text/csv;charset=utf-8', toCsv(header, rows));
     return true;
   }
   runtime.setState(step.set.path, runtime.resolveValue(step.set.value, scope));

@@ -273,6 +273,22 @@ describe('Vetrina: componenti avanzati', () => {
     });
   });
 
+  describe('validazione dei campi a sé', () => {
+    it('«Conferma» controlla il gruppo: senza nome si ferma e lo dice, con i dati giusti procede', { timeout: 20000 }, async () => {
+      const { el, until } = await openShowcase('/vetrina/vetrina-input');
+      const button = [...el.querySelectorAll<HTMLButtonElement>('main lc-button button')].find((b) => plainText(b.textContent).startsWith('Conferma'))!;
+      button.click();
+      await until(() => !!document.querySelector('.ant-message-notice'), 'avviso');
+      expect(document.querySelector('.ant-message-notice')?.textContent).toContain('Controlla i campi evidenziati');
+      expect([...el.querySelectorAll('main .ant-form-item-explain-error')].map((e) => plainText(e.textContent))).toContain('Campo obbligatorio');
+      const nome = [...el.querySelectorAll('main lc-input')].find((i) => plainText(i.querySelector('nz-form-label')?.textContent) === 'Nome')!.querySelector('input') as HTMLInputElement;
+      nome.value = 'Anna';
+      nome.dispatchEvent(new Event('change'));
+      button.click();
+      await until(() => [...document.querySelectorAll('.ant-message-notice')].some((n) => n.textContent?.includes('Dati corretti')), 'conferma');
+    });
+  });
+
   describe('contenitori di layout', () => {
     it('border con filtro a ovest e tabella al centro, griglia e box con proporzioni', { timeout: 20000 }, async () => {
       const { el, until } = await openShowcase('/vetrina/vetrina-contenitori');

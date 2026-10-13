@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, input, OnInit, signal } from '@angular/core';
 import { I18n, initialInputValue, inputPath, runSteps, type ScreenRuntime, type Scope } from 'core';
 import { NzFormModule } from 'ng-zorro-antd/form';
 import type { InputNode } from 'schema';
@@ -54,6 +54,7 @@ export class InputComponent implements OnInit {
   readonly scope = input<Scope>({});
 
   private readonly i18n = inject(I18n);
+  private readonly destroyRef = inject(DestroyRef);
   protected readonly id = nextId('lc-input');
   protected readonly touched = signal(false);
 
@@ -77,6 +78,12 @@ export class InputComponent implements OnInit {
   ngOnInit(): void {
     // Di norma lo stato è già stato preparato dal runtime; qui per i campi in finestre o aggiunti dopo.
     if (this.runtime().getState(this.path()) === undefined) this.runtime().setState(this.path(), initialInputValue(this.node()));
+    // Il passo validate controlla i campi del gruppo (`default` se non indicato) finché il campo è sullo schermo.
+    const unregister = this.runtime().registerValidator(this.node().group ?? 'default', () => {
+      this.touched.set(true);
+      return this.error() === null;
+    });
+    this.destroyRef.onDestroy(unregister);
   }
 
   protected async change(raw: unknown): Promise<void> {

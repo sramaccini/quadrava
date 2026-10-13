@@ -46,6 +46,8 @@ export class ScreenRuntime {
   /** Letture di servizio (`query`) identiche in corso: chi arriva dopo aspetta la stessa risposta. */
   private readonly sharedQueries = new Map<string, Promise<unknown>>();
   private readonly missingKeys = new Set<string>();
+  /** Controlli dei campi a sé, per gruppo di validazione. */
+  private readonly validators = new Map<string, Set<() => boolean>>();
   /** Ultima richiesta del caricamento automatico di ogni data source GET (per non ripeterla se non cambia). */
   private readonly lastAutoRequest = new Map<string, string>();
 
@@ -191,6 +193,28 @@ export class ScreenRuntime {
   resolveValue(value: unknown, scope: Scope = {}): unknown {
     const ctx = this.context(scope);
     return this.resolveIn(value, ctx);
+  }
+
+  /**
+   * Registra il controllo di un campo nel suo gruppo di validazione; restituisce la funzione che lo toglie (quando il
+   * campo sparisce). Il controllo mostra gli errori del campo e dice se è valido.
+   */
+  registerValidator(group: string, check: () => boolean): () => void {
+    const set = this.validators.get(group) ?? new Set();
+    set.add(check);
+    this.validators.set(group, set);
+    return () => set.delete(check);
+  }
+
+  /** Controlla tutti i campi del gruppo (`*` = tutti), senza fermarsi al primo: ognuno mostra i propri errori. */
+  validate(group: string): boolean {
+    const checks = group === '*' ? [...this.validators.values()].flatMap((s) => [...s]) : [...(this.validators.get(group) ?? [])];
+    return checks.map((check) => check()).every(Boolean);
+  }
+
+  /** Stampa del browser (il foglio di stile di stampa nasconde il guscio dell'applicazione). */
+  print(): void {
+    globalThis.print?.();
   }
 
   setState(path: string, value: unknown): void {

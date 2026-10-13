@@ -7,3 +7,10 @@
 }
 html, body { margin: 0; }
 body { background: var(--lc-color-background); color: var(--lc-color-on-surface); font-family: var(--lc-font-family); font-size: var(--lc-font-size); }
+
+/* Stampa (passo print): solo il contenuto della schermata, senza menu, barra superiore e pulsanti. */
+@media print {
+  lc-sidebar, .lc-sider-drawer, nz-header.bar, lc-button, .ant-btn, .ant-pagination { display: none !important; }
+  body { background: none; }
+  .shell, .main { background: none !important; }
+}

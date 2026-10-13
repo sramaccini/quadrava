@@ -26,6 +26,8 @@ export interface PropertyInfo {
   schema?: Schema;
   /** Lo schema (schermate, navigazione…) da cui viene la proprietà. */
   reader?: SchemaReader;
+  /** Valore fisso di un booleano (`const`, per esempio `print: true`): è anche il valore iniziale. */
+  fixed?: boolean;
 }
 
 /** Una variante di un elenco con elementi di forme diverse (i passi: `call`, `toast`…), riconosciuta dalla sua chiave. */
@@ -72,6 +74,7 @@ export class SchemaReader {
     if (Array.isArray(s['enum'])) return { kind: 'enum', options: (s['enum'] as unknown[]).map(String), description };
     // Un valore fisso (per esempio la versione dello schema) è una scelta con una sola opzione.
     if (typeof s['const'] === 'string') return { kind: 'enum', options: [s['const'] as string], description };
+    if (typeof s['const'] === 'boolean') return { kind: 'boolean', description, fixed: s['const'] as boolean };
     if (ref === 'expression') return { kind: 'expression', description };
     if (ref === 'color') return { kind: 'color', description, pattern: typeof s['pattern'] === 'string' ? (s['pattern'] as string) : undefined };
     if (s['type'] === 'string') return { kind: 'text', description, pattern: typeof s['pattern'] === 'string' ? (s['pattern'] as string) : undefined };
