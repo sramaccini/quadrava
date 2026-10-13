@@ -1557,6 +1557,10 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
               },
               "gap": {
                 "$ref": "#/$defs/gap"
+              },
+              "resizable": {
+                "type": "boolean",
+                "description": "Divisori tra il centro e i lati ovest ed est, da trascinare o da spostare con le frecce (da 120 a 600px)."
               }
             }
           }

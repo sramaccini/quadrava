@@ -72,4 +72,34 @@ describe('contenitori di layout', () => {
     expect(h.requests[0].query).toEqual({ q: 'x' });
     expect(plain(host(h.el, 'nascosto').textContent)).toBe('');
   });
+
+  it('border ridimensionabile: divisori accessibili, tastiera e trascinamento entro 120–600px', async () => {
+    const h = await renderScreen({
+      components: [{ type: 'border', resizable: true, westWidth: 200, components: [text('menu', { region: 'west' }), text('corpo'), text('note', { region: 'east' })] }],
+    });
+    const [west, east] = [...h.el.querySelectorAll<HTMLElement>('lc-border .handle')];
+    const columns = () => (h.el.querySelector('lc-border .border') as HTMLElement).style.getPropertyValue('--lc-border-columns');
+    expect(west.getAttribute('role')).toBe('separator');
+    expect(west.getAttribute('aria-label')).toBe('Larghezza del pannello sinistro');
+    expect([west.getAttribute('aria-valuenow'), east.getAttribute('aria-valuenow')]).toEqual(['200', '240']);
+    west.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    east.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', shiftKey: true, bubbles: true }));
+    await h.settle();
+    expect(columns()).toBe('216px minmax(0, 1fr) 176px');
+    west.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true }));
+    await h.settle();
+    expect(west.getAttribute('aria-valuenow')).toBe('120');
+    // Trascinamento: 500px a destra si fermano al massimo.
+    const pointer = (type: string, x: number) => west.dispatchEvent(Object.assign(new MouseEvent(type, { bubbles: true, clientX: x }), { pointerId: 1 }));
+    pointer('pointerdown', 100);
+    pointer('pointermove', 600);
+    pointer('pointerup', 600);
+    await h.settle();
+    expect(west.getAttribute('aria-valuenow')).toBe('600');
+  });
+
+  it('border senza resizable: nessun divisore', async () => {
+    const h = await renderScreen({ components: [{ type: 'border', components: [text('menu', { region: 'west' }), text('corpo')] }] });
+    expect(h.el.querySelector('lc-border .handle')).toBeNull();
+  });
 });

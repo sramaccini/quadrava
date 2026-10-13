@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { NodeHostComponent, type ScreenRuntime, type Scope } from 'core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import { I18n, NodeHostComponent, type ScreenRuntime, type Scope } from 'core';
 import type { BorderNode, BorderRegion, BoxNode, GridNode, LayoutGap, NodeDefinition } from 'schema';
 
 /**
@@ -106,11 +106,19 @@ const REGIONS: BorderRegion[] = ['north', 'west', 'center', 'east', 'south'];
   styles: `
     :host { display: block; container-type: inline-size; }
     .border { display: grid; grid-template-columns: var(--lc-border-columns); grid-template-areas: var(--lc-border-areas); }
-    .region { display: flex; flex-direction: column; min-width: 0; }
+    .region { display: flex; flex-direction: column; min-width: 0; position: relative; }
+    /* Divisori dei lati ridimensionabili: una fascia sottile sul bordo verso il centro. */
+    .handle { position: absolute; top: 0; bottom: 0; width: 10px; cursor: col-resize; touch-action: none; z-index: 1; }
+    .west > .handle { right: -11px; }
+    .east > .handle { left: -11px; }
+    .handle::after { content: ''; position: absolute; top: 0; bottom: 0; left: 4px; width: 2px; border-radius: 1px; background: transparent; }
+    .handle:hover::after, .handle:focus-visible::after, .handle.dragging::after { background: var(--lc-color-primary, #1f5fbf); }
+    .handle:focus-visible { outline: none; }
     .north { grid-area: north; } .south { grid-area: south; } .west { grid-area: west; } .east { grid-area: east; } .center { grid-area: center; }
     @container (max-width: 768px) {
       .border { grid-template-columns: minmax(0, 1fr); grid-template-areas: none; }
       .region { grid-area: auto; }
+      .handle { display: none; }
     }
     ${GAP_STYLES}
   `,
@@ -120,6 +128,24 @@ const REGIONS: BorderRegion[] = ['north', 'west', 'center', 'east', 'south'];
         <div class="region" [class]="region + ' ' + gapClass()" [attr.data-region]="region">
           @for (child of regions()[region]; track $index) {
             <lc-node [node]="child" [runtime]="runtime()" [scope]="scope()" />
+          }
+          @if (node().resizable && (region === 'west' || region === 'east')) {
+            <div
+              class="handle"
+              role="separator"
+              tabindex="0"
+              aria-orientation="vertical"
+              [attr.aria-label]="i18n.t(region === 'west' ? 'lc.resizeWest' : 'lc.resizeEast')"
+              [attr.aria-valuenow]="width(region)"
+              [attr.aria-valuemin]="MIN"
+              [attr.aria-valuemax]="MAX"
+              [class.dragging]="dragging() === region"
+              (pointerdown)="startDrag($event, region)"
+              (pointermove)="drag($event)"
+              (pointerup)="endDrag($event)"
+              (pointercancel)="endDrag($event)"
+              (keydown)="key($event, region)"
+            ></div>
           }
         </div>
       }
@@ -131,6 +157,55 @@ export class BorderComponent {
   readonly runtime = input.required<ScreenRuntime>();
   readonly scope = input<Scope>({});
   protected readonly gapClass = computed(() => gapClass(this.node().gap));
+  protected readonly i18n = inject(I18n);
+  protected readonly MIN = 120;
+  protected readonly MAX = 600;
+  /** Larghezze scelte dall'utente trascinando i divisori (solo per questa visita della schermata). */
+  private readonly resized = signal<{ west?: number; east?: number }>({});
+  protected readonly dragging = signal<'west' | 'east' | null>(null);
+  private dragStart: { x: number; width: number } | null = null;
+
+  protected width(side: 'west' | 'east'): number {
+    return this.resized()[side] ?? (side === 'west' ? this.node().westWidth : this.node().eastWidth) ?? 240;
+  }
+
+  private setWidth(side: 'west' | 'east', width: number): void {
+    const clamped = Math.round(Math.min(this.MAX, Math.max(this.MIN, width)));
+    this.resized.update((r) => ({ ...r, [side]: clamped }));
+  }
+
+  protected startDrag(event: PointerEvent, side: 'west' | 'east'): void {
+    event.preventDefault();
+    (event.target as HTMLElement).setPointerCapture?.(event.pointerId);
+    this.dragging.set(side);
+    this.dragStart = { x: event.clientX, width: this.width(side) };
+  }
+
+  protected drag(event: PointerEvent): void {
+    const side = this.dragging();
+    if (!side || !this.dragStart) return;
+    const dx = event.clientX - this.dragStart.x;
+    // Verso destra il lato ovest si allarga, quello est si stringe.
+    this.setWidth(side, this.dragStart.width + (side === 'west' ? dx : -dx));
+  }
+
+  protected endDrag(event: PointerEvent): void {
+    (event.target as HTMLElement).releasePointerCapture?.(event.pointerId);
+    this.dragging.set(null);
+    this.dragStart = null;
+  }
+
+  /** Da tastiera: frecce di 16px (con Maiusc 64px), Home e Fine ai limiti. */
+  protected key(event: KeyboardEvent, side: 'west' | 'east'): void {
+    const step = event.shiftKey ? 64 : 16;
+    const grow = side === 'west' ? 1 : -1;
+    const current = this.width(side);
+    const next =
+      event.key === 'ArrowRight' ? current + step * grow : event.key === 'ArrowLeft' ? current - step * grow : event.key === 'Home' ? this.MIN : event.key === 'End' ? this.MAX : null;
+    if (next === null) return;
+    event.preventDefault();
+    this.setWidth(side, next);
+  }
 
   /** I figli divisi per regione (center se non indicata), nell'ordine del documento. */
   protected readonly regions = computed(() => {
@@ -146,7 +221,7 @@ export class BorderComponent {
   protected readonly template = computed(() => {
     const has = (r: BorderRegion) => this.regions()[r].length > 0;
     const middle = [has('west') ? 'west' : null, 'center', has('east') ? 'east' : null].filter((r): r is string => r !== null);
-    const columns = [has('west') ? `${this.node().westWidth ?? 240}px` : null, 'minmax(0, 1fr)', has('east') ? `${this.node().eastWidth ?? 240}px` : null].filter(Boolean).join(' ');
+    const columns = [has('west') ? `${this.width('west')}px` : null, 'minmax(0, 1fr)', has('east') ? `${this.width('east')}px` : null].filter(Boolean).join(' ');
     const row = (name: string) => `"${middle.map(() => name).join(' ')}"`;
     const areas = [has('north') ? row('north') : null, `"${middle.join(' ')}"`, has('south') ? row('south') : null].filter(Boolean).join(' ');
     return { columns, areas };

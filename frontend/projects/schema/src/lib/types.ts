@@ -401,6 +401,8 @@ export interface BorderNode extends NodeBase {
   westWidth?: number;
   eastWidth?: number;
   gap?: LayoutGap;
+  /** Divisori trascinabili tra il centro e i lati. */
+  resizable?: boolean;
 }
 
 /** Immagine con testo alternativo; solo indirizzi relativi, https o data:image. */
