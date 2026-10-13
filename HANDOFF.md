@@ -4,7 +4,7 @@ Documento di passaggio per continuare il lavoro con Claude Code in locale. Ultim
 
 ## 1. Cos'è
 
-Piattaforma low-code per frontend gestionali/amministrativi **definiti da JSON** (schermate, data source, azioni, espressioni CEL), più un editor visuale (schermate, navigazione, temi) e servizi di base. Il backend consiste in contratti OpenAPI e un'implementazione di riferimento Spring Boot non destinata alla produzione (moduli Java mai compilati).
+Piattaforma low-code per frontend gestionali/amministrativi **definiti da JSON** (schermate, data source, azioni, espressioni CEL), più un editor visuale (schermate, navigazione, temi) e servizi di base. Il backend consiste in contratti OpenAPI e un'implementazione di riferimento Spring Boot non destinata alla produzione (compila e i test passano con `mvn verify`, JDK 21 e Maven 3.9 presenti in locale; non ancora in CI).
 
 ## 2. Preferenze di Simone (rispettale)
 
@@ -75,7 +75,7 @@ Le principali sono nella DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In breve:
 
 - `services` **non è collegato** a `runtime` (la demo usa porte finte).
 - BFF: mancano CSRF, forwarding delle API (con token e `traceparent`), allow-list degli host.
-- Moduli Java mai compilati (`mvn verify` in sospeso).
+- Moduli Java: `mvn verify` passa in locale (authz 4, registry 5, telemetry 3 test; bff senza test); manca la CI e una prova contro Keycloak.
 - `validate:examples` non controlla le espressioni CEL (lo fa il test `i18n-examples.spec.ts`).
 - Limiti dei componenti che restano: vedi catalogo § 3 (niente righe ripetibili annidate, datatable sulle righe caricate — provata fino a 20.000 nel componente —, grafici senza zoom né aree). I limiti della prima consegna (lookup, file, righe, albero da tastiera, volumi, grafici) sono stati superati: catalogo § 3.1.
 - Architettura (Claude Docs) § 9: paragrafo «Stato al 12 ottobre 2026» sull'editor e sugli scostamenti da ADR-08/09. Documenti Claude Docs aggiornati l'11 ottobre 2026 con una sintesi (funzionale: RF-DEF-18…21; architettura: § 4 «Aggiornamenti di ottobre 2026»; linee guida: § 6 e § 11); il dettaglio resta in `docs/catalogo-componenti.md`.
@@ -84,9 +84,9 @@ Le principali sono nella DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In breve:
 
 1. Review dei 18 componenti (commit da `4d224fb` a `47a96ee`), del fix del runtime `9d96798`, dei limiti superati (da `7907884` a `f42abdf`), della serverDataTable (`9bae9b7`) e dell'editor (da `5840c9c` a `b3d7a5d`).
 2. Collegare `services` a `runtime` e completare il BFF (CSRF, forwarding, allow-list; il forwarding deve gestire anche i corpi multipart).
-3. **Editor visuale**, seconda fase: pubblicazione nel registro a documenti separati (contratto da adeguare, poi client nell'editor e implementazione di riferimento); completamento delle espressioni (vedi `docs/editor.md` § 6).
+3. **Editor visuale**, seconda fase: client del registro (salva versione, storico, pubblica per ambiente) sul contratto 0.2 a documenti separati; completamento delle espressioni (vedi `docs/editor.md` § 6).
 4. Menu: navigazione da tastiera, badge, ricerca. CEL in `validate:examples`.
-5. Decise il 13 ottobre 2026: ADR-08 accettata (anteprima in iframe, fatta), ADR-09 modificata (cronologia a versioni immutabili), registro a documenti separati (schermate, navigazione, temi) — contratto e collegamento dell'editor da fare.
+5. Decise il 13 ottobre 2026: ADR-08 accettata (anteprima in iframe, fatta), ADR-09 modificata (cronologia a versioni immutabili), registro a documenti separati (schermate, navigazione, temi): contratto `registry.yaml` 0.2 e registro di riferimento adeguati; resta il client nell'editor.
 
 ## 9. Convenzioni di lavoro
 

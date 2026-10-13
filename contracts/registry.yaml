@@ -1,10 +1,13 @@
 openapi: 3.1.0
 info:
   title: Piattaforma LowCode - Contratto del registry
-  version: 0.1.0
+  version: 0.2.0
   description: >
-    Registro delle definizioni delle applicazioni. Le versioni sono immutabili e identificate da un hash;
-    pubblicare significa far puntare un ambiente a una versione.
+    Registro delle definizioni delle applicazioni. Un'applicazione è fatta di documenti separati: ogni schermata,
+    la navigazione e ogni tema sono un documento a sé, con le proprie versioni e le proprie pubblicazioni.
+    Le versioni sono immutabili e identificate dall'hash del contenuto; pubblicare significa far puntare un ambiente
+    a una versione di un documento. Il registry valida il contenuto contro lo schema del tipo di documento
+    (screen.schema.json, navigation.schema.json, theme.schema.json) e rifiuta i documenti non validi.
   license:
     name: Proprietaria
     identifier: LicenseRef-Proprietary
@@ -12,7 +15,7 @@ servers:
   - url: /
 tags:
   - name: registry
-    description: Definizioni delle applicazioni e pubblicazione.
+    description: Documenti delle applicazioni, versioni e pubblicazione.
 security:
   - cookieAuth: []
   - bearerAuth: []
@@ -31,13 +34,38 @@ paths:
                 type: array
                 items: { $ref: '#/components/schemas/AppSummary' }
         '401': { $ref: '#/components/responses/Problem' }
-  /registry/apps/{appId}/versions:
+  /registry/apps/{appId}/documents:
     parameters:
       - $ref: '#/components/parameters/AppId'
     get:
       tags: [registry]
+      operationId: listDocuments
+      summary: Documenti dell'applicazione (schermate, navigazione, temi)
+      parameters:
+        - name: kind
+          in: query
+          required: false
+          description: Solo i documenti di questo tipo.
+          schema: { $ref: '#/components/schemas/DocumentKind' }
+      responses:
+        '200':
+          description: Documenti, con l'ultima versione e gli ambienti in cui sono pubblicati.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/DocumentSummary' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /registry/apps/{appId}/documents/{kind}/{documentId}/versions:
+    parameters:
+      - $ref: '#/components/parameters/AppId'
+      - $ref: '#/components/parameters/Kind'
+      - $ref: '#/components/parameters/DocumentId'
+    get:
+      tags: [registry]
       operationId: listVersions
-      summary: Storico delle versioni
+      summary: Storico delle versioni di un documento
       responses:
         '200':
           description: Versioni, dalla più recente.
@@ -45,30 +73,36 @@ paths:
             application/json:
               schema:
                 type: array
-                items: { $ref: '#/components/schemas/AppVersion' }
+                items: { $ref: '#/components/schemas/DocumentVersion' }
         '401': { $ref: '#/components/responses/Problem' }
         '404': { $ref: '#/components/responses/Problem' }
     post:
       tags: [registry]
       operationId: saveVersion
-      summary: Salva una nuova versione (immutabile)
+      summary: Salva una nuova versione del documento (immutabile)
+      description: >
+        Il contenuto si valida contro lo schema del tipo di documento. L'identificativo nel contenuto (`screen`,
+        `navigation` o `theme`) deve coincidere con `documentId`. Salvare due volte lo stesso contenuto restituisce
+        la stessa versione.
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/AppDefinition' }
+            schema: { $ref: '#/components/schemas/DocumentContent' }
       responses:
         '201':
-          description: Versione creata.
+          description: Versione creata (o già esistente con lo stesso contenuto).
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/AppVersion' }
+              schema: { $ref: '#/components/schemas/DocumentVersion' }
         '400': { $ref: '#/components/responses/Problem' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
-  /registry/apps/{appId}/versions/{hash}:
+  /registry/apps/{appId}/documents/{kind}/{documentId}/versions/{hash}:
     parameters:
       - $ref: '#/components/parameters/AppId'
+      - $ref: '#/components/parameters/Kind'
+      - $ref: '#/components/parameters/DocumentId'
       - name: hash
         in: path
         required: true
@@ -79,15 +113,17 @@ paths:
       summary: Contenuto di una versione
       responses:
         '200':
-          description: Definizione.
+          description: Documento.
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/AppDefinition' }
+              schema: { $ref: '#/components/schemas/DocumentContent' }
         '401': { $ref: '#/components/responses/Problem' }
         '404': { $ref: '#/components/responses/Problem' }
-  /registry/apps/{appId}/published:
+  /registry/apps/{appId}/documents/{kind}/{documentId}/published:
     parameters:
       - $ref: '#/components/parameters/AppId'
+      - $ref: '#/components/parameters/Kind'
+      - $ref: '#/components/parameters/DocumentId'
       - name: env
         in: query
         required: true
@@ -95,29 +131,30 @@ paths:
     get:
       tags: [registry]
       operationId: getPublished
-      summary: Definizione pubblicata per un ambiente (con ETag)
+      summary: Versione pubblicata di un documento in un ambiente (con ETag)
+      description: Il runtime carica così ogni schermata, la navigazione e il tema, ognuno quando serve.
       responses:
         '200':
-          description: Definizione pubblicata.
+          description: Documento pubblicato.
           headers:
             ETag: { schema: { type: string } }
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/AppDefinition' }
-        '304': { description: Non modificata. }
+              schema: { $ref: '#/components/schemas/DocumentContent' }
+        '304': { description: Non modificato. }
         '401': { $ref: '#/components/responses/Problem' }
         '404': { $ref: '#/components/responses/Problem' }
     put:
       tags: [registry]
       operationId: publish
-      summary: Pubblica una versione in un ambiente
+      summary: Pubblica una versione del documento in un ambiente
       requestBody:
         required: true
         content:
           application/json:
             schema: { $ref: '#/components/schemas/PublishRequest' }
       responses:
-        '204': { description: Pubblicata. }
+        '204': { description: Pubblicato. }
         '400': { $ref: '#/components/responses/Problem' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
@@ -131,6 +168,17 @@ components:
       in: path
       required: true
       schema: { type: string }
+    Kind:
+      name: kind
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/DocumentKind' }
+    DocumentId:
+      name: documentId
+      in: path
+      required: true
+      description: Identificativo del documento (kebab-case), uguale a `screen`, `navigation` o `theme` nel contenuto.
+      schema: { type: string, pattern: '^[a-z0-9]+(-[a-z0-9]+)*$' }
   responses:
     Problem:
       description: Errore in formato RFC 9457.
@@ -138,23 +186,39 @@ components:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }
   schemas:
+    DocumentKind:
+      type: string
+      enum: [screen, navigation, theme]
+      description: Tipo di documento, che decide lo schema di validazione.
     AppSummary:
       type: object
       required: [id, name]
       properties:
         id: { type: string }
         name: { type: string }
-        publishedEnvironments:
-          type: array
-          items: { type: string }
-    AppDefinition:
+        documentCount: { type: integer, minimum: 0 }
+    DocumentSummary:
       type: object
-      description: Documento JSON dell'applicazione, validato contro lo schema del nucleo.
+      required: [kind, id]
+      properties:
+        kind: { $ref: '#/components/schemas/DocumentKind' }
+        id: { type: string }
+        latest:
+          description: Ultima versione salvata.
+          $ref: '#/components/schemas/DocumentVersion'
+        publishedEnvironments:
+          type: object
+          description: Ambiente → hash della versione pubblicata.
+          additionalProperties: { type: string }
+    DocumentContent:
+      type: object
+      description: >
+        Il documento JSON (una schermata, la navigazione o un tema), validato contro lo schema del suo tipo.
       required: [schemaVersion]
       properties:
         schemaVersion: { type: string }
       additionalProperties: true
-    AppVersion:
+    DocumentVersion:
       type: object
       required: [hash, createdAt, author]
       properties:

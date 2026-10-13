@@ -33,7 +33,7 @@ Contributor documentation: [DEVELOPMENT-GUIDE.md](DEVELOPMENT-GUIDE.md). Design 
 | **Libraries** (`schema`, `expressions`, `core`, `components`, `services`) | JSON Schema and types, expression evaluator, interpreter, NG-ZORRO component catalogue, HTTP/session/authorization/telemetry services | Working, tested |
 | **Visual editor** (`frontend/projects/editor`) | Builds screens and the navigation (use cases and menus) with property panels generated from the JSON Schemas and live previews rendered by the real runtime | Screens, navigation and themes |
 | **Contracts** (`contracts/`) | OpenAPI 3.1: authorization, telemetry ingestion, registry | Defined and validated |
-| **Reference implementation** (`reference/`) | Spring Boot BFF, registry, authorization and telemetry services that implement the contracts | Written, not yet compiled in CI |
+| **Reference implementation** (`reference/`) | Spring Boot BFF, registry, authorization and telemetry services that implement the contracts | Compiles and its unit tests pass locally (JDK 21, Maven 3.9); not yet in CI |
 | **Identity provider** (`idp/`) | Keycloak with a sample realm for local development | Ready |
 | **Examples** (`examples/`) | Reference applications used by tests and by the demo | Working |
 
@@ -236,14 +236,14 @@ Open point: Ajv generates validators with `new Function`, so browser-side valida
 
 **Not verified:**
 
-* The Java modules have not been compiled or tested (`mvn verify` is pending; Spring Boot 4 starter names must be checked at the first build).
+* The Java modules compile and their unit tests pass with `mvn verify` (authz 4, registry 5, telemetry 3; the BFF has none), but they are not built in CI and have not been run against Keycloak and the front end.
 * The `services` library is tested against simulated HTTP only, not against the real BFF.
 * The demo has not been run in a real browser after the move to NG-ZORRO: it is covered by jsdom tests, so the visual result (including the dark theme stylesheet) still needs a manual look.
 
 **Next steps:**
 
 * Wire `services` into the `runtime` app (today it uses the demo's fake ports) and complete the BFF: CSRF protection, API forwarding with token and `traceparent`, host allow-list.
-* Visual editor: publication to the registry, with screens, navigation and themes as separate documents (the registry contract still stores one document per application and must be revised first), completion while typing expressions.
+* Visual editor: publication to the registry (contract 0.2 stores screens, navigation and themes as separate documents, each with its own versions and publications; the reference registry implements it), completion while typing expressions.
 * The October 2026 component batch is complete (see the catalogue for the specification and the known limits of each component).
 * Menu: arrow-key navigation, badges, search.
 * Check expressions in `validate:examples` too.

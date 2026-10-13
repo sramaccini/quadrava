@@ -156,7 +156,7 @@ Layout, real focus and the dark theme are not covered by tests (the application 
 
 * No real-browser check of the NG-ZORRO migration yet; the collapsed side menu now opens groups in a popup.
 * `services` is not yet wired into `runtime`; the BFF lacks CSRF protection, API forwarding and a host allow-list.
-* Java modules are not yet compiled in CI.
+* Java modules are built and tested locally with `mvn verify` (JDK 21, Maven 3.9) but not yet in CI.
 * Ajv needs `unsafe-eval` under CSP until validators are precompiled.
 * `validate:examples` checks translation keys but not CEL expressions (the runtime test `i18n-examples.spec.ts` does).
 * Component limits that remain (no nested repeaters, no chart zoom, no row selection in the server data table) are listed in the component catalogue, § 3.

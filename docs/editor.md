@@ -132,7 +132,7 @@ editor/src/app/
 
 - **Traduzioni.** Le traduzioni si esportano in un file da unire a mano ai cataloghi; quando i cataloghi verranno da un servizio, l'editor li aggiornerà direttamente. Le lingue sono quelle della demo (italiano e inglese).
 - **Espressioni.** Sintassi controllata e aiuto con le variabili del contesto, ma niente completamento mentre si scrive né controllo che i campi usati (`row.x`) esistano davvero nelle risposte dei servizi.
-- **Pubblicazione.** Deciso: schermate, navigazione e tema sono **documenti separati** nel registro, ognuno con le proprie versioni. Il contratto del registro va adeguato (oggi conserva un solo documento per applicazione) e l'editor va collegato.
+- **Pubblicazione.** Deciso: schermate, navigazione e tema sono **documenti separati** nel registro, ognuno con le proprie versioni e pubblicazioni (`contracts/registry.yaml` 0.2, già implementato dal registro di riferimento). Manca il client nell'editor.
 - **Anteprima e procedure.** Selezionare un nodo in un passo successivo di un wizard non porta a quel passo (i passi si superano solo con le loro condizioni).
 - **Larghezza.** Sotto i 1100 px i pannelli si impilano; l'editor è pensato per schermi da desktop.
 
