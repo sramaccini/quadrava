@@ -34,7 +34,16 @@ export interface DataRequest {
 
 /** Esegue le chiamate REST. Deve lanciare un errore se la risposta non è di successo. */
 export abstract class DataClient {
-  abstract request(request: DataRequest): Promise<unknown>;
+  /**
+   * `options.signal`: annullamento di una lettura superata (la richiesta risolta è cambiata prima della risposta). Chi lo
+   * rispetta interrompe la chiamata e rifiuta la promessa; chi lo ignora fa solo una chiamata in più, la cui risposta il
+   * runtime scarta comunque.
+   */
+  abstract request(request: DataRequest, options?: DataRequestOptions): Promise<unknown>;
+}
+
+export interface DataRequestOptions {
+  signal?: AbortSignal;
 }
 
 /** Cambio di schermata. */

@@ -261,4 +261,83 @@ describe('ScreenRuntime: corpo delle richieste', () => {
     expect(fakes.requests).toEqual([{ method: 'PUT', url: '/api/ordini/5', body: { cliente: 'ACME', sconto: 10 } }]);
     rt.destroy();
   });
+
+  describe('richieste superate e ripetute', () => {
+    let fakes: Fakes;
+    let injector: Injector;
+    beforeEach(() => {
+      fakes = new Fakes();
+      fakes.permissions.add('ordini.ordine.leggi');
+      injector = TestBed.inject(Injector);
+    });
+    async function settle(): Promise<void> {
+      TestBed.tick();
+      await Promise.resolve();
+      await Promise.resolve();
+      TestBed.tick();
+    }
+
+    /** Un client che lascia le risposte in sospeso e registra gli annullamenti. */
+    function pending() {
+      const calls: { request: { method: string; query?: unknown }; signal?: AbortSignal; resolve: (v: unknown) => void }[] = [];
+      fakes.deps.data = {
+        request: (request: never, options?: { signal?: AbortSignal }) =>
+          new Promise((resolve, reject) => {
+            calls.push({ request, signal: options?.signal, resolve });
+            options?.signal?.addEventListener('abort', () => reject(new DOMException('annullata', 'AbortError')));
+          }),
+      } as never;
+      return calls;
+    }
+
+    it('una lettura nuova annulla quella in corso, senza segnalare errori né cambiare i dati', async () => {
+      const calls = pending();
+      const rt = fakes.runtime(screen, injector);
+      rt.setState('filtri', { stato: null });
+      await settle();
+      rt.setState('filtri.stato', 'inviato');
+      await settle();
+      expect(calls.length).toBe(2);
+      expect(calls[0].signal?.aborted).toBe(true);
+      expect(calls[1].signal?.aborted).toBe(false);
+      calls[1].resolve({ items: [1], total: 1 });
+      await settle();
+      expect(rt.source('ordini')).toEqual({ status: 'ready', data: { items: [1], total: 1 } });
+      expect(fakes.reports).toEqual([]);
+      rt.destroy();
+      expect(calls[1].signal?.aborted).toBe(false);
+    });
+
+    it('le scritture non si annullano; uscendo dalla schermata si annullano le letture in corso', async () => {
+      const calls = pending();
+      const rt = fakes.runtime(screen, injector);
+      rt.setState('filtri', { stato: null });
+      await settle();
+      void rt.execute('approva', { id: 1 });
+      void rt.execute('approva', { id: 2 });
+      expect(calls.filter((c) => c.request.method === 'POST').map((c) => c.signal)).toEqual([undefined, undefined]);
+      rt.destroy();
+      expect(calls[0].signal?.aborted).toBe(true);
+    });
+
+    it('letture di servizio identiche e contemporanee fanno una sola chiamata', async () => {
+      const calls = pending();
+      const rt = fakes.runtime({ ...screen, dataSources: { clienti: { type: 'rest', method: 'POST', url: '/api/x' }, cerca: { type: 'rest', method: 'GET', url: '/api/clienti', params: { q: '{{ search }}' } } } }, injector);
+      // Solo le ricerche (il caricamento automatico senza testo non ha q).
+      const searches = () => calls.filter((c) => (c.request.query as { q?: string } | undefined)?.q);
+      const a = rt.query('cerca', {}, { search: 'ro' });
+      const b = rt.query('cerca', {}, { search: 'ro' });
+      const c = rt.query('cerca', {}, { search: 'bi' });
+      expect(searches().length).toBe(2);
+      searches()[0].resolve(['Rossi']);
+      searches()[1].resolve(['Bianchi']);
+      expect(await a).toEqual({ ok: true, data: ['Rossi'] });
+      expect(await b).toEqual({ ok: true, data: ['Rossi'] });
+      expect(await c).toEqual({ ok: true, data: ['Bianchi'] });
+      // Finita, la stessa lettura si rifà.
+      void rt.query('cerca', {}, { search: 'ro' });
+      expect(searches().length).toBe(3);
+      rt.destroy();
+    });
+  });
 });

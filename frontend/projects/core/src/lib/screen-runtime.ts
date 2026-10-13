@@ -41,6 +41,10 @@ export class ScreenRuntime {
 
   private readonly effects: EffectRef[] = [];
   private readonly sequence = new Map<string, number>();
+  /** Letture in corso di ogni data source, da annullare quando ne parte una più recente. */
+  private readonly inflight = new Map<string, AbortController>();
+  /** Letture di servizio (`query`) identiche in corso: chi arriva dopo aspetta la stessa risposta. */
+  private readonly sharedQueries = new Map<string, Promise<unknown>>();
   private readonly missingKeys = new Set<string>();
   /** Ultima richiesta del caricamento automatico di ogni data source GET (per non ripeterla se non cambia). */
   private readonly lastAutoRequest = new Map<string, string>();
@@ -134,6 +138,9 @@ export class ScreenRuntime {
   destroy(): void {
     for (const e of this.effects) e.destroy();
     this.effects.length = 0;
+    // Lasciata la schermata, le letture in corso non servono più.
+    for (const controller of this.inflight.values()) controller.abort();
+    this.inflight.clear();
   }
 
   /** Contesto di valutazione: utente, stato, parametri e variabili del punto corrente. */
@@ -233,7 +240,16 @@ export class ScreenRuntime {
       return { ok: false, error: built.error };
     }
     try {
-      return { ok: true, data: await this.deps.data.request(built.request) };
+      if (built.request.method !== 'GET') return { ok: true, data: await this.deps.data.request(built.request) };
+      const key = `${name} ${JSON.stringify(built.request)}`;
+      let shared = this.sharedQueries.get(key);
+      if (!shared) {
+        shared = this.deps.data.request(built.request);
+        this.sharedQueries.set(key, shared);
+        const forget = () => this.sharedQueries.delete(key);
+        shared.then(forget, forget);
+      }
+      return { ok: true, data: await shared };
     } catch (e) {
       const error = e instanceof Error ? e.message : String(e);
       this.report(`data source ${name}`, error);
@@ -312,16 +328,27 @@ export class ScreenRuntime {
     this.sequence.set(name, seq);
     const previous = this.source(name);
     this.setSource(name, { status: 'loading', data: previous.data });
+    // Una lettura nuova annulla quella ancora in corso dello stesso data source. Le scritture non si annullano mai:
+    // il servizio potrebbe averle già eseguite.
+    const controller = request.method === 'GET' ? new AbortController() : null;
+    if (controller) {
+      this.inflight.get(name)?.abort();
+      this.inflight.set(name, controller);
+    }
     try {
-      const data = await this.deps.data.request(request);
+      const data = await this.deps.data.request(request, controller ? { signal: controller.signal } : undefined);
       // Una risposta più vecchia non deve sovrascrivere una più recente.
       if (this.sequence.get(name) === seq) this.setSource(name, { status: 'ready', data });
       return { ok: true, data };
     } catch (e) {
+      // Annullata perché superata: non è un errore da segnalare né da mostrare.
+      if (controller?.signal.aborted) return { ok: false, error: 'annullata' };
       const error = e instanceof Error ? e.message : String(e);
       this.report(`data source ${name}`, error);
       if (this.sequence.get(name) === seq) this.setSource(name, { status: 'error', data: null, error: this.systemText('lc.loadFailed', 'Caricamento non riuscito') });
       return { ok: false, error };
+    } finally {
+      if (controller && this.inflight.get(name) === controller) this.inflight.delete(name);
     }
   }
 

@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import { Authorization, DataClient, RuntimeDiagnostics, UserProvider, type DataRequest } from 'core';
+import { Authorization, DataClient, RuntimeDiagnostics, UserProvider, type DataRequest, type DataRequestOptions } from 'core';
 import { DemoBackend } from './demo-backend';
 
 /** Profili della demo: i permessi sono quelli che in produzione darebbe il servizio di autorizzazione. */
@@ -54,8 +54,10 @@ export class MockDataClient extends DataClient {
   static readonly PAGE_SIZE = DemoBackend.PAGE_SIZE;
   private readonly backend = new DemoBackend();
 
-  async request(req: DataRequest): Promise<unknown> {
+  async request(req: DataRequest, options: DataRequestOptions = {}): Promise<unknown> {
     await new Promise((resolve) => setTimeout(resolve, 200));
+    // Come una rete vera: una lettura annullata durante l'attesa non arriva al backend.
+    if (options.signal?.aborted) throw new DOMException('Richiesta annullata', 'AbortError');
     return this.backend.handle(req);
   }
 }

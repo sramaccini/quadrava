@@ -216,6 +216,27 @@ describe('HttpDataClient', () => {
   });
 });
 
+describe('HttpDataClient: annullamento', () => {
+  it('un segnale annullato interrompe la chiamata HTTP e rifiuta con AbortError', async () => {
+    const { http } = setup();
+    const controller = new AbortController();
+    const p = TestBed.inject(HttpDataClient).request({ method: 'GET', url: '/api/lenta' }, { signal: controller.signal });
+    const req = http.expectOne('/api/lenta');
+    controller.abort();
+    expect(req.cancelled).toBe(true);
+    const err = (await p.catch((e: unknown) => e)) as DOMException;
+    expect(err.name).toBe('AbortError');
+  });
+
+  it('un segnale già annullato non fa partire la chiamata', async () => {
+    const { http } = setup();
+    const controller = new AbortController();
+    controller.abort();
+    await expect(TestBed.inject(HttpDataClient).request({ method: 'GET', url: '/api/x' }, { signal: controller.signal })).rejects.toMatchObject({ name: 'AbortError' });
+    http.verify();
+  });
+});
+
 describe('HttpDiagnostics', () => {
   it('redige e invia log OTLP a lotti', async () => {
     const { http } = setup();
