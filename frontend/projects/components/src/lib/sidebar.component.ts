@@ -1,8 +1,10 @@
 import { FormsModule } from '@angular/forms';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, model, output, signal, untracked } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { afterEveryRender, ChangeDetectionStrategy, Component, computed, effect, ElementRef, inject, input, model, output, signal, untracked } from '@angular/core';
 import { I18n, type NavigationRuntime, type VisibleItem, type VisibleLeaf } from 'core';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzDropdownModule } from 'ng-zorro-antd/dropdown';
+import { NzInputModule } from 'ng-zorro-antd/input';
 import { NzMenuModule } from 'ng-zorro-antd/menu';
 import { NzSelectModule } from 'ng-zorro-antd/select';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
@@ -21,7 +23,7 @@ export interface NavigateEvent {
  */
 @Component({
   selector: 'lc-sidebar',
-  imports: [FormsModule, IconComponent, NzButtonModule, NzDropdownModule, NzMenuModule, NzSelectModule, NzTooltipModule],
+  imports: [FormsModule, NgTemplateOutlet, IconComponent, NzButtonModule, NzDropdownModule, NzInputModule, NzMenuModule, NzSelectModule, NzTooltipModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: block; position: sticky; top: 0; z-index: 2; align-self: flex-start; height: 100vh; flex: none; }
@@ -59,6 +61,18 @@ export interface NavigateEvent {
     a.leaf { display: flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; }
     .collapsed .label { display: none; }
     .empty { margin: 0; padding: 0 16px; color: var(--lc-sider-muted); font-size: .9em; }
+    .search { padding: 0 16px 8px; }
+    .search input { background: transparent; color: var(--lc-sider-text); border-color: var(--lc-sider-border, #d5dbe3); }
+    .results { list-style: none; margin: 0; padding: 0 8px; display: flex; flex-direction: column; gap: 2px; }
+    .results a { display: flex; flex-direction: column; padding: 6px 10px; border-radius: var(--lc-radius, 6px); color: var(--lc-sider-text); text-decoration: none; }
+    .results a:hover, .results a:focus-visible { background: var(--lc-sider-active-bg); color: var(--lc-sider-active-text); outline: none; }
+    .results .where { font-size: 12px; color: var(--lc-sider-muted); }
+    /* Contatore accanto alla voce; a barra compressa diventa un pallino sull'icona. */
+    .badge { margin-left: auto; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; font-size: 12px; line-height: 20px; text-align: center;
+      background: var(--lc-color-primary, #1f5fbf); color: var(--lc-color-on-primary, #fff); }
+    a.leaf { position: relative; }
+    .collapsed .badge { position: absolute; top: 2px; left: 14px; min-width: 8px; width: 8px; height: 8px; padding: 0; font-size: 0; }
+    :host ::ng-deep .ant-menu-submenu-title:focus-visible, a.leaf:focus-visible { outline: 2px solid var(--lc-sider-active-text, #1f5fbf); outline-offset: -2px; }
     /* Pulsante tondo sul bordo della barra, all'altezza del logo, come in Ant Design Pro. Sta fuori dall'area che scorre.
        Sporge di 13px nella barra superiore: chi ospita la barra lascia quel margine prima del titolo. */
     .toggle { position: absolute; z-index: 3; top: calc(var(--lc-header-height, 56px) / 2 - 13px); right: -13px; width: 26px; height: 26px; min-width: 26px; padding: 0;
@@ -108,8 +122,48 @@ export interface NavigateEvent {
         }
       }
 
+      <ng-template #leafContent let-leaf>
+        <lc-icon [name]="leaf.icon" />
+        <span class="label">{{ leaf.label }}</span>
+        @if (badges()[leaf.id]; as n) {
+          <span class="badge" aria-hidden="true">{{ n > 99 ? '99+' : n }}</span>
+          <span class="visually-hidden">, {{ i18n.t('lc.badge', { n }) }}</span>
+        }
+      </ng-template>
+      @if (current() && !collapsed()) {
+        <div class="search" role="search">
+          <input
+            nz-input
+            nzSize="small"
+            type="search"
+            [id]="searchId"
+            [placeholder]="i18n.t('lc.menuSearch')"
+            [attr.aria-label]="i18n.t('lc.menuSearch')"
+            [attr.aria-controls]="query() ? searchId + '-results' : null"
+            [value]="query()"
+            (input)="query.set($any($event.target).value)"
+            (keydown)="searchKey($event)"
+          />
+        </div>
+      }
       @if (current(); as uc) {
-        <nav [attr.aria-label]="i18n.t('lc.menu') + ' ' + uc.label">
+        @if (query().trim() && !collapsed()) {
+          <ul class="results" [id]="searchId + '-results'" [attr.aria-label]="i18n.t('lc.menuResults')">
+            @for (r of results(); track r.leaf.id) {
+              <li>
+                <a [href]="hrefFor()(uc.id, r.leaf)" (click)="go($event, r.leaf); query.set('')" (keydown)="resultKey($event)">
+                  <span>{{ r.leaf.label }}</span>
+                  @if (r.where) {
+                    &ngsp;<span class="where">{{ r.where }}</span>
+                  }
+                </a>
+              </li>
+            } @empty {
+              <li class="empty" role="status">{{ i18n.t('lc.menuNoResults') }}</li>
+            }
+          </ul>
+        } @else {
+        <nav [attr.aria-label]="i18n.t('lc.menu') + ' ' + uc.label" (keydown)="navKey($event)">
           <ul nz-menu nzMode="inline" [nzTheme]="tone()" [nzInlineCollapsed]="collapsed()" [nzInlineIndent]="18">
             @for (g1 of uc.items; track g1.id) {
               @if (g1.kind === 'group') {
@@ -121,9 +175,8 @@ export interface NavigateEvent {
                           <ul>
                             @for (l3 of leaves(g2.children); track l3.id) {
                               <li nz-menu-item [nzSelected]="isActive(l3)">
-                <a class="leaf" [href]="hrefFor()(uc.id, l3)" [attr.aria-current]="isActive(l3) ? 'page' : null" [attr.title]="collapsed() ? l3.label : null" [attr.aria-label]="collapsed() ? l3.label : null" (click)="go($event, l3)">
-                  <lc-icon [name]="l3.icon" />
-                  <span class="label">{{ l3.label }}</span>
+                <a class="leaf" [href]="hrefFor()(uc.id, l3)" [attr.aria-current]="isActive(l3) ? 'page' : null" [attr.title]="collapsed() ? l3.label : null" [attr.aria-label]="collapsed() ? leafLabel(l3) : null" (click)="go($event, l3)">
+                  <ng-container [ngTemplateOutlet]="leafContent" [ngTemplateOutletContext]="{ $implicit: l3 }" />
                 </a>
               </li>
                             }
@@ -132,9 +185,8 @@ export interface NavigateEvent {
                       } @else {
                         @let l2 = g2;
                         <li nz-menu-item [nzSelected]="isActive(l2)">
-                <a class="leaf" [href]="hrefFor()(uc.id, l2)" [attr.aria-current]="isActive(l2) ? 'page' : null" [attr.title]="collapsed() ? l2.label : null" [attr.aria-label]="collapsed() ? l2.label : null" (click)="go($event, l2)">
-                  <lc-icon [name]="l2.icon" />
-                  <span class="label">{{ l2.label }}</span>
+                <a class="leaf" [href]="hrefFor()(uc.id, l2)" [attr.aria-current]="isActive(l2) ? 'page' : null" [attr.title]="collapsed() ? l2.label : null" [attr.aria-label]="collapsed() ? leafLabel(l2) : null" (click)="go($event, l2)">
+                  <ng-container [ngTemplateOutlet]="leafContent" [ngTemplateOutletContext]="{ $implicit: l2 }" />
                 </a>
               </li>
                       }
@@ -144,15 +196,15 @@ export interface NavigateEvent {
               } @else {
                 @let l1 = g1;
                 <li nz-menu-item [nzSelected]="isActive(l1)">
-                <a class="leaf" [href]="hrefFor()(uc.id, l1)" [attr.aria-current]="isActive(l1) ? 'page' : null" [attr.title]="collapsed() ? l1.label : null" [attr.aria-label]="collapsed() ? l1.label : null" (click)="go($event, l1)">
-                  <lc-icon [name]="l1.icon" />
-                  <span class="label">{{ l1.label }}</span>
+                <a class="leaf" [href]="hrefFor()(uc.id, l1)" [attr.aria-current]="isActive(l1) ? 'page' : null" [attr.title]="collapsed() ? l1.label : null" [attr.aria-label]="collapsed() ? leafLabel(l1) : null" (click)="go($event, l1)">
+                  <ng-container [ngTemplateOutlet]="leafContent" [ngTemplateOutletContext]="{ $implicit: l1 }" />
                 </a>
               </li>
               }
             }
           </ul>
         </nav>
+        }
       } @else if (!collapsed()) {
         <p class="empty">{{ i18n.t('lc.noFunctions') }}</p>
       }
@@ -177,11 +229,17 @@ export class SidebarComponent {
   readonly active = input<{ screen: string; params: Record<string, unknown> } | null>(null);
   /** Costruisce l'indirizzo di una voce (per i link). */
   readonly hrefFor = input<(useCase: string, leaf: VisibleLeaf) => string>(() => '#');
+  /** Contatori delle voci (id della voce → numero), mostrati accanto al testo. */
+  readonly badges = input<Record<string, number>>({});
 
   readonly navigate = output<NavigateEvent>();
   readonly useCaseChange = output<string>();
 
   protected readonly selectId = nextId('lc-usecase');
+  protected readonly searchId = nextId('lc-menu-search');
+  /** Testo cercato nel menu. */
+  protected readonly query = signal('');
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   /** Barra compressa a sole icone. Con `[(collapsed)]` il pulsante può stare altrove (per esempio nella barra superiore). */
   readonly collapsed = model(false);
   /** Mostra il pulsante di compressione in fondo alla barra. */
@@ -201,7 +259,32 @@ export class SidebarComponent {
     return uc && active ? (this.navigation().locate(uc.id, active.screen, active.params) ?? []) : [];
   });
 
+  /** Voci del caso d'uso corrente che contengono il testo cercato (senza badare a maiuscole e accenti), con il loro percorso. */
+  protected readonly results = computed(() => {
+    const q = plainText(this.query());
+    const uc = this.current();
+    if (!q || !uc) return [];
+    const found: { leaf: VisibleLeaf; where: string }[] = [];
+    const walk = (items: VisibleItem[], trail: string[]) => {
+      for (const item of items) {
+        if (item.kind === 'group') walk(item.children, [...trail, item.label]);
+        else if (plainText(item.label).includes(q) || trail.some((t) => plainText(t).includes(q))) found.push({ leaf: item, where: trail.join(' › ') });
+      }
+    };
+    walk(uc.items, []);
+    return found.slice(0, 20);
+  });
+
   constructor() {
+    // I titoli dei gruppi di NG-ZORRO non si raggiungono da tastiera e non dicono se sono aperti: lo si aggiunge qui.
+    afterEveryRender(() => {
+      for (const title of this.host.nativeElement.querySelectorAll<HTMLElement>('.ant-menu-submenu-title')) {
+        const open = title.parentElement?.classList.contains('ant-menu-submenu-open') ?? false;
+        if (title.getAttribute('tabindex') !== '0') title.setAttribute('tabindex', '0');
+        if (title.getAttribute('role') !== 'button') title.setAttribute('role', 'button');
+        if (title.getAttribute('aria-expanded') !== String(open)) title.setAttribute('aria-expanded', String(open));
+      }
+    });
     // I gruppi che contengono la voce attiva si aprono da soli; l'utente poi li può chiudere.
     effect(() => {
       const ancestors = this.path().slice(0, -1);
@@ -236,6 +319,86 @@ export class SidebarComponent {
     return this.path().at(-1) === leaf.id;
   }
 
+  /** Testo di una voce per chi usa un lettore di schermo, con il contatore se c'è. */
+  protected leafLabel(leaf: VisibleLeaf): string {
+    const n = this.badges()[leaf.id];
+    return n ? `${leaf.label}, ${this.i18n.t('lc.badge', { n })}` : leaf.label;
+  }
+
+  /** Nella ricerca: Freccia giù porta ai risultati, Invio apre il primo, Esc pulisce. */
+  protected searchKey(event: KeyboardEvent): void {
+    if (event.key === 'Escape') {
+      this.query.set('');
+    } else if (event.key === 'ArrowDown') {
+      this.host.nativeElement.querySelector<HTMLElement>('.results a')?.focus();
+    } else if (event.key === 'Enter') {
+      const first = this.results()[0];
+      const uc = this.current();
+      if (first && uc) {
+        this.navigate.emit({ useCase: uc.id, leaf: first.leaf });
+        this.query.set('');
+      }
+    } else {
+      return;
+    }
+    event.preventDefault();
+  }
+
+  /** Tra i risultati: frecce su e giù (dal primo, su torna alla ricerca). */
+  protected resultKey(event: KeyboardEvent): void {
+    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+    event.preventDefault();
+    const links = [...this.host.nativeElement.querySelectorAll<HTMLElement>('.results a')];
+    const i = links.indexOf(event.target as HTMLElement);
+    const next = event.key === 'ArrowDown' ? links[i + 1] : i === 0 ? this.host.nativeElement.querySelector<HTMLElement>('.search input') : links[i - 1];
+    next?.focus();
+  }
+
+  /**
+   * Menu da tastiera: frecce su e giù tra voci e gruppi visibili, Home e Fine agli estremi, destra apre un gruppo
+   * (o entra nella prima voce se è già aperto), sinistra lo chiude (o torna al gruppo che contiene la voce), Invio e
+   * Spazio aprono o chiudono un gruppo.
+   */
+  protected navKey(event: KeyboardEvent): void {
+    const target = event.target as HTMLElement;
+    const items = [...this.host.nativeElement.querySelectorAll<HTMLElement>('nav a.leaf, nav .ant-menu-submenu-title')].filter((el) => !el.closest('.ant-menu-submenu-hidden'));
+    const i = items.indexOf(target);
+    if (i < 0) return;
+    const isGroup = target.classList.contains('ant-menu-submenu-title');
+    const open = isGroup && target.getAttribute('aria-expanded') === 'true';
+    const focus = (el: HTMLElement | undefined) => el?.focus();
+    switch (event.key) {
+      case 'ArrowDown':
+        focus(items[i + 1]);
+        break;
+      case 'ArrowUp':
+        focus(items[i - 1]);
+        break;
+      case 'Home':
+        focus(items[0]);
+        break;
+      case 'End':
+        focus(items.at(-1));
+        break;
+      case 'ArrowRight':
+        if (isGroup && !open) target.click();
+        else if (isGroup) focus(items[i + 1]);
+        break;
+      case 'ArrowLeft':
+        if (isGroup && open) target.click();
+        else focus(target.closest('li.ant-menu-submenu')?.querySelector<HTMLElement>(':scope > .ant-menu-submenu-title') ?? undefined);
+        break;
+      case 'Enter':
+      case ' ':
+        if (!isGroup) return;
+        target.click();
+        break;
+      default:
+        return;
+    }
+    event.preventDefault();
+  }
+
   protected go(event: MouseEvent, leaf: VisibleLeaf): void {
     // Con i tasti modificatori o il clic centrale decide il browser (nuova scheda).
     if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
@@ -246,3 +409,8 @@ export class SidebarComponent {
 }
 
 export type { VisibleItem };
+
+/** Testo senza maiuscole né accenti, per cercare. */
+function plainText(text: string): string {
+  return text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
+}

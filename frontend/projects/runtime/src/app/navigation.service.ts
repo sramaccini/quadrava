@@ -1,9 +1,9 @@
 import { Location } from '@angular/common';
-import { Injectable, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, inject, signal } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { ExpressionEngine } from 'expressions';
-import { Authorization, DefinitionSource, I18n, NavigationRuntime, RuntimeDiagnostics, ScreenNavigator, UserProvider, checkNavigation, type VisibleLeaf } from 'core';
-import { validateNavigation } from 'schema';
+import { Authorization, DataClient, DefinitionSource, I18n, NavigationRuntime, RuntimeDiagnostics, ScreenNavigator, UserProvider, checkNavigation, type VisibleLeaf } from 'core';
+import { validateNavigation, type NavigationDefinition } from 'schema';
 
 export interface RouteLocation {
   useCase: string | null;
@@ -24,9 +24,13 @@ export class NavigationService {
   private readonly diagnostics = inject(RuntimeDiagnostics, { optional: true });
   private readonly i18n = inject(I18n);
   private readonly definitions = inject(DefinitionSource);
+  private readonly data = inject(DataClient);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly runtime = signal<NavigationRuntime | null>(null);
   readonly problems = signal<string[]>([]);
+  /** Contatori delle voci del menu (id della voce → numero), se la navigazione li prevede. */
+  readonly badges = signal<Record<string, number>>({});
   readonly current = signal<RouteLocation>({ useCase: null, screen: null, params: {} });
   private readonly lastScreen = new Map<string, { screen: string; params: Record<string, string> }>();
 
@@ -51,9 +55,40 @@ export class NavigationService {
         return;
       }
       this.runtime.set(new NavigationRuntime(result.value, { authorization: this.authorization, userProvider: this.userProvider, diagnostics: this.diagnostics, i18n: this.i18n }));
+      this.watchBadges(result.value.badges);
     } catch (e) {
       this.problems.set([`Navigazione non caricata: ${e instanceof Error ? e.message : String(e)}`]);
     }
+  }
+
+  /**
+   * Contatori del menu: si leggono subito, poi a intervalli (solo con la pagina visibile) e quando si torna sulla
+   * pagina. Si tengono solo i numeri interi positivi; un errore lascia i contatori di prima e finisce nelle
+   * segnalazioni tecniche, senza disturbare l'utente.
+   */
+  private watchBadges(badges: NavigationDefinition['badges']): void {
+    if (!badges || typeof document === 'undefined') return;
+    const read = async () => {
+      if (document.visibilityState === 'hidden') return;
+      try {
+        const reply = await this.data.request({ method: 'GET', url: badges.url });
+        const counts: Record<string, number> = {};
+        if (reply && typeof reply === 'object' && !Array.isArray(reply)) {
+          for (const [id, value] of Object.entries(reply)) if (typeof value === 'number' && Number.isInteger(value) && value > 0) counts[id] = value;
+        }
+        this.badges.set(counts);
+      } catch (e) {
+        this.diagnostics?.report({ screen: 'navigazione', source: 'contatori del menu', error: e instanceof Error ? e.message : String(e) });
+      }
+    };
+    void read();
+    const timer = setInterval(read, (badges.refreshSeconds ?? 60) * 1000);
+    const onVisible = () => void read();
+    document.addEventListener('visibilitychange', onVisible);
+    this.destroyRef.onDestroy(() => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisible);
+    });
   }
 
   private syncFromUrl(): void {

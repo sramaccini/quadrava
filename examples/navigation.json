@@ -1,6 +1,10 @@
 {
   "schemaVersion": "1.0",
   "navigation": "fatturazione",
+  "badges": {
+    "url": "/api/menu/contatori",
+    "refreshSeconds": 30
+  },
   "default": "consultazione-fatture",
   "useCases": [
     {

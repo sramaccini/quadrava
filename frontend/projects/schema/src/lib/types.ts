@@ -580,5 +580,7 @@ export interface NavigationDefinition {
   schemaVersion: string;
   navigation: string;
   default?: string;
+  /** Contatori accanto alle voci: GET che restituisce { id della voce: numero }. */
+  badges?: { url: string; refreshSeconds?: number };
   useCases: NavigationUseCase[];
 }

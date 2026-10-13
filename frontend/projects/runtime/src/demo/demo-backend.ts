@@ -276,6 +276,14 @@ export class DemoBackend {
       return { id: this.attachments };
     }
     if (path === '/api/attivita' && req.method === 'GET') return this.tasks.map((t) => ({ ...t }));
+    if (path === '/api/menu/contatori' && req.method === 'GET') {
+      // Contatori del menu: fatture in bozza, spese da revisionare, attività non concluse.
+      return {
+        bozze: this.invoices.filter((f) => f.stato === 'bozza').length,
+        'da-revisionare': this.expenses.filter((s) => s.stato === 'da-revisionare').length,
+        'vetrina-attivita': this.tasks.filter((t) => t.stato !== 'fatto').length,
+      };
+    }
     const move = /^\/api\/attivita\/(\d+)\/sposta$/.exec(path);
     if (move && req.method === 'POST') {
       const task = this.tasks.find((t) => t.id === Number(move[1]));

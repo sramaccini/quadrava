@@ -30,6 +30,27 @@ export const NAVIGATION_SCHEMA: Record<string, unknown> = {
       "items": {
         "$ref": "#/$defs/useCase"
       }
+    },
+    "badges": {
+      "type": "object",
+      "required": [
+        "url"
+      ],
+      "additionalProperties": false,
+      "description": "Contatori accanto alle voci del menu (per esempio «3» fatture da inviare): un GET che restituisce { \"<id della voce>\": numero }. Si rilegge a intervalli e quando si torna sulla pagina.",
+      "properties": {
+        "url": {
+          "type": "string",
+          "pattern": "^/[^/\\s][^\\s]*$",
+          "description": "Percorso relativo del servizio (per esempio /api/menu/contatori)."
+        },
+        "refreshSeconds": {
+          "type": "integer",
+          "minimum": 15,
+          "maximum": 3600,
+          "description": "Ogni quanti secondi rileggere i contatori (60 se assente)."
+        }
+      }
     }
   },
   "$defs": {

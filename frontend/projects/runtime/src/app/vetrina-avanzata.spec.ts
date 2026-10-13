@@ -310,6 +310,14 @@ describe('Vetrina: componenti avanzati', () => {
     });
   });
 
+  describe('menu', () => {
+    it('i contatori del menu vengono dal servizio indicato dalla navigazione', { timeout: 20000 }, async () => {
+      const { el, until } = await openShowcase('/vetrina/vetrina-input');
+      const leaf = () => [...el.querySelectorAll<HTMLAnchorElement>('lc-sidebar a.leaf')].find((a) => a.getAttribute('href')?.endsWith('/vetrina-attivita'));
+      await until(() => plainText(leaf()?.querySelector('.badge')?.textContent) === '4', 'contatore');
+    });
+  });
+
   describe('contenitori di layout', () => {
     it('border con filtro a ovest e tabella al centro, griglia e box con proporzioni', { timeout: 20000 }, async () => {
       const { el, until } = await openShowcase('/vetrina/vetrina-contenitori');

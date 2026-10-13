@@ -13,6 +13,7 @@
           [useCaseId]="navigation.current().useCase"
           [active]="active()"
           [hrefFor]="hrefFor"
+          [badges]="navigation.badges()"
           (navigate)="open($event.useCase, $event.leaf)"
           (useCaseChange)="navigation.switchUseCase($event)"
         />

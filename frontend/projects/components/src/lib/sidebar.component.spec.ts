@@ -186,4 +186,72 @@ describe('SidebarComponent', () => {
     expect(changes).toEqual(['consultazione']);
     document.querySelectorAll('.cdk-overlay-container').forEach((c) => (c.innerHTML = ''));
   });
+
+  describe('ricerca, contatori e tastiera', () => {
+    const key = (target: Element, k: string) => target.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
+
+    it('la ricerca mostra le voci che contengono il testo (senza accenti e maiuscole), con il percorso; Invio apre la prima', async () => {
+      const { fixture, el, events } = await render(['fatture.fattura.crea']);
+      const input = el.querySelector('.search input') as HTMLInputElement;
+      input.value = 'ATTIVA';
+      input.dispatchEvent(new Event('input'));
+      await flush(fixture);
+      expect(el.querySelector('nav')).toBeNull();
+      expect([...el.querySelectorAll('.results a')].map((a) => text(a))).toEqual(['Attiva Nuova fattura']);
+      // Anche il nome del gruppo conta: «nuova» trova le sue voci.
+      input.value = 'nuova';
+      input.dispatchEvent(new Event('input'));
+      await flush(fixture);
+      expect([...el.querySelectorAll('.results a')].map((a) => text(a))).toEqual(['Attiva Nuova fattura', 'Scegli ordine Nuova fattura › Da ordine']);
+      key(input, 'Enter');
+      await flush(fixture);
+      expect(events.map((e) => e.leaf.id)).toEqual(['attiva']);
+      expect(input.value).toBe('');
+      expect(el.querySelector('nav')).not.toBeNull();
+      input.value = 'zzz';
+      input.dispatchEvent(new Event('input'));
+      await flush(fixture);
+      expect(text(el.querySelector('.results [role="status"]'))).toBe('Nessuna voce trovata.');
+      key(input, 'Escape');
+      await flush(fixture);
+      expect(el.querySelector('.results')).toBeNull();
+    });
+
+    it('contatori accanto alle voci, letti anche dai lettori di schermo; oltre 99 «99+»', async () => {
+      const { fixture, el } = await render(['fatture.fattura.crea']);
+      fixture.componentRef.setInput('badges', { bozze: 3, attiva: 120 });
+      await flush(fixture);
+      const bozze = [...el.querySelectorAll('a.leaf')].find((a) => a.textContent?.includes('Bozze'))!;
+      expect(text(bozze.querySelector('.badge'))).toBe('3');
+      expect(text(bozze.querySelector('.visually-hidden'))).toBe(', 3 da gestire');
+      fixture.componentRef.setInput('collapsed', true);
+      await flush(fixture);
+      expect(bozze.getAttribute('aria-label')).toBe('Bozze, 3 da gestire');
+    });
+
+    it('i titoli dei gruppi si raggiungono da tastiera e dicono se sono aperti; frecce, Home/Fine, destra e sinistra', async () => {
+      const { fixture, el } = await render(['fatture.fattura.crea']);
+      const title = el.querySelector('.ant-menu-submenu-title') as HTMLElement;
+      expect([title.getAttribute('tabindex'), title.getAttribute('role'), title.getAttribute('aria-expanded')]).toEqual(['0', 'button', 'false']);
+      title.focus();
+      key(title, 'ArrowRight');
+      await flush(fixture);
+      expect(title.getAttribute('aria-expanded')).toBe('true');
+      // Aperto: giù entra nella prima voce, poi nel sottogruppo.
+      key(title, 'ArrowDown');
+      expect(text(document.activeElement)).toBe('Attiva');
+      key(document.activeElement!, 'ArrowDown');
+      expect(text(document.activeElement)).toBe('Da ordine');
+      // Sinistra da una voce torna al gruppo che la contiene.
+      key(el.querySelector('a.leaf')!, 'ArrowLeft');
+      expect(document.activeElement).toBe(title);
+      key(title, 'End');
+      expect(text(document.activeElement)).toBe('Bozze');
+      key(document.activeElement!, 'Home');
+      expect(document.activeElement).toBe(title);
+      key(title, 'Enter');
+      await flush(fixture);
+      expect(title.getAttribute('aria-expanded')).toBe('false');
+    });
+  });
 });
