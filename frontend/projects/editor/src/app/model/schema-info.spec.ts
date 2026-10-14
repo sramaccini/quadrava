@@ -82,6 +82,7 @@ describe('lettura dello schema', () => {
   it('la tavolozza offre ogni tipo di campo a sé; i nomi dei campi nuovi non si ripetono', () => {
     expect(paletteGroups().find((g) => g.key === 'fields')?.types).toEqual(INPUT_KINDS.map((k) => 'input.' + k));
     expect(nodeTemplate('input.select', t)).toMatchObject({ type: 'input', field: { name: 'scelta', type: 'select' } });
+    expect(nodeTemplate('text.markdown', t)).toMatchObject({ type: 'text', format: 'markdown' });
     const lookup = nodeTemplate('input.lookup', t);
     expect(Object.keys((ensureSource(emptyScreen(t), lookup) as { dataSources: object }).dataSources)).toEqual(['clienti']);
     const doc: Json = { components: [{ type: 'input', field: { name: 'testo', type: 'text' } }, { type: 'input', field: { name: 'testo2', type: 'text' } }] };

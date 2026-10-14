@@ -60,13 +60,18 @@ function describe(value: string, path: Path, property: string): TextEntry {
   return { path, property, value, kind: 'expression', keys };
 }
 
+const ESCAPES: Record<string, string> = { n: '\n', r: '\r', t: '\t' };
+
 function unescape(text: string): string {
-  return text.replace(/\\(.)/g, '$1');
+  return text.replace(/\\(.)/g, (_, c: string) => ESCAPES[c] ?? c);
 }
 
-/** Il testo dentro una stringa CEL tra apici singoli. */
+/**
+ * Il testo dentro una stringa CEL tra apici singoli. Gli a capo diventano `\n`: una stringa tra apici non può
+ * contenerne di veri (i testi formattati in Markdown ne hanno).
+ */
 function quote(text: string): string {
-  return "'" + text.replace(/\\/g, '\\\\').replace(/'/g, "\\'") + "'";
+  return "'" + text.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\r/g, '\\r').replace(/\n/g, '\\n').replace(/\t/g, '\\t') + "'";
 }
 
 /**

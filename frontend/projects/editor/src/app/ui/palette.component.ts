@@ -15,7 +15,7 @@ export const DRAG_NODE = 'application/x-lc-node-path';
  * `input.<tipo>` aggiungono un campo a sé del tipo indicato.
  */
 const GROUPS: { key: string; types: string[] }[] = [
-  { key: 'layout', types: ['section', 'box', 'grid', 'border', 'tabs', 'wizard', 'text', 'alert', 'image', 'link'] },
+  { key: 'layout', types: ['section', 'box', 'grid', 'border', 'tabs', 'wizard', 'text', 'text.markdown', 'alert', 'image', 'link'] },
   { key: 'fields', types: INPUT_KINDS.map((k) => 'input.' + k) },
   { key: 'input', types: ['form', 'filterBar', 'button'] },
   { key: 'data', types: ['table', 'dataTable', 'serverDataTable', 'detail'] },

@@ -64,7 +64,8 @@ export function nodeTemplate(kind: string, t: Translate): JsonObject {
         ],
       };
     case 'text':
-      return { type, text: t('ed.tpl.text') };
+      // `text.markdown`: testo formattato, con un esempio di elenco e grassetto da modificare.
+      return variant === 'markdown' ? { type, format: 'markdown', text: t('ed.tpl.markdown') } : { type, text: t('ed.tpl.text') };
     case 'button':
       return { type, label: t('ed.tpl.button'), onClick: [{ toast: t('ed.tpl.clicked') }] };
     case 'alert':

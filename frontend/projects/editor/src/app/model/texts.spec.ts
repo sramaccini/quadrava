@@ -48,4 +48,13 @@ describe('testi e chiavi di traduzione', () => {
     expect(collectTexts({ text: value } as Json)[0]).toMatchObject({ kind: 'key', key: 'p.ordine', fallback: "L'ordine \\ è pronto" });
     expect(translatable('p.x', 'Totale {n}')).toBeNull();
   });
+
+  it('un testo su più righe (Markdown) diventa un’espressione valida e torna uguale', () => {
+    const text = 'Prima di **inviare**:\n\n- controlla i dati\n- allega la fattura';
+    const value = translatable('p.istruzioni', text)!;
+    expect(value).not.toContain('\n');
+    const engine = new ExpressionEngine({ can: () => false });
+    expect(engine.checkTemplate(value).valid).toBe(true);
+    expect(collectTexts({ text: value } as Json)[0]).toMatchObject({ kind: 'key', fallback: text });
+  });
 });
