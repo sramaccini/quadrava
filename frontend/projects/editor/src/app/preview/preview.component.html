@@ -24,14 +24,39 @@
     <nz-switch nzSize="small" [ngModel]="liveData()" (ngModelChange)="setLiveData($event)" />
     {{ i18n.t('ed.preview.liveData') }}
   </label>
-  <button nz-button nzSize="small" type="button" (click)="showParams.set(!showParams())" [attr.aria-expanded]="showParams()">{{ i18n.t('ed.preview.params') }}</button>
+  <!-- Pannelli che si aprono: icona e nome. Comandi immediati (seleziona, ricarica): solo icona, il nome nel suggerimento. -->
+  <button nz-button nzSize="small" type="button" (click)="showParams.set(!showParams())" [attr.aria-expanded]="showParams()">
+    <span nz-icon nzType="sliders" aria-hidden="true"></span>{{ i18n.t('ed.preview.params') }}
+  </button>
   <button nz-button nzSize="small" type="button" (click)="showLog.set(!showLog())" [attr.aria-expanded]="showLog()">
-    {{ i18n.t('ed.preview.log') }} ({{ log.events().length }})
+    <span nz-icon nzType="profile" aria-hidden="true"></span>{{ i18n.t('ed.preview.log') }} ({{ log.events().length }})
   </button>
-  <button nz-button nzSize="small" type="button" [nzType]="selectMode() ? 'primary' : 'default'" (click)="selectMode.set(!selectMode())" [attr.aria-pressed]="selectMode()" [attr.title]="i18n.t('ed.preview.selectHint')">
-    <span nz-icon nzType="select"></span>{{ i18n.t('ed.preview.select') }}
+  <button
+    nz-button
+    nzSize="small"
+    type="button"
+    class="icon-only"
+    data-command="select"
+    [nzType]="selectMode() ? 'primary' : 'default'"
+    (click)="selectMode.set(!selectMode())"
+    [attr.aria-pressed]="selectMode()"
+    [attr.aria-label]="i18n.t('ed.preview.select')"
+    [nz-tooltip]="i18n.t('ed.preview.select') + ' — ' + i18n.t('ed.preview.selectHint')"
+  >
+    <span nz-icon nzType="select" aria-hidden="true"></span>
   </button>
-  <button nz-button nzSize="small" type="button" (click)="reload()"><span nz-icon nzType="reload"></span>{{ i18n.t('ed.preview.reload') }}</button>
+  <button
+    nz-button
+    nzSize="small"
+    type="button"
+    class="icon-only"
+    data-command="reload"
+    (click)="reload()"
+    [attr.aria-label]="i18n.t('ed.preview.reload')"
+    [nz-tooltip]="i18n.t('ed.preview.reload')"
+  >
+    <span nz-icon nzType="reload" aria-hidden="true"></span>
+  </button>
 </div>
 
 @if (showParams()) {

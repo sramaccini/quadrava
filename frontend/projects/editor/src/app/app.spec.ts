@@ -319,7 +319,12 @@ describe('editor delle schermate', () => {
     await settle();
     expect(store.selection()).toEqual(['components', 0]);
     // Modalità selezione e registro.
-    ([...el.querySelectorAll('ed-preview .bar button')].find((b) => b.textContent?.includes('Seleziona')) as HTMLButtonElement).click();
+    // Seleziona e Ricarica: solo icona, il nome per i lettori di schermo; Parametri e Registro: icona e nome.
+    const selectButton = el.querySelector('ed-preview .bar button[data-command="select"]') as HTMLButtonElement;
+    expect([selectButton.getAttribute('aria-label'), selectButton.textContent?.trim()]).toEqual(['Seleziona', '']);
+    expect(el.querySelector('ed-preview .bar button[data-command="reload"]')?.getAttribute('aria-label')).toBe('Ricarica');
+    expect(el.querySelectorAll('ed-preview .bar button[aria-expanded] .anticon').length).toBe(2);
+    selectButton.click();
     await untilState('ed-preview', (st) => st.selectMode, 'modalità selezione');
     await fromFrame('ed-preview', { type: 'lc-preview:event', event: { kind: 'request', text: 'GET /api/elenco' } });
     expect(el.querySelector('ed-preview .bar')?.textContent).toContain('Registro (1)');
