@@ -319,15 +319,23 @@ describe('editor delle schermate', () => {
     await settle();
     expect(store.selection()).toEqual(['components', 0]);
     // Modalità selezione e registro.
-    // Seleziona e Ricarica: solo icona, il nome per i lettori di schermo; Parametri e Registro: icona e nome.
+    // Parametri, Registro, Seleziona e Ricarica: solo icona, il nome per i lettori di schermo, allineati a destra.
     const selectButton = el.querySelector('ed-preview .bar button[data-command="select"]') as HTMLButtonElement;
     expect([selectButton.getAttribute('aria-label'), selectButton.textContent?.trim()]).toEqual(['Seleziona', '']);
     expect(el.querySelector('ed-preview .bar button[data-command="reload"]')?.getAttribute('aria-label')).toBe('Ricarica');
-    expect(el.querySelectorAll('ed-preview .bar button[aria-expanded] .anticon').length).toBe(2);
+    expect([...el.querySelectorAll('ed-preview .bar .actions button')].map((b) => [b.getAttribute('data-command'), b.querySelector('.anticon') !== null])).toEqual([
+      ['params', true],
+      ['log', true],
+      ['select', true],
+      ['reload', true],
+    ]);
+    expect(el.querySelector('ed-preview .bar button[data-command="params"]')?.getAttribute('aria-label')).toBe('Parametri');
     selectButton.click();
     await untilState('ed-preview', (st) => st.selectMode, 'modalità selezione');
     await fromFrame('ed-preview', { type: 'lc-preview:event', event: { kind: 'request', text: 'GET /api/elenco' } });
-    expect(el.querySelector('ed-preview .bar')?.textContent).toContain('Registro (1)');
+    const logButton = el.querySelector('ed-preview .bar button[data-command="log"]') as HTMLButtonElement;
+    expect(logButton.getAttribute('aria-label')).toBe('Registro (1)');
+    expect(logButton.querySelector('.count')?.textContent).toBe('1');
     // Larghezze: solo icone, con il nome (e i pixel) per i lettori di schermo.
     const widths = [...el.querySelectorAll<HTMLButtonElement>('ed-preview .widths button')];
     expect(widths.map((b) => [b.getAttribute('aria-label'), b.getAttribute('aria-pressed'), b.textContent?.trim()])).toEqual([

@@ -24,12 +24,39 @@
     <nz-switch nzSize="small" [ngModel]="liveData()" (ngModelChange)="setLiveData($event)" />
     {{ i18n.t('ed.preview.liveData') }}
   </label>
-  <!-- Pannelli che si aprono: icona e nome. Comandi immediati (seleziona, ricarica): solo icona, il nome nel suggerimento. -->
-  <button nz-button nzSize="small" type="button" (click)="showParams.set(!showParams())" [attr.aria-expanded]="showParams()">
-    <span nz-icon nzType="sliders" aria-hidden="true"></span>{{ i18n.t('ed.preview.params') }}
+  <!-- A destra: comandi a sola icona, il nome nel suggerimento e per i lettori di schermo. -->
+  <div class="actions">
+  @let logLabel = i18n.t('ed.preview.log') + ' (' + log.events().length + ')';
+  <button
+    nz-button
+    nzSize="small"
+    type="button"
+    class="icon-only"
+    data-command="params"
+    [nzType]="showParams() ? 'primary' : 'default'"
+    (click)="showParams.set(!showParams())"
+    [attr.aria-expanded]="showParams()"
+    [attr.aria-label]="i18n.t('ed.preview.params')"
+    [nz-tooltip]="i18n.t('ed.preview.params')"
+  >
+    <span nz-icon nzType="sliders" aria-hidden="true"></span>
   </button>
-  <button nz-button nzSize="small" type="button" (click)="showLog.set(!showLog())" [attr.aria-expanded]="showLog()">
-    <span nz-icon nzType="profile" aria-hidden="true"></span>{{ i18n.t('ed.preview.log') }} ({{ log.events().length }})
+  <button
+    nz-button
+    nzSize="small"
+    type="button"
+    class="icon-only"
+    data-command="log"
+    [nzType]="showLog() ? 'primary' : 'default'"
+    (click)="showLog.set(!showLog())"
+    [attr.aria-expanded]="showLog()"
+    [attr.aria-label]="logLabel"
+    [nz-tooltip]="logLabel"
+  >
+    <span nz-icon nzType="profile" aria-hidden="true"></span>
+    @if (log.events().length) {
+      <span class="count" aria-hidden="true">{{ log.events().length > 99 ? '99+' : log.events().length }}</span>
+    }
   </button>
   <button
     nz-button
@@ -57,6 +84,7 @@
   >
     <span nz-icon nzType="reload" aria-hidden="true"></span>
   </button>
+  </div>
 </div>
 
 @if (showParams()) {

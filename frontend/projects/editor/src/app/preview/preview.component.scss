@@ -8,7 +8,13 @@
 .width:hover { color: var(--lc-color-on-surface); }
 .width.on { background: var(--lc-color-surface); color: var(--lc-color-primary); box-shadow: 0 1px 2px rgb(0 0 0 / 15%); }
 .width:focus-visible { outline: 2px solid var(--lc-color-primary); outline-offset: 1px; }
-.icon-only { width: 28px; padding: 0; }
+.actions { display: flex; gap: 4px; margin-left: auto; }
+.icon-only { position: relative; width: 28px; padding: 0; }
+/* Numero di eventi del registro, sull'angolo dell'icona. */
+.count {
+  position: absolute; top: -6px; right: -6px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px;
+  background: var(--lc-color-primary); color: var(--lc-color-on-primary); font-size: 10px; line-height: 16px; text-align: center;
+}
 .switch { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
 .params { padding: 8px 12px; border-bottom: 1px solid var(--lc-color-border); background: var(--lc-color-surface); font-size: 12px; }
 .log {
