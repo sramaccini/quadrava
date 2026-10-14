@@ -64,7 +64,10 @@ Before opening a pull request, all of these must pass: `schema:check`, `schema:d
 
 Example: adding a `progress` node.
 
-1. **Schema.** Add the node definition in `projects/schema/src/lib/screen.schema.json` (properties, `required`, `additionalProperties: false`), run `npm run schema:sync`, and add the TypeScript type next to the others. Columns are layered: `columnProps` (shared with detail fields) → `tableColumnProps` (`sortable`, `onClick`, `aggregate`) → `dataColumn` (`filter`, `groupable`); each closed variant uses `unevaluatedProperties: false`. State paths use `$defs/statePath`. Ajv runs in strict mode: a subschema with `properties` needs `type: object`, and a `required` inside `if/then` or `anyOf` needs the property declared there too. Write regex patterns from a script file, not a shell heredoc (double backslashes get collapsed).
+1. **Schema.** Add the node definition in `projects/schema/src/lib/screen.schema.json` (properties, `required`, `additionalProperties: false`), run `npm run schema:sync`, and add the TypeScript type next to the others.
+   * Columns are layered: `columnProps` (shared with detail fields) → `tableColumnProps` (`sortable`, `onClick`, `aggregate`) → `dataColumn` (`filter`, `groupable`); each closed variant uses `unevaluatedProperties: false`. State paths use `$defs/statePath`.
+   * Ajv runs in strict mode: a subschema with `properties` needs `type: object`, and a `required` inside `if/then` or `anyOf` needs the property declared there too.
+   * Write regex patterns from a script file, not a shell heredoc (double backslashes get collapsed).
 2. **Component.** Create `projects/components/src/lib/progress.component.ts`: standalone, `ChangeDetectionStrategy.OnPush`, inputs through `input()` / `input.required()`. Resolve expressions through the screen runtime from `core`; never evaluate strings yourself. Keep data logic in pure functions (see `table-data.ts`, `chart-geometry.ts`) so it can be tested without rendering. If the node writes to the screen state (`bind`), give the state an initial value in `ScreenRuntime.seedFilters`, so expressions and data sources never see a missing key.
 3. **Register.** Add it to `STANDARD_COMPONENTS` (and export it from `public-api.ts`). Application-specific components are registered with `provideLowcodeComponents(extra)`.
 4. **Tests.** Cover rendering, expression-driven state (`visibleIf`, `enabledIf`, `can()`), the fail-closed behaviour, and any action it triggers.
@@ -121,7 +124,17 @@ The Italian locale is patched in `provide.ts` (`rangeQuarterPlaceholder` is miss
 
 Everything external to the interpreter is an abstract class used as a DI token: `Authorization`, `UserProvider`, `DataClient`, `ScreenNavigator`, `Notifier`, `RuntimeDiagnostics`, `Confirmation`, `FormDialog` (the `dialog` step; implemented by `DialogForm` in `components`).
 
-`DataRequest` may carry a `file` (`field`, `name`, `type`, `blob`): `HttpDataClient` then sends a multipart body (`FormData`) with the file in its part and each body entry as a text part. `ScreenRuntime.execute(name, args, scope, file)` attaches it; `ScreenRuntime.query(name, args, scope)` runs a data source without changing its shared state (used by lookup fields and by the server data table, so that two components on the same source do not disturb each other). Components that query a source themselves should watch `ScreenRuntime.refreshCount()[source]`: the `refresh` step increments it for every source, and on non-GET sources that is all it does (it returns `{ ok: true, data: null }`). Data source expressions always see `search`, `lookupKey` and `request` (null until a component sets them). The runtime chooses the implementations at start-up from `runtime-config.json`: without `services` it plugs in the demo fakes and `DemoShellSession` (profile selector); with `services: { source: 'bff', appId }` it calls `provideLowcodeServices` and uses `BffShellSession` (user name, permission count, logout). In a `provideAppInitializer` callback call every `inject()` before the first `await`: afterwards the injection context is gone (NG0203) and the app does not start. To add one: declare the abstract class in `core`, inject it where needed, provide a fake in `runtime/demo`, and a real implementation in `services` (or `components` when it is UI). Components must depend on the abstraction only.
+**Files.** `DataRequest` may carry a `file` (`field`, `name`, `type`, `blob`): `HttpDataClient` then sends a multipart body (`FormData`) with the file in its part and each body entry as a text part. `ScreenRuntime.execute(name, args, scope, file)` attaches it.
+
+**Queries and refresh.**
+
+* `ScreenRuntime.query(name, args, scope)` runs a data source without changing its shared state (used by lookup fields and by the server data table, so that two components on the same source do not disturb each other).
+* Components that query a source themselves should watch `ScreenRuntime.refreshCount()[source]`: the `refresh` step increments it for every source, and on non-GET sources that is all it does (it returns `{ ok: true, data: null }`).
+* Data source expressions always see `search`, `lookupKey` and `request` (null until a component sets them).
+
+**Choosing the implementations.** The runtime chooses them at start-up from `runtime-config.json`: without `services` it plugs in the demo fakes and `DemoShellSession` (profile selector); with `services: { source: 'bff', appId }` it calls `provideLowcodeServices` and uses `BffShellSession` (user name, permission count, logout). In a `provideAppInitializer` callback call every `inject()` before the first `await`: afterwards the injection context is gone (NG0203) and the app does not start.
+
+**Adding a port.** Declare the abstract class in `core`, inject it where needed, provide a fake in `runtime/demo`, and a real implementation in `services` (or `components` when it is UI). Components must depend on the abstraction only.
 
 ## 8. Security rules (non-negotiable)
 
