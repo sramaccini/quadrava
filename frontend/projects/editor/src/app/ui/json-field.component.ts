@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, input, linkedSignal, output, signal } from '@angular/core';
 import { I18n } from 'core';
-import { JsonHighlightDirective } from './json-highlight';
+import { JsonHighlightDirective } from './code-highlight';
 import type { Json } from '../model/doc-ops';
 
 /**

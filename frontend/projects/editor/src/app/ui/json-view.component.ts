@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, linkedSignal, signal } from
 import { I18n } from 'core';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import type { Json } from '../model/doc-ops';
-import { JsonHighlightDirective } from './json-highlight';
+import { JsonHighlightDirective } from './code-highlight';
 import { DocumentState } from '../model/document-state';
 
 /**

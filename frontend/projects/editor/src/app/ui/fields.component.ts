@@ -14,6 +14,7 @@ import { DocumentState } from '../model/document-state';
 import { listItem, objectFields, type ItemShape, type PropertyInfo, type Variant } from '../model/schema-info';
 import { defaultItem, summaryOf } from '../model/templates';
 import { applyCompletion, completionAt, expressionHints, insertHint, type Hint } from '../model/expression-help';
+import { TemplateHighlightDirective } from './code-highlight';
 import { JsonFieldComponent } from './json-field.component';
 
 /** Proprietà mostrate come area di testo su più righe anche se sono semplici testi. */
@@ -55,6 +56,7 @@ interface ListEntry {
     NzInputNumberModule,
     NzMenuModule,
     NzSelectModule,
+    TemplateHighlightDirective,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './fields.component.scss',

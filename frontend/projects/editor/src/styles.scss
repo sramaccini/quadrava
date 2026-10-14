@@ -74,6 +74,7 @@ ed-dock-side .ed-floating.ed-open { opacity: 1; visibility: visible; pointer-eve
 :root {
   --ed-code-key: #0b5cad; --ed-code-string: #1a7f37; --ed-code-number: #b35900; --ed-code-literal: #8250df;
   --ed-code-punctuation: #57606a; --ed-code-expression: #9a3412; --ed-code-expression-bg: #fff1e0;
+  --ed-code-function: #6639ba; --ed-code-variable: #0b5cad; --ed-code-property: #0a3069; --ed-code-operator: #b3261e;
 }
 .ed-code { position: relative; display: flex; flex-direction: column; min-height: 0; }
 .ed-code > textarea, .ed-code > .ed-code-layer {
@@ -98,3 +99,10 @@ ed-dock-side .ed-floating.ed-open { opacity: 1; visibility: visible; pointer-eve
 .ed-code-literal { color: var(--ed-code-literal); font-weight: 600; }
 .ed-code-punctuation { color: var(--ed-code-punctuation); }
 .ed-code-expression { color: var(--ed-code-expression); background: var(--ed-code-expression-bg); border-radius: 3px; }
+/* Testi delle proprietà con espressioni: le graffe evidenziate, le parti di CEL con i loro colori. */
+.ed-code-delimiter { color: var(--ed-code-expression); background: var(--ed-code-expression-bg); font-weight: 600; border-radius: 3px; }
+.ed-code-function { color: var(--ed-code-function); }
+.ed-code-variable { color: var(--ed-code-variable); }
+.ed-code-property { color: var(--ed-code-property); }
+.ed-code-operator { color: var(--ed-code-operator); }
+.ed-code > textarea::placeholder { color: var(--lc-color-muted); }

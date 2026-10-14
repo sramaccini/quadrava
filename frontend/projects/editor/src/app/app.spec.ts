@@ -113,6 +113,15 @@ describe('editor delle schermate', () => {
     expect(el.querySelector('ed-inspector .kind')?.textContent).toBe('Sezione');
     type(el.querySelector('#prop-title') as HTMLTextAreaElement, 'Riepilogo');
     await untilState('ed-preview', (st) => getAt(screenOf(st), ['components', 0, 'title']) === 'Riepilogo', 'titolo nell’anteprima');
+    // Il testo della proprietà ha la sintassi colorata dietro l'area di testo (anche con un'espressione).
+    const title = el.querySelector('#prop-title') as HTMLTextAreaElement;
+    type(title, "Riepilogo {{ state.n }}");
+    await settle();
+    const layer = title.previousElementSibling as HTMLElement;
+    expect(layer.classList.contains('ed-code-layer')).toBe(true);
+    expect([...layer.querySelectorAll('span')].map((s) => s.className)).toEqual(['ed-code-delimiter', 'ed-code-variable', 'ed-code-punctuation', 'ed-code-property', 'ed-code-delimiter']);
+    type(title, 'Riepilogo');
+    await settle();
     // Dentro la sezione selezionata finisce il nodo successivo.
     (el.querySelector('ed-palette button[data-type="alert"]') as HTMLButtonElement).click();
     await untilState('ed-preview', (st) => getAt(screenOf(st), ['components', 0, 'components', 0, 'type']) === 'alert', 'messaggio dentro la sezione');

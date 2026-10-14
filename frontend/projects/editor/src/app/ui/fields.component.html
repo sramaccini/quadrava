@@ -113,11 +113,12 @@
       }
       @default {
         @if (isLong(row)) {
+          <!-- Sintassi colorata: il testo fisso normale, le espressioni {{ }} con le loro parti (vedi code-highlight). -->
+          <div class="ed-code">
           <textarea
             #area
-            nz-input
+            [edTemplateHighlight]="asText(row.value)"
             [id]="row.id"
-            [class.code]="row.info.kind === 'expression'"
             rows="1"
             [value]="asText(row.value)"
             (input)="setText(row, $any($event.target).value); suggest(row, area)"
@@ -130,6 +131,7 @@
             [attr.aria-activedescendant]="completion()?.key === key(row.path) ? row.id + '-completion-' + completion()!.active : null"
             spellcheck="false"
           ></textarea>
+          </div>
           @if (completion(); as c) {
             @if (c.key === key(row.path)) {
               <ul class="completion" role="listbox" [id]="row.id + '-completion'" [attr.aria-label]="i18n.t('ed.hints')">
