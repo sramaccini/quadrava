@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterEveryRender, computed, effect, inject, linkedSignal, signal, untracked, viewChild } from '@angular/core';
-import { SidebarComponent, type NavigateEvent } from 'components';
+import { KinetixWordmarkComponent, SidebarComponent, type NavigateEvent } from 'components';
 import { I18n, NavigationRuntime, Notifier, ScreenComponent, ThemeService, loadMessages } from 'core';
 import { validateTheme, type ThemeDefinition } from 'schema';
 import { PreviewChannel, PreviewSession } from './preview-ports';
@@ -26,7 +26,7 @@ const sameJson = (a: unknown, b: unknown): boolean => a === b || JSON.stringify(
  */
 @Component({
   selector: 'lc-root',
-  imports: [ScreenComponent, SidebarComponent],
+  imports: [KinetixWordmarkComponent, ScreenComponent, SidebarComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: flex; min-height: 100vh; background: var(--lc-color-background); color: var(--lc-color-on-surface); }
@@ -44,7 +44,9 @@ const sameJson = (a: unknown, b: unknown): boolean => a === b || JSON.stringify(
   `,
   template: `
     @if (navigation(); as nav) {
-      <lc-sidebar [navigation]="nav" brand="LowCode" [tone]="tone()" [useCaseId]="useCaseId()" (useCaseChange)="useCaseId.set($event)" (navigate)="navigated($event)" />
+      <lc-sidebar [navigation]="nav" brand="KinetiX" [tone]="tone()" [useCaseId]="useCaseId()" (useCaseChange)="useCaseId.set($event)" (navigate)="navigated($event)">
+        <lc-kinetix-wordmark lcBrand icon="brand/kinetix-icon-small.svg" [tone]="tone()" />
+      </lc-sidebar>
     }
     @if (state(); as s) {
       @if (screen() || !navigation()) {

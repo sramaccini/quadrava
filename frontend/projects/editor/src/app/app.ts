@@ -9,6 +9,7 @@ import { NzSelectModule } from 'ng-zorro-antd/select';
 import { NzTabsModule } from 'ng-zorro-antd/tabs';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
+import { KinetixWordmarkComponent } from 'components';
 import { validateTheme } from 'schema';
 import { isObject, type Json } from './model/doc-ops';
 import type { DocumentState } from './model/document-state';
@@ -37,7 +38,7 @@ const MODES: Mode[] = ['screen', 'navigation', 'theme'];
 const VIEWS = ['preview', 'json', 'sources', 'texts'] as const;
 
 /**
- * Editor visuale: schermate (tavolozza e struttura a sinistra, anteprima / JSON / data source / testi al centro,
+ * KinetiX Studio, l'editor visuale: schermate (tavolozza e struttura a sinistra, anteprima / JSON / data source / testi al centro,
  * proprietà a destra) e navigazione (casi d'uso e menu, con l'anteprima del menu), problemi in basso. I documenti
  * prodotti sono gli stessi JSON che il runtime legge.
  */
@@ -49,6 +50,7 @@ const VIEWS = ['preview', 'json', 'sources', 'texts'] as const;
     InspectorComponent,
     IssuesComponent,
     JsonViewComponent,
+    KinetixWordmarkComponent,
     MenuBarComponent,
     NavigationEditorComponent,
     ThemeEditorComponent,

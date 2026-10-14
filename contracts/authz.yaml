@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: Piattaforma LowCode - Contratto di autorizzazione
+  title: KinetiX - Contratto di autorizzazione
   version: 0.1.0
   description: >
     Contratto REST che ogni backend applicativo implementa per esporre i permessi dell'utente corrente.

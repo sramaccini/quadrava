@@ -4,8 +4,7 @@
       <ng-template #sidebar let-inDrawer>
         <lc-sidebar
           [navigation]="nav"
-          brand="LowCode"
-          logo="logo.svg"
+          brand="KinetiX"
           [tone]="siderTone()"
           [collapsed]="inDrawer ? false : collapsed()"
           (collapsedChange)="collapsed.set($event)"
@@ -16,7 +15,9 @@
           [badges]="navigation.badges()"
           (navigate)="open($event.useCase, $event.leaf)"
           (useCaseChange)="navigation.switchUseCase($event)"
-        />
+        >
+          <lc-kinetix-wordmark lcBrand icon="brand/kinetix-icon-small.svg" [tone]="siderTone()" [compact]="inDrawer ? false : collapsed()" />
+        </lc-sidebar>
       </ng-template>
       @if (viewport() === 'narrow') {
         <!-- Fascia stretta: la barra laterale vive in un cassetto sopra il contenuto. -->

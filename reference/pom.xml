@@ -14,7 +14,7 @@
   <artifactId>lowcode-reference</artifactId>
   <version>0.1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
-  <name>Piattaforma LowCode - Reference implementation</name>
+  <name>KinetiX - Reference implementation</name>
   <description>Implementazione di riferimento dei contratti REST (non per produzione).</description>
 
   <properties>

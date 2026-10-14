@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: Piattaforma LowCode - Contratto di ingestione della telemetria
+  title: KinetiX - Contratto di ingestione della telemetria
   version: 0.1.0
   description: >
     Endpoint REST a cui il runtime invia tracce e log in formato OTLP/HTTP (JSON).

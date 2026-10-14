@@ -10,7 +10,7 @@
   </parent>
 
   <artifactId>lowcode-registry</artifactId>
-  <name>LowCode reference - registry</name>
+  <name>KinetiX reference - registry</name>
   <description>Registry di esempio con versioni immutabili (contratto registry.yaml).</description>
 
   <dependencies>

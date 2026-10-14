@@ -143,7 +143,15 @@ describe('App (demo)', () => {
     await until(fixture, () => rows(el) > 0, 'elenco fatture');
     const crumbs = [...el.querySelectorAll('main nz-breadcrumb-item')].map((n) => (n.textContent ?? '').replace('/', '').trim());
     expect(crumbs).toEqual(['Consultazione Fatture', 'Elenco fatture']);
-    expect(el.querySelector('lc-sidebar .logo img')?.getAttribute('src')).toBe('logo.svg');
+    // Il marchio KinetiX: icona e logotipo, con il nome per i lettori di schermo; a barra compressa resta l'icona.
+    const brand = el.querySelector('lc-sidebar .logo lc-kinetix-wordmark') as HTMLElement;
+    expect(brand.querySelector('img')?.getAttribute('src')).toBe('brand/kinetix-icon-small.svg');
+    expect(brand.querySelector('[role="img"]')?.getAttribute('aria-label')).toBe('KinetiX');
+    expect(brand.querySelector('.word')?.textContent).toBe('KinetiX');
+    expect(el.querySelector('lc-sidebar .logo .name')).toBeNull();
+    (el.querySelector('lc-sidebar button.toggle') as HTMLButtonElement).click();
+    await until(fixture, () => !brand.querySelector('.word'), 'barra compressa');
+    expect(brand.querySelector('img')).not.toBeNull();
   });
 
   it('il menu utente mostra il nome e termina la sessione con l’ultima voce, poi si può accedere di nuovo', async () => {

@@ -3,7 +3,6 @@ import type { Messages } from 'core';
 /** Scritte dell'editor (chiavi `ed.*`). Le scritte della piattaforma (`lc.*`) vengono da `components`. */
 export const EDITOR_MESSAGES: Record<string, Messages> = {
   it: {
-    'ed.title': 'Editor visuale',
     'ed.mode.label': 'Che cosa modificare',
     'ed.mode.screen': 'Schermata',
     'ed.mode.navigation': 'Navigazione',
@@ -251,7 +250,6 @@ export const EDITOR_MESSAGES: Record<string, Messages> = {
     'ed.tpl.done': 'Fatto',
   },
   en: {
-    'ed.title': 'Visual editor',
     'ed.mode.label': 'What to edit',
     'ed.mode.screen': 'Screen',
     'ed.mode.navigation': 'Navigation',

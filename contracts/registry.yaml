@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: Piattaforma LowCode - Contratto del registry
+  title: KinetiX - Contratto del registry
   version: 0.3.0
   description: >
     Registro delle definizioni delle applicazioni. Un'applicazione è fatta di documenti separati: ogni schermata,

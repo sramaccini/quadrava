@@ -38,7 +38,7 @@ Regole comuni a tutti i componenti, valide anche per i nuovi:
 | Campi | `text`, `number`, `select`, `checkbox`, `date`, `textarea`, `datetime`, `radio`, `switch`, `multiselect`, `lookup`, `file`, `repeater`, `richtext` (§ 2.26). |
 | Formati di cella | `text`, `number`, `currency`, `percent`, `date`, `datetime`, `boolean`, `badge`, `markdown`. |
 | Passi | `set`, `call`, `refresh`, `navigate`, `toast`, `confirm`, `dialog`, `validate`, `print`, `export` (§ 2.22). |
-| Guscio | Barra laterale (`lc-sidebar`, con ricerca, contatori e tastiera: § 2.25), menu utente (`lc-user-menu`), barra superiore responsive. |
+| Guscio | Barra laterale (`lc-sidebar`, con ricerca, contatori e tastiera: § 2.25; il marchio dell'applicazione si inserisce con un elemento `lcBrand`, altrimenti logo e nome), menu utente (`lc-user-menu`), barra superiore responsive, logotipo `lc-kinetix-wordmark`. |
 
 ## 2. Aggiunti nell'ottobre 2026
 

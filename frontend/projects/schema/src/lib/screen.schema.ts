@@ -4,7 +4,7 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://lowcode.example/schemas/screen.schema.json",
   "title": "Schermata",
-  "description": "Nucleo del linguaggio di definizione: una schermata di un'applicazione LowCode con il catalogo dei componenti di base.",
+  "description": "Nucleo del linguaggio di definizione: una schermata di un'applicazione KinetiX con il catalogo dei componenti di base.",
   "type": "object",
   "required": [
     "schemaVersion",

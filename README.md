@@ -1,6 +1,6 @@
-# LowCode Platform
+# KinetiX
 
-A platform for building **management and administrative front ends by describing them in JSON**, plus a visual editor that produces that JSON.
+A platform for building **management and administrative front ends by describing them in JSON**, plus a visual editor, **KinetiX Studio**, that produces that JSON.
 
 An application is a set of JSON documents: screens (components, data sources, actions), a theme and a navigation menu. A generic runtime reads those documents and renders a working Angular application, built on the [NG-ZORRO](https://ng.ant.design) UI library (Ant Design for Angular). Authors never write Angular code: they declare *what* a screen shows and *which* API each action calls, and the platform takes care of authentication, authorization, tracing and error handling in one place.
 
@@ -146,6 +146,7 @@ The lookup order is: active language, default language, the fallback written in 
 | `idp/` | Keycloak for local development (Docker Compose and sample realm) |
 | `examples/` | Reference JSON applications used by validation and tests |
 | `docs/` | Documentation entry point and architecture decision records |
+| `assets/brand/` | KinetiX brand: icons, logos, colours and usage rules (`assets/brand/README.md`) |
 
 Frontend libraries, from the bottom up:
 
@@ -192,6 +193,10 @@ In the top bar choose the **user** (`operatore`, `responsabile`, `amministratore
 * The look follows Ant Design Pro and is entirely driven by the theme: full-height light side bar with the logo above the use-case selector and a round collapse button on its edge, top bar with the user menu (name, avatar, sign-out as the last entry), page header with breadcrumb, title and description, cards on a light grey background. Three themes are provided: `chiaro`, `classico` (dark navy side bar) and `scuro`. The round button on the side bar edge collapses it to icons (groups then open as pop-ups). *Sign out* in the user menu ends the demo session.
 
 The libraries are not hot-reloaded: after changing anything in `frontend/projects/<library>` run `npm run build:libs` again.
+
+## Brand
+
+The product is **KinetiX**; the visual editor is **KinetiX Studio**. The source assets live in `assets/brand/` (icons, logos, colours, usage); each app copies only what it needs into `public/brand/` (favicon in SVG with a 32 px PNG fallback, Apple touch icon, the small icon for the header). The logotype is drawn by `lc-kinetix-wordmark` (components library): the icon plus "Kineti**X**" (and "Studio") as HTML text in the Sora typeface, bundled locally from `@fontsource/sora` (weights 300 and 600, no request to Google), because an SVG logo used as an image cannot use the page's fonts. Brand colours are fixed (light and dark variants), not theme colours. The demo puts the logotype in the side bar (icon only when the bar is collapsed, dark variant on a dark bar) through the side bar's `lcBrand` slot, which any application can use for its own brand; KinetiX Studio shows it at the top left. Technical identifiers (Keycloak realm `lowcode`, Java packages, `lc-` prefixes, schema `$id`s) keep their names.
 
 ## Run the editor
 
@@ -262,7 +267,7 @@ npm run conformance:telemetry -- --user operatore --password operatore
 
 Every push to `main` and every pull request runs [`.github/workflows/ci.yml`](.github/workflows/ci.yml) on GitHub Actions: the front-end job (`schema:check`, `validate:examples`, `build:libs`, the tests of every project, the production builds of runtime and editor), the end-to-end job (Playwright in Chromium; report uploaded as an artifact when it fails) and the Java job (`mvn -B verify`).
 
-At the time of writing there are **537 automated tests**: schema 71, expressions 42, core 76, components 165, services 27, runtime 78, editor 78. The Java modules add 39 (`mvn verify`: authz 7, bff 8, registry 18 — including the parity of the server-side schema validation with Ajv on every example and the coherence between controller and contract —, telemetry 6). They run in jsdom, so layout, real focus handling and pixel-level rendering are **not** covered there; see the development guide for the helpers that make NG-ZORRO overlays testable. The Playwright suite (18 tests) checks in a real browser what jsdom cannot see: the standalone fields showcase, the rich text editor (toolbar commands are executed by the browser), the border layout at 1400 px and 375 px, and **accessibility** with axe-core (WCAG 2.1 A/AA, no serious or critical violation) on all twelve showcase screens. The conformance kits pass against the reference services: registry 17 of 17, authorization 11 of 11, telemetry 6 of 6 (they found real deviations in the authorization and telemetry services, now fixed: unchecked permission format and batch size, a 500 on a missing `checks`, non-OTLP bodies accepted, errors without a Problem body).
+At the time of writing there are **541 automated tests**: schema 71, expressions 42, core 76, components 169, services 27, runtime 78, editor 78. The Java modules add 39 (`mvn verify`: authz 7, bff 8, registry 18 — including the parity of the server-side schema validation with Ajv on every example and the coherence between controller and contract —, telemetry 6). They run in jsdom, so layout, real focus handling and pixel-level rendering are **not** covered there; see the development guide for the helpers that make NG-ZORRO overlays testable. The Playwright suite (18 tests) checks in a real browser what jsdom cannot see: the standalone fields showcase, the rich text editor (toolbar commands are executed by the browser), the border layout at 1400 px and 375 px, and **accessibility** with axe-core (WCAG 2.1 A/AA, no serious or critical violation) on all twelve showcase screens. The conformance kits pass against the reference services: registry 17 of 17, authorization 11 of 11, telemetry 6 of 6 (they found real deviations in the authorization and telemetry services, now fixed: unchecked permission format and batch size, a 500 on a missing `checks`, non-OTLP bodies accepted, errors without a Problem body).
 
 ## Security model
 

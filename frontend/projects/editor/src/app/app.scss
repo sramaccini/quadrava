@@ -9,7 +9,7 @@
   grid-area: top; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 4px 12px;
   background: var(--lc-color-surface); border-bottom: 1px solid var(--lc-color-border);
 }
-.brand { margin: 0 4px 0 0; font-size: 16px; font-weight: 600; }
+.brand { display: flex; margin: 0 8px 0 0; --kx-wordmark-size: 18px; }
 .group { display: flex; gap: 4px; }
 .end { margin-left: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .status { display: flex; gap: 4px; }

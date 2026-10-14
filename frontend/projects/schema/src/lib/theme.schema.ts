@@ -3,7 +3,7 @@
 export const THEME_SCHEMA: Record<string, unknown> = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://lowcode.example/schemas/theme.schema.json",
-  "title": "Tema dell'applicazione LowCode",
+  "title": "Tema dell'applicazione KinetiX",
   "description": "Design token di un tema. Il runtime li applica come CSS custom properties (--lc-*). I valori ammessi sono volutamente ristretti: un tema non può iniettare CSS arbitrario.",
   "type": "object",
   "required": [

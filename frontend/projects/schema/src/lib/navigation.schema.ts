@@ -3,7 +3,7 @@
 export const NAVIGATION_SCHEMA: Record<string, unknown> = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://lowcode.example/schemas/navigation.schema.json",
-  "title": "Navigazione dell'applicazione LowCode",
+  "title": "Navigazione dell'applicazione KinetiX",
   "description": "Menu laterale organizzato per casi d'uso, fino a tre livelli (gruppo, sottogruppo, voce). Il menu ragiona in permessi: i ruoli restano nel provider di identità. È solo una comodità di navigazione: l'enforcement resta in `requires` della schermata e nel backend.",
   "type": "object",
   "required": [

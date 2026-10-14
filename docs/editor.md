@@ -1,4 +1,4 @@
-# Editor visuale
+# KinetiX Studio (editor visuale)
 
 L'editor (`frontend/projects/editor`) modifica le **schermate**, la **navigazione** (casi d'uso e menu) e il **tema**; un selettore nella barra degli strumenti passa dall'uno all'altro. Per le schermate produce lo stesso JSON che il runtime legge: chi lo usa compone la schermata con tavolozza, struttura e pannello delle proprietà, e vede subito il risultato disegnato dal runtime vero. Non esiste un formato intermedio: quello che si esporta si mette in `examples/` (o, in futuro, si pubblica nel registro) così com'è.
 
@@ -8,7 +8,7 @@ Avvio: `cd frontend && npm run start:editor` (porta 4201; costruisce le librerie
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│ Editor  File  Modifica  ↶ ↷          Valida [Schermata|Navigazione|Tema]  IT │
+│ ▣ KinetiX Studio  File  Modifica  ↶ ↷  Valida [Schermata|Navigazione|Tema] IT│
 ├───────────────┬──────────────────────────────────────────┬───────────────────┤
 │ COMPONENTI    │ Anteprima | JSON | Data source           │ PROPRIETÀ         │
 │ Sezione Testo │ [Desktop|Tablet|Telefono] [Permessi] …   │ Tabella           │
@@ -23,7 +23,7 @@ Avvio: `cd frontend && npm run start:editor` (porta 4201; costruisce le librerie
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
-In alto c'è una **barra dei menu** come nelle applicazioni desktop:
+In alto a sinistra il logotipo **KinetiX Studio** (icona e nome; nella scheda del browser l'icona di Studio), poi una **barra dei menu** come nelle applicazioni desktop:
 
 - **File**: Nuova, Apri esempio ▸ (sottomenu con gli esempi della modalità corrente), Importa…, Esporta, Registro…;
 - **Modifica**: Annulla, Ripeti; per le schermate Taglia, Copia, Incolla; Duplica, Elimina, Sposta su, Sposta giù (anche nella navigazione). Ogni voce mostra la sua scorciatoia; quelle che non si possono usare (niente da annullare, nessun nodo selezionato, appunti vuoti) sono spente.

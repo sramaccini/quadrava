@@ -1,7 +1,7 @@
 {
   "name": "components",
   "version": "0.0.1",
-  "description": "Catalogo dei componenti standard del linguaggio LowCode (testo, pulsante, sezione, filtri, tabella, form, schede, dettaglio, messaggi, menu), costruiti su NG-ZORRO.",
+  "description": "Catalogo dei componenti standard del linguaggio KinetiX (testo, pulsante, sezione, filtri, tabella, form, schede, dettaglio, messaggi, menu), costruiti su NG-ZORRO.",
   "peerDependencies": {
     "@angular/common": "^22.2.0",
     "@angular/core": "^22.2.0",

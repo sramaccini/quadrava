@@ -1,6 +1,6 @@
 # Development Guide
 
-How to work on the LowCode Platform: set up, build, test, extend and contribute. For what the project is, read [README.md](README.md) first. Design rationale lives in the documents linked from [docs/README.md](docs/README.md).
+How to work on KinetiX: set up, build, test, extend and contribute. For what the project is, read [README.md](README.md) first. Design rationale lives in the documents linked from [docs/README.md](docs/README.md).
 
 ## 1. Prerequisites and setup
 
@@ -100,6 +100,14 @@ The Italian locale is patched in `provide.ts` (`rangeQuarterPlaceholder` is miss
 * Dark themes add `<link id="lc-nz-dark-theme" href="nz-dark.css">`; the stylesheet is built by `angular.json` (bundle `nz-dark`, `inject: false`). Light themes remove it.
 * The application shell is theme-driven too. `tokens.layout` (optional) sets `sider` (tone, background, text, mutedText, activeBackground, activeText, border, width, collapsedWidth), `header` (background, text, border, height), `pageHeader` and `content.padding`; they become `--lc-sider-*`, `--lc-header-*`, `--lc-page-header-*` and `--lc-content-padding`, with fallbacks derived from the base colours. The side bar and page header read only those variables; `tone` merely selects the NG-ZORRO menu style.
 * Never hard-code colours in components: use `var(--lc-*)` or NG-ZORRO tokens.
+
+## 6a. Brand
+
+* `assets/brand/` is the single source of the KinetiX brand (read its README: colours, typeface, minimum sizes, clear space; do not recolour or distort). Apps copy what they need into `projects/<app>/public/brand/`; when the assets change, copy them again.
+* The logotype is `lc-kinetix-wordmark` (`product`, `icon`, `tone`, `compact`), HTML text in Sora rather than the SVG logos, which use `<text>` and would fall back to another typeface when loaded as images. Sora comes from `@fontsource/sora` (`latin-300.css`, `latin-600.css` in the `styles` of both apps in `angular.json`).
+* Brand colours are an exception to the no-hard-coded-colours rule: they are fixed by the brand, with a light and a dark variant, and never follow the theme.
+* Below 32 px use the `*-icon-small.svg` variants (favicon, header, side bar).
+* `lc-sidebar` takes an application brand through content projection (`<x lcBrand>`); without it, it shows `logo` (or a default icon) and `brand`.
 
 ## 6b. Texts and languages
 

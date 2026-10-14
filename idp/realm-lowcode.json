@@ -1,5 +1,6 @@
 {
   "realm": "lowcode",
+  "displayName": "KinetiX",
   "enabled": true,
   "sslRequired": "none",
   "registrationAllowed": false,
@@ -23,7 +24,7 @@
   "clients": [
     {
       "clientId": "lowcode-bff",
-      "name": "LowCode BFF",
+      "name": "KinetiX BFF",
       "enabled": true,
       "protocol": "openid-connect",
       "publicClient": false,
@@ -45,7 +46,7 @@
     },
     {
       "clientId": "lowcode-strumenti",
-      "name": "LowCode strumenti di sviluppo (script locali, mai in produzione)",
+      "name": "KinetiX strumenti di sviluppo (script locali, mai in produzione)",
       "enabled": true,
       "protocol": "openid-connect",
       "publicClient": true,

@@ -10,7 +10,7 @@
   </parent>
 
   <artifactId>lowcode-telemetry</artifactId>
-  <name>LowCode reference - telemetria</name>
+  <name>KinetiX reference - telemetria</name>
   <description>Endpoint di ingestione di esempio (contratto telemetry.yaml).</description>
 
   <dependencies>

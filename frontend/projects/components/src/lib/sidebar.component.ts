@@ -91,12 +91,15 @@ export interface NavigateEvent {
   template: `
     <aside class="side" [class.collapsed]="collapsed()">
       <div class="logo">
-        @if (logo(); as src) {
-          <img [src]="src" alt="" />
-        } @else {
-          <span class="mark" aria-hidden="true"><lc-icon name="package" /></span>
-        }
-        <span class="name">{{ brand() }}</span>
+        <!-- Un marchio proprio dell'applicazione (elemento con l'attributo lcBrand) sostituisce logo e nome. -->
+        <ng-content select="[lcBrand]">
+          @if (logo(); as src) {
+            <img [src]="src" alt="" />
+          } @else {
+            <span class="mark" aria-hidden="true"><lc-icon name="package" /></span>
+          }
+          <span class="name">{{ brand() }}</span>
+        </ng-content>
       </div>
       @if (useCases().length > 1) {
         @if (!collapsed()) {
@@ -229,7 +232,7 @@ export class SidebarComponent {
   protected readonly i18n = inject(I18n);
   readonly navigation = input.required<NavigationRuntime>();
   /** Nome mostrato accanto al logo. */
-  readonly brand = input('LowCode');
+  readonly brand = input('KinetiX');
   /** Indirizzo (relativo) dell'immagine del logo; se manca si mostra un'icona. */
   readonly logo = input<string | null>(null);
   /** Caso d'uso mostrato; se manca o non è visibile si mostra il primo disponibile. */
