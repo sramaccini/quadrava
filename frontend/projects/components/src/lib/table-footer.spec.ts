@@ -39,7 +39,15 @@ describe('Piede delle tabelle: «Aggiorna», prima e ultima pagina', () => {
     const before = requests.length;
     refresh.click();
     await until(() => requests.length === before + 1, 'ricarica');
+    // Riscontro immediato: l'icona gira anche se la risposta è istantanea, poi si ferma dopo il giro minimo.
     await settle();
+    expect(refresh.classList.contains('busy')).toBe(true);
+    expect(refresh.getAttribute('aria-busy')).toBe('true');
+    // Un secondo clic mentre gira non ripete la richiesta.
+    refresh.click();
+    await settle();
+    expect(requests).toHaveLength(before + 1);
+    await until(() => !refresh.classList.contains('busy'), 'fine del giro');
   });
 
   it('tabella paginata dal servizio: «ultima» chiede l’ultima pagina', async () => {

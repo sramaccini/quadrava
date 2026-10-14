@@ -1,9 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
 import { I18n } from 'core';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzPaginationModule } from 'ng-zorro-antd/pagination';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import { IconComponent } from './icon.component';
+
+/** Dopo un clic su «Aggiorna» l'icona gira almeno un giro, anche se i dati arrivano prima: il clic deve dare un riscontro. */
+export const REFRESH_MIN_SPIN_MS = 800;
 
 /**
  * Piede comune delle tabelle (tabella, datatable, datatable lato server): a sinistra il pulsante facoltativo «Aggiorna»
@@ -17,7 +20,7 @@ import { IconComponent } from './icon.component';
     :host { display: flex; align-items: center; gap: 8px; padding-top: var(--lc-gap, 12px); }
     .pages { margin-left: auto; display: flex; align-items: center; gap: 4px; }
     button lc-icon { margin: 0; }
-    .refresh.busy lc-icon { animation: lc-spin 1s linear infinite; }
+    .refresh.busy lc-icon { animation: lc-spin 0.8s linear infinite; }
     @keyframes lc-spin { to { transform: rotate(360deg); } }
     @media (prefers-reduced-motion: reduce) { .refresh.busy lc-icon { animation: none; } }
   `,
@@ -27,13 +30,13 @@ import { IconComponent } from './icon.component';
         nz-button
         type="button"
         class="refresh"
-        [class.busy]="busy()"
-        [attr.aria-busy]="busy()"
-        [attr.aria-disabled]="busy()"
+        [class.busy]="spinning()"
+        [attr.aria-busy]="spinning()"
+        [attr.aria-disabled]="spinning()"
         [attr.aria-label]="i18n.t('lc.refresh')"
         nz-tooltip
         [nzTooltipTitle]="i18n.t('lc.refresh')"
-        (click)="busy() || refresh.emit()"
+        (click)="onRefresh()"
       >
         <!-- Durante il caricamento l'icona gira (niente spinner al suo posto, così il pulsante non cambia misura) e un altro clic
              non fa nulla; il pulsante non si disabilita, altrimenti chi lo usa da tastiera perderebbe il focus. -->
@@ -66,6 +69,40 @@ export class TableFooterComponent {
 
   protected readonly i18n = inject(I18n);
   protected readonly pages = computed(() => Math.max(1, Math.ceil(this.total() / Math.max(1, this.pageSize()))));
+
+  /** L'icona gira durante il caricamento e, dopo un clic, almeno {@link REFRESH_MIN_SPIN_MS}. */
+  protected readonly spinning = signal(false);
+  private clickedAt = 0;
+  private timer: ReturnType<typeof setTimeout> | undefined;
+
+  constructor() {
+    inject(DestroyRef).onDestroy(() => clearTimeout(this.timer));
+    effect(() => {
+      const busy = this.busy();
+      untracked(() => {
+        clearTimeout(this.timer);
+        if (busy) {
+          this.spinning.set(true);
+          return;
+        }
+        const remaining = REFRESH_MIN_SPIN_MS - (Date.now() - this.clickedAt);
+        if (remaining > 0) this.timer = setTimeout(() => this.spinning.set(false), remaining);
+        else this.spinning.set(false);
+      });
+    });
+  }
+
+  protected onRefresh(): void {
+    if (this.spinning()) return;
+    this.clickedAt = Date.now();
+    this.spinning.set(true);
+    clearTimeout(this.timer);
+    // Se il caricamento non parte (o finisce subito) l'icona si ferma comunque dopo il giro minimo.
+    this.timer = setTimeout(() => {
+      if (!this.busy()) this.spinning.set(false);
+    }, REFRESH_MIN_SPIN_MS);
+    this.refresh.emit();
+  }
 
   protected go(page: number): void {
     const target = Math.min(Math.max(0, page), this.pages() - 1);

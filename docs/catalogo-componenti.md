@@ -478,7 +478,7 @@ Nella demo il selettore **Rete** (normale, lenta, molto lenta) nella barra super
 
 Tabella, datatable e datatable lato server hanno lo stesso piede (`lc-table-footer`):
 
-- **a sinistra**, facoltativo, il pulsante **Aggiorna** (`"refreshable": true`): icona con tooltip, ricarica il data source come il passo `refresh`. Durante il caricamento l'icona gira, il pulsante non cambia misura e un altro clic non fa nulla; non si disabilita, così chi lo usa da tastiera non perde il focus;
+- **a sinistra**, facoltativo, il pulsante **Aggiorna** (`"refreshable": true`): icona con tooltip, ricarica il data source come il passo `refresh`. Dopo il clic l'icona gira subito e per almeno un giro (800 ms), anche se i dati arrivano prima: con risposte veloci lo spinner sulla tabella (che compare dopo 300 ms) non si vedrebbe e il clic sembrerebbe a vuoto. Il pulsante non cambia misura e un altro clic mentre gira non fa nulla; non si disabilita, così chi lo usa da tastiera non perde il focus;
 - **a destra** le pagine, con i pulsanti **prima pagina** e **ultima pagina** ai lati (disabilitati agli estremi). Le pagine compaiono solo se ce n'è più di una.
 
 Nella vetrina «Aggiorna» c'è nella prima tabella di «Filtri e tabelle» e nelle tre tabelle di «Datatable».
