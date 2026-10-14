@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, linkedSignal, signal } from
 import { I18n } from 'core';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import type { Json } from '../model/doc-ops';
+import { JsonHighlightDirective } from './json-highlight';
 import { DocumentState } from '../model/document-state';
 
 /**
@@ -10,17 +11,14 @@ import { DocumentState } from '../model/document-state';
  */
 @Component({
   selector: 'ed-json-view',
-  imports: [NzButtonModule],
+  imports: [JsonHighlightDirective, NzButtonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: flex; flex-direction: column; height: 100%; min-height: 0; padding: 12px; gap: 8px; }
     .bar { display: flex; align-items: center; gap: 8px; }
     .error { margin: 0; color: var(--lc-color-danger); font-size: 12px; }
-    textarea {
-      flex: 1; min-height: 0; width: 100%; resize: none; padding: 8px; border: 1px solid var(--lc-color-border); border-radius: var(--lc-radius);
-      background: var(--lc-color-surface); color: inherit; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; line-height: 1.5;
-    }
-    textarea:focus-visible { outline: 2px solid var(--lc-color-primary); outline-offset: -1px; }
+    .ed-code { flex: 1; }
+    .ed-code textarea { flex: 1; min-height: 0; }
   `,
   template: `
     <div class="bar">
@@ -30,7 +28,9 @@ import { DocumentState } from '../model/document-state';
         <p class="error" role="alert">{{ i18n.t('ed.jsonInvalid', { e: e }) }}</p>
       }
     </div>
-    <textarea [attr.aria-label]="i18n.t('ed.tabs.json')" [value]="text()" (input)="edit($any($event.target).value)" spellcheck="false"></textarea>
+    <div class="ed-code">
+      <textarea [edJsonHighlight]="text()" [attr.aria-label]="i18n.t('ed.tabs.json')" [value]="text()" (input)="edit($any($event.target).value)" spellcheck="false"></textarea>
+    </div>
   `,
 })
 export class JsonViewComponent {

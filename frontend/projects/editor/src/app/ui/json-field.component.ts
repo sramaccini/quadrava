@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, input, linkedSignal, output, signal } from '@angular/core';
 import { I18n } from 'core';
-import { NzInputModule } from 'ng-zorro-antd/input';
+import { JsonHighlightDirective } from './json-highlight';
 import type { Json } from '../model/doc-ops';
 
 /**
@@ -10,16 +10,17 @@ import type { Json } from '../model/doc-ops';
  */
 @Component({
   selector: 'ed-json-field',
-  imports: [NzInputModule],
+  imports: [JsonHighlightDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: block; }
-    textarea { field-sizing: content; max-height: 420px; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; }
+    .ed-code textarea { field-sizing: content; max-height: 420px; }
     .error { margin: 4px 0 0; color: var(--lc-color-danger); font-size: 12px; }
   `,
   template: `
+    <div class="ed-code">
     <textarea
-      nz-input
+      [edJsonHighlight]="text()"
       [rows]="minRows()"
       [attr.id]="fieldId()"
       [attr.aria-invalid]="error() ? true : null"
@@ -30,6 +31,7 @@ import type { Json } from '../model/doc-ops';
       (keydown.control.enter)="commit()"
       spellcheck="false"
     ></textarea>
+    </div>
     @if (error(); as e) {
       <p class="error" [id]="fieldId() + '-error'" role="alert">{{ i18n.t('ed.jsonInvalid', { e: e }) }}</p>
     }

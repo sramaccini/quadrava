@@ -65,3 +65,36 @@ ed-dock-side .ed-floating.ed-open { opacity: 1; visibility: visible; pointer-eve
   ed-dock-pin { display: none !important; }
   .ed-floating { position: static !important; width: auto; box-shadow: none; opacity: 1; visibility: visible; pointer-events: auto; transform: none !important; }
 }
+
+/*
+ * Aree di testo JSON con la sintassi colorata (JsonHighlightDirective): la textarea, trasparente, sta sopra un <pre>
+ * con lo stesso testo colorato. Carattere, spaziature, a capo e barra di scorrimento devono essere identici nei due,
+ * altrimenti i colori si sfasano dal testo. Colori su bianco con contrasto almeno 4,5:1.
+ */
+:root {
+  --ed-code-key: #0b5cad; --ed-code-string: #1a7f37; --ed-code-number: #b35900; --ed-code-literal: #8250df;
+  --ed-code-punctuation: #57606a; --ed-code-expression: #9a3412; --ed-code-expression-bg: #fff1e0;
+}
+.ed-code { position: relative; display: flex; flex-direction: column; min-height: 0; }
+.ed-code > textarea, .ed-code > .ed-code-layer {
+  box-sizing: border-box; margin: 0; padding: 6px 8px; border: 1px solid transparent; border-radius: var(--lc-radius);
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; line-height: 1.5; letter-spacing: 0; tab-size: 2;
+  white-space: pre-wrap; overflow-wrap: anywhere; word-break: normal; scrollbar-gutter: stable;
+}
+.ed-code > .ed-code-layer {
+  position: absolute; inset: 0; overflow: hidden; pointer-events: none; color: var(--lc-color-on-surface); background: var(--lc-color-surface);
+}
+.ed-code > textarea {
+  position: relative; z-index: 1; width: 100%; resize: vertical; overflow-y: auto; border-color: var(--lc-color-border);
+  background: transparent; color: transparent; caret-color: var(--lc-color-on-surface);
+}
+.ed-code > textarea::selection { background: color-mix(in srgb, var(--lc-color-primary) 28%, transparent); color: transparent; }
+.ed-code > textarea:hover { border-color: var(--lc-color-primary); }
+.ed-code > textarea:focus { outline: none; border-color: var(--lc-color-primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--lc-color-primary) 20%, transparent); }
+.ed-code > textarea[aria-invalid='true'] { border-color: var(--lc-color-danger); }
+.ed-code-key { color: var(--ed-code-key); }
+.ed-code-string { color: var(--ed-code-string); }
+.ed-code-number { color: var(--ed-code-number); }
+.ed-code-literal { color: var(--ed-code-literal); font-weight: 600; }
+.ed-code-punctuation { color: var(--ed-code-punctuation); }
+.ed-code-expression { color: var(--ed-code-expression); background: var(--ed-code-expression-bg); border-radius: 3px; }
