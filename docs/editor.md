@@ -32,7 +32,7 @@ Un clic apre e chiude un menu e, a menu aperto, passando sull'altro titolo si ca
 
 Componenti, struttura e proprietà stanno in **riquadri separati**, ognuno con il titolo su una barra grigio scuro a testo bianco (colori dell'editor, non del tema in modifica) preceduto da un'icona: blocchi per i componenti, albero per la struttura, cursori per le proprietà, tessera per il profilo simulato e il proprio scorrimento; lo stesso vale per struttura, profilo simulato e proprietà della navigazione e per le proprietà del tema. Sotto i 1100 px componenti e struttura si affiancano sopra l'anteprima e le proprietà vanno sotto.
 
-**Lati nascosti automaticamente**, come le finestre degli IDE (Visual Studio, Eclipse). La puntina nella barra del titolo di Componenti e Struttura (lato sinistro) o di Proprietà (lato destro) sgancia il lato: la colonna si riduce a una striscia sul bordo con le linguette verticali e l'anteprima prende lo spazio.
+**Lati nascosti automaticamente**, come le finestre degli IDE (Visual Studio, Eclipse). La puntina nella barra del titolo di Componenti e Struttura (lato sinistro) o di Proprietà (lato destro) sgancia il lato: la colonna si riduce a una striscia sul bordo con le linguette verticali e l'anteprima prende lo spazio. Vale in tutte e tre le modalità: in navigazione la Struttura a sinistra e le Proprietà a destra, nel tema le Proprietà. La scelta è per lato e vale per tutte le modalità (un lato destro sganciato nel tema lo è anche nella schermata).
 
 - **Apertura:** il lato si apre sopra l'anteprima, con un'ombra, quando il mouse si ferma sulla striscia (150 ms: un passaggio veloce non apre nulla), con un clic su una linguetta o con Invio sulla linguetta.
 - **Chiusura:** si richiude 400 ms dopo che il mouse è uscito. Non si chiude mentre il fuoco è in un campo del lato (si sta scrivendo una proprietà): in quel caso si chiude quando il fuoco va altrove.
@@ -137,7 +137,7 @@ editor/src/app/
               document-state (documento, selezione, cronologia, problemi: comune ai documenti),
               editor-store (la schermata), navigation-store (la navigazione), theme-store (il tema),
               templates (modelli, valori iniziali, riassunti), drop (trascinamento), texts (testi e chiavi), registry-client (client del registro)
-  ui/         menu-bar (barra dei menu), dock e dock-pin (lati nascosti automaticamente), palette, outline, inspector, fields (campi ricorsivi), json-field, json-view,
+  ui/         menu-bar (barra dei menu), dock, dock-side e dock-pin (lati nascosti automaticamente, in tutte le modalità), palette, outline, inspector, fields (campi ricorsivi), json-field, json-view,
               data-sources, texts, issues, navigation-editor, theme-editor, registry-panel
   preview/    protocol (messaggi), preview-frame (l'iframe, lato editor), preview (barra dell'anteprima della
               schermata), preview-log (registro); dentro l'iframe: preview-app, preview-config, preview-ports

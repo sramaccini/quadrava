@@ -1,6 +1,6 @@
-<aside class="left ed-panels">
+<ed-dock-side side="left" [width]="280" [label]="i18n.t('ed.dock.leftNav')" [tabs]="[{ label: i18n.t('ed.outline'), icon: 'apartment' }]">
   <nav class="outline ed-panel" [attr.aria-label]="i18n.t('ed.outline')">
-    <h2 class="ed-panel-title"><span nz-icon nzType="apartment" aria-hidden="true"></span>{{ i18n.t('ed.outline') }}</h2>
+    <h2 class="ed-panel-title"><span nz-icon nzType="apartment" aria-hidden="true"></span>{{ i18n.t('ed.outline') }}<ed-dock-pin side="left" /></h2>
     <div class="ed-panel-body">
     <div class="add" role="toolbar" [attr.aria-label]="i18n.t('ed.nav.add')">
       <button nz-button nzSize="small" type="button" (click)="store.addUseCase()"><span nz-icon nzType="plus"></span>{{ i18n.t('ed.nav.kind.useCase') }}</button>
@@ -16,7 +16,7 @@
     <ng-container [ngTemplateOutlet]="branch" [ngTemplateOutletContext]="{ $implicit: items(), level: 1 }" />
     </div>
   </nav>
-</aside>
+</ed-dock-side>
 
 <ng-template #branch let-items let-level="level">
   <ul class="branch">
@@ -95,9 +95,9 @@
   </div>
 </main>
 
-<aside class="right ed-panels">
+<ed-dock-side side="right" [width]="320" [label]="i18n.t('ed.dock.right')" [tabs]="[{ label: i18n.t('ed.inspector'), icon: 'control' }]">
   <section class="inspector ed-panel" [attr.aria-label]="i18n.t('ed.inspector')">
-    <h2 class="ed-panel-title"><span nz-icon nzType="control" aria-hidden="true"></span>{{ i18n.t('ed.inspector') }}</h2>
+    <h2 class="ed-panel-title"><span nz-icon nzType="control" aria-hidden="true"></span>{{ i18n.t('ed.inspector') }}<ed-dock-pin side="right" /></h2>
     <div class="ed-panel-body">
     @if (store.target()) {
       <p class="kind">{{ heading() }}</p>
@@ -114,4 +114,4 @@
     }
     </div>
   </section>
-</aside>
+</ed-dock-side>

@@ -168,8 +168,8 @@ describe('editor delle schermate', () => {
   });
 
   it('lati nascosti automaticamente come negli IDE: striscia con le linguette, apertura al passaggio, chiusura all’uscita', async () => {
-    const left = el.querySelector('aside.left') as HTMLElement;
-    const right = el.querySelector('aside.right') as HTMLElement;
+    const left = el.querySelector('ed-dock-side.left') as HTMLElement;
+    const right = el.querySelector('ed-dock-side.right') as HTMLElement;
     const pin = (side: string) => el.querySelector(`[data-dock-pin="${side}"]`) as HTMLButtonElement;
     const isOpen = (aside: HTMLElement) => aside.classList.contains('open');
     expect(pin('left').getAttribute('aria-pressed')).toBe('true');
@@ -224,6 +224,37 @@ describe('editor delle schermate', () => {
     expect(left.querySelector('.strip')).toBeNull();
     expect(right.querySelector('.strip')).toBeNull();
     expect(JSON.parse(localStorage.getItem('lc.editor.dock')!)).toEqual({ left: true, right: true });
+  });
+
+  it('lati nascosti automaticamente anche in navigazione e tema; la scelta vale per il lato in tutte le modalità', async () => {
+    const mode = async (label: string) => {
+      ([...el.querySelectorAll<HTMLElement>('.mode .ant-segmented-item')].find((i) => i.textContent?.includes(label)) as HTMLElement).click();
+      await settle();
+    };
+    await mode('Navigazione');
+    const nav = el.querySelector('ed-navigation-editor') as HTMLElement;
+    expect([...nav.querySelectorAll('[data-dock-pin]')].map((p) => p.getAttribute('data-dock-pin'))).toEqual(['left', 'right']);
+    (nav.querySelector('[data-dock-pin="left"]') as HTMLButtonElement).click();
+    await settle();
+    const left = nav.querySelector('ed-dock-side.left') as HTMLElement;
+    expect(nav.classList.contains('left-auto')).toBe(true);
+    expect([...left.querySelectorAll('.strip .tab')].map((t) => t.textContent?.trim())).toEqual(['Struttura']);
+    left.dispatchEvent(new Event('pointerleave'));
+    await until(() => !left.classList.contains('open'), 'chiusura in navigazione');
+    left.dispatchEvent(new Event('pointerenter'));
+    await until(() => left.classList.contains('open'), 'apertura in navigazione');
+
+    // Tema: il lato destro; sganciato qui, è sganciato anche nella schermata.
+    await mode('Tema');
+    const theme = el.querySelector('ed-theme-editor') as HTMLElement;
+    (theme.querySelector('[data-dock-pin="right"]') as HTMLButtonElement).click();
+    await settle();
+    expect(theme.classList.contains('right-auto')).toBe(true);
+    expect([...theme.querySelectorAll('ed-dock-side.right .strip .tab')].map((t) => t.textContent?.trim())).toEqual(['Proprietà']);
+    await mode('Schermata');
+    expect(el.querySelector('.editor')?.classList.contains('right-auto')).toBe(true);
+    expect(el.querySelector('.editor')?.classList.contains('left-auto')).toBe(true);
+    expect(el.querySelector('ed-dock-side.right .strip')).not.toBeNull();
   });
 
   it('un errore si vede nelle proprietà, nell’elenco dei problemi e nella struttura; l’anteprima resta all’ultima versione valida', async () => {

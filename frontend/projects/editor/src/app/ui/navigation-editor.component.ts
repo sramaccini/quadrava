@@ -17,6 +17,9 @@ import { PreviewFrameComponent } from '../preview/preview-frame.component';
 import { previewState, type PreviewState } from '../preview/protocol';
 import { navProperties, navTargetAt, NavigationStore, type NavTarget } from '../model/navigation-store';
 import { fallbackText } from '../model/templates';
+import { Dock } from './dock';
+import { DockPinComponent } from './dock-pin.component';
+import { DockSideComponent } from './dock-side.component';
 import { FieldsComponent } from './fields.component';
 import { JsonViewComponent } from './json-view.component';
 
@@ -41,6 +44,8 @@ interface NavItem {
   imports: [
     FormsModule,
     NgTemplateOutlet,
+    DockPinComponent,
+    DockSideComponent,
     FieldsComponent,
     JsonViewComponent,
     PreviewFrameComponent,
@@ -56,10 +61,12 @@ interface NavItem {
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './navigation-editor.component.scss',
   templateUrl: './navigation-editor.component.html',
+  host: { '[class.left-auto]': '!dock.pinned.left()', '[class.right-auto]': '!dock.pinned.right()' },
 })
 export class NavigationEditorComponent {
   protected readonly store = inject(NavigationStore);
   protected readonly i18n = inject(I18n);
+  protected readonly dock = inject(Dock);
   private readonly screens = inject(EditorStore);
   private readonly theme = inject(ThemeStore);
 
