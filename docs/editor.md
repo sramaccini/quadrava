@@ -11,13 +11,14 @@ Avvio: `cd frontend && npm run start:editor` (porta 4201; costruisce le librerie
 │ ▣ KinetiX Studio  File  Modifica  ↶ ↷  Valida [Schermata|Navigazione|Tema] IT│
 ├───────────────┬──────────────────────────────────────────┬───────────────────┤
 │ COMPONENTI    │ [Desktop|Tablet|Telefono] [Permessi] …   │ PROPRIETÀ         │
-│ Sezione Testo │ [Desktop|Tablet|Telefono] [Permessi] …   │ Tabella           │
+│ Sezione Testo │                                          │ Tabella           │
 │ Tabella …     │ ┌──────────────────────────────────────┐ │ id     tabella-1  │
 │               │ │  la schermata, disegnata dal runtime │ │ source elenco ▾   │
 │ STRUTTURA     │ │  ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐  (nodo       │ │ columns           │
 │ Schermata     │ │  │  nodo selezionato   │  evidenziato)│ │  ▸ Id (id)        │
 │  Sezione      │ │  └ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘              │ │  ▾ Descrizione    │
 │   Tabella ↑↓⧉✂🗑│ └──────────────────────────────────────┘ │     field …       │
+│               │ Anteprima ▔JSON▔ Data source ▔Testi▔     │                   │
 ├───────────────┴──────────────────────────────────────────┴───────────────────┤
 │ Problemi (0)                                                                 │
 └──────────────────────────────────────────────────────────────────────────────┘
