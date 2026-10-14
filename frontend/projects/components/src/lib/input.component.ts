@@ -77,7 +77,7 @@ export class InputComponent implements OnInit {
 
   ngOnInit(): void {
     // Di norma lo stato è già stato preparato dal runtime; qui per i campi in finestre o aggiunti dopo.
-    if (this.runtime().getState(this.path()) === undefined) this.runtime().setState(this.path(), initialInputValue(this.node()));
+    if (this.runtime().getState(this.path()) === undefined) this.runtime().setState(this.path(), this.runtime().resolveValue(initialInputValue(this.node()), this.scope()));
     // Il passo validate controlla i campi del gruppo (`default` se non indicato) finché il campo è sullo schermo.
     const unregister = this.runtime().registerValidator(this.node().group ?? 'default', () => {
       this.touched.set(true);

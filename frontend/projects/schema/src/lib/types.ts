@@ -80,7 +80,7 @@ export interface ActionDefinition {
 
 export interface FieldDefinition {
   name: string;
-  type: 'text' | 'number' | 'select' | 'checkbox' | 'date' | 'textarea' | 'datetime' | 'radio' | 'switch' | 'multiselect' | 'lookup' | 'file' | 'repeater';
+  type: 'text' | 'number' | 'select' | 'checkbox' | 'date' | 'textarea' | 'datetime' | 'radio' | 'switch' | 'multiselect' | 'lookup' | 'file' | 'repeater' | 'richtext';
   /** Per `repeater`: i campi di ogni riga (solo tipi semplici). */
   fields?: FieldDefinition[];
   /** Per `repeater`: righe minime e massime. */
@@ -117,7 +117,9 @@ export interface FieldDefinition {
 }
 
 export type Tone = 'neutral' | 'primary' | 'success' | 'danger';
-export type CellFormat = 'text' | 'number' | 'currency' | 'percent' | 'date' | 'datetime' | 'boolean' | 'badge';
+export type CellFormat = 'text' | 'number' | 'currency' | 'percent' | 'date' | 'datetime' | 'boolean' | 'badge' | 'markdown';
+/** Testo semplice o formattato (Markdown ristretto). */
+export type TextFormat = 'plain' | 'markdown';
 
 /** Colonna di una tabella o campo di una scheda di dettaglio. */
 export interface ColumnDefinition {
@@ -180,6 +182,8 @@ export interface TextNode extends NodeBase {
   type: 'text';
   text: string;
   style?: 'heading' | 'body';
+  /** markdown: testo formattato (elenchi, grassetto…), sempre disegnato senza HTML. */
+  format?: TextFormat;
 }
 export interface ButtonNode extends NodeBase {
   type: 'button';
@@ -241,6 +245,7 @@ export interface AlertNode extends NodeBase {
   type: 'alert';
   text: string;
   kind?: 'info' | 'success' | 'error';
+  format?: TextFormat;
 }
 
 /** Un indicatore: valore da un campo del record (`field`) o da un'espressione (`value`, con il record come `row`). */

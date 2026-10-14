@@ -33,4 +33,39 @@ test.describe('Vetrina: campi a sé', () => {
     await note.fill('Cliente in attesa');
     await expect(note).toHaveValue('Cliente in attesa');
   });
+
+  // I comandi di modifica (grassetto, elenchi) li esegue il browser: jsdom non li ha, qui si provano davvero.
+  test('editor di testo formattato: scrivere, grassetto ed elenco arrivano all’anteprima', async ({ page }) => {
+    const editor = page.getByRole('textbox', { name: 'Descrizione (testo formattato)' });
+    const anteprima = page.locator('[data-node-id="risultato-formattato"]');
+    await expect(editor.locator('h4')).toHaveText('Consegna');
+    await expect(anteprima.locator('ol li')).toHaveCount(2);
+
+    await editor.locator('blockquote').click();
+    await page.keyboard.press('End');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Nuova riga');
+    await page.keyboard.press('Shift+Home');
+    await page.getByRole('button', { name: 'Grassetto (Ctrl+B)' }).click();
+    await page.getByRole('button', { name: 'Elenco puntato' }).click();
+    await expect(page.getByRole('button', { name: 'Elenco puntato' })).toHaveAttribute('aria-pressed', 'true');
+
+    // Il valore va nello stato uscendo dall'editor.
+    await editor.blur();
+    await expect(anteprima.locator('ul li strong')).toHaveText('Nuova riga');
+    await expect(anteprima.locator('ol li strong')).toHaveText('magazzino');
+  });
+
+  test('editor di testo formattato: un collegamento javascript: è rifiutato', async ({ page }) => {
+    const editor = page.getByRole('textbox', { name: 'Descrizione (testo formattato)' });
+    await editor.locator('h4').selectText();
+    await page.getByRole('button', { name: 'Collegamento' }).click();
+    const indirizzo = page.getByRole('textbox', { name: 'Indirizzo del collegamento' });
+    await indirizzo.fill('javascript:alert(1)');
+    await indirizzo.press('Enter');
+    await expect(page.getByText('Solo indirizzi https://, mailto: o che cominciano con /')).toBeVisible();
+    await indirizzo.fill('https://example.com/consegne');
+    await indirizzo.press('Enter');
+    await expect(editor.locator('a')).toHaveAttribute('href', 'https://example.com/consegne');
+  });
 });

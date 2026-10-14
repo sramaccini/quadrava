@@ -32,6 +32,7 @@
 | --- | --- | --- |
 | `text` * | testo |  |
 | `style` | `heading`, `body` |  |
+| `format` | `plain`, `markdown` | plain (predefinito): testo semplice. markdown: testo formattato con il Markdown ristretto della piattaforma: paragrafi, titoli (#, ##, ###), elenchi puntati (-) e numerati (1.) anche annidati, citazioni (>), **grassetto**, *corsivo*, ~~barrato~~, `codice`, [collegamenti](https://…). Mai HTML: anche un testo che arriva dai dati è sicuro. |
 
 ### `button`
 
@@ -90,6 +91,7 @@
 | --- | --- | --- |
 | `text` * | testo |  |
 | `kind` | `info`, `success`, `error` | Aspetto del messaggio; info se assente. |
+| `format` | `plain`, `markdown` | plain (predefinito): testo semplice. markdown: testo formattato con il Markdown ristretto della piattaforma: paragrafi, titoli (#, ##, ###), elenchi puntati (-) e numerati (1.) anche annidati, citazioni (>), **grassetto**, *corsivo*, ~~barrato~~, `codice`, [collegamenti](https://…). Mai HTML: anche un testo che arriva dai dati è sicuro. |
 
 ### `stats`
 
@@ -182,7 +184,7 @@
 | --- | --- | --- |
 | `field` * | field | Il campo da mostrare, con le stesse proprietà dei campi del form (tipo, etichetta, opzioni, obbligatorietà, regola di validazione, lookup, file…). Il nome identifica il campo e, senza `bind`, il valore nello stato. |
 | `bind` | percorso nello stato | Stato in cui il campo legge e scrive il valore (state.<nome del campo> se assente). I data source che lo usano si ricaricano quando cambia. |
-| `default` |  | Valore iniziale, se lo stato non ne ha già uno (nullo se assente; falso per checkbox e switch). |
+| `default` |  | Valore iniziale, se lo stato non ne ha già uno (nullo se assente; falso per checkbox e switch). I testi possono contenere {{ }}, per esempio un testo tradotto. |
 | `onChange` | elenco di passo | Passi eseguiti dopo ogni modifica del valore, che vedono il nuovo valore in `value`. Il testo libero si scrive nello stato quando si esce dal campo o con Invio. |
 | `group` | testo | Gruppo di validazione: il passo { "validate": "<gruppo>" } controlla insieme i campi dello stesso gruppo. |
 
@@ -339,7 +341,7 @@
 | Proprietà | Tipo | Descrizione |
 | --- | --- | --- |
 | `name` * | testo |  |
-| `type` * | `text`, `number`, `select`, `checkbox`, `date`, `textarea`, `datetime`, `radio`, `switch`, `multiselect`, `lookup`, `file`, `repeater` | Tipo di campo. textarea: testo su più righe (`rows`); datetime: data e ora AAAA-MM-GGTHH:mm (ora locale); radio: scelta tra `options`; switch: interruttore vero/falso; multiselect: elenco di valori di `options`. lookup: valore scelto tra le righe di un data source cercate mentre si scrive (`lookup`). file: un file scelto dall’utente (`accept`, `maxSizeKb`, `upload`). repeater: elenco di righe, ognuna con i campi di `fields` (`minRows`, `maxRows`, `addLabel`). |
+| `type` * | `text`, `number`, `select`, `checkbox`, `date`, `textarea`, `datetime`, `radio`, `switch`, `multiselect`, `lookup`, `file`, `repeater`, `richtext` | Tipo di campo. textarea: testo su più righe (`rows`); datetime: data e ora AAAA-MM-GGTHH:mm (ora locale); radio: scelta tra `options`; switch: interruttore vero/falso; multiselect: elenco di valori di `options`. lookup: valore scelto tra le righe di un data source cercate mentre si scrive (`lookup`). file: un file scelto dall’utente (`accept`, `maxSizeKb`, `upload`). repeater: elenco di righe, ognuna con i campi di `fields` (`minRows`, `maxRows`, `addLabel`). richtext: testo formattato scritto con una barra degli strumenti (grassetto, corsivo, titoli, elenchi, citazioni, collegamenti); il valore è Markdown ristretto, mai HTML (`rows` per l’altezza). |
 | `label` | testo |  |
 | `required` | sì/no |  |
 | `options` | elenco di testo |  |

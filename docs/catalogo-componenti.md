@@ -20,7 +20,7 @@ Regole comuni a tutti i componenti, valide anche per i nuovi:
 | `image`, `link` | Immagine con testo alternativo; collegamento a una schermata o a un indirizzo https (§ 2.23). |
 | `progress` | Barra o cerchio di avanzamento (§ 2.23). |
 | `timeline`, `kanban` | Eventi in ordine di data; schede in colonne da spostare (§ 2.24). |
-| `text` | Testo semplice o titolo (`style: heading`). |
+| `text` | Testo semplice (con gli a capo), titolo (`style: heading`) o testo formattato (`format: markdown`, § 2.26). |
 | `button` | Pulsante che esegue una sequenza di passi (`onClick`). |
 | `filterBar` | Barra di filtri che scrive nello stato della schermata (`bind`). |
 | `table` | Tabella con paginazione lato server, formati di cella, ordinamento, selezione e azioni multiple, menu delle azioni, righe espandibili, celle cliccabili e totali. |
@@ -28,15 +28,15 @@ Regole comuni a tutti i componenti, valide anche per i nuovi:
 | `serverDataTable` | Stessa datatable, ma filtri, ordinamento, gruppi, totali e pagine li calcola il servizio (§ 2.19). |
 | `form` | Form con validazione, campi condizionali, griglia a colonne e azioni. |
 | `tabs` | Schede, ognuna con i propri nodi. |
-| `detail` | Scheda di dettaglio in sola lettura (etichetta e valore). |
-| `alert` | Messaggio nella pagina (info, successo, errore). |
+| `detail` | Scheda di dettaglio in sola lettura (etichetta e valore; un campo `format: markdown` si mostra formattato). |
+| `alert` | Messaggio nella pagina (info, successo, errore), anche formattato (`format: markdown`). |
 | `stats` | Indicatori (KPI). |
 | `wizard` | Procedura a passi. |
 | `tree` | Vista ad albero. |
 | `calendar` | Calendario mensile con eventi. |
 | `chart` | Grafici a barre, linee e torta. |
-| Campi | `text`, `number`, `select`, `checkbox`, `date`, `textarea`, `datetime`, `radio`, `switch`, `multiselect`, `lookup`, `file`, `repeater`. |
-| Formati di cella | `text`, `number`, `currency`, `percent`, `date`, `datetime`, `boolean`, `badge`. |
+| Campi | `text`, `number`, `select`, `checkbox`, `date`, `textarea`, `datetime`, `radio`, `switch`, `multiselect`, `lookup`, `file`, `repeater`, `richtext` (§ 2.26). |
+| Formati di cella | `text`, `number`, `currency`, `percent`, `date`, `datetime`, `boolean`, `badge`, `markdown`. |
 | Passi | `set`, `call`, `refresh`, `navigate`, `toast`, `confirm`, `dialog`, `validate`, `print`, `export` (§ 2.22). |
 | Guscio | Barra laterale (`lc-sidebar`, con ricerca, contatori e tastiera: § 2.25), menu utente (`lc-user-menu`), barra superiore responsive. |
 
@@ -401,6 +401,39 @@ Regole comuni: un figlio nascosto (`visibleIf`) non occupa spazio; nei contenito
 - **Contatori**: nella navigazione `"badges": { "url": "/api/menu/contatori", "refreshSeconds": 60 }`. Il servizio (GET relativo, attraverso il BFF) risponde `{ "<id della voce>": numero }`; si tengono gli interi positivi, oltre 99 «99+», a barra compressa un pallino. Un gruppo chiuso mostra la somma dei contatori delle sue voci (anche dei sottogruppi); aperto, i numeri passano alle voci. Si rileggono a intervalli (solo con la pagina visibile) e al ritorno sulla pagina. I lettori di schermo leggono «Bozze, 3 da gestire».
 - **Tastiera**: frecce su e giù tra voci e gruppi visibili, Home e Fine, destra apre un gruppo (o entra nella prima voce), sinistra lo chiude (o torna al gruppo), Invio e Spazio sui gruppi. I titoli dei gruppi si raggiungono con Tab e dicono se sono aperti (`aria-expanded`).
 
+### 2.26 Testo formattato e editor di testo formattato
+
+**Prima** i componenti testuali mostravano solo testo semplice: niente elenchi, grassetto o collegamenti, e il testo semplice perdeva perfino gli a capo. Ora:
+
+- il testo semplice (`text` senza formato) rispetta gli a capo;
+- `text` e `alert` con `"format": "markdown"`, e i campi del `detail` con `"format": "markdown"`, mostrano la **tipografia classica** scritta in un Markdown ristretto;
+- il tipo di campo `richtext` è un editor di testo formattato con barra degli strumenti, nel form e come campo a sé.
+
+```json
+{ "type": "text", "format": "markdown",
+  "text": "{{ t('ordini.istruzioni', 'Prima di **inviare**:\\n\\n- controlla i dati\\n- allega la fattura') }}" }
+```
+
+| Scrittura | Risultato |
+| --- | --- |
+| riga vuota | nuovo paragrafo (un a capo semplice resta un a capo) |
+| `# `, `## `, `### ` | titoli (tre livelli, sotto il titolo della sezione) |
+| `- ` (o `* `, `+ `), `1. ` | elenchi puntati e numerati; rientro di due spazi per annidare (fino a tre livelli) |
+| `> ` | citazione |
+| `**grassetto**`, `*corsivo*` (o `_corsivo_`), `~~barrato~~`, `` `codice` `` | enfasi |
+| `[testo](https://…)` | collegamento: solo `https:`, `mailto:` o percorsi che cominciano con `/`; gli altri restano testo. Gli indirizzi esterni si aprono in una nuova scheda |
+| `\*` | il carattere senza significato speciale |
+
+**Sicurezza.** Il testo si analizza e si disegna con elementi costruiti dalla piattaforma: **mai HTML**. Un `<img onerror=…>` o uno `<script>` nel testo, anche se arriva dai dati o da una traduzione, si vede come testo. I collegamenti `javascript:`, `data:` e simili non diventano collegamenti. Il testo è limitato a 20.000 caratteri.
+
+**Nelle tabelle** il formato di colonna `markdown` mostra il testo semplice (senza simboli); nella scheda di dettaglio è formattato.
+
+**Editor `richtext`.** Barra con grassetto (Ctrl+B), corsivo (Ctrl+I), barrato, titolo, elenco puntato e numerato, citazione, collegamento e «togli la formattazione»; `rows` per l'altezza minima. Il valore è lo **stesso Markdown ristretto**, mai HTML: si mostra con un `text` o un campo di dettaglio `format: markdown`. Quello che il browser produce durante la modifica si riduce al formato ammesso (stili, script e tag sconosciuti spariscono); si incolla solo testo semplice; un collegamento si accetta solo con un indirizzo ammesso. L'area è un `textbox` multiriga con la sua etichetta; i pulsanti dicono se sono attivi (`aria-pressed`). Nella barra dei filtri `richtext` si comporta come `text`. La vetrina «Campi a sé» ha un esempio con l'anteprima accanto.
+
+**Etichette.** Le etichette (dei campi, delle colonne, dei pulsanti, del menu) restano **testo semplice**, di proposito: sono brevi, vengono lette dai lettori di schermo come nome dell'elemento e devono restare uguali ovunque.
+
+**Nelle traduzioni.** Dentro un'espressione CEL una stringa tra apici non può contenere a capo veri: nel testo di riserva di `t()` si scrive `\n` (nel JSON della schermata `\\n`). Nei file di traduzione gli a capo sono normali `\n` JSON.
+
 ## 3. Note di realizzazione e limiti noti
 
 - **Caricamento dei data source.** Un data source GET si ricarica da solo solo se cambia la richiesta risolta (URL e parametri). Un cambiamento dello stato che non tocca la richiesta (una selezione, un passo della procedura, un nodo scelto) non provoca nuove chiamate; per ricaricare comunque si usa il passo `refresh`.
@@ -414,6 +447,7 @@ Regole comuni: un figlio nascosto (`visibleIf`) non occupa spazio; nei contenito
 - **Campi a sé.** Per bloccare un'azione finché i campi non sono validi si usa il passo `validate` (§ 2.22); come sempre il controllo vero spetta al servizio.
 - **Contenitori di layout.** Le larghezze scelte con i divisori valgono per la visita della schermata (non si ricordano); niente celle della griglia su più righe; soglie per impilare fisse (600px griglia, 768px border).
 - **Kanban.** Niente riordino delle schede dentro una colonna né limiti per colonna; lo spostamento aspetta la risposta del servizio (nessun aggiornamento ottimistico).
+- **Testo formattato.** Niente tabelle, immagini, colori o HTML; tre livelli di titolo e di elenco. L'editor usa i comandi di modifica del browser: il risultato si normalizza sempre al Markdown ristretto, ma la resa durante la scrittura può variare leggermente tra browser.
 - **Esportazione.** Le righe sono quelle che il data source restituisce in una chiamata: per archivi a pagine il servizio deve offrire una lettura completa (o un'esportazione propria).
 
 ### 3.1 Limiti superati (ottobre 2026)

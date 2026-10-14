@@ -127,7 +127,8 @@ export class ScreenRuntime {
         }
       } else if (node.type === 'input') {
         const path = inputPath(node);
-        if (this.getState(path) === undefined) this.setState(path, initialInputValue(node));
+        // Il valore iniziale può contenere {{ }} (per esempio un testo tradotto).
+        if (this.getState(path) === undefined) this.setState(path, this.resolveValue(initialInputValue(node)));
       } else if (node.type === 'tree') {
         if (node.bind && this.getState(node.bind) === undefined) this.setState(node.bind, null);
       } else if (node.type === 'wizard') {

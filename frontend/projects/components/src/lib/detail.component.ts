@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { MarkdownComponent } from './markdown.component';
 import { I18n, formatValue, type FormatLabels, type FormattedValue, type ScreenRuntime, type Scope } from 'core';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzCardModule } from 'ng-zorro-antd/card';
@@ -15,7 +16,7 @@ import { TONE_COLORS } from './shared';
  */
 @Component({
   selector: 'lc-detail',
-  imports: [IconComponent, NzCardModule, NzDescriptionsModule, NzTagModule, NzAlertModule, NzTooltipModule],
+  imports: [MarkdownComponent, IconComponent, NzCardModule, NzDescriptionsModule, NzTagModule, NzAlertModule, NzTooltipModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     .help { display: inline-flex; margin-left: 4px; color: var(--lc-color-muted, #5d6b7a); cursor: help; vertical-align: -1px; }
@@ -36,7 +37,9 @@ import { TONE_COLORS } from './shared';
               }
             </ng-template>
             <nz-descriptions-item [nzTitle]="title">
-              @if (view(rec, field); as v) {
+              @if (field.format === 'markdown') {
+                <lc-markdown [source]="markdownOf(rec, field)" />
+              } @else if (view(rec, field); as v) {
                 @if (v.tone) {
                   <nz-tag [nzColor]="color(v.tone)">{{ v.text }}</nz-tag>
                 } @else {
@@ -67,6 +70,12 @@ export class DetailComponent {
     const data = this.source().data;
     return data !== null && typeof data === 'object' && !Array.isArray(data) ? (data as Record<string, unknown>) : null;
   });
+
+  /** Valore di un campo con formato markdown, come testo (null e altri tipi → vuoto). */
+  protected markdownOf(record: Record<string, unknown>, field: { field: string }): string {
+    const value = record[field.field];
+    return typeof value === 'string' ? value : '';
+  }
 
   protected view(record: Record<string, unknown>, field: ColumnDefinition): FormattedValue {
     return formatValue(record[field.field], field, this.i18n.intlLocale(), this.labels());

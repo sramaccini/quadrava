@@ -11,6 +11,7 @@ import type { FieldDefinition } from 'schema';
 import { FileFieldComponent } from './file-field.component';
 import { LookupComponent } from './lookup.component';
 import { RepeaterComponent } from './repeater.component';
+import { RichTextEditorComponent } from './rich-text-editor.component';
 import { parseIsoDate, parseIsoDateTime, toIsoDate, toIsoDateTime } from './shared';
 
 /**
@@ -21,7 +22,7 @@ import { parseIsoDate, parseIsoDateTime, toIsoDate, toIsoDateTime } from './shar
  */
 @Component({
   selector: 'lc-field-control',
-  imports: [FormsModule, LookupComponent, FileFieldComponent, RepeaterComponent, NzInputModule, NzSelectModule, NzCheckboxModule, NzDatePickerModule, NzRadioModule, NzSwitchModule],
+  imports: [FormsModule, LookupComponent, FileFieldComponent, RepeaterComponent, RichTextEditorComponent, NzInputModule, NzSelectModule, NzCheckboxModule, NzDatePickerModule, NzRadioModule, NzSwitchModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: block; }
@@ -59,6 +60,18 @@ import { parseIsoDate, parseIsoDateTime, toIsoDate, toIsoDateTime } from './shar
           (input)="typed($any($event.target).value, 'input')"
           (change)="typed($any($event.target).value, 'change')"
         ></textarea>
+      }
+      @case ('richtext') {
+        <lc-rich-text-editor
+          [inputId]="inputId()"
+          [labelId]="labelId()"
+          [value]="text() || null"
+          [disabled]="disabled()"
+          [invalid]="invalid()"
+          [rows]="f.rows ?? 5"
+          [commitOn]="commitOn()"
+          (valueChange)="valueChange.emit($event)"
+        />
       }
       @case ('radio') {
         @if (variant() === 'filter') {

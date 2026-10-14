@@ -1,3 +1,4 @@
+import { markdownToPlain } from './markdown';
 import type { ColumnDefinition, Tone } from 'schema';
 
 export interface FormattedValue {
@@ -71,6 +72,9 @@ export function formatValue(value: unknown, spec: FormatSpec, locale = 'it-IT', 
       }
       case 'boolean':
         return { text: value === true ? labels.yes : value === false ? labels.no : String(value) };
+      case 'markdown':
+        // Nelle tabelle il testo formattato si mostra come testo semplice (il dettaglio lo disegna formattato).
+        return { text: markdownToPlain(typeof value === 'string' ? value : String(value)).replace(/\n+/g, ' ') };
       case 'badge': {
         const raw = String(value);
         const own = spec.badges && Object.prototype.hasOwnProperty.call(spec.badges, raw) ? spec.badges[raw] : undefined;

@@ -36,7 +36,7 @@ Da `frontend/`:
 - **Stack completo con Keycloak passo per passo** (Docker Desktop avviato): `cd idp && docker compose up -d`; in `reference/` `mvn -q package -DskipTests` e `java -jar <modulo>/target/*.jar` per registry (con `--lowcode.registry.storage-dir=<cartella>` per non perdere i dati), authz, telemetry, bff; in `frontend/` `npm run demo-api` (8084), `npm run publish:examples -- --user amministratore --password amministratore`, poi `npm run start:runtime:bff` (4200) e `start:editor:bff` (4201). Le origini ammesse dal BFF sono 4200 e 4201.
 - test per progetto: `npx ng test <schema|expressions|core|components|services|runtime|editor> --watch=false`
 
-Stato test (tutti verdi): schema 71, expressions 42, core 71, components 156, services 27, runtime 78, editor 72 (**517**); Java 39 (authz 7, bff 8, registry 18, telemetry 6); Playwright 16 (di cui 12 di accessibilità); kit di conformità: registro 17/17, autorizzazioni 11/11, telemetria 6/6. Build di produzione: runtime 2,46 MB iniziali (422 kB trasferiti), editor 818 kB iniziali (l'anteprima e l'editor si caricano a parte).
+Stato test (tutti verdi): schema 71, expressions 42, core 76, components 165, services 27, runtime 78, editor 72 (**531**); Java 39 (authz 7, bff 8, registry 18, telemetry 6); Playwright 18 (di cui 12 di accessibilità e 2 sull'editor di testo formattato); kit di conformità: registro 17/17, autorizzazioni 11/11, telemetria 6/6. Build di produzione: runtime 2,46 MB iniziali (422 kB trasferiti), editor 818 kB iniziali (l'anteprima e l'editor si caricano a parte).
 
 ## 4. Architettura in breve
 
@@ -44,7 +44,8 @@ Librerie (`frontend/projects/`): `schema` (JSON Schema + tipi), `expressions` (C
 
 - Porte (classi astratte come token DI): Authorization, UserProvider, DataClient (con `{ signal }` per annullare le letture superate), ScreenNavigator, Notifier, RuntimeDiagnostics, Confirmation, **FormDialog** (passo `dialog`), DefinitionSource (schermate, navigazione, temi e **cataloghi** `messages(lingua)`).
 - Nodi: section (anche `layout: "row"`), **box, grid, border** (contenitori di layout; i figli dichiarano `grow`, `span`, `region`; border con lati ridimensionabili), **input** (campo a sé legato allo stato, con `group` di validazione), text, **image, link**, button, filterBar, table, **dataTable**, **serverDataTable**, form, tabs, detail, alert, **stats, progress, timeline, kanban**, **wizard**, **tree**, **calendar**, **chart**. Passi: set, call, refresh, navigate, toast, confirm, **dialog, validate, print, export** (CSV).
-- Campi: text, number, select, checkbox, date, **textarea, datetime, radio, switch, multiselect, lookup, file, repeater**. Formati: **number**, currency, percent, date, datetime, boolean, badge.
+- Campi: text, number, select, checkbox, date, **textarea, datetime, radio, switch, multiselect, lookup, file, repeater, richtext**. Formati: **number**, currency, percent, date, datetime, boolean, badge, markdown.
+- Testo formattato: `format: markdown` su text, alert e campi del detail (Markdown ristretto: `core/src/lib/markdown.ts`, disegnato da `lc-markdown` senza HTML); editor `richtext` (`lc-rich-text-editor`, contenteditable + comandi del browser, valore in Markdown). Le etichette restano testo semplice di proposito. Catalogo § 2.26.
 - Tabella: ordinamento (in pagina o lato server con `sort.bind`), selezione + azioni multiple, menu azioni (`rowActionsInline`), righe espandibili, celle cliccabili, riga dei totali (`aggregate`).
 - `lc-node` applica `visibleIf/hiddenIf` e `tooltip`, ed espone `data-node-id`/`data-node-type` (per l'editor e i test). Permessi `dominio.risorsa.azione`; espressioni **fail-closed**.
 - I data source GET si ricaricano **solo se cambia la richiesta risolta** (URL e parametri); `refresh` ricarica comunque. `ScreenRuntime.query` esegue un data source senza toccarne lo stato condiviso (usato dai lookup e dalla serverDataTable). `refresh` su un data source non GET incrementa solo `ScreenRuntime.refreshCount`, che la serverDataTable osserva per ricaricarsi.
@@ -67,6 +68,7 @@ Modalità «Navigazione» (selettore nella barra): struttura di casi d'uso/grupp
 Le principali sono nella DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In breve:
 
 - Stringhe in modal, message e titoli dell'albero sono **HTML** → componenti di contenuto, `escapeHtml` o template propri.
+- jsdom non ha `execCommand`: la barra dell'editor di testo formattato si prova solo in e2e. Nei testi di riserva di `t()` gli a capo si scrivono `\n` (CEL non ammette a capo veri tra apici).
 - Icone da registrare in `ICON_TYPES`. Array e date in `ngModel` vanno calcolati una volta per valore (`computed`), altrimenti NG0103.
 - Lingua dei selettori di date: `NzDateAdapter.setLocale`. Ordinando una colonna `nz-table` azzera le altre.
 - Ajv strict: `type: object` accanto a `properties`, proprietà dichiarate accanto ai `required` di `if/then`/`anyOf`.

@@ -22,12 +22,12 @@ export const TEMPLATE_SOURCES: Record<string, { name: string; method: 'GET' | 'P
 };
 
 /** Tipi di campo che la tavolozza offre come componenti `input` a sé (voce `input.<tipo>`). */
-export const INPUT_KINDS = ['text', 'textarea', 'number', 'select', 'multiselect', 'radio', 'checkbox', 'switch', 'date', 'datetime', 'lookup', 'file'] as const;
+export const INPUT_KINDS = ['text', 'textarea', 'richtext', 'number', 'select', 'multiselect', 'radio', 'checkbox', 'switch', 'date', 'datetime', 'lookup', 'file'] as const;
 
 /** Nome iniziale del campo di un `input`, per tipo (reso unico nella schermata da `uniqueInputName`). */
 const INPUT_NAMES: Record<string, string> = {
   text: 'testo', textarea: 'note', number: 'numero', select: 'scelta', multiselect: 'scelte', radio: 'opzione',
-  checkbox: 'conferma', switch: 'attivo', date: 'data', datetime: 'momento', lookup: 'cliente', file: 'allegato',
+  checkbox: 'conferma', switch: 'attivo', date: 'data', datetime: 'momento', lookup: 'cliente', file: 'allegato', richtext: 'descrizione',
 };
 
 /** Il campo di partenza di un `input` del tipo dato. */

@@ -29,6 +29,15 @@ import {
   UserOutline,
   ExportOutline,
   SwapOutline,
+  BoldOutline,
+  ItalicOutline,
+  StrikethroughOutline,
+  FontSizeOutline,
+  UnorderedListOutline as BulletsOutline,
+  OrderedListOutline,
+  MessageOutline,
+  LinkOutline,
+  ClearOutline,
 } from '@ant-design/icons-angular/icons';
 import type { IconDefinition } from '@ant-design/icons-angular';
 import { NzIconModule } from 'ng-zorro-antd/icon';
@@ -67,6 +76,16 @@ export const ICON_TYPES: Record<string, { type: string; icon: IconDefinition }> 
   close: { type: 'close', icon: CloseOutline },
   external: { type: 'export', icon: ExportOutline },
   move: { type: 'swap', icon: SwapOutline },
+  // Barra dell'editor di testo formattato.
+  'rich-bold': { type: 'bold', icon: BoldOutline },
+  'rich-italic': { type: 'italic', icon: ItalicOutline },
+  'rich-strike': { type: 'strikethrough', icon: StrikethroughOutline },
+  'rich-heading': { type: 'font-size', icon: FontSizeOutline },
+  'rich-bullets': { type: 'unordered-list', icon: BulletsOutline },
+  'rich-numbers': { type: 'ordered-list', icon: OrderedListOutline },
+  'rich-quote': { type: 'message', icon: MessageOutline },
+  'rich-link': { type: 'link', icon: LinkOutline },
+  'rich-clear': { type: 'clear', icon: ClearOutline },
 };
 
 /** Tipo NG-ZORRO di un nome di icona del set integrato, oppure `null` se il nome non è noto. */

@@ -118,6 +118,7 @@ Everything external to the interpreter is an abstract class used as a DI token: 
 ## 8. Security rules (non-negotiable)
 
 * No `innerHTML`, `bypassSecurityTrust*` or `eval`/`new Function` in application code.
+* Rich text goes through `parseMarkdown` (core) and `lc-markdown`, which renders the tree with templates. Never add raw HTML support to the Markdown dialect. In the rich text editor the DOM is built with `createElement`/`textContent` (`renderMarkdownInto`) and read back only through `domToMarkdown`, which keeps the allowed tags and checks link addresses with `safeHref`.
 * No secrets, tokens or personal data in JSON, logs, URLs or storage. Tokens are never put in `localStorage` / `sessionStorage`.
 * Expressions fail closed; evaluation errors go to `RuntimeDiagnostics`, never thrown during rendering.
 * Data-source URLs must stay relative; trace headers are same-origin only.
@@ -175,6 +176,8 @@ Real focus handling and the dark theme are not covered yet (the application shel
 * The collapsed side menu opens groups in a popup.
 * The reference registry keeps its data in memory unless `lowcode.registry.storage-dir` is set (`npm run stack` sets it to `data/registry`). Logout from the apps is a JSON call (`Accept: application/json`, CSRF header) answered with `{"redirect": …}`: with `csrf().spa()` a form field would need the masked token.
 * The Playwright suite runs in Chromium only.
+* jsdom has no `document.execCommand`: the rich text toolbar is tested end to end (`e2e/vetrina-input.spec.ts`); unit tests cover the Markdown ↔ DOM conversions and the value flow.
+* Inside a CEL single-quoted string a real newline is a syntax error: write `\n` in `t()` fallbacks (in screen JSON, `\\n`).
 * `validate:examples` checks translation keys but not CEL expressions (the runtime test `i18n-examples.spec.ts` does).
 * Component limits that remain (no nested repeaters, no chart zoom, no row selection in the server data table) are listed in the component catalogue, § 3.
 * NG-ZORRO 22's `nz-input` has its own `readonly` input and writes the attribute from it: bind `[readonly]`, never `[readOnly]` (the property binding is overwritten and the field stays editable).

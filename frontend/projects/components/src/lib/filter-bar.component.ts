@@ -49,7 +49,7 @@ export class FilterBarComponent implements OnInit {
   protected readonly i18n = inject(I18n);
   protected readonly id = nextId('lc-filter') + '-';
   /** In una barra in linea un testo su più righe si cerca con una casella su una riga. */
-  protected readonly fields = computed(() => this.node().fields.map((f) => (f.type === 'textarea' ? { ...f, type: 'text' as const } : f)));
+  protected readonly fields = computed(() => this.node().fields.map((f) => (f.type === 'textarea' || f.type === 'richtext' ? { ...f, type: 'text' as const } : f)));
   ngOnInit(): void {
     // Ogni filtro dichiarato esiste nello stato (nullo se non impostato): le espressioni `state.filtri.x` non vanno mai in errore.
     for (const field of this.node().fields) {

@@ -67,7 +67,8 @@ describe('esempi tradotti', () => {
       expect(result.valid).toBe(true);
       if (!result.valid) return;
       expect(checkScreenExpressions(result.value, engine)).toEqual([]);
-      const untranslated = texts(doc).filter((t) => !t.includes("t('"));
+      // Un testo fatto solo di dati (nessuna stringa scritta a mano, per esempio {{ state.descrizione }}) non ha nulla da tradurre.
+      const untranslated = texts(doc).filter((t) => !t.includes("t('") && !/^{{[^'"]*}}$/.test(t.trim()));
       expect(untranslated).toEqual([]);
     });
   }
