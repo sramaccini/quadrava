@@ -679,13 +679,15 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
             ],
             "properties": {
               "title": {
-                "type": "string"
+                "type": "string",
+                "description": "Titolo della sezione, mostrato in testa; può contenere {{ }}, per esempio un testo tradotto."
               },
               "components": {
                 "type": "array",
                 "items": {
                   "$ref": "#/$defs/node"
-                }
+                },
+                "description": "Componenti contenuti nella sezione, disposti secondo layout."
               },
               "layout": {
                 "enum": [
@@ -715,13 +717,15 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
             ],
             "properties": {
               "text": {
-                "type": "string"
+                "type": "string",
+                "description": "Testo da mostrare; può contenere {{ }}. Mai HTML."
               },
               "style": {
                 "enum": [
                   "heading",
                   "body"
-                ]
+                ],
+                "description": "heading: titolo; body: testo normale (predefinito)."
               },
               "format": {
                 "enum": [
@@ -752,14 +756,16 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
             ],
             "properties": {
               "label": {
-                "type": "string"
+                "type": "string",
+                "description": "Testo del pulsante; può contenere {{ }}."
               },
               "onClick": {
                 "type": "array",
                 "minItems": 1,
                 "items": {
                   "$ref": "#/$defs/step"
-                }
+                },
+                "description": "Passi eseguiti al clic, in ordine (call, set, navigate, refresh…). Il pulsante resta occupato finché finiscono."
               }
             }
           }
@@ -791,7 +797,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                 "minItems": 1,
                 "items": {
                   "$ref": "#/$defs/field"
-                }
+                },
+                "description": "Campi dei filtri: ognuno scrive il valore nello stato `bind`, sotto il proprio nome (per esempio state.filtri.stato). textarea e richtext diventano testo su una riga."
               }
             }
           }
@@ -823,13 +830,15 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                 "minItems": 1,
                 "items": {
                   "$ref": "#/$defs/tableColumn"
-                }
+                },
+                "description": "Colonne della tabella, in ordine: campo, intestazione, formato."
               },
               "rowActions": {
                 "type": "array",
                 "items": {
                   "$ref": "#/$defs/action"
-                }
+                },
+                "description": "Azioni su una riga, nell’ultima colonna: le espressioni vedono la riga come `row`."
               },
               "sort": {
                 "type": "object",
@@ -929,13 +938,15 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                 "minItems": 1,
                 "items": {
                   "$ref": "#/$defs/field"
-                }
+                },
+                "description": "Campi del form, in ordine. I valori si leggono come `form` nelle espressioni."
               },
               "actions": {
                 "type": "array",
                 "items": {
                   "$ref": "#/$defs/action"
-                }
+                },
+                "description": "Pulsanti sotto i campi: al clic il form controlla i campi visibili e, se sono validi, esegue i passi, che vedono i valori in `form`."
               },
               "columns": {
                 "type": "integer",
@@ -968,7 +979,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                 "minItems": 1,
                 "items": {
                   "$ref": "#/$defs/tab"
-                }
+                },
+                "description": "Schede, in ordine: etichetta e componenti. Una scheda con visibleIf falso non compare; i valori non si perdono cambiando scheda."
               }
             }
           }
@@ -992,7 +1004,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
             ],
             "properties": {
               "title": {
-                "type": "string"
+                "type": "string",
+                "description": "Titolo del riquadro; può contenere {{ }}."
               },
               "source": {
                 "type": "string",
@@ -1003,7 +1016,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                 "minItems": 1,
                 "items": {
                   "$ref": "#/$defs/column"
-                }
+                },
+                "description": "Campi del record da mostrare, in ordine: campo, etichetta, formato."
               }
             }
           }
@@ -1026,7 +1040,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
             ],
             "properties": {
               "text": {
-                "type": "string"
+                "type": "string",
+                "description": "Testo del messaggio; può contenere {{ }}."
               },
               "kind": {
                 "enum": [
@@ -1073,7 +1088,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                 "maxItems": 8,
                 "items": {
                   "$ref": "#/$defs/statItem"
-                }
+                },
+                "description": "Indicatori da mostrare affiancati (da 1 a 8), ognuno con etichetta e valore."
               }
             }
           }
@@ -1105,13 +1121,16 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                 "maxItems": 10,
                 "items": {
                   "$ref": "#/$defs/wizardStep"
-                }
+                },
+                "description": "Passi della procedura guidata (da 2 a 10), ognuno con etichetta e componenti; si mostra un passo alla volta."
               },
               "nextLabel": {
-                "type": "string"
+                "type": "string",
+                "description": "Testo del pulsante per il passo successivo («Avanti» se assente); può contenere {{ }}."
               },
               "backLabel": {
-                "type": "string"
+                "type": "string",
+                "description": "Testo del pulsante per il passo precedente («Indietro» se assente); può contenere {{ }}."
               }
             }
           }
@@ -1212,7 +1231,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                 "type": "object",
                 "additionalProperties": {
                   "$ref": "#/$defs/tone"
-                }
+                },
+                "description": "Colore degli eventi per valore di `badgeField`, per esempio {\"urgente\": \"danger\"}; i valori non elencati sono primary."
               },
               "bind": {
                 "$ref": "#/$defs/statePath",
@@ -1292,7 +1312,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                 "maxItems": 6,
                 "items": {
                   "$ref": "#/$defs/chartSeries"
-                }
+                },
+                "description": "Serie di valori da disegnare (da 1 a 6), ognuna da un campo numerico delle righe."
               },
               "format": {
                 "enum": [
@@ -1365,7 +1386,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                 "minItems": 1,
                 "items": {
                   "$ref": "#/$defs/dataColumn"
-                }
+                },
+                "description": "Colonne della tabella, in ordine: campo, intestazione, formato, e se si possono ordinare, filtrare, raggruppare o totalizzare."
               },
               "groupBy": {
                 "type": "array",
@@ -1377,7 +1399,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                 "description": "Colonne di raggruppamento iniziali (groupable), in ordine."
               },
               "defaultSort": {
-                "$ref": "#/$defs/sortSpec"
+                "$ref": "#/$defs/sortSpec",
+                "description": "Ordinamento iniziale (campo e direzione); poi lo cambia l’utente dalle intestazioni."
               },
               "pageSize": {
                 "type": "integer",
@@ -1389,12 +1412,14 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                 "type": "array",
                 "items": {
                   "$ref": "#/$defs/action"
-                }
+                },
+                "description": "Azioni su una riga, nell’ultima colonna: le espressioni vedono la riga come `row`."
               },
               "rowActionsInline": {
                 "type": "integer",
                 "minimum": 0,
-                "maximum": 10
+                "maximum": 10,
+                "description": "Quante azioni di riga (visibili) mostrare come pulsanti; le altre finiscono nel menu «⋯». 0 = tutte nel menu; se manca, tutte pulsanti."
               }
             }
           }
@@ -1426,7 +1451,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                 "minItems": 1,
                 "items": {
                   "$ref": "#/$defs/dataColumn"
-                }
+                },
+                "description": "Colonne della tabella, in ordine: campo, intestazione, formato, e se si possono ordinare, filtrare, raggruppare o totalizzare (lo fa il servizio)."
               },
               "groupBy": {
                 "type": "array",
@@ -1438,7 +1464,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                 "description": "Colonne di raggruppamento iniziali (groupable), in ordine."
               },
               "defaultSort": {
-                "$ref": "#/$defs/sortSpec"
+                "$ref": "#/$defs/sortSpec",
+                "description": "Ordinamento iniziale (campo e direzione), inviato al servizio; poi lo cambia l’utente dalle intestazioni."
               },
               "pageSize": {
                 "type": "integer",
@@ -1454,12 +1481,14 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                 "type": "array",
                 "items": {
                   "$ref": "#/$defs/action"
-                }
+                },
+                "description": "Azioni su una riga, nell’ultima colonna: le espressioni vedono la riga come `row`."
               },
               "rowActionsInline": {
                 "type": "integer",
                 "minimum": 0,
-                "maximum": 10
+                "maximum": 10,
+                "description": "Quante azioni di riga (visibili) mostrare come pulsanti; le altre finiscono nel menu «⋯». 0 = tutte nel menu; se manca, tutte pulsanti."
               }
             }
           }
@@ -1529,7 +1558,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                 "type": "array",
                 "items": {
                   "$ref": "#/$defs/node"
-                }
+                },
+                "description": "Componenti contenuti, disposti secondo direction; ognuno può allargarsi con grow."
               },
               "direction": {
                 "enum": [
@@ -1539,7 +1569,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                 "description": "row: affiancati (predefinito); column: uno sotto l’altro."
               },
               "gap": {
-                "$ref": "#/$defs/gap"
+                "$ref": "#/$defs/gap",
+                "description": "Spazio tra i componenti, ricavato dal tema (medium se assente)."
               },
               "align": {
                 "enum": [
@@ -1587,7 +1618,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                 "type": "array",
                 "items": {
                   "$ref": "#/$defs/node"
-                }
+                },
+                "description": "Componenti contenuti, uno per cella e a capo dopo l’ultima colonna; ognuno può occupare più colonne con span."
               },
               "columns": {
                 "type": "integer",
@@ -1596,7 +1628,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                 "description": "Colonne della griglia (2 se assente). Sotto i 600px di larghezza diventa una colonna sola."
               },
               "gap": {
-                "$ref": "#/$defs/gap"
+                "$ref": "#/$defs/gap",
+                "description": "Spazio tra i componenti, ricavato dal tema (medium se assente)."
               }
             }
           }
@@ -1622,7 +1655,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                 "type": "array",
                 "items": {
                   "$ref": "#/$defs/node"
-                }
+                },
+                "description": "Componenti contenuti, ognuno nella regione indicata da region (north, west, center, east, south; center se assente)."
               },
               "westWidth": {
                 "type": "integer",
@@ -1637,7 +1671,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                 "description": "Larghezza in px della regione east (240 se assente)."
               },
               "gap": {
-                "$ref": "#/$defs/gap"
+                "$ref": "#/$defs/gap",
+                "description": "Spazio tra i componenti, ricavato dal tema (medium se assente)."
               },
               "resizable": {
                 "type": "boolean",
@@ -1741,7 +1776,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
             },
             "properties": {
               "label": {
-                "type": "string"
+                "type": "string",
+                "description": "Testo del collegamento; può contenere {{ }}."
               },
               "screen": {
                 "type": "string",
@@ -1799,7 +1835,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                 "description": "Valore che corrisponde al 100% (100 se assente); numero o espressione."
               },
               "label": {
-                "type": "string"
+                "type": "string",
+                "description": "Etichetta mostrata sopra la barra; può contenere {{ }}."
               },
               "kind": {
                 "enum": [
@@ -1809,7 +1846,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                 "description": "Barra (line, predefinita) o cerchio."
               },
               "tone": {
-                "$ref": "#/$defs/tone"
+                "$ref": "#/$defs/tone",
+                "description": "Colore della barra, preso dal tema (primary se assente)."
               }
             }
           }
@@ -1857,7 +1895,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                 "type": "object",
                 "additionalProperties": {
                   "$ref": "#/$defs/tone"
-                }
+                },
+                "description": "Colore degli eventi per valore di `toneField`, per esempio {\"errore\": \"danger\"}; i valori non elencati sono primary."
               },
               "order": {
                 "enum": [
@@ -1902,10 +1941,12 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                 "description": "Campo della riga che decide la colonna (per esempio stato)."
               },
               "titleField": {
-                "type": "string"
+                "type": "string",
+                "description": "Campo mostrato come titolo della scheda."
               },
               "descriptionField": {
-                "type": "string"
+                "type": "string",
+                "description": "Campo mostrato sotto il titolo della scheda."
               },
               "columns": {
                 "type": "array",
@@ -1929,7 +1970,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                       "$ref": "#/$defs/tone"
                     }
                   }
-                }
+                },
+                "description": "Colonne della bacheca, in ordine: value è il valore di `columnField`, label l’intestazione (può contenere {{ }}), tone il colore (neutral se assente)."
               },
               "moveIf": {
                 "$ref": "#/$defs/expression",

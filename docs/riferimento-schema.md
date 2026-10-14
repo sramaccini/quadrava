@@ -22,39 +22,39 @@
 
 | Proprietà | Tipo | Descrizione |
 | --- | --- | --- |
-| `title` | testo |  |
-| `components` * | elenco di componente |  |
+| `title` | testo | Titolo della sezione, mostrato in testa; può contenere {{ }}, per esempio un testo tradotto. |
+| `components` * | elenco di componente | Componenti contenuti nella sezione, disposti secondo layout. |
 | `layout` | `column`, `row` | Disposizione dei componenti: uno sotto l’altro (column, predefinito) o affiancati e a capo quando manca spazio (row), per esempio più campi in una riga. |
 
 ### `text`
 
 | Proprietà | Tipo | Descrizione |
 | --- | --- | --- |
-| `text` * | testo |  |
-| `style` | `heading`, `body` |  |
+| `text` * | testo | Testo da mostrare; può contenere {{ }}. Mai HTML. |
+| `style` | `heading`, `body` | heading: titolo; body: testo normale (predefinito). |
 | `format` | `plain`, `markdown` | plain (predefinito): testo semplice. markdown: testo formattato con il Markdown ristretto della piattaforma: paragrafi, titoli (#, ##, ###), elenchi puntati (-) e numerati (1.) anche annidati, citazioni (>), **grassetto**, *corsivo*, ~~barrato~~, `codice`, [collegamenti](https://…). Mai HTML: anche un testo che arriva dai dati è sicuro. |
 
 ### `button`
 
 | Proprietà | Tipo | Descrizione |
 | --- | --- | --- |
-| `label` * | testo |  |
-| `onClick` * | elenco di passo |  |
+| `label` * | testo | Testo del pulsante; può contenere {{ }}. |
+| `onClick` * | elenco di passo | Passi eseguiti al clic, in ordine (call, set, navigate, refresh…). Il pulsante resta occupato finché finiscono. |
 
 ### `filterBar`
 
 | Proprietà | Tipo | Descrizione |
 | --- | --- | --- |
 | `bind` * | testo | Percorso nello stato della schermata, per esempio state.filtri. |
-| `fields` * | elenco di field |  |
+| `fields` * | elenco di field | Campi dei filtri: ognuno scrive il valore nello stato `bind`, sotto il proprio nome (per esempio state.filtri.stato). textarea e richtext diventano testo su una riga. |
 
 ### `table`
 
 | Proprietà | Tipo | Descrizione |
 | --- | --- | --- |
 | `source` * | testo | Nome del data source che fornisce le righe. |
-| `columns` * | elenco di tableColumn |  |
-| `rowActions` | elenco di action |  |
+| `columns` * | elenco di tableColumn | Colonne della tabella, in ordine: campo, intestazione, formato. |
+| `rowActions` | elenco di action | Azioni su una riga, nell’ultima colonna: le espressioni vedono la riga come `row`. |
 | `sort` | oggetto | Ordinamento. Con paging server lo fa il servizio: la tabella scrive { field, direction } nello stato `bind`; altrimenti ordina in pagina le righe caricate. |
 | `selection` | oggetto | Selezione delle righe: le chiavi delle righe scelte stanno nello stato `bind`; le azioni multiple vedono le righe intere in `selection`. |
 | `bulkActions` | elenco di action | Azioni sulle righe selezionate, sopra la tabella. Le espressioni vedono `selection` (elenco delle righe scelte). |
@@ -67,29 +67,29 @@
 | --- | --- | --- |
 | `source` | testo | Nome del data source che fornisce i valori iniziali (assente nei form di inserimento). |
 | `initial` | oggetto | Valori iniziali con espressioni, risolti una sola volta all'apertura; per esempio {"tipo": "{{params.tipo}}"}. |
-| `fields` * | elenco di field |  |
-| `actions` | elenco di action |  |
+| `fields` * | elenco di field | Campi del form, in ordine. I valori si leggono come `form` nelle espressioni. |
+| `actions` | elenco di action | Pulsanti sotto i campi: al clic il form controlla i campi visibili e, se sono validi, esegue i passi, che vedono i valori in `form`. |
 | `columns` | intero 1–4 | Colonne della griglia dei campi (1 se assente). Con poco spazio il form torna a una colonna. |
 
 ### `tabs`
 
 | Proprietà | Tipo | Descrizione |
 | --- | --- | --- |
-| `tabs` * | elenco di tab |  |
+| `tabs` * | elenco di tab | Schede, in ordine: etichetta e componenti. Una scheda con visibleIf falso non compare; i valori non si perdono cambiando scheda. |
 
 ### `detail`
 
 | Proprietà | Tipo | Descrizione |
 | --- | --- | --- |
-| `title` | testo |  |
+| `title` | testo | Titolo del riquadro; può contenere {{ }}. |
 | `source` * | testo | Nome del data source che restituisce un solo record (un oggetto). |
-| `fields` * | elenco di column |  |
+| `fields` * | elenco di column | Campi del record da mostrare, in ordine: campo, etichetta, formato. |
 
 ### `alert`
 
 | Proprietà | Tipo | Descrizione |
 | --- | --- | --- |
-| `text` * | testo |  |
+| `text` * | testo | Testo del messaggio; può contenere {{ }}. |
 | `kind` | `info`, `success`, `error` | Aspetto del messaggio; info se assente. |
 | `format` | `plain`, `markdown` | plain (predefinito): testo semplice. markdown: testo formattato con il Markdown ristretto della piattaforma: paragrafi, titoli (#, ##, ###), elenchi puntati (-) e numerati (1.) anche annidati, citazioni (>), **grassetto**, *corsivo*, ~~barrato~~, `codice`, [collegamenti](https://…). Mai HTML: anche un testo che arriva dai dati è sicuro. |
 
@@ -98,16 +98,16 @@
 | Proprietà | Tipo | Descrizione |
 | --- | --- | --- |
 | `source` | testo | Data source che restituisce un record (oggetto) con i valori; facoltativo se tutti gli indicatori usano value. |
-| `items` * | elenco di statItem |  |
+| `items` * | elenco di statItem | Indicatori da mostrare affiancati (da 1 a 8), ognuno con etichetta e valore. |
 
 ### `wizard`
 
 | Proprietà | Tipo | Descrizione |
 | --- | --- | --- |
 | `bind` | percorso nello stato | Stato con l’indice del passo corrente (da 0): anche un pulsante può spostarlo con set. |
-| `steps` * | elenco di wizardStep |  |
-| `nextLabel` | testo |  |
-| `backLabel` | testo |  |
+| `steps` * | elenco di wizardStep | Passi della procedura guidata (da 2 a 10), ognuno con etichetta e componenti; si mostra un passo alla volta. |
+| `nextLabel` | testo | Testo del pulsante per il passo successivo («Avanti» se assente); può contenere {{ }}. |
+| `backLabel` | testo | Testo del pulsante per il passo precedente («Indietro» se assente); può contenere {{ }}. |
 
 ### `tree`
 
@@ -130,7 +130,7 @@
 | `dateField` * | testo | Campo con la data dell’evento (AAAA-MM-GG, anche con l’ora). |
 | `labelField` * | testo | Campo mostrato come testo dell’evento. |
 | `badgeField` | testo | Campo che decide il colore dell’evento secondo `badges`. |
-| `badges` | oggetto |  |
+| `badges` | oggetto | Colore degli eventi per valore di `badgeField`, per esempio {"urgente": "danger"}; i valori non elencati sono primary. |
 | `bind` | percorso nello stato | Stato con il mese visibile (AAAA-MM), da usare nei parametri del data source. |
 | `maxPerDay` | intero 1–10 | Eventi mostrati per giorno; gli altri diventano «+n» (3 se assente). |
 | `onSelect` | elenco di passo | Passi eseguiti al clic su un evento, che vedono l’evento in `row`. |
@@ -144,7 +144,7 @@
 | `categoryField` * | testo | Campo con la categoria (asse orizzontale o fetta). |
 | `categoryFormat` | `text`, `date`, `month` | Come mostrare la categoria: testo, data (AAAA-MM-GG) o mese (AAAA-MM). |
 | `categoryKey` | testo | Prefisso delle chiavi di traduzione delle categorie (t('<prefisso>.<valore>')). |
-| `series` * | elenco di chartSeries |  |
+| `series` * | elenco di chartSeries | Serie di valori da disegnare (da 1 a 6), ognuna da un campo numerico delle righe. |
 | `format` | `number`, `currency`, `percent` | Formato dei valori (number se assente). |
 | `currency` | testo | Codice ISO 4217 per format currency (EUR se assente). |
 | `decimals` | intero 0–6 | Decimali mostrati con format number (fino a 2 se assente). |
@@ -158,25 +158,25 @@
 | Proprietà | Tipo | Descrizione |
 | --- | --- | --- |
 | `source` * | testo | Data source con le righe da analizzare in pagina (tutte caricate: niente paginazione lato server). |
-| `columns` * | elenco di dataColumn |  |
+| `columns` * | elenco di dataColumn | Colonne della tabella, in ordine: campo, intestazione, formato, e se si possono ordinare, filtrare, raggruppare o totalizzare. |
 | `groupBy` | elenco di testo | Colonne di raggruppamento iniziali (groupable), in ordine. |
-| `defaultSort` | sortSpec |  |
+| `defaultSort` | sortSpec | Ordinamento iniziale (campo e direzione); poi lo cambia l’utente dalle intestazioni. |
 | `pageSize` | intero 5–100 | Elementi per pagina, intestazioni dei gruppi comprese (10 se assente). |
-| `rowActions` | elenco di action |  |
-| `rowActionsInline` | intero 0–10 |  |
+| `rowActions` | elenco di action | Azioni su una riga, nell’ultima colonna: le espressioni vedono la riga come `row`. |
+| `rowActionsInline` | intero 0–10 | Quante azioni di riga (visibili) mostrare come pulsanti; le altre finiscono nel menu «⋯». 0 = tutte nel menu; se manca, tutte pulsanti. |
 
 ### `serverDataTable`
 
 | Proprietà | Tipo | Descrizione |
 | --- | --- | --- |
 | `source` * | testo | Data source di ricerca (di solito POST con "body": "{{ request }}") che riceve pagina, ordinamento, filtri e gruppi e restituisce solo ciò che serve: { items, total, totals } per le righe, { groups: [{ value, count, aggregates }], total, totals } per i gruppi, { values } per i valori di un filtro a scelta. |
-| `columns` * | elenco di dataColumn |  |
+| `columns` * | elenco di dataColumn | Colonne della tabella, in ordine: campo, intestazione, formato, e se si possono ordinare, filtrare, raggruppare o totalizzare (lo fa il servizio). |
 | `groupBy` | elenco di testo | Colonne di raggruppamento iniziali (groupable), in ordine. |
-| `defaultSort` | sortSpec |  |
+| `defaultSort` | sortSpec | Ordinamento iniziale (campo e direzione), inviato al servizio; poi lo cambia l’utente dalle intestazioni. |
 | `pageSize` | intero 5–200 | Righe (o gruppi) per pagina e righe caricate a ogni «mostra altre» dentro un gruppo (20 se assente). |
 | `bind` | percorso nello stato | Stato in cui la tabella scrive la richiesta corrente (senza pagina), per altri componenti, per esempio un pulsante di esportazione. |
-| `rowActions` | elenco di action |  |
-| `rowActionsInline` | intero 0–10 |  |
+| `rowActions` | elenco di action | Azioni su una riga, nell’ultima colonna: le espressioni vedono la riga come `row`. |
+| `rowActionsInline` | intero 0–10 | Quante azioni di riga (visibili) mostrare come pulsanti; le altre finiscono nel menu «⋯». 0 = tutte nel menu; se manca, tutte pulsanti. |
 
 ### `input`
 
@@ -192,7 +192,7 @@
 
 | Proprietà | Tipo | Descrizione |
 | --- | --- | --- |
-| `components` * | elenco di componente |  |
+| `components` * | elenco di componente | Componenti contenuti, disposti secondo direction; ognuno può allargarsi con grow. |
 | `direction` | `row`, `column` | row: affiancati (predefinito); column: uno sotto l’altro. |
 | `gap` | gap | Spazio tra i componenti, ricavato dal tema (medium se assente). |
 | `align` | `start`, `center`, `end`, `stretch` | Allineamento sull’asse trasversale: in riga è quello verticale (stretch se assente, end per allineare campi di altezza diversa). |
@@ -203,7 +203,7 @@
 
 | Proprietà | Tipo | Descrizione |
 | --- | --- | --- |
-| `components` * | elenco di componente |  |
+| `components` * | elenco di componente | Componenti contenuti, uno per cella e a capo dopo l’ultima colonna; ognuno può occupare più colonne con span. |
 | `columns` | intero 1–12 | Colonne della griglia (2 se assente). Sotto i 600px di larghezza diventa una colonna sola. |
 | `gap` | gap | Spazio tra i componenti, ricavato dal tema (medium se assente). |
 
@@ -211,7 +211,7 @@
 
 | Proprietà | Tipo | Descrizione |
 | --- | --- | --- |
-| `components` * | elenco di componente |  |
+| `components` * | elenco di componente | Componenti contenuti, ognuno nella regione indicata da region (north, west, center, east, south; center se assente). |
 | `westWidth` | intero 120–600 | Larghezza in px della regione west (240 se assente). |
 | `eastWidth` | intero 120–600 | Larghezza in px della regione east (240 se assente). |
 | `gap` | gap | Spazio tra i componenti, ricavato dal tema (medium se assente). |
@@ -231,7 +231,7 @@
 
 | Proprietà | Tipo | Descrizione |
 | --- | --- | --- |
-| `label` * | testo |  |
+| `label` * | testo | Testo del collegamento; può contenere {{ }}. |
 | `screen` | testo | Schermata da aprire nell’applicazione (con params). |
 | `params` | oggetto | Parametri della schermata; i valori possono contenere {{ }}. |
 | `href` | testo | Indirizzo esterno https:// (si apre in una nuova scheda, senza accesso a questa) o percorso relativo. Mai javascript: o altri protocolli. |
@@ -242,9 +242,9 @@
 | --- | --- | --- |
 | `value` * | testo o numero | Valore raggiunto, un numero o un’espressione (per esempio {{ row.completate }}). |
 | `max` | testo o numero | Valore che corrisponde al 100% (100 se assente); numero o espressione. |
-| `label` | testo |  |
+| `label` | testo | Etichetta mostrata sopra la barra; può contenere {{ }}. |
 | `kind` | `line`, `circle` | Barra (line, predefinita) o cerchio. |
-| `tone` | tone | Tono di colore, preso dal tema. |
+| `tone` | tone | Colore della barra, preso dal tema (primary se assente). |
 
 ### `timeline`
 
@@ -255,7 +255,7 @@
 | `labelField` * | testo | Campo mostrato come titolo dell’evento. |
 | `descriptionField` | testo | Campo mostrato sotto il titolo. |
 | `toneField` | testo | Campo che decide il colore secondo tones. |
-| `tones` | oggetto |  |
+| `tones` | oggetto | Colore degli eventi per valore di `toneField`, per esempio {"errore": "danger"}; i valori non elencati sono primary. |
 | `order` | `desc`, `asc` | Dal più recente (desc, predefinito) o dal più vecchio. |
 | `withTime` | sì/no | Mostra anche l’ora. |
 
@@ -265,9 +265,9 @@
 | --- | --- | --- |
 | `source` * | testo | Data source con le schede (un elenco di righe). |
 | `columnField` * | testo | Campo della riga che decide la colonna (per esempio stato). |
-| `titleField` * | testo |  |
-| `descriptionField` | testo |  |
-| `columns` * | elenco di oggetto |  |
+| `titleField` * | testo | Campo mostrato come titolo della scheda. |
+| `descriptionField` | testo | Campo mostrato sotto il titolo della scheda. |
+| `columns` * | elenco di oggetto | Colonne della bacheca, in ordine: value è il valore di `columnField`, label l’intestazione (può contenere {{ }}), tone il colore (neutral se assente). |
 | `moveIf` | espressione | Condizione per spostare una scheda (vede la riga in row), per esempio un permesso. |
 | `onMove` | elenco di passo | Passi per spostare una scheda (di solito call e refresh): vedono la riga in row, la colonna di partenza in from e quella di arrivo in to. |
 
