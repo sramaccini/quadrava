@@ -14,4 +14,5 @@ export interface DataSourceState {
   error?: string;
 }
 
-export type CallResult = { ok: true; data: unknown } | { ok: false; error: string };
+/** Esito di una chiamata. In errore `status` è il codice HTTP (0 se il servizio non risponde o la richiesta non parte). */
+export type CallResult = { ok: true; data: unknown } | { ok: false; error: string; status?: number };

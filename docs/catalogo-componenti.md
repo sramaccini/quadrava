@@ -37,7 +37,7 @@ Regole comuni a tutti i componenti, valide anche per i nuovi:
 | `chart` | Grafici a barre, linee e torta. |
 | Campi | `text`, `number`, `select`, `checkbox`, `date`, `textarea`, `datetime`, `radio`, `switch`, `multiselect`, `lookup`, `file`, `repeater`, `richtext` (§ 2.26). |
 | Formati di cella | `text`, `number`, `currency`, `percent`, `date`, `datetime`, `boolean`, `badge`, `markdown`. |
-| Passi | `set`, `call`, `refresh`, `navigate`, `toast`, `confirm`, `dialog`, `validate`, `print`, `export` (§ 2.22). |
+| Passi | `set`, `call` (con `as` e `onError`), `refresh`, `navigate`, `toast`, `confirm`, `dialog`, `validate`, `print`, `export` (§ 2.22), `if` e `run`; sequenze con nome in `actions` (§ 2.22b). |
 | Guscio | Barra laterale (`lc-sidebar`, con ricerca, contatori e tastiera: § 2.25; il marchio dell'applicazione si inserisce con un elemento `lcBrand`, altrimenti logo e nome), menu utente (`lc-user-menu`), barra superiore responsive, logotipo `lc-kinetix-wordmark`. |
 
 ## 2. Aggiunti nell'ottobre 2026
@@ -373,6 +373,32 @@ Regole comuni: un figlio nascosto (`visibleIf`) non occupa spazio; nei contenito
 - **validate**: controlla i campi a sé del gruppo indicato (`group` dei nodi `input`, `default` se non indicato; `*` = tutti quelli sullo schermo). Ogni campo mostra i propri errori; se uno non è valido compare l'avviso «Controlla i campi evidenziati» e la sequenza si ferma. Un campo nascosto non conta.
 - **print**: apre la stampa del browser; il foglio di stampa del runtime nasconde menu, barra superiore, pulsanti e paginazione.
 - **export**: esegue il data source (GET; `args` come in `call`) e scarica le righe (un elenco, oppure `items` di una risposta a pagine) in CSV per Excel in italiano: punto e virgola, righe CRLF, BOM UTF-8. Le intestazioni passano da `t()`; i valori sono quelli grezzi (numeri non formattati). Le celle che cominciano con `=`, `+`, `-`, `@` (o tabulazione e ritorno a capo) si fanno precedere da un apice: un foglio di calcolo non le esegue come formule. Il nome del file si ripulisce e prende `.csv`.
+
+### 2.22b Prima e dopo una chiamata: risposta, condizioni, sequenze con nome, errori
+
+I passi sono una sequenza: quello che va fatto prima di una chiamata (`validate`, `confirm`, `set`) e dopo (`toast`, `refresh`, `navigate`) si mette prima e dopo il passo `call`, che ferma la sequenza se non riesce. Quattro aggiunte permettono di usare la risposta e di non ripetersi:
+
+```json
+"actions": {
+  "salvaOrdine": [
+    { "validate": "ordine" },
+    { "confirm": "{{ t('ordini.conferma', 'Salvare l\\'ordine?') }}" },
+    { "call": "creaOrdine", "as": "creato",
+      "onError": { "if": "{{ error.status == 409 }}", "then": { "toast": "Ordine già presente" }, "else": { "toast": "Salvataggio non riuscito" } } },
+    { "if": "{{ creato.stato == 'bozza' }}", "then": { "toast": "Salvato come bozza" } },
+    { "refresh": "ordini" },
+    { "navigate": "ordine-dettaglio", "params": { "id": "{{ creato.id }}" } }
+  ]
+},
+"components": [{ "type": "button", "label": "Salva", "onClick": { "run": "salvaOrdine" } }]
+```
+
+- **`as` nel passo `call`**: i passi seguenti della stessa sequenza vedono la risposta con quel nome (`{{ creato.id }}`). Il nome non può essere quello di una variabile esistente (`user`, `state`, `params`, `row`, `form`, `error`…).
+- **`if`** con `then` e `else` (facoltativo): un passo o un elenco di passi per ramo. La condizione deve dare vero o falso; se non si può valutare (o dà altro) la sequenza si ferma con l'avviso generico e la segnalazione tecnica, senza eseguire nessuno dei due rami (fail-closed).
+- **`actions` e `run`**: sequenze con nome della schermata, richiamate da pulsanti, azioni di riga, form… con le variabili del punto in cui si richiamano (`row`, `form`). Le variabili create dentro (`as`) restano loro. Una sequenza che non esiste, o richiami una dentro l'altra oltre otto livelli (un ciclo), fermano la sequenza. L'editor suggerisce i nomi in `run` e segnala quelli che mancano.
+- **`error.status` in `onError`**: il codice HTTP della risposta (0 se il servizio non è raggiungibile), per comportarsi diversamente secondo l'errore. Il messaggio del server non c'è: potrebbe contenere dettagli interni.
+
+Quello che **deve** succedere comunque (controlli, regole, audit, più chiamate da tenere coerenti) non va nell'interfaccia, che si può aggirare: sta nel servizio, nel BFF o in un endpoint che le combina. I passi servono all'esperienza dell'utente. La vetrina «Componenti base» ha un esempio di ognuna (sezione «Sequenze e risposte»).
 
 ### 2.23 Immagine, collegamento, avanzamento
 

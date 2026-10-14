@@ -83,7 +83,7 @@ L'editor non ha un elenco proprio delle proprietà dei componenti: le legge da `
 | `integer` / `number` | numero con minimo e massimo dello schema |
 | oggetto chiuso (`sort`, `selection`, `lookup`, `dialog`…) | gruppo di campi, «Imposta» / «Togli» se facoltativo |
 | elenco di oggetti (`columns`, `fields`, `rowActions`, `items`, `series`…) | elementi apribili uno per uno, con sposta, elimina, aggiungi (un elemento nuovo ha già le proprietà obbligatorie, compreso un passo se l'elenco dei passi è obbligatorio); vista JSON dell'elenco |
-| elenco di passi (`onClick`, `onSubmit`, `onSelect`) | come sopra, e «Aggiungi» chiede la variante: `call`, `refresh`, `navigate`, `toast`, `set`, `confirm`, `dialog` |
+| elenco di passi (`onClick`, `onSubmit`, `onSelect`) | come sopra, e «Aggiungi» chiede la variante: `call`, `refresh`, `navigate`, `toast`, `set`, `confirm`, `dialog`, `validate`, `print`, `export`, `if` (nasce con `{{ true }}` e un messaggio), `run` (suggerisce le sequenze di `actions`, segnalato finché il nome non esiste). Nell'aiuto alle espressioni ci sono le risposte delle `call` precedenti con `as` e, dentro `onError`, `error.status`. Le sequenze con nome (`actions` della schermata) si scrivono come JSON |
 | elenco di nodi (`components`) | non nel pannello: si gestisce nella struttura |
 | mappe libere (`params`, `initial`, `badges`, `args`) e il resto | JSON |
 

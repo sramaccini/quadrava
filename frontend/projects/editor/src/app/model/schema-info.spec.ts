@@ -28,7 +28,7 @@ describe('lettura dello schema', () => {
     expect(columns.fields.map((f) => f.name)).toEqual(expect.arrayContaining(['field', 'label', 'format', 'sortable', 'aggregate', 'filter', 'groupable']));
     expect(columns.fields.find((f) => f.name === 'field')?.required).toBe(true);
     const steps = listItem(nodeProperties('button').find((p) => p.name === 'onClick')!) as { variants: Variant[] };
-    expect(steps.variants.map((v) => v.key)).toEqual(['call', 'refresh', 'navigate', 'toast', 'set', 'confirm', 'dialog', 'validate', 'print', 'export']);
+    expect(steps.variants.map((v) => v.key)).toEqual(['call', 'refresh', 'navigate', 'toast', 'set', 'confirm', 'dialog', 'validate', 'print', 'export', 'if', 'run']);
     // Ogni variante nasce valida: un booleano fisso (print) prende il suo valore.
     const print = steps.variants.find((v) => v.key === 'print')!;
     expect(defaultItem(print.fields, 0, t)).toEqual({ print: true });

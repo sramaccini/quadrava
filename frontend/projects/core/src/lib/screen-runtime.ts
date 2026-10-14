@@ -1,6 +1,6 @@
 import { effect, Injector, signal, computed, untracked, type EffectRef } from '@angular/core';
 import { ExpressionEngine, parseTemplate } from 'expressions';
-import type { DialogStep, InputNode, NodeDefinition, ScreenDefinition } from 'schema';
+import type { DialogStep, InputNode, NodeDefinition, ScreenDefinition, Step } from 'schema';
 import { Authorization, Confirmation, DataClient, FormDialog, Notifier, RuntimeDiagnostics, ScreenNavigator, UserProvider, type DataRequest } from './ports';
 import type { I18n } from './i18n';
 import type { CallResult, DataSourceState, Scope } from './types';
@@ -180,6 +180,23 @@ export class ScreenRuntime {
     if (this.missingKeys.has(key)) return;
     this.missingKeys.add(key);
     this.report('t()', `chiave di traduzione mancante: ${key}`);
+  }
+
+  /**
+   * Condizione di un passo `if`: true o false; null se non si può valutare o non è un valore vero/falso (segnalato, senza
+   * il testo dell'errore, che potrebbe contenere dati).
+   */
+  condition(template: string, scope: Scope = {}): boolean | null {
+    const result = this.engine.interpolate(template, this.context(scope));
+    if (result.ok && typeof result.value === 'boolean') return result.value;
+    this.report('if', result.ok ? 'la condizione non è vera né falsa' : 'condizione non valutabile');
+    return null;
+  }
+
+  /** Sequenza con nome della schermata (`actions`), oppure null se non c'è. */
+  action(name: string): Step[] | null {
+    const steps = this.definition.actions?.[name];
+    return steps === undefined ? null : Array.isArray(steps) ? steps : [steps];
   }
 
   /** Valuta un testo con `{{ }}`; in caso di errore restituisce il testo originale. */
@@ -371,7 +388,7 @@ export class ScreenRuntime {
       const error = e instanceof Error ? e.message : String(e);
       this.report(`data source ${name}`, error);
       if (this.sequence.get(name) === seq) this.setSource(name, { status: 'error', data: null, error: this.systemText('lc.loadFailed', 'Caricamento non riuscito') });
-      return { ok: false, error };
+      return { ok: false, error, status: statusOf(e) };
     } finally {
       if (controller && this.inflight.get(name) === controller) this.inflight.delete(name);
     }
@@ -456,4 +473,15 @@ export function inputPath(node: InputNode): string {
 export function initialInputValue(node: InputNode): unknown {
   if (node.default !== undefined) return node.default;
   return node.field.type === 'checkbox' || node.field.type === 'switch' ? false : null;
+}
+
+/**
+ * Codice HTTP di un errore di chiamata: quello dell'errore del client dati (`status`) oppure quello in testa al
+ * messaggio («409», come nei client della demo e dell'anteprima); 0 se non c'è (servizio non raggiungibile).
+ */
+function statusOf(e: unknown): number {
+  const status = (e as { status?: unknown } | null)?.status;
+  if (typeof status === 'number' && Number.isInteger(status)) return status;
+  const head = /^(\d{3})\b/.exec(e instanceof Error ? e.message : String(e));
+  return head ? Number(head[1]) : 0;
 }

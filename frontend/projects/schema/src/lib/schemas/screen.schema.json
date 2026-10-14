@@ -32,6 +32,16 @@
         "$ref": "#/$defs/dataSource"
       }
     },
+    "actions": {
+      "type": "object",
+      "description": "Sequenze di passi con nome, richiamate con il passo run da pulsanti, azioni di riga, form… Servono per ciò che va fatto sempre prima e dopo una chiamata (validare, confermare, chiamare, avvisare, ricaricare) senza ricopiarlo in ogni pulsante.",
+      "propertyNames": {
+        "pattern": "^[A-Za-z][A-Za-z0-9_]*$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/steps"
+      }
+    },
     "components": {
       "type": "array",
       "items": {
@@ -138,6 +148,12 @@
         },
         {
           "$ref": "#/$defs/stepExport"
+        },
+        {
+          "$ref": "#/$defs/stepIf"
+        },
+        {
+          "$ref": "#/$defs/stepRun"
         }
       ]
     },
@@ -170,7 +186,57 @@
           "type": "object"
         },
         "onError": {
-          "$ref": "#/$defs/steps"
+          "$ref": "#/$defs/steps",
+          "description": "Passi eseguiti se la chiamata non riesce (al posto del messaggio predefinito). Vedono error.status: il codice HTTP della risposta (0 se il servizio non è raggiungibile), per esempio {{ error.status == 409 }}. Il messaggio del server non c'è: potrebbe contenere dettagli interni."
+        },
+        "as": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/identifier"
+            },
+            {
+              "not": {
+                "enum": [
+                  "user",
+                  "state",
+                  "params",
+                  "row",
+                  "form",
+                  "value",
+                  "search",
+                  "lookupKey",
+                  "request",
+                  "file",
+                  "item",
+                  "error",
+                  "from",
+                  "to",
+                  "true",
+                  "false",
+                  "null",
+                  "in",
+                  "as",
+                  "break",
+                  "const",
+                  "continue",
+                  "else",
+                  "for",
+                  "function",
+                  "if",
+                  "import",
+                  "let",
+                  "loop",
+                  "package",
+                  "namespace",
+                  "return",
+                  "var",
+                  "void",
+                  "while"
+                ]
+              }
+            }
+          ],
+          "description": "Nome con cui i passi successivi della stessa sequenza vedono la risposta del servizio, per esempio \"creato\" e poi {{ creato.id }}. Non può essere il nome di una variabile già esistente (user, state, params, row, form, error…)."
         }
       }
     },
@@ -2359,6 +2425,48 @@
               }
             }
           }
+        }
+      }
+    },
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9_]*$",
+      "description": "Nome semplice: una lettera, poi lettere, cifre o _."
+    },
+    "stepIf": {
+      "type": "object",
+      "required": [
+        "if",
+        "then"
+      ],
+      "additionalProperties": false,
+      "description": "Passo condizionale: esegue then se la condizione è vera, altrimenti else (se c'è).",
+      "properties": {
+        "if": {
+          "$ref": "#/$defs/expression",
+          "description": "Condizione, per esempio {{ creato.stato == 'bozza' }}. Se non si può valutare la sequenza si ferma (non si esegue nessuno dei due rami)."
+        },
+        "then": {
+          "$ref": "#/$defs/steps",
+          "description": "Passi se la condizione è vera."
+        },
+        "else": {
+          "$ref": "#/$defs/steps",
+          "description": "Passi se la condizione è falsa."
+        }
+      }
+    },
+    "stepRun": {
+      "type": "object",
+      "required": [
+        "run"
+      ],
+      "additionalProperties": false,
+      "description": "Esegue una sequenza con nome della schermata (actions), con le stesse variabili del punto in cui la si richiama (row, form…).",
+      "properties": {
+        "run": {
+          "$ref": "#/$defs/identifier",
+          "description": "Nome della sequenza in actions."
         }
       }
     }

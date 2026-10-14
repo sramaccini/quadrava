@@ -16,7 +16,38 @@
       "type": "rest",
       "method": "POST",
       "url": "/api/vetrina/errore"
+    },
+    "segnalaConflitto": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/vetrina/conflitto"
     }
+  },
+  "actions": {
+    "inviaSegnalazione": [
+      {
+        "confirm": "{{ t('vetrina_base.conferma_segnalazione', 'Inviare la segnalazione?') }}"
+      },
+      {
+        "set": {
+          "path": "messaggio",
+          "value": "Segnalazione dalla vetrina"
+        }
+      },
+      {
+        "call": "segnala",
+        "as": "ricevuta"
+      },
+      {
+        "toast": "{{ t('vetrina_base.protocollo', 'Segnalazione registrata con protocollo {p}', {'p': ricevuta.protocollo}) }}"
+      },
+      {
+        "set": {
+          "path": "ultimoProtocollo",
+          "value": "{{ ricevuta.protocollo }}"
+        }
+      }
+    ]
   },
   "components": [
     {
@@ -170,6 +201,75 @@
               }
             }
           ]
+        }
+      ]
+    },
+    {
+      "id": "sezione-sequenze",
+      "type": "section",
+      "title": "{{ t('vetrina_base.sequenze', 'Sequenze e risposte') }}",
+      "components": [
+        {
+          "id": "sequenze-spiegazione",
+          "type": "text",
+          "text": "{{ t('vetrina_base.sequenze_spiegazione', 'Prima e dopo una chiamata: una sequenza con nome (actions, passo run) chiede conferma, chiama il servizio, legge la risposta (as) e la usa nei passi seguenti; il passo if sceglie cosa fare; onError distingue gli errori con error.status.') }}"
+        },
+        {
+          "id": "sequenze-azioni",
+          "type": "box",
+          "gap": "small",
+          "components": [
+            {
+              "id": "btn-run",
+              "type": "button",
+              "label": "{{ t('vetrina_base.btn_run', 'Sequenza con nome (run, as)') }}",
+              "onClick": [
+                {
+                  "run": "inviaSegnalazione"
+                }
+              ]
+            },
+            {
+              "id": "btn-if",
+              "type": "button",
+              "label": "{{ t('vetrina_base.btn_if', 'Decidi in base al contatore (if)') }}",
+              "onClick": [
+                {
+                  "if": "{{ has(state.contatore) && state.contatore >= 3 }}",
+                  "then": {
+                    "toast": "{{ t('vetrina_base.contatore_alto', 'Il contatore è almeno 3: si prosegue') }}"
+                  },
+                  "else": {
+                    "toast": "{{ t('vetrina_base.contatore_basso', 'Il contatore è sotto 3: premi ancora «Incrementa il contatore»') }}"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "btn-status",
+              "type": "button",
+              "label": "{{ t('vetrina_base.btn_status', 'Errore distinto (error.status)') }}",
+              "onClick": [
+                {
+                  "call": "segnalaConflitto",
+                  "onError": {
+                    "if": "{{ error.status == 409 }}",
+                    "then": {
+                      "toast": "{{ t('vetrina_base.conflitto', 'Conflitto (409): la pratica è già stata inviata') }}"
+                    },
+                    "else": {
+                      "toast": "{{ t('vetrina_base.errore_codice', 'Errore {s}', {'s': error.status}) }}"
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ultimo-protocollo",
+          "type": "text",
+          "text": "{{ has(state.ultimoProtocollo) ? t('vetrina_base.ultimo_protocollo', 'Ultimo protocollo: {p}', {'p': state.ultimoProtocollo}) : t('vetrina_base.nessun_protocollo', 'Nessuna segnalazione inviata') }}"
         }
       ]
     },

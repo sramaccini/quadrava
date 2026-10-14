@@ -102,10 +102,20 @@ export class EditorStore extends DocumentState {
     return ownerOf(doc, path);
   }
 
-  /** `source`, `call`, `refresh` suggeriscono i data source della schermata, `navigate` le schermate note. */
+  /** Nomi delle sequenze della schermata (`actions`). */
+  readonly actionNames = computed(() => {
+    const actions = getIn(this.doc(), ['actions']);
+    return isObject(actions) ? Object.keys(actions) : [];
+  });
+
+  /**
+   * `source`, `call`, `refresh` suggeriscono i data source della schermata, `navigate` le schermate note, `run` le
+   * sequenze con nome.
+   */
   override suggestions(property: string): string[] {
     if (['source', 'call', 'refresh'].includes(property)) return this.sourceNames();
     if (property === 'navigate') return this.knownScreens();
+    if (property === 'run') return this.actionNames();
     return [];
   }
 
@@ -526,6 +536,8 @@ export class EditorStore extends DocumentState {
   private checkReferences(doc: Json, add: (pointer: string, message: string, severity: EditorIssue['severity']) => void): void {
     const sources = getIn(doc, ['dataSources']);
     const names = new Set(isObject(sources) ? Object.keys(sources) : []);
+    const declared = getIn(doc, ['actions']);
+    const actions = new Set(isObject(declared) ? Object.keys(declared) : []);
     const seen = new Set<string>();
     const visit = (value: Json, path: Path): void => {
       if (Array.isArray(value)) return value.forEach((v, i) => visit(v, [...path, i]));
@@ -535,6 +547,9 @@ export class EditorStore extends DocumentState {
       }
       for (const [key, step] of [['call', value['call']], ['refresh', value['refresh']]] as const) {
         if (typeof step === 'string' && !names.has(step)) add(toPointer([...path, key]), this.t('ed.issue.unknownSource', { name: step }), 'warning');
+      }
+      if (typeof value['run'] === 'string' && !actions.has(value['run'])) {
+        add(toPointer([...path, 'run']), this.t('ed.issue.unknownAction', { name: value['run'] }), 'warning');
       }
       if (typeof value['id'] === 'string' && path.at(-2) !== 'dataSources') {
         if (seen.has(value['id'])) add(toPointer([...path, 'id']), this.t('ed.issue.duplicateId', { id: value['id'] }), 'error');

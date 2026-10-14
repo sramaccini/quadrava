@@ -712,7 +712,7 @@ describe('editor delle schermate', () => {
     const steps = el.querySelector('ed-inspector [data-prop="onClick"]') as HTMLElement;
     expect(steps.querySelector('.summary')?.textContent?.trim()).toBe('toast: Fatto');
     (steps.querySelector('button[nz-dropdown]') as HTMLButtonElement).click();
-    await until(() => document.querySelectorAll('.ant-dropdown-menu-item').length === 10, 'varianti dei passi');
+    await until(() => document.querySelectorAll('.ant-dropdown-menu-item').length === 12, 'varianti dei passi');
     ([...document.querySelectorAll<HTMLElement>('.ant-dropdown-menu-item')].find((i) => i.textContent?.includes('refresh')) as HTMLElement).click();
     await settle();
     expect(getAt(store.doc(), ['components', 1, 'onClick', 1])).toEqual({ refresh: '' });

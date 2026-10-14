@@ -279,7 +279,8 @@
 | --- | --- | --- |
 | `call` * | testo | Nome del data source da eseguire. |
 | `args` | oggetto |  |
-| `onError` | steps |  |
+| `onError` | steps | Passi eseguiti se la chiamata non riesce (al posto del messaggio predefinito). Vedono error.status: il codice HTTP della risposta (0 se il servizio non è raggiungibile), per esempio {{ error.status == 409 }}. Il messaggio del server non c'è: potrebbe contenere dettagli interni. |
+| `as` |  | Nome con cui i passi successivi della stessa sequenza vedono la risposta del servizio, per esempio "creato" e poi {{ creato.id }}. Non può essere il nome di una variabile già esistente (user, state, params, row, form, error…). |
 
 ### `refresh`
 
@@ -335,6 +336,20 @@
 | Proprietà | Tipo | Descrizione |
 | --- | --- | --- |
 | `export` * | oggetto | Scarica in CSV le righe di un data source GET (un elenco, oppure items di una risposta a pagine): separatore punto e virgola, UTF-8 con BOM per Excel, celle che cominciano con = + - @ neutralizzate. |
+
+### `if`
+
+| Proprietà | Tipo | Descrizione |
+| --- | --- | --- |
+| `if` * | espressione | Condizione, per esempio {{ creato.stato == 'bozza' }}. Se non si può valutare la sequenza si ferma (non si esegue nessuno dei due rami). |
+| `then` * | steps | Passi se la condizione è vera. |
+| `else` | steps | Passi se la condizione è falsa. |
+
+### `run`
+
+| Proprietà | Tipo | Descrizione |
+| --- | --- | --- |
+| `run` * | identifier | Nome della sequenza in actions. |
 
 ## Campi (form, filtri, campi a sé)
 

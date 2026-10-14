@@ -17,7 +17,20 @@ export interface DataSourceDefinition {
 export interface CallStep {
   call: string;
   args?: Record<string, unknown>;
+  /** Nome con cui i passi successivi vedono la risposta. */
+  as?: string;
+  /** Passi se la chiamata non riesce; vedono `error.status`. */
   onError?: Step | Step[];
+}
+/** Passo condizionale. */
+export interface IfStep {
+  if: string;
+  then: Step | Step[];
+  else?: Step | Step[];
+}
+/** Esegue una sequenza con nome della schermata (`actions`). */
+export interface RunStep {
+  run: string;
 }
 export interface RefreshStep {
   refresh: string;
@@ -59,7 +72,7 @@ export interface PrintStep {
 export interface ExportStep {
   export: { source: string; fileName?: string; args?: Record<string, unknown>; columns: { field: string; label?: string }[] };
 }
-export type Step = CallStep | RefreshStep | NavigateStep | ToastStep | SetStep | ConfirmStep | DialogStep | ValidateStep | PrintStep | ExportStep;
+export type Step = CallStep | RefreshStep | NavigateStep | ToastStep | SetStep | ConfirmStep | DialogStep | ValidateStep | PrintStep | ExportStep | IfStep | RunStep;
 
 export interface ConditionalProps {
   visibleIf?: Expression;
@@ -489,6 +502,8 @@ export interface ScreenDefinition {
   description?: string;
   requires?: string;
   dataSources?: Record<string, DataSourceDefinition>;
+  /** Sequenze di passi con nome, richiamate dal passo `run`. */
+  actions?: Record<string, Step | Step[]>;
   components: NodeDefinition[];
 }
 

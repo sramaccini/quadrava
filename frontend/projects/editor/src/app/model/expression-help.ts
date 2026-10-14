@@ -38,7 +38,13 @@ export function expressionHints(doc: Json, path: Path): Hint[] {
   for (let i = 0; i < path.length; i++) {
     const value = getIn(doc, path.slice(0, i));
     const next = path[i];
+    // In una sequenza di passi: le risposte delle chiamate precedenti con `as`.
+    if (Array.isArray(value) && typeof next === 'number') {
+      for (const step of value.slice(0, next)) if (isObject(step) && typeof step['call'] === 'string' && typeof step['as'] === 'string') add(step['as']);
+    }
     if (!isObject(value)) continue;
+    // Nei passi di onError: il codice HTTP dell'errore.
+    if (next === 'onError') add('error.status');
     if (i === 0 && next === 'dataSources') ['search', 'lookupKey', 'request'].forEach(add);
     if (typeof value['type'] === 'string' && TABLES.has(value['type']) && typeof next === 'string' && ROW_SCOPES.has(next)) {
       fieldsOf(value['columns'], 'field').forEach((f) => add(`row.${f}`));

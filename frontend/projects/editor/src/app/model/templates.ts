@@ -199,6 +199,11 @@ const ITEM_DEFAULTS: Record<string, (index: number, t: Translate) => Json> = {
   field: (i) => `campo${i + 1}`,
   label: (_, t) => t('ed.tpl.label'),
   title: (_, t) => t('ed.tpl.label'),
+  // Passo if: una condizione valida e un passo nel ramo then, da cambiare.
+  if: () => '{{ true }}',
+  then: (_, t) => ({ toast: t('ed.tpl.clicked') }),
+  // Passo run: un nome da sostituire con una sequenza di actions (finché non esiste è segnalato).
+  run: () => 'sequenza',
 };
 
 /**

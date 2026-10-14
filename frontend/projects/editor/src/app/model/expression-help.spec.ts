@@ -31,7 +31,31 @@ describe('aiuto alle espressioni', () => {
     expect(expressionHints(doc, []).some((h) => h.insert === "can('')")).toBe(true);
   });
 
-  it('inserisce al cursore; un campo vuoto diventa {{ }}', () => {
+  it('nei passi: le risposte delle chiamate precedenti con as; in onError il codice dell’errore', () => {
+    const doc: Json = {
+      components: [
+        {
+          type: 'button',
+          onClick: [
+            { call: 'crea', as: 'creato' },
+            { call: 'altro' },
+            { toast: '…' },
+            { call: 'invia', as: 'inviato', onError: [{ toast: '…' }] },
+          ],
+        },
+      ],
+    };
+    const names = (path: (string | number)[]) => expressionHints(doc, path).filter((h) => h.kind === 'variable').map((h) => h.label);
+    expect(names(['components', 0, 'onClick', 2, 'toast'])).toContain('creato');
+    expect(names(['components', 0, 'onClick', 2, 'toast'])).not.toContain('inviato');
+    expect(names(['components', 0, 'onClick', 0, 'call'])).not.toContain('creato');
+    const inError = names(['components', 0, 'onClick', 3, 'onError', 0, 'toast']);
+    expect(inError).toContain('error.status');
+    expect(inError).toContain('creato');
+    expect(names(['components', 0, 'onClick', 2, 'toast'])).not.toContain('error.status');
+  });
+
+    it('inserisce al cursore; un campo vuoto diventa {{ }}', () => {
     expect(insertHint('', 0, 0, 'row.numero')).toEqual({ value: '{{ row.numero }}', caret: 13 });
     expect(insertHint('{{  > 0 }}', 3, 3, 'row.importo')).toEqual({ value: '{{ row.importo > 0 }}', caret: 14 });
   });

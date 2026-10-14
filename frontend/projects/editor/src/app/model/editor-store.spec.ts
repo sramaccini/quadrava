@@ -3,6 +3,8 @@ import { I18n } from 'core';
 import { EDITOR_MESSAGES } from '../messages';
 import { getIn, type Json } from './doc-ops';
 import { EditorStore } from './editor-store';
+import { listItem, nodeProperties } from './schema-info';
+import { defaultItem } from './templates';
 
 describe('EditorStore', () => {
   let store: EditorStore;
@@ -251,7 +253,24 @@ describe('EditorStore', () => {
     expect(store.doc()).toBe(before);
   });
 
-  it('salva la bozza nel browser e la riprende', () => {
+  it('passi prima e dopo le chiamate: run suggerisce le sequenze e segnala quelle che mancano; if e run nascono validi', () => {
+    store.addNode('button');
+    store.setValue(['actions'], { salva: [{ toast: 'ok' }] });
+    expect(store.suggestions('run')).toEqual(['salva']);
+    store.setValue(['components', 0, 'onClick'], [{ run: 'salva' }, { run: 'manca' }]);
+    expect(store.issues().map((i) => [i.pointer, i.severity])).toEqual([['/components/0/onClick/1/run', 'warning']]);
+    // I modelli dei passi nuovi (come li crea «Aggiungi» scegliendo la variante) sono validi per lo schema.
+    const steps = listItem(nodeProperties('button').find((p) => p.name === 'onClick')!);
+    const variant = (key: string) => (steps && 'variants' in steps ? steps.variants.find((v) => v.key === key)! : null)!;
+    const t = (k: string) => k;
+    store.setValue(['components', 0, 'onClick'], [defaultItem(variant('if').fields, 0, t), defaultItem(variant('call').fields, 0, t)]);
+    expect(getIn(store.doc(), ['components', 0, 'onClick', 0])).toEqual({ if: '{{ true }}', then: { toast: 'ed.tpl.clicked' } });
+    expect(store.issues().filter((i) => i.severity === 'error')).toEqual([]);
+    store.setValue(['components', 0, 'onClick'], [defaultItem(variant('run').fields, 0, t)]);
+    expect(store.issues().map((i) => i.severity)).toEqual(['warning']);
+  });
+
+    it('salva la bozza nel browser e la riprende', () => {
     store.addNode('alert');
     TestBed.tick();
     const saved = JSON.parse(localStorage.getItem('lc.editor.draft')!);

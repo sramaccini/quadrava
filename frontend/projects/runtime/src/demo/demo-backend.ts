@@ -65,6 +65,7 @@ export class DemoBackend {
     'Marino Edilizia|Bari', 'Greco Trasporti|Palermo', 'Gallo Energia|Padova', 'Conti Software|Trento',
   ].map((entry, i) => ({ id: i + 1, nome: entry.split('|')[0], citta: entry.split('|')[1] }));
   private attachments = 0;
+  private reports = 0;
   /** Attività del kanban della vetrina: lo stato cambia con /api/attivita/{id}/sposta. */
   private readonly tasks: { id: number; titolo: string; chi: string; stato: string }[] = [
     { id: 1, titolo: 'Preventivo Rossi Srl', chi: 'Anna', stato: 'da-fare' },
@@ -136,7 +137,10 @@ export class DemoBackend {
       order.stato = 'approvato';
       return {};
     }
-    if (path === '/api/vetrina/segnala' && req.method === 'POST') return {};
+    // Una segnalazione restituisce il suo protocollo (i passi seguenti lo leggono con `as`).
+    if (path === '/api/vetrina/segnala' && req.method === 'POST') return { protocollo: `PR-${String(++this.reports).padStart(4, '0')}`, ricevuta: true };
+    // Sempre in conflitto: per provare onError con error.status.
+    if (path === '/api/vetrina/conflitto' && req.method === 'POST') throw new Error('409');
     if (path === '/api/vetrina/errore') throw new Error('500');
     const other = this.handleBilling(req, path);
     if (other !== undefined) return other;
