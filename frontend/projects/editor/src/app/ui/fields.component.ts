@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { I18n } from 'core';
+import { NzAutocompleteModule } from 'ng-zorro-antd/auto-complete';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzCheckboxModule } from 'ng-zorro-antd/checkbox';
 import { NzDropdownModule } from 'ng-zorro-antd/dropdown';
@@ -48,6 +49,7 @@ interface ListEntry {
   imports: [
     FormsModule,
     JsonFieldComponent,
+    NzAutocompleteModule,
     NzButtonModule,
     NzCheckboxModule,
     NzDropdownModule,
@@ -108,6 +110,24 @@ export class FieldsComponent {
   }
 
   /** Valori suggeriti mentre si scrive (si può comunque scrivere altro): li decide il documento. */
+  /**
+   * Suggerimenti che corrispondono al testo scritto; con un valore già uguale a un suggerimento (o vuoto) tutti, così
+   * la freccia mostra l'elenco intero.
+   */
+  protected filteredSuggestions(row: FieldRow): string[] {
+    const all = this.suggestions(row);
+    const text = this.asText(row.value);
+    if (!text || all.includes(text)) return all;
+    const query = text.toLowerCase();
+    return all.filter((option) => option.toLowerCase().includes(query));
+  }
+
+  /** La freccia della casella: porta il fuoco nella casella, che apre l'elenco. */
+  protected openSuggestions(input: HTMLInputElement): void {
+    input.focus();
+    input.dispatchEvent(new Event('click', { bubbles: true }));
+  }
+
   protected suggestions(row: FieldRow): string[] {
     return row.info.kind === 'text' ? this.store.suggestions(row.info.name) : [];
   }

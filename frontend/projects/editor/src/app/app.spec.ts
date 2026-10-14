@@ -580,7 +580,10 @@ describe('editor delle schermate', () => {
     await settle();
     expect(el.querySelector('ed-texts .error')?.textContent).toContain('Lingua non riconosciuta');
     // I suggerimenti hanno il nome nella lingua dell'editor; basta scrivere il nome.
-    const suggestions = [...el.querySelectorAll<HTMLOptionElement>('#ed-language-suggestions option')].map((o) => o.value);
+    code.focus();
+    code.dispatchEvent(new Event('focusin', { bubbles: true }));
+    await until(() => document.querySelectorAll('nz-auto-option[data-language-option]').length > 0, 'suggerimenti delle lingue');
+    const suggestions = [...document.querySelectorAll('nz-auto-option[data-language-option]')].map((o) => o.textContent?.trim());
     expect(suggestions).toContain('Francese (fr)');
     expect(suggestions).not.toContain('Italiano (it)');
     code.value = 'francese';
@@ -633,7 +636,14 @@ describe('editor delle schermate', () => {
     await settle();
     // Il campo source suggerisce i data source della schermata.
     const source = el.querySelector('#prop-source') as HTMLInputElement;
-    expect([...document.querySelectorAll('#' + source.getAttribute('list') + ' option')].map((o) => (o as HTMLOptionElement).value)).toEqual(['elenco']);
+    // L'elenco si apre sotto la casella (autocompletamento, non il <datalist> del browser).
+    source.focus();
+    source.dispatchEvent(new Event('focusin', { bubbles: true }));
+    await until(() => document.querySelectorAll('nz-auto-option').length > 0, 'suggerimenti del data source');
+    expect([...document.querySelectorAll('nz-auto-option')].map((o) => o.textContent?.trim())).toEqual(['elenco']);
+    source.blur();
+    document.body.dispatchEvent(new Event('click', { bubbles: true }));
+    await settle();
     tab(2);
     await until(() => !!el.querySelector('ed-data-sources article'), 'pannello dei data source');
     expect(el.querySelector('ed-data-sources article')?.getAttribute('aria-label')).toBe('elenco');

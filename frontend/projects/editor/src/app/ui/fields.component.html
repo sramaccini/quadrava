@@ -165,21 +165,31 @@
             </details>
           }
         } @else {
-          <input
-            nz-input
-            nzSize="small"
-            [id]="row.id"
-            [attr.list]="suggestions(row).length ? row.id + '-options' : null"
-            [value]="asText(row.value)"
-            (input)="setText(row, $any($event.target).value)"
-            spellcheck="false"
-          />
           @if (suggestions(row).length) {
-            <datalist [id]="row.id + '-options'">
-              @for (option of suggestions(row); track option) {
-                <option [value]="option"></option>
+            <!-- Suggerimenti (data source, schermate…): l'elenco si apre sotto la casella e si filtra mentre si scrive. -->
+            <nz-input-wrapper class="suggest" nzAutocompleteOrigin #origin="nzAutocompleteOrigin">
+              <input
+                #suggest
+                nz-input
+                nzSize="small"
+                [id]="row.id"
+                [nzAutocomplete]="list"
+                [nzAutocompleteConnectedTo]="origin"
+                [ngModel]="asText(row.value)"
+                (ngModelChange)="setText(row, $event)"
+                spellcheck="false"
+              />
+              <button nzInputSuffix type="button" class="suggest-open" tabindex="-1" [attr.aria-label]="i18n.t('ed.suggestions')" (mousedown)="$event.preventDefault()" (click)="openSuggestions(suggest)">
+                <span nz-icon nzType="down" aria-hidden="true"></span>
+              </button>
+            </nz-input-wrapper>
+            <nz-autocomplete #list [nzDefaultActiveFirstOption]="false">
+              @for (option of filteredSuggestions(row); track option) {
+                <nz-auto-option [nzValue]="option" [nzLabel]="option">{{ option }}</nz-auto-option>
               }
-            </datalist>
+            </nz-autocomplete>
+          } @else {
+            <input nz-input nzSize="small" [id]="row.id" [value]="asText(row.value)" (input)="setText(row, $any($event.target).value)" spellcheck="false" />
           }
         }
       }

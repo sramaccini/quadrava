@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Confirmation, I18n, Notifier } from 'core';
+import { FormsModule } from '@angular/forms';
+import { NzAutocompleteModule } from 'ng-zorro-antd/auto-complete';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzInputModule } from 'ng-zorro-antd/input';
@@ -30,7 +32,7 @@ interface TextRow {
  */
 @Component({
   selector: 'ed-texts',
-  imports: [NzButtonModule, NzIconModule, NzInputModule, NzTagModule],
+  imports: [FormsModule, NzAutocompleteModule, NzButtonModule, NzIconModule, NzInputModule, NzTagModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './texts.component.scss',
   templateUrl: './texts.component.html',
@@ -46,6 +48,14 @@ export class TextsComponent {
     const ui = this.i18n.locale();
     const present = new Set(this.locales());
     return SUGGESTED_LANGUAGES.filter((code) => !present.has(code)).map((code) => ({ code, label: `${languageName(code, ui)} (${code})` }));
+  });
+
+  /** Testo scritto nella casella «Aggiungi lingua». */
+  protected readonly languageText = signal('');
+  /** Suggerimenti che contengono il testo scritto (nome o codice). */
+  protected readonly filteredLanguages = computed(() => {
+    const query = this.languageText().trim().toLowerCase();
+    return query ? this.suggestions().filter((s) => s.label.toLowerCase().includes(query)) : this.suggestions();
   });
 
   protected nameOf(locale: string): string {
@@ -158,6 +168,7 @@ export class TextsComponent {
     if (this.locales().includes(code)) return this.languageError.set(this.i18n.t('ed.texts.languageExists', { locale: this.nameOf(code) }));
     this.store.addLanguage(code);
     input.value = '';
+    this.languageText.set('');
     this.notifier.toast(this.i18n.t('ed.texts.languageAdded', { locale: this.nameOf(code) }));
   }
 

@@ -78,7 +78,7 @@ L'editor non ha un elenco proprio delle proprietà dei componenti: le legge da `
 | --- | --- |
 | `enum` | scelta (vuota = proprietà assente, se facoltativa) |
 | `$ref: expression` | area di testo con `{{ … }}` e l'aiuto «Variabili e funzioni»: le variabili del punto in cui si scrive (`row.<campo>` nelle colonne e nelle azioni di riga, `form.<campo>` nei form e nelle finestre, `value` nelle regole di validazione, `search`/`lookupKey`/`request` nei data source), lo stato e i parametri già usati nel documento, l'utente, e le funzioni (`can`, `t`, `has`, `fmt*`, `plural`); un clic le inserisce al cursore |
-| `string` | testo; area di testo per testi lunghi e per ogni valore con `{{ }}`; `source`, `call`, `refresh` suggeriscono i data source, `navigate` le schermate note |
+| `string` | testo; area di testo per testi lunghi e per ogni valore con `{{ }}`; `source`, `call`, `refresh` suggeriscono i data source, `navigate` le schermate note: l'elenco si apre sotto la casella (anche con la freccia) e si filtra mentre si scrive |
 | `boolean` | casella (deselezionata = proprietà assente) |
 | `integer` / `number` | numero con minimo e massimo dello schema |
 | oggetto chiuso (`sort`, `selection`, `lookup`, `dialog`…) | gruppo di campi, «Imposta» / «Togli» se facoltativo |

@@ -48,7 +48,10 @@
         nz-input
         nzSize="small"
         data-add-language
-        list="ed-language-suggestions"
+        [nzAutocomplete]="languageList"
+        [ngModel]="languageText()"
+        (ngModelChange)="languageText.set($event)"
+        name="language"
         autocomplete="off"
         [attr.aria-label]="i18n.t('ed.texts.languageCode')"
         [placeholder]="i18n.t('ed.texts.languageCode')"
@@ -56,11 +59,11 @@
         (input)="languageError.set('')"
       />
       <!-- Suggerimenti: nome nella lingua dell'editor e codice; si può scrivere il nome, il codice, o sceglierne uno. -->
-      <datalist id="ed-language-suggestions">
-        @for (s of suggestions(); track s.code) {
-          <option [value]="s.label"></option>
+      <nz-autocomplete #languageList [nzDefaultActiveFirstOption]="false">
+        @for (s of filteredLanguages(); track s.code) {
+          <nz-auto-option [nzValue]="s.label" [nzLabel]="s.label" [attr.data-language-option]="s.code">{{ s.label }}</nz-auto-option>
         }
-      </datalist>
+      </nz-autocomplete>
       <button nz-button nzSize="small" type="submit"><span nz-icon nzType="plus"></span>{{ i18n.t('ed.texts.addLanguage') }}</button>
       @if (languageError()) {
         <span class="error" role="alert">{{ languageError() }}</span>

@@ -65,3 +65,11 @@ nz-input-number, nz-select { width: 100%; }
 .completion li:hover {
   background: color-mix(in srgb, var(--lc-color-primary) 12%, transparent);
 }
+
+/* Casella con suggerimenti: la freccia apre l'elenco (sotto la casella). */
+.suggest { width: 100%; }
+.suggest-open {
+  display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; margin-right: -4px; padding: 0;
+  border: 0; border-radius: 3px; background: none; color: var(--lc-color-muted); font-size: 10px; cursor: pointer;
+}
+.suggest-open:hover { color: var(--lc-color-primary); background: color-mix(in srgb, var(--lc-color-primary) 10%, transparent); }
