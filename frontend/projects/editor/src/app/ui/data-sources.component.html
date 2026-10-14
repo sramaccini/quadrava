@@ -1,8 +1,16 @@
 <section class="sources" [attr.aria-label]="i18n.t('ed.tabs.sources')">
   <div class="head">
     <p class="intro">{{ i18n.t('ed.sources.intro') }}</p>
-    <button nz-button nzType="primary" nzSize="small" type="button" (click)="add()"><span nz-icon nzType="plus"></span>{{ i18n.t('ed.sources.add') }}</button>
+    <div class="head-actions">
+      <button nz-button nzSize="small" type="button" data-openapi-open (click)="importing.set(true)"><span nz-icon nzType="api"></span>{{ i18n.t('ed.openapi.open') }}</button>
+      <button nz-button nzType="primary" nzSize="small" type="button" (click)="add()"><span nz-icon nzType="plus"></span>{{ i18n.t('ed.sources.add') }}</button>
+    </div>
   </div>
+  <nz-modal [nzVisible]="importing()" [nzTitle]="i18n.t('ed.openapi.title')" [nzFooter]="null" [nzWidth]="760" (nzOnCancel)="importing.set(false)">
+    <ng-container *nzModalContent>
+      <ed-openapi-import (closed)="importing.set(false)" />
+    </ng-container>
+  </nz-modal>
   @for (source of sources(); track source.name) {
     <article class="source" [attr.aria-label]="source.name">
       <div class="row">

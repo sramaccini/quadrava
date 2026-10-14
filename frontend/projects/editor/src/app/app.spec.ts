@@ -432,6 +432,60 @@ describe('editor delle schermate', () => {
     await untilState('ed-preview', (st) => st.defaultLocale === 'en', 'lingua predefinita nell’anteprima');
   });
 
+  it('data source importati da OpenAPI (springdoc): lettura dall’indirizzo, scelta delle operazioni, dati di esempio', async () => {
+    const doc = {
+      openapi: '3.0.1',
+      info: { title: 'Gestionale', version: '1' },
+      servers: [{ url: 'http://localhost:8080' }],
+      paths: {
+        '/api/clienti': {
+          get: { tags: ['clienti'], operationId: 'listClienti', responses: { '200': { description: 'OK', content: { '*/*': { schema: { type: 'array', items: { type: 'object', properties: { nome: { type: 'string', example: 'Rossi' } } } } } } } } },
+          post: { tags: ['clienti'], operationId: 'createCliente', requestBody: { content: { 'application/json': { schema: { type: 'object' } } } }, responses: { '200': { description: 'OK' } } },
+        },
+      },
+    };
+    const requested: string[] = [];
+    vi.stubGlobal('fetch', async (url: string) => {
+      requested.push(url);
+      if (url === '/v3/api-docs') return { ok: true, status: 200, text: async () => JSON.stringify(doc) };
+      return { ok: false, status: 404, text: async () => '' };
+    });
+    tab(2);
+    await settle();
+    (el.querySelector('[data-openapi-open]') as HTMLButtonElement).click();
+    await until(() => !!document.querySelector('[data-openapi-url]'), 'finestra di importazione');
+    const url = document.querySelector('[data-openapi-url]') as HTMLInputElement;
+    expect(url.value).toBe('/v3/api-docs');
+    // Indirizzo sbagliato: il messaggio dice lo stato.
+    type(url, '/swagger-ui.html');
+    url.form!.dispatchEvent(new Event('submit', { cancelable: true }));
+    await until(() => !!document.querySelector('ed-openapi-import .error'), 'errore');
+    expect(document.querySelector('ed-openapi-import .error')?.textContent).toContain('404');
+    type(url, 'javascript:alert(1)');
+    url.form!.dispatchEvent(new Event('submit', { cancelable: true }));
+    await settle();
+    expect(document.querySelector('ed-openapi-import .error')?.textContent).toContain('Indirizzo non valido');
+    expect(requested).toEqual(['/swagger-ui.html']);
+    type(url, '/v3/api-docs');
+    url.form!.dispatchEvent(new Event('submit', { cancelable: true }));
+    await until(() => document.querySelectorAll('ed-openapi-import .op').length === 2, 'operazioni');
+    expect(document.querySelector('ed-openapi-import .api')?.textContent).toContain('Gestionale');
+    const importButton = () => document.querySelector('[data-openapi-import]') as HTMLButtonElement;
+    expect(importButton().disabled).toBe(true);
+    ([...document.querySelectorAll<HTMLButtonElement>('ed-openapi-import .bulk button')][0]).click();
+    await settle();
+    expect(importButton().textContent).toContain('Importa 2 data source');
+    importButton().click();
+    await until(() => getAt(store.doc(), ['dataSources', 'listClienti']) !== undefined, 'importazione');
+    expect(getAt(store.doc(), ['dataSources', 'listClienti'])).toEqual({ type: 'rest', method: 'GET', url: '/api/clienti' });
+    expect(getAt(store.doc(), ['dataSources', 'createCliente'])).toEqual({ type: 'rest', method: 'POST', url: '/api/clienti', body: '{{ form }}' });
+    expect(store.samples()['listClienti']).toEqual([{ nome: 'Rossi' }, { nome: 'Rossi' }]);
+    expect(localStorage.getItem('lc.editor.openapi.url')).toBe('/v3/api-docs');
+    // Un solo passo da annullare.
+    store.undo();
+    expect(getAt(store.doc(), ['dataSources', 'listClienti'])).toBeUndefined();
+  });
+
   it('proprietà: percorso dell’elemento con i contenitori cliccabili e filtro per nome', async () => {
     (el.querySelector('ed-palette button[data-type="section"]') as HTMLButtonElement).click();
     await settle();

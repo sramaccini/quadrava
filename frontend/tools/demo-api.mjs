@@ -6,6 +6,7 @@
 // Ogni richiesta deve portare un token di Keycloak valido (Authorization: Bearer, lo aggiunge il BFF): firma RS256
 // verificata con le chiavi pubblicate dal realm, emittente e scadenza. Con --senza-auth il controllo è spento (avviso
 // nel log). Gli errori del backend tornano come Problem (RFC 9457) con il solo stato, mai con dettagli.
+import { readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { createPublicKey, createVerify } from 'node:crypto';
 import { dirname, join } from 'node:path';
@@ -110,10 +111,23 @@ function send(res, status, body) {
 
 const problem = (res, status, title) => send(res, status, { title, status });
 
+// Descrizione OpenAPI delle API, come la pubblica springdoc in Spring Boot: l'editor la importa nei data source.
+const openApi = readFileSync(join(here, 'demo-api.openapi.json'), 'utf8');
+
 createServer(async (req, res) => {
   const url = new URL(req.url ?? '/', `http://localhost:${port}`);
+  // /v3/api-docs: la sola descrizione (nessun dato), senza token e leggibile da altre origini, come springdoc con CORS
+  // abilitato in sviluppo; dietro il BFF la stessa descrizione è anche su /api/v3/api-docs, con il token.
+  if (url.pathname === '/v3/api-docs' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+    return res.end(openApi);
+  }
   if (!url.pathname.startsWith('/api/')) return problem(res, 404, 'Non trovato');
   if (!withoutAuth && !(await verify(req.headers['authorization']))) return problem(res, 401, 'Token mancante o non valido');
+  if (url.pathname === '/api/v3/api-docs' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(openApi);
+  }
   try {
     const request = await readRequest(req, url);
     const result = await backend.handle(request);

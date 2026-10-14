@@ -1,6 +1,7 @@
 import { ApplicationConfig, inject, provideBrowserGlobalErrorListeners, provideEnvironmentInitializer } from '@angular/core';
 import {
   ApartmentOutline,
+  ApiOutline,
   AppstoreOutline,
   ArrowDownOutline,
   ArrowUpOutline,
@@ -47,6 +48,7 @@ export const appConfig: ApplicationConfig = {
     provideNzIcons([
       ...Object.values(ICON_TYPES).map((i) => i.icon),
       ApartmentOutline,
+      ApiOutline,
       AppstoreOutline,
       ArrowDownOutline,
       ArrowUpOutline,

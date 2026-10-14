@@ -4,10 +4,12 @@ import { I18n } from 'core';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzInputModule } from 'ng-zorro-antd/input';
+import { NzModalModule } from 'ng-zorro-antd/modal';
 import { NzSelectModule } from 'ng-zorro-antd/select';
 import { getIn, isObject, toPointer, type Json, type JsonObject } from '../model/doc-ops';
 import { EditorStore } from '../model/editor-store';
 import { JsonFieldComponent } from './json-field.component';
+import { OpenApiImportComponent } from './openapi-import.component';
 
 const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
 
@@ -24,7 +26,7 @@ interface SourceView {
  */
 @Component({
   selector: 'ed-data-sources',
-  imports: [FormsModule, JsonFieldComponent, NzButtonModule, NzIconModule, NzInputModule, NzSelectModule],
+  imports: [FormsModule, JsonFieldComponent, NzButtonModule, NzIconModule, NzInputModule, NzModalModule, NzSelectModule, OpenApiImportComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './data-sources.component.scss',
   templateUrl: './data-sources.component.html',
@@ -32,6 +34,8 @@ interface SourceView {
 export class DataSourcesComponent {
   protected readonly store = inject(EditorStore);
   protected readonly i18n = inject(I18n);
+  /** Finestra «Importa da OpenAPI» aperta. */
+  protected readonly importing = signal(false);
   protected readonly methods = METHODS;
   /** Nome che non si è potuto applicare (non valido o già usato). */
   protected readonly renameError = signal<string | null>(null);

@@ -484,6 +484,21 @@ export class EditorStore extends DocumentState {
     });
   }
 
+  /**
+   * Aggiunge più data source in un solo passo da annullare (importazione da OpenAPI). I nomi già usati non si
+   * sovrascrivono; i dati di esempio si impostano solo per i data source nuovi. Restituisce i nomi aggiunti.
+   */
+  importSources(entries: { name: string; source: JsonObject; sample?: Json }[]): string[] {
+    const existing = new Set(this.sourceNames());
+    const fresh = entries.filter((e) => SOURCE_NAME.test(e.name) && !existing.has(e.name));
+    if (!fresh.length) return [];
+    let next = this.doc();
+    for (const entry of fresh) next = setIn(next, ['dataSources', entry.name], entry.source);
+    this.apply(next);
+    for (const entry of fresh) if (entry.sample !== undefined) this.setSample(entry.name, entry.sample);
+    return fresh.map((e) => e.name);
+  }
+
   /** Apre un documento (file, esempio, nuova schermata): azzera cronologia e selezione. */
   load(doc: Json, samples: Record<string, Json> = {}): void {
     this.reset(doc);

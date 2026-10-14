@@ -14,3 +14,5 @@ label { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-siz
 .issue { margin: 4px 0 0; color: var(--lc-color-danger); font-size: 12px; }
 .empty { color: var(--lc-color-muted); }
 nz-select { width: 100%; }
+
+.head-actions { display: flex; gap: 6px; flex-wrap: wrap; }
