@@ -10,10 +10,15 @@
 .width:focus-visible { outline: 2px solid var(--lc-color-primary); outline-offset: 1px; }
 .actions { display: flex; gap: 4px; margin-left: auto; }
 .icon-only { position: relative; width: 28px; padding: 0; }
-/* Numero di eventi del registro, sull'angolo dell'icona. */
-.count {
+/* Numero di eventi del registro, sull'angolo dell'icona. Più specifico di «.ant-btn:focus > span { position: relative }»
+   di NG-ZORRO, che dopo il clic (pulsante con il fuoco) lo rimetterebbe nel flusso spostando l'icona. */
+.icon-only > .count {
   position: absolute; top: -6px; right: -6px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px;
   background: var(--lc-color-primary); color: var(--lc-color-on-primary); font-size: 10px; line-height: 16px; text-align: center;
+}
+/* Sul pulsante blu (registro aperto) i colori si invertono, altrimenti il numero sparirebbe. */
+.ant-btn-primary.icon-only > .count {
+  background: var(--lc-color-on-primary); color: var(--lc-color-primary); box-shadow: 0 0 0 1px var(--lc-color-primary);
 }
 .switch { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
 .params { padding: 8px 12px; border-bottom: 1px solid var(--lc-color-border); background: var(--lc-color-surface); font-size: 12px; }
