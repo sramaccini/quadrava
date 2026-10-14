@@ -24,6 +24,8 @@ body { background: var(--lc-color-background); color: var(--lc-color-on-surface)
 }
 .ed-panel-title {
   flex: none; margin: 0; padding: 7px 12px; background: var(--ed-panel-title-bg); color: var(--ed-panel-title-fg);
+  display: flex; align-items: center; gap: 8px;
   font-size: 12px; font-weight: 600; line-height: 1.4; text-transform: uppercase; letter-spacing: 0.06em;
 }
+.ed-panel-title .anticon { font-size: 14px; }
 .ed-panel-body { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 10px 12px; }

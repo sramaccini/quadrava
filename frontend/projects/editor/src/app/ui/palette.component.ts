@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { I18n } from 'core';
+import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import { EditorStore } from '../model/editor-store';
 import { NODE_TYPES } from '../model/schema-info';
@@ -28,7 +29,7 @@ const GROUPS: { key: string; types: string[] }[] = [
  */
 @Component({
   selector: 'ed-palette',
-  imports: [NzTooltipModule],
+  imports: [NzIconModule, NzTooltipModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: flex; flex-direction: column; min-height: 0; }
@@ -45,7 +46,7 @@ const GROUPS: { key: string; types: string[] }[] = [
   `,
   template: `
     <section class="ed-panel" [attr.aria-label]="i18n.t('ed.palette')">
-      <h2 class="ed-panel-title">{{ i18n.t('ed.palette') }}</h2>
+      <h2 class="ed-panel-title"><span nz-icon nzType="appstore" aria-hidden="true"></span>{{ i18n.t('ed.palette') }}</h2>
       <div class="ed-panel-body">
       @for (group of groups; track group.key) {
         <h3>{{ i18n.t('ed.group.' + group.key) }}</h3>

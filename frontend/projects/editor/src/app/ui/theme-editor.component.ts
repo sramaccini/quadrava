@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, signal } from '@angular/core';
 import { I18n } from 'core';
+import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzTabsModule } from 'ng-zorro-antd/tabs';
 import type { ThemeDefinition } from 'schema';
 import { DocumentState } from '../model/document-state';
@@ -18,7 +19,7 @@ import { JsonViewComponent } from './json-view.component';
  */
 @Component({
   selector: 'ed-theme-editor',
-  imports: [FieldsComponent, JsonViewComponent, PreviewFrameComponent, NzTabsModule],
+  imports: [FieldsComponent, JsonViewComponent, PreviewFrameComponent, NzIconModule, NzTabsModule],
   providers: [{ provide: DocumentState, useExisting: ThemeStore }],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
@@ -47,7 +48,7 @@ import { JsonViewComponent } from './json-view.component';
     </main>
     <aside class="right ed-panels">
       <section class="ed-panel" [attr.aria-label]="i18n.t('ed.inspector')">
-        <h2 class="ed-panel-title">{{ i18n.t('ed.inspector') }}</h2>
+        <h2 class="ed-panel-title"><span nz-icon nzType="control" aria-hidden="true"></span>{{ i18n.t('ed.inspector') }}</h2>
         <div class="ed-panel-body">
           <p class="note">{{ i18n.t('ed.theme.note') }}</p>
           <ed-fields [path]="[]" [fields]="fields" />

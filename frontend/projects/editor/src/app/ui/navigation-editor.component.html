@@ -1,6 +1,6 @@
 <aside class="left ed-panels">
   <nav class="outline ed-panel" [attr.aria-label]="i18n.t('ed.outline')">
-    <h2 class="ed-panel-title">{{ i18n.t('ed.outline') }}</h2>
+    <h2 class="ed-panel-title"><span nz-icon nzType="apartment" aria-hidden="true"></span>{{ i18n.t('ed.outline') }}</h2>
     <div class="ed-panel-body">
     <div class="add" role="toolbar" [attr.aria-label]="i18n.t('ed.nav.add')">
       <button nz-button nzSize="small" type="button" (click)="store.addUseCase()"><span nz-icon nzType="plus"></span>{{ i18n.t('ed.nav.kind.useCase') }}</button>
@@ -66,7 +66,7 @@
     }
     <div class="preview" [class.off]="view() === 'json'">
       <section class="profile ed-panel" [attr.aria-label]="i18n.t('ed.nav.profile')">
-        <h2 class="ed-panel-title">{{ i18n.t('ed.nav.profile') }}</h2>
+        <h2 class="ed-panel-title"><span nz-icon nzType="idcard" aria-hidden="true"></span>{{ i18n.t('ed.nav.profile') }}</h2>
         <div class="ed-panel-body">
         <label class="switch">
           <nz-switch nzSize="small" [ngModel]="granted() === null" (ngModelChange)="setGrantAll($event)" />
@@ -97,7 +97,7 @@
 
 <aside class="right ed-panels">
   <section class="inspector ed-panel" [attr.aria-label]="i18n.t('ed.inspector')">
-    <h2 class="ed-panel-title">{{ i18n.t('ed.inspector') }}</h2>
+    <h2 class="ed-panel-title"><span nz-icon nzType="control" aria-hidden="true"></span>{{ i18n.t('ed.inspector') }}</h2>
     <div class="ed-panel-body">
     @if (store.target()) {
       <p class="kind">{{ heading() }}</p>
