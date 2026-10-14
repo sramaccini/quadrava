@@ -10,3 +10,20 @@ body { background: var(--lc-color-background); color: var(--lc-color-on-surface)
 
 /* Anteprima dell'editor: in modalità selezione i componenti si scelgono con un clic. */
 .frame.selecting lc-node[data-node-id] { cursor: crosshair; }
+
+/*
+ * Riquadri dell'editor (componenti, struttura, proprietà…): ognuno separato, con il titolo su una barra scura fissa e il
+ * contenuto che scorre sotto. I colori della barra sono dell'editor, non del tema in modifica: il contrasto resta
+ * garantito (bianco su #2b333d, circa 12,6:1).
+ */
+:root { --ed-panel-title-bg: #2b333d; --ed-panel-title-fg: #fff; }
+.ed-panels { display: flex; flex-direction: column; gap: 8px; min-height: 0; padding: 8px; background: var(--lc-color-background); }
+.ed-panel {
+  display: flex; flex-direction: column; min-height: 0; overflow: hidden;
+  background: var(--lc-color-surface); border: 1px solid var(--lc-color-border); border-radius: var(--lc-radius);
+}
+.ed-panel-title {
+  flex: none; margin: 0; padding: 7px 12px; background: var(--ed-panel-title-bg); color: var(--ed-panel-title-fg);
+  font-size: 12px; font-weight: 600; line-height: 1.4; text-transform: uppercase; letter-spacing: 0.06em;
+}
+.ed-panel-body { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 10px 12px; }

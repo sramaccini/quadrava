@@ -1,5 +1,6 @@
-<nav class="outline" [attr.aria-label]="i18n.t('ed.outline')">
-  <h2 class="panel-title">{{ i18n.t('ed.outline') }}</h2>
+<nav class="outline ed-panel" [attr.aria-label]="i18n.t('ed.outline')">
+  <h2 class="ed-panel-title">{{ i18n.t('ed.outline') }}</h2>
+  <div class="ed-panel-body">
   <button
     type="button"
     class="row screen"
@@ -20,6 +21,7 @@
   } @else {
     <p class="empty">{{ i18n.t('ed.outlineEmpty') }}</p>
   }
+  </div>
 </nav>
 
 <ng-template #branch let-items let-level="level">

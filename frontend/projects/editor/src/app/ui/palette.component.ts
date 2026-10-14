@@ -31,9 +31,10 @@ const GROUPS: { key: string; types: string[] }[] = [
   imports: [NzTooltipModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
-    :host { display: block; }
-    .panel-title { margin: 0 0 8px; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--lc-color-muted); }
-    h3 { margin: 8px 0 4px; font-size: 12px; font-weight: 600; color: var(--lc-color-muted); }
+    :host { display: flex; flex-direction: column; min-height: 0; }
+    section { flex: 1 1 auto; }
+    h3:first-child { margin-top: 0; }
+    h3 { margin: 10px 0 4px; font-size: 12px; font-weight: 600; color: var(--lc-color-muted); }
     .items { display: flex; flex-wrap: wrap; gap: 4px; }
     button {
       padding: 2px 8px; border: 1px solid var(--lc-color-border); border-radius: var(--lc-radius); background: var(--lc-color-surface);
@@ -43,8 +44,9 @@ const GROUPS: { key: string; types: string[] }[] = [
     button:focus-visible { outline: 2px solid var(--lc-color-primary); outline-offset: 1px; }
   `,
   template: `
-    <section [attr.aria-label]="i18n.t('ed.palette')">
-      <h2 class="panel-title">{{ i18n.t('ed.palette') }}</h2>
+    <section class="ed-panel" [attr.aria-label]="i18n.t('ed.palette')">
+      <h2 class="ed-panel-title">{{ i18n.t('ed.palette') }}</h2>
+      <div class="ed-panel-body">
       @for (group of groups; track group.key) {
         <h3>{{ i18n.t('ed.group.' + group.key) }}</h3>
         <div class="items">
@@ -55,6 +57,7 @@ const GROUPS: { key: string; types: string[] }[] = [
           }
         </div>
       }
+      </div>
     </section>
   `,
 })

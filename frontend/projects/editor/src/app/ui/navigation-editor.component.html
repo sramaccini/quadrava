@@ -1,11 +1,12 @@
-<aside class="left">
-  <nav class="outline" [attr.aria-label]="i18n.t('ed.outline')">
+<aside class="left ed-panels">
+  <nav class="outline ed-panel" [attr.aria-label]="i18n.t('ed.outline')">
+    <h2 class="ed-panel-title">{{ i18n.t('ed.outline') }}</h2>
+    <div class="ed-panel-body">
     <div class="add" role="toolbar" [attr.aria-label]="i18n.t('ed.nav.add')">
       <button nz-button nzSize="small" type="button" (click)="store.addUseCase()"><span nz-icon nzType="plus"></span>{{ i18n.t('ed.nav.kind.useCase') }}</button>
       <button nz-button nzSize="small" type="button" [disabled]="!canAddGroup()" (click)="store.addItem('group')"><span nz-icon nzType="plus"></span>{{ i18n.t('ed.nav.kind.group') }}</button>
       <button nz-button nzSize="small" type="button" [disabled]="!canAddLeaf()" (click)="store.addItem('leaf')"><span nz-icon nzType="plus"></span>{{ i18n.t('ed.nav.kind.leaf') }}</button>
     </div>
-    <h2 class="panel-title">{{ i18n.t('ed.outline') }}</h2>
     <button type="button" class="row root" [class.selected]="isSelected([])" [attr.aria-current]="isSelected([]) ? 'true' : null" (click)="store.select([])">
       <span class="label">{{ i18n.t('ed.nav.kind.root') }}</span>
       @if (rootSeverity(); as s) {
@@ -13,6 +14,7 @@
       }
     </button>
     <ng-container [ngTemplateOutlet]="branch" [ngTemplateOutletContext]="{ $implicit: items(), level: 1 }" />
+    </div>
   </nav>
 </aside>
 
@@ -63,8 +65,9 @@
       <ed-json-view />
     }
     <div class="preview" [class.off]="view() === 'json'">
-      <section class="profile" [attr.aria-label]="i18n.t('ed.nav.profile')">
-        <h2 class="panel-title">{{ i18n.t('ed.nav.profile') }}</h2>
+      <section class="profile ed-panel" [attr.aria-label]="i18n.t('ed.nav.profile')">
+        <h2 class="ed-panel-title">{{ i18n.t('ed.nav.profile') }}</h2>
+        <div class="ed-panel-body">
         <label class="switch">
           <nz-switch nzSize="small" [ngModel]="granted() === null" (ngModelChange)="setGrantAll($event)" />
           {{ i18n.t('ed.preview.grantAll') }}
@@ -83,6 +86,7 @@
           </ul>
         }
         <p class="help">{{ i18n.t('ed.nav.profileHint') }}</p>
+        </div>
       </section>
       <div class="menu">
         <ed-preview-frame [state]="previewState()" />
@@ -91,9 +95,10 @@
   </div>
 </main>
 
-<aside class="right">
-  <section class="inspector" [attr.aria-label]="i18n.t('ed.inspector')">
-    <h2 class="panel-title">{{ i18n.t('ed.inspector') }}</h2>
+<aside class="right ed-panels">
+  <section class="inspector ed-panel" [attr.aria-label]="i18n.t('ed.inspector')">
+    <h2 class="ed-panel-title">{{ i18n.t('ed.inspector') }}</h2>
+    <div class="ed-panel-body">
     @if (store.target()) {
       <p class="kind">{{ heading() }}</p>
       @if (generalIssues().length) {
@@ -107,5 +112,6 @@
     } @else {
       <p class="empty">{{ i18n.t('ed.noSelection') }}</p>
     }
+    </div>
   </section>
 </aside>

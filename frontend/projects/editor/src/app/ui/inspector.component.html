@@ -1,5 +1,6 @@
-<section class="inspector" [attr.aria-label]="i18n.t('ed.inspector')">
-  <h2 class="panel-title">{{ i18n.t('ed.inspector') }}</h2>
+<section class="inspector ed-panel" [attr.aria-label]="i18n.t('ed.inspector')">
+  <h2 class="ed-panel-title">{{ i18n.t('ed.inspector') }}</h2>
+  <div class="ed-panel-body">
   @if (store.target()) {
     <p class="kind">{{ heading() }}</p>
     @if (generalIssues().length) {
@@ -22,4 +23,5 @@
   } @else {
     <p class="empty">{{ i18n.t('ed.noSelection') }}</p>
   }
+  </div>
 </section>

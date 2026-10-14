@@ -28,8 +28,8 @@ import { JsonViewComponent } from './json-view.component';
     .center ::ng-deep .ant-tabs-nav { margin: 0; }
     .view { flex: 1; min-height: 0; }
     .off { display: none; }
-    .right { overflow: auto; padding: 12px; background: var(--lc-color-surface); border-left: 1px solid var(--lc-color-border); }
-    .panel-title { margin: 0 0 8px; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--lc-color-muted); }
+    .right { overflow: hidden; border-left: 1px solid var(--lc-color-border); }
+    .right > .ed-panel { flex: 1 1 0; }
     .note { margin: 0 0 12px; font-size: 12px; color: var(--lc-color-muted); }
   `,
   template: `
@@ -45,10 +45,14 @@ import { JsonViewComponent } from './json-view.component';
         <ed-preview-frame [state]="state()" [class.off]="view() === 'json'" />
       </div>
     </main>
-    <aside class="right">
-      <h2 class="panel-title">{{ i18n.t('ed.inspector') }}</h2>
-      <p class="note">{{ i18n.t('ed.theme.note') }}</p>
-      <ed-fields [path]="[]" [fields]="fields" />
+    <aside class="right ed-panels">
+      <section class="ed-panel" [attr.aria-label]="i18n.t('ed.inspector')">
+        <h2 class="ed-panel-title">{{ i18n.t('ed.inspector') }}</h2>
+        <div class="ed-panel-body">
+          <p class="note">{{ i18n.t('ed.theme.note') }}</p>
+          <ed-fields [path]="[]" [fields]="fields" />
+        </div>
+      </section>
     </aside>
   `,
 })

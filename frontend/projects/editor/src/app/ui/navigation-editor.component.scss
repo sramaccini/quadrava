@@ -1,12 +1,12 @@
 :host { display: grid; grid-template-columns: 280px minmax(0, 1fr) 320px; min-height: 0; }
-.left, .right { overflow: auto; padding: 12px; background: var(--lc-color-surface); }
+.left, .right { overflow: hidden; }
+.left > .ed-panel, .right > .ed-panel { flex: 1 1 0; }
 .left { border-right: 1px solid var(--lc-color-border); }
 .right { border-left: 1px solid var(--lc-color-border); }
 .center { display: flex; flex-direction: column; min-height: 0; }
 .center nz-tabs { padding: 0 12px; background: var(--lc-color-surface); }
 .center ::ng-deep .ant-tabs-nav { margin: 0; }
 .view { flex: 1; min-height: 0; }
-.panel-title { margin: 0 0 8px; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--lc-color-muted); }
 .add { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 16px; }
 
 .branch { list-style: none; margin: 0; padding: 0; }
@@ -29,7 +29,7 @@
 
 .preview.off { display: none; }
 .preview { display: flex; gap: 16px; height: 100%; padding: 12px; overflow: auto; background: var(--lc-color-background); }
-.profile { flex: 0 0 260px; padding: 12px; border: 1px solid var(--lc-color-border); border-radius: var(--lc-radius); background: var(--lc-color-surface); align-self: flex-start; }
+.profile { flex: 0 0 260px; align-self: flex-start; }
 .switch { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
 .permissions { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
 .permissions code { font-size: 12px; }

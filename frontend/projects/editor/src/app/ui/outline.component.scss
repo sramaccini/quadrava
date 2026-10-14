@@ -1,5 +1,5 @@
-:host { display: block; }
-.panel-title { margin: 0 0 8px; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--lc-color-muted); }
+:host { display: flex; flex-direction: column; min-height: 0; }
+.outline { flex: 1 1 auto; }
 .branch { list-style: none; margin: 0; padding: 0; }
 .line { display: flex; align-items: center; gap: 2px; padding-left: calc((var(--level, 1) - 1) * 14px); border-radius: var(--lc-radius); }
 .line.selected, .row.screen.selected { background: color-mix(in srgb, var(--lc-color-primary) 14%, transparent); }
