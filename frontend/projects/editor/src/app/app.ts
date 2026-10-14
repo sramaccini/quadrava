@@ -21,7 +21,8 @@ import { PreviewComponent } from './preview/preview.component';
 import { DataSourcesComponent } from './ui/data-sources.component';
 import { InspectorComponent } from './ui/inspector.component';
 import { IssuesComponent } from './ui/issues.component';
-import { Dock } from './ui/dock';
+import { Dock, type DockPanel } from './ui/dock';
+import { DockPanelDirective } from './ui/dock-panel.directive';
 import { DockSideComponent } from './ui/dock-side.component';
 import { JsonViewComponent } from './ui/json-view.component';
 import { MenuBarComponent, type Menu, type MenuItem } from './ui/menu-bar.component';
@@ -39,6 +40,9 @@ const MODE_KEY = 'lc.editor.mode';
 type Mode = 'screen' | 'navigation' | 'theme';
 const MODES: Mode[] = ['screen', 'navigation', 'theme'];
 const VIEWS = ['preview', 'json', 'sources', 'texts'] as const;
+/** Riquadri di ogni modalità (le voci «… fissato» del menu Visualizza). */
+const MODE_PANELS: Record<Mode, DockPanel[]> = { screen: ['palette', 'outline', 'inspector'], navigation: ['outline', 'inspector'], theme: ['inspector'] };
+const PANEL_LABELS: Record<DockPanel, string> = { palette: 'ed.palette', outline: 'ed.outline', inspector: 'ed.inspector' };
 const VIEW_LABELS: Record<(typeof VIEWS)[number], string> = { preview: 'ed.tabs.preview', json: 'ed.tabs.json', sources: 'ed.tabs.sources', texts: 'ed.tabs.texts' };
 
 /** Scorciatoie dell'aiuto: gruppo → [tasti, descrizione]. I tasti con nomi da tradurre sono chiavi dei messaggi (`ed.`). */
@@ -80,6 +84,7 @@ const SHORTCUTS: { group: string; keys: [string, string][] }[] = [
   imports: [
     FormsModule,
     DataSourcesComponent,
+    DockPanelDirective,
     DockSideComponent,
     InspectorComponent,
     IssuesComponent,
@@ -141,6 +146,9 @@ export class App {
   /** Scorciatoie mostrate nell'aiuto, per gruppo (testi nei messaggi `ed.keys.*`). */
   protected readonly shortcutGroups = SHORTCUTS;
   protected readonly dock = inject(Dock);
+  /** Riquadri dei due lati della schermata (per la larghezza delle colonne). */
+  protected readonly leftPanels: DockPanel[] = ['palette', 'outline'];
+  protected readonly rightPanels: DockPanel[] = ['inspector'];
   private readonly fileInput = viewChild<ElementRef<HTMLInputElement>>('fileInput');
 
   /** Barra dei menu: File (documento) e Modifica (comandi del documento e della selezione, con le scorciatoie). */
@@ -190,8 +198,13 @@ export class App {
     }
     // Visualizza: i lati (fissati o nascosti), i problemi e, nella schermata, la vista centrale.
     const view: MenuItem[] = [
-      { id: 'pin-left', label: t('ed.menu.pinLeft'), toggle: 'check', checked: this.dock.pinned.left(), disabled: mode === 'theme', run: () => this.dock.togglePin('left') },
-      { id: 'pin-right', label: t('ed.menu.pinRight'), toggle: 'check', checked: this.dock.pinned.right(), run: () => this.dock.togglePin('right') },
+      ...(MODE_PANELS[mode].map((panel) => ({
+        id: 'pin-' + panel,
+        label: this.i18n.t('ed.menu.pinPanel', { name: t(PANEL_LABELS[panel]) }),
+        toggle: 'check' as const,
+        checked: this.dock.pinned[panel](),
+        run: () => this.dock.togglePin(panel),
+      })) satisfies MenuItem[]),
       { id: 'issues', label: t('ed.menu.issues'), toggle: 'check', checked: this.showIssues(), run: () => this.showIssues.update((v) => !v) },
     ];
     if (mode === 'screen') {

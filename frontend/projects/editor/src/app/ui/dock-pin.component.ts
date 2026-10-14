@@ -2,11 +2,11 @@ import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core
 import { I18n } from 'core';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
-import { Dock, type DockSide } from './dock';
+import { Dock, type DockPanel } from './dock';
 
 /**
- * Puntina nella barra del titolo di un riquadro, come negli IDE: fissa il lato o lo nasconde automaticamente. Diritta
- * quando il lato è fissato, coricata quando si nasconde da solo.
+ * Puntina nella barra del titolo di un riquadro, come negli IDE: fissa il riquadro nel suo lato o lo nasconde
+ * automaticamente (linguetta sul bordo). Diritta quando è fissato, coricata quando si nasconde da solo.
  */
 @Component({
   selector: 'ed-dock-pin',
@@ -23,23 +23,23 @@ import { Dock, type DockSide } from './dock';
     button.unpinned .anticon { transform: rotate(-90deg); }
   `,
   template: `
-    @let pinned = dock.pinned[side()]();
+    @let pinned = dock.pinned[panel()]();
     <button
       type="button"
       class="pin"
       [class.unpinned]="!pinned"
-      [attr.data-dock-pin]="side()"
+      [attr.data-dock-pin]="panel()"
       [attr.aria-pressed]="pinned"
       [attr.aria-label]="i18n.t('ed.dock.pin')"
       [nz-tooltip]="i18n.t(pinned ? 'ed.dock.autoHide' : 'ed.dock.pin')"
-      (click)="dock.togglePin(side())"
+      (click)="dock.togglePin(panel())"
     >
       <span nz-icon nzType="pushpin" [nzTheme]="pinned ? 'fill' : 'outline'" aria-hidden="true"></span>
     </button>
   `,
 })
 export class DockPinComponent {
-  readonly side = input.required<DockSide>();
+  readonly panel = input.required<DockPanel>();
   protected readonly dock = inject(Dock);
   protected readonly i18n = inject(I18n);
 }

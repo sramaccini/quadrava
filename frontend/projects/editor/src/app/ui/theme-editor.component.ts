@@ -10,6 +10,7 @@ import { THEME, ThemeStore } from '../model/theme-store';
 import { PreviewFrameComponent } from '../preview/preview-frame.component';
 import { previewState, type PreviewState } from '../preview/protocol';
 import { Dock } from './dock';
+import { DockPanelDirective } from './dock-panel.directive';
 import { DockPinComponent } from './dock-pin.component';
 import { DockSideComponent } from './dock-side.component';
 import { FieldsComponent } from './fields.component';
@@ -22,14 +23,12 @@ import { JsonViewComponent } from './json-view.component';
  */
 @Component({
   selector: 'ed-theme-editor',
-  imports: [DockPinComponent, DockSideComponent, FieldsComponent, JsonViewComponent, PreviewFrameComponent, NzIconModule, NzTabsModule],
+  imports: [DockPanelDirective, DockPinComponent, DockSideComponent, FieldsComponent, JsonViewComponent, PreviewFrameComponent, NzIconModule, NzTabsModule],
   providers: [{ provide: DocumentState, useExisting: ThemeStore }],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { '[class.right-auto]': '!dock.pinned.right()', '[style.--ed-right.px]': "dock.pinned.right() ? dock.width('right', 360) : null" },
+  host: { '[style.--ed-right.px]': "dock.columnWidth('right', ['inspector'], 360)" },
   styles: `
     :host { display: grid; grid-template-columns: minmax(0, 1fr) var(--ed-right, 360px); min-height: 0; }
-    /* Lato sganciato (ed-dock-side): la colonna si riduce alla striscia della linguetta. */
-    :host(.right-auto) { --ed-right: 30px; }
     .center { display: flex; flex-direction: column; min-height: 0; }
     .center nz-tabs { padding: 0 12px; background: var(--lc-color-surface); }
     .center ::ng-deep .ant-tabs-nav { margin: 0; }
@@ -52,9 +51,9 @@ import { JsonViewComponent } from './json-view.component';
         <ed-preview-frame [state]="state()" [class.off]="view() === 'json'" />
       </div>
     </main>
-    <ed-dock-side side="right" [width]="360" [label]="i18n.t('ed.dock.right')" [tabs]="[{ label: i18n.t('ed.inspector'), icon: 'control' }]">
-      <section class="ed-panel" [attr.aria-label]="i18n.t('ed.inspector')">
-        <h2 class="ed-panel-title"><span nz-icon nzType="control" aria-hidden="true"></span>{{ i18n.t('ed.inspector') }}<ed-dock-pin side="right" /></h2>
+    <ed-dock-side side="right" [width]="360" [panels]="[{ id: 'inspector', label: i18n.t('ed.inspector'), icon: 'control' }]">
+      <section class="ed-panel" edDockPanel="inspector" [attr.aria-label]="i18n.t('ed.inspector')">
+        <h2 class="ed-panel-title"><span nz-icon nzType="control" aria-hidden="true"></span>{{ i18n.t('ed.inspector') }}<ed-dock-pin panel="inspector" /></h2>
         <div class="ed-panel-body">
           <p class="note">{{ i18n.t('ed.theme.note') }}</p>
           <ed-fields [path]="[]" [fields]="fields" />

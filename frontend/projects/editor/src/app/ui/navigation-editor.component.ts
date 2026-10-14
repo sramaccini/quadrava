@@ -18,6 +18,7 @@ import { previewState, type PreviewState } from '../preview/protocol';
 import { navProperties, navTargetAt, NavigationStore, type NavTarget } from '../model/navigation-store';
 import { fallbackText } from '../model/templates';
 import { Dock } from './dock';
+import { DockPanelDirective } from './dock-panel.directive';
 import { DockPinComponent } from './dock-pin.component';
 import { DockSideComponent } from './dock-side.component';
 import { FieldsComponent } from './fields.component';
@@ -44,6 +45,7 @@ interface NavItem {
   imports: [
     FormsModule,
     NgTemplateOutlet,
+    DockPanelDirective,
     DockPinComponent,
     DockSideComponent,
     FieldsComponent,
@@ -62,10 +64,8 @@ interface NavItem {
   styleUrl: './navigation-editor.component.scss',
   templateUrl: './navigation-editor.component.html',
   host: {
-    '[class.left-auto]': '!dock.pinned.left()',
-    '[class.right-auto]': '!dock.pinned.right()',
-    '[style.--ed-left.px]': "dock.pinned.left() ? dock.width('left', 280) : null",
-    '[style.--ed-right.px]': "dock.pinned.right() ? dock.width('right', 320) : null",
+    '[style.--ed-left.px]': "dock.columnWidth('left', ['outline'], 280)",
+    '[style.--ed-right.px]': "dock.columnWidth('right', ['inspector'], 320)",
   },
 })
 export class NavigationEditorComponent {

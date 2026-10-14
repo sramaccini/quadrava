@@ -1,7 +1,4 @@
 :host { display: grid; grid-template-columns: var(--ed-left, 280px) minmax(0, 1fr) var(--ed-right, 320px); min-height: 0; }
-/* Lati sganciati (ed-dock-side): la colonna si riduce alla striscia delle linguette. */
-:host(.left-auto) { --ed-left: 30px; }
-:host(.right-auto) { --ed-right: 30px; }
 .left .ed-panel, .right .ed-panel { flex: 1 1 0; }
 .left { border-right: 1px solid var(--lc-color-border); }
 .right { border-left: 1px solid var(--lc-color-border); }

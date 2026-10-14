@@ -169,94 +169,118 @@ describe('editor delle schermate', () => {
     expect(item('open-example')).toBeNull();
   });
 
-  it('lati nascosti automaticamente come negli IDE: striscia con le linguette, apertura al passaggio, chiusura all’uscita', async () => {
+  it('riquadri nascosti uno per uno come negli IDE: linguetta del riquadro, gli altri restano nella colonna', async () => {
     const left = el.querySelector('ed-dock-side.left') as HTMLElement;
     const right = el.querySelector('ed-dock-side.right') as HTMLElement;
-    const pin = (side: string) => el.querySelector(`[data-dock-pin="${side}"]`) as HTMLButtonElement;
-    const isOpen = (aside: HTMLElement) => aside.classList.contains('open');
-    expect(pin('left').getAttribute('aria-pressed')).toBe('true');
+    const editor = el.querySelector('.editor') as HTMLElement;
+    const pin = (panel: string) => el.querySelector(`[data-dock-pin="${panel}"]`) as HTMLButtonElement;
+    const panel = (id: string) => el.querySelector(`[data-dock-panel="${id}"]`) as HTMLElement;
+    const tabs = (side: HTMLElement) => [...side.querySelectorAll('.strip .tab')].map((t) => t.textContent?.trim());
+    expect([pin('palette'), pin('outline'), pin('inspector')].map((b) => b.getAttribute('aria-pressed'))).toEqual(['true', 'true', 'true']);
     expect(left.querySelector('.strip')).toBeNull();
+    expect(editor.style.getPropertyValue('--ed-left')).toBe('280px');
 
-    // Sganciato: resta aperto finché il mouse non esce, poi rimane la striscia con le linguette.
-    pin('left').click();
+    // Solo la struttura si nasconde: linguetta «Struttura», i componenti restano nella colonna (più larga della striscia).
+    pin('outline').click();
     await settle();
-    expect(el.querySelector('.editor')?.classList.contains('left-auto')).toBe(true);
-    expect([...left.querySelectorAll('.strip .tab')].map((t) => t.textContent?.trim())).toEqual(['Componenti', 'Struttura']);
-    expect(isOpen(left)).toBe(true);
+    expect(tabs(left)).toEqual(['Struttura']);
+    expect(panel('palette').classList.contains('ed-docked')).toBe(true);
+    expect(panel('outline').classList.contains('ed-floating')).toBe(true);
+    expect(editor.style.getPropertyValue('--ed-left')).toBe('310px');
+    // Appena sganciata resta aperta finché il mouse non esce.
+    expect(panel('outline').classList.contains('ed-open')).toBe(true);
     left.dispatchEvent(new Event('pointerleave'));
-    await until(() => !isOpen(left), 'chiusura all’uscita del mouse');
-    expect(JSON.parse(localStorage.getItem('lc.editor.dock')!)).toEqual({ left: false, right: true });
+    await until(() => !panel('outline').classList.contains('ed-open'), 'chiusura all’uscita del mouse');
+    expect(JSON.parse(localStorage.getItem('lc.editor.dock')!)).toEqual({ pins: { palette: true, outline: false, inspector: true } });
 
-    // Al passaggio si apre dopo una breve attesa; un passaggio veloce non apre nulla.
-    left.dispatchEvent(new Event('pointerenter'));
+    // Anche i componenti: resta la sola striscia, con le due linguette nell'ordine dei riquadri.
+    pin('palette').click();
+    await settle();
     left.dispatchEvent(new Event('pointerleave'));
+    await until(() => !panel('palette').classList.contains('ed-open'), 'chiusura');
+    expect(tabs(left)).toEqual(['Componenti', 'Struttura']);
+    expect(editor.style.getPropertyValue('--ed-left')).toBe('30px');
+    expect(left.querySelector('.splitter')).toBeNull();
+
+    // Il passaggio su una linguetta apre solo il suo riquadro (dopo una breve attesa; un passaggio veloce no).
+    const tab = (id: string) => left.querySelector(`.tab[data-dock-tab="${id}"]`) as HTMLButtonElement;
+    tab('outline').dispatchEvent(new Event('pointerenter'));
+    tab('outline').dispatchEvent(new Event('pointerleave'));
     await new Promise((r) => setTimeout(r, 250));
     await settle();
-    expect(isOpen(left)).toBe(false);
+    expect(panel('outline').classList.contains('ed-open')).toBe(false);
     left.dispatchEvent(new Event('pointerenter'));
-    await until(() => isOpen(left), 'apertura al passaggio');
-    expect(left.querySelector('.tab')?.getAttribute('aria-expanded')).toBe('true');
+    tab('outline').dispatchEvent(new Event('pointerenter'));
+    await until(() => panel('outline').classList.contains('ed-open'), 'apertura al passaggio');
+    expect(panel('palette').classList.contains('ed-open')).toBe(false);
+    expect(tab('outline').getAttribute('aria-expanded')).toBe('true');
+    // Passando all'altra linguetta si apre l'altro riquadro.
+    tab('palette').dispatchEvent(new Event('pointerenter'));
+    await until(() => panel('palette').classList.contains('ed-open') && !panel('outline').classList.contains('ed-open'), 'cambio di riquadro');
 
-    // Trascinare un componente della tavolozza verso l'anteprima chiude il lato.
+    // Trascinare un componente della tavolozza verso l'anteprima chiude il riquadro.
     el.querySelector('ed-palette button[data-type="section"]')!.dispatchEvent(new Event('dragstart', { bubbles: true }));
-    await until(() => !isOpen(left), 'chiusura durante il trascinamento');
+    await until(() => !panel('palette').classList.contains('ed-open'), 'chiusura durante il trascinamento');
 
     // A destra: con il fuoco in un campo resta aperto anche con il mouse fuori; Esc lo chiude e torna alla linguetta.
-    pin('right').click();
+    pin('inspector').click();
     await settle();
-    const field = right.querySelector('.dock input, .dock textarea') as HTMLInputElement;
+    const field = panel('inspector').querySelector('input, textarea') as HTMLInputElement;
     field.focus();
     right.dispatchEvent(new Event('pointerleave'));
     await new Promise((r) => setTimeout(r, 500));
     await settle();
-    expect(isOpen(right)).toBe(true);
+    expect(panel('inspector').classList.contains('ed-open')).toBe(true);
     field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     await settle();
-    expect(isOpen(right)).toBe(false);
-    expect(document.activeElement?.getAttribute('data-dock-tab')).toBe('right');
+    expect(panel('inspector').classList.contains('ed-open')).toBe(false);
+    expect(document.activeElement?.getAttribute('data-dock-tab')).toBe('inspector');
     // Un clic sulla linguetta apre subito.
     (document.activeElement as HTMLButtonElement).click();
     await settle();
-    expect(isOpen(right)).toBe(true);
+    expect(panel('inspector').classList.contains('ed-open')).toBe(true);
 
-    // Rifissati, i lati tornano colonne; la scelta resta per la visita successiva.
-    pin('right').click();
-    pin('left').click();
+    // Rifissati, tornano nelle colonne; la scelta resta per la visita successiva.
+    pin('inspector').click();
+    pin('palette').click();
+    pin('outline').click();
     await settle();
     expect(left.querySelector('.strip')).toBeNull();
     expect(right.querySelector('.strip')).toBeNull();
-    expect(JSON.parse(localStorage.getItem('lc.editor.dock')!)).toEqual({ left: true, right: true });
+    expect(JSON.parse(localStorage.getItem('lc.editor.dock')!)).toEqual({ pins: { palette: true, outline: true, inspector: true } });
   });
 
-  it('lati nascosti automaticamente anche in navigazione e tema; la scelta vale per il lato in tutte le modalità', async () => {
+  it('riquadri nascosti anche in navigazione e tema; la scelta vale per il riquadro in tutte le modalità', async () => {
     const mode = async (label: string) => {
       ([...el.querySelectorAll<HTMLElement>('.mode .ant-segmented-item')].find((i) => i.textContent?.includes(label)) as HTMLElement).click();
       await settle();
     };
     await mode('Navigazione');
     const nav = el.querySelector('ed-navigation-editor') as HTMLElement;
-    expect([...nav.querySelectorAll('[data-dock-pin]')].map((p) => p.getAttribute('data-dock-pin'))).toEqual(['left', 'right']);
-    (nav.querySelector('[data-dock-pin="left"]') as HTMLButtonElement).click();
+    expect([...nav.querySelectorAll('[data-dock-pin]')].map((p) => p.getAttribute('data-dock-pin'))).toEqual(['outline', 'inspector']);
+    (nav.querySelector('[data-dock-pin="outline"]') as HTMLButtonElement).click();
     await settle();
     const left = nav.querySelector('ed-dock-side.left') as HTMLElement;
-    expect(nav.classList.contains('left-auto')).toBe(true);
+    const outline = nav.querySelector('[data-dock-panel="outline"]') as HTMLElement;
+    expect(nav.style.getPropertyValue('--ed-left')).toBe('30px');
     expect([...left.querySelectorAll('.strip .tab')].map((t) => t.textContent?.trim())).toEqual(['Struttura']);
     left.dispatchEvent(new Event('pointerleave'));
-    await until(() => !left.classList.contains('open'), 'chiusura in navigazione');
+    await until(() => !outline.classList.contains('ed-open'), 'chiusura in navigazione');
     left.dispatchEvent(new Event('pointerenter'));
-    await until(() => left.classList.contains('open'), 'apertura in navigazione');
+    left.querySelector('.tab')!.dispatchEvent(new Event('pointerenter'));
+    await until(() => outline.classList.contains('ed-open'), 'apertura in navigazione');
 
-    // Tema: il lato destro; sganciato qui, è sganciato anche nella schermata.
+    // Tema: le proprietà; nascoste qui, lo sono anche nella schermata. La struttura nascosta in navigazione lo è anche lì.
     await mode('Tema');
     const theme = el.querySelector('ed-theme-editor') as HTMLElement;
-    (theme.querySelector('[data-dock-pin="right"]') as HTMLButtonElement).click();
+    (theme.querySelector('[data-dock-pin="inspector"]') as HTMLButtonElement).click();
     await settle();
-    expect(theme.classList.contains('right-auto')).toBe(true);
+    expect(theme.style.getPropertyValue('--ed-right')).toBe('30px');
     expect([...theme.querySelectorAll('ed-dock-side.right .strip .tab')].map((t) => t.textContent?.trim())).toEqual(['Proprietà']);
     await mode('Schermata');
-    expect(el.querySelector('.editor')?.classList.contains('right-auto')).toBe(true);
-    expect(el.querySelector('.editor')?.classList.contains('left-auto')).toBe(true);
-    expect(el.querySelector('ed-dock-side.right .strip')).not.toBeNull();
+    expect([...el.querySelectorAll('ed-dock-side.left .strip .tab')].map((t) => t.textContent?.trim())).toEqual(['Struttura']);
+    expect([...el.querySelectorAll('ed-dock-side.right .strip .tab')].map((t) => t.textContent?.trim())).toEqual(['Proprietà']);
+    expect((el.querySelector('.editor') as HTMLElement).style.getPropertyValue('--ed-right')).toBe('30px');
   });
 
   it('tavolozza: la ricerca filtra mentre si scrive, Invio aggiunge il primo trovato, Esc svuota', async () => {
@@ -435,18 +459,19 @@ describe('editor delle schermate', () => {
     (el.querySelector('ed-menu-bar [data-menu="view"]') as HTMLButtonElement).click();
     await settle();
     const item = (id: string) => el.querySelector(`ed-menu-bar [data-item="${id}"]`) as HTMLButtonElement;
-    expect([item('pin-left').getAttribute('role'), item('pin-left').getAttribute('aria-checked')]).toEqual(['menuitemcheckbox', 'true']);
+    expect([...el.querySelectorAll('ed-menu-bar [data-item^="pin-"] .label')].map((l) => l.textContent)).toEqual(['«Componenti» fissato', '«Struttura» fissato', '«Proprietà» fissato']);
+    expect([item('pin-palette').getAttribute('role'), item('pin-palette').getAttribute('aria-checked')]).toEqual(['menuitemcheckbox', 'true']);
     expect([item('view-preview').getAttribute('role'), item('view-preview').getAttribute('aria-checked')]).toEqual(['menuitemradio', 'true']);
-    item('pin-right').click();
+    item('pin-inspector').click();
     await settle();
-    expect(el.querySelector('.editor')?.classList.contains('right-auto')).toBe(true);
+    expect((el.querySelector('.editor') as HTMLElement).style.getPropertyValue('--ed-right')).toBe('30px');
     await menuCommand('view', 'issues');
     expect(el.querySelector('ed-issues')).toBeNull();
     await menuCommand('view', 'view-json');
     expect(store.view()).toBe('json');
     (el.querySelector('ed-menu-bar [data-menu="view"]') as HTMLButtonElement).click();
     await settle();
-    expect([item('pin-right').getAttribute('aria-checked'), item('issues').getAttribute('aria-checked'), item('view-json').getAttribute('aria-checked')]).toEqual(['false', 'false', 'true']);
+    expect([item('pin-inspector').getAttribute('aria-checked'), item('issues').getAttribute('aria-checked'), item('view-json').getAttribute('aria-checked')]).toEqual(['false', 'false', 'true']);
     document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }));
     await settle();
     // F1 apre le scorciatoie.

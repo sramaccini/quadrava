@@ -30,7 +30,21 @@ body { background: var(--lc-color-background); color: var(--lc-color-on-surface)
 .ed-panel-title .anticon { font-size: 14px; }
 .ed-panel-body { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 10px 12px; }
 
-/* Con i pannelli impilati (finestre strette) i lati non si nascondono: niente puntine. */
+/*
+ * Riquadri sganciati (edDockPanel, vedi Dock): fuori dalla colonna, galleggiano sopra l'area centrale accanto alla
+ * striscia delle linguette, visibili solo quando sono aperti. Chiusi restano nel documento ma trasparenti e senza eventi.
+ */
+.ed-floating {
+  position: absolute !important; top: 8px; bottom: 8px; z-index: 31; width: var(--ed-dock-width); max-height: none !important;
+  box-shadow: 0 6px 24px rgb(0 0 0 / 22%); border-radius: var(--lc-radius);
+  opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 0.12s ease, transform 0.12s ease, visibility 0s linear 0.12s;
+}
+ed-dock-side.left .ed-floating { left: calc(var(--ed-dock-strip) + 6px); transform: translateX(-8px); }
+ed-dock-side.right .ed-floating { right: calc(var(--ed-dock-strip) + 6px); transform: translateX(8px); }
+ed-dock-side .ed-floating.ed-open { opacity: 1; visibility: visible; pointer-events: auto; transform: none; transition: opacity 0.12s ease, transform 0.12s ease; }
+
+/* Con i pannelli impilati (finestre strette) i riquadri non si nascondono: niente puntine, tutti al loro posto. */
 @media (max-width: 1100px) {
   ed-dock-pin { display: none !important; }
+  .ed-floating { position: static !important; width: auto; box-shadow: none; opacity: 1; visibility: visible; pointer-events: auto; transform: none !important; }
 }

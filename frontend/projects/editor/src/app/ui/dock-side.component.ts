@@ -1,19 +1,21 @@
-import { ChangeDetectionStrategy, Component, ElementRef, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, input } from '@angular/core';
 import { I18n } from 'core';
 import { NzIconModule } from 'ng-zorro-antd/icon';
-import { DOCK_MAX_WIDTH, DOCK_MIN_WIDTH, Dock, type DockSide } from './dock';
+import { DOCK_MAX_WIDTH, DOCK_MIN_WIDTH, DOCK_STRIP, Dock, PANEL_SIDE, type DockPanel, type DockSide } from './dock';
 
-/** Una linguetta della striscia: il riquadro che il lato contiene. */
+/** Un riquadro del lato: la sua linguetta quando è nascosto. */
 export interface DockTab {
+  id: DockPanel;
   label: string;
   icon: string;
 }
 
 /**
- * Un lato dell'editor (schermata, navigazione, tema) che si può nascondere automaticamente, come negli IDE (vedi
- * `Dock`): fissato mostra i suoi riquadri; sganciato si riduce alla striscia delle linguette e i riquadri si aprono
- * sopra l'area centrale. Chiusi restano nel documento (trasparenti e senza eventi): un trascinamento partito dalla
- * tavolozza continua anche se il lato si chiude. Il contenitore riduce la colonna con la classe `<lato>-auto`.
+ * Un lato dell'editor (schermata, navigazione, tema) con i suoi riquadri, come negli IDE (vedi \`Dock\`). I riquadri
+ * fissati stanno nella colonna; quelli sganciati hanno una linguetta sulla striscia del bordo e, aperti, galleggiano
+ * sopra l'area centrale (gli elementi dei riquadri hanno \`edDockPanel\`). Chiusi restano nel documento (trasparenti e
+ * senza eventi): un trascinamento partito dalla tavolozza continua anche se il riquadro si chiude. La larghezza della
+ * colonna la decide il contenitore con \`Dock.columnWidth\`.
  */
 @Component({
   selector: 'ed-dock-side',
@@ -23,9 +25,11 @@ export interface DockTab {
     role: 'complementary',
     '[class.left]': "side() === 'left'",
     '[class.right]': "side() === 'right'",
-    '[class.auto]': '!dock.pinned[side()]()',
-    '[class.open]': 'dock.isOpen(side())',
+    '[class.has-hidden]': 'hidden().length > 0',
+    '[class.all-hidden]': 'hidden().length === panels().length',
+    '[class.open]': 'dock.openSide() === side()',
     '[style.--ed-dock-width.px]': 'dock.width(side(), width())',
+    '[style.--ed-dock-strip.px]': 'strip',
     '(pointerenter)': 'dock.pointer(side(), true)',
     '(pointerleave)': 'dock.pointer(side(), false)',
     '(keydown.escape)': 'escape()',
@@ -34,20 +38,18 @@ export interface DockTab {
     :host { position: relative; display: flex; min-height: 0; overflow: hidden; }
     :host(.right) { flex-direction: row-reverse; }
     .dock { flex: 1; min-width: 0; }
-    :host(.auto) { z-index: 30; overflow: visible; }
+    :host(.has-hidden) { z-index: 30; overflow: visible; }
+    :host(.all-hidden) .dock { flex: 0 0 0; padding: 0; overflow: visible; }
     .strip { flex: none; display: flex; flex-direction: column; gap: 2px; width: 30px; padding: 6px 0; background: var(--lc-color-surface); }
+    :host(.left) .strip { border-right: 1px solid var(--lc-color-border); }
+    :host(.right) .strip { border-left: 1px solid var(--lc-color-border); }
+    :host(.all-hidden) .strip { border: 0; }
     .tab {
       display: flex; align-items: center; gap: 6px; padding: 10px 0; border: 0; border-radius: var(--lc-radius); background: none;
       color: var(--lc-color-muted); font: inherit; font-size: 12px; font-weight: 600; writing-mode: vertical-rl; cursor: pointer;
     }
     .tab:hover, .tab[aria-expanded='true'] { color: var(--lc-color-primary); background: color-mix(in srgb, var(--lc-color-primary) 10%, transparent); }
     .tab:focus-visible { outline: 2px solid var(--lc-color-primary); outline-offset: -2px; }
-    :host(.auto) .dock {
-      position: absolute; top: 0; bottom: 0; display: flex; width: var(--ed-dock-width); box-shadow: 0 6px 24px rgb(0 0 0 / 22%);
-      opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 0.12s ease, transform 0.12s ease, visibility 0s linear 0.12s;
-    }
-    :host(.left.auto) .dock { left: 30px; transform: translateX(-8px); }
-    :host(.right.auto) .dock { right: 30px; transform: translateX(8px); }
     /* Bordo interno da trascinare per cambiare la larghezza (doppio clic: larghezza prevista). */
     .splitter { position: absolute; top: 0; bottom: 0; z-index: 5; width: 7px; cursor: col-resize; touch-action: none; }
     :host(.left) .splitter { right: -4px; }
@@ -55,26 +57,34 @@ export interface DockTab {
     .splitter::after { content: ''; position: absolute; top: 0; bottom: 0; left: 3px; width: 1px; background: transparent; transition: background 0.1s; }
     .splitter:hover::after, .splitter.dragging::after, .splitter:focus-visible::after { background: var(--lc-color-primary); width: 2px; left: 2px; }
     .splitter:focus-visible { outline: none; }
-    :host(.auto.open) .dock { opacity: 1; visibility: visible; pointer-events: auto; transform: none; transition: opacity 0.12s ease, transform 0.12s ease; }
-    /* Finestre strette: niente lati nascosti, si vedono sempre (le puntine spariscono, vedi styles.scss). */
+    /* Finestre strette: niente riquadri nascosti, si vedono sempre (vedi anche styles.scss). */
     @media (max-width: 1100px) {
-      :host(.auto) { overflow: hidden; }
+      :host(.has-hidden) { overflow: hidden; }
       .strip, .splitter { display: none; }
-      :host(.auto) .dock { position: static; width: auto; box-shadow: none; opacity: 1; visibility: visible; pointer-events: auto; transform: none; }
+      :host(.all-hidden) .dock { flex: 1; padding: 8px; }
     }
   `,
   template: `
-    @if (!dock.pinned[side()]()) {
-      <!-- Lato nascosto automaticamente: la striscia con le linguette, che aprono il lato sopra l'area centrale. -->
-      <div class="strip" role="group" [attr.aria-label]="label()">
-        @for (tab of tabs(); track tab.label) {
-          <button type="button" class="tab" [attr.data-dock-tab]="side()" [attr.aria-expanded]="dock.isOpen(side())" [attr.aria-controls]="'ed-dock-' + side()" (click)="dock.toggle(side())">
+    @if (hidden().length) {
+      <!-- Riquadri nascosti automaticamente: una linguetta ciascuno, che apre il suo riquadro sopra l'area centrale. -->
+      <div class="strip" role="group" [attr.aria-label]="i18n.t('ed.dock.hidden')">
+        @for (tab of hidden(); track tab.id) {
+          <button
+            type="button"
+            class="tab"
+            [attr.data-dock-tab]="tab.id"
+            [attr.aria-expanded]="dock.isOpen(tab.id)"
+            [attr.aria-controls]="'ed-panel-' + tab.id"
+            (pointerenter)="dock.hoverTab(tab.id, true)"
+            (pointerleave)="dock.hoverTab(tab.id, false)"
+            (click)="dock.toggle(tab.id)"
+          >
             <span nz-icon [nzType]="tab.icon" aria-hidden="true"></span><span class="tab-label">{{ tab.label }}</span>
           </button>
         }
       </div>
     }
-    @if (dock.pinned[side()]()) {
+    @if (hidden().length < panels().length) {
       <div
         class="splitter"
         role="separator"
@@ -97,15 +107,16 @@ export interface DockTab {
 })
 export class DockSideComponent {
   readonly side = input.required<DockSide>();
-  /** Linguette della striscia, una per riquadro. */
-  readonly tabs = input.required<DockTab[]>();
-  /** Nome della striscia per i lettori di schermo. */
-  readonly label = input('');
-  /** Larghezza del lato aperto sopra l'area centrale (la stessa della colonna quando è fissato). */
+  /** I riquadri del lato, nell'ordine in cui stanno (le linguette di quelli nascosti seguono lo stesso ordine). */
+  readonly panels = input.required<DockTab[]>();
+  /** Larghezza prevista dei riquadri (fissati, e aperti sopra l'area centrale). */
   readonly width = input(300);
   protected readonly dock = inject(Dock);
   protected readonly i18n = inject(I18n);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  protected readonly strip = DOCK_STRIP;
+  /** I riquadri nascosti (con la linguetta). */
+  protected readonly hidden = computed(() => this.panels().filter((p) => !this.dock.pinned[p.id]()));
 
   protected readonly min = DOCK_MIN_WIDTH;
   protected readonly max = DOCK_MAX_WIDTH;
@@ -147,31 +158,31 @@ export class DockSideComponent {
   }
 
   /**
-   * Il fuoco entra in un campo del lato (si sta scrivendo): resta aperto anche se il mouse esce. Un pulsante (la
-   * puntina, un componente della tavolozza, un nodo della struttura) non lo trattiene.
+   * Il fuoco entra in un campo del lato (si sta scrivendo): il riquadro aperto resta aperto anche se il mouse esce.
+   * Un pulsante (la puntina, un componente della tavolozza, un nodo della struttura) non lo trattiene.
    */
   protected focusIn(event: FocusEvent): void {
     this.dock.focus(this.side(), isEditable(event.target));
   }
 
-  /** Il fuoco esce dal lato: si chiude, se anche il mouse è fuori. */
+  /** Il fuoco esce dal lato: il riquadro aperto si chiude, se anche il mouse è fuori. */
   protected focusOut(event: FocusEvent): void {
     const area = event.currentTarget as HTMLElement;
     if (!(event.relatedTarget instanceof Node && area.contains(event.relatedTarget))) this.dock.blur(this.side());
   }
 
-  /** Esc chiude il lato aperto e riporta il fuoco alla sua linguetta. */
+  /** Esc chiude il riquadro aperto e riporta il fuoco alla sua linguetta. */
   protected escape(): void {
-    const side = this.side();
-    if (this.dock.pinned[side]() || this.dock.open() !== side) return;
-    this.dock.hide(side);
-    this.host.nativeElement.querySelector<HTMLElement>('.tab')?.focus();
+    const open = this.dock.open();
+    if (!open || PANEL_SIDE[open] !== this.side()) return;
+    this.dock.hide();
+    this.host.nativeElement.querySelector<HTMLElement>(`.tab[data-dock-tab="${open}"]`)?.focus();
   }
 
-  /** Un componente trascinato dalla tavolozza verso l'anteprima: il lato si chiude per lasciare libero il disegno. */
+  /** Un componente trascinato dalla tavolozza aperta sopra l'anteprima: il riquadro si chiude per lasciare libero il disegno. */
   protected dragStart(event: DragEvent): void {
+    if (this.dock.open() !== 'palette' || !(event.target instanceof Element) || !event.target.closest('ed-palette')) return;
     const side = this.side();
-    if (this.dock.pinned[side]() || !(event.target instanceof Element) || !event.target.closest('ed-palette')) return;
     setTimeout(() => this.dock.dragAway(side));
   }
 }

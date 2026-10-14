@@ -55,7 +55,7 @@ const GROUPS: { key: string; types: string[] }[] = [
   `,
   template: `
     <section class="ed-panel" [attr.aria-label]="i18n.t('ed.palette')">
-      <h2 class="ed-panel-title"><span nz-icon nzType="appstore" aria-hidden="true"></span>{{ i18n.t('ed.palette') }}<ed-dock-pin side="left" /></h2>
+      <h2 class="ed-panel-title"><span nz-icon nzType="appstore" aria-hidden="true"></span>{{ i18n.t('ed.palette') }}<ed-dock-pin panel="palette" /></h2>
       <div class="ed-panel-body">
       <input
         class="search"
