@@ -1,4 +1,10 @@
-<div class="editor" [class.left-auto]="mode() === 'screen' && !dock.pinned.left()" [class.right-auto]="mode() === 'screen' && !dock.pinned.right()">
+<div
+  class="editor"
+  [class.left-auto]="mode() === 'screen' && !dock.pinned.left()"
+  [class.right-auto]="mode() === 'screen' && !dock.pinned.right()"
+  [style.--ed-left.px]="dock.pinned.left() ? dock.width('left', 280) : null"
+  [style.--ed-right.px]="dock.pinned.right() ? dock.width('right', 320) : null"
+>
   <header class="toolbar">
     <h1 class="brand"><lc-kinetix-wordmark icon="brand/kinetix-studio-icon-small.svg" product="Studio" /></h1>
     <!-- Menu come nelle applicazioni desktop: File (nuova, esempi, importa, esporta, registro) e Modifica. -->
@@ -71,6 +77,31 @@
     <ed-inspector />
   </ed-dock-side>
   }
+
+  <!-- Aiuto: scorciatoie da tastiera (anche F1) e informazioni. -->
+  <nz-modal [nzVisible]="showShortcuts()" [nzTitle]="i18n.t('ed.menu.shortcuts')" [nzFooter]="null" [nzWidth]="560" (nzOnCancel)="showShortcuts.set(false)">
+    <ng-container *nzModalContent>
+      <div class="shortcuts">
+        @for (group of shortcutGroups; track group.group) {
+          <h3>{{ i18n.t(group.group) }}</h3>
+          <dl>
+            @for (entry of group.keys; track $index) {
+              <dt><kbd>{{ entry[0].startsWith('ed.') ? i18n.t(entry[0]) : entry[0] }}</kbd></dt>
+              <dd>{{ i18n.t(entry[1]) }}</dd>
+            }
+          </dl>
+        }
+      </div>
+    </ng-container>
+  </nz-modal>
+  <nz-modal [nzVisible]="showAbout()" [nzTitle]="i18n.t('ed.menu.about')" [nzFooter]="null" [nzWidth]="420" (nzOnCancel)="showAbout.set(false)">
+    <ng-container *nzModalContent>
+      <div class="about">
+        <lc-kinetix-wordmark icon="brand/kinetix-studio-icon-small.svg" product="Studio" />
+        <p>{{ i18n.t('ed.about.text') }}</p>
+      </div>
+    </ng-container>
+  </nz-modal>
 
   <nz-drawer [nzVisible]="showRegistry()" [nzTitle]="i18n.t('ed.registry.title')" [nzWidth]="380" (nzOnClose)="showRegistry.set(false)">
     <ng-container *nzDrawerContent>

@@ -25,7 +25,7 @@ import { JsonViewComponent } from './json-view.component';
   imports: [DockPinComponent, DockSideComponent, FieldsComponent, JsonViewComponent, PreviewFrameComponent, NzIconModule, NzTabsModule],
   providers: [{ provide: DocumentState, useExisting: ThemeStore }],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { '[class.right-auto]': '!dock.pinned.right()' },
+  host: { '[class.right-auto]': '!dock.pinned.right()', '[style.--ed-right.px]': "dock.pinned.right() ? dock.width('right', 360) : null" },
   styles: `
     :host { display: grid; grid-template-columns: minmax(0, 1fr) var(--ed-right, 360px); min-height: 0; }
     /* Lato sganciato (ed-dock-side): la colonna si riduce alla striscia della linguetta. */

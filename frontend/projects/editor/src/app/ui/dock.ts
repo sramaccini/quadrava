@@ -7,6 +7,9 @@ const STORAGE_KEY = 'lc.editor.dock';
 export const DOCK_OPEN_DELAY = 150;
 /** Attesa prima di chiudere quando il mouse esce (si può rientrare senza che si chiuda). */
 export const DOCK_CLOSE_DELAY = 400;
+/** Limiti della larghezza di un lato trascinandone il bordo. */
+export const DOCK_MIN_WIDTH = 200;
+export const DOCK_MAX_WIDTH = 640;
 
 /**
  * I lati dell'editor (componenti e struttura a sinistra, proprietà a destra) come le finestre degli IDE classici:
@@ -18,6 +21,8 @@ export const DOCK_CLOSE_DELAY = 400;
 @Injectable({ providedIn: 'root' })
 export class Dock {
   readonly pinned = { left: signal(true), right: signal(true) };
+  /** Larghezza scelta trascinando il bordo (null: quella prevista dalla modalità). */
+  readonly widths = { left: signal<number | null>(null), right: signal<number | null>(null) };
   /** Il lato non fissato aperto in questo momento (al più uno). */
   readonly open = signal<DockSide | null>(null);
   private readonly hovered = { left: false, right: false };
@@ -26,14 +31,20 @@ export class Dock {
 
   constructor() {
     try {
-      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}') as Partial<Record<DockSide, boolean>>;
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}') as Partial<Record<DockSide, boolean> & Record<'leftWidth' | 'rightWidth', number>>;
       if (saved.left === false) this.pinned.left.set(false);
       if (saved.right === false) this.pinned.right.set(false);
+      if (typeof saved.leftWidth === 'number') this.widths.left.set(clampWidth(saved.leftWidth));
+      if (typeof saved.rightWidth === 'number') this.widths.right.set(clampWidth(saved.rightWidth));
     } catch {
       // Valori illeggibili: lati fissati.
     }
     effect(() => {
-      const state = { left: this.pinned.left(), right: this.pinned.right() };
+      const state: Record<string, boolean | number> = { left: this.pinned.left(), right: this.pinned.right() };
+      const leftWidth = this.widths.left();
+      const rightWidth = this.widths.right();
+      if (leftWidth !== null) state['leftWidth'] = leftWidth;
+      if (rightWidth !== null) state['rightWidth'] = rightWidth;
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       } catch {
@@ -41,6 +52,16 @@ export class Dock {
       }
     });
     inject(DestroyRef).onDestroy(() => clearTimeout(this.timer));
+  }
+
+  /** Larghezza del lato: quella scelta, altrimenti quella prevista (`fallback`). */
+  width(side: DockSide, fallback: number): number {
+    return this.widths[side]() ?? fallback;
+  }
+
+  /** Nuova larghezza (entro i limiti); null torna a quella prevista. */
+  resize(side: DockSide, width: number | null): void {
+    this.widths[side].set(width === null ? null : clampWidth(width));
   }
 
   isOpen(side: DockSide): boolean {
@@ -107,4 +128,8 @@ export class Dock {
   private settle(side: DockSide): void {
     if (!this.hovered[side] && !this.focused[side]) this.hide(side);
   }
+}
+
+function clampWidth(width: number): number {
+  return Math.round(Math.min(DOCK_MAX_WIDTH, Math.max(DOCK_MIN_WIDTH, width)));
 }

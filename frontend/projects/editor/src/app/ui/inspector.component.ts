@@ -1,10 +1,10 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { I18n } from 'core';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { DockPinComponent } from './dock-pin.component';
-import { fromPointer, getIn, isObject, samePath, toPointer } from '../model/doc-ops';
+import { fromPointer, getIn, isObject, samePath, toPointer, type Path } from '../model/doc-ops';
 import { EditorStore } from '../model/editor-store';
-import { definitionProperties, nodeProperties, screenProperties, type PropertyInfo } from '../model/schema-info';
+import { definitionProperties, nodeProperties, ownerOf, screenProperties, targetAt, type PropertyInfo } from '../model/schema-info';
 import { FieldsComponent } from './fields.component';
 
 /** Proprietà raccolte nel gruppo «Condizioni e aiuto», chiuso se nessuna è impostata. */
@@ -12,7 +12,9 @@ const CONDITIONS = new Set(['visibleIf', 'hiddenIf', 'enabledIf', 'readOnlyIf', 
 
 /**
  * Pannello delle proprietà dell'elemento selezionato (schermata, nodo, scheda o passo). I campi vengono dallo schema
- * (vedi `ed-fields`); le condizioni stanno in un gruppo a parte, aperto solo se ne è impostata una.
+ * (vedi `ed-fields`); le condizioni stanno in un gruppo a parte, aperto solo se ne è impostata una. In cima il
+ * percorso dell'elemento (un clic risale a un contenitore) e un filtro per nome delle proprietà, che riparte vuoto a
+ * ogni cambio di selezione.
  */
 @Component({
   selector: 'ed-inspector',
@@ -24,6 +26,28 @@ const CONDITIONS = new Set(['visibleIf', 'hiddenIf', 'enabledIf', 'readOnlyIf', 
 export class InspectorComponent {
   protected readonly store = inject(EditorStore);
   protected readonly i18n = inject(I18n);
+  /** Filtro delle proprietà per nome. */
+  protected readonly filter = signal('');
+
+  constructor() {
+    effect(() => {
+      this.store.selection();
+      this.filter.set('');
+    });
+  }
+
+  /** Percorso dalla schermata all'elemento selezionato, attraverso i contenitori (nodi, schede, passi). */
+  protected readonly crumbs = computed(() => {
+    const doc = this.store.doc();
+    const paths: Path[] = [];
+    for (let path = this.store.selection(); path.length; path = ownerOf(doc, path.slice(0, -1))) paths.unshift(path);
+    paths.unshift([]);
+    return paths.map((path) => {
+      const target = targetAt(doc, path);
+      const label = !target || target.kind === 'screen' ? this.i18n.t('ed.screen') : target.kind === 'node' ? this.i18n.t('ed.type.' + target.type) : this.i18n.t('ed.' + target.kind);
+      return { path, key: path.join('/'), label };
+    });
+  });
 
   protected readonly heading = computed(() => {
     const target = this.store.target();
@@ -44,8 +68,13 @@ export class InspectorComponent {
     return all.filter((info) => info.kind !== 'children');
   });
 
-  protected readonly main = computed(() => this.properties().filter((p) => !CONDITIONS.has(p.name)));
-  protected readonly conditions = computed(() => this.properties().filter((p) => CONDITIONS.has(p.name)));
+  /** Proprietà che passano il filtro (nome della proprietà, senza badare a maiuscole). */
+  private readonly filtered = computed(() => {
+    const query = this.filter().trim().toLowerCase();
+    return query ? this.properties().filter((p) => p.name.toLowerCase().includes(query)) : this.properties();
+  });
+  protected readonly main = computed(() => this.filtered().filter((p) => !CONDITIONS.has(p.name)));
+  protected readonly conditions = computed(() => this.filtered().filter((p) => CONDITIONS.has(p.name)));
 
   /** Il gruppo delle condizioni si apre da solo se una condizione è impostata o ha problemi. */
   protected readonly conditionsOpen = computed(() => {

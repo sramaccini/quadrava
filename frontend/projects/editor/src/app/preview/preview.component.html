@@ -16,6 +16,18 @@
       </button>
     }
   </div>
+  <nz-select
+    class="language"
+    nzSize="small"
+    [ngModel]="locale()"
+    (ngModelChange)="chooseLocale($event)"
+    [attr.aria-label]="i18n.t('ed.preview.language')"
+    [nz-tooltip]="i18n.t('ed.preview.language')"
+  >
+    @for (l of store.languages(); track l) {
+      <nz-option [nzValue]="l" [nzLabel]="l.toUpperCase()" />
+    }
+  </nz-select>
   <label class="switch">
     <nz-switch nzSize="small" [ngModel]="grantAll()" (ngModelChange)="setGrantAll($event)" />
     {{ i18n.t('ed.preview.grantAll') }}

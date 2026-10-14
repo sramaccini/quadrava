@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, linkedSignal, signal } from '@angular/core';
 import { dropPoint } from '../model/drop';
 import type { DropZone, ResizeProperty } from './protocol';
 import { FormsModule } from '@angular/forms';
@@ -6,6 +6,7 @@ import { I18n } from 'core';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzIconModule } from 'ng-zorro-antd/icon';
+import { NzSelectModule } from 'ng-zorro-antd/select';
 import { NzSwitchModule } from 'ng-zorro-antd/switch';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import type { ScreenDefinition } from 'schema';
@@ -32,7 +33,7 @@ const WIDTH_ICONS: Record<string, string> = { desktop: 'desktop', tablet: 'table
  */
 @Component({
   selector: 'ed-preview',
-  imports: [FormsModule, JsonFieldComponent, PreviewFrameComponent, NzAlertModule, NzButtonModule, NzIconModule, NzSwitchModule, NzTooltipModule],
+  imports: [FormsModule, JsonFieldComponent, PreviewFrameComponent, NzAlertModule, NzButtonModule, NzIconModule, NzSelectModule, NzSwitchModule, NzTooltipModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './preview.component.scss',
   templateUrl: './preview.component.html',
@@ -61,6 +62,10 @@ export class PreviewComponent {
   );
   protected readonly frameWidth = computed(() => WIDTHS[this.width()]);
   protected readonly params = signal<Record<string, unknown>>({});
+  /** Lingua scelta per l'anteprima: segue quella dell'editor finché non se ne sceglie un'altra (anche una aggiunta nei testi). */
+  private readonly chosenLocale = linkedSignal(() => this.i18n.locale());
+  /** Lingua dell'anteprima: quella scelta, se esiste ancora (una lingua tolta nei testi fa tornare a quella dell'editor). */
+  protected readonly locale = computed(() => (this.store.languages().includes(this.chosenLocale()) ? this.chosenLocale() : this.i18n.locale()));
   protected readonly showLog = signal(false);
   protected readonly showParams = signal(false);
   protected readonly stale = computed(() => this.store.definition() === null && this.shown() !== null);
@@ -80,7 +85,7 @@ export class PreviewComponent {
       granted: this.grantAll() ? null : [],
       samples: this.store.samples(),
       params: this.params(),
-      locale: this.i18n.locale(),
+      locale: this.locale(),
       translations: this.store.translations(),
       selectedId: this.selectedId(),
       selectMode: this.selectMode(),
@@ -132,6 +137,10 @@ export class PreviewComponent {
   protected picked(id: string): void {
     const path = this.store.pathOfId(id);
     if (path) this.store.select(path);
+  }
+
+  protected chooseLocale(locale: string): void {
+    this.chosenLocale.set(locale);
   }
 
   protected reload(): void {

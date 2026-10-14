@@ -1,4 +1,5 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { vi } from 'vitest';
 import layout from '../../public/examples/vetrina-layout.json';
 import { I18n } from 'core';
@@ -8,6 +9,7 @@ import { EditorStore } from './model/editor-store';
 import { getIn as getAt, type Json } from './model/doc-ops';
 import { NavigationStore } from './model/navigation-store';
 import { EDITOR_REDIRECT } from './model/registry-client';
+import { PreviewComponent } from './preview/preview.component';
 import { isToPreview, type PreviewState } from './preview/protocol';
 
 const FILES: Record<string, unknown> = { 'examples/index.json': ['vetrina-layout'], 'examples/vetrina-layout.json': layout };
@@ -120,7 +122,7 @@ describe('editor delle schermate', () => {
 
   it('barra dei menu: Modifica agisce sulla selezione, File apre un esempio dal sottomenu', async () => {
     const bar = el.querySelector('ed-menu-bar [role="menubar"]') as HTMLElement;
-    expect([...bar.querySelectorAll(':scope > li > [role="menuitem"]')].map((b) => b.textContent?.trim())).toEqual(['File', 'Modifica']);
+    expect([...bar.querySelectorAll(':scope > li > [role="menuitem"]')].map((b) => b.textContent?.trim())).toEqual(['File', 'Modifica', 'Visualizza', 'Aiuto']);
     const item = (id: string) => el.querySelector(`ed-menu-bar [data-item="${id}"]`) as HTMLButtonElement | null;
 
     // Senza selezione i comandi della selezione sono spenti e non fanno nulla.
@@ -255,6 +257,202 @@ describe('editor delle schermate', () => {
     expect(el.querySelector('.editor')?.classList.contains('right-auto')).toBe(true);
     expect(el.querySelector('.editor')?.classList.contains('left-auto')).toBe(true);
     expect(el.querySelector('ed-dock-side.right .strip')).not.toBeNull();
+  });
+
+  it('tavolozza: la ricerca filtra mentre si scrive, Invio aggiunge il primo trovato, Esc svuota', async () => {
+    const search = el.querySelector('[data-palette-search]') as HTMLInputElement;
+    type(search, 'griglia');
+    await settle();
+    expect([...el.querySelectorAll('ed-palette button[data-type]')].map((b) => b.getAttribute('data-type'))).toEqual(['grid']);
+    search.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    await settle();
+    expect(outline()).toEqual(['Griglia']);
+    type(search, 'zzz');
+    await settle();
+    expect(el.querySelector('ed-palette .none')?.textContent).toContain('Nessun componente');
+    search.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    await settle();
+    expect(el.querySelectorAll('ed-palette button[data-type]').length).toBeGreaterThan(30);
+  });
+
+  it('struttura: rami da chiudere e aprire, ricerca, menu contestuale con «Avvolgi in» anche da tastiera', async () => {
+    const add = async (type: string) => {
+      (el.querySelector(`ed-palette button[data-type="${type}"]`) as HTMLButtonElement).click();
+      await settle();
+    };
+    await add('section');
+    await add('box');
+    await add('text');
+    store.select([]);
+    await settle();
+    await add('alert');
+    expect(outline()).toEqual(['Sezione', 'Box (riga o colonna)', 'Testo', 'Messaggio']);
+    // Chiudere e aprire un ramo; comprimi ed espandi tutto.
+    const twisty = () => el.querySelector('ed-outline .twisty') as HTMLButtonElement;
+    expect(twisty().getAttribute('aria-expanded')).toBe('true');
+    twisty().click();
+    await settle();
+    expect(outline()).toEqual(['Sezione', 'Messaggio']);
+    (el.querySelector('[data-outline="expand"]') as HTMLButtonElement).click();
+    await settle();
+    (el.querySelector('[data-outline="collapse"]') as HTMLButtonElement).click();
+    await settle();
+    expect(outline()).toEqual(['Sezione', 'Messaggio']);
+    // Selezionare un nodo dentro un ramo chiuso lo riapre.
+    store.select(['components', 0, 'components', 0, 'components', 0]);
+    await settle();
+    expect(outline()).toEqual(['Sezione', 'Box (riga o colonna)', 'Testo', 'Messaggio']);
+    // Ricerca: i nodi trovati con i rami che li contengono.
+    const search = el.querySelector('ed-outline .search') as HTMLInputElement;
+    type(search, 'testo');
+    await settle();
+    expect(outline()).toEqual(['Sezione', 'Box (riga o colonna)', 'Testo']);
+    expect(el.querySelector('ed-outline .line.match .label')?.textContent).toBe('Testo');
+    type(search, 'niente');
+    await settle();
+    expect(el.querySelector('ed-outline .empty')?.textContent).toContain('Nessun nodo');
+    type(search, '');
+    await settle();
+    // Menu contestuale da tastiera (Maiusc+F10) sul testo: «Avvolgi in una griglia».
+    const row = el.querySelector('ed-outline .row[data-path="components/0/components/0/components/0"]') as HTMLButtonElement;
+    row.dispatchEvent(new KeyboardEvent('keydown', { key: 'F10', shiftKey: true, bubbles: true }));
+    await settle();
+    const menu = el.querySelector('ed-context-menu [role="menu"]') as HTMLElement;
+    expect(menu).not.toBeNull();
+    expect(document.activeElement?.getAttribute('data-item')).toBe('cut');
+    expect(menu.querySelector('[data-item="paste"]')?.getAttribute('aria-disabled')).toBe('true');
+    menu.dispatchEvent(new KeyboardEvent('keydown', { key: 'End' }));
+    expect(document.activeElement?.getAttribute('data-item')).toBe('select-parent');
+    menu.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
+    expect(document.activeElement?.getAttribute('data-item')).toBe('wrap-grid');
+    (document.activeElement as HTMLButtonElement).click();
+    await settle();
+    expect(el.querySelector('ed-context-menu')).toBeNull();
+    expect(outline()).toEqual(['Sezione', 'Box (riga o colonna)', 'Griglia', 'Testo', 'Messaggio']);
+    expect(store.selection()).toEqual(['components', 0, 'components', 0, 'components', 0]);
+    // Tasto destro sul messaggio: Esc chiude senza fare nulla; «Seleziona il contenitore» risale.
+    const line = el.querySelector('ed-outline .row[data-path="components/1"]')!.parentElement as HTMLElement;
+    line.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 50, clientY: 50 }));
+    await settle();
+    expect(store.selection()).toEqual(['components', 1]);
+    el.querySelector('ed-context-menu [role="menu"]')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    await settle();
+    expect(el.querySelector('ed-context-menu')).toBeNull();
+    store.select(['components', 0, 'components', 0]);
+    await settle();
+    el.querySelector('ed-outline .row[data-path="components/0/components/0"]')!.parentElement!.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+    await settle();
+    (el.querySelector('ed-context-menu [data-item="select-parent"]') as HTMLButtonElement).click();
+    await settle();
+    expect(store.selection()).toEqual(['components', 0]);
+    expect(store.issues()).toEqual([]);
+  });
+
+  it('proprietà: percorso dell’elemento con i contenitori cliccabili e filtro per nome', async () => {
+    (el.querySelector('ed-palette button[data-type="section"]') as HTMLButtonElement).click();
+    await settle();
+    (el.querySelector('ed-palette button[data-type="table"]') as HTMLButtonElement).click();
+    await settle();
+    const crumbs = () => [...el.querySelectorAll('ed-inspector .crumbs li')].map((li) => li.textContent?.trim());
+    expect(crumbs()).toEqual(['Schermata', 'Sezione', 'Tabella']);
+    expect(el.querySelector('ed-inspector .crumbs [aria-current="location"]')?.textContent).toBe('Tabella');
+    const filter = el.querySelector('[data-prop-filter]') as HTMLInputElement;
+    type(filter, 'sour');
+    await settle();
+    expect([...el.querySelectorAll('ed-inspector ed-fields > .prop')].map((p) => p.getAttribute('data-prop'))).toEqual(['source']);
+    type(filter, 'xyz');
+    await settle();
+    expect(el.querySelector('ed-inspector .empty')?.textContent).toContain('Nessuna proprietà');
+    // Un clic sul contenitore nel percorso lo seleziona; il filtro riparte vuoto.
+    ([...el.querySelectorAll<HTMLButtonElement>('ed-inspector .crumbs button')].find((b) => b.textContent === 'Sezione') as HTMLButtonElement).click();
+    await settle();
+    expect(store.selection()).toEqual(['components', 0]);
+    expect((el.querySelector('[data-prop-filter]') as HTMLInputElement).value).toBe('');
+    expect(crumbs()).toEqual(['Schermata', 'Sezione']);
+  });
+
+  it('menu Visualizza (lati, problemi, vista) e Aiuto (scorciatoie, anche con F1; informazioni)', async () => {
+    (el.querySelector('ed-menu-bar [data-menu="view"]') as HTMLButtonElement).click();
+    await settle();
+    const item = (id: string) => el.querySelector(`ed-menu-bar [data-item="${id}"]`) as HTMLButtonElement;
+    expect([item('pin-left').getAttribute('role'), item('pin-left').getAttribute('aria-checked')]).toEqual(['menuitemcheckbox', 'true']);
+    expect([item('view-preview').getAttribute('role'), item('view-preview').getAttribute('aria-checked')]).toEqual(['menuitemradio', 'true']);
+    item('pin-right').click();
+    await settle();
+    expect(el.querySelector('.editor')?.classList.contains('right-auto')).toBe(true);
+    await menuCommand('view', 'issues');
+    expect(el.querySelector('ed-issues')).toBeNull();
+    await menuCommand('view', 'view-json');
+    expect(store.view()).toBe('json');
+    (el.querySelector('ed-menu-bar [data-menu="view"]') as HTMLButtonElement).click();
+    await settle();
+    expect([item('pin-right').getAttribute('aria-checked'), item('issues').getAttribute('aria-checked'), item('view-json').getAttribute('aria-checked')]).toEqual(['false', 'false', 'true']);
+    document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    await settle();
+    // F1 apre le scorciatoie.
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'F1', bubbles: true }));
+    await until(() => !!document.querySelector('.shortcuts dt'), 'scorciatoie');
+    expect([...document.querySelectorAll('.shortcuts h3')].map((h) => h.textContent)).toEqual(['Generali', 'Struttura (fuori dai campi di testo)', 'Barra dei menu', 'Pannelli e anteprima']);
+    expect([...document.querySelectorAll('.shortcuts kbd')].map((k) => k.textContent)).toContain('Maiusc+F10');
+    await menuCommand('help', 'about');
+    await until(() => !!document.querySelector('.about lc-kinetix-wordmark'), 'informazioni');
+  });
+
+  it('lati ridimensionabili: il bordo si sposta da tastiera e si ricorda; Invio torna alla larghezza prevista', async () => {
+    const splitter = el.querySelector('ed-dock-side.left .splitter') as HTMLElement;
+    expect([splitter.getAttribute('role'), splitter.getAttribute('aria-valuenow')]).toEqual(['separator', '280']);
+    splitter.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    splitter.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    await settle();
+    expect(splitter.getAttribute('aria-valuenow')).toBe('312');
+    expect((el.querySelector('.editor') as HTMLElement).style.getPropertyValue('--ed-left')).toBe('312px');
+    expect(JSON.parse(localStorage.getItem('lc.editor.dock')!).leftWidth).toBe(312);
+    splitter.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
+    await settle();
+    expect(splitter.getAttribute('aria-valuenow')).toBe('640');
+    // A destra le frecce sono invertite: verso l'area centrale (sinistra) il lato cresce.
+    const right = el.querySelector('ed-dock-side.right .splitter') as HTMLElement;
+    right.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+    await settle();
+    expect(right.getAttribute('aria-valuenow')).toBe('336');
+    splitter.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    await settle();
+    expect(splitter.getAttribute('aria-valuenow')).toBe('280');
+  });
+
+  it('traduzioni: si aggiunge una lingua (con il codice controllato), ha la sua colonna e l’anteprima la può usare', async () => {
+    (el.querySelector('ed-palette button[data-type="text"]') as HTMLButtonElement).click();
+    await settle();
+    store.makeTranslatable(['components', 0, 'text']);
+    tab(3);
+    await settle();
+    const code = el.querySelector('[data-add-language]') as HTMLInputElement;
+    code.value = 'Francese';
+    code.form!.dispatchEvent(new Event('submit', { cancelable: true }));
+    await settle();
+    expect(el.querySelector('ed-texts .error')?.textContent).toContain('Codice non valido');
+    code.value = 'fr';
+    code.dispatchEvent(new Event('input'));
+    code.form!.dispatchEvent(new Event('submit', { cancelable: true }));
+    await settle();
+    expect([...el.querySelectorAll('ed-texts th.locale')].map((th) => th.textContent?.trim())).toEqual(['IT', 'EN', 'FR']);
+    const fr = el.querySelector('ed-texts input[aria-label$=" fr"]') as HTMLInputElement;
+    expect(fr.getAttribute('aria-invalid')).toBe('true');
+    fr.value = 'Nouveau texte';
+    fr.dispatchEvent(new Event('change'));
+    await settle();
+    expect(store.translations()['fr']).toEqual({ 'nuova_schermata.nuovo_testo': 'Nouveau texte' });
+    // L'anteprima in francese.
+    tab(0);
+    await settle();
+    expect(el.querySelector('ed-preview nz-select.language')?.getAttribute('aria-label')).toBe('Lingua dell’anteprima');
+    await untilState('ed-preview', (st) => st.locale === 'it' && !!st.translations['fr'], 'traduzioni francesi nell’anteprima');
+    // Scelta la lingua aggiunta, l'anteprima la usa; tolta, torna a quella dell'editor.
+    const preview = fixture.debugElement.query(By.directive(PreviewComponent)).componentInstance as unknown as { chooseLocale(l: string): void };
+    preview.chooseLocale('fr');
+    await untilState('ed-preview', (st) => st.locale === 'fr', 'anteprima in francese');
+    store.removeLanguage('fr');
+    await untilState('ed-preview', (st) => st.locale === 'it', 'di nuovo in italiano');
   });
 
   it('un errore si vede nelle proprietà, nell’elenco dei problemi e nella struttura; l’anteprima resta all’ultima versione valida', async () => {

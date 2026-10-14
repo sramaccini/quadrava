@@ -140,6 +140,55 @@ describe('EditorStore', () => {
     expect(store.issues()).toEqual([]);
   });
 
+  it('lingue delle traduzioni: si aggiungono (codici validi), contano nelle mancanti, si importano e si tolgono', () => {
+    expect(store.languages()).toEqual(['it', 'en']);
+    expect(store.addLanguage('FR')).toBe(false);
+    expect(store.addLanguage('francese')).toBe(false);
+    expect(store.addLanguage('en')).toBe(false);
+    expect(store.addLanguage('fr')).toBe(true);
+    expect(store.addLanguage('pt-BR')).toBe(true);
+    store.addNode('text');
+    const key = store.makeTranslatable(['components', 0, 'text'])!;
+    const entry = { path: ['components', 0, 'text'], property: 'text', value: '', kind: 'key' as const, key, fallback: 'Nuovo testo' };
+    expect(store.missingLocales(entry)).toEqual(['en', 'fr', 'pt-BR']);
+
+    // Import: il formato di «Esporta traduzioni»; una lingua nuova si aggiunge.
+    expect(store.importTranslations({ fr: { [key]: 'Nouveau texte' }, de: { [key]: 'Neuer Text' } })).toBe(2);
+    expect(store.languages()).toEqual(['it', 'en', 'fr', 'pt-BR', 'de']);
+    expect(store.missingLocales(entry)).toEqual(['en', 'pt-BR']);
+    expect(TestBed.inject(I18n).raw(key, 'de')).toBe('Neuer Text');
+    expect(store.importTranslations({ FR: { a: 'b' } })).toBeNull();
+    expect(store.importTranslations({ fr: { a: 1 } })).toBeNull();
+    expect(store.importTranslations(['x'])).toBeNull();
+
+    // La predefinita non si toglie; togliendo una lingua si perdono le sue traduzioni scritte qui.
+    expect(store.removeLanguage('it')).toBe(false);
+    expect(store.removeLanguage('de')).toBe(true);
+    expect(store.languages()).not.toContain('de');
+    expect(store.translations()['de']).toBeUndefined();
+    TestBed.tick();
+    expect(JSON.parse(localStorage.getItem('lc.editor.draft')!).languages).toEqual(['it', 'en', 'fr', 'pt-BR']);
+  });
+
+  it('avvolge un nodo in un contenitore nuovo, che ne prende la posizione nel contenitore di prima', () => {
+    store.addNode('grid');
+    store.addNode('text');
+    store.setValue(['components', 0, 'components', 0, 'span'], 2);
+    store.wrap(['components', 0, 'components', 0], 'section');
+    const wrapper = getIn(store.doc(), ['components', 0, 'components', 0]) as Record<string, Json>;
+    expect(wrapper).toMatchObject({ type: 'section', span: 2, components: [{ type: 'text' }] });
+    expect((wrapper['components'] as Record<string, Json>[])[0]['span']).toBeUndefined();
+    expect(store.selection()).toEqual(['components', 0, 'components', 0]);
+    expect(store.issues()).toEqual([]);
+    store.undo();
+    expect(getIn(store.doc(), ['components', 0, 'components', 0, 'type'])).toBe('text');
+    // Le schede e i passi non si avvolgono.
+    store.addNode('tabs');
+    const before = store.doc();
+    store.wrap(['components', 1, 'tabs', 0], 'box');
+    expect(store.doc()).toBe(before);
+  });
+
   it('salva la bozza nel browser e la riprende', () => {
     store.addNode('alert');
     TestBed.tick();

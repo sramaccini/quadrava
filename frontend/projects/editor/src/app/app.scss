@@ -47,3 +47,16 @@
   .right { border-left: 0; border-top: 1px solid var(--lc-color-border); }
   .right ed-inspector { flex: none; }
 }
+
+/* Aiuto: scorciatoie da tastiera e informazioni (le finestre stanno fuori dall'editor, quindi ::ng-deep). */
+::ng-deep .shortcuts h3 { margin: 14px 0 6px; font-size: 13px; font-weight: 600; }
+::ng-deep .shortcuts h3:first-child { margin-top: 0; }
+::ng-deep .shortcuts dl { display: grid; grid-template-columns: 210px 1fr; gap: 4px 16px; margin: 0; font-size: 13px; }
+::ng-deep .shortcuts dt { margin: 0; }
+::ng-deep .shortcuts dd { margin: 0; }
+::ng-deep .shortcuts kbd {
+  padding: 1px 6px; border: 1px solid var(--lc-color-border); border-bottom-width: 2px; border-radius: 4px;
+  background: var(--lc-color-background); font-family: inherit; font-size: 12px; white-space: nowrap;
+}
+::ng-deep .about { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; --kx-wordmark-size: 22px; }
+::ng-deep .about p { margin: 0; }

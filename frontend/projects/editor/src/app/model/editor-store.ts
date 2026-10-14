@@ -15,15 +15,21 @@ interface Draft {
   doc: Json;
   samples: Record<string, Json>;
   translations: Translations;
+  /** Lingue delle traduzioni (oltre a quelle con testi già scritti). */
+  languages?: string[];
 }
 
 /** Traduzioni scritte nell'editor: lingua → chiave → testo. */
 export type Translations = Record<string, Record<string, string>>;
 
-/** Lingue in cui l'editor fa scrivere le traduzioni (le stesse della demo). */
+/** Lingue di partenza delle traduzioni (quelle della demo); se ne possono aggiungere altre nel pannello «Testi». */
 export const EDITOR_LOCALES = ['it', 'en'];
+/** Codice di una lingua: due o tre lettere minuscole, con la variante del paese facoltativa (`pt-BR`). */
+export const LANGUAGE_CODE = /^[a-z]{2,3}(-[A-Z]{2})?$/;
 
 const DRAFT_KEY = 'lc.editor.draft';
+/** Proprietà che collocano un nodo nel suo contenitore: avvolgendolo passano al contenitore nuovo. */
+const WRAP_PLACEMENT = ['region', 'span', 'grow'];
 /** Nome di un data source: lo si scrive nelle espressioni e nei passi, quindi un identificativo semplice. */
 export const SOURCE_NAME = /^[A-Za-z][A-Za-z0-9_]*$/;
 
@@ -48,6 +54,11 @@ export class EditorStore extends DocumentState {
    * e intanto valgono già nell'anteprima.
    */
   readonly translations = signal<Translations>(this.draft?.translations ?? {});
+  /**
+   * Lingue in cui si scrivono le traduzioni: quelle della demo, quelle aggiunte e quelle che hanno già testi. La prima
+   * resta la predefinita (il ripiego scritto nel testo vale per lei).
+   */
+  readonly languages = signal<string[]>(mergeLanguages(this.draft?.languages ?? EDITOR_LOCALES, Object.keys(this.draft?.translations ?? {})));
 
   /** Il documento come schermata valida, oppure null se ha errori (l'anteprima mostra allora l'ultima versione valida). */
   readonly definition = computed<ScreenDefinition | null>(() => (this.errorCount() === 0 ? (this.doc() as unknown as ScreenDefinition) : null));
@@ -66,7 +77,7 @@ export class EditorStore extends DocumentState {
     // Le traduzioni della bozza valgono subito nell'anteprima.
     for (const [locale, messages] of Object.entries(this.translations())) this.i18n.addMessages(locale, messages);
     effect(() => {
-      const draft: Draft = { doc: this.doc(), samples: this.samples(), translations: this.translations() };
+      const draft: Draft = { doc: this.doc(), samples: this.samples(), translations: this.translations(), languages: this.languages() };
       try {
         localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
       } catch {
@@ -183,6 +194,27 @@ export class EditorStore extends DocumentState {
     return true;
   }
 
+  /**
+   * Avvolge un nodo in un contenitore nuovo (sezione, box, griglia) che prende il suo posto. Le proprietà che dicono
+   * dove sta il nodo nel contenitore di prima (`region`, `span`, `grow`) passano al contenitore nuovo.
+   */
+  wrap(path: Path, kind: 'section' | 'box' | 'grid'): void {
+    const doc = this.doc();
+    const node = getIn(doc, path);
+    if (targetAt(doc, path)?.kind !== 'node' || !isObject(node)) return;
+    const inner: JsonObject = { ...node };
+    const placement: JsonObject = {};
+    for (const key of WRAP_PLACEMENT) {
+      if (key in inner) {
+        placement[key] = inner[key];
+        delete inner[key];
+      }
+    }
+    const template = nodeTemplate(kind, (k) => this.t(k));
+    const wrapper: JsonObject = { id: freshId(doc, kind), ...template, ...placement, components: [inner] };
+    this.apply(setIn(doc, path, wrapper), { select: path });
+  }
+
   /** Nodo copiato o tagliato, da incollare nel punto di inserimento (anche in un altro contenitore). */
   readonly clipboard = signal<Json | null>(null);
 
@@ -253,7 +285,46 @@ export class EditorStore extends DocumentState {
   /** Lingue in cui manca la traduzione di un testo con chiave (nella predefinita basta il ripiego scritto nel testo). */
   missingLocales(entry: TextEntry): string[] {
     if (!entry.key) return [];
-    return EDITOR_LOCALES.filter((locale) => !this.translation(locale, entry.key!) && !(locale === this.i18n.defaultLocale() && entry.fallback));
+    return this.languages().filter((locale) => !this.translation(locale, entry.key!) && !(locale === this.i18n.defaultLocale() && entry.fallback));
+  }
+
+  /** Aggiunge una lingua per le traduzioni. Restituisce false se il codice non è valido o la lingua c'è già. */
+  addLanguage(code: string): boolean {
+    const locale = code.trim();
+    if (!LANGUAGE_CODE.test(locale) || this.languages().includes(locale)) return false;
+    this.languages.update((all) => [...all, locale]);
+    return true;
+  }
+
+  /** Toglie una lingua e le traduzioni scritte nell'editor per lei (la predefinita resta). */
+  removeLanguage(locale: string): boolean {
+    if (locale === this.i18n.defaultLocale() || !this.languages().includes(locale)) return false;
+    this.languages.update((all) => all.filter((l) => l !== locale));
+    this.translations.update(({ [locale]: _removed, ...rest }) => rest);
+    return true;
+  }
+
+  /**
+   * Importa traduzioni: `{ "<lingua>": { "<chiave>": "testo" } }` (il formato di «Esporta traduzioni»). Le lingue nuove
+   * si aggiungono; i testi sostituiscono quelli scritti nell'editor. Restituisce quanti testi sono stati letti, o null
+   * se il contenuto non ha questa forma (lingue con codici non validi o testi non di tipo stringa).
+   */
+  importTranslations(data: unknown): number | null {
+    if (!isObject(data as Json)) return null;
+    const entries = Object.entries(data as Record<string, unknown>);
+    const valid = entries.every(
+      ([locale, texts]) => LANGUAGE_CODE.test(locale) && isObject(texts as Json) && Object.values(texts as Record<string, unknown>).every((t) => typeof t === 'string'),
+    );
+    if (!valid || !entries.length) return null;
+    let count = 0;
+    for (const [locale, texts] of entries as [string, Record<string, string>][]) {
+      if (!this.languages().includes(locale)) this.languages.update((all) => [...all, locale]);
+      this.translations.update((all) => ({ ...all, [locale]: { ...all[locale], ...texts } }));
+      const nonEmpty = Object.fromEntries(Object.entries(texts).filter(([, t]) => t));
+      this.i18n.addMessages(locale, nonEmpty);
+      count += Object.keys(texts).length;
+    }
+    return count;
   }
 
   /** Testi da sistemare: semplici (non traducibili) o con traduzioni mancanti. */
@@ -355,8 +426,14 @@ function readDraft(): Draft | null {
     const parsed = JSON.parse(raw) as Draft;
     if (!isObject(parsed as unknown as Json) || parsed.doc === undefined) return null;
     const translations = isObject(parsed.translations as unknown as Json) ? parsed.translations : {};
-    return { doc: parsed.doc, samples: isObject(parsed.samples) ? parsed.samples : {}, translations };
+    const languages = Array.isArray(parsed.languages) ? parsed.languages.filter((l) => typeof l === 'string' && LANGUAGE_CODE.test(l)) : undefined;
+    return { doc: parsed.doc, samples: isObject(parsed.samples) ? parsed.samples : {}, translations, languages };
   } catch {
     return null;
   }
+}
+
+/** Lingue senza ripetizioni, nell'ordine: prima quelle indicate, poi le altre. */
+function mergeLanguages(first: readonly string[], more: readonly string[]): string[] {
+  return [...new Set([...first, ...more].filter((l) => LANGUAGE_CODE.test(l)))];
 }

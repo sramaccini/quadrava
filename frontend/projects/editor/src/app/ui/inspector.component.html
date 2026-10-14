@@ -2,7 +2,33 @@
   <h2 class="ed-panel-title"><span nz-icon nzType="control" aria-hidden="true"></span>{{ i18n.t('ed.inspector') }}<ed-dock-pin side="right" /></h2>
   <div class="ed-panel-body">
   @if (store.target()) {
+    @if (crumbs().length > 1) {
+      <!-- Dove sta l'elemento: un clic su un contenitore lo seleziona. -->
+      <nav class="crumbs" [attr.aria-label]="i18n.t('ed.crumbs')">
+        <ol>
+          @for (crumb of crumbs(); track crumb.key; let last = $last) {
+            <li>
+              @if (last) {
+                <span aria-current="location">{{ crumb.label }}</span>
+              } @else {
+                <button type="button" (click)="store.select(crumb.path)">{{ crumb.label }}</button>
+              }
+            </li>
+          }
+        </ol>
+      </nav>
+    }
     <p class="kind">{{ heading() }}</p>
+    <input
+      class="filter"
+      type="search"
+      data-prop-filter
+      [attr.aria-label]="i18n.t('ed.propFilter')"
+      [placeholder]="i18n.t('ed.propFilter')"
+      [value]="filter()"
+      (input)="filter.set($any($event.target).value)"
+      (keydown.escape)="filter.set('')"
+    />
     @if (generalIssues().length) {
       <ul class="issues" role="alert">
         @for (message of generalIssues(); track $index) {
@@ -11,8 +37,11 @@
       </ul>
     }
     <ed-fields [path]="store.selection()" [fields]="main()" />
+    @if (filter().trim() && !main().length && !conditions().length) {
+      <p class="empty">{{ i18n.t('ed.propNoMatch') }}</p>
+    }
     @if (conditions().length) {
-      <details class="conditions" [open]="conditionsOpen()">
+      <details class="conditions" [open]="conditionsOpen() || !!filter().trim()">
         <summary>{{ i18n.t('ed.conditions') }}</summary>
         @if (expressionHelp()) {
           <p class="help">{{ expressionHelp() }}</p>

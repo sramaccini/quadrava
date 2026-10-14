@@ -1,11 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { I18n, Notifier } from 'core';
+import { Confirmation, I18n, Notifier } from 'core';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzInputModule } from 'ng-zorro-antd/input';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 import { getIn, isObject, type Path } from '../model/doc-ops';
-import { EDITOR_LOCALES, EditorStore } from '../model/editor-store';
+import { EditorStore, LANGUAGE_CODE } from '../model/editor-store';
 import { ownerOf, targetAt } from '../model/schema-info';
 import { fallbackText } from '../model/templates';
 import { collectTexts, translatable, usedKeys, type TextEntry } from '../model/texts';
@@ -37,7 +37,12 @@ interface TextRow {
 export class TextsComponent {
   protected readonly store = inject(EditorStore);
   protected readonly i18n = inject(I18n);
-  protected readonly locales = EDITOR_LOCALES;
+  /** Lingue delle traduzioni (una colonna ciascuna). */
+  protected readonly locales = computed(() => this.store.languages());
+  protected readonly defaultLocale = computed(() => this.i18n.defaultLocale());
+  /** Perché la lingua scritta non si può aggiungere. */
+  protected readonly languageError = signal('');
+  private readonly confirmation = inject(Confirmation);
   private readonly client = inject(RegistryClient);
   private readonly notifier = inject(Notifier);
   /** Applicazione e ambiente scelti nel pannello del registro. */
@@ -53,7 +58,7 @@ export class TextsComponent {
       const target = targetAt(doc, owner);
       const kind = target?.kind === 'node' ? this.i18n.t('ed.type.' + target.type) : target ? this.i18n.t('ed.' + target.kind) : '';
       const values: Record<string, string> = {};
-      if (entry.key) for (const locale of this.locales) values[locale] = this.store.translation(locale, entry.key) ?? '';
+      if (entry.key) for (const locale of this.locales()) values[locale] = this.store.translation(locale, entry.key) ?? '';
       const missing = this.store.missingLocales(entry);
       return {
         entry,
@@ -100,7 +105,7 @@ export class TextsComponent {
   protected async saveToRegistry(): Promise<void> {
     this.registry = readRegistrySettings();
     const { appId, env } = this.registry;
-    const changed = Object.entries(this.store.translations()).filter(([locale, texts]) => (this.locales as readonly string[]).includes(locale) && Object.keys(texts).length > 0);
+    const changed = Object.entries(this.store.translations()).filter(([locale, texts]) => this.locales().includes(locale) && Object.keys(texts).length > 0);
     if (!appId || changed.length === 0) {
       this.notifier.toast(this.i18n.t(appId ? 'ed.texts.nothingToSave' : 'ed.texts.registryHint'));
       return;
@@ -129,11 +134,49 @@ export class TextsComponent {
     }
   }
 
+  /** Aggiunge la lingua scritta (codice come `fr` o `pt-BR`): una colonna nuova da compilare. */
+  protected addLanguage(input: HTMLInputElement): void {
+    const code = input.value.trim();
+    if (!code) return;
+    if (!LANGUAGE_CODE.test(code)) return this.languageError.set(this.i18n.t('ed.texts.languageInvalid'));
+    if (this.locales().includes(code)) return this.languageError.set(this.i18n.t('ed.texts.languageExists', { locale: code }));
+    this.store.addLanguage(code);
+    input.value = '';
+    this.notifier.toast(this.i18n.t('ed.texts.languageAdded', { locale: code }));
+  }
+
+  /** Toglie una lingua; se ha traduzioni scritte nell'editor chiede conferma (si perdono). */
+  protected async removeLanguage(locale: string): Promise<void> {
+    const written = Object.keys(this.store.translations()[locale] ?? {}).length;
+    if (written && !(await this.confirmation.confirm(this.i18n.t('ed.texts.removeLanguageConfirm', { locale, n: written })))) return;
+    this.store.removeLanguage(locale);
+  }
+
+  /**
+   * Importa un file di traduzioni: quello di «Esporta traduzioni» (`{ "<lingua>": { … } }`) oppure il catalogo di una
+   * lingua (`{ "<chiave>": "testo" }`) con la lingua nel nome del file (`fr.json`, `demo.fr.json`).
+   */
+  protected async importTranslations(input: HTMLInputElement): Promise<void> {
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    try {
+      const data = JSON.parse(await file.text()) as unknown;
+      const stem = file.name.replace(/\.json$/i, '').split('.').at(-1) ?? '';
+      const flat = isObject(data as never) && Object.values(data as Record<string, unknown>).every((v) => typeof v === 'string');
+      const count = this.store.importTranslations(flat && LANGUAGE_CODE.test(stem) ? { [stem]: data } : data);
+      if (count === null) throw new Error(this.i18n.t('ed.texts.importFormat'));
+      this.notifier.toast(this.i18n.t('ed.texts.imported', { n: count, name: file.name }));
+    } catch (e) {
+      this.notifier.toast(this.i18n.t('ed.loadFailed', { e: e instanceof Error ? e.message : String(e) }), 'error');
+    }
+  }
+
   /** Scarica le traduzioni delle chiavi usate dalla schermata, per lingua, da unire ai cataloghi. */
   protected exportTranslations(): void {
     const keys = [...usedKeys(collectTexts(this.store.doc()))].sort();
     const out: Record<string, Record<string, string>> = {};
-    for (const locale of this.locales) {
+    for (const locale of this.locales()) {
       out[locale] = {};
       for (const key of keys) {
         const text = this.store.translation(locale, key);

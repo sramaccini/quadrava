@@ -2,6 +2,8 @@
   <div class="head">
     <p class="intro">{{ i18n.t('ed.texts.intro') }}</p>
     <div class="head-actions">
+      <button nz-button nzSize="small" type="button" (click)="importInput.click()"><span nz-icon nzType="upload"></span>{{ i18n.t('ed.texts.import') }}</button>
+      <input #importInput type="file" accept="application/json,.json" hidden (change)="importTranslations(importInput)" />
       <button nz-button nzSize="small" type="button" (click)="exportTranslations()"><span nz-icon nzType="download"></span>{{ i18n.t('ed.texts.export') }}</button>
       <button
         nz-button
@@ -16,12 +18,44 @@
       </button>
     </div>
   </div>
+  <!-- Lingue delle traduzioni: la predefinita resta; le altre si tolgono, se ne aggiungono di nuove. -->
+  <div class="languages" role="group" [attr.aria-label]="i18n.t('ed.texts.languages')">
+    <span class="languages-label">{{ i18n.t('ed.texts.languages') }}</span>
+    @for (locale of locales(); track locale) {
+      <span class="language" [attr.data-language]="locale">
+        {{ locale }}
+        @if (locale === defaultLocale()) {
+          <span class="default">{{ i18n.t('ed.texts.defaultLanguage') }}</span>
+        } @else {
+          <button type="button" class="remove" (click)="removeLanguage(locale)" [attr.aria-label]="i18n.t('ed.texts.removeLanguage', { locale })" [title]="i18n.t('ed.texts.removeLanguage', { locale })">
+            <span nz-icon nzType="close" aria-hidden="true"></span>
+          </button>
+        }
+      </span>
+    }
+    <form class="add-language" (submit)="$event.preventDefault(); addLanguage(code)">
+      <input
+        #code
+        nz-input
+        nzSize="small"
+        data-add-language
+        [attr.aria-label]="i18n.t('ed.texts.languageCode')"
+        [placeholder]="i18n.t('ed.texts.languageCode')"
+        [attr.aria-invalid]="languageError() ? true : null"
+        (input)="languageError.set('')"
+      />
+      <button nz-button nzSize="small" type="submit"><span nz-icon nzType="plus"></span>{{ i18n.t('ed.texts.addLanguage') }}</button>
+      @if (languageError()) {
+        <span class="error" role="alert">{{ languageError() }}</span>
+      }
+    </form>
+  </div>
   <table>
     <thead>
       <tr>
         <th scope="col">{{ i18n.t('ed.texts.where') }}</th>
         <th scope="col">{{ i18n.t('ed.texts.text') }}</th>
-        @for (locale of locales; track locale) {
+        @for (locale of locales(); track locale) {
           <th scope="col" class="locale">{{ locale.toUpperCase() }}</th>
         }
       </tr>
@@ -53,7 +87,7 @@
               }
             }
           </td>
-          @for (locale of locales; track locale) {
+          @for (locale of locales(); track locale) {
             <td class="locale">
               @if (row.entry.kind === 'key') {
                 <input
@@ -72,7 +106,7 @@
         </tr>
       } @empty {
         <tr>
-          <td [attr.colspan]="2 + locales.length" class="empty">{{ i18n.t('ed.texts.none') }}</td>
+          <td [attr.colspan]="2 + locales().length" class="empty">{{ i18n.t('ed.texts.none') }}</td>
         </tr>
       }
     </tbody>

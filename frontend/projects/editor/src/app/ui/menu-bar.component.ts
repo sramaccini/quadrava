@@ -13,6 +13,9 @@ export interface MenuItem {
   children?: MenuItem[];
   /** Testo mostrato in un sottomenu vuoto. */
   emptyLabel?: string;
+  /** Voce con segno di spunta (`check`, si accende e si spegne) o scelta tra alternative (`radio`). */
+  toggle?: 'check' | 'radio';
+  checked?: boolean;
   run?: () => void;
 }
 
@@ -51,6 +54,7 @@ export interface Menu {
     /* Il sottomenu (gli esempi possono essere molti) scorre; il menu principale no, altrimenti taglierebbe il sottomenu. */
     .menu .menu { top: -5px; left: 100%; max-height: 60vh; overflow: auto; margin: 0 0 0 2px; }
     .entry { position: relative; }
+    .check { position: absolute; left: 9px; font-size: 11px; }
     .item { gap: 24px; padding: 5px 14px 5px 26px; font-size: 13px; }
     .item:not([aria-disabled='true']):hover, .item:not([aria-disabled='true']):focus, .item[aria-expanded='true'] {
       background: var(--lc-color-primary); color: var(--lc-color-on-primary);
@@ -99,10 +103,11 @@ export interface Menu {
           <button
             type="button"
             class="item"
-            role="menuitem"
+            [attr.role]="roleOf(item)"
             tabindex="-1"
             [attr.data-item]="item.id"
             [attr.data-level]="level"
+            [attr.aria-checked]="item.toggle ? !!item.checked : null"
             [attr.aria-disabled]="item.disabled ? 'true' : null"
             [attr.aria-haspopup]="item.children ? 'menu' : null"
             [attr.aria-expanded]="item.children ? sub() === item.id : null"
@@ -110,6 +115,9 @@ export interface Menu {
             (pointerenter)="hoverItem(item, level, $event)"
             (keydown)="itemKey($event, item, level)"
           >
+            @if (item.toggle && item.checked) {
+              <span class="check" aria-hidden="true">{{ item.toggle === 'radio' ? '●' : '✓' }}</span>
+            }
             <span class="label">{{ item.label }}</span>
             @if (item.shortcut) {
               <span class="shortcut" aria-hidden="true">{{ item.shortcut }}</span>
@@ -161,6 +169,10 @@ export class MenuBarComponent {
   private readonly injector = inject(Injector);
   /** Elemento che aveva il fuoco prima di aprire con il mouse: ci torna dopo un comando. */
   private returnFocus: HTMLElement | null = null;
+
+  protected roleOf(item: MenuItem): string {
+    return item.toggle === 'check' ? 'menuitemcheckbox' : item.toggle === 'radio' ? 'menuitemradio' : 'menuitem';
+  }
 
   protected toggle(index: number): void {
     if (this.open() === index) return this.close();

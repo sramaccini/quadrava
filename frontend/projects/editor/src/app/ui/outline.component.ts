@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, effect, inject, signal } from '@angular/core';
 import { I18n } from 'core';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzIconModule } from 'ng-zorro-antd/icon';
@@ -7,14 +7,20 @@ import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import { getIn, isObject, samePath, startsWith, type Json, type Path } from '../model/doc-ops';
 import { dropPoint, zoneAt, type DropZone } from '../model/drop';
 import { EditorStore } from '../model/editor-store';
-import { childSlots, containerItems, targetAt } from '../model/schema-info';
+import { childSlots, containerItems, ownerOf, targetAt } from '../model/schema-info';
+import { ContextMenuComponent } from './context-menu.component';
 import { DockPinComponent } from './dock-pin.component';
+import type { MenuItem } from './menu-bar.component';
 import { DRAG_NODE, DRAG_TYPE } from './palette.component';
 import { fallbackText } from '../model/templates';
 
 /** Una riga della struttura: un nodo, una scheda o un passo, con i propri figli. */
 export interface OutlineItem {
   path: Path;
+  /** Chiave stabile per ricordare i rami chiusi: l'identificativo del nodo, o il percorso. */
+  key: string;
+  /** Testo in cui cercare: tipo, etichetta, dettaglio, identificativo. */
+  search: string;
   kind: 'node' | 'tab' | 'step';
   type?: string;
   label: string;
@@ -37,7 +43,7 @@ const DETAIL_KEYS = ['title', 'label', 'text', 'source', 'bind'];
  */
 @Component({
   selector: 'ed-outline',
-  imports: [DockPinComponent, NgTemplateOutlet, NzButtonModule, NzIconModule, NzTooltipModule],
+  imports: [ContextMenuComponent, DockPinComponent, NgTemplateOutlet, NzButtonModule, NzIconModule, NzTooltipModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './outline.component.scss',
   templateUrl: './outline.component.html',
@@ -45,6 +51,23 @@ const DETAIL_KEYS = ['title', 'label', 'text', 'source', 'bind'];
 export class OutlineComponent {
   protected readonly store = inject(EditorStore);
   protected readonly i18n = inject(I18n);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  /** Rami chiusi (chiavi delle righe). */
+  protected readonly collapsed = signal<ReadonlySet<string>>(new Set());
+  /** Testo cercato nella struttura. */
+  protected readonly query = signal('');
+  /** Menu contestuale aperto: su quale riga e dove. */
+  protected readonly menu = signal<{ item: OutlineItem; x: number; y: number } | null>(null);
+
+  constructor() {
+    // Selezionando un nodo (anche dall'anteprima) i rami che lo contengono si aprono.
+    effect(() => {
+      const selection = this.store.selection();
+      const closed = this.collapsed();
+      const open = this.ancestors(this.items(), selection).filter((key) => closed.has(key));
+      if (open.length) this.collapsed.set(new Set([...closed].filter((key) => !open.includes(key))));
+    });
+  }
 
   protected readonly screenLabel = computed(() => {
     const doc = this.store.doc();
@@ -58,6 +81,136 @@ export class OutlineComponent {
     const doc = this.store.doc();
     return this.list(doc, ['components']);
   });
+
+  /** Le righe da mostrare: tutte, oppure quelle che corrispondono alla ricerca con i rami che le contengono. */
+  protected readonly shown = computed<OutlineItem[]>(() => {
+    const query = normalize(this.query().trim());
+    if (!query) return this.items();
+    const filter = (items: OutlineItem[]): OutlineItem[] =>
+      items.flatMap((item) => {
+        const children = filter(item.children);
+        return item.search.includes(query) || children.length ? [{ ...item, children }] : [];
+      });
+    return filter(this.items());
+  });
+
+  protected readonly searching = computed(() => this.query().trim() !== '');
+
+  /** Le righe che corrispondono alla ricerca (per evidenziarle). */
+  protected matches(item: OutlineItem): boolean {
+    const query = normalize(this.query().trim());
+    return query !== '' && item.search.includes(query);
+  }
+
+  /** Un ramo è aperto se non è stato chiuso; durante una ricerca sono tutti aperti. */
+  protected isOpen(item: OutlineItem): boolean {
+    return this.searching() || !this.collapsed().has(item.key);
+  }
+
+  protected toggle(item: OutlineItem): void {
+    const next = new Set(this.collapsed());
+    if (next.has(item.key)) next.delete(item.key);
+    else next.add(item.key);
+    this.collapsed.set(next);
+  }
+
+  protected collapseAll(): void {
+    const keys: string[] = [];
+    const visit = (items: OutlineItem[]) =>
+      items.forEach((item) => {
+        if (item.children.length) keys.push(item.key);
+        visit(item.children);
+      });
+    visit(this.items());
+    // Il ramo con l'elemento selezionato resta aperto.
+    const keep = this.ancestors(this.items(), this.store.selection());
+    this.collapsed.set(new Set(keys.filter((key) => !keep.includes(key))));
+  }
+
+  protected expandAll(): void {
+    this.collapsed.set(new Set());
+  }
+
+  /** Frecce sulla riga: destra apre il ramo, sinistra lo chiude; il tasto menu o Maiusc+F10 aprono il menu. */
+  protected rowKey(event: KeyboardEvent, item: OutlineItem): void {
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
+    if (event.key === 'ArrowRight' && item.children.length && !this.isOpen(item)) {
+      event.preventDefault();
+      this.toggle(item);
+    } else if (event.key === 'ArrowLeft' && item.children.length && this.isOpen(item) && !this.searching()) {
+      event.preventDefault();
+      this.toggle(item);
+    } else if (event.key === 'ContextMenu' || (event.key === 'F10' && event.shiftKey)) {
+      event.preventDefault();
+      const box = (event.currentTarget as HTMLElement).getBoundingClientRect();
+      this.openMenu(item, box.left + 16, box.bottom);
+    }
+  }
+
+  protected contextMenu(event: MouseEvent, item: OutlineItem): void {
+    event.preventDefault();
+    this.openMenu(item, event.clientX, event.clientY);
+  }
+
+  private openMenu(item: OutlineItem, x: number, y: number): void {
+    this.store.select(item.path);
+    this.menu.set({ item, x, y });
+  }
+
+  /** Il menu si è chiuso: il fuoco torna alla riga (il comando può averlo spostato altrove). */
+  protected menuClosed(): void {
+    const item = this.menu()?.item;
+    this.menu.set(null);
+    if (!item) return;
+    setTimeout(() => {
+      const active = document.activeElement;
+      if (active && active !== document.body && !this.host.nativeElement.contains(active)) return;
+      const path = this.store.selection().join('/');
+      this.host.nativeElement.querySelector<HTMLElement>(`.row[data-path="${CSS.escape(path)}"]`)?.focus();
+    });
+  }
+
+  /** Voci del menu contestuale per una riga: i comandi della struttura, «Avvolgi in…» e il contenitore. */
+  protected menuItems(item: OutlineItem): MenuItem[] {
+    const t = (key: string) => this.i18n.t(key);
+    const path = item.path;
+    const node = item.kind === 'node';
+    const items: MenuItem[] = [];
+    if (node) {
+      items.push(
+        { id: 'cut', label: t('ed.menu.cut'), shortcut: 'Ctrl+X', run: () => this.store.cut(path) },
+        { id: 'copy', label: t('ed.menu.copy'), shortcut: 'Ctrl+C', run: () => this.store.copy(path) },
+        { id: 'paste', label: t('ed.menu.paste'), shortcut: 'Ctrl+V', disabled: !this.store.clipboard(), run: () => this.store.paste() },
+      );
+    }
+    items.push(
+      { id: 'duplicate', label: t('ed.menu.duplicate'), shortcut: 'Ctrl+D', separator: node, run: () => this.store.duplicate(path) },
+      { id: 'delete', label: t('ed.menu.delete'), shortcut: t('ed.key.delete'), run: () => this.store.remove(path) },
+      { id: 'move-up', label: t('ed.menu.moveUp'), shortcut: 'Alt+↑', separator: true, disabled: item.first, run: () => this.store.move(path, -1) },
+      { id: 'move-down', label: t('ed.menu.moveDown'), shortcut: 'Alt+↓', disabled: item.last, run: () => this.store.move(path, 1) },
+    );
+    if (item.canAddItem) {
+      items.push({ id: 'add-item', label: t(item.type === 'tabs' ? 'ed.addTab' : 'ed.addStep'), run: () => this.store.addContainerItem(path) });
+    }
+    if (node) {
+      items.push(
+        { id: 'wrap-section', label: t('ed.ctx.wrapSection'), separator: true, run: () => this.store.wrap(path, 'section') },
+        { id: 'wrap-box', label: t('ed.ctx.wrapBox'), run: () => this.store.wrap(path, 'box') },
+        { id: 'wrap-grid', label: t('ed.ctx.wrapGrid'), run: () => this.store.wrap(path, 'grid') },
+      );
+    }
+    const parent = ownerOf(this.store.doc(), path.slice(0, -1));
+    items.push({ id: 'select-parent', label: t('ed.ctx.selectParent'), separator: true, run: () => this.store.select(parent) });
+    return items;
+  }
+
+  /** Chiavi dei rami che contengono il percorso. */
+  private ancestors(items: OutlineItem[], path: Path): string[] {
+    for (const item of items) {
+      if (path.length > item.path.length && startsWith(path, item.path)) return [item.key, ...this.ancestors(item.children, path)];
+    }
+    return [];
+  }
 
   private list(doc: Json, listPath: Path): OutlineItem[] {
     const list = getIn(doc, listPath);
@@ -79,12 +232,17 @@ export class OutlineComponent {
     }
     for (const slot of childSlots(doc, path)) children.push(...this.list(doc, slot.path));
     const type = target.kind === 'node' ? target.type : undefined;
+    const label = target.kind === 'node' ? this.i18n.t('ed.type.' + target.type) : this.i18n.t('ed.' + target.kind);
+    const detail = detailOf(value);
+    const id = typeof value['id'] === 'string' ? value['id'] : '';
     return {
       path,
+      key: id ? 'id:' + id : path.join('/'),
+      search: normalize([label, detail, type ?? '', id].join(' ')),
       kind: target.kind,
       type,
-      label: target.kind === 'node' ? this.i18n.t('ed.type.' + target.type) : this.i18n.t('ed.' + target.kind),
-      detail: detailOf(value),
+      label,
+      detail,
       severity: this.severityOf(path),
       children,
       canAddItem: type === 'tabs' || type === 'wizard',
@@ -188,4 +346,9 @@ function detailOf(value: Record<string, Json>): string {
     if (typeof text === 'string' && text.trim()) return fallbackText(text);
   }
   return typeof value['id'] === 'string' ? value['id'] : '';
+}
+
+/** Testo per la ricerca: minuscolo e senza accenti. */
+function normalize(text: string): string {
+  return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 }

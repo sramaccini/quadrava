@@ -61,7 +61,12 @@ interface NavItem {
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './navigation-editor.component.scss',
   templateUrl: './navigation-editor.component.html',
-  host: { '[class.left-auto]': '!dock.pinned.left()', '[class.right-auto]': '!dock.pinned.right()' },
+  host: {
+    '[class.left-auto]': '!dock.pinned.left()',
+    '[class.right-auto]': '!dock.pinned.right()',
+    '[style.--ed-left.px]': "dock.pinned.left() ? dock.width('left', 280) : null",
+    '[style.--ed-right.px]': "dock.pinned.right() ? dock.width('right', 320) : null",
+  },
 })
 export class NavigationEditorComponent {
   protected readonly store = inject(NavigationStore);

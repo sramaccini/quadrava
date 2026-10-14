@@ -22,6 +22,7 @@
 .ant-btn-primary.icon-only > .count {
   background: var(--lc-color-on-primary); color: var(--lc-color-primary); box-shadow: 0 0 0 1px var(--lc-color-primary);
 }
+.language { width: 76px; }
 .switch { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
 .params { padding: 8px 12px; border-bottom: 1px solid var(--lc-color-border); background: var(--lc-color-surface); font-size: 12px; }
 .log {

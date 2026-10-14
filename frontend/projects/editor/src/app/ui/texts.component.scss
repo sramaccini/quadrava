@@ -20,3 +20,18 @@ input.missing { border-color: var(--lc-color-warning, #d48806); }
   gap: 6px;
   flex-wrap: wrap;
 }
+
+/* Lingue delle traduzioni. */
+.languages { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 12px; font-size: 13px; }
+.languages-label { color: var(--lc-color-muted); font-size: 12px; font-weight: 600; }
+.language {
+  display: inline-flex; align-items: center; gap: 4px; padding: 1px 4px 1px 8px; border: 1px solid var(--lc-color-border);
+  border-radius: 12px; background: var(--lc-color-surface); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px;
+}
+.language .default { padding-right: 4px; color: var(--lc-color-muted); font-family: var(--lc-font-family); font-size: 11px; }
+.remove { display: inline-flex; padding: 2px; border: 0; border-radius: 50%; background: none; color: var(--lc-color-muted); font-size: 10px; cursor: pointer; }
+.remove:hover { color: var(--lc-color-danger); }
+.remove:focus-visible { outline: 2px solid var(--lc-color-primary); }
+.add-language { display: inline-flex; align-items: center; gap: 4px; margin-left: 6px; }
+.add-language input { width: 110px; }
+.error { color: var(--lc-color-danger); font-size: 12px; }

@@ -4,6 +4,7 @@ import { Confirmation, I18n, Notifier, ThemeService, loadMessages } from 'core';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzDrawerModule } from 'ng-zorro-antd/drawer';
 import { NzIconModule } from 'ng-zorro-antd/icon';
+import { NzModalModule } from 'ng-zorro-antd/modal';
 import { NzSegmentedModule } from 'ng-zorro-antd/segmented';
 import { NzSelectModule } from 'ng-zorro-antd/select';
 import { NzTabsModule } from 'ng-zorro-antd/tabs';
@@ -38,6 +39,35 @@ const MODE_KEY = 'lc.editor.mode';
 type Mode = 'screen' | 'navigation' | 'theme';
 const MODES: Mode[] = ['screen', 'navigation', 'theme'];
 const VIEWS = ['preview', 'json', 'sources', 'texts'] as const;
+const VIEW_LABELS: Record<(typeof VIEWS)[number], string> = { preview: 'ed.tabs.preview', json: 'ed.tabs.json', sources: 'ed.tabs.sources', texts: 'ed.tabs.texts' };
+
+/** Scorciatoie dell'aiuto: gruppo → [tasti, descrizione]. I tasti con nomi da tradurre sono chiavi dei messaggi (`ed.`). */
+const SHORTCUTS: { group: string; keys: [string, string][] }[] = [
+  { group: 'ed.keys.general', keys: [['Ctrl+Z', 'ed.keys.undo'], ['ed.keys.k.redo', 'ed.keys.redo'], ['F1', 'ed.keys.help']] },
+  {
+    group: 'ed.keys.outline',
+    keys: [
+      ['ed.keys.del', 'ed.keys.delete'],
+      ['Ctrl+D', 'ed.keys.duplicate'],
+      ['Ctrl+C · Ctrl+X · Ctrl+V', 'ed.keys.clipboard'],
+      ['Alt+↑ · Alt+↓', 'ed.keys.move'],
+      ['→ · ←', 'ed.keys.branch'],
+      ['ed.keys.k.context', 'ed.keys.context'],
+    ],
+  },
+  { group: 'ed.keys.menus', keys: [['Tab', 'ed.keys.menuReach'], ['ed.keys.k.menuMove', 'ed.keys.menuMove'], ['Esc', 'ed.keys.menuClose']] },
+  {
+    group: 'ed.keys.panels',
+    keys: [
+      ['ed.keys.k.pick', 'ed.keys.pick'],
+      ['ed.keys.k.enter', 'ed.keys.paletteFirst'],
+      ['Esc', 'ed.keys.clearSearch'],
+      ['Esc', 'ed.keys.closeSide'],
+      ['ed.keys.k.ctrlEnter', 'ed.keys.applyJson'],
+      ['ed.keys.k.complete', 'ed.keys.complete'],
+    ],
+  },
+];
 
 /**
  * KinetiX Studio, l'editor visuale: schermate (tavolozza e struttura a sinistra, anteprima / JSON / data source / testi al centro,
@@ -65,6 +95,7 @@ const VIEWS = ['preview', 'json', 'sources', 'texts'] as const;
     TextsComponent,
     NzButtonModule,
     NzIconModule,
+    NzModalModule,
     NzSegmentedModule,
     NzSelectModule,
     NzTabsModule,
@@ -103,6 +134,11 @@ export class App {
   protected readonly showRegistry = signal(false);
   protected readonly warningCount = computed(() => this.active().issues().length - this.active().errorCount());
   protected readonly showIssues = signal(true);
+  /** Finestre dell'aiuto: scorciatoie da tastiera e informazioni. */
+  protected readonly showShortcuts = signal(false);
+  protected readonly showAbout = signal(false);
+  /** Scorciatoie mostrate nell'aiuto, per gruppo (testi nei messaggi `ed.keys.*`). */
+  protected readonly shortcutGroups = SHORTCUTS;
   protected readonly dock = inject(Dock);
   private readonly fileInput = viewChild<ElementRef<HTMLInputElement>>('fileInput');
 
@@ -145,9 +181,30 @@ export class App {
         { id: 'move-down', label: t('ed.menu.moveDown'), shortcut: 'Alt+↓', disabled: none, run: () => doc.move(selection, 1) },
       );
     }
+    // Visualizza: i lati (fissati o nascosti), i problemi e, nella schermata, la vista centrale.
+    const view: MenuItem[] = [
+      { id: 'pin-left', label: t('ed.menu.pinLeft'), toggle: 'check', checked: this.dock.pinned.left(), disabled: mode === 'theme', run: () => this.dock.togglePin('left') },
+      { id: 'pin-right', label: t('ed.menu.pinRight'), toggle: 'check', checked: this.dock.pinned.right(), run: () => this.dock.togglePin('right') },
+      { id: 'issues', label: t('ed.menu.issues'), toggle: 'check', checked: this.showIssues(), run: () => this.showIssues.update((v) => !v) },
+    ];
+    if (mode === 'screen') {
+      const current = this.store.view();
+      VIEWS.forEach((v, i) =>
+        view.push({ id: 'view-' + v, label: t(VIEW_LABELS[v]), toggle: 'radio', checked: current === v, separator: i === 0, run: () => this.store.view.set(v) }),
+      );
+    }
     return [
       { id: 'file', label: t('ed.menu.file'), items: file },
       { id: 'edit', label: t('ed.menu.edit'), items: edit },
+      { id: 'view', label: t('ed.menu.view'), items: view },
+      {
+        id: 'help',
+        label: t('ed.menu.help'),
+        items: [
+          { id: 'shortcuts', label: t('ed.menu.shortcuts'), shortcut: 'F1', run: () => this.showShortcuts.set(true) },
+          { id: 'about', label: t('ed.menu.about'), separator: true, run: () => this.showAbout.set(true) },
+        ],
+      },
     ];
   });
 
@@ -258,6 +315,7 @@ export class App {
   protected onKey(event: KeyboardEvent): void {
     const ctrl = event.ctrlKey || event.metaKey;
     const key = event.key.toLowerCase();
+    if (key === 'f1') return this.handled(event, () => this.showShortcuts.set(true));
     const active = this.active();
     if (ctrl && key === 'z' && !event.shiftKey) return this.handled(event, () => active.undo());
     if (ctrl && (key === 'y' || (key === 'z' && event.shiftKey))) return this.handled(event, () => active.redo());
