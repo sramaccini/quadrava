@@ -3,7 +3,7 @@
 .left { border-right: 1px solid var(--lc-color-border); }
 .right { border-left: 1px solid var(--lc-color-border); }
 .center { display: flex; flex-direction: column; min-height: 0; padding: 8px; background: var(--lc-color-background); }
-.center nz-tabs { padding: 0 12px; background: var(--lc-color-surface); }
+.center nz-tabs { padding: 0; }
 .center ::ng-deep .ant-tabs-nav { margin: 0; }
 .view { flex: 1; min-height: 0; }
 .add { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 16px; }

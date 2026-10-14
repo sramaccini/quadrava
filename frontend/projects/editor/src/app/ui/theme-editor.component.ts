@@ -30,7 +30,7 @@ import { JsonViewComponent } from './json-view.component';
   styles: `
     :host { display: grid; grid-template-columns: minmax(0, 1fr) var(--ed-right, 360px); min-height: 0; }
     .center { display: flex; flex-direction: column; min-height: 0; padding: 8px; background: var(--lc-color-background); }
-    .center nz-tabs { padding: 0 12px; background: var(--lc-color-surface); }
+    .center nz-tabs { padding: 0; }
     .center ::ng-deep .ant-tabs-nav { margin: 0; }
     .view { flex: 1; min-height: 0; }
     .off { display: none; }
@@ -41,7 +41,7 @@ import { JsonViewComponent } from './json-view.component';
   template: `
     <main class="center">
     <div class="ed-tabs-box">
-      <nz-tabs nzSize="small" [nzSelectedIndex]="view() === 'json' ? 1 : 0" (nzSelectedIndexChange)="view.set($event === 1 ? 'json' : 'preview')" [nzAnimated]="false">
+      <nz-tabs nzType="card" nzSize="small" [nzSelectedIndex]="view() === 'json' ? 1 : 0" (nzSelectedIndexChange)="view.set($event === 1 ? 'json' : 'preview')" [nzAnimated]="false">
         <nz-tab [nzTitle]="i18n.t('ed.theme.preview')"></nz-tab>
         <nz-tab [nzTitle]="i18n.t('ed.tabs.json')"></nz-tab>
       </nz-tabs>
