@@ -41,7 +41,7 @@ import { JsonViewComponent } from './json-view.component';
   template: `
     <main class="center">
     <div class="ed-tabs-box">
-      <nz-tabs nzType="card" nzSize="small" [nzSelectedIndex]="view() === 'json' ? 1 : 0" (nzSelectedIndexChange)="view.set($event === 1 ? 'json' : 'preview')" [nzAnimated]="false">
+      <nz-tabs nzType="card" nzTabPosition="bottom" nzSize="small" [nzSelectedIndex]="view() === 'json' ? 1 : 0" (nzSelectedIndexChange)="view.set($event === 1 ? 'json' : 'preview')" [nzAnimated]="false">
         <nz-tab [nzTitle]="i18n.t('ed.theme.preview')"></nz-tab>
         <nz-tab [nzTitle]="i18n.t('ed.tabs.json')"></nz-tab>
       </nz-tabs>

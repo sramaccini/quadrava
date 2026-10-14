@@ -30,19 +30,21 @@ body { background: var(--lc-color-background); color: var(--lc-color-on-surface)
 .ed-panel-title .anticon { font-size: 14px; }
 .ed-panel-body { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 10px 12px; }
 /*
- * Area centrale: le schede (Anteprima, JSON, Data source, Testi…) stanno sopra il contenuto come linguette di
+ * Area centrale: le schede (Anteprima, JSON, Data source, Testi…) stanno sotto il contenuto come linguette di
  * cartella; il contenuto è un riquadro con il suo bordo, e la scheda attiva si unisce a lui (niente riga in mezzo).
+ * Nel documento le schede restano prima del contenuto (l'ordine solito per i lettori di schermo): le sposta `order`.
  */
 .ed-tabs-box { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.ed-tabs-box > nz-tabs { order: 2; }
 .ed-tabs-box > nz-tabs .ant-tabs-nav { margin: 0; }
-.ed-tabs-box > nz-tabs .ant-tabs-nav::before { border-bottom-color: var(--lc-color-border); }
+.ed-tabs-box > nz-tabs .ant-tabs-nav::before { border-color: var(--lc-color-border); }
 .ed-tabs-box > nz-tabs .ant-tabs-tab {
   background: color-mix(in srgb, var(--lc-color-on-surface) 4%, var(--lc-color-background)); border-color: var(--lc-color-border) !important;
 }
-.ed-tabs-box > nz-tabs .ant-tabs-tab.ant-tabs-tab-active { background: var(--lc-color-surface); border-bottom-color: var(--lc-color-surface) !important; }
+.ed-tabs-box > nz-tabs .ant-tabs-tab.ant-tabs-tab-active { background: var(--lc-color-surface); border-top-color: var(--lc-color-surface) !important; }
 .ed-tabs-box > .view {
   flex: 1; min-height: 0; overflow: hidden; background: var(--lc-color-surface);
-  border: 1px solid var(--lc-color-border); border-top: 0; border-radius: 0 0 var(--lc-radius) var(--lc-radius);
+  border: 1px solid var(--lc-color-border); border-bottom: 0; border-radius: var(--lc-radius) var(--lc-radius) 0 0;
 }
 
 /*

@@ -10,7 +10,7 @@ Avvio: `cd frontend && npm run start:editor` (porta 4201; costruisce le librerie
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │ ▣ KinetiX Studio  File  Modifica  ↶ ↷  Valida [Schermata|Navigazione|Tema] IT│
 ├───────────────┬──────────────────────────────────────────┬───────────────────┤
-│ COMPONENTI    │ Anteprima | JSON | Data source           │ PROPRIETÀ         │
+│ COMPONENTI    │ [Desktop|Tablet|Telefono] [Permessi] …   │ PROPRIETÀ         │
 │ Sezione Testo │ [Desktop|Tablet|Telefono] [Permessi] …   │ Tabella           │
 │ Tabella …     │ ┌──────────────────────────────────────┐ │ id     tabella-1  │
 │               │ │  la schermata, disegnata dal runtime │ │ source elenco ▾   │
@@ -32,7 +32,7 @@ In alto a sinistra il logotipo **KinetiX Studio** (icona e nome; nella scheda de
 
 Un clic apre e chiude un menu e, a menu aperto, passando sull'altro titolo si cambia menu; un clic fuori lo chiude. Da tastiera (schema «menubar» di WAI-ARIA): Tab raggiunge la barra, frecce sinistra e destra tra i menu, giù (o Invio, Spazio) apre e scorre le voci saltando quelle spente, Home e Fine, destra entra nel sottomenu e sinistra ne esce, Esc chiude e riporta il fuoco al titolo. Dopo un comando il fuoco torna dov'era. Accanto ai menu restano le icone di annulla e ripeti; a destra lo stato del documento, il selettore **Schermata / Navigazione / Tema** e la lingua, che restano insieme anche quando la barra va a capo.
 
-Nell'area centrale le schede (Anteprima, JSON, Data source, Testi) stanno sopra il contenuto come linguette di cartella: il contenuto è un riquadro con il suo bordo, la scheda attiva (bianca) si unisce a lui e le altre (grigie) restano fuori, così il confine del contenuto è evidente; lo stesso nella navigazione e nel tema. Componenti, struttura e proprietà stanno in **riquadri separati**, ognuno con il titolo su una barra grigio scuro a testo bianco (colori dell'editor, non del tema in modifica) preceduto da un'icona: blocchi per i componenti, albero per la struttura, cursori per le proprietà, tessera per il profilo simulato e il proprio scorrimento; lo stesso vale per struttura, profilo simulato e proprietà della navigazione e per le proprietà del tema. Sotto i 1100 px componenti e struttura si affiancano sopra l'anteprima e le proprietà vanno sotto.
+Nell'area centrale le schede (Anteprima, JSON, Data source, Testi) stanno sotto il contenuto come linguette di cartella: il contenuto è un riquadro con il suo bordo, la scheda attiva (bianca) si unisce a lui e le altre (grigie) restano fuori, così il confine del contenuto è evidente; lo stesso nella navigazione e nel tema. Componenti, struttura e proprietà stanno in **riquadri separati**, ognuno con il titolo su una barra grigio scuro a testo bianco (colori dell'editor, non del tema in modifica) preceduto da un'icona: blocchi per i componenti, albero per la struttura, cursori per le proprietà, tessera per il profilo simulato e il proprio scorrimento; lo stesso vale per struttura, profilo simulato e proprietà della navigazione e per le proprietà del tema. Sotto i 1100 px componenti e struttura si affiancano sopra l'anteprima e le proprietà vanno sotto.
 
 **Riquadri nascosti automaticamente**, come le finestre degli IDE (Visual Studio, Eclipse): ogni riquadro ha la sua puntina nella barra del titolo (Componenti e Struttura a sinistra, Proprietà a destra).
 
