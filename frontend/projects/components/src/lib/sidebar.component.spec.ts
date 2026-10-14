@@ -146,6 +146,22 @@ describe('SidebarComponent', () => {
     await flush(fixture);
   });
 
+  it('il clic sul bordo della riga (fuori dal testo) apre la voce; l’evidenziazione segue solo la schermata aperta', async () => {
+    const { fixture, el, events } = await render(['fatture.fattura.crea']);
+    fixture.componentRef.setInput('active', { screen: 'fattura-nuova', params: { tipo: 'attiva' } });
+    await flush(fixture);
+    const row = [...el.querySelectorAll<HTMLElement>('li.ant-menu-item')].find((li) => li.textContent?.includes('Bozze'))!;
+    row.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }));
+    await flush(fixture);
+    expect(events.map((e) => e.leaf.id)).toEqual(['bozze']);
+    // Finché la schermata non cambia, resta evidenziata quella aperta (prima il clic spostava l'evidenziazione da solo).
+    const selected = () => [...el.querySelectorAll('li.ant-menu-item-selected')].map((li) => text(li.querySelector('.label')));
+    expect(selected()).toEqual(['Attiva']);
+    fixture.componentRef.setInput('active', { screen: 'fatture-elenco', params: { stato: 'bozza' } });
+    await flush(fixture);
+    expect(selected()).toEqual(['Bozze']);
+  });
+
   it('i permessi tolti ridisegnano il menu', async () => {
     const { fixture, el } = await render(['fatture.fattura.crea']);
     permissions.set(new Set());

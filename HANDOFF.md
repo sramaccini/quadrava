@@ -36,7 +36,7 @@ Da `frontend/`:
 - **Stack completo con Keycloak passo per passo** (Docker Desktop avviato): `cd idp && docker compose up -d`; in `reference/` `mvn -q package -DskipTests` e `java -jar <modulo>/target/*.jar` per registry (con `--lowcode.registry.storage-dir=<cartella>` per non perdere i dati), authz, telemetry, bff; in `frontend/` `npm run demo-api` (8084), `npm run publish:examples -- --user amministratore --password amministratore`, poi `npm run start:runtime:bff` (4200) e `start:editor:bff` (4201). Le origini ammesse dal BFF sono 4200 e 4201.
 - test per progetto: `npx ng test <schema|expressions|core|components|services|runtime|editor> --watch=false`
 
-Stato test (tutti verdi): schema 71, expressions 42, core 80, components 177, services 27, runtime 84, editor 110 (**591**); Java 39 (authz 7, bff 8, registry 18, telemetry 6); Playwright 18 (di cui 12 di accessibilità e 2 sull'editor di testo formattato); kit di conformità: registro 17/17, autorizzazioni 11/11, telemetria 6/6. Build di produzione: runtime 2,46 MB iniziali (422 kB trasferiti), editor 818 kB iniziali (l'anteprima e l'editor si caricano a parte).
+Stato test (tutti verdi): schema 71, expressions 42, core 80, components 178, services 27, runtime 84, editor 110 (**592**); Java 39 (authz 7, bff 8, registry 18, telemetry 6); Playwright 18 (di cui 12 di accessibilità e 2 sull'editor di testo formattato); kit di conformità: registro 17/17, autorizzazioni 11/11, telemetria 6/6. Build di produzione: runtime 2,46 MB iniziali (422 kB trasferiti), editor 818 kB iniziali (l'anteprima e l'editor si caricano a parte).
 
 ## 4. Architettura in breve
 

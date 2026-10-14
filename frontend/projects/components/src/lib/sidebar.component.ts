@@ -176,7 +176,8 @@ export interface NavigateEvent {
           </ul>
         } @else {
         <nav [attr.aria-label]="i18n.t('lc.menu') + ' ' + uc.label" (keydown)="navKey($event)">
-          <ul nz-menu nzMode="inline" [nzTheme]="tone()" [nzInlineCollapsed]="collapsed()" [nzInlineIndent]="18">
+          <!-- La voce evidenziata la decide solo la schermata aperta (nzSelected): NG-ZORRO non la cambia da sé al clic. -->
+          <ul nz-menu nzMode="inline" [nzTheme]="tone()" [nzInlineCollapsed]="collapsed()" [nzInlineIndent]="18" [nzSelectable]="false">
             @for (g1 of uc.items; track g1.id) {
               @if (g1.kind === 'group') {
                 <li nz-submenu class="group" [attr.data-group]="g1.id" [nzTitle]="g1.label" [nzIcon]="type(g1.icon)" [nzOpen]="isExpanded(g1.id)" (nzOpenChange)="setOpen(g1.id, $event)">
@@ -186,8 +187,8 @@ export interface NavigateEvent {
                         <li nz-submenu class="group" [attr.data-group]="g2.id" [nzTitle]="g2.label" [nzIcon]="type(g2.icon)" [nzOpen]="isExpanded(g2.id)" (nzOpenChange)="setOpen(g2.id, $event)">
                           <ul>
                             @for (l3 of leaves(g2.children); track l3.id) {
-                              <li nz-menu-item [nzSelected]="isActive(l3)">
-                <a class="leaf" [href]="hrefFor()(uc.id, l3)" [attr.aria-current]="isActive(l3) ? 'page' : null" [attr.title]="collapsed() ? l3.label : null" [attr.aria-label]="collapsed() ? leafLabel(l3) : null" (click)="go($event, l3)">
+                              <li nz-menu-item [nzSelected]="isActive(l3)" (click)="go($event, l3)">
+                <a class="leaf" [href]="hrefFor()(uc.id, l3)" [attr.aria-current]="isActive(l3) ? 'page' : null" [attr.title]="collapsed() ? l3.label : null" [attr.aria-label]="collapsed() ? leafLabel(l3) : null">
                   <ng-container [ngTemplateOutlet]="leafContent" [ngTemplateOutletContext]="{ $implicit: l3 }" />
                 </a>
               </li>
@@ -196,8 +197,8 @@ export interface NavigateEvent {
                         </li>
                       } @else {
                         @let l2 = g2;
-                        <li nz-menu-item [nzSelected]="isActive(l2)">
-                <a class="leaf" [href]="hrefFor()(uc.id, l2)" [attr.aria-current]="isActive(l2) ? 'page' : null" [attr.title]="collapsed() ? l2.label : null" [attr.aria-label]="collapsed() ? leafLabel(l2) : null" (click)="go($event, l2)">
+                        <li nz-menu-item [nzSelected]="isActive(l2)" (click)="go($event, l2)">
+                <a class="leaf" [href]="hrefFor()(uc.id, l2)" [attr.aria-current]="isActive(l2) ? 'page' : null" [attr.title]="collapsed() ? l2.label : null" [attr.aria-label]="collapsed() ? leafLabel(l2) : null">
                   <ng-container [ngTemplateOutlet]="leafContent" [ngTemplateOutletContext]="{ $implicit: l2 }" />
                 </a>
               </li>
@@ -207,8 +208,8 @@ export interface NavigateEvent {
                 </li>
               } @else {
                 @let l1 = g1;
-                <li nz-menu-item [nzSelected]="isActive(l1)">
-                <a class="leaf" [href]="hrefFor()(uc.id, l1)" [attr.aria-current]="isActive(l1) ? 'page' : null" [attr.title]="collapsed() ? l1.label : null" [attr.aria-label]="collapsed() ? leafLabel(l1) : null" (click)="go($event, l1)">
+                <li nz-menu-item [nzSelected]="isActive(l1)" (click)="go($event, l1)">
+                <a class="leaf" [href]="hrefFor()(uc.id, l1)" [attr.aria-current]="isActive(l1) ? 'page' : null" [attr.title]="collapsed() ? l1.label : null" [attr.aria-label]="collapsed() ? leafLabel(l1) : null">
                   <ng-container [ngTemplateOutlet]="leafContent" [ngTemplateOutletContext]="{ $implicit: l1 }" />
                 </a>
               </li>
@@ -440,6 +441,10 @@ export class SidebarComponent {
     event.preventDefault();
   }
 
+  /**
+   * Clic su tutta la riga della voce (non solo sul testo del link): apre la schermata. Prima un clic sul bordo della riga
+   * evidenziava la voce senza aprirla. Il clic sul link arriva qui risalendo dalla riga.
+   */
   protected go(event: MouseEvent, leaf: VisibleLeaf): void {
     // Con i tasti modificatori o il clic centrale decide il browser (nuova scheda).
     if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
