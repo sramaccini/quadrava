@@ -4,7 +4,7 @@ Documento di passaggio per continuare il lavoro con Claude Code in locale. Ultim
 
 ## 1. Cos'è
 
-Piattaforma low-code per frontend gestionali/amministrativi **definiti da JSON** (schermate, data source, azioni, espressioni CEL), più un editor visuale (schermate, navigazione, temi) e servizi di base. Il backend consiste in contratti OpenAPI e un'implementazione di riferimento Spring Boot non destinata alla produzione (compila e i test passano con `mvn verify`, JDK 21 e Maven 3.9, anche in CI).
+**KinetiX** è una piattaforma low-code per frontend gestionali/amministrativi **definiti da JSON** (schermate, data source, azioni, espressioni CEL), più l'editor visuale **KinetiX Studio** (schermate, navigazione, temi) e servizi di base. Il backend consiste in contratti OpenAPI e un'implementazione di riferimento Spring Boot non destinata alla produzione (compila e i test passano con `mvn verify`, JDK 21 e Maven 3.9, anche in CI).
 
 ## 2. Preferenze di Simone (rispettale)
 
@@ -29,7 +29,7 @@ Da `frontend/`:
 - `npm run e2e` — Playwright (campi a sé, border layout, accessibilità axe su tutta la vetrina)
 - `npm run validate:examples` — valida gli esempi (schema + chiavi di traduzione)
 - `npm run demo:prepare` / `npm run start:runtime` — copia `examples/` in `projects/runtime/public/examples` e avvia la demo (porta 4200). Il dev server **non** ricarica `dist`: dopo modifiche a librerie o esempi va rilanciato.
-- `npm run start:editor` — editor visuale sulla porta 4201 (prepara anche gli esempi, con `examples/index.json`).
+- `npm run start:editor` — KinetiX Studio (editor visuale) sulla porta 4201 (prepara anche gli esempi, con `examples/index.json`).
 - `.claude/launch.json` avvia una copia della demo sulla porta 4300, dell'editor sulla 4301 e delle due app in modalità registro sulla 4302 e 4303 (per l'anteprima nel pannello di Claude).
 - Registro locale senza Keycloak: `java -jar reference/registry/target/lowcode-registry-0.1.0-SNAPSHOT.jar --spring.profiles.active=senza-auth`, poi `npm run publish:examples`, poi `npm run start:runtime:registro` / `start:editor:registro`.
 - `runtime-config.json` (cartella pubblica del runtime) decide da dove vengono le definizioni: `examples` (demo) o `registry` (app, ambiente, navigazione, temi); la configurazione `registro` di angular.json usa `projects/runtime/config/registro/`. Con `services: { source: 'bff', appId }` il runtime usa le porte vere di `services` (configurazione `bff`, `projects/runtime/config/bff/`).
@@ -58,7 +58,7 @@ Librerie (`frontend/projects/`): `schema` (JSON Schema + tipi), `expressions` (C
 
 `docs/catalogo-componenti.md`: specifica di ogni componente aggiunto (fino al § 2.25), regole comuni e **limiti noti** (§ 3); `docs/riferimento-schema.md`: tutte le proprietà, generate dallo schema. La vetrina della demo ha dodici schermate: Componenti base, Form, Attività e avanzamento, Contenitori di layout, Campi a sé, Campi e form, Filtri e tabelle, Tabelle avanzate, Datatable, Schede/dettaglio/messaggi, Cruscotto, Procedure e viste.
 
-## 5b. Editor visuale
+## 5b. KinetiX Studio (editor visuale)
 
 `docs/editor.md` descrive tutto. In breve: tavolozza (clic o trascinamento), struttura (seleziona, sposta, duplica, taglia/incolla, trascina), pannello delle proprietà **generato da `screen.schema.json`** (elenchi di colonne/campi/azioni/passi modificabili elemento per elemento, passi per variante, oggetti come gruppi), anteprima con il runtime vero e porte finte (dati di esempio per data source, permessi, larghezze, parametri, registro; Alt+clic seleziona), vista JSON, pannello dei data source (rinomina con aggiornamento dei riferimenti), pannello dei testi (rendi traducibile, traduzioni it/en applicate all'anteprima, esportazione per i cataloghi), problemi (schema, CEL, id ripetuti, data source mancanti), cronologia di annullamento, bozza nel browser, apri esempio / importa / esporta. Un componente nuovo richiede solo il modello in `model/templates.ts`, il gruppo nella tavolozza e `ed.type.<tipo>` nei messaggi. Dal 13 ottobre: completamento delle espressioni mentre si scrive; componenti trascinati dalla tavolozza direttamente sull'anteprima; anteprima con **dati veri** (solo letture, editor dietro il BFF); pannello «Registro» con stato di revisione, Chiedi revisione/Approva/Respingi, Confronta (versione contro documento aperto), avviso di modifiche concorrenti (If-Match), errori di validazione del registro punto per punto; pannello «Testi» che salva e pubblica i cataloghi nel registro.
 

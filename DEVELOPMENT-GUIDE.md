@@ -33,7 +33,7 @@ editor  ──► components ──► core   (the preview renders screens with 
 * `components`: everything that depends on NG-ZORRO (standard components, side menu, user menu, confirmation dialog, notifier, theme bridge).
 * `services`: production implementations of the ports.
 * `runtime`: the demo application; wiring only, plus `demo/` fakes.
-* `editor`: the visual editor for screens, navigation and themes. `model/` holds pure, tested logic (immutable document operations, the `SchemaReader`, templates, drop positions, `DocumentState` with its stores `EditorStore`, `NavigationStore` and `ThemeStore`); `ui/` the panels; `preview/` the live preview and its fake ports. The property panel is generated from `screen.schema.json` (`model/schema-info.ts`): do not hand-write per-component forms. See `docs/editor.md`.
+* `editor`: **KinetiX Studio**, the visual editor for screens, navigation and themes. `model/` holds pure, tested logic (immutable document operations, the `SchemaReader`, templates, drop positions, `DocumentState` with its stores `EditorStore`, `NavigationStore` and `ThemeStore`); `ui/` the panels; `preview/` the live preview and its fake ports. The property panel is generated from `screen.schema.json` (`model/schema-info.ts`): do not hand-write per-component forms. See `docs/editor.md`.
 
 ## 3. Daily commands
 
@@ -45,7 +45,7 @@ editor  ──► components ──► core   (the preview renders screens with 
 | `npx ng test <project> --watch=false` | Tests of one project (`schema`, `expressions`, `core`, `components`, `services`, `runtime`, `editor`) |
 | `npm run demo:prepare` | Copies `examples/` into `projects/runtime/public/examples` and `projects/editor/public/examples` (git-ignored), with an `index.json` of the screens; required by the runtime and editor specs |
 | `npm run start:runtime` | Builds libs, prepares examples and serves the demo on port 4200 |
-| `npm run start:editor` | Builds libs, prepares examples and serves the visual editor on port 4201 |
+| `npm run start:editor` | Builds libs, prepares examples and serves KinetiX Studio on port 4201 |
 | `npm run start:runtime:registro` / `start:editor:registro` | Same apps, with `/registry` proxied to the reference registry on 8081 (run it with the `senza-auth` profile); the runtime loads its definitions from the registry |
 | `npm run start:runtime:bff` / `start:editor:bff` | Same apps behind the BFF on 8080 (needs Keycloak and the reference services): `/registry`, `/api`, `/authz`, `/telemetry`, `/bff`, `/oauth2`, `/logout` are proxied; the runtime uses the real `services` ports (`projects/runtime/config/bff/runtime-config.json`) |
 | `npm run demo-api` | Demo application back end on 8084 (the `/api` route of the BFF): the in-browser demo logic (`runtime/src/demo/demo-backend.ts`, bundled with esbuild at start-up) behind RS256 token verification against the local realm; `-- --senza-auth` switches it off. It also serves its OpenAPI description (`tools/demo-api.openapi.json`) at `/v3/api-docs` without a token and with CORS open, and at `/api/v3/api-docs` behind the BFF, for the editor's OpenAPI import; keep it in step when demo endpoints change |

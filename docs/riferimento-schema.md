@@ -1,4 +1,4 @@
-# Riferimento dello schema delle schermate
+# Riferimento dello schema delle schermate di KinetiX
 
 > Generato da `frontend/tools/schema-docs.mjs` a partire da `screen.schema.json`: non modificare a mano. Dopo una modifica allo schema: `npm run schema:docs`. Le proprietà con * sono obbligatorie. Le spiegazioni con esempi sono nel [catalogo dei componenti](catalogo-componenti.md).
 
@@ -32,7 +32,7 @@
 | --- | --- | --- |
 | `text` * | testo | Testo da mostrare; può contenere {{ }}. Mai HTML. |
 | `style` | `heading`, `body` | heading: titolo; body: testo normale (predefinito). |
-| `format` | `plain`, `markdown` | plain (predefinito): testo semplice. markdown: testo formattato con il Markdown ristretto della piattaforma: paragrafi, titoli (#, ##, ###), elenchi puntati (-) e numerati (1.) anche annidati, citazioni (>), **grassetto**, *corsivo*, ~~barrato~~, `codice`, [collegamenti](https://…). Mai HTML: anche un testo che arriva dai dati è sicuro. |
+| `format` | `plain`, `markdown` | plain (predefinito): testo semplice. markdown: testo formattato con il Markdown ristretto di KinetiX: paragrafi, titoli (#, ##, ###), elenchi puntati (-) e numerati (1.) anche annidati, citazioni (>), **grassetto**, *corsivo*, ~~barrato~~, `codice`, [collegamenti](https://…). Mai HTML: anche un testo che arriva dai dati è sicuro. |
 
 ### `button`
 
@@ -91,7 +91,7 @@
 | --- | --- | --- |
 | `text` * | testo | Testo del messaggio; può contenere {{ }}. |
 | `kind` | `info`, `success`, `error` | Aspetto del messaggio; info se assente. |
-| `format` | `plain`, `markdown` | plain (predefinito): testo semplice. markdown: testo formattato con il Markdown ristretto della piattaforma: paragrafi, titoli (#, ##, ###), elenchi puntati (-) e numerati (1.) anche annidati, citazioni (>), **grassetto**, *corsivo*, ~~barrato~~, `codice`, [collegamenti](https://…). Mai HTML: anche un testo che arriva dai dati è sicuro. |
+| `format` | `plain`, `markdown` | plain (predefinito): testo semplice. markdown: testo formattato con il Markdown ristretto di KinetiX: paragrafi, titoli (#, ##, ###), elenchi puntati (-) e numerati (1.) anche annidati, citazioni (>), **grassetto**, *corsivo*, ~~barrato~~, `codice`, [collegamenti](https://…). Mai HTML: anche un testo che arriva dai dati è sicuro. |
 
 ### `stats`
 

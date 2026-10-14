@@ -732,7 +732,7 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                   "plain",
                   "markdown"
                 ],
-                "description": "plain (predefinito): testo semplice. markdown: testo formattato con il Markdown ristretto della piattaforma: paragrafi, titoli (#, ##, ###), elenchi puntati (-) e numerati (1.) anche annidati, citazioni (>), **grassetto**, *corsivo*, ~~barrato~~, `codice`, [collegamenti](https://…). Mai HTML: anche un testo che arriva dai dati è sicuro."
+                "description": "plain (predefinito): testo semplice. markdown: testo formattato con il Markdown ristretto di KinetiX: paragrafi, titoli (#, ##, ###), elenchi puntati (-) e numerati (1.) anche annidati, citazioni (>), **grassetto**, *corsivo*, ~~barrato~~, `codice`, [collegamenti](https://…). Mai HTML: anche un testo che arriva dai dati è sicuro."
               }
             }
           }
@@ -1056,7 +1056,7 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                   "plain",
                   "markdown"
                 ],
-                "description": "plain (predefinito): testo semplice. markdown: testo formattato con il Markdown ristretto della piattaforma: paragrafi, titoli (#, ##, ###), elenchi puntati (-) e numerati (1.) anche annidati, citazioni (>), **grassetto**, *corsivo*, ~~barrato~~, `codice`, [collegamenti](https://…). Mai HTML: anche un testo che arriva dai dati è sicuro."
+                "description": "plain (predefinito): testo semplice. markdown: testo formattato con il Markdown ristretto di KinetiX: paragrafi, titoli (#, ##, ###), elenchi puntati (-) e numerati (1.) anche annidati, citazioni (>), **grassetto**, *corsivo*, ~~barrato~~, `codice`, [collegamenti](https://…). Mai HTML: anche un testo che arriva dai dati è sicuro."
               }
             }
           }

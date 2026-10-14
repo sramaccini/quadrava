@@ -53,7 +53,7 @@ function table(properties, required = []) {
 }
 
 const out = [];
-out.push('# Riferimento dello schema delle schermate');
+out.push('# Riferimento dello schema delle schermate di KinetiX');
 out.push('');
 out.push(
   '> Generato da `frontend/tools/schema-docs.mjs` a partire da `screen.schema.json`: non modificare a mano. Dopo una modifica allo schema: `npm run schema:docs`. Le proprietà con * sono obbligatorie. Le spiegazioni con esempi sono nel [catalogo dei componenti](catalogo-componenti.md).',

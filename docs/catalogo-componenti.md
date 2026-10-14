@@ -1,10 +1,10 @@
-# Catalogo dei componenti
+# Catalogo dei componenti di KinetiX
 
-Elenco dei componenti del linguaggio JSON, con la specifica di quelli aggiunti nell'ottobre 2026. Ogni componente nuovo ha test unitari nella libreria `components` e un esempio nella **vetrina** della demo (caso d'uso «Vetrina componenti»).
+Elenco dei componenti del linguaggio JSON di KinetiX, con la specifica di quelli aggiunti nell'ottobre 2026. Ogni componente nuovo ha test unitari nella libreria `components` e un esempio nella **vetrina** della demo (caso d'uso «Vetrina componenti»).
 
 Regole comuni a tutti i componenti, valide anche per i nuovi:
 
-- i testi passano da `{{ }}` e dal catalogo delle traduzioni (`t('chiave', 'ripiego')`); le scritte della piattaforma sono chiavi `lc.*` in italiano e inglese;
+- i testi passano da `{{ }}` e dal catalogo delle traduzioni (`t('chiave', 'ripiego')`); le scritte di KinetiX sono chiavi `lc.*` in italiano e inglese;
 - nessun HTML da dati o traduzioni: i valori si mostrano sempre come testo;
 - le espressioni sono **fail-closed**: se una condizione non si può valutare, il componente si nasconde o si disabilita;
 - `visibleIf`, `hiddenIf`, `tooltip` valgono per ogni nodo (li applica il contenitore `lc-node`); `grow`, `span` e `region` valgono per ogni nodo dentro un contenitore di layout (§ 2.21);
@@ -240,7 +240,7 @@ Vista mensile con gli eventi nei giorni (al massimo tre, poi «+n»). Cambiando 
   "format": "currency", "rightFormat": "percent", "height": 280 }
 ```
 
-Tipi `bar`, `line` e `pie`, disegnati in SVG dalla piattaforma (nessuna libreria esterna) con i colori del tema. Le barre possono essere affiancate o impilate (`stacked`, i negativi verso il basso); una serie può stare su un secondo asse a destra (`axis: "right"`, formato `rightFormat`) e avere un suo tipo (`kind`), per grafici combinati come barre più una linea. Ogni grafico ha una legenda, i valori al passaggio del mouse e, per l'accessibilità, una tabella equivalente leggibile dagli screen reader.
+Tipi `bar`, `line` e `pie`, disegnati in SVG da KinetiX (nessuna libreria esterna) con i colori del tema. Le barre possono essere affiancate o impilate (`stacked`, i negativi verso il basso); una serie può stare su un secondo asse a destra (`axis: "right"`, formato `rightFormat`) e avere un suo tipo (`kind`), per grafici combinati come barre più una linea. Ogni grafico ha una legenda, i valori al passaggio del mouse e, per l'accessibilità, una tabella equivalente leggibile dagli screen reader.
 
 ### 2.18 Datatable
 
@@ -450,7 +450,7 @@ Quello che **deve** succedere comunque (controlli, regole, audit, più chiamate 
 | `[testo](https://…)` | collegamento: solo `https:`, `mailto:` o percorsi che cominciano con `/`; gli altri restano testo. Gli indirizzi esterni si aprono in una nuova scheda |
 | `\*` | il carattere senza significato speciale |
 
-**Sicurezza.** Il testo si analizza e si disegna con elementi costruiti dalla piattaforma: **mai HTML**. Un `<img onerror=…>` o uno `<script>` nel testo, anche se arriva dai dati o da una traduzione, si vede come testo. I collegamenti `javascript:`, `data:` e simili non diventano collegamenti. Il testo è limitato a 20.000 caratteri.
+**Sicurezza.** Il testo si analizza e si disegna con elementi costruiti da KinetiX: **mai HTML**. Un `<img onerror=…>` o uno `<script>` nel testo, anche se arriva dai dati o da una traduzione, si vede come testo. I collegamenti `javascript:`, `data:` e simili non diventano collegamenti. Il testo è limitato a 20.000 caratteri.
 
 **Nelle tabelle** il formato di colonna `markdown` mostra il testo semplice (senza simboli); nella scheda di dettaglio è formattato.
 

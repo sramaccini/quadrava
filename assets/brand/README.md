@@ -21,6 +21,7 @@ Logotipo: **Sora** (Google Fonts) 600, "Studio" in 300. I logo SVG usano <text>:
 - `svg/kinetix-mark.svg` – solo simbolo, senza sfondo (pensato per sfondi blu/scuri)
 - `svg/kinetix-logo(-dark).svg`, `svg/kinetix-studio-logo(-dark).svg` – logo completo per sfondi chiari/scuri
 - `png/<prodotto>-icon-<size>.png` – 16, 24, 32, 48, 64, 76, 128, 180, 192, 256, 512, 1024 px
+- `png/kinetix-logo(-dark).png`, `png/kinetix-studio-logo(-dark).png` – logo completo in PNG (4x, sfondo trasparente) con Sora incorporato, per dove l'SVG non può caricare il carattere (README su GitHub, documenti). Si rigenerano dagli SVG con `cd frontend && node tools/brand-png.mjs`.
 
 ## Uso consigliato
 - Favicon: `kinetix-icon-small.svg` + fallback `kinetix-icon-32.png`

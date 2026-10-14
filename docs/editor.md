@@ -1,6 +1,6 @@
 # KinetiX Studio (editor visuale)
 
-L'editor (`frontend/projects/editor`) modifica le **schermate**, la **navigazione** (casi d'uso e menu) e il **tema**; un selettore nella barra degli strumenti passa dall'uno all'altro. Per le schermate produce lo stesso JSON che il runtime legge: chi lo usa compone la schermata con tavolozza, struttura e pannello delle proprietà, e vede subito il risultato disegnato dal runtime vero. Non esiste un formato intermedio: quello che si esporta si mette in `examples/` (o, in futuro, si pubblica nel registro) così com'è.
+KinetiX Studio, l'editor visuale di KinetiX (`frontend/projects/editor`), modifica le **schermate**, la **navigazione** (casi d'uso e menu) e il **tema**; un selettore nella barra degli strumenti passa dall'uno all'altro. Per le schermate produce lo stesso JSON che il runtime legge: chi lo usa compone la schermata con tavolozza, struttura e pannello delle proprietà, e vede subito il risultato disegnato dal runtime vero. Non esiste un formato intermedio: quello che si esporta si mette in `examples/` (o, in futuro, si pubblica nel registro) così com'è.
 
 Avvio: `cd frontend && npm run start:editor` (porta 4201; costruisce le librerie e copia gli esempi).
 

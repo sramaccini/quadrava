@@ -1,4 +1,4 @@
-# Documentazione
+# Documentazione di KinetiX
 
 Per la descrizione del progetto e la guida ai contributori (in inglese) vedi [README.md](../README.md) e [DEVELOPMENT-GUIDE.md](../DEVELOPMENT-GUIDE.md).
 
@@ -9,6 +9,6 @@ I documenti di riferimento sono mantenuti come documenti vivi (modificabili e co
 - [Linee guida di implementazione](https://claude.ai/code/artifact/f286ccf2-9ad4-4470-8f34-da217be64031): stack, struttura, convenzioni, test, rilascio.
 - [Catalogo dei componenti](catalogo-componenti.md): componenti realizzati e in costruzione, con la specifica di ciascuno.
 - [Riferimento dello schema](riferimento-schema.md): tutte le proprietà di componenti, passi, campi e data source, generate da `screen.schema.json` (`npm run schema:docs`).
-- [Editor visuale](editor.md): com'è fatto l'editor delle schermate, come genera il pannello delle proprietà dallo schema, l'anteprima, le scorciatoie, i limiti.
+- [KinetiX Studio](editor.md): com'è fatto l'editor visuale delle schermate, come genera il pannello delle proprietà dallo schema, l'anteprima, le scorciatoie, i limiti.
 
 Le decisioni architetturali (ADR) vanno copiate in questa cartella, una per file, quando passano da "Proposta" ad "Accettata".
