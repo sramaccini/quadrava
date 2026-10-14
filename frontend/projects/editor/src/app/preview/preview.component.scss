@@ -1,5 +1,13 @@
 :host { display: flex; flex-direction: column; min-height: 0; height: 100%; }
 .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--lc-color-border); background: var(--lc-color-surface); }
+.widths { display: inline-flex; gap: 2px; padding: 2px; border-radius: var(--lc-radius); background: color-mix(in srgb, var(--lc-color-on-surface) 6%, transparent); }
+.width {
+  display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 24px; padding: 0; border: 0;
+  border-radius: calc(var(--lc-radius) - 2px); background: none; color: var(--lc-color-muted); font-size: 16px; cursor: pointer;
+}
+.width:hover { color: var(--lc-color-on-surface); }
+.width.on { background: var(--lc-color-surface); color: var(--lc-color-primary); box-shadow: 0 1px 2px rgb(0 0 0 / 15%); }
+.width:focus-visible { outline: 2px solid var(--lc-color-primary); outline-offset: 1px; }
 .switch { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
 .params { padding: 8px 12px; border-bottom: 1px solid var(--lc-color-border); background: var(--lc-color-surface); font-size: 12px; }
 .log {

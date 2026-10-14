@@ -323,6 +323,17 @@ describe('editor delle schermate', () => {
     await untilState('ed-preview', (st) => st.selectMode, 'modalità selezione');
     await fromFrame('ed-preview', { type: 'lc-preview:event', event: { kind: 'request', text: 'GET /api/elenco' } });
     expect(el.querySelector('ed-preview .bar')?.textContent).toContain('Registro (1)');
+    // Larghezze: solo icone, con il nome (e i pixel) per i lettori di schermo.
+    const widths = [...el.querySelectorAll<HTMLButtonElement>('ed-preview .widths button')];
+    expect(widths.map((b) => [b.getAttribute('aria-label'), b.getAttribute('aria-pressed'), b.textContent?.trim()])).toEqual([
+      ['Desktop', 'true', ''],
+      ['Tablet (768 px)', 'false', ''],
+      ['Telefono (375 px)', 'false', ''],
+    ]);
+    widths[1].click();
+    await settle();
+    expect(widths[1].getAttribute('aria-pressed')).toBe('true');
+    expect((el.querySelector('ed-preview iframe') as HTMLIFrameElement).style.width).toBe('768px');
   });
   it('testi: le traduzioni si salvano nel registro unite al catalogo esistente e si pubblicano', async () => {
     localStorage.setItem('lc.editor.registry', JSON.stringify({ appId: 'demo', env: 'sviluppo' }));

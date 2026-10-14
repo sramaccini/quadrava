@@ -86,7 +86,7 @@ Nessuna chiamata esce dal browser. Le porte dell'anteprima (`preview/preview-por
 - **ScreenNavigator**: non cambia pagina; manda la navigazione al registro dell'editor e mostra un messaggio.
 - **RuntimeDiagnostics**: le segnalazioni tecniche finiscono nel registro dell'editor.
 
-Si possono provare le larghezze (desktop, tablet 768 px, telefono 375 px) e i parametri della schermata (`params`, per esempio `{"id": 1}`). Il ridisegno parte 250 ms dopo l'ultima modifica.
+Si possono provare le larghezze con le tre icone della barra, come nella barra dei dispositivi di Chrome (desktop, tablet 768 px, telefono 375 px; il nome e i pixel nel suggerimento) e i parametri della schermata (`params`, per esempio `{"id": 1}`). Il ridisegno parte 250 ms dopo l'ultima modifica.
 
 Per collegare disegno e struttura, `lc-node` espone `data-node-id` e `data-node-type` (mai dati): per questo l'editor dà un `id` a ogni nodo che crea. I nodi senza `id` (scritti a mano) si selezionano solo dalla struttura.
 

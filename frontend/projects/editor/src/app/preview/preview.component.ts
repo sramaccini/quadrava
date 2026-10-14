@@ -6,8 +6,8 @@ import { I18n } from 'core';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzIconModule } from 'ng-zorro-antd/icon';
-import { NzSegmentedModule } from 'ng-zorro-antd/segmented';
 import { NzSwitchModule } from 'ng-zorro-antd/switch';
+import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import type { ScreenDefinition } from 'schema';
 import { getIn, isObject, type Json } from '../model/doc-ops';
 import { EditorStore } from '../model/editor-store';
@@ -22,6 +22,7 @@ const DEBOUNCE_MS = 250;
 
 /** Larghezze dell'anteprima, per provare le fasce del guscio. */
 const WIDTHS: Record<string, number | null> = { desktop: null, tablet: 768, mobile: 375 };
+const WIDTH_ICONS: Record<string, string> = { desktop: 'desktop', tablet: 'tablet', mobile: 'mobile' };
 
 /**
  * Anteprima dal vivo della schermata: la barra (larghezza, permessi, parametri, registro, selezione, ricarica) sta
@@ -31,7 +32,7 @@ const WIDTHS: Record<string, number | null> = { desktop: null, tablet: 768, mobi
  */
 @Component({
   selector: 'ed-preview',
-  imports: [FormsModule, JsonFieldComponent, PreviewFrameComponent, NzAlertModule, NzButtonModule, NzIconModule, NzSegmentedModule, NzSwitchModule],
+  imports: [FormsModule, JsonFieldComponent, PreviewFrameComponent, NzAlertModule, NzButtonModule, NzIconModule, NzSwitchModule, NzTooltipModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './preview.component.scss',
   templateUrl: './preview.component.html',
@@ -50,7 +51,14 @@ export class PreviewComponent {
   /** Letture dai servizi veri invece dei dati di esempio (le scritture restano bloccate). */
   protected readonly liveData = signal(false);
   protected readonly width = signal('desktop');
-  protected readonly widthOptions = computed(() => Object.keys(WIDTHS).map((value) => ({ value, label: this.i18n.t('ed.preview.' + value) })));
+  /** Una voce per larghezza: icona, e nome con i pixel per suggerimento e lettori di schermo. */
+  protected readonly widthOptions = computed(() =>
+    Object.entries(WIDTHS).map(([value, px]) => ({
+      value,
+      icon: WIDTH_ICONS[value],
+      label: px ? this.i18n.t('ed.preview.widthPx', { name: this.i18n.t('ed.preview.' + value), px }) : this.i18n.t('ed.preview.' + value),
+    })),
+  );
   protected readonly frameWidth = computed(() => WIDTHS[this.width()]);
   protected readonly params = signal<Record<string, unknown>>({});
   protected readonly showLog = signal(false);

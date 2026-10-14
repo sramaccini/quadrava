@@ -1,5 +1,21 @@
 <div class="bar" role="toolbar" [attr.aria-label]="i18n.t('ed.tabs.preview')">
-  <nz-segmented [nzOptions]="widthOptions()" [ngModel]="width()" (ngModelChange)="width.set($event)" nzSize="small" [attr.aria-label]="i18n.t('ed.preview.width')" />
+  <!-- Larghezze come nella barra dei dispositivi di Chrome: solo icone, il nome (con i pixel) nel suggerimento. -->
+  <div class="widths" role="group" [attr.aria-label]="i18n.t('ed.preview.width')">
+    @for (option of widthOptions(); track option.value) {
+      <button
+        type="button"
+        class="width"
+        [attr.data-width]="option.value"
+        [class.on]="width() === option.value"
+        [attr.aria-pressed]="width() === option.value"
+        [attr.aria-label]="option.label"
+        [nz-tooltip]="option.label"
+        (click)="width.set(option.value)"
+      >
+        <span nz-icon [nzType]="option.icon"></span>
+      </button>
+    }
+  </div>
   <label class="switch">
     <nz-switch nzSize="small" [ngModel]="grantAll()" (ngModelChange)="setGrantAll($event)" />
     {{ i18n.t('ed.preview.grantAll') }}
