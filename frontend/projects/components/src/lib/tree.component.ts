@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, ElementRef, afterEveryRender, computed, inject, input, linkedSignal, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { I18n, runSteps, type ScreenRuntime, type Scope } from 'core';
+import { BusyComponent } from './busy.component';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
 import type { NzTreeNode, NzTreeNodeOptions } from 'ng-zorro-antd/core/tree';
 import { NzInputModule } from 'ng-zorro-antd/input';
@@ -36,7 +37,7 @@ export function highlight(text: string, search: string): { text: string; match: 
  */
 @Component({
   selector: 'lc-tree',
-  imports: [FormsModule, NzAlertModule, NzInputModule, NzTreeModule],
+  imports: [BusyComponent, FormsModule, NzAlertModule, NzInputModule, NzTreeModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: block; }
@@ -54,6 +55,7 @@ export function highlight(text: string, search: string): { text: string; match: 
         <label class="visually-hidden" [for]="searchId">{{ i18n.t('lc.search') }}</label>
         <input nz-input class="search" type="search" [id]="searchId" [placeholder]="i18n.t('lc.search')" [ngModel]="search()" (ngModelChange)="search.set($event)" />
       }
+      <lc-busy [busy]="source().status === 'loading'" [empty]="!nodes().length">
       @if (nodes().length) {
         <nz-tree
           nzBlockNode
@@ -84,11 +86,10 @@ export function highlight(text: string, search: string): { text: string; match: 
             @for (part of parts(node.title); track $index) {@if (part.match) {<mark>{{ part.text }}</mark>} @else {<span>{{ part.text }}</span>}}
           </span>
         </ng-template>
-      } @else if (source().status === 'loading') {
-        <p role="status">{{ i18n.t('lc.loading') }}</p>
-      } @else {
+      } @else if (source().status !== 'loading') {
         <p role="status">{{ i18n.t('lc.noData') }}</p>
       }
+      </lc-busy>
     }
   `,
 })

@@ -144,6 +144,8 @@ The position properties live on the children, like the constraints of classic la
 
 **Charts** draw grouped or stacked bars, lines and doughnuts, with an optional right axis and combined bar/line series. The **tree view** is fully keyboard operable.
 
+**Waiting for data.** Every component that reads a data source shows the same activity indicator (`lc-busy`): a spinner that appears only after 300 ms, over a reserved area on the first load and over the dimmed previous data on reloads (which stay usable), with "taking longer than usual" after 8 seconds, `aria-busy` and a live announcement for screen readers. Buttons and form actions show their own spinner while they run.
+
 **Rich text.** `text` and `alert` with `"format": "markdown"`, and detail fields with the `markdown` format, show classic typography — paragraphs, three heading levels, nested bulleted and numbered lists, quotes, bold, italic, strikethrough, inline code and links — written in a restricted Markdown dialect; tables show the same values as plain text. The `richtext` field edits that same Markdown, so its value can be stored and shown anywhere.
 
 Plain text keeps its line breaks. Labels (fields, columns, buttons, menu) deliberately stay plain text. The component catalogue ([docs/catalogo-componenti.md](docs/catalogo-componenti.md), in Italian) lists what exists and specifies what is being built.
@@ -245,6 +247,7 @@ npm run start:runtime        # builds the libraries, copies the examples, serves
 
 In the top bar choose the **user** (`operatore`, `responsabile`, `amministratore`) and the **theme** (light, dark). The side menu is defined by `examples/navigation.json`; a selector at its top switches the use case. Things to try:
 
+* Switch the simulated **network** (normal, slow, very slow) in the top bar to see the activity indicators.
 * Switch users: the available use cases and menu entries follow the permissions of the profile. The URL of a screen you may not open shows a denial even if typed by hand.
 * *Inserimento Fattura*: a form with validation that saves a draft and navigates to the drafts list.
 * *Revisione Spese*: two menu entries open the same screen with different parameters; Approve and Reject only appear with the review permission.
@@ -370,7 +373,7 @@ npm run conformance:telemetry -- --user operatore --password operatore
 
 Every push to `main` and every pull request runs [`.github/workflows/ci.yml`](.github/workflows/ci.yml) on GitHub Actions: the front-end job (`schema:check`, `validate:examples`, `build:libs`, the tests of every project, the production builds of runtime and editor), the end-to-end job (Playwright in Chromium; report uploaded as an artifact when it fails) and the Java job (`mvn -B verify`).
 
-At the time of writing there are **584 automated tests**: schema 71, expressions 42, core 80, components 172, services 27, runtime 82, editor 110. The Java modules add 39 (`mvn verify`: authz 7, bff 8, registry 18 — including the parity of the server-side schema validation with Ajv on every example and the coherence between controller and contract —, telemetry 6).
+At the time of writing there are **591 automated tests**: schema 71, expressions 42, core 80, components 177, services 27, runtime 84, editor 110. The Java modules add 39 (`mvn verify`: authz 7, bff 8, registry 18 — including the parity of the server-side schema validation with Ajv on every example and the coherence between controller and contract —, telemetry 6).
 
 The unit tests run in jsdom, so layout, real focus handling and pixel-level rendering are **not** covered there; see the development guide for the helpers that make NG-ZORRO overlays testable.
 

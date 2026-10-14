@@ -13,6 +13,7 @@ import { DefinitionSource, I18n, ThemeService, loadCatalogs, type VisibleLeaf } 
 import { validateTheme } from 'schema';
 import { NavigationService } from './navigation.service';
 import { ShellSession } from './shell-session';
+import { DemoNetwork, NETWORK_SPEEDS, type NetworkSpeed } from '../demo/demo-ports';
 
 /** Lingue della demo: per ciascuna esiste `examples/i18n/<lingua>.json`. */
 const LANGUAGES = ['it', 'en'];
@@ -74,6 +75,9 @@ export class App {
   protected readonly languages = LANGUAGES;
 
   protected readonly profiles = this.session.profiles;
+  /** Rete simulata: solo nella demo con il backend nel browser (dove ci sono i profili da scegliere). */
+  protected readonly network = inject(DemoNetwork);
+  protected readonly speeds = Object.keys(NETWORK_SPEEDS) as NetworkSpeed[];
   private readonly definitions = inject(DefinitionSource);
   protected readonly themes = this.definitions.themes();
   protected readonly themeName = signal(this.themes[0]);

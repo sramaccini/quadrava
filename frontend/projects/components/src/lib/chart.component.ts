@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterNextRender, computed, inject, input, signal } from '@angular/core';
 import { I18n, formatValue, type ScreenRuntime, type Scope } from 'core';
+import { BusyComponent } from './busy.component';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
 import type { ChartNode, ColumnDefinition, Tone } from 'schema';
 import { niceScale, pieSlices } from './chart-geometry';
@@ -47,7 +48,7 @@ interface Line {
  */
 @Component({
   selector: 'lc-chart',
-  imports: [NzAlertModule],
+  imports: [BusyComponent, NzAlertModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: block; }
@@ -69,8 +70,13 @@ interface Line {
     @if (source().status === 'error') {
       <div role="alert"><nz-alert nzType="error" [nzMessage]="source().error ?? null" nzShowIcon /></div>
     } @else if (!rows().length) {
-      <p class="empty" role="status">{{ source().status === 'loading' ? i18n.t('lc.loading') : i18n.t('lc.noData') }}</p>
+      <lc-busy [busy]="source().status === 'loading'" [empty]="true">
+        @if (source().status !== 'loading') {
+          <p class="empty" role="status">{{ i18n.t('lc.noData') }}</p>
+        }
+      </lc-busy>
     } @else {
+      <lc-busy [busy]="source().status === 'loading'">
       <svg [attr.viewBox]="'0 0 ' + width() + ' ' + height()" [attr.height]="height()" aria-hidden="true" focusable="false">
         @if (node().kind === 'pie') {
           @for (slice of slices(); track $index) {
@@ -131,6 +137,7 @@ interface Line {
           }
         </tbody>
       </table>
+      </lc-busy>
     }
   `,
 })

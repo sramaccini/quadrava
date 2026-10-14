@@ -8,7 +8,8 @@ Regole comuni a tutti i componenti, valide anche per i nuovi:
 - nessun HTML da dati o traduzioni: i valori si mostrano sempre come testo;
 - le espressioni sono **fail-closed**: se una condizione non si può valutare, il componente si nasconde o si disabilita;
 - `visibleIf`, `hiddenIf`, `tooltip` valgono per ogni nodo (li applica il contenitore `lc-node`); `grow`, `span` e `region` valgono per ogni nodo dentro un contenitore di layout (§ 2.21);
-- colori e misure solo dal tema (`var(--lc-*)` o i token NG-ZORRO).
+- colori e misure solo dal tema (`var(--lc-*)` o i token NG-ZORRO);
+- un componente che legge un data source mostra l'attesa con l'indicatore comune `lc-busy` (§ 2.27), non con uno suo.
 
 ## 1. Realizzati
 
@@ -459,6 +460,19 @@ Quello che **deve** succedere comunque (controlli, regole, audit, più chiamate 
 **Etichette.** Le etichette (dei campi, delle colonne, dei pulsanti, del menu) restano **testo semplice**, di proposito: sono brevi, vengono lette dai lettori di schermo come nome dell'elemento e devono restare uguali ovunque.
 
 **Nelle traduzioni.** Dentro un'espressione CEL una stringa tra apici non può contenere a capo veri: nel testo di riserva di `t()` si scrive `\n` (nel JSON della schermata `\\n`). Nei file di traduzione gli a capo sono normali `\n` JSON.
+
+### 2.27 Indicatore di attività
+
+Tutti i componenti che leggono un data source (tabella, datatable, datatable lato server, grafico, dettaglio, indicatori, albero, calendario, timeline, kanban) mostrano l'attesa nello stesso modo, con il componente comune `lc-busy` che avvolge il loro contenuto.
+
+- **Spinner, anche per le tabelle grandi.** Non uno *skeleton*: per una tabella non si sa quante righe arriveranno, e righe grigie ferme per secondi sembrano una pagina rotta. L'intestazione della tabella (le colonne sono nella definizione) è visibile subito.
+- **Primo caricamento.** Lo spinner sta al posto del contenuto, in un'area di altezza minima riservata (`--lc-busy-min-height`, 160px), così all'arrivo dei dati la pagina salta poco. Durante l'attesa la tabella non dice «Nessun risultato».
+- **Ricarica** (filtri, `refresh`, pagina). I dati precedenti restano visibili e attenuati (`--lc-busy-dim`), con lo spinner sopra. L'indicatore non intercetta i clic: filtri, raggruppamenti e scorrimento restano usabili. Su una tabella lunga lo spinner resta nella parte visibile anche scorrendo.
+- **Tempi.** Lo spinner compare solo se l'attesa supera 300 ms, così le risposte veloci non lo fanno lampeggiare; una volta comparso resta almeno 400 ms. Oltre 8 secondi la scritta diventa «Ci vuole più del solito…».
+- **Accessibilità.** Il contenuto ha `aria-busy` per tutta l'attesa. Una regione `status`, sempre presente, annuncia «Caricamento…» quando compare lo spinner. Con «riduci movimento» del sistema operativo lo spinner non gira.
+- **Azioni.** Pulsanti, azioni dei form e caricamento dei file restano con lo spinner nel pulsante, che intanto è disabilitato.
+
+Nella demo il selettore **Rete** (normale, lenta, molto lenta) nella barra superiore rallenta il backend nel browser, per vedere l'indicatore e il messaggio delle attese lunghe; vale per la scheda del browser.
 
 ## 3. Note di realizzazione e limiti noti
 

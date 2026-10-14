@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { I18n, rowsOf, type ScreenRuntime, type Scope } from 'core';
+import { BusyComponent } from './busy.component';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzTimelineModule } from 'ng-zorro-antd/timeline';
 import type { TimelineNode } from 'schema';
@@ -13,7 +14,7 @@ type Row = Record<string, unknown>;
  */
 @Component({
   selector: 'lc-timeline',
-  imports: [NzAlertModule, NzTimelineModule],
+  imports: [BusyComponent, NzAlertModule, NzTimelineModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: block; }
@@ -25,8 +26,10 @@ type Row = Record<string, unknown>;
   template: `
     @if (source().status === 'error') {
       <div role="alert"><nz-alert nzType="error" [nzMessage]="source().error ?? null" nzShowIcon /></div>
-    } @else if (events().length) {
-      <nz-timeline [attr.aria-busy]="source().status === 'loading'">
+    } @else {
+      <lc-busy [busy]="source().status === 'loading'" [empty]="!events().length">
+      @if (events().length) {
+      <nz-timeline>
         @for (event of events(); track $index) {
           <nz-timeline-item [nzColor]="event.color">
             <time [attr.datetime]="event.iso">{{ event.when }}</time>
@@ -37,8 +40,10 @@ type Row = Record<string, unknown>;
           </nz-timeline-item>
         }
       </nz-timeline>
-    } @else if (source().status !== 'loading') {
-      <p class="empty">{{ i18n.t('lc.noData') }}</p>
+      } @else if (source().status !== 'loading') {
+        <p class="empty">{{ i18n.t('lc.noData') }}</p>
+      }
+      </lc-busy>
     }
   `,
 })

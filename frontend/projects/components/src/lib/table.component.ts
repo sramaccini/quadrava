@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, linkedSignal, signal, untracked } from '@angular/core';
 import { I18n, NodeHostComponent, formatValue, type FormatLabels, runSteps, type FormattedValue, type ScreenRuntime, type Scope } from 'core';
+import { BusyComponent } from './busy.component';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzPaginationModule } from 'ng-zorro-antd/pagination';
@@ -22,7 +23,7 @@ const DEFAULT_PAGE_SIZE = 10;
  */
 @Component({
   selector: 'lc-table',
-  imports: [NodeHostComponent, RowActionsComponent, NzTableModule, NzTagModule, NzButtonModule, NzPaginationModule, NzAlertModule, NzTooltipModule],
+  imports: [BusyComponent, NodeHostComponent, RowActionsComponent, NzTableModule, NzTagModule, NzButtonModule, NzPaginationModule, NzAlertModule, NzTooltipModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     .wrap { overflow-x: auto; overflow-y: hidden; }
@@ -40,7 +41,7 @@ const DEFAULT_PAGE_SIZE = 10;
     .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   `,
   template: `
-    <div [attr.aria-busy]="source().status === 'loading'">
+    <div>
       @if (source().status === 'error') {
         <div role="alert"><nz-alert nzType="error" [nzMessage]="source().error ?? null" nzShowIcon /></div>
       } @else {
@@ -58,11 +59,11 @@ const DEFAULT_PAGE_SIZE = 10;
             }
           </div>
         }
+        <lc-busy [busy]="source().status === 'loading'" [empty]="!rows().length">
         <div class="wrap">
         <nz-table
           nzSize="middle"
           [nzData]="rows()"
-          [nzLoading]="source().status === 'loading' && rows().length > 0"
           [nzFrontPagination]="false"
           [nzShowPagination]="false"
           [nzNoResult]="empty"
@@ -181,10 +182,10 @@ const DEFAULT_PAGE_SIZE = 10;
           }
         </nz-table>
         </div>
+        </lc-busy>
+        <!-- Durante il caricamento il posto resta vuoto: lo indica lc-busy. -->
         <ng-template #empty>
-          @if (source().status === 'loading') {
-            <span role="status">{{ i18n.t('lc.loading') }}</span>
-          } @else {
+          @if (source().status !== 'loading') {
             <span role="status">{{ i18n.t('lc.noResults') }}</span>
           }
         </ng-template>

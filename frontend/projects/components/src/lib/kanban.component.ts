@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { I18n, rowsOf, runSteps, type ScreenRuntime, type Scope } from 'core';
+import { BusyComponent } from './busy.component';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzDropdownModule } from 'ng-zorro-antd/dropdown';
@@ -19,7 +20,7 @@ type Row = Record<string, unknown>;
  */
 @Component({
   selector: 'lc-kanban',
-  imports: [IconComponent, NzAlertModule, NzButtonModule, NzDropdownModule, NzMenuModule],
+  imports: [BusyComponent, IconComponent, NzAlertModule, NzButtonModule, NzDropdownModule, NzMenuModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: block; }
@@ -43,7 +44,8 @@ type Row = Record<string, unknown>;
     @if (source().status === 'error') {
       <div role="alert"><nz-alert nzType="error" [nzMessage]="source().error ?? null" nzShowIcon /></div>
     } @else {
-      <div class="board" [attr.aria-busy]="source().status === 'loading'">
+      <lc-busy [busy]="source().status === 'loading'">
+      <div class="board">
         @for (column of columns(); track column.value) {
           <section
             class="column"
@@ -99,6 +101,7 @@ type Row = Record<string, unknown>;
           </section>
         }
       </div>
+      </lc-busy>
     }
   `,
 })

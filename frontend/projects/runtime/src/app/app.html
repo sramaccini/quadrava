@@ -60,6 +60,14 @@
               <nz-option [nzValue]="l" [nzLabel]="i18n.t('app.lang.' + l, {}, l)" />
             }
           </nz-select>
+          @if (profiles.length) {
+            <label for="lc-network">{{ i18n.t('app.network') }}</label>
+            <nz-select nzId="lc-network" nzSize="small" class="pick" [ngModel]="network.speed()" (ngModelChange)="network.set($event)">
+              @for (s of speeds; track s) {
+                <nz-option [nzValue]="s" [nzLabel]="i18n.t('app.network.' + s)" />
+              }
+            </nz-select>
+          }
         } @else {
           <!-- Fasce più strette: profilo, tema e lingua in un menu, perché la barra superiore non vada mai a capo. -->
           <button nz-button nzType="text" class="settings-button" type="button" nz-dropdown nzTrigger="click" nzPlacement="bottomRight" [nzDropdownMenu]="settingsMenu"
@@ -91,6 +99,15 @@
                   }
                 </ul>
               </li>
+              @if (profiles.length) {
+                <li nz-submenu [nzTitle]="i18n.t('app.network') + ': ' + i18n.t('app.network.' + network.speed())">
+                  <ul>
+                    @for (s of speeds; track s) {
+                      <li nz-menu-item [nzSelected]="s === network.speed()" (click)="network.set(s)">{{ i18n.t('app.network.' + s) }}</li>
+                    }
+                  </ul>
+                </li>
+              }
             </ul>
           </nz-dropdown-menu>
         }

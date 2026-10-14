@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, input, linkedSignal, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { I18n, formatValue, runSteps, type FormatLabels, type FormattedValue, type ScreenRuntime, type Scope } from 'core';
+import { BusyComponent } from './busy.component';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzCheckboxModule } from 'ng-zorro-antd/checkbox';
@@ -82,7 +83,7 @@ function asLevel(data: unknown, page: number, previous?: Level): Level {
 @Component({
   selector: 'lc-server-data-table',
   imports: [
-    FormsModule, IconComponent, RowActionsComponent, NzAlertModule, NzButtonModule, NzCheckboxModule, NzDatePickerModule, NzDropdownModule, NzInputModule,
+    BusyComponent, FormsModule, IconComponent, RowActionsComponent, NzAlertModule, NzButtonModule, NzCheckboxModule, NzDatePickerModule, NzDropdownModule, NzInputModule,
     NzPaginationModule, NzSelectModule, NzTableModule, NzTagModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -109,7 +110,7 @@ function asLevel(data: unknown, page: number, previous?: Level): Level {
     .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   `,
   template: `
-    <div [attr.aria-busy]="top()?.status === 'loading'">
+    <div>
       @if (top()?.status === 'error') {
         <div role="alert"><nz-alert nzType="error" [nzMessage]="i18n.t('lc.loadFailed')" nzShowIcon /></div>
       } @else {
@@ -127,8 +128,9 @@ function asLevel(data: unknown, page: number, previous?: Level): Level {
           }
           <span class="count" aria-live="polite">{{ countText() }}</span>
         </div>
+        <lc-busy [busy]="top()?.status === 'loading'" [empty]="!items().length">
         <div class="wrap">
-          <nz-table nzSize="middle" [nzData]="items()" [nzFrontPagination]="false" [nzShowPagination]="false" [nzNoResult]="empty" [nzLoading]="top()?.status === 'loading' && items().length > 0">
+          <nz-table nzSize="middle" [nzData]="items()" [nzFrontPagination]="false" [nzShowPagination]="false" [nzNoResult]="empty">
             <thead>
               <tr>
                 @for (column of columns(); track column.field) {
@@ -274,8 +276,11 @@ function asLevel(data: unknown, page: number, previous?: Level): Level {
             }
           </nz-table>
         </div>
+        </lc-busy>
         <ng-template #empty>
-          <span role="status">{{ top()?.status === 'loading' ? i18n.t('lc.loading') : i18n.t('lc.noResults') }}</span>
+          @if (top()?.status !== 'loading') {
+            <span role="status">{{ i18n.t('lc.noResults') }}</span>
+          }
         </ng-template>
         @if ((top()?.total ?? 0) > pageSize()) {
           <div class="pager">

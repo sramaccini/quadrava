@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { I18n, formatValue, type FormatLabels, type ScreenRuntime, type Scope } from 'core';
+import { BusyComponent } from './busy.component';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import type { StatItem, StatsNode, Tone } from 'schema';
@@ -29,7 +30,7 @@ interface StatView {
  */
 @Component({
   selector: 'lc-stats',
-  imports: [IconComponent, NzAlertModule, NzTooltipModule],
+  imports: [BusyComponent, IconComponent, NzAlertModule, NzTooltipModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: block; }
@@ -47,7 +48,8 @@ interface StatView {
     @if (status() === 'error') {
       <div role="alert"><nz-alert nzType="error" [nzMessage]="error()" nzShowIcon /></div>
     } @else {
-      <dl [attr.aria-busy]="status() === 'loading'">
+      <lc-busy [busy]="status() === 'loading'">
+      <dl>
         @for (stat of stats(); track $index) {
           <div class="stat">
             <dt>
@@ -65,6 +67,7 @@ interface StatView {
           </div>
         }
       </dl>
+      </lc-busy>
     }
   `,
 })

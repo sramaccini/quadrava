@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { MarkdownComponent } from './markdown.component';
 import { I18n, formatValue, type FormatLabels, type FormattedValue, type ScreenRuntime, type Scope } from 'core';
+import { BusyComponent } from './busy.component';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzCardModule } from 'ng-zorro-antd/card';
 import { NzDescriptionsModule } from 'ng-zorro-antd/descriptions';
@@ -16,17 +17,19 @@ import { TONE_COLORS } from './shared';
  */
 @Component({
   selector: 'lc-detail',
-  imports: [MarkdownComponent, IconComponent, NzCardModule, NzDescriptionsModule, NzTagModule, NzAlertModule, NzTooltipModule],
+  imports: [BusyComponent, MarkdownComponent, IconComponent, NzCardModule, NzDescriptionsModule, NzTagModule, NzAlertModule, NzTooltipModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     .help { display: inline-flex; margin-left: 4px; color: var(--lc-color-muted, #5d6b7a); cursor: help; vertical-align: -1px; }
     .help:focus-visible { outline: 2px solid var(--lc-color-primary, #1f5fbf); outline-offset: 2px; border-radius: 50%; }
   `,
   template: `
-    <nz-card role="region" [attr.aria-label]="node().title ? runtime().text(node().title, scope()) : null" [attr.aria-busy]="source().status === 'loading'" [nzTitle]="node().title ? runtime().text(node().title, scope())  : undefined">
+    <nz-card role="region" [attr.aria-label]="node().title ? runtime().text(node().title, scope()) : null" [nzTitle]="node().title ? runtime().text(node().title, scope())  : undefined">
       @if (source().status === 'error') {
         <div role="alert"><nz-alert nzType="error" [nzMessage]="source().error ?? null" nzShowIcon /></div>
-      } @else if (record(); as rec) {
+      } @else {
+      <lc-busy [busy]="source().status === 'loading'" [empty]="!record()">
+      @if (record(); as rec) {
         <nz-descriptions nzBordered nzSize="small" [nzColumn]="{ xxl: 3, xl: 3, lg: 3, md: 2, sm: 1, xs: 1 }">
           @for (field of fields(); track field.field) {
             <ng-template #title>
@@ -51,8 +54,8 @@ import { TONE_COLORS } from './shared';
         </nz-descriptions>
       } @else if (source().status === 'ready') {
         <p role="status">{{ i18n.t('lc.noData') }}</p>
-      } @else {
-        <p role="status">{{ i18n.t('lc.loading') }}</p>
+      }
+      </lc-busy>
       }
     </nz-card>
   `,

@@ -4,13 +4,14 @@
 /* La barra superiore non va mai a capo: ha altezza fissa e quello che non ci sta finisce nel menu delle impostazioni.
    A sinistra lascia spazio al pulsante tondo della barra laterale, che sporge di 13px. */
 .bar {
-  display: flex; flex-wrap: nowrap; align-items: center; gap: 12px; height: var(--lc-header-height); line-height: 1.5715; padding: 0 16px 0 40px;
+  display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; height: var(--lc-header-height); line-height: 1.5715; padding: 0 16px 0 40px;
   background: var(--lc-header-bg); color: var(--lc-header-text); border-bottom: 1px solid var(--lc-header-border); position: relative; z-index: 1;
 }
 .crumb { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--lc-color-muted); }
 .spacer { flex: 1; }
 .bar label { margin-left: 8px; color: var(--lc-color-muted); white-space: nowrap; }
-.pick { min-width: 140px; }
+/* Quattro scelte (profilo, tema, lingua, rete) devono stare nella barra anche a 1200px con la barra laterale aperta. */
+.pick { min-width: 112px; }
 .menu-button, .settings-button { flex: none; color: inherit; font-size: 18px; }
 lc-user-menu { height: 100%; flex: none; }
 nz-content { flex: 1; min-width: 0; }

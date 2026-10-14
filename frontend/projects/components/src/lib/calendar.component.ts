@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { I18n, runSteps, type ScreenRuntime, type Scope } from 'core';
+import { BusyComponent } from './busy.component';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzCalendarModule } from 'ng-zorro-antd/calendar';
@@ -39,7 +40,7 @@ export function parseMonth(value: unknown): Date | null {
  */
 @Component({
   selector: 'lc-calendar',
-  imports: [IconComponent, NzAlertModule, NzButtonModule, NzCalendarModule],
+  imports: [BusyComponent, IconComponent, NzAlertModule, NzButtonModule, NzCalendarModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: block; }
@@ -58,7 +59,9 @@ export function parseMonth(value: unknown): Date | null {
     @if (source().status === 'error') {
       <div role="alert"><nz-alert nzType="error" [nzMessage]="source().error ?? null" nzShowIcon /></div>
     } @else {
-      <nz-calendar [nzValue]="value()" [nzDateCell]="cell" [nzCustomHeader]="header" (nzValueChange)="pick($event)" [attr.aria-busy]="source().status === 'loading'" />
+      <lc-busy [busy]="source().status === 'loading'">
+        <nz-calendar [nzValue]="value()" [nzDateCell]="cell" [nzCustomHeader]="header" (nzValueChange)="pick($event)" />
+      </lc-busy>
       <ng-template #header>
         <div class="header">
           <button nz-button type="button" [attr.aria-label]="i18n.t('lc.previousMonth')" (click)="shift(-1)"><lc-icon name="left" /></button>
