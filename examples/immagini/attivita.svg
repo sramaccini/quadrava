@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-hidden="true">
+  <!-- Illustrazione d'esempio della vetrina «Attività e avanzamento»: una cartellina con l'elenco delle attività. -->
+  <rect x="9" y="7" width="30" height="37" rx="4" fill="#e8f1fb" stroke="#2f6fb5" stroke-width="2"/>
+  <rect x="17" y="4" width="14" height="7" rx="2" fill="#ffffff" stroke="#2f6fb5" stroke-width="2"/>
+  <path d="M15 19.5l2.5 2.5 4.5-5" fill="none" stroke="#1a7f37" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M15 29.5l2.5 2.5 4.5-5" fill="none" stroke="#1a7f37" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="15" y="35.5" width="6" height="6" rx="1.5" fill="none" stroke="#8a94a3" stroke-width="2"/>
+  <path d="M25 20h9M25 30h9M25 38.5h7" stroke="#5b6573" stroke-width="2.4" stroke-linecap="round"/>
+</svg>

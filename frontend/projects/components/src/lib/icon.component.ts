@@ -38,6 +38,8 @@ import {
   MessageOutline,
   LinkOutline,
   ClearOutline,
+  CodeOutline,
+  CopyOutline,
 } from '@ant-design/icons-angular/icons';
 import type { IconDefinition } from '@ant-design/icons-angular';
 import { NzIconModule } from 'ng-zorro-antd/icon';
@@ -76,6 +78,8 @@ export const ICON_TYPES: Record<string, { type: string; icon: IconDefinition }> 
   close: { type: 'close', icon: CloseOutline },
   external: { type: 'export', icon: ExportOutline },
   move: { type: 'swap', icon: SwapOutline },
+  code: { type: 'code', icon: CodeOutline },
+  copy: { type: 'copy', icon: CopyOutline },
   // Barra dell'editor di testo formattato.
   'rich-bold': { type: 'bold', icon: BoldOutline },
   'rich-italic': { type: 'italic', icon: ItalicOutline },

@@ -1,13 +1,14 @@
 import { provideHttpClient, withFetch } from '@angular/common/http';
 import { ApplicationConfig, provideBrowserGlobalErrorListeners, type EnvironmentProviders, type Provider } from '@angular/core';
 import { provideRouter } from '@angular/router';
-import { NzNotifier, provideLowcodeComponents } from 'components';
+import { NzNotifier, SectionTools, provideLowcodeComponents } from 'components';
 import { Authorization, DataClient, DefinitionSource, Notifier, RuntimeDiagnostics, ScreenNavigator, UserProvider } from 'core';
 import { provideLowcodeServices, provideRegistryDefinitions } from 'services';
 import { DemoDiagnostics, DemoSession, MockDataClient } from '../demo/demo-ports';
 import { ExampleDefinitions } from '../demo/example-definitions';
 import { routes } from './app.routes';
 import { RouterNavigator } from './navigation.service';
+import { ShowcaseTools } from './showcase/showcase-tools';
 import { DEFAULT_RUNTIME_CONFIG, type RuntimeConfig } from './runtime-config';
 import { BffShellSession, DemoShellSession, ShellSession } from './shell-session';
 
@@ -48,6 +49,8 @@ export function appConfigFor(config: RuntimeConfig): ApplicationConfig {
       ...ports(config),
       { provide: ScreenNavigator, useExisting: RouterNavigator },
       { provide: Notifier, useExisting: NzNotifier },
+      // Nelle vetrine ogni sezione ha «JSON» e «Aiuto».
+      { provide: SectionTools, useExisting: ShowcaseTools },
     ],
   };
 }

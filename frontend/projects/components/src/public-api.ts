@@ -14,6 +14,8 @@ export * from './lib/input.component';
 export * from './lib/layout.component';
 export * from './lib/display.component';
 export * from './lib/markdown.component';
+export * from './lib/code-tokens';
+export * from './lib/code-view.component';
 export * from './lib/kinetix-wordmark.component';
 export * from './lib/rich-text-editor.component';
 export * from './lib/rich-text-dom';

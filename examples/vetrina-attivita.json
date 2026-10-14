@@ -31,10 +31,10 @@
       "align": "center",
       "components": [
         {
-          "id": "logo",
+          "id": "illustrazione",
           "type": "image",
-          "src": "logo.svg",
-          "alt": "{{ t('vetrina_attivita.logo', 'Logo della piattaforma') }}",
+          "src": "examples/immagini/attivita.svg",
+          "alt": "{{ t('vetrina_attivita.illustrazione', 'Cartellina con l’elenco delle attività') }}",
           "width": 40,
           "height": 40
         },
