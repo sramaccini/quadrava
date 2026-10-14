@@ -126,7 +126,7 @@ Elenco redatto il 13 ottobre e **realizzato lo stesso giorno** (lavoro autonomo 
 
 ## 9. Convenzioni di lavoro
 
-- Commit in italiano, descrittivi, uno per componente. Trailer: `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
+- Commit in italiano, descrittivi, uno per componente, a nome dell'utente: nessun trailer `Co-Authored-By` di Claude (la storia è stata ripulita il 14-10-2026).
 - Dopo ogni modifica al codice: `build:libs`, test dei progetti toccati, `validate:examples` se si toccano esempi o schemi; per la UI controllo nel browser (demo sulla 4300).
 - Gli schemi JSON sono la fonte: modificare `*.schema.json`, poi `schema:sync`, poi i tipi in `schema/src/lib/types.ts`.
 - Ogni componente nuovo: schema, tipo, componente registrato in `STANDARD_COMPONENTS`, test (schema in `schema/new-components.spec.ts`, componente in `components/*.spec.ts` con `renderScreen`, vetrina in `runtime/vetrina-avanzata.spec.ts` con `openShowcase`), esempio in `examples/vetrina-*.json` con testi in `examples/i18n/it.json` ed `en.json`.
