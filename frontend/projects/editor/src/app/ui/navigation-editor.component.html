@@ -56,6 +56,7 @@
 </ng-template>
 
 <main class="center">
+    <div class="ed-tabs-box">
   <nz-tabs nzSize="small" [nzSelectedIndex]="view() === 'json' ? 1 : 0" (nzSelectedIndexChange)="setView($event)" [nzAnimated]="false">
     <nz-tab [nzTitle]="i18n.t('ed.nav.preview')"></nz-tab>
     <nz-tab [nzTitle]="i18n.t('ed.tabs.json')"></nz-tab>
@@ -93,7 +94,8 @@
       </div>
     </div>
   </div>
-</main>
+  </div>
+    </main>
 
 <ed-dock-side side="right" [width]="320" [panels]="[{ id: 'inspector', label: i18n.t('ed.inspector'), icon: 'control' }]">
   <section class="inspector ed-panel" edDockPanel="inspector" [attr.aria-label]="i18n.t('ed.inspector')">

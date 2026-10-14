@@ -22,7 +22,7 @@
 /* Con la struttura nascosta, i componenti prendono tutta la colonna. */
 .left:not(:has(ed-outline.ed-docked)) ed-palette { flex: 1 1 0; max-height: none; }
 .right ed-inspector { flex: 1 1 0; }
-.center { grid-area: center; display: flex; flex-direction: column; min-height: 0; }
+.center { grid-area: center; display: flex; flex-direction: column; min-height: 0; padding: 8px; background: var(--lc-color-background); }
 .center nz-tabs { padding: 0 12px; background: var(--lc-color-surface); }
 .center ::ng-deep .ant-tabs-nav { margin: 0; }
 .view { flex: 1; min-height: 0; }

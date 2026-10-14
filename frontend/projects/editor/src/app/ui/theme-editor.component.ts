@@ -29,7 +29,7 @@ import { JsonViewComponent } from './json-view.component';
   host: { '[style.--ed-right.px]': "dock.columnWidth('right', ['inspector'], 360)" },
   styles: `
     :host { display: grid; grid-template-columns: minmax(0, 1fr) var(--ed-right, 360px); min-height: 0; }
-    .center { display: flex; flex-direction: column; min-height: 0; }
+    .center { display: flex; flex-direction: column; min-height: 0; padding: 8px; background: var(--lc-color-background); }
     .center nz-tabs { padding: 0 12px; background: var(--lc-color-surface); }
     .center ::ng-deep .ant-tabs-nav { margin: 0; }
     .view { flex: 1; min-height: 0; }
@@ -40,6 +40,7 @@ import { JsonViewComponent } from './json-view.component';
   `,
   template: `
     <main class="center">
+    <div class="ed-tabs-box">
       <nz-tabs nzSize="small" [nzSelectedIndex]="view() === 'json' ? 1 : 0" (nzSelectedIndexChange)="view.set($event === 1 ? 'json' : 'preview')" [nzAnimated]="false">
         <nz-tab [nzTitle]="i18n.t('ed.theme.preview')"></nz-tab>
         <nz-tab [nzTitle]="i18n.t('ed.tabs.json')"></nz-tab>
@@ -49,6 +50,7 @@ import { JsonViewComponent } from './json-view.component';
           <ed-json-view />
         }
         <ed-preview-frame [state]="state()" [class.off]="view() === 'json'" />
+      </div>
       </div>
     </main>
     <ed-dock-side side="right" [width]="360" [panels]="[{ id: 'inspector', label: i18n.t('ed.inspector'), icon: 'control' }]">

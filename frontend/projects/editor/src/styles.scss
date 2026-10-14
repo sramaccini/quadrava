@@ -29,6 +29,11 @@ body { background: var(--lc-color-background); color: var(--lc-color-on-surface)
 }
 .ed-panel-title .anticon { font-size: 14px; }
 .ed-panel-body { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 10px 12px; }
+/* Area centrale: le schede (Anteprima, JSON, Data source, Testi…) e il loro contenuto in un riquadro con il bordo. */
+.ed-tabs-box {
+  display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden;
+  background: var(--lc-color-surface); border: 1px solid var(--lc-color-border); border-radius: var(--lc-radius);
+}
 
 /*
  * Riquadri sganciati (edDockPanel, vedi Dock): fuori dalla colonna, galleggiano sopra l'area centrale accanto alla
