@@ -6,12 +6,13 @@
   grid-template-areas: 'top top top' 'left center right' 'bottom bottom bottom';
 }
 .toolbar {
-  grid-area: top; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 8px 12px;
+  grid-area: top; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 4px 12px;
   background: var(--lc-color-surface); border-bottom: 1px solid var(--lc-color-border);
 }
-.brand { margin: 0; font-size: 16px; font-weight: 600; }
+.brand { margin: 0 4px 0 0; font-size: 16px; font-weight: 600; }
 .group { display: flex; gap: 4px; }
-.status { margin-left: auto; display: flex; gap: 4px; }
+.end { margin-left: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.status { display: flex; gap: 4px; }
 .language { width: 72px; }
 /* Colonne laterali: riquadri separati, ognuno con il proprio scorrimento. */
 .left, .right { overflow: hidden; }
@@ -32,7 +33,6 @@
   font: inherit; font-size: 12px; font-weight: 600; text-align: left; cursor: pointer;
 }
 .issues-toggle:focus-visible { outline: 2px solid var(--lc-color-primary); outline-offset: -2px; }
-.examples { max-height: 360px; overflow: auto; }
 .nav-workspace { grid-row: 2; grid-column: 1 / -1; }
 
 /* Finestre strette: la struttura sopra, le proprietà sotto l'anteprima. */

@@ -8,7 +8,7 @@ Avvio: `cd frontend && npm run start:editor` (porta 4201; costruisce le librerie
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│ Editor  [Nuova] [Apri esempio] [Importa] [Esporta]  [↶] [↷] [Incolla]  Valida│
+│ Editor  File  Modifica  ↶ ↷          Valida [Schermata|Navigazione|Tema]  IT │
 ├───────────────┬──────────────────────────────────────────┬───────────────────┤
 │ COMPONENTI    │ Anteprima | JSON | Data source           │ PROPRIETÀ         │
 │ Sezione Testo │ [Desktop|Tablet|Telefono] [Permessi] …   │ Tabella           │
@@ -23,6 +23,13 @@ Avvio: `cd frontend && npm run start:editor` (porta 4201; costruisce le librerie
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
+In alto c'è una **barra dei menu** come nelle applicazioni desktop:
+
+- **File**: Nuova, Apri esempio ▸ (sottomenu con gli esempi della modalità corrente), Importa…, Esporta, Registro…;
+- **Modifica**: Annulla, Ripeti; per le schermate Taglia, Copia, Incolla; Duplica, Elimina, Sposta su, Sposta giù (anche nella navigazione). Ogni voce mostra la sua scorciatoia; quelle che non si possono usare (niente da annullare, nessun nodo selezionato, appunti vuoti) sono spente.
+
+Un clic apre e chiude un menu e, a menu aperto, passando sull'altro titolo si cambia menu; un clic fuori lo chiude. Da tastiera (schema «menubar» di WAI-ARIA): Tab raggiunge la barra, frecce sinistra e destra tra i menu, giù (o Invio, Spazio) apre e scorre le voci saltando quelle spente, Home e Fine, destra entra nel sottomenu e sinistra ne esce, Esc chiude e riporta il fuoco al titolo. Dopo un comando il fuoco torna dov'era. Accanto ai menu restano le icone di annulla e ripeti; a destra lo stato del documento, il selettore **Schermata / Navigazione / Tema** e la lingua, che restano insieme anche quando la barra va a capo.
+
 Componenti, struttura e proprietà stanno in **riquadri separati**, ognuno con il titolo su una barra grigio scuro a testo bianco (colori dell'editor, non del tema in modifica) e il proprio scorrimento; lo stesso vale per struttura, profilo simulato e proprietà della navigazione e per le proprietà del tema. Sotto i 1100 px componenti e struttura si affiancano sopra l'anteprima e le proprietà vanno sotto.
 
 - **Tavolozza.** Gruppi: «Struttura e testi» (sezione, box, griglia, border layout, schede, procedura, testo, testo formattato — un `text` con `format: markdown` e un esempio di elenco —, messaggio, immagine, collegamento; anche il messaggio accetta `format: markdown`), «Campi» (un campo a sé per tipo: casella di testo, elenco a discesa, data, editor di testo formattato…, con nomi che non si ripetono nella schermata), «Inserimento e azioni», «Dati», «Visualizzazione» (indicatori, grafico, avanzamento, timeline, kanban, albero, calendario). Un clic aggiunge il componente nel punto di inserimento: dentro il contenitore selezionato (schermata, sezione, box, griglia, border, scheda, passo), altrimenti subito dopo il nodo selezionato. In alternativa lo si trascina nella struttura **o direttamente sull'anteprima**: lì il componente sotto il puntatore decide il punto (bordo alto prima, bordo basso dopo, centro dentro se è un contenitore; fuori dai componenti in fondo alla schermata) e un indicatore lo mostra. Ogni componente nasce da un modello valido; se usa un data source (`source`) e questo manca, l'editor lo crea (GET `/api/<nome>`, POST con `{{ request }}` per la datatable lato server).
@@ -34,9 +41,9 @@ Componenti, struttura e proprietà stanno in **riquadri separati**, ognuno con i
 - **Testi.** Tutti i testi che l'utente legge (titoli, etichette, messaggi, tooltip, conferme…), con dove stanno. Un testo semplice non cambia con la lingua: «Rendi traducibile» lo sostituisce con `{{ t('schermata.chiave', 'Testo') }}` (chiave dal prefisso della schermata e dalle prime parole, unica) e lo usa come traduzione italiana (gli a capo di un testo formattato diventano `\n` nell'espressione). Per ogni chiave si scrivono le traduzioni italiana e inglese, che valgono subito nell'anteprima; le traduzioni mancanti sono segnalate e contate nel titolo della scheda. «Esporta traduzioni» scarica `<schermata>.i18n.json` (`{ "it": {…}, "en": {…} }`) da unire ai cataloghi `examples/i18n/<lingua>.json`; «Salva nel registro e pubblica in <ambiente>» unisce le traduzioni modificate all'ultima versione del catalogo della lingua (documento `messages`, con If-Match) e la pubblica nell'ambiente scelto nel pannello del registro. I testi con graffe (parametri dei messaggi) e le espressioni più complesse si rendono traducibili a mano.
 - **Problemi.** Errori di schema, espressioni CEL non valide, identificativi ripetuti (errori) e data source non definiti (avvisi). Un clic porta all'elemento. Con errori l'anteprima resta all'ultima versione valida.
 
-- **Registro.** Il pulsante «Registro» apre un pannello per il documento aperto (schermata, navigazione o tema), che nel registro è un documento a sé (`contracts/registry.yaml` 0.3): si indicano applicazione e ambiente (ricordati nel browser; «sviluppo» all'inizio); «Salva versione» manda il documento (bloccato se ha errori o se l'identificativo non è valido) indicando la versione da cui si è partiti: se nel frattempo un altro ha salvato, il pannello lo dice e chiede se salvare comunque; se il registro rifiuta il documento, gli errori di schema si elencano punto per punto. «Storico» elenca le versioni, dalla più recente, con lo **stato di revisione** (bozza, in revisione, approvata, respinta, con chi ha deciso e la nota) e gli ambienti in cui ognuna è pubblicata; ogni versione si riapre, si **confronta** con il documento aperto (differenze per percorso), si manda in revisione, si approva o respinge (solo i revisori, mai l'autore: lo decide il registro) o si pubblica nell'ambiente indicato (con conferma; collaudo e produzione accettano solo versioni approvate). Gli errori del servizio si mostrano come messaggi brevi (registro non raggiungibile, permessi, non trovato, rifiutato con il titolo del Problem), mai con i dettagli tecnici. Le chiamate vanno a `/registry` sulla stessa origine e le inoltra il BFF, con il token dell'utente: le scritture rimandano il token CSRF del cookie `XSRF-TOKEN` (se il cookie non c'era ancora, la prima scrittura riceve 403 e si ripete una volta). Senza sessione il pannello mostra «Accedi», che passa dal login del BFF e torna all'editor. In sviluppo senza Keycloak: `npm run start:editor:registro` parla direttamente con il registro di riferimento avviato con il profilo `senza-auth`.
+- **Registro.** «File → Registro…» apre un pannello per il documento aperto (schermata, navigazione o tema), che nel registro è un documento a sé (`contracts/registry.yaml` 0.3): si indicano applicazione e ambiente (ricordati nel browser; «sviluppo» all'inizio); «Salva versione» manda il documento (bloccato se ha errori o se l'identificativo non è valido) indicando la versione da cui si è partiti: se nel frattempo un altro ha salvato, il pannello lo dice e chiede se salvare comunque; se il registro rifiuta il documento, gli errori di schema si elencano punto per punto. «Storico» elenca le versioni, dalla più recente, con lo **stato di revisione** (bozza, in revisione, approvata, respinta, con chi ha deciso e la nota) e gli ambienti in cui ognuna è pubblicata; ogni versione si riapre, si **confronta** con il documento aperto (differenze per percorso), si manda in revisione, si approva o respinge (solo i revisori, mai l'autore: lo decide il registro) o si pubblica nell'ambiente indicato (con conferma; collaudo e produzione accettano solo versioni approvate). Gli errori del servizio si mostrano come messaggi brevi (registro non raggiungibile, permessi, non trovato, rifiutato con il titolo del Problem), mai con i dettagli tecnici. Le chiamate vanno a `/registry` sulla stessa origine e le inoltra il BFF, con il token dell'utente: le scritture rimandano il token CSRF del cookie `XSRF-TOKEN` (se il cookie non c'era ancora, la prima scrittura riceve 403 e si ripete una volta). Senza sessione il pannello mostra «Accedi», che passa dal login del BFF e torna all'editor. In sviluppo senza Keycloak: `npm run start:editor:registro` parla direttamente con il registro di riferimento avviato con il profilo `senza-auth`.
 
-La bozza (documento, dati di esempio e traduzioni scritte nell'editor) si salva da sola nel browser a ogni modifica e si riprende alla riapertura. «Apri esempio» offre le schermate di `examples/` (l'elenco `examples/index.json` lo scrive `tools/copy-examples.mjs`); «Importa» ed «Esporta» leggono e scrivono un file `.json`.
+La bozza (documento, dati di esempio e traduzioni scritte nell'editor) si salva da sola nel browser a ogni modifica e si riprende alla riapertura. «File → Apri esempio» offre le schermate di `examples/` (l'elenco `examples/index.json` lo scrive `tools/copy-examples.mjs`); «Importa…» ed «Esporta» leggono e scrivono un file `.json`.
 
 ## 2. Pannello delle proprietà generato dallo schema
 
@@ -102,6 +109,7 @@ Modalità «Tema»: un file di `examples/themes/` (design token). Il pannello a 
 
 | Tasti | Azione |
 | --- | --- |
+| Tab sulla barra dei menu, poi frecce | apre i menu File e Modifica (vedi sopra) |
 | Ctrl+Z / Ctrl+Y (o Ctrl+Maiusc+Z) | annulla / ripeti (anche dentro i campi: le modifiche ravvicinate alla stessa proprietà sono un solo passo) |
 | Canc | elimina il nodo selezionato |
 | Ctrl+D | duplica |
@@ -120,7 +128,7 @@ editor/src/app/
               document-state (documento, selezione, cronologia, problemi: comune ai documenti),
               editor-store (la schermata), navigation-store (la navigazione), theme-store (il tema),
               templates (modelli, valori iniziali, riassunti), drop (trascinamento), texts (testi e chiavi), registry-client (client del registro)
-  ui/         palette, outline, inspector, fields (campi ricorsivi), json-field, json-view,
+  ui/         menu-bar (barra dei menu), palette, outline, inspector, fields (campi ricorsivi), json-field, json-view,
               data-sources, texts, issues, navigation-editor, theme-editor, registry-panel
   preview/    protocol (messaggi), preview-frame (l'iframe, lato editor), preview (barra dell'anteprima della
               schermata), preview-log (registro); dentro l'iframe: preview-app, preview-config, preview-ports

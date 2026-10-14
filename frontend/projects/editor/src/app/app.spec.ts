@@ -95,6 +95,13 @@ describe('editor delle schermate', () => {
     input.dispatchEvent(new Event('input'));
   };
   const tab = (index: number): void => (el.querySelectorAll('.center .ant-tabs-tab')[index] as HTMLElement).click();
+  /** Un comando della barra dei menu, come lo sceglie l'utente: apre il menu e fa clic sulla voce. */
+  async function menuCommand(menu: string, item: string): Promise<void> {
+    (el.querySelector(`ed-menu-bar [data-menu="${menu}"]`) as HTMLButtonElement).click();
+    await settle();
+    (el.querySelector(`ed-menu-bar [data-item="${item}"]`) as HTMLButtonElement).click();
+    await settle();
+  }
 
   it('dalla tavolozza alla struttura, alle proprietà e all’anteprima', async () => {
     expect(el.querySelector('ed-outline .empty')).not.toBeNull();
@@ -109,6 +116,55 @@ describe('editor delle schermate', () => {
     await untilState('ed-preview', (st) => getAt(screenOf(st), ['components', 0, 'components', 0, 'type']) === 'alert', 'messaggio dentro la sezione');
     expect(store.selection()).toEqual(['components', 0, 'components', 0]);
     expect(el.querySelector('.status')?.textContent).toContain('Valida');
+  });
+
+  it('barra dei menu: Modifica agisce sulla selezione, File apre un esempio dal sottomenu', async () => {
+    const bar = el.querySelector('ed-menu-bar [role="menubar"]') as HTMLElement;
+    expect([...bar.querySelectorAll(':scope > li > [role="menuitem"]')].map((b) => b.textContent?.trim())).toEqual(['File', 'Modifica']);
+    const item = (id: string) => el.querySelector(`ed-menu-bar [data-item="${id}"]`) as HTMLButtonElement | null;
+
+    // Senza selezione i comandi della selezione sono spenti e non fanno nulla.
+    (el.querySelector('ed-menu-bar [data-menu="edit"]') as HTMLButtonElement).click();
+    await settle();
+    expect(item('duplicate')?.getAttribute('aria-disabled')).toBe('true');
+    expect(item('undo')?.getAttribute('aria-disabled')).toBe('true');
+    expect(item('delete')?.querySelector('.shortcut')?.textContent).toBe('Canc');
+    item('duplicate')!.click();
+    await settle();
+    expect(item('duplicate')).not.toBeNull();
+    // Un clic fuori chiude il menu.
+    document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    await settle();
+    expect(item('duplicate')).toBeNull();
+
+    (el.querySelector('ed-palette button[data-type="section"]') as HTMLButtonElement).click();
+    await settle();
+    await menuCommand('edit', 'duplicate');
+    expect(outline()).toEqual(['Sezione', 'Sezione']);
+    await menuCommand('edit', 'undo');
+    expect(outline()).toEqual(['Sezione']);
+    store.select(['components', 0]);
+    await settle();
+    await menuCommand('edit', 'delete');
+    expect(store.doc()).toMatchObject({ components: [] });
+
+    // File → Apri esempio → vetrina-layout, dopo la conferma.
+    (el.querySelector('ed-menu-bar [data-menu="file"]') as HTMLButtonElement).click();
+    await settle();
+    expect([...el.querySelectorAll('ed-menu-bar [data-level="0"] .label')].map((l) => l.textContent)).toEqual([
+      'Nuova',
+      'Apri esempio',
+      'Importa…',
+      'Esporta',
+      'Registro…',
+    ]);
+    item('open-example')!.click();
+    await until(() => !!item('example:vetrina-layout'), 'esempi nel sottomenu');
+    item('example:vetrina-layout')!.click();
+    await until(() => !![...document.querySelectorAll('.ant-modal')].at(-1)?.querySelector('.ant-btn-primary'), 'conferma');
+    ([...document.querySelectorAll('.ant-modal')].at(-1)!.querySelector('.ant-btn-primary') as HTMLButtonElement).click();
+    await until(() => (store.doc() as { screen?: string }).screen === 'vetrina-layout', 'esempio aperto');
+    expect(item('open-example')).toBeNull();
   });
 
   it('un errore si vede nelle proprietà, nell’elenco dei problemi e nella struttura; l’anteprima resta all’ultima versione valida', async () => {
@@ -399,7 +455,7 @@ describe('editor delle schermate', () => {
       const body = FILES[url];
       return body ? json(body) : { ok: false, status: 404, json: async () => ({}) };
     });
-    ([...el.querySelectorAll<HTMLButtonElement>('.toolbar button')].find((b) => b.textContent?.includes('Registro')) as HTMLButtonElement).click();
+    await menuCommand('file', 'registry');
     await until(() => !!document.querySelector('ed-registry-panel'), 'pannello del registro');
     const panel = document.querySelector('ed-registry-panel') as HTMLElement;
     const app = panel.querySelector('#registry-app') as HTMLInputElement;
@@ -452,7 +508,7 @@ describe('editor delle schermate', () => {
       const body = FILES[url];
       return body ? json(body) : { ok: false, status: 404, json: async () => ({}) };
     });
-    ([...el.querySelectorAll<HTMLButtonElement>('.toolbar button')].find((b) => b.textContent?.includes('Registro')) as HTMLButtonElement).click();
+    await menuCommand('file', 'registry');
     await until(() => !!document.querySelector('ed-registry-panel'), 'pannello del registro');
     const panel = document.querySelector('ed-registry-panel') as HTMLElement;
     type(panel.querySelector('#registry-app') as HTMLInputElement, 'ordini');
@@ -510,7 +566,7 @@ describe('editor delle schermate', () => {
       const body = FILES[url];
       return body ? { ok: true, status: 200, json: async () => body } : { ok: false, status: 404, json: async () => ({}) };
     });
-    ([...el.querySelectorAll<HTMLButtonElement>('.toolbar button')].find((b) => b.textContent?.includes('Registro')) as HTMLButtonElement).click();
+    await menuCommand('file', 'registry');
     await until(() => !!document.querySelector('ed-registry-panel'), 'pannello del registro');
     const panel = document.querySelector('ed-registry-panel') as HTMLElement;
     type(panel.querySelector('#registry-app') as HTMLInputElement, 'ordini');

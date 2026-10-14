@@ -1,11 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, resource, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, effect, inject, resource, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Confirmation, I18n, Notifier, ThemeService, loadMessages } from 'core';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzDrawerModule } from 'ng-zorro-antd/drawer';
-import { NzDropdownModule } from 'ng-zorro-antd/dropdown';
 import { NzIconModule } from 'ng-zorro-antd/icon';
-import { NzMenuModule } from 'ng-zorro-antd/menu';
 import { NzSegmentedModule } from 'ng-zorro-antd/segmented';
 import { NzSelectModule } from 'ng-zorro-antd/select';
 import { NzTabsModule } from 'ng-zorro-antd/tabs';
@@ -22,6 +20,7 @@ import { DataSourcesComponent } from './ui/data-sources.component';
 import { InspectorComponent } from './ui/inspector.component';
 import { IssuesComponent } from './ui/issues.component';
 import { JsonViewComponent } from './ui/json-view.component';
+import { MenuBarComponent, type Menu, type MenuItem } from './ui/menu-bar.component';
 import { NavigationEditorComponent } from './ui/navigation-editor.component';
 import { ThemeEditorComponent } from './ui/theme-editor.component';
 import { OutlineComponent } from './ui/outline.component';
@@ -50,6 +49,7 @@ const VIEWS = ['preview', 'json', 'sources', 'texts'] as const;
     InspectorComponent,
     IssuesComponent,
     JsonViewComponent,
+    MenuBarComponent,
     NavigationEditorComponent,
     ThemeEditorComponent,
     OutlineComponent,
@@ -59,9 +59,7 @@ const VIEWS = ['preview', 'json', 'sources', 'texts'] as const;
     PreviewComponent,
     TextsComponent,
     NzButtonModule,
-    NzDropdownModule,
     NzIconModule,
-    NzMenuModule,
     NzSegmentedModule,
     NzSelectModule,
     NzTabsModule,
@@ -100,6 +98,52 @@ export class App {
   protected readonly showRegistry = signal(false);
   protected readonly warningCount = computed(() => this.active().issues().length - this.active().errorCount());
   protected readonly showIssues = signal(true);
+  private readonly fileInput = viewChild<ElementRef<HTMLInputElement>>('fileInput');
+
+  /** Barra dei menu: File (documento) e Modifica (comandi del documento e della selezione, con le scorciatoie). */
+  protected readonly menus = computed<Menu[]>(() => {
+    const t = (key: string) => this.i18n.t(key);
+    const active = this.active();
+    const mode = this.mode();
+    const file: MenuItem[] = [
+      { id: 'new', label: t('ed.menu.new'), run: () => void this.newDocument() },
+      {
+        id: 'open-example',
+        label: t('ed.openExample'),
+        emptyLabel: t('ed.menu.noExamples'),
+        children: this.exampleNames().map((name) => ({ id: 'example:' + name, label: name, run: () => void this.openExample(name) })),
+      },
+      { id: 'import', label: t('ed.menu.import'), run: () => this.fileInput()?.nativeElement.click() },
+      { id: 'export', label: t('ed.export'), run: () => this.exportFile() },
+      { id: 'registry', label: t('ed.menu.registry'), separator: true, run: () => this.showRegistry.set(true) },
+    ];
+    const edit: MenuItem[] = [
+      { id: 'undo', label: t('ed.menu.undo'), shortcut: 'Ctrl+Z', disabled: !active.canUndo(), run: () => active.undo() },
+      { id: 'redo', label: t('ed.menu.redo'), shortcut: 'Ctrl+Y', disabled: !active.canRedo(), run: () => active.redo() },
+    ];
+    if (mode !== 'theme') {
+      const doc = mode === 'screen' ? this.store : this.nav;
+      const selection = doc.selection();
+      const none = !selection.length;
+      if (mode === 'screen') {
+        edit.push(
+          { id: 'cut', label: t('ed.menu.cut'), shortcut: 'Ctrl+X', separator: true, disabled: none, run: () => this.store.cut(selection) },
+          { id: 'copy', label: t('ed.menu.copy'), shortcut: 'Ctrl+C', disabled: none, run: () => this.store.copy(selection) },
+          { id: 'paste', label: t('ed.menu.paste'), shortcut: 'Ctrl+V', disabled: !this.store.clipboard(), run: () => this.store.paste() },
+        );
+      }
+      edit.push(
+        { id: 'duplicate', label: t('ed.menu.duplicate'), shortcut: 'Ctrl+D', separator: mode === 'navigation', disabled: none, run: () => doc.duplicate(selection) },
+        { id: 'delete', label: t('ed.menu.delete'), shortcut: t('ed.key.delete'), disabled: none, run: () => doc.remove(selection) },
+        { id: 'move-up', label: t('ed.menu.moveUp'), shortcut: 'Alt+↑', separator: true, disabled: none, run: () => doc.move(selection, -1) },
+        { id: 'move-down', label: t('ed.menu.moveDown'), shortcut: 'Alt+↓', disabled: none, run: () => doc.move(selection, 1) },
+      );
+    }
+    return [
+      { id: 'file', label: t('ed.menu.file'), items: file },
+      { id: 'edit', label: t('ed.menu.edit'), items: edit },
+    ];
+  });
 
   /** Schermate di esempio (`examples/index.json`, scritto da tools/copy-examples.mjs). */
   protected readonly examples = resource({
