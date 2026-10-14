@@ -167,6 +167,65 @@ describe('editor delle schermate', () => {
     expect(item('open-example')).toBeNull();
   });
 
+  it('lati nascosti automaticamente come negli IDE: striscia con le linguette, apertura al passaggio, chiusura all’uscita', async () => {
+    const left = el.querySelector('aside.left') as HTMLElement;
+    const right = el.querySelector('aside.right') as HTMLElement;
+    const pin = (side: string) => el.querySelector(`[data-dock-pin="${side}"]`) as HTMLButtonElement;
+    const isOpen = (aside: HTMLElement) => aside.classList.contains('open');
+    expect(pin('left').getAttribute('aria-pressed')).toBe('true');
+    expect(left.querySelector('.strip')).toBeNull();
+
+    // Sganciato: resta aperto finché il mouse non esce, poi rimane la striscia con le linguette.
+    pin('left').click();
+    await settle();
+    expect(el.querySelector('.editor')?.classList.contains('left-auto')).toBe(true);
+    expect([...left.querySelectorAll('.strip .tab')].map((t) => t.textContent?.trim())).toEqual(['Componenti', 'Struttura']);
+    expect(isOpen(left)).toBe(true);
+    left.dispatchEvent(new Event('pointerleave'));
+    await until(() => !isOpen(left), 'chiusura all’uscita del mouse');
+    expect(JSON.parse(localStorage.getItem('lc.editor.dock')!)).toEqual({ left: false, right: true });
+
+    // Al passaggio si apre dopo una breve attesa; un passaggio veloce non apre nulla.
+    left.dispatchEvent(new Event('pointerenter'));
+    left.dispatchEvent(new Event('pointerleave'));
+    await new Promise((r) => setTimeout(r, 250));
+    await settle();
+    expect(isOpen(left)).toBe(false);
+    left.dispatchEvent(new Event('pointerenter'));
+    await until(() => isOpen(left), 'apertura al passaggio');
+    expect(left.querySelector('.tab')?.getAttribute('aria-expanded')).toBe('true');
+
+    // Trascinare un componente della tavolozza verso l'anteprima chiude il lato.
+    el.querySelector('ed-palette button[data-type="section"]')!.dispatchEvent(new Event('dragstart', { bubbles: true }));
+    await until(() => !isOpen(left), 'chiusura durante il trascinamento');
+
+    // A destra: con il fuoco in un campo resta aperto anche con il mouse fuori; Esc lo chiude e torna alla linguetta.
+    pin('right').click();
+    await settle();
+    const field = right.querySelector('.dock input, .dock textarea') as HTMLInputElement;
+    field.focus();
+    right.dispatchEvent(new Event('pointerleave'));
+    await new Promise((r) => setTimeout(r, 500));
+    await settle();
+    expect(isOpen(right)).toBe(true);
+    field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await settle();
+    expect(isOpen(right)).toBe(false);
+    expect(document.activeElement?.getAttribute('data-dock-tab')).toBe('right');
+    // Un clic sulla linguetta apre subito.
+    (document.activeElement as HTMLButtonElement).click();
+    await settle();
+    expect(isOpen(right)).toBe(true);
+
+    // Rifissati, i lati tornano colonne; la scelta resta per la visita successiva.
+    pin('right').click();
+    pin('left').click();
+    await settle();
+    expect(left.querySelector('.strip')).toBeNull();
+    expect(right.querySelector('.strip')).toBeNull();
+    expect(JSON.parse(localStorage.getItem('lc.editor.dock')!)).toEqual({ left: true, right: true });
+  });
+
   it('un errore si vede nelle proprietà, nell’elenco dei problemi e nella struttura; l’anteprima resta all’ultima versione valida', async () => {
     (el.querySelector('ed-palette button[data-type="text"]') as HTMLButtonElement).click();
     await untilState('ed-preview', (st) => getAt(screenOf(st), ['components', 0, 'type']) === 'text', 'testo nell’anteprima');

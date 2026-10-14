@@ -1,7 +1,7 @@
 :host { display: block; height: 100vh; }
 .editor {
   display: grid; height: 100%;
-  grid-template-columns: 280px minmax(0, 1fr) 320px;
+  grid-template-columns: var(--ed-left, 280px) minmax(0, 1fr) var(--ed-right, 320px);
   grid-template-rows: auto minmax(0, 1fr) auto;
   grid-template-areas: 'top top top' 'left center right' 'bottom bottom bottom';
 }
@@ -15,12 +15,36 @@
 .status { display: flex; gap: 4px; }
 .language { width: 72px; }
 /* Colonne laterali: riquadri separati, ognuno con il proprio scorrimento. */
-.left, .right { overflow: hidden; }
+.left, .right { position: relative; display: flex; min-height: 0; overflow: hidden; }
 .left { grid-area: left; border-right: 1px solid var(--lc-color-border); }
-.left > ed-palette { flex: 0 1 auto; max-height: 50%; }
-.left > ed-outline { flex: 1 1 0; min-height: 160px; }
-.right { grid-area: right; border-left: 1px solid var(--lc-color-border); }
-.right > ed-inspector { flex: 1 1 0; }
+.right { grid-area: right; flex-direction: row-reverse; border-left: 1px solid var(--lc-color-border); }
+.dock { flex: 1; min-width: 0; }
+.left .dock > ed-palette { flex: 0 1 auto; max-height: 50%; }
+.left .dock > ed-outline { flex: 1 1 0; min-height: 160px; }
+.right .dock > ed-inspector { flex: 1 1 0; }
+
+/*
+ * Lati nascosti automaticamente, come negli IDE: la colonna si riduce alla striscia delle linguette e il lato si apre
+ * sopra l'anteprima. Chiuso resta nel documento (trasparente e senza eventi): un trascinamento partito dalla
+ * tavolozza continua anche se il lato si chiude.
+ */
+.editor.left-auto { --ed-left: 30px; }
+.editor.right-auto { --ed-right: 30px; }
+.left.auto, .right.auto { z-index: 30; overflow: visible; }
+.strip { flex: none; display: flex; flex-direction: column; gap: 2px; width: 30px; padding: 6px 0; background: var(--lc-color-surface); }
+.tab {
+  display: flex; align-items: center; gap: 6px; padding: 10px 0; border: 0; border-radius: var(--lc-radius); background: none;
+  color: var(--lc-color-muted); font: inherit; font-size: 12px; font-weight: 600; writing-mode: vertical-rl; cursor: pointer;
+}
+.tab:hover, .tab[aria-expanded='true'] { color: var(--lc-color-primary); background: color-mix(in srgb, var(--lc-color-primary) 10%, transparent); }
+.tab:focus-visible { outline: 2px solid var(--lc-color-primary); outline-offset: -2px; }
+.auto .dock {
+  position: absolute; top: 0; bottom: 0; display: flex; box-shadow: 0 6px 24px rgb(0 0 0 / 22%);
+  opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 0.12s ease, transform 0.12s ease, visibility 0s linear 0.12s;
+}
+.left.auto .dock { left: 30px; width: 280px; transform: translateX(-8px); }
+.right.auto .dock { right: 30px; width: 320px; transform: translateX(8px); }
+.auto.open .dock { opacity: 1; visibility: visible; pointer-events: auto; transform: none; transition: opacity 0.12s ease, transform 0.12s ease; }
 .center { grid-area: center; display: flex; flex-direction: column; min-height: 0; }
 .center nz-tabs { padding: 0 12px; background: var(--lc-color-surface); }
 .center ::ng-deep .ant-tabs-nav { margin: 0; }
@@ -40,8 +64,12 @@
   :host { height: auto; }
   .editor { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto 70vh auto auto; grid-template-areas: 'top' 'left' 'center' 'right' 'bottom'; }
   .left, .right { overflow: visible; }
-  .left { flex-direction: row; flex-wrap: wrap; border-right: 0; border-bottom: 1px solid var(--lc-color-border); }
-  .left > ed-palette, .left > ed-outline { flex: 1 1 300px; max-height: 45vh; }
+  .left { border-right: 0; border-bottom: 1px solid var(--lc-color-border); }
+  .left .dock { flex-direction: row; flex-wrap: wrap; }
+  .left .dock > ed-palette, .left .dock > ed-outline { flex: 1 1 300px; max-height: 45vh; }
   .right { border-left: 0; border-top: 1px solid var(--lc-color-border); }
-  .right > ed-inspector { flex: none; }
+  .right .dock > ed-inspector { flex: none; }
+  /* Pannelli impilati: niente lati nascosti, si vedono sempre. */
+  .strip { display: none; }
+  .auto .dock { position: static; width: auto; box-shadow: none; opacity: 1; visibility: visible; pointer-events: auto; transform: none; }
 }

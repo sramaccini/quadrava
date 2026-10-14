@@ -8,6 +8,7 @@ import { getIn, isObject, samePath, startsWith, type Json, type Path } from '../
 import { dropPoint, zoneAt, type DropZone } from '../model/drop';
 import { EditorStore } from '../model/editor-store';
 import { childSlots, containerItems, targetAt } from '../model/schema-info';
+import { DockPinComponent } from './dock-pin.component';
 import { DRAG_NODE, DRAG_TYPE } from './palette.component';
 import { fallbackText } from '../model/templates';
 
@@ -36,7 +37,7 @@ const DETAIL_KEYS = ['title', 'label', 'text', 'source', 'bind'];
  */
 @Component({
   selector: 'ed-outline',
-  imports: [NgTemplateOutlet, NzButtonModule, NzIconModule, NzTooltipModule],
+  imports: [DockPinComponent, NgTemplateOutlet, NzButtonModule, NzIconModule, NzTooltipModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './outline.component.scss',
   templateUrl: './outline.component.html',

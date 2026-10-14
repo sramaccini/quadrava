@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { I18n } from 'core';
 import { NzIconModule } from 'ng-zorro-antd/icon';
+import { DockPinComponent } from './dock-pin.component';
 import { fromPointer, getIn, isObject, samePath, toPointer } from '../model/doc-ops';
 import { EditorStore } from '../model/editor-store';
 import { definitionProperties, nodeProperties, screenProperties, type PropertyInfo } from '../model/schema-info';
@@ -15,7 +16,7 @@ const CONDITIONS = new Set(['visibleIf', 'hiddenIf', 'enabledIf', 'readOnlyIf', 
  */
 @Component({
   selector: 'ed-inspector',
-  imports: [FieldsComponent, NzIconModule],
+  imports: [DockPinComponent, FieldsComponent, NzIconModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './inspector.component.scss',
   templateUrl: './inspector.component.html',

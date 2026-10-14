@@ -1,4 +1,4 @@
-<div class="editor">
+<div class="editor" [class.left-auto]="mode() === 'screen' && !dock.pinned.left()" [class.right-auto]="mode() === 'screen' && !dock.pinned.right()">
   <header class="toolbar">
     <h1 class="brand"><lc-kinetix-wordmark icon="brand/kinetix-studio-icon-small.svg" product="Studio" /></h1>
     <!-- Menu come nelle applicazioni desktop: File (nuova, esempi, importa, esporta, registro) e Modifica. -->
@@ -38,9 +38,29 @@
   } @else if (mode() === 'theme') {
     <ed-theme-editor class="nav-workspace" />
   } @else {
-  <aside class="left ed-panels">
-    <ed-palette />
-    <ed-outline />
+  <aside
+    class="left"
+    [class.auto]="!dock.pinned.left()"
+    [class.open]="dock.isOpen('left')"
+    (pointerenter)="dock.pointer('left', true)"
+    (pointerleave)="dock.pointer('left', false)"
+    (keydown.escape)="escapeDock('left')"
+  >
+    @if (!dock.pinned.left()) {
+      <!-- Lato nascosto automaticamente: la striscia con le linguette, che aprono il lato sopra l'anteprima. -->
+      <div class="strip" role="group" [attr.aria-label]="i18n.t('ed.dock.left')">
+        <button type="button" class="tab" [attr.data-dock-tab]="'left'" [attr.aria-expanded]="dock.isOpen('left')" aria-controls="ed-dock-left" (click)="dock.toggle('left')">
+          <span nz-icon nzType="appstore" aria-hidden="true"></span><span class="tab-label">{{ i18n.t('ed.palette') }}</span>
+        </button>
+        <button type="button" class="tab" [attr.data-dock-tab]="'left'" [attr.aria-expanded]="dock.isOpen('left')" aria-controls="ed-dock-left" (click)="dock.toggle('left')">
+          <span nz-icon nzType="apartment" aria-hidden="true"></span><span class="tab-label">{{ i18n.t('ed.outline') }}</span>
+        </button>
+      </div>
+    }
+    <div id="ed-dock-left" class="dock ed-panels" (focusin)="dockFocusIn('left', $event)" (focusout)="dockFocusOut('left', $event)" (dragstart)="dragFromDock('left', $event)">
+      <ed-palette />
+      <ed-outline />
+    </div>
   </aside>
 
   <main class="center">
@@ -67,8 +87,25 @@
     </div>
   </main>
 
-  <aside class="right ed-panels">
-    <ed-inspector />
+  <aside
+    class="right"
+    [class.auto]="!dock.pinned.right()"
+    [class.open]="dock.isOpen('right')"
+    (pointerenter)="dock.pointer('right', true)"
+    (pointerleave)="dock.pointer('right', false)"
+    (keydown.escape)="escapeDock('right')"
+  >
+    @if (!dock.pinned.right()) {
+      <!-- Lato nascosto automaticamente: la striscia con le linguette, che aprono il lato sopra l'anteprima. -->
+      <div class="strip" role="group" [attr.aria-label]="i18n.t('ed.dock.right')">
+        <button type="button" class="tab" [attr.data-dock-tab]="'right'" [attr.aria-expanded]="dock.isOpen('right')" aria-controls="ed-dock-right" (click)="dock.toggle('right')">
+          <span nz-icon nzType="control" aria-hidden="true"></span><span class="tab-label">{{ i18n.t('ed.inspector') }}</span>
+        </button>
+      </div>
+    }
+    <div id="ed-dock-right" class="dock ed-panels" (focusin)="dockFocusIn('right', $event)" (focusout)="dockFocusOut('right', $event)">
+      <ed-inspector />
+    </div>
   </aside>
   }
 

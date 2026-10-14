@@ -20,6 +20,7 @@ import { PreviewComponent } from './preview/preview.component';
 import { DataSourcesComponent } from './ui/data-sources.component';
 import { InspectorComponent } from './ui/inspector.component';
 import { IssuesComponent } from './ui/issues.component';
+import { Dock, type DockSide } from './ui/dock';
 import { JsonViewComponent } from './ui/json-view.component';
 import { MenuBarComponent, type Menu, type MenuItem } from './ui/menu-bar.component';
 import { NavigationEditorComponent } from './ui/navigation-editor.component';
@@ -100,6 +101,7 @@ export class App {
   protected readonly showRegistry = signal(false);
   protected readonly warningCount = computed(() => this.active().issues().length - this.active().errorCount());
   protected readonly showIssues = signal(true);
+  protected readonly dock = inject(Dock);
   private readonly fileInput = viewChild<ElementRef<HTMLInputElement>>('fileInput');
 
   /** Barra dei menu: File (documento) e Modifica (comandi del documento e della selezione, con le scorciatoie). */
@@ -184,6 +186,33 @@ export class App {
         // vedi la bozza
       }
     });
+  }
+
+  /**
+   * Il fuoco entra in un campo del lato (si sta scrivendo una proprietà): il lato resta aperto anche se il mouse esce.
+   * Un pulsante (la puntina, un componente della tavolozza, un nodo della struttura) non lo trattiene.
+   */
+  protected dockFocusIn(side: DockSide, event: FocusEvent): void {
+    this.dock.focus(side, isEditable(event.target));
+  }
+
+  /** Il fuoco esce dal lato aperto sopra l'anteprima: si chiude (se anche il mouse è fuori). */
+  protected dockFocusOut(side: DockSide, event: FocusEvent): void {
+    const area = event.currentTarget as HTMLElement;
+    if (!(event.relatedTarget instanceof Node && area.contains(event.relatedTarget))) this.dock.blur(side);
+  }
+
+  /** Esc chiude il lato aperto sopra l'anteprima e riporta il fuoco alla sua linguetta. */
+  protected escapeDock(side: DockSide): void {
+    if (this.dock.pinned[side]() || this.dock.open() !== side) return;
+    this.dock.hide(side);
+    document.querySelector<HTMLElement>(`[data-dock-tab="${side}"]`)?.focus();
+  }
+
+  /** Un componente trascinato dalla tavolozza verso l'anteprima: il lato si chiude per lasciare libero il disegno. */
+  protected dragFromDock(side: DockSide, event: DragEvent): void {
+    if (this.dock.pinned[side]() || !(event.target instanceof Element) || !event.target.closest('ed-palette')) return;
+    setTimeout(() => this.dock.dragAway(side));
   }
 
   protected setView(index: number): void {
