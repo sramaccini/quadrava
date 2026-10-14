@@ -127,7 +127,7 @@ function asLevel(data: unknown, page: number, previous?: Level): Level {
           }
           <span class="count" aria-live="polite">{{ countText() }}</span>
         </div>
-        <lc-busy [busy]="top()?.status === 'loading'" [empty]="!items().length">
+        <lc-busy [busy]="top()?.status === 'loading' || refreshing()" [immediate]="refreshing()" [empty]="!items().length">
         <div class="wrap">
           <nz-table nzSize="middle" [nzData]="items()" [nzFrontPagination]="false" [nzShowPagination]="false" [nzNoResult]="empty">
             <thead>
@@ -290,6 +290,7 @@ function asLevel(data: unknown, page: number, previous?: Level): Level {
             [total]="top()?.total ?? 0"
             (pageChange)="page.set($event)"
             (refresh)="reload()"
+            (refreshingChange)="refreshing.set($event)"
           />
         }
       }
@@ -302,6 +303,9 @@ export class ServerDataTableComponent {
   readonly scope = input<Scope>({});
 
   /** Pulsante «Aggiorna» del piede: ricarica il data source come il passo `refresh`. */
+  /** Dal clic su «Aggiorna» finché la sua icona gira: lo spinner centrale compare subito. */
+  protected readonly refreshing = signal(false);
+
   protected reload(): void {
     void this.runtime().refresh(this.node().source);
   }

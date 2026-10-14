@@ -77,7 +77,7 @@ type NzSortOrder = 'ascend' | 'descend' | null;
           }
           <span class="count" aria-live="polite">{{ i18n.t('lc.rowsCount', { n: filtered().length, total: rows().length }) }}</span>
         </div>
-        <lc-busy [busy]="source().status === 'loading'" [empty]="!rows().length">
+        <lc-busy [busy]="source().status === 'loading' || refreshing()" [immediate]="refreshing()" [empty]="!rows().length">
         <div class="wrap">
           <nz-table nzSize="middle" [nzData]="pageItems()" [nzFrontPagination]="false" [nzShowPagination]="false" [nzNoResult]="empty">
             <thead>
@@ -222,6 +222,7 @@ type NzSortOrder = 'ascend' | 'descend' | null;
             [total]="items().length"
             (pageChange)="page.set($event)"
             (refresh)="reload()"
+            (refreshingChange)="refreshing.set($event)"
           />
         }
       }
@@ -234,6 +235,9 @@ export class DataTableComponent {
   readonly scope = input<Scope>({});
 
   /** Pulsante «Aggiorna» del piede: ricarica il data source come il passo `refresh`. */
+  /** Dal clic su «Aggiorna» finché la sua icona gira: lo spinner centrale compare subito. */
+  protected readonly refreshing = signal(false);
+
   protected reload(): void {
     void this.runtime().refresh(this.node().source);
   }

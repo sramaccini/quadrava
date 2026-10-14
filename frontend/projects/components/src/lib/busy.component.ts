@@ -65,6 +65,8 @@ export class BusyComponent {
   readonly busy = input(false);
   /** Non ci sono ancora dati da mostrare (primo caricamento): si riserva un'altezza minima. */
   readonly empty = input(false);
+  /** Mostra lo spinner subito, senza il ritardo: per un'attesa chiesta dall'utente (per esempio «Aggiorna»). */
+  readonly immediate = input(false);
 
   protected readonly i18n = inject(I18n);
   protected readonly visible = signal(false);
@@ -78,6 +80,10 @@ export class BusyComponent {
       const busy = this.busy();
       untracked(() => (busy ? this.start() : this.stop()));
     });
+    // Un'attesa chiesta dall'utente si mostra subito.
+    effect(() => {
+      if (this.immediate() && this.busy()) untracked(() => this.show());
+    });
   }
 
   private start(): void {
@@ -87,12 +93,15 @@ export class BusyComponent {
       return;
     }
     this.timers.push(
-      setTimeout(() => {
-        this.visible.set(true);
-        this.shownAt = Date.now();
-      }, BUSY_DELAY_MS),
+      setTimeout(() => this.show(), untracked(() => this.immediate()) ? 0 : BUSY_DELAY_MS),
       setTimeout(() => this.slow.set(true), BUSY_SLOW_MS),
     );
+  }
+
+  private show(): void {
+    if (this.visible()) return;
+    this.visible.set(true);
+    this.shownAt = Date.now();
   }
 
   private stop(): void {

@@ -66,6 +66,11 @@ export class TableFooterComponent {
   readonly total = input(0);
   readonly pageChange = output<number>();
   readonly refresh = output<void>();
+  /**
+   * Vero dal clic su «Aggiorna» finché l'icona smette di girare: la tabella mostra subito il suo spinner centrale, per lo
+   * stesso tempo. I caricamenti non chiesti con il pulsante non lo cambiano (lì lo spinner ha il suo ritardo).
+   */
+  readonly refreshingChange = output<boolean>();
 
   protected readonly i18n = inject(I18n);
   protected readonly pages = computed(() => Math.max(1, Math.ceil(this.total() / Math.max(1, this.pageSize()))));
@@ -73,6 +78,8 @@ export class TableFooterComponent {
   /** L'icona gira durante il caricamento e, dopo un clic, almeno {@link REFRESH_MIN_SPIN_MS}. */
   protected readonly spinning = signal(false);
   private clickedAt = 0;
+  /** L'icona gira per un clic su «Aggiorna» (non per un caricamento qualunque). */
+  private manual = false;
   private timer: ReturnType<typeof setTimeout> | undefined;
 
   constructor() {
@@ -82,24 +89,34 @@ export class TableFooterComponent {
       untracked(() => {
         clearTimeout(this.timer);
         if (busy) {
-          this.spinning.set(true);
+          this.setSpinning(true);
           return;
         }
         const remaining = REFRESH_MIN_SPIN_MS - (Date.now() - this.clickedAt);
-        if (remaining > 0) this.timer = setTimeout(() => this.spinning.set(false), remaining);
-        else this.spinning.set(false);
+        if (remaining > 0) this.timer = setTimeout(() => this.setSpinning(false), remaining);
+        else this.setSpinning(false);
       });
     });
+  }
+
+  private setSpinning(value: boolean): void {
+    this.spinning.set(value);
+    if (!value && this.manual) {
+      this.manual = false;
+      this.refreshingChange.emit(false);
+    }
   }
 
   protected onRefresh(): void {
     if (this.spinning()) return;
     this.clickedAt = Date.now();
-    this.spinning.set(true);
+    this.manual = true;
+    this.refreshingChange.emit(true);
+    this.setSpinning(true);
     clearTimeout(this.timer);
     // Se il caricamento non parte (o finisce subito) l'icona si ferma comunque dopo il giro minimo.
     this.timer = setTimeout(() => {
-      if (!this.busy()) this.spinning.set(false);
+      if (!this.busy()) this.setSpinning(false);
     }, REFRESH_MIN_SPIN_MS);
     this.refresh.emit();
   }

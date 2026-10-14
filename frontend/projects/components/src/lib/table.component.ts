@@ -58,7 +58,7 @@ const DEFAULT_PAGE_SIZE = 10;
             }
           </div>
         }
-        <lc-busy [busy]="source().status === 'loading'" [empty]="!rows().length">
+        <lc-busy [busy]="source().status === 'loading' || refreshing()" [immediate]="refreshing()" [empty]="!rows().length">
         <div class="wrap">
         <nz-table
           nzSize="middle"
@@ -197,6 +197,7 @@ const DEFAULT_PAGE_SIZE = 10;
             [total]="paged() ? total() : 0"
             (pageChange)="goTo($event)"
             (refresh)="reload()"
+            (refreshingChange)="refreshing.set($event)"
           />
         }
       }
@@ -379,6 +380,9 @@ export class TableComponent {
   }
 
 /** Pulsante «Aggiorna» del piede: ricarica il data source come il passo `refresh`. */
+  /** Dal clic su «Aggiorna» finché la sua icona gira: lo spinner centrale compare subito. */
+  protected readonly refreshing = signal(false);
+
   protected reload(): void {
     void this.runtime().refresh(this.node().source);
   }

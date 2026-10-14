@@ -43,6 +43,8 @@ describe('Piede delle tabelle: «Aggiorna», prima e ultima pagina', () => {
     await settle();
     expect(refresh.classList.contains('busy')).toBe(true);
     expect(refresh.getAttribute('aria-busy')).toBe('true');
+    // E lo spinner al centro della tabella, con il messaggio, compare subito (senza il ritardo dei caricamenti normali).
+    expect(el.querySelector('lc-data-table lc-busy .overlay .label')?.textContent?.trim()).toBe('Caricamento…');
     // Un secondo clic mentre gira non ripete la richiesta.
     refresh.click();
     await settle();
