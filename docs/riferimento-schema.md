@@ -60,6 +60,7 @@
 | `bulkActions` | elenco di action | Azioni sulle righe selezionate, sopra la tabella. Le espressioni vedono `selection` (elenco delle righe scelte). |
 | `rowActionsInline` | intero 0–10 | Quante azioni di riga (visibili) mostrare come pulsanti; le altre finiscono nel menu «⋯». 0 = tutte nel menu; se manca, tutte pulsanti. |
 | `expand` | oggetto | Area che si apre sotto la riga: i nodi vedono la riga come `row`. I data source sono della schermata: dentro l'area si usano i valori di `row`. |
+| `refreshable` | sì/no | Pulsante «Aggiorna» nel piede della tabella, a sinistra (le pagine sono a destra): ricarica il data source come il passo refresh. Assente se false o non indicato. |
 
 ### `form`
 
@@ -164,6 +165,7 @@
 | `pageSize` | intero 5–100 | Elementi per pagina, intestazioni dei gruppi comprese (10 se assente). |
 | `rowActions` | elenco di action | Azioni su una riga, nell’ultima colonna: le espressioni vedono la riga come `row`. |
 | `rowActionsInline` | intero 0–10 | Quante azioni di riga (visibili) mostrare come pulsanti; le altre finiscono nel menu «⋯». 0 = tutte nel menu; se manca, tutte pulsanti. |
+| `refreshable` | sì/no | Pulsante «Aggiorna» nel piede della tabella, a sinistra (le pagine sono a destra): ricarica il data source come il passo refresh. Assente se false o non indicato. |
 
 ### `serverDataTable`
 
@@ -177,6 +179,7 @@
 | `bind` | percorso nello stato | Stato in cui la tabella scrive la richiesta corrente (senza pagina), per altri componenti, per esempio un pulsante di esportazione. |
 | `rowActions` | elenco di action | Azioni su una riga, nell’ultima colonna: le espressioni vedono la riga come `row`. |
 | `rowActionsInline` | intero 0–10 | Quante azioni di riga (visibili) mostrare come pulsanti; le altre finiscono nel menu «⋯». 0 = tutte nel menu; se manca, tutte pulsanti. |
+| `refreshable` | sì/no | Pulsante «Aggiorna» nel piede della tabella, a sinistra (le pagine sono a destra): ricarica il data source come il passo refresh. Assente se false o non indicato. |
 
 ### `input`
 

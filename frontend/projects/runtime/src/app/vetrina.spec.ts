@@ -201,7 +201,8 @@ describe('Vetrina dei componenti', () => {
       (el.querySelector('main .ant-pagination-next button') as HTMLButtonElement).click();
       await until(fixture, () => el.querySelector('main .ant-pagination-item-active')?.textContent?.trim() === '2' && rows(el, 0) === 8, 'seconda pagina');
       await type(fixture, el, 'stato', 'Approvato');
-      await until(fixture, () => rows(el, 0) === 7 && el.querySelector('main .ant-pagination-item-active')?.textContent?.trim() === '1', 'filtro applicato');
+      // Filtrate stanno in una pagina sola: si torna alla prima e le pagine spariscono.
+      await until(fixture, () => rows(el, 0) === 7 && !el.querySelector('main lc-table-footer .ant-pagination'), 'filtro applicato');
     });
 
     it('le azioni di riga rispettano permessi e stato della riga', async () => {

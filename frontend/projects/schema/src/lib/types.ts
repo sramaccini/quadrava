@@ -211,6 +211,8 @@ export interface FilterBarNode extends NodeBase {
 export interface TableNode extends NodeBase {
   type: 'table';
   source: string;
+  /** Pulsante «Aggiorna» nel piede. */
+  refreshable?: boolean;
   columns: TableColumnDefinition[];
   /** Ordinamento: con paging server lo scrive nello stato `bind` per il servizio, altrimenti ordina in pagina. */
   sort?: { bind?: StatePath; default?: SortSpec };
@@ -366,6 +368,8 @@ export interface DataColumnDefinition extends TableColumnDefinition {
 export interface DataTableNode extends NodeBase {
   type: 'dataTable';
   source: string;
+  /** Pulsante «Aggiorna» nel piede. */
+  refreshable?: boolean;
   columns: DataColumnDefinition[];
   /** Colonne di raggruppamento iniziali, in ordine. */
   groupBy?: string[];
@@ -378,6 +382,8 @@ export interface DataTableNode extends NodeBase {
 /** Datatable pilotata dal servizio: filtri, ordinamento, gruppi, totali e pagine li calcola il data source. */
 export interface ServerDataTableNode extends NodeBase {
   type: 'serverDataTable';
+  /** Pulsante «Aggiorna» nel piede. */
+  refreshable?: boolean;
   /** Data source di ricerca: riceve `request` e restituisce righe, gruppi o valori distinti. */
   source: string;
   columns: DataColumnDefinition[];

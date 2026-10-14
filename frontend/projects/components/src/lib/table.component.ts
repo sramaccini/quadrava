@@ -1,9 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, linkedSignal, signal, untracked } from '@angular/core';
 import { I18n, NodeHostComponent, formatValue, type FormatLabels, runSteps, type FormattedValue, type ScreenRuntime, type Scope } from 'core';
 import { BusyComponent } from './busy.component';
+import { TableFooterComponent } from './table-footer.component';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzButtonModule } from 'ng-zorro-antd/button';
-import { NzPaginationModule } from 'ng-zorro-antd/pagination';
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
@@ -23,7 +23,7 @@ const DEFAULT_PAGE_SIZE = 10;
  */
 @Component({
   selector: 'lc-table',
-  imports: [BusyComponent, NodeHostComponent, RowActionsComponent, NzTableModule, NzTagModule, NzButtonModule, NzPaginationModule, NzAlertModule, NzTooltipModule],
+  imports: [BusyComponent, TableFooterComponent, NodeHostComponent, RowActionsComponent, NzTableModule, NzTagModule, NzButtonModule, NzAlertModule, NzTooltipModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     .wrap { overflow-x: auto; overflow-y: hidden; }
@@ -35,7 +35,6 @@ const DEFAULT_PAGE_SIZE = 10;
     .totals .kind { font-weight: 400; color: var(--lc-color-muted, #5d6b7a); margin-right: 4px; }
     .expanded-body { display: flex; flex-direction: column; gap: var(--lc-gap, 12px); padding: 4px 0; }
     .menu-row { display: inline-flex; align-items: center; gap: 8px; }
-    .pager { display: flex; justify-content: flex-end; padding-top: var(--lc-gap, 12px); }
     .bulk { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding-bottom: var(--lc-gap, 12px); }
     .bulk .count { color: var(--lc-color-muted, #5d6b7a); margin-right: 4px; }
     .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
@@ -189,10 +188,16 @@ const DEFAULT_PAGE_SIZE = 10;
             <span role="status">{{ i18n.t('lc.noResults') }}</span>
           }
         </ng-template>
-        @if (paged()) {
-          <div class="pager">
-            <nz-pagination [nzPageIndex]="page() + 1" [nzPageSize]="pageSize()" [nzTotal]="total()" (nzPageIndexChange)="goTo($event - 1)" />
-          </div>
+        @if (paged() || node().refreshable) {
+          <lc-table-footer
+            [refreshable]="!!node().refreshable"
+            [busy]="source().status === 'loading'"
+            [page]="page()"
+            [pageSize]="pageSize()"
+            [total]="paged() ? total() : 0"
+            (pageChange)="goTo($event)"
+            (refresh)="reload()"
+          />
         }
       }
     </div>
@@ -371,6 +376,11 @@ export class TableComponent {
     } finally {
       this.busy.set(false);
     }
+  }
+
+/** Pulsante «Aggiorna» del piede: ricarica il data source come il passo `refresh`. */
+  protected reload(): void {
+    void this.runtime().refresh(this.node().source);
   }
 
   protected goTo(page: number): void {

@@ -474,6 +474,15 @@ Tutti i componenti che leggono un data source (tabella, datatable, datatable lat
 
 Nella demo il selettore **Rete** (normale, lenta, molto lenta) nella barra superiore rallenta il backend nel browser, per vedere l'indicatore e il messaggio delle attese lunghe; vale per la scheda del browser.
 
+### 2.28 Piede delle tabelle: «Aggiorna», prima e ultima pagina
+
+Tabella, datatable e datatable lato server hanno lo stesso piede (`lc-table-footer`):
+
+- **a sinistra**, facoltativo, il pulsante **Aggiorna** (`"refreshable": true`): icona con tooltip, ricarica il data source come il passo `refresh`. Durante il caricamento l'icona gira, il pulsante non cambia misura e un altro clic non fa nulla; non si disabilita, così chi lo usa da tastiera non perde il focus;
+- **a destra** le pagine, con i pulsanti **prima pagina** e **ultima pagina** ai lati (disabilitati agli estremi). Le pagine compaiono solo se ce n'è più di una.
+
+Nella vetrina «Aggiorna» c'è nella prima tabella di «Filtri e tabelle» e nelle tre tabelle di «Datatable».
+
 ## 3. Note di realizzazione e limiti noti
 
 - **Caricamento dei data source.** Un data source GET si ricarica da solo solo se cambia la richiesta risolta (URL e parametri). Un cambiamento dello stato che non tocca la richiesta (una selezione, un passo della procedura, un nodo scelto) non provoca nuove chiamate; per ricaricare comunque si usa il passo `refresh`.

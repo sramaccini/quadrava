@@ -51,6 +51,7 @@
           "id": "datatable-movimenti",
           "type": "dataTable",
           "source": "movimenti",
+          "refreshable": true,
           "groupBy": [
             "conto"
           ],
@@ -146,6 +147,7 @@
           "id": "datatable-archivio",
           "type": "dataTable",
           "source": "archivio",
+          "refreshable": true,
           "groupBy": [
             "conto",
             "categoria"
@@ -216,6 +218,7 @@
           "id": "tabella-server",
           "type": "serverDataTable",
           "source": "ricerca",
+          "refreshable": true,
           "groupBy": [
             "conto"
           ],

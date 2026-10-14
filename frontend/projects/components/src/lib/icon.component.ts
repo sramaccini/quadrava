@@ -39,6 +39,9 @@ import {
   LinkOutline,
   ClearOutline,
   CodeOutline,
+  ReloadOutline,
+  VerticalLeftOutline,
+  VerticalRightOutline,
   CopyOutline,
 } from '@ant-design/icons-angular/icons';
 import type { IconDefinition } from '@ant-design/icons-angular';
@@ -79,6 +82,9 @@ export const ICON_TYPES: Record<string, { type: string; icon: IconDefinition }> 
   external: { type: 'export', icon: ExportOutline },
   move: { type: 'swap', icon: SwapOutline },
   code: { type: 'code', icon: CodeOutline },
+  reload: { type: 'reload', icon: ReloadOutline },
+  first: { type: 'vertical-right', icon: VerticalRightOutline },
+  last: { type: 'vertical-left', icon: VerticalLeftOutline },
   copy: { type: 'copy', icon: CopyOutline },
   // Barra dell'editor di testo formattato.
   'rich-bold': { type: 'bold', icon: BoldOutline },

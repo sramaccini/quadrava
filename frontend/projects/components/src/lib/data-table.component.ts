@@ -2,13 +2,13 @@ import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, input
 import { FormsModule } from '@angular/forms';
 import { I18n, formatValue, runSteps, type FormatLabels, type FormattedValue, type ScreenRuntime, type Scope } from 'core';
 import { BusyComponent } from './busy.component';
+import { TableFooterComponent } from './table-footer.component';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzCheckboxModule } from 'ng-zorro-antd/checkbox';
 import { NzDatePickerModule } from 'ng-zorro-antd/date-picker';
 import { NzDropdownModule } from 'ng-zorro-antd/dropdown';
 import { NzInputModule } from 'ng-zorro-antd/input';
-import { NzPaginationModule } from 'ng-zorro-antd/pagination';
 import { NzSelectModule } from 'ng-zorro-antd/select';
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzTagModule } from 'ng-zorro-antd/tag';
@@ -34,8 +34,8 @@ type NzSortOrder = 'ascend' | 'descend' | null;
 @Component({
   selector: 'lc-data-table',
   imports: [
-    BusyComponent, FormsModule, IconComponent, RowActionsComponent, NzAlertModule, NzButtonModule, NzCheckboxModule, NzDatePickerModule, NzDropdownModule, NzInputModule,
-    NzPaginationModule, NzSelectModule, NzTableModule, NzTagModule,
+    BusyComponent, TableFooterComponent, FormsModule, IconComponent, RowActionsComponent, NzAlertModule, NzButtonModule, NzCheckboxModule, NzDatePickerModule, NzDropdownModule, NzInputModule,
+    NzSelectModule, NzTableModule, NzTagModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
@@ -51,7 +51,6 @@ type NzSortOrder = 'ascend' | 'descend' | null;
     .group-count { color: var(--lc-color-muted, #5d6b7a); font-weight: 400; }
     .totals td { font-weight: 600; }
     .kind { font-weight: 400; color: var(--lc-color-muted, #5d6b7a); margin-right: 4px; }
-    .pager { display: flex; justify-content: flex-end; padding-top: var(--lc-gap, 12px); }
     .filter-panel { padding: 12px; background: var(--lc-color-surface, #fff); border-radius: var(--lc-radius, 6px); min-width: 220px; display: flex; flex-direction: column; gap: 8px; }
     .filter-panel .options { display: flex; flex-direction: column; gap: 4px; max-height: 240px; overflow-y: auto; }
     .filter-panel .range { display: flex; gap: 8px; }
@@ -214,10 +213,16 @@ type NzSortOrder = 'ascend' | 'descend' | null;
             <span role="status">{{ i18n.t('lc.noResults') }}</span>
           }
         </ng-template>
-        @if (items().length > pageSize()) {
-          <div class="pager">
-            <nz-pagination [nzPageIndex]="page() + 1" [nzPageSize]="pageSize()" [nzTotal]="items().length" (nzPageIndexChange)="page.set($event - 1)" />
-          </div>
+        @if (items().length > pageSize() || node().refreshable) {
+          <lc-table-footer
+            [refreshable]="!!node().refreshable"
+            [busy]="source().status === 'loading'"
+            [page]="page()"
+            [pageSize]="pageSize()"
+            [total]="items().length"
+            (pageChange)="page.set($event)"
+            (refresh)="reload()"
+          />
         }
       }
     </div>
@@ -227,6 +232,11 @@ export class DataTableComponent {
   readonly node = input.required<DataTableNode>();
   readonly runtime = input.required<ScreenRuntime>();
   readonly scope = input<Scope>({});
+
+  /** Pulsante «Aggiorna» del piede: ricarica il data source come il passo `refresh`. */
+  protected reload(): void {
+    void this.runtime().refresh(this.node().source);
+  }
 
   protected readonly i18n = inject(I18n);
   protected readonly groupId = nextId('lc-datatable-group');

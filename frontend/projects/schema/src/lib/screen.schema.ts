@@ -904,6 +904,10 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                     "description": "Quali righe si possono espandere (espressione con row); tutte se assente."
                   }
                 }
+              },
+              "refreshable": {
+                "type": "boolean",
+                "description": "Pulsante «Aggiorna» nel piede della tabella, a sinistra (le pagine sono a destra): ricarica il data source come il passo refresh. Assente se false o non indicato."
               }
             }
           }
@@ -1420,6 +1424,10 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                 "minimum": 0,
                 "maximum": 10,
                 "description": "Quante azioni di riga (visibili) mostrare come pulsanti; le altre finiscono nel menu «⋯». 0 = tutte nel menu; se manca, tutte pulsanti."
+              },
+              "refreshable": {
+                "type": "boolean",
+                "description": "Pulsante «Aggiorna» nel piede della tabella, a sinistra (le pagine sono a destra): ricarica il data source come il passo refresh. Assente se false o non indicato."
               }
             }
           }
@@ -1489,6 +1497,10 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                 "minimum": 0,
                 "maximum": 10,
                 "description": "Quante azioni di riga (visibili) mostrare come pulsanti; le altre finiscono nel menu «⋯». 0 = tutte nel menu; se manca, tutte pulsanti."
+              },
+              "refreshable": {
+                "type": "boolean",
+                "description": "Pulsante «Aggiorna» nel piede della tabella, a sinistra (le pagine sono a destra): ricarica il data source come il passo refresh. Assente se false o non indicato."
               }
             }
           }
