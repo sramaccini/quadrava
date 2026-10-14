@@ -29,9 +29,16 @@ input.missing { border-color: var(--lc-color-warning, #d48806); }
   border-radius: 12px; background: var(--lc-color-surface); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px;
 }
 .language .default { padding-right: 4px; color: var(--lc-color-muted); font-family: var(--lc-font-family); font-size: 11px; }
+.language { font-family: var(--lc-font-family); }
+.language code { color: var(--lc-color-muted); font-size: 11px; }
+.language.is-default { border-color: var(--lc-color-primary); }
+.make-default { display: inline-flex; padding: 2px; border: 0; border-radius: 50%; background: none; color: var(--lc-color-muted); font-size: 11px; cursor: pointer; }
+.make-default:hover { color: var(--lc-color-primary); }
+.make-default:focus-visible { outline: 2px solid var(--lc-color-primary); }
+.locale-name { display: block; font-weight: 400; font-size: 11px; }
 .remove { display: inline-flex; padding: 2px; border: 0; border-radius: 50%; background: none; color: var(--lc-color-muted); font-size: 10px; cursor: pointer; }
 .remove:hover { color: var(--lc-color-danger); }
 .remove:focus-visible { outline: 2px solid var(--lc-color-primary); }
 .add-language { display: inline-flex; align-items: center; gap: 4px; margin-left: 6px; }
-.add-language input { width: 110px; }
+.add-language input { width: 200px; }
 .error { color: var(--lc-color-danger); font-size: 12px; }

@@ -39,3 +39,4 @@
 .twisty:disabled { cursor: default; opacity: 0.5; }
 /* Righe trovate dalla ricerca. */
 .line.match > .row .label { text-decoration: underline; text-decoration-color: var(--lc-color-primary); text-underline-offset: 3px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

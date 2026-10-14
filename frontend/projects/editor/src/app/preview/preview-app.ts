@@ -142,6 +142,7 @@ export class PreviewApp {
       if (!state) return;
       untracked(() => {
         for (const [locale, messages] of Object.entries(state.translations)) this.i18n.addMessages(locale, messages);
+        if (state.defaultLocale && this.i18n.defaultLocale() !== state.defaultLocale) this.i18n.defaultLocale.set(state.defaultLocale);
         if (this.i18n.locale() !== state.locale) this.i18n.setLocale(state.locale);
       });
     });

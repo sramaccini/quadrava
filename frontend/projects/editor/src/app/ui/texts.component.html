@@ -22,12 +22,21 @@
   <div class="languages" role="group" [attr.aria-label]="i18n.t('ed.texts.languages')">
     <span class="languages-label">{{ i18n.t('ed.texts.languages') }}</span>
     @for (locale of locales(); track locale) {
-      <span class="language" [attr.data-language]="locale">
-        {{ locale }}
+      <span class="language" [class.is-default]="locale === defaultLocale()" [attr.data-language]="locale">
+        <span class="name">{{ nameOf(locale) }}</span> <code>{{ locale }}</code>
         @if (locale === defaultLocale()) {
           <span class="default">{{ i18n.t('ed.texts.defaultLanguage') }}</span>
         } @else {
-          <button type="button" class="remove" (click)="removeLanguage(locale)" [attr.aria-label]="i18n.t('ed.texts.removeLanguage', { locale })" [title]="i18n.t('ed.texts.removeLanguage', { locale })">
+          <button
+            type="button"
+            class="make-default"
+            (click)="setDefault(locale)"
+            [attr.aria-label]="i18n.t('ed.texts.makeDefault', { name: nameOf(locale) })"
+            [title]="i18n.t('ed.texts.makeDefault', { name: nameOf(locale) })"
+          >
+            <span nz-icon nzType="star" aria-hidden="true"></span>
+          </button>
+          <button type="button" class="remove" (click)="removeLanguage(locale)" [attr.aria-label]="i18n.t('ed.texts.removeLanguage', { locale: nameOf(locale) })" [title]="i18n.t('ed.texts.removeLanguage', { locale: nameOf(locale) })">
             <span nz-icon nzType="close" aria-hidden="true"></span>
           </button>
         }
@@ -39,11 +48,19 @@
         nz-input
         nzSize="small"
         data-add-language
+        list="ed-language-suggestions"
+        autocomplete="off"
         [attr.aria-label]="i18n.t('ed.texts.languageCode')"
         [placeholder]="i18n.t('ed.texts.languageCode')"
         [attr.aria-invalid]="languageError() ? true : null"
         (input)="languageError.set('')"
       />
+      <!-- Suggerimenti: nome nella lingua dell'editor e codice; si può scrivere il nome, il codice, o sceglierne uno. -->
+      <datalist id="ed-language-suggestions">
+        @for (s of suggestions(); track s.code) {
+          <option [value]="s.label"></option>
+        }
+      </datalist>
       <button nz-button nzSize="small" type="submit"><span nz-icon nzType="plus"></span>{{ i18n.t('ed.texts.addLanguage') }}</button>
       @if (languageError()) {
         <span class="error" role="alert">{{ languageError() }}</span>
@@ -56,7 +73,7 @@
         <th scope="col">{{ i18n.t('ed.texts.where') }}</th>
         <th scope="col">{{ i18n.t('ed.texts.text') }}</th>
         @for (locale of locales(); track locale) {
-          <th scope="col" class="locale">{{ locale.toUpperCase() }}</th>
+          <th scope="col" class="locale" [attr.title]="nameOf(locale)">{{ locale.toUpperCase() }} <span class="locale-name">{{ nameOf(locale) }}</span></th>
         }
       </tr>
     </thead>

@@ -16,3 +16,4 @@
   background: var(--lc-color-surface); color: inherit; font: inherit; font-size: 12px;
 }
 .filter:focus-visible { outline: 2px solid var(--lc-color-primary); outline-offset: -1px; }
+.multi { margin: 0 0 8px; padding: 6px 8px; border-radius: var(--lc-radius); background: color-mix(in srgb, var(--lc-color-primary) 10%, transparent); font-size: 12px; }

@@ -348,6 +348,66 @@ describe('editor delle schermate', () => {
     expect(store.issues()).toEqual([]);
   });
 
+  it('struttura: più nodi con Ctrl+clic e Maiusc+clic, avvolti insieme dal menu contestuale; Canc li elimina', async () => {
+    for (const type of ['text', 'alert', 'button', 'text']) {
+      store.select([]);
+      (el.querySelector(`ed-palette button[data-type="${type}"]`) as HTMLButtonElement).click();
+      await settle();
+    }
+    const row = (i: number) => el.querySelector(`ed-outline .row[data-path="components/${i}"]`) as HTMLButtonElement;
+    row(0).click();
+    row(2).dispatchEvent(new MouseEvent('click', { bubbles: true, ctrlKey: true }));
+    await settle();
+    expect([...el.querySelectorAll('ed-outline .line.selected .row')].map((r) => r.getAttribute('data-path'))).toEqual(['components/0', 'components/2']);
+    expect(el.querySelector('ed-outline .tools')).toBeNull();
+    expect(el.querySelector('ed-inspector .multi')?.textContent).toContain('2 nodi selezionati');
+    expect(row(0).textContent).toContain('selezionato insieme ad altri');
+    // Maiusc+clic: intervallo dal primo scelto.
+    row(1).click();
+    row(3).dispatchEvent(new MouseEvent('click', { bubbles: true, shiftKey: true }));
+    await settle();
+    expect(store.multi()).toEqual([['components', 1], ['components', 2], ['components', 3]]);
+    // Maiusc+freccia su dalla riga 3 stringe l'intervallo a 1–2.
+    row(3).dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', shiftKey: true, bubbles: true }));
+    await settle();
+    expect(store.multi()).toEqual([['components', 1], ['components', 2]]);
+    // Menu contestuale su un nodo della selezione: vale per tutti.
+    row(2).parentElement!.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+    await settle();
+    expect([...el.querySelectorAll('ed-context-menu .item .label')].map((l) => l.textContent)).toEqual([
+      'Avvolgi 2 nodi in una sezione',
+      'Avvolgi 2 nodi in un box',
+      'Avvolgi 2 nodi in una griglia',
+      'Elimina 2 nodi',
+    ]);
+    (el.querySelector('ed-context-menu [data-item="wrap-box"]') as HTMLButtonElement).click();
+    await settle();
+    expect(outline()).toEqual(['Testo', 'Box (riga o colonna)', 'Messaggio', 'Pulsante', 'Testo']);
+    // Canc su una selezione di più nodi li elimina tutti.
+    store.select(['components', 0]);
+    store.toggleSelect(['components', 2]);
+    await settle();
+    document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete', bubbles: true }));
+    await settle();
+    expect(outline()).toEqual(['Box (riga o colonna)', 'Messaggio', 'Pulsante']);
+    expect(store.issues()).toEqual([]);
+  });
+
+  it('traduzioni: la lingua predefinita si cambia dal pannello e arriva all’anteprima', async () => {
+    tab(3);
+    await settle();
+    (el.querySelector('ed-texts [data-language="en"] .make-default') as HTMLButtonElement).click();
+    await settle();
+    expect(store.defaultLanguage()).toBe('en');
+    expect([...el.querySelectorAll('ed-texts .language .name')].map((n) => n.textContent)).toEqual(['Inglese', 'Italiano']);
+    expect(el.querySelector('ed-texts [data-language="en"] .default')?.textContent).toBe('predefinita');
+    expect(el.querySelector('ed-texts [data-language="en"] .remove')).toBeNull();
+    expect(el.querySelector('ed-texts [data-language="it"] .remove')).not.toBeNull();
+    tab(0);
+    await settle();
+    await untilState('ed-preview', (st) => st.defaultLocale === 'en', 'lingua predefinita nell’anteprima');
+  });
+
   it('proprietà: percorso dell’elemento con i contenitori cliccabili e filtro per nome', async () => {
     (el.querySelector('ed-palette button[data-type="section"]') as HTMLButtonElement).click();
     await settle();
@@ -427,15 +487,20 @@ describe('editor delle schermate', () => {
     tab(3);
     await settle();
     const code = el.querySelector('[data-add-language]') as HTMLInputElement;
-    code.value = 'Francese';
+    code.value = 'Klingon';
     code.form!.dispatchEvent(new Event('submit', { cancelable: true }));
     await settle();
-    expect(el.querySelector('ed-texts .error')?.textContent).toContain('Codice non valido');
-    code.value = 'fr';
+    expect(el.querySelector('ed-texts .error')?.textContent).toContain('Lingua non riconosciuta');
+    // I suggerimenti hanno il nome nella lingua dell'editor; basta scrivere il nome.
+    const suggestions = [...el.querySelectorAll<HTMLOptionElement>('#ed-language-suggestions option')].map((o) => o.value);
+    expect(suggestions).toContain('Francese (fr)');
+    expect(suggestions).not.toContain('Italiano (it)');
+    code.value = 'francese';
     code.dispatchEvent(new Event('input'));
     code.form!.dispatchEvent(new Event('submit', { cancelable: true }));
     await settle();
-    expect([...el.querySelectorAll('ed-texts th.locale')].map((th) => th.textContent?.trim())).toEqual(['IT', 'EN', 'FR']);
+    expect([...el.querySelectorAll('ed-texts th.locale')].map((th) => th.textContent?.trim().split(' ')[0])).toEqual(['IT', 'EN', 'FR']);
+    expect([...el.querySelectorAll('ed-texts .language .name')].map((n) => n.textContent)).toEqual(['Italiano', 'Inglese', 'Francese']);
     const fr = el.querySelector('ed-texts input[aria-label$=" fr"]') as HTMLInputElement;
     expect(fr.getAttribute('aria-invalid')).toBe('true');
     fr.value = 'Nouveau texte';

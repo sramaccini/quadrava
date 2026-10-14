@@ -18,6 +18,9 @@
         </ol>
       </nav>
     }
+    @if (store.multi().length > 1) {
+      <p class="multi" role="status">{{ i18n.t('ed.multi.selected', { n: store.multi().length }) }}</p>
+    }
     <p class="kind">{{ heading() }}</p>
     <input
       class="filter"

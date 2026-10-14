@@ -134,7 +134,10 @@ export class OutlineComponent {
   /** Frecce sulla riga: destra apre il ramo, sinistra lo chiude; il tasto menu o Maiusc+F10 aprono il menu. */
   protected rowKey(event: KeyboardEvent, item: OutlineItem): void {
     if (event.altKey || event.ctrlKey || event.metaKey) return;
-    if (event.key === 'ArrowRight' && item.children.length && !this.isOpen(item)) {
+    if (event.shiftKey && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) {
+      event.preventDefault();
+      this.extend(item, event.key === 'ArrowUp' ? -1 : 1);
+    } else if (event.key === 'ArrowRight' && item.children.length && !this.isOpen(item)) {
       event.preventDefault();
       this.toggle(item);
     } else if (event.key === 'ArrowLeft' && item.children.length && this.isOpen(item) && !this.searching()) {
@@ -147,13 +150,37 @@ export class OutlineComponent {
     }
   }
 
+  /** Clic su una riga: Ctrl (o Cmd) aggiunge o toglie dalla selezione, Maiusc seleziona l'intervallo, altrimenti seleziona. */
+  protected rowClick(event: MouseEvent, item: OutlineItem): void {
+    if (event.ctrlKey || event.metaKey) this.store.toggleSelect(item.path);
+    else if (event.shiftKey) this.store.selectRange(item.path);
+    else this.store.select(item.path);
+  }
+
+  /** La riga fa parte di una selezione di più nodi. */
+  protected inMulti(path: Path): boolean {
+    const multi = this.store.multi();
+    return multi.length > 1 && multi.some((p) => samePath(p, path));
+  }
+
+  /** Maiusc+freccia su o giù: allarga la selezione al fratello precedente o successivo e ci porta il fuoco. */
+  private extend(item: OutlineItem, delta: number): void {
+    const index = item.path.at(-1);
+    if (item.kind !== 'node' || typeof index !== 'number') return;
+    const next = [...item.path.slice(0, -1), index + delta];
+    if (targetAt(this.store.doc(), next)?.kind !== 'node') return;
+    this.store.selectRange(next);
+    setTimeout(() => this.host.nativeElement.querySelector<HTMLElement>(`.row[data-path="${CSS.escape(next.join('/'))}"]`)?.focus());
+  }
+
   protected contextMenu(event: MouseEvent, item: OutlineItem): void {
     event.preventDefault();
     this.openMenu(item, event.clientX, event.clientY);
   }
 
   private openMenu(item: OutlineItem, x: number, y: number): void {
-    this.store.select(item.path);
+    // Su un nodo della selezione multipla il menu vale per tutti; altrove si seleziona la riga.
+    if (!this.inMulti(item.path)) this.store.select(item.path);
     this.menu.set({ item, x, y });
   }
 
@@ -173,6 +200,16 @@ export class OutlineComponent {
   /** Voci del menu contestuale per una riga: i comandi della struttura, «Avvolgi in…» e il contenitore. */
   protected menuItems(item: OutlineItem): MenuItem[] {
     const t = (key: string) => this.i18n.t(key);
+    if (this.inMulti(item.path)) {
+      const paths = this.store.multi();
+      const n = { n: paths.length };
+      return [
+        { id: 'wrap-section', label: this.i18n.t('ed.ctx.wrapManySection', n), run: () => this.store.wrapMany(paths, 'section') },
+        { id: 'wrap-box', label: this.i18n.t('ed.ctx.wrapManyBox', n), run: () => this.store.wrapMany(paths, 'box') },
+        { id: 'wrap-grid', label: this.i18n.t('ed.ctx.wrapManyGrid', n), run: () => this.store.wrapMany(paths, 'grid') },
+        { id: 'delete', label: this.i18n.t('ed.ctx.deleteMany', n), shortcut: t('ed.key.delete'), separator: true, run: () => this.store.removeMany(paths) },
+      ];
+    }
     const path = item.path;
     const node = item.kind === 'node';
     const items: MenuItem[] = [];

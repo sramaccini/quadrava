@@ -87,6 +87,7 @@ export class ThemeEditorComponent {
       samples: this.screens.samples(),
       locale: this.i18n.locale(),
       translations: this.screens.translations(),
+      defaultLocale: this.screens.defaultLanguage(),
     }),
   );
 }

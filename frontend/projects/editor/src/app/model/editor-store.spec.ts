@@ -170,6 +170,68 @@ describe('EditorStore', () => {
     expect(JSON.parse(localStorage.getItem('lc.editor.draft')!).languages).toEqual(['it', 'en', 'fr', 'pt-BR']);
   });
 
+  it('lingua predefinita: si cambia tra le lingue presenti; vale per i ripieghi, «Rendi traducibile» e le lingue da togliere', () => {
+    expect(store.defaultLanguage()).toBe('it');
+    expect(store.setDefaultLanguage('fr')).toBe(false);
+    expect(store.setDefaultLanguage('en')).toBe(true);
+    expect(store.languages()).toEqual(['en', 'it']);
+    store.addNode('text');
+    const key = store.makeTranslatable(['components', 0, 'text'])!;
+    expect(store.translations()).toEqual({ en: { [key]: 'Nuovo testo' } });
+    const entry = { path: ['components', 0, 'text'], property: 'text', value: '', kind: 'key' as const, key, fallback: 'Nuovo testo' };
+    expect(store.missingLocales(entry)).toEqual(['it']);
+    expect(store.removeLanguage('en')).toBe(false);
+    expect(store.removeLanguage('it')).toBe(true);
+    TestBed.tick();
+    expect(JSON.parse(localStorage.getItem('lc.editor.draft')!).defaultLanguage).toBe('en');
+  });
+
+  it('selezione di più nodi fratelli: Ctrl aggiunge e toglie, Maiusc un intervallo; si avvolgono o si eliminano insieme', () => {
+    for (const kind of ['text', 'alert', 'button', 'text']) {
+      store.select([]);
+      store.addNode(kind);
+    }
+    store.select(['components', 0]);
+    store.toggleSelect(['components', 2]);
+    expect(store.multi()).toEqual([['components', 0], ['components', 2]]);
+    expect(store.selection()).toEqual(['components', 2]);
+    store.toggleSelect(['components', 0]);
+    expect(store.multi()).toEqual([]);
+    expect(store.selection()).toEqual(['components', 2]);
+    // Intervallo dal punto fermo (l'ultimo scelto senza Maiusc), anche all'indietro.
+    store.select(['components', 1]);
+    store.selectRange(['components', 3]);
+    expect(store.multi()).toEqual([['components', 1], ['components', 2], ['components', 3]]);
+    store.selectRange(['components', 0]);
+    expect(store.multi()).toEqual([['components', 0], ['components', 1]]);
+    // Fuori dall'elenco si riparte da una selezione semplice.
+    store.select([]);
+    store.addNode('section');
+    store.select(['components', 0]);
+    store.toggleSelect(['components', 1]);
+    store.toggleSelect(['components', 4, 'components', 0]);
+    expect(store.multi()).toEqual([]);
+
+    // Avvolgere in una griglia: al posto del primo, nell'ordine; un solo passo da annullare.
+    store.select(['components', 1]);
+    store.selectRange(['components', 2]);
+    store.wrapMany(store.multi(), 'grid');
+    expect(components().map((c) => (c as { type: string }).type)).toEqual(['text', 'grid', 'text', 'section']);
+    expect(((components()[1] as { components: { type: string }[] }).components).map((c) => c.type)).toEqual(['alert', 'button']);
+    expect(store.selection()).toEqual(['components', 1]);
+    expect(store.multi()).toEqual([]);
+    expect(store.issues()).toEqual([]);
+    store.undo();
+    expect(components().map((c) => (c as { type: string }).type)).toEqual(['text', 'alert', 'button', 'text', 'section']);
+    // Eliminare insieme.
+    store.select(['components', 0]);
+    store.toggleSelect(['components', 3]);
+    store.removeMany(store.multi());
+    expect(components().map((c) => (c as { type: string }).type)).toEqual(['alert', 'button', 'section']);
+    store.undo();
+    expect(components()).toHaveLength(5);
+  });
+
   it('avvolge un nodo in un contenitore nuovo, che ne prende la posizione nel contenitore di prima', () => {
     store.addNode('grid');
     store.addNode('text');

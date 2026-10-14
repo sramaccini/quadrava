@@ -53,7 +53,7 @@
       <li>
         <div
           class="line"
-          [class.selected]="isSelected(item.path)"
+          [class.selected]="isSelected(item.path) || inMulti(item.path)"
           [class.ancestor]="containsSelection(item.path)"
           [class.drop-before]="hintOf(item.path) === 'before'"
           [class.drop-after]="hintOf(item.path) === 'after'"
@@ -89,17 +89,20 @@
             [attr.aria-current]="isSelected(item.path) ? 'true' : null"
             [attr.aria-expanded]="item.children.length ? isOpen(item) : null"
             aria-haspopup="menu"
-            (click)="store.select(item.path)"
+            (click)="rowClick($event, item)"
             (keydown)="rowKey($event, item)"
             [attr.data-path]="item.path.join('/')"
           >
             <span class="label" [class.container-item]="item.kind !== 'node'">{{ item.label }}</span>
+            @if (inMulti(item.path)) {
+              <span class="sr-only">{{ i18n.t('ed.multi.member') }}</span>
+            }
             <span class="detail">{{ item.detail }}</span>
             @if (item.severity; as s) {
               <span class="mark" [class]="s" [attr.title]="i18n.t('ed.has.' + s)" [attr.aria-label]="i18n.t('ed.has.' + s)"></span>
             }
           </button>
-          @if (isSelected(item.path)) {
+          @if (isSelected(item.path) && store.multi().length < 2) {
             <span class="tools">
               <button nz-button nzType="text" nzSize="small" type="button" [disabled]="item.first" (click)="store.move(item.path, -1)" [attr.aria-label]="i18n.t('ed.moveUp')" [nz-tooltip]="i18n.t('ed.moveUp')">
                 <span nz-icon nzType="arrow-up"></span>

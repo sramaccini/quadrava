@@ -17,6 +17,8 @@ interface Draft {
   translations: Translations;
   /** Lingue delle traduzioni (oltre a quelle con testi già scritti). */
   languages?: string[];
+  /** Lingua predefinita: quella dei testi di ripiego scritti nelle schermate. */
+  defaultLanguage?: string;
 }
 
 /** Traduzioni scritte nell'editor: lingua → chiave → testo. */
@@ -59,6 +61,12 @@ export class EditorStore extends DocumentState {
    * resta la predefinita (il ripiego scritto nel testo vale per lei).
    */
   readonly languages = signal<string[]>(mergeLanguages(this.draft?.languages ?? EDITOR_LOCALES, Object.keys(this.draft?.translations ?? {})));
+  /**
+   * Lingua predefinita del progetto: quella dei testi di ripiego scritti in `t('chiave', 'Testo')`. Per lei il ripiego
+   * basta (non manca nessuna traduzione), «Rendi traducibile» le assegna il testo, non si può togliere; l'anteprima la
+   * usa quando manca una traduzione.
+   */
+  readonly defaultLanguage = signal<string>(this.draft?.defaultLanguage && LANGUAGE_CODE.test(this.draft.defaultLanguage) ? this.draft.defaultLanguage : EDITOR_LOCALES[0]);
 
   /** Il documento come schermata valida, oppure null se ha errori (l'anteprima mostra allora l'ultima versione valida). */
   readonly definition = computed<ScreenDefinition | null>(() => (this.errorCount() === 0 ? (this.doc() as unknown as ScreenDefinition) : null));
@@ -77,7 +85,7 @@ export class EditorStore extends DocumentState {
     // Le traduzioni della bozza valgono subito nell'anteprima.
     for (const [locale, messages] of Object.entries(this.translations())) this.i18n.addMessages(locale, messages);
     effect(() => {
-      const draft: Draft = { doc: this.doc(), samples: this.samples(), translations: this.translations(), languages: this.languages() };
+      const draft: Draft = { doc: this.doc(), samples: this.samples(), translations: this.translations(), languages: this.languages(), defaultLanguage: this.defaultLanguage() };
       try {
         localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
       } catch {
@@ -195,6 +203,102 @@ export class EditorStore extends DocumentState {
   }
 
   /**
+   * Nodi selezionati insieme (Ctrl+clic, Maiusc+clic nella struttura): fratelli dello stesso elenco, in ordine. Vuoto =
+   * selezione semplice (`selection`). L'elemento principale resta `selection` (proprietà, anteprima).
+   */
+  readonly multi = signal<Path[]>([]);
+  /** I nodi su cui agiscono i comandi: quelli selezionati insieme, altrimenti l'elemento selezionato. */
+  readonly selectedPaths = computed<Path[]>(() => (this.multi().length > 1 ? this.multi() : [this.selection()]));
+
+  /** Punto fermo degli intervalli (Maiusc+clic, Maiusc+frecce): l'ultimo nodo scelto senza Maiusc. */
+  private anchor: Path | null = null;
+
+  override select(path: Path): void {
+    this.multi.set([]);
+    this.anchor = path;
+    super.select(path);
+  }
+
+  override undo(): void {
+    this.multi.set([]);
+    super.undo();
+  }
+
+  override redo(): void {
+    this.multi.set([]);
+    super.redo();
+  }
+
+  override apply(next: Json, options: { select?: Path; coalesce?: string } = {}): void {
+    if (next !== this.doc()) this.multi.set([]);
+    super.apply(next, options);
+  }
+
+  /**
+   * Ctrl+clic: aggiunge o toglie un nodo dalla selezione. Vale tra fratelli dello stesso elenco; un nodo di un altro
+   * elenco riparte da una selezione semplice.
+   */
+  toggleSelect(path: Path): void {
+    const doc = this.doc();
+    if (targetAt(doc, path)?.kind !== 'node') return this.select(path);
+    const current = this.selectedPaths().filter((p) => targetAt(doc, p)?.kind === 'node');
+    if (!current.length || !current.every((p) => sameList(p, path))) return this.select(path);
+    const has = current.some((p) => samePath(p, path));
+    const next = sortSiblings(has ? current.filter((p) => !samePath(p, path)) : [...current, path]);
+    if (!next.length) return this.select([]);
+    this.multi.set(next.length > 1 ? next : []);
+    this.anchor = has ? next[next.length - 1] : path;
+    super.select(this.anchor);
+  }
+
+  /** Maiusc+clic: seleziona i fratelli dal nodo selezionato a quello indicato (stesso elenco). */
+  selectRange(path: Path): void {
+    const doc = this.doc();
+    const anchor = this.anchor && targetAt(doc, this.anchor) ? this.anchor : this.selection();
+    if (targetAt(doc, path)?.kind !== 'node' || targetAt(doc, anchor)?.kind !== 'node' || !sameList(anchor, path)) return this.select(path);
+    const [from, to] = [anchor.at(-1) as number, path.at(-1) as number].sort((a, b) => a - b);
+    const list = path.slice(0, -1);
+    const range: Path[] = [];
+    for (let i = from; i <= to; i++) range.push([...list, i]);
+    this.multi.set(range.length > 1 ? range : []);
+    super.select(path);
+  }
+
+  /** Avvolge più nodi fratelli in un contenitore nuovo, al posto del primo e nell'ordine in cui stavano. */
+  wrapMany(paths: Path[], kind: 'section' | 'box' | 'grid'): void {
+    const doc = this.doc();
+    const nodes = sortSiblings(paths.filter((p) => targetAt(doc, p)?.kind === 'node'));
+    if (nodes.length < 2 || !nodes.every((p) => sameList(p, nodes[0]))) return nodes.length === 1 ? this.wrap(nodes[0], kind) : undefined;
+    const list = nodes[0].slice(0, -1);
+    const items = getIn(doc, list) as Json[];
+    const indexes = new Set(nodes.map((p) => p.at(-1) as number));
+    const first = Math.min(...indexes);
+    const inner = nodes.map((p) => ({ ...(getIn(doc, p) as JsonObject) }));
+    // La collocazione nel contenitore di prima passa al contenitore nuovo (quella del primo nodo).
+    const placement: JsonObject = {};
+    for (const key of WRAP_PLACEMENT) {
+      if (key in inner[0]) placement[key] = inner[0][key];
+      for (const node of inner) delete node[key];
+    }
+    const wrapper: JsonObject = { id: freshId(doc, kind), ...nodeTemplate(kind, (k) => this.t(k)), ...placement, components: inner };
+    const rest = items.flatMap((item, i) => (i === first ? [wrapper] : indexes.has(i) ? [] : [item]));
+    this.apply(setIn(doc, list, rest), { select: [...list, first] });
+  }
+
+  /** Elimina più nodi fratelli insieme (un solo passo da annullare). */
+  removeMany(paths: Path[]): void {
+    const doc = this.doc();
+    const nodes = sortSiblings(paths.filter((p) => targetAt(doc, p)?.kind === 'node'));
+    if (nodes.length < 2 || !nodes.every((p) => sameList(p, nodes[0]))) return nodes.length === 1 ? this.remove(nodes[0]) : undefined;
+    const list = nodes[0].slice(0, -1);
+    const indexes = new Set(nodes.map((p) => p.at(-1) as number));
+    const rest = (getIn(doc, list) as Json[]).filter((_, i) => !indexes.has(i));
+    const index = Math.min(Math.min(...indexes), rest.length - 1);
+    const next = setIn(doc, list, rest);
+    this.apply(next, { select: index >= 0 ? [...list, index] : ownerOf(next, list) });
+  }
+
+  /**
    * Avvolge un nodo in un contenitore nuovo (sezione, box, griglia) che prende il suo posto. Le proprietà che dicono
    * dove sta il nodo nel contenitore di prima (`region`, `span`, `grow`) passano al contenitore nuovo.
    */
@@ -285,7 +389,7 @@ export class EditorStore extends DocumentState {
   /** Lingue in cui manca la traduzione di un testo con chiave (nella predefinita basta il ripiego scritto nel testo). */
   missingLocales(entry: TextEntry): string[] {
     if (!entry.key) return [];
-    return this.languages().filter((locale) => !this.translation(locale, entry.key!) && !(locale === this.i18n.defaultLocale() && entry.fallback));
+    return this.languages().filter((locale) => !this.translation(locale, entry.key!) && !(locale === this.defaultLanguage() && entry.fallback));
   }
 
   /** Aggiunge una lingua per le traduzioni. Restituisce false se il codice non è valido o la lingua c'è già. */
@@ -296,9 +400,17 @@ export class EditorStore extends DocumentState {
     return true;
   }
 
+  /** Rende predefinita una delle lingue (va in testa all'elenco). */
+  setDefaultLanguage(locale: string): boolean {
+    if (!this.languages().includes(locale)) return false;
+    this.defaultLanguage.set(locale);
+    this.languages.update((all) => [locale, ...all.filter((l) => l !== locale)]);
+    return true;
+  }
+
   /** Toglie una lingua e le traduzioni scritte nell'editor per lei (la predefinita resta). */
   removeLanguage(locale: string): boolean {
-    if (locale === this.i18n.defaultLocale() || !this.languages().includes(locale)) return false;
+    if (locale === this.defaultLanguage() || !this.languages().includes(locale)) return false;
     this.languages.update((all) => all.filter((l) => l !== locale));
     this.translations.update(({ [locale]: _removed, ...rest }) => rest);
     return true;
@@ -359,7 +471,7 @@ export class EditorStore extends DocumentState {
     const value = translatable(key, text);
     if (!value) return null;
     this.apply(setIn(doc, path, value));
-    this.setTranslation(this.i18n.defaultLocale(), key, text);
+    this.setTranslation(this.defaultLanguage(), key, text);
     return key;
   }
 
@@ -427,7 +539,8 @@ function readDraft(): Draft | null {
     if (!isObject(parsed as unknown as Json) || parsed.doc === undefined) return null;
     const translations = isObject(parsed.translations as unknown as Json) ? parsed.translations : {};
     const languages = Array.isArray(parsed.languages) ? parsed.languages.filter((l) => typeof l === 'string' && LANGUAGE_CODE.test(l)) : undefined;
-    return { doc: parsed.doc, samples: isObject(parsed.samples) ? parsed.samples : {}, translations, languages };
+    const defaultLanguage = typeof parsed.defaultLanguage === 'string' ? parsed.defaultLanguage : undefined;
+    return { doc: parsed.doc, samples: isObject(parsed.samples) ? parsed.samples : {}, translations, languages, defaultLanguage };
   } catch {
     return null;
   }
@@ -436,4 +549,22 @@ function readDraft(): Draft | null {
 /** Lingue senza ripetizioni, nell'ordine: prima quelle indicate, poi le altre. */
 function mergeLanguages(first: readonly string[], more: readonly string[]): string[] {
   return [...new Set([...first, ...more].filter((l) => LANGUAGE_CODE.test(l)))];
+}
+
+/** Due percorsi nello stesso elenco (fratelli). */
+function sameList(a: Path, b: Path): boolean {
+  return a.length === b.length && typeof a.at(-1) === 'number' && typeof b.at(-1) === 'number' && samePath(a.slice(0, -1), b.slice(0, -1));
+}
+
+/** Percorsi di fratelli in ordine di posizione, senza ripetizioni. */
+function sortSiblings(paths: Path[]): Path[] {
+  const seen = new Set<string>();
+  return paths
+    .filter((p) => {
+      const key = p.join('/');
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .sort((a, b) => (a.at(-1) as number) - (b.at(-1) as number));
 }

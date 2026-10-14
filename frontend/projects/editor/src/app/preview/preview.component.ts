@@ -86,6 +86,7 @@ export class PreviewComponent {
       samples: this.store.samples(),
       params: this.params(),
       locale: this.locale(),
+      defaultLocale: this.store.defaultLanguage(),
       translations: this.store.translations(),
       selectedId: this.selectedId(),
       selectMode: this.selectMode(),

@@ -171,6 +171,7 @@ export class NavigationEditorComponent {
       granted: granted ? [...granted] : null,
       locale: this.i18n.locale(),
       translations: this.screens.translations(),
+      defaultLocale: this.screens.defaultLanguage(),
     });
   });
 

@@ -36,6 +36,8 @@ export interface PreviewState {
   /** Parametri della schermata (`params`). */
   params: Record<string, unknown>;
   locale: string;
+  /** Lingua predefinita: quella dei testi di ripiego, usata quando manca una traduzione. */
+  defaultLocale: string;
   /** Traduzioni scritte nell'editor e non ancora nei cataloghi. */
   translations: Record<string, Record<string, string>>;
   /** Nodo da evidenziare. */
@@ -104,6 +106,7 @@ export function previewState(partial: Partial<PreviewState>): PreviewState {
     samples: {},
     params: {},
     locale: 'it',
+    defaultLocale: 'it',
     translations: {},
     selectedId: null,
     selectMode: false,

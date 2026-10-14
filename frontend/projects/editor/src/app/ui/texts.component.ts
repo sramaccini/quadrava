@@ -6,6 +6,7 @@ import { NzInputModule } from 'ng-zorro-antd/input';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 import { getIn, isObject, type Path } from '../model/doc-ops';
 import { EditorStore, LANGUAGE_CODE } from '../model/editor-store';
+import { SUGGESTED_LANGUAGES, languageFromInput, languageName } from '../model/languages';
 import { ownerOf, targetAt } from '../model/schema-info';
 import { fallbackText } from '../model/templates';
 import { collectTexts, translatable, usedKeys, type TextEntry } from '../model/texts';
@@ -39,7 +40,21 @@ export class TextsComponent {
   protected readonly i18n = inject(I18n);
   /** Lingue delle traduzioni (una colonna ciascuna). */
   protected readonly locales = computed(() => this.store.languages());
-  protected readonly defaultLocale = computed(() => this.i18n.defaultLocale());
+  protected readonly defaultLocale = computed(() => this.store.defaultLanguage());
+  /** Lingue proposte (quelle non ancora presenti), con il nome nella lingua dell'editor. */
+  protected readonly suggestions = computed(() => {
+    const ui = this.i18n.locale();
+    const present = new Set(this.locales());
+    return SUGGESTED_LANGUAGES.filter((code) => !present.has(code)).map((code) => ({ code, label: `${languageName(code, ui)} (${code})` }));
+  });
+
+  protected nameOf(locale: string): string {
+    return languageName(locale, this.i18n.locale());
+  }
+
+  protected setDefault(locale: string): void {
+    if (this.store.setDefaultLanguage(locale)) this.notifier.toast(this.i18n.t('ed.texts.defaultChanged', { name: this.nameOf(locale) }));
+  }
   /** Perché la lingua scritta non si può aggiungere. */
   protected readonly languageError = signal('');
   private readonly confirmation = inject(Confirmation);
@@ -136,13 +151,14 @@ export class TextsComponent {
 
   /** Aggiunge la lingua scritta (codice come `fr` o `pt-BR`): una colonna nuova da compilare. */
   protected addLanguage(input: HTMLInputElement): void {
-    const code = input.value.trim();
-    if (!code) return;
-    if (!LANGUAGE_CODE.test(code)) return this.languageError.set(this.i18n.t('ed.texts.languageInvalid'));
-    if (this.locales().includes(code)) return this.languageError.set(this.i18n.t('ed.texts.languageExists', { locale: code }));
+    if (!input.value.trim()) return;
+    // Il codice, il nome di una lingua proposta o la voce scelta tra i suggerimenti («Francese (fr)»).
+    const code = languageFromInput(input.value, this.i18n.locale());
+    if (!code || !LANGUAGE_CODE.test(code)) return this.languageError.set(this.i18n.t('ed.texts.languageInvalid'));
+    if (this.locales().includes(code)) return this.languageError.set(this.i18n.t('ed.texts.languageExists', { locale: this.nameOf(code) }));
     this.store.addLanguage(code);
     input.value = '';
-    this.notifier.toast(this.i18n.t('ed.texts.languageAdded', { locale: code }));
+    this.notifier.toast(this.i18n.t('ed.texts.languageAdded', { locale: this.nameOf(code) }));
   }
 
   /** Toglie una lingua; se ha traduzioni scritte nell'editor chiede conferma (si perdono). */

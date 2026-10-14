@@ -53,6 +53,7 @@ const SHORTCUTS: { group: string; keys: [string, string][] }[] = [
       ['Alt+↑ · Alt+↓', 'ed.keys.move'],
       ['→ · ←', 'ed.keys.branch'],
       ['ed.keys.k.context', 'ed.keys.context'],
+      ['ed.keys.k.multi', 'ed.keys.multi'],
     ],
   },
   { group: 'ed.keys.menus', keys: [['Tab', 'ed.keys.menuReach'], ['ed.keys.k.menuMove', 'ed.keys.menuMove'], ['Esc', 'ed.keys.menuClose']] },
@@ -176,7 +177,13 @@ export class App {
       }
       edit.push(
         { id: 'duplicate', label: t('ed.menu.duplicate'), shortcut: 'Ctrl+D', separator: mode === 'navigation', disabled: none, run: () => doc.duplicate(selection) },
-        { id: 'delete', label: t('ed.menu.delete'), shortcut: t('ed.key.delete'), disabled: none, run: () => doc.remove(selection) },
+        {
+          id: 'delete',
+          label: t('ed.menu.delete'),
+          shortcut: t('ed.key.delete'),
+          disabled: none,
+          run: () => (mode === 'screen' && this.store.multi().length > 1 ? this.store.removeMany(this.store.multi()) : doc.remove(selection)),
+        },
         { id: 'move-up', label: t('ed.menu.moveUp'), shortcut: 'Alt+↑', separator: true, disabled: none, run: () => doc.move(selection, -1) },
         { id: 'move-down', label: t('ed.menu.moveDown'), shortcut: 'Alt+↓', disabled: none, run: () => doc.move(selection, 1) },
       );
@@ -327,7 +334,7 @@ export class App {
       if (ctrl && key === 'v') this.handled(event, () => this.store.paste());
       return;
     }
-    if (key === 'delete') this.handled(event, () => this.store.remove(selection));
+    if (key === 'delete') this.handled(event, () => (this.store.multi().length > 1 ? this.store.removeMany(this.store.multi()) : this.store.remove(selection)));
     else if (ctrl && key === 'd') this.handled(event, () => this.store.duplicate(selection));
     else if (ctrl && key === 'c') this.handled(event, () => this.store.copy(selection));
     else if (ctrl && key === 'x') this.handled(event, () => this.store.cut(selection));
