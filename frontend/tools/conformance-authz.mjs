@@ -1,12 +1,12 @@
-// Kit di conformità al contratto di autorizzazione (contracts/authz.yaml): verifica via HTTP che un servizio di
-// autorizzazione (quello di riferimento o quello di un cliente) si comporti come descrive il contratto.
+// Conformance kit for the authorization contract (contracts/authz.yaml): checks over HTTP that an authorization service
+// (the reference one or a customer's) behaves as the contract describes.
 //
 //   node tools/conformance-authz.mjs --authz http://localhost:8082 --app demo
-//        [--token <JWT> | --user <utente> --password <password>]          utente principale (obbligatorio)
-//        [--other-token <JWT> | --other-user <u> --other-password <p>]    utente con permessi diversi (facoltativo)
+//        [--token <JWT> | --user <user> --password <password>]           main user (required)
+//        [--other-token <JWT> | --other-user <u> --other-password <p>]    user with different permissions (optional)
 //        [--issuer http://localhost:8180/realms/lowcode]
 //
-// Il servizio non viene modificato: le prove sono solo letture e verifiche. Esce con codice 1 se una prova fallisce.
+// The service is not modified: the checks only read and verify. Exits with code 1 if a check fails.
 import { call as httpCall, expect, isProblem, parseArgs, suite, tokenFromArgs } from './conformance-lib.mjs';
 
 const args = parseArgs();
@@ -15,7 +15,7 @@ const app = args.app ?? 'demo';
 const token = await tokenFromArgs(args);
 const other = await tokenFromArgs(args, 'other-');
 if (!token) {
-  console.error('Serve un utente: --token oppure --user e --password.');
+  console.error('A user is needed: --token, or --user and --password.');
   process.exit(2);
 }
 const call = (method, path, options = {}) => httpCall(base, method, path, { token, ...options });
@@ -23,87 +23,87 @@ const PERMISSION = /^[a-z0-9]+\.[a-z0-9]+\.[a-z0-9]+$/;
 const { check, report } = suite();
 let capabilities = null;
 
-await check('senza token: 401', async () => {
+await check('without a token: 401', async () => {
   const r = await call('GET', `/authz/capabilities?app=${encodeURIComponent(app)}`, { token: null });
-  expect(r.status === 401, `atteso 401, ricevuto ${r.status}`);
+  expect(r.status === 401, `expected 401, got ${r.status}`);
 });
 
-await check('capacità: permessi nel formato dominio.risorsa.azione, versione, ttl', async () => {
+await check('capabilities: permissions in the domain.resource.action format, version, ttl', async () => {
   const r = await call('GET', `/authz/capabilities?app=${encodeURIComponent(app)}`);
-  expect(r.status === 200, `atteso 200, ricevuto ${r.status}`);
-  expect(Array.isArray(r.json?.permissions), 'permissions deve essere un elenco');
+  expect(r.status === 200, `expected 200, got ${r.status}`);
+  expect(Array.isArray(r.json?.permissions), 'permissions must be a list');
   const bad = r.json.permissions.filter((p) => typeof p !== 'string' || !PERMISSION.test(p));
-  expect(bad.length === 0, `permessi non validi: ${bad.slice(0, 3).join(', ')}`);
-  expect(new Set(r.json.permissions).size === r.json.permissions.length, 'permessi ripetuti');
-  expect(typeof r.json.version === 'string' && r.json.version.length > 0, 'version mancante');
-  expect(r.json.ttlSeconds === undefined || (Number.isInteger(r.json.ttlSeconds) && r.json.ttlSeconds >= 0), 'ttlSeconds deve essere un intero ≥ 0');
+  expect(bad.length === 0, `invalid permissions: ${bad.slice(0, 3).join(', ')}`);
+  expect(new Set(r.json.permissions).size === r.json.permissions.length, 'repeated permissions');
+  expect(typeof r.json.version === 'string' && r.json.version.length > 0, 'version missing');
+  expect(r.json.ttlSeconds === undefined || (Number.isInteger(r.json.ttlSeconds) && r.json.ttlSeconds >= 0), 'ttlSeconds must be an integer ≥ 0');
   capabilities = r.json;
 });
 
-await check('X-Permissions-Version uguale alla versione nel corpo', async () => {
+await check('X-Permissions-Version equal to the version in the body', async () => {
   const r = await call('GET', `/authz/capabilities?app=${encodeURIComponent(app)}`);
-  expect(r.headers.get('x-permissions-version') === r.json?.version, `intestazione ${r.headers.get('x-permissions-version')} diversa da ${r.json?.version}`);
+  expect(r.headers.get('x-permissions-version') === r.json?.version, `header ${r.headers.get('x-permissions-version')} different from ${r.json?.version}`);
 });
 
-await check('stessi permessi, stessa versione (chiamate ripetute)', async () => {
+await check('same permissions, same version (repeated calls)', async () => {
   const a = await call('GET', `/authz/capabilities?app=${encodeURIComponent(app)}`);
   const b = await call('GET', `/authz/capabilities?app=${encodeURIComponent(app)}`);
-  expect(a.json?.version === b.json?.version, 'la versione cambia senza che cambino i permessi');
+  expect(a.json?.version === b.json?.version, 'the version changes while the permissions do not');
 });
 
-await check('capacità senza app: 400 in formato Problem', async () => {
+await check('capabilities without app: 400 in Problem format', async () => {
   const r = await call('GET', '/authz/capabilities');
-  expect(r.status === 400, `atteso 400, ricevuto ${r.status}`);
-  expect(isProblem(r), 'la risposta non è un Problem (title, status)');
+  expect(r.status === 400, `expected 400, got ${r.status}`);
+  expect(isProblem(r), 'the response is not a Problem (title, status)');
 });
 
-await check('verifica a lotti: un esito per richiesta, nello stesso ordine, coerente con le capacità', async () => {
+await check('batch check: one result per request, in the same order, consistent with the capabilities', async () => {
   const granted = capabilities?.permissions?.[0];
-  expect(granted, 'l’utente non ha permessi: usare un utente con almeno un permesso');
+  expect(granted, 'the user has no permissions: use a user with at least one permission');
   const denied = 'conformance.missing.test';
-  const checks = [{ permission: denied }, { permission: granted, resource: { type: 'ordine', id: '7' } }, { permission: granted }];
+  const checks = [{ permission: denied }, { permission: granted, resource: { type: 'order', id: '7' } }, { permission: granted }];
   const r = await call('POST', '/authz/check', { body: { checks } });
-  expect(r.status === 200, `atteso 200, ricevuto ${r.status}`);
+  expect(r.status === 200, `expected 200, got ${r.status}`);
   const results = r.json?.results;
-  expect(Array.isArray(results) && results.length === checks.length, 'serve un esito per ogni verifica');
+  expect(Array.isArray(results) && results.length === checks.length, 'one result is needed for every check');
   results.forEach((res, i) => {
-    expect(res.permission === checks[i].permission, `esito ${i}: permesso diverso o fuori ordine`);
-    expect(typeof res.allowed === 'boolean', `esito ${i}: allowed deve essere vero o falso`);
+    expect(res.permission === checks[i].permission, `result ${i}: different permission or out of order`);
+    expect(typeof res.allowed === 'boolean', `result ${i}: allowed must be true or false`);
   });
-  expect(results[0].allowed === false, 'un permesso che l’utente non ha deve risultare negato');
-  expect(results[2].allowed === true, 'un permesso delle capacità deve risultare concesso');
-  expect(results[1].resource?.type === 'ordine' && results[1].resource?.id === '7', 'la risorsa va riportata nell’esito');
-  expect(r.headers.get('x-permissions-version') === capabilities.version, 'X-Permissions-Version mancante o diversa');
+  expect(results[0].allowed === false, 'a permission the user does not have must be denied');
+  expect(results[2].allowed === true, 'a permission of the capabilities must be granted');
+  expect(results[1].resource?.type === 'order' && results[1].resource?.id === '7', 'the resource must be echoed in the result');
+  expect(r.headers.get('x-permissions-version') === capabilities.version, 'X-Permissions-Version missing or different');
 });
 
-await check('verifica con un permesso nel formato sbagliato: 400', async () => {
-  const r = await call('POST', '/authz/check', { body: { checks: [{ permission: 'Ordini.Approva' }] } });
-  expect(r.status === 400, `atteso 400, ricevuto ${r.status}`);
-  expect(isProblem(r), 'la risposta non è un Problem');
+await check('check with a permission in the wrong format: 400', async () => {
+  const r = await call('POST', '/authz/check', { body: { checks: [{ permission: 'Orders.Approve' }] } });
+  expect(r.status === 400, `expected 400, got ${r.status}`);
+  expect(isProblem(r), 'the response is not a Problem');
 });
 
-await check('verifica senza checks: 400', async () => {
+await check('check without checks: 400', async () => {
   const r = await call('POST', '/authz/check', { body: {} });
-  expect(r.status === 400, `atteso 400, ricevuto ${r.status}`);
-  expect(isProblem(r), 'la risposta non è un Problem');
+  expect(r.status === 400, `expected 400, got ${r.status}`);
+  expect(isProblem(r), 'the response is not a Problem');
 });
 
-await check('più di 200 verifiche in un lotto: 400', async () => {
+await check('more than 200 checks in a batch: 400', async () => {
   const checks = Array.from({ length: 201 }, () => ({ permission: 'conformance.test.read' }));
   const r = await call('POST', '/authz/check', { body: { checks } });
-  expect(r.status === 400, `atteso 400, ricevuto ${r.status}`);
+  expect(r.status === 400, `expected 400, got ${r.status}`);
 });
 
-await check('corpo non JSON: 400', async () => {
-  const r = await call('POST', '/authz/check', { raw: '{non json' });
-  expect(r.status === 400, `atteso 400, ricevuto ${r.status}`);
+await check('body is not JSON: 400', async () => {
+  const r = await call('POST', '/authz/check', { raw: '{not json' });
+  expect(r.status === 400, `expected 400, got ${r.status}`);
 });
 
-await check('utenti con permessi diversi: versioni diverse', async () => {
+await check('users with different permissions: different versions', async () => {
   const r = await httpCall(base, 'GET', `/authz/capabilities?app=${encodeURIComponent(app)}`, { token: other });
-  expect(r.status === 200, `atteso 200, ricevuto ${r.status}`);
+  expect(r.status === 200, `expected 200, got ${r.status}`);
   const same = JSON.stringify([...r.json.permissions].sort()) === JSON.stringify([...capabilities.permissions].sort());
-  expect(same ? r.json.version === capabilities.version : r.json.version !== capabilities.version, 'la versione deve cambiare quando cambiano i permessi');
+  expect(same ? r.json.version === capabilities.version : r.json.version !== capabilities.version, 'the version must change when the permissions change');
 }, { skip: !other });
 
-report(`Conformità al contratto di autorizzazione (${base}, applicazione ${app})`);
+report(`Conformance with the authorization contract (${base}, application ${app})`);

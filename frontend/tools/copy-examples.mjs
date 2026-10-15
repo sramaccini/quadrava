@@ -1,6 +1,6 @@
-// Copia gli esempi (../examples) nelle cartelle pubbliche delle app runtime ed editor, così le app li caricano via HTTP.
-// Scrive anche examples/index.json con l'elenco delle schermate e examples/themes/index.json con quello dei temi,
-// che l'editor offre da aprire.
+// Copies the examples (../examples) into the public folders of the runtime and editor apps, so the apps load them over HTTP.
+// It also writes examples/index.json with the list of screens and examples/themes/index.json with the list of themes,
+// which the editor offers to open.
 import { cpSync, rmSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -24,5 +24,5 @@ for (const app of ['runtime', 'editor']) {
   cpSync(source, target, { recursive: true, dereference: true });
   writeFileSync(join(target, 'index.json'), JSON.stringify(screens, null, 2) + '\n');
   writeFileSync(join(target, 'themes', 'index.json'), JSON.stringify(themes, null, 2) + '\n');
-  console.log(`Esempi copiati in projects/${app}/public/examples`);
+  console.log(`Examples copied to projects/${app}/public/examples`);
 }

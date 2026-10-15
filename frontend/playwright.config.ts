@@ -1,8 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * Prove end-to-end nel browser contro la demo del runtime (`ng serve runtime`, dati simulati nel browser).
- * Prima vanno compilate le librerie e copiati gli esempi: `npm run demo:prepare`.
+ * End-to-end tests in the browser against the runtime demo (`ng serve runtime`, data simulated in the browser).
+ * Build the libraries and copy the examples first: `npm run demo:prepare`.
  */
 const port = Number(process.env['E2E_PORT'] ?? 4300);
 

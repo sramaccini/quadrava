@@ -1,11 +1,11 @@
-// Backend di esempio della demo, per l'avvio con il BFF: espone come vere API REST (/api/...) lo stesso backend in
-// memoria che la demo usa nel browser (projects/runtime/src/demo/demo-backend.ts). Solo per lo sviluppo locale.
+// Sample back end of the demo, for running with the BFF: it exposes as real REST APIs (/api/...) the same in-memory back
+// end the demo uses in the browser (projects/runtime/src/demo/demo-backend.ts). For local development only.
 //
 //   node tools/demo-api.mjs [--port 8084] [--issuer http://localhost:8180/realms/lowcode] [--no-auth]
 //
-// Ogni richiesta deve portare un token di Keycloak valido (Authorization: Bearer, lo aggiunge il BFF): firma RS256
-// verificata con le chiavi pubblicate dal realm, emittente e scadenza. Con --no-auth il controllo è spento (avviso
-// nel log). Gli errori del backend tornano come Problem (RFC 9457) con il solo stato, mai con dettagli.
+// Every request must carry a valid Keycloak token (Authorization: Bearer, added by the BFF): RS256 signature checked
+// with the keys published by the realm, issuer and expiry. With --no-auth the check is off (warning in the log). Back-end
+// errors come back as Problem (RFC 9457) with the status only, never with details.
 import { readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { createPublicKey, createVerify } from 'node:crypto';
@@ -24,7 +24,7 @@ const port = Number(args.port ?? 8084);
 const issuer = String(args.issuer ?? process.env.KEYCLOAK_ISSUER_URI ?? 'http://localhost:8180/realms/lowcode').replace(/\/+$/, '');
 const withoutAuth = args['no-auth'] === true;
 
-// Il backend TypeScript, impacchettato al volo.
+// The TypeScript back end, bundled on the fly.
 const here = dirname(fileURLToPath(import.meta.url));
 const bundle = await build({
   entryPoints: [join(here, '../projects/runtime/src/demo/demo-backend.ts')],
@@ -37,12 +37,12 @@ const bundle = await build({
 const { DemoBackend } = await import('data:text/javascript;base64,' + Buffer.from(bundle.outputFiles[0].text).toString('base64'));
 const backend = new DemoBackend();
 
-// Chiavi pubbliche del realm, per kid; si ricaricano quando arriva un kid sconosciuto.
+// Public keys of the realm, by kid; reloaded when an unknown kid arrives.
 let keys = new Map();
 async function keyFor(kid) {
   if (!keys.has(kid)) {
     const response = await fetch(`${issuer}/protocol/openid-connect/certs`);
-    if (!response.ok) throw new Error('chiavi non disponibili');
+    if (!response.ok) throw new Error('keys not available');
     const { keys: list } = await response.json();
     keys = new Map(list.filter((k) => k.kty === 'RSA').map((k) => [k.kid, createPublicKey({ key: k, format: 'jwk' })]));
   }
@@ -51,7 +51,7 @@ async function keyFor(kid) {
 
 const decode = (part) => JSON.parse(Buffer.from(part, 'base64url').toString('utf8'));
 
-/** Il token è valido? Firma RS256 del realm, emittente atteso, non scaduto. */
+/** Is the token valid? RS256 signature of the realm, expected issuer, not expired. */
 async function verify(authorization) {
   const match = /^Bearer ([\w-]+)\.([\w-]+)\.([\w-]+)$/.exec(authorization ?? '');
   if (!match) return false;
@@ -70,7 +70,7 @@ async function verify(authorization) {
   }
 }
 
-/** Le parti di testo di un multipart: JSON se si può (numeri, oggetti), altrimenti testo. */
+/** The text parts of a multipart: JSON when possible (numbers, objects), otherwise text. */
 function textValue(value) {
   try {
     return JSON.parse(value);
@@ -111,19 +111,19 @@ function send(res, status, body) {
 
 const problem = (res, status, title) => send(res, status, { title, status });
 
-// Descrizione OpenAPI delle API, come la pubblica springdoc in Spring Boot: l'editor la importa nei data source.
+// OpenAPI description of the APIs, as springdoc publishes it in Spring Boot: the editor imports it into data sources.
 const openApi = readFileSync(join(here, 'demo-api.openapi.json'), 'utf8');
 
 createServer(async (req, res) => {
   const url = new URL(req.url ?? '/', `http://localhost:${port}`);
-  // /v3/api-docs: la sola descrizione (nessun dato), senza token e leggibile da altre origini, come springdoc con CORS
-  // abilitato in sviluppo; dietro il BFF la stessa descrizione è anche su /api/v3/api-docs, con il token.
+  // /v3/api-docs: the description only (no data), without a token and readable from other origins, like springdoc with
+  // CORS enabled in development; behind the BFF the same description is also on /api/v3/api-docs, with the token.
   if (url.pathname === '/v3/api-docs' && req.method === 'GET') {
     res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
     return res.end(openApi);
   }
-  if (!url.pathname.startsWith('/api/')) return problem(res, 404, 'Non trovato');
-  if (!withoutAuth && !(await verify(req.headers['authorization']))) return problem(res, 401, 'Token mancante o non valido');
+  if (!url.pathname.startsWith('/api/')) return problem(res, 404, 'Not found');
+  if (!withoutAuth && !(await verify(req.headers['authorization']))) return problem(res, 401, 'Missing or invalid token');
   if (url.pathname === '/api/v3/api-docs' && req.method === 'GET') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     return res.end(openApi);
@@ -131,17 +131,17 @@ createServer(async (req, res) => {
   try {
     const request = await readRequest(req, url);
     const result = await backend.handle(request);
-    if (result === undefined) return problem(res, 404, 'Non trovato');
+    if (result === undefined) return problem(res, 404, 'Not found');
     send(res, 200, result);
   } catch (e) {
     const status = Number(e instanceof Error ? e.message : NaN);
-    if (status >= 400 && status < 600) problem(res, status, 'Richiesta non riuscita');
+    if (status >= 400 && status < 600) problem(res, status, 'Request failed');
     else {
       console.error('[demo-api]', e instanceof Error ? e.message : e);
-      problem(res, 500, 'Errore interno');
+      problem(res, 500, 'Internal error');
     }
   }
 }).listen(port, '127.0.0.1', () => {
-  if (withoutAuth) console.warn('[demo-api] AVVIATO SENZA AUTENTICAZIONE (--no-auth): solo per lo sviluppo locale.');
-  console.log(`[demo-api] http://localhost:${port}/api — token verificati con ${withoutAuth ? '(nessuno)' : issuer}`);
+  if (withoutAuth) console.warn('[demo-api] STARTED WITHOUT AUTHENTICATION (--no-auth): for local development only.');
+  console.log(`[demo-api] http://localhost:${port}/api — tokens checked against ${withoutAuth ? '(none)' : issuer}`);
 });

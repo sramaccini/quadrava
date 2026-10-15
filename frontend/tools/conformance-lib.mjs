@@ -1,30 +1,30 @@
-// Strumenti comuni dei kit di conformità ai contratti (tools/conformance-*.mjs): argomenti, token di Keycloak, chiamate
-// HTTP, prove e rapporto. Le prove verificano dall'esterno, via HTTP, quello che il contratto promette.
+// Shared tools of the contract conformance kits (tools/conformance-*.mjs): arguments, Keycloak tokens, HTTP calls,
+// checks and report. The checks verify from the outside, over HTTP, what the contract promises.
 
-/** Argomenti `--nome valore` della riga di comando. */
+/** Command-line arguments `--name value`. */
 export function parseArgs(argv = process.argv.slice(2)) {
   return Object.fromEntries(argv.reduce((pairs, value, i, all) => (value.startsWith('--') ? [...pairs, [value.slice(2), all[i + 1]]] : pairs), []));
 }
 
-/** Token di Keycloak con il client di sviluppo lowcode-tools (password grant: solo realm locale). */
+/** Keycloak token with the development client lowcode-tools (password grant: local realm only). */
 export async function tokenFor(issuer, user, password) {
   const response = await fetch(`${issuer.replace(/\/+$/, '')}/protocol/openid-connect/token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({ grant_type: 'password', client_id: 'lowcode-tools', username: user, password: password ?? '' }),
   });
-  if (!response.ok) throw new Error(`token non ottenuto per ${user}: HTTP ${response.status}`);
+  if (!response.ok) throw new Error(`no token for ${user}: HTTP ${response.status}`);
   return (await response.json()).access_token;
 }
 
-/** Il token da `--<prefisso>token` oppure da `--<prefisso>user` e `--<prefisso>password`; null se mancano. */
+/** The token from `--<prefix>token` or from `--<prefix>user` and `--<prefix>password`; null if they are missing. */
 export async function tokenFromArgs(args, prefix = '') {
   if (args[`${prefix}token`]) return args[`${prefix}token`];
   if (!args[`${prefix}user`]) return null;
   return tokenFor(args.issuer ?? 'http://localhost:8180/realms/lowcode', args[`${prefix}user`], args[`${prefix}password`]);
 }
 
-/** Chiamata HTTP: stato, intestazioni e corpo (JSON se lo è). */
+/** HTTP call: status, headers and body (JSON when it is JSON). */
 export async function call(base, method, path, { body, raw, token, headers = {} } = {}) {
   const response = await fetch(base + path, {
     method,
@@ -41,40 +41,40 @@ export async function call(base, method, path, { body, raw, token, headers = {} 
   try {
     json = text ? JSON.parse(text) : null;
   } catch {
-    // corpo non JSON
+    // body is not JSON
   }
   return { status: response.status, headers: response.headers, json, text };
 }
 
-/** Risposta di errore in formato Problem (RFC 9457): JSON con title e status uguale a quello HTTP. */
+/** Error response in Problem format (RFC 9457): JSON with a title and a status equal to the HTTP one. */
 export function isProblem(r) {
   return (r.headers.get('content-type') ?? '').includes('json') && typeof r.json?.title === 'string' && r.json?.status === r.status;
 }
 
-/** Raccolta delle prove: `check(nome, prova, { skip })`, poi `report(titolo)` stampa ed esce. */
+/** Collects the checks: `check(name, run, { skip })`, then `report(title)` prints and exits. */
 export function suite() {
   const results = [];
   return {
     async check(name, run, { skip = false } = {}) {
       if (skip) {
-        results.push({ name, outcome: 'saltata' });
+        results.push({ name, outcome: 'skipped' });
         return;
       }
       try {
         await run();
         results.push({ name, outcome: 'ok' });
       } catch (e) {
-        results.push({ name, outcome: 'FALLITA', reason: e instanceof Error ? e.message : String(e) });
+        results.push({ name, outcome: 'FAILED', reason: e instanceof Error ? e.message : String(e) });
       }
     },
     report(title) {
       let failed = 0;
       console.log(`${title}\n`);
       for (const r of results) {
-        if (r.outcome === 'FALLITA') failed++;
-        console.log(`${r.outcome === 'ok' ? '  ok     ' : r.outcome === 'saltata' ? '  saltata' : '  FALLITA'}  ${r.name}${r.reason ? `\n           ${r.reason}` : ''}`);
+        if (r.outcome === 'FAILED') failed++;
+        console.log(`${r.outcome === 'ok' ? '  ok     ' : r.outcome === 'skipped' ? '  skipped' : '  FAILED '}  ${r.name}${r.reason ? `\n           ${r.reason}` : ''}`);
       }
-      console.log(`\n${results.length - failed} su ${results.length} prove senza errori${failed ? `, ${failed} fallite` : ''}.`);
+      console.log(`\n${results.length - failed} of ${results.length} checks passed${failed ? `, ${failed} failed` : ''}.`);
       process.exit(failed ? 1 : 0);
     },
   };

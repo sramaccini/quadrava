@@ -1,6 +1,6 @@
-// Disegna i loghi completi (icona + nome) in PNG, con il carattere Sora incorporato: servono dove l'SVG non può
-// caricare il carattere (il README su GitHub, documenti, presentazioni). Uso: node tools/brand-png.mjs
-// Scrive assets/brand/png/<logo>.png (sfondo trasparente, 4x, ritagliati sul disegno).
+// Draws the full logos (icon + name) as PNG, with the Sora font embedded: they are needed where the SVG cannot load
+// the font (the README on GitHub, documents, presentations). Usage: node tools/brand-png.mjs
+// Writes assets/brand/png/<logo>.png (transparent background, 4x, cropped to the drawing).
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -23,8 +23,8 @@ try {
     const page = await browser.newPage({ viewport: { width: Number(width), height: Number(height) }, deviceScaleFactor: SCALE });
     await page.setContent(`<style>${fontFaces} html, body { margin: 0; background: transparent; } svg { display: block; }</style>${svg}`);
     await page.evaluate(() => document.fonts.ready);
-    if (!(await page.evaluate(() => document.fonts.check('600 44px Sora')))) throw new Error('Sora non caricato');
-    // Ritaglio sul disegno: il viewBox lascia spazio vuoto a destra del nome.
+    if (!(await page.evaluate(() => document.fonts.check('600 44px Sora')))) throw new Error('Sora not loaded');
+    // Crop to the drawing: the viewBox leaves empty space to the right of the name.
     const box = await page.evaluate(() => {
       const b = document.querySelector('svg').getBBox();
       return { x: 0, y: 0, width: Math.ceil(b.x + b.width) + 1, height: Number(document.querySelector('svg').getAttribute('height')) };

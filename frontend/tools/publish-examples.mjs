@@ -1,11 +1,11 @@
-// Pubblica gli esempi (../examples) in un registro: ogni schermata, la navigazione, ogni tema e ogni catalogo delle
-// traduzioni come documenti separati (contracts/registry.yaml 0.5). Serve a provare il runtime che carica dal registro.
+// Publishes the examples (../examples) into a registry: every screen, the navigation, every theme and every translation
+// catalogue as separate documents (contracts/registry.yaml 0.5). Used to try the runtime that loads from the registry.
 //
 //   node tools/publish-examples.mjs [--registry http://localhost:8081] [--app demo] [--env development]
-//                                   [--token <JWT> | --user <utente> --password <password> [--issuer <realm>]]
+//                                   [--token <JWT> | --user <user> --password <password> [--issuer <realm>]]
 //
-// Con il registro di riferimento avviato con il profilo no-auth il token non serve. Con --user e --password lo
-// script chiede il token a Keycloak con il client di sviluppo lowcode-tools (solo per il realm locale).
+// With the reference registry started with the no-auth profile no token is needed. With --user and --password the script
+// asks Keycloak for the token with the development client lowcode-tools (local realm only).
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -27,7 +27,7 @@ if (!token && args.user) {
     body: new URLSearchParams({ grant_type: 'password', client_id: 'lowcode-tools', username: args.user, password: args.password ?? '' }),
   });
   if (!response.ok) {
-    console.error(`Token non ottenuto da ${issuer}: HTTP ${response.status}`);
+    console.error(`No token from ${issuer}: HTTP ${response.status}`);
     process.exit(1);
   }
   token = (await response.json()).access_token;
@@ -48,7 +48,7 @@ for (const file of readdirSync(join(examples, 'themes')).filter((f) => f.endsWit
   const doc = read(join(examples, 'themes', file));
   documents.push({ kind: 'theme', id: doc.theme, doc });
 }
-// Cataloghi delle traduzioni: un documento messages per lingua (i file degli esempi sono solo chiave → testo).
+// Translation catalogues: one messages document per language (the example files are just key → text).
 for (const file of readdirSync(join(examples, 'i18n')).filter((f) => f.endsWith('.json'))) {
   const locale = file.replace(/\.json$/, '');
   documents.push({ kind: 'messages', id: locale, doc: { schemaVersion: '1.0', messages: locale, texts: read(join(examples, 'i18n', file)) } });
@@ -59,15 +59,15 @@ for (const { kind, id, doc } of documents) {
   const base = `${registry}/registry/apps/${encodeURIComponent(app)}/documents/${kind}/${encodeURIComponent(id)}`;
   try {
     const saved = await fetch(`${base}/versions`, { method: 'POST', headers, body: JSON.stringify(doc) });
-    if (!saved.ok) throw new Error(`salvataggio: HTTP ${saved.status}`);
+    if (!saved.ok) throw new Error(`save: HTTP ${saved.status}`);
     const { hash } = await saved.json();
     const published = await fetch(`${base}/published?env=${encodeURIComponent(env)}`, { method: 'PUT', headers, body: JSON.stringify({ hash }) });
-    if (!published.ok) throw new Error(`pubblicazione: HTTP ${published.status}`);
-    console.log(`${kind} ${id} → ${hash.slice(0, 10)} pubblicato in ${env}`);
+    if (!published.ok) throw new Error(`publish: HTTP ${published.status}`);
+    console.log(`${kind} ${id} → ${hash.slice(0, 10)} published in ${env}`);
   } catch (e) {
     failed++;
     console.error(`${kind} ${id}: ${e instanceof Error ? e.message : e}`);
   }
 }
-console.log(`${documents.length - failed} documenti pubblicati nell'applicazione «${app}», ambiente «${env}» (${registry}).`);
+console.log(`${documents.length - failed} documents published in application «${app}», environment «${env}» (${registry}).`);
 process.exit(failed ? 1 : 0);

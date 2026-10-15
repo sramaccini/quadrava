@@ -1,15 +1,15 @@
-// Avvia in un comando tutto lo stack di sviluppo con il login vero:
-//   Keycloak (Docker) → registro, autorizzazioni, telemetria, BFF (jar Java) → backend della demo → esempi pubblicati
-//   → runtime (4200) ed editor (4201) dietro il BFF.
+// Starts the whole development stack, with the real login, in one command:
+//   Keycloak (Docker) → registry, authorization, telemetry, BFF (Java jars) → demo back end → examples published
+//   → runtime (4200) and editor (4201) behind the BFF.
 //
 //   npm run stack [-- --services-only] [-- --rebuild]
 //
 // --services-only  does not start runtime and editor (to start them separately, for example from the IDE)
 // --rebuild        rebuilds the jars even if they already exist
 //
-// Il registro tiene i dati in ../data/registry (sopravvivono al riavvio). I log di ogni processo sono in
-// ../.stack/logs. Ctrl+C ferma tutto tranne Keycloak, che resta acceso per ripartire in fretta
-// (per fermarlo: cd idp && docker compose down). Solo per lo sviluppo locale.
+// The registry keeps its data in ../data/registry (it survives restarts). The logs of every process are in
+// ../.stack/logs. Ctrl+C stops everything except Keycloak, which stays up to restart quickly
+// (to stop it: cd idp && docker compose down). For local development only.
 import { spawn, spawnSync } from 'node:child_process';
 import { createWriteStream, existsSync, mkdirSync, readdirSync } from 'node:fs';
 import { dirname, isAbsolute, join } from 'node:path';
@@ -35,43 +35,43 @@ function stop(code = 0) {
   process.exit(code);
 }
 process.on('SIGINT', () => {
-  say('fermo i processi (Keycloak resta acceso: cd idp && docker compose down per fermarlo)');
+  say('stopping the processes (Keycloak stays up: cd idp && docker compose down to stop it)');
   stop(0);
 });
 
-/** Avvia un processo con il log in .stack/logs/<nome>.log; se termina da solo, lo dice. */
+/** Starts a process with its log in .stack/logs/<name>.log; if it ends by itself, says so. */
 function start(name, command, args, cwd) {
   const log = createWriteStream(join(logs, `${name}.log`), { flags: 'w' });
   const child = spawn(command, args, { cwd, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
   child.stdout.pipe(log);
   child.stderr.pipe(log);
   child.on('exit', (code) => {
-    if (code !== null && code !== 0) say(`${name} è terminato (codice ${code}): vedi .stack/logs/${name}.log`);
+    if (code !== null && code !== 0) say(`${name} ended (code ${code}): see .stack/logs/${name}.log`);
   });
   children.push(child);
   return child;
 }
 
-/** Aspetta che un indirizzo risponda (qualunque risposta HTTP, anche 401: il servizio è su). */
+/** Waits until an address answers (any HTTP response, 401 included: the service is up). */
 async function ready(name, url, seconds = 120) {
   const until = Date.now() + seconds * 1000;
   while (Date.now() < until) {
     try {
       await fetch(url, { signal: AbortSignal.timeout(2000) });
-      say(`${name} pronto`);
+      say(`${name} ready`);
       return;
     } catch {
       await new Promise((r) => setTimeout(r, 1000));
     }
   }
-  fail(`${name} non risponde su ${url} dopo ${seconds} secondi: vedi .stack/logs`);
+  fail(`${name} does not answer on ${url} after ${seconds} seconds: see .stack/logs`);
 }
 
 function run(command, args, cwd) {
-  // Su Windows npm, mvn e docker sono .cmd e chiedono la shell; un eseguibile con percorso assoluto (node) no: con la
-  // shell un percorso con spazi («C:\Program Files\…») si spezzerebbe.
+  // On Windows npm, mvn and docker are .cmd files and need the shell; an executable with an absolute path (node) does
+  // not: through the shell a path with spaces («C:\Program Files\…») would be split.
   const result = spawnSync(command, args, { cwd, stdio: 'inherit', shell: windows && !isAbsolute(command) });
-  if (result.status !== 0) fail(`comando non riuscito: ${command} ${args.join(' ')}`);
+  if (result.status !== 0) fail(`command failed: ${command} ${args.join(' ')}`);
 }
 
 const jar = (module) => {
@@ -84,15 +84,15 @@ mkdirSync(logs, { recursive: true });
 mkdirSync(join(root, 'data', 'registry'), { recursive: true });
 
 // 1. Keycloak
-say('avvio Keycloak (Docker)…');
-if (spawnSync('docker', ['version'], { stdio: 'ignore', shell: windows }).status !== 0) fail('Docker non è disponibile: avvia Docker Desktop');
+say('starting Keycloak (Docker)…');
+if (spawnSync('docker', ['version'], { stdio: 'ignore', shell: windows }).status !== 0) fail('Docker is not available: start Docker Desktop');
 run('docker', ['compose', 'up', '-d'], join(root, 'idp'));
 await ready('Keycloak', 'http://localhost:8180/realms/lowcode/.well-known/openid-configuration', 180);
 
-// 2. Servizi Java
+// 2. Java services
 const modules = ['registry', 'authz', 'telemetry', 'bff'];
 if (flags.has('--rebuild') || modules.some((m) => !jar(m))) {
-  say('compilo i servizi Java (mvn package)…');
+  say('building the Java services (mvn package)…');
   run('mvn', ['-q', 'package', '-DskipTests'], reference);
 }
 start('registry', 'java', ['-jar', jar('registry'), `--lowcode.registry.storage-dir=${join(root, 'data', 'registry')}`], reference);
@@ -101,21 +101,21 @@ start('telemetry', 'java', ['-jar', jar('telemetry')], reference);
 start('bff', 'java', ['-jar', jar('bff')], reference);
 start('demo-api', process.execPath, [join(here, 'demo-api.mjs')], frontend);
 await Promise.all([
-  ready('registro', 'http://localhost:8081/actuator/health'),
-  ready('autorizzazioni', 'http://localhost:8082/actuator/health'),
-  ready('telemetria', 'http://localhost:8083/actuator/health'),
+  ready('registry', 'http://localhost:8081/actuator/health'),
+  ready('authorization', 'http://localhost:8082/actuator/health'),
+  ready('telemetry', 'http://localhost:8083/actuator/health'),
   ready('BFF', 'http://localhost:8080/actuator/health'),
-  ready('backend della demo', 'http://localhost:8084/'),
+  ready('demo back end', 'http://localhost:8084/'),
 ]);
 
-// 3. Esempi nel registro (stesso contenuto = stessa versione: ripubblicare non crea duplicati)
-say('pubblico gli esempi nel registro…');
+// 3. Examples in the registry (same content = same version: publishing again creates no duplicates)
+say('publishing the examples in the registry…');
 run(process.execPath, [join(here, 'publish-examples.mjs'), '--user', 'administrator', '--password', 'administrator'], frontend);
 
-// 4. Runtime ed editor dietro il BFF
+// 4. Runtime and editor behind the BFF
 if (!flags.has('--services-only')) {
   if (!existsSync(join(frontend, 'dist', 'components'))) {
-    say('compilo le librerie (build:libs)…');
+    say('building the libraries (build:libs)…');
     run('npm', ['run', 'build:libs'], frontend);
   }
   run(process.execPath, [join(here, 'copy-examples.mjs')], frontend);
@@ -125,12 +125,12 @@ if (!flags.has('--services-only')) {
   await Promise.all([ready('runtime', 'http://localhost:4200/', 300), ready('editor', 'http://localhost:4201/', 300)]);
 }
 
-say('tutto pronto:');
+say('all ready:');
 console.log(`
-  Runtime   http://localhost:4200   (login: operator, manager o administrator; password = nome utente)
-  Editor    http://localhost:4201   (pannello Registro, applicazione «demo»)
+  Runtime   http://localhost:4200   (login: operator, manager or administrator; password = user name)
+  Editor    http://localhost:4201   (Registry panel, application «demo»)
   Keycloak  http://localhost:8180   (console: admin / admin)
-  Log       .stack/logs/
+  Logs      .stack/logs/
 
-  Ctrl+C per fermare.
+  Ctrl+C to stop.
 `);
