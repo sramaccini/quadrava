@@ -1,6 +1,6 @@
 # Quadrava component catalogue
 
-List of the components of the Quadrava JSON language, with the specification of those added in October 2026. Every new component has unit tests in the `components` library and an example in the demo **showcase** (area «Vetrina componenti»).
+List of the components of the Quadrava JSON language, with the specification of those added in October 2026. Every new component has unit tests in the `components` library and an example in the demo **showcase** (area «Component showcase»).
 
 Rules common to all components, new ones included:
 

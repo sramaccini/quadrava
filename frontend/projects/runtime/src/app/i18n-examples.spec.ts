@@ -8,18 +8,18 @@ import ordiniElenco from '../../public/examples/order-list.json';
 import pacchettiElenco from '../../public/examples/package-list.json';
 import pacchettoNuovo from '../../public/examples/package-new.json';
 import speseElenco from '../../public/examples/expense-list.json';
-import vetrinaBase from '../../public/examples/showcase-basics.json';
-import vetrinaForm from '../../public/examples/showcase-form.json';
-import vetrinaLayout from '../../public/examples/showcase-layout.json';
-import vetrinaTabelle from '../../public/examples/showcase-tables.json';
-import vetrinaTabelleAvanzate from '../../public/examples/showcase-advanced-tables.json';
-import vetrinaCampi from '../../public/examples/showcase-fields.json';
-import vetrinaInput from '../../public/examples/showcase-input.json';
-import vetrinaContenitori from '../../public/examples/showcase-containers.json';
-import vetrinaAttivita from '../../public/examples/showcase-tasks.json';
-import vetrinaCruscotto from '../../public/examples/showcase-dashboard.json';
-import vetrinaViste from '../../public/examples/showcase-views.json';
-import vetrinaDatatable from '../../public/examples/showcase-datatable.json';
+import showcaseBasics from '../../public/examples/showcase-basics.json';
+import showcaseForm from '../../public/examples/showcase-form.json';
+import showcaseLayout from '../../public/examples/showcase-layout.json';
+import showcaseTables from '../../public/examples/showcase-tables.json';
+import showcaseAdvancedTables from '../../public/examples/showcase-advanced-tables.json';
+import showcaseFields from '../../public/examples/showcase-fields.json';
+import showcaseInput from '../../public/examples/showcase-input.json';
+import showcaseContainers from '../../public/examples/showcase-containers.json';
+import showcaseTasks from '../../public/examples/showcase-tasks.json';
+import showcaseDashboard from '../../public/examples/showcase-dashboard.json';
+import showcaseViews from '../../public/examples/showcase-views.json';
+import showcaseDatatable from '../../public/examples/showcase-datatable.json';
 import navigation from '../../public/examples/navigation.json';
 import catalogEn from '../../public/examples/i18n/en.json';
 import catalogIt from '../../public/examples/i18n/it.json';
@@ -32,18 +32,18 @@ const SCREENS: Record<string, unknown> = {
   'package-list': pacchettiElenco,
   'package-new': pacchettoNuovo,
   'expense-list': speseElenco,
-  'showcase-basics': vetrinaBase,
-  'showcase-form': vetrinaForm,
-  'showcase-layout': vetrinaLayout,
-  'showcase-tables': vetrinaTabelle,
-  'showcase-advanced-tables': vetrinaTabelleAvanzate,
-  'showcase-fields': vetrinaCampi,
-  'showcase-input': vetrinaInput,
-  'showcase-containers': vetrinaContenitori,
-  'showcase-tasks': vetrinaAttivita,
-  'showcase-dashboard': vetrinaCruscotto,
-  'showcase-views': vetrinaViste,
-  'showcase-datatable': vetrinaDatatable,
+  'showcase-basics': showcaseBasics,
+  'showcase-form': showcaseForm,
+  'showcase-layout': showcaseLayout,
+  'showcase-tables': showcaseTables,
+  'showcase-advanced-tables': showcaseAdvancedTables,
+  'showcase-fields': showcaseFields,
+  'showcase-input': showcaseInput,
+  'showcase-containers': showcaseContainers,
+  'showcase-tasks': showcaseTasks,
+  'showcase-dashboard': showcaseDashboard,
+  'showcase-views': showcaseViews,
+  'showcase-datatable': showcaseDatatable,
 };
 
 /** The text strings appearing in a screen (labels, titles, messages…), to check that none was left written in a single language. */

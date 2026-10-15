@@ -4,13 +4,13 @@ import { Router } from '@angular/router';
 import navigationDoc from '../../public/examples/navigation.json';
 import fattureElenco from '../../public/examples/invoice-list.json';
 import tabelleAvanzate from '../../public/examples/showcase-advanced-tables.json';
-import campi from '../../public/examples/showcase-fields.json';
+import fields from '../../public/examples/showcase-fields.json';
 import input from '../../public/examples/showcase-input.json';
-import contenitori from '../../public/examples/showcase-containers.json';
-import attivita from '../../public/examples/showcase-tasks.json';
+import containers from '../../public/examples/showcase-containers.json';
+import tasks from '../../public/examples/showcase-tasks.json';
 import layout from '../../public/examples/showcase-layout.json';
-import cruscotto from '../../public/examples/showcase-dashboard.json';
-import viste from '../../public/examples/showcase-views.json';
+import dashboard from '../../public/examples/showcase-dashboard.json';
+import views from '../../public/examples/showcase-views.json';
 import datatable from '../../public/examples/showcase-datatable.json';
 import light from '../../public/examples/themes/light.json';
 import catalogIt from '../../public/examples/i18n/it.json';
@@ -25,13 +25,13 @@ export const SHOWCASE_FILES: Record<string, unknown> = {
   // The initial destination, which opens before going to the showcase screen.
   'examples/invoice-list.json': fattureElenco,
   'examples/showcase-advanced-tables.json': tabelleAvanzate,
-  'examples/showcase-fields.json': campi,
+  'examples/showcase-fields.json': fields,
   'examples/showcase-input.json': input,
-  'examples/showcase-containers.json': contenitori,
-  'examples/showcase-tasks.json': attivita,
+  'examples/showcase-containers.json': containers,
+  'examples/showcase-tasks.json': tasks,
   'examples/showcase-layout.json': layout,
-  'examples/showcase-dashboard.json': cruscotto,
-  'examples/showcase-views.json': viste,
+  'examples/showcase-dashboard.json': dashboard,
+  'examples/showcase-views.json': views,
   'examples/showcase-datatable.json': datatable,
   'examples/i18n/it.json': catalogIt,
   'examples/i18n/en.json': catalogEn,
