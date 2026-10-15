@@ -22,7 +22,7 @@ The same symbol is used by both products: Quadrava on blue, Quadrava Studio on i
 | lavender | #B9B3FF | "Studio" on dark |
 
 ## Typography
-Logotype: **Sora** (Google Fonts, OFL) 600, "Studio" in 300; the "Q" takes the accent colour. The SVG logos use `<text>`: load Sora in the app (for example `@fontsource/sora`) or convert the text to paths before external use.
+Logotype: **Sora** (Google Fonts, OFL) 600, "Studio" in 400; the "Q" takes the accent colour. The SVG logos use `<text>`: load Sora in the app (for example `@fontsource/sora`) or convert the text to paths before external use.
 
 ## Files
 - `svg/quadrava-icon.svg`, `svg/quadrava-studio-icon.svg` – main icons (≥ 48 px)

@@ -12,7 +12,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const brand = join(here, '../../assets/brand');
 const fonts = join(here, '../node_modules/@fontsource/sora/files');
 const font = (weight) => readFileSync(join(fonts, `sora-latin-${weight}-normal.woff2`)).toString('base64');
-const fontFaces = [300, 600]
+const fontFaces = [400, 600]
   .map((w) => `@font-face { font-family: Sora; font-weight: ${w}; src: url(data:font/woff2;base64,${font(w)}) format('woff2'); }`)
   .join('\n');
 const only = process.argv.includes('--only') ? process.argv[process.argv.indexOf('--only') + 1] : null;

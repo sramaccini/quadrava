@@ -108,7 +108,7 @@ The Italian locale is patched in `provide.ts` (`rangeQuarterPlaceholder` is miss
 ## 6a. Brand
 
 * `assets/brand/` is the single source of the Quadrava brand (read its README: colours, typeface, minimum sizes, clear space; do not recolour or distort). Apps copy what they need into `projects/<app>/public/brand/`; when the assets change, copy them again.
-* The logotype is `lc-quadrava-wordmark` (`product`, `icon`, `tone`, `compact`), HTML text in Sora rather than the SVG logos, which use `<text>` and would fall back to another typeface when loaded as images. Sora comes from `@fontsource/sora` (`latin-300.css`, `latin-600.css` in the `styles` of both apps in `angular.json`).
+* The logotype is `lc-quadrava-wordmark` (`product`, `icon`, `tone`, `compact`), HTML text in Sora rather than the SVG logos, which use `<text>` and would fall back to another typeface when loaded as images. Sora comes from `@fontsource/sora` (`latin-400.css`, `latin-600.css` in the `styles` of both apps in `angular.json`).
 * Brand colours are an exception to the no-hard-coded-colours rule: they are fixed by the brand, with a light and a dark variant, and never follow the theme.
 * Below 32 px use the `*-icon-small.svg` variants (favicon, header, side bar).
 * `lc-sidebar` takes an application brand through content projection (`<x lcBrand>`); without it, it shows `logo` (or a default icon) and `brand`.

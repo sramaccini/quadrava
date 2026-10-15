@@ -37,7 +37,7 @@
                 "bundleName": "nz-dark",
                 "inject": false
               },
-              "node_modules/@fontsource/sora/latin-300.css",
+              "node_modules/@fontsource/sora/latin-400.css",
               "node_modules/@fontsource/sora/latin-600.css",
               "projects/runtime/src/styles.scss"
             ]
@@ -153,7 +153,7 @@
                 "bundleName": "nz-dark",
                 "inject": false
               },
-              "node_modules/@fontsource/sora/latin-300.css",
+              "node_modules/@fontsource/sora/latin-400.css",
               "node_modules/@fontsource/sora/latin-600.css",
               "projects/editor/src/styles.scss"
             ],

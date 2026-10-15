@@ -20,7 +20,7 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
     .icon { width: 1.45em; height: 1.45em; flex: none; }
     .word { font-family: Sora, 'Segoe UI', Arial, sans-serif; font-weight: 600; letter-spacing: -0.03em; color: var(--qv-text); }
     .q { color: var(--qv-q); }
-    .product { font-weight: 300; color: var(--qv-product); }
+    .product { font-weight: 400; color: var(--qv-product); }
   `,
   template: `
     <span class="qv" [class.dark]="tone() === 'dark'" role="img" [attr.aria-label]="label()">
