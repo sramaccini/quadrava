@@ -29,10 +29,10 @@ class ReferencesTest {
                   {"type":"link","label":"Esterno","href":"https://example.org"},
                   {"type":"link","label":"Dinamico","screen":"{{ state.destinazione }}"},
                   {"type":"button","label":"Ricarica","onClick":[{"navigate":"order-list"}]}],
-                 "actions":{"apri":[{"navigate":"ordine-nuovo","params":{"da":"elenco"}}]}}""";
+                 "actions":{"open":[{"navigate":"order-new","params":{"from":"list"}}]}}""";
         assertThat(References.of(Kind.SCREEN, "order-list", screen)).containsExactly(
                 new ScreenReference("order-detail", "/components/0/screen"),
-                new ScreenReference("ordine-nuovo", "/actions/apri/0/navigate"));
+                new ScreenReference("order-new", "/actions/open/0/navigate"));
     }
 
     @Test

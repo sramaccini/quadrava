@@ -3,16 +3,16 @@ import { formatMessage } from './message-format';
 import { parseTemplate } from './template';
 import type { EvalContext } from './types';
 
-const granted = new Set(['ordini.ordine.leggi', 'ordini.ordine.approva']);
+const granted = new Set(['orders.order.read', 'orders.order.approve']);
 const errors: { source: string; error: string }[] = [];
 const engine = new ExpressionEngine({ can: (p) => granted.has(p) }, { onError: (e) => errors.push(e) });
 
 const ctx: EvalContext = {
   user: { username: 'manager' },
-  row: { id: 7, stato: 'inviato', _perm: { update: true, delete: false } },
+  row: { id: 7, status: 'submitted', _perm: { update: true, delete: false } },
   form: { tipo: 'business' },
   value: 15,
-  state: { filtri: { stato: 'bozza' } },
+  state: { filters: { status: 'draft' } },
 };
 
 beforeEach(() => {
@@ -21,7 +21,7 @@ beforeEach(() => {
 
 describe('ExpressionEngine.evaluate', () => {
   it('combines permissions and row data', () => {
-    expect(engine.evaluate("can('ordini.ordine.approva') && row.stato == 'inviato'", ctx)).toEqual({ ok: true, value: true });
+    expect(engine.evaluate("can('orders.order.approve') && row.status == 'submitted'", ctx)).toEqual({ ok: true, value: true });
   });
 
   it('denies a missing permission', () => {
@@ -52,7 +52,7 @@ describe('ExpressionEngine.evaluate', () => {
   });
 
   it('usa in, ternario e has()', () => {
-    expect(engine.evaluate("row.stato in ['inviato', 'approvato']", ctx)).toEqual({ ok: true, value: true });
+    expect(engine.evaluate("row.status in ['submitted', 'approvato']", ctx)).toEqual({ ok: true, value: true });
     expect(engine.evaluate("form.tipo == 'privato' ? 'P' : 'B'", ctx)).toEqual({ ok: true, value: 'B' });
     expect(engine.evaluate("has(row.inesistente) && row.inesistente == 'x'", ctx)).toEqual({ ok: true, value: false });
   });
@@ -72,7 +72,7 @@ describe('ExpressionEngine.evaluate', () => {
   });
 
   it('rejects the $ syntax (not a CEL identifier)', () => {
-    expect(engine.evaluate("$can('ordini.ordine.approva')", ctx).ok).toBe(false);
+    expect(engine.evaluate("$can('orders.order.approve')", ctx).ok).toBe(false);
   });
 
   it('applies the depth limits', () => {
@@ -89,11 +89,11 @@ describe('ExpressionEngine.evaluate', () => {
 describe('ExpressionEngine.interpolate', () => {
   it('returns the typed value if the template is a single expression', () => {
     expect(engine.interpolate('{{row.id}}', ctx)).toEqual({ ok: true, value: 7 });
-    expect(engine.interpolate("{{can('ordini.ordine.leggi')}}", ctx)).toEqual({ ok: true, value: true });
+    expect(engine.interpolate("{{can('orders.order.read')}}", ctx)).toEqual({ ok: true, value: true });
   });
 
   it('combines text and values', () => {
-    expect(engine.interpolate("Ordine {{row.id}} ({{row.stato}})", ctx)).toEqual({ ok: true, value: 'Ordine 7 (inviato)' });
+    expect(engine.interpolate("Order {{row.id}} ({{row.status}})", ctx)).toEqual({ ok: true, value: 'Order 7 (submitted)' });
   });
 
   it('leaves text without expressions unchanged', () => {
@@ -116,7 +116,7 @@ describe('ExpressionEngine.evaluateCondition', () => {
   });
 
   it('evaluates a condition', () => {
-    expect(engine.evaluateCondition("{{can('ordini.ordine.approva')}}", ctx, { whenMissing: true })).toBe(true);
+    expect(engine.evaluateCondition("{{can('orders.order.approve')}}", ctx, { whenMissing: true })).toBe(true);
   });
 
   it('fails closed if the evaluation gives an error', () => {
@@ -125,14 +125,14 @@ describe('ExpressionEngine.evaluateCondition', () => {
   });
 
   it('fails closed if the result is not a boolean', () => {
-    expect(engine.evaluateCondition('{{row.stato}}', ctx, { whenMissing: true })).toBe(false);
+    expect(engine.evaluateCondition('{{row.status}}', ctx, { whenMissing: true })).toBe(false);
     expect(errors[0]?.error).toContain('boolean');
   });
 });
 
 describe('ExpressionEngine.check', () => {
   it('accetta espressioni valide', () => {
-    expect(engine.check("can('a.b') && row.stato == 'x'")).toEqual({ valid: true });
+    expect(engine.check("can('a.b') && row.status == 'x'")).toEqual({ valid: true });
   });
 
   it('reports syntax errors', () => {
@@ -194,13 +194,13 @@ describe('presentation functions', () => {
   it('a value that cannot be formatted becomes empty text', () => {
     const engine = withI18n('it-IT');
     expect(engine.evaluate('fmtCurrency(state.x, "EUR")', { state: { x: null } })).toEqual({ ok: true, value: '' });
-    expect(engine.evaluate('fmtDate("non è una data")')).toEqual({ ok: true, value: '' });
+    expect(engine.evaluate('fmtDate("not a date")')).toEqual({ ok: true, value: '' });
   });
 
   it('plural() chooses the form and replaces {n}', () => {
     const engine = withI18n('it-IT');
-    expect(engine.evaluate("plural(1, 'una riga', '{n} righe')")).toEqual({ ok: true, value: 'una riga' });
-    expect(engine.evaluate("plural(state.n, 'una riga', '{n} righe')", { state: { n: 3 } })).toEqual({ ok: true, value: '3 righe' });
+    expect(engine.evaluate("plural(1, 'one row', '{n} rows')")).toEqual({ ok: true, value: 'one row' });
+    expect(engine.evaluate("plural(state.n, 'one row', '{n} rows')", { state: { n: 3 } })).toEqual({ ok: true, value: '3 rows' });
   });
 
   it('check() knows the presentation functions', () => {

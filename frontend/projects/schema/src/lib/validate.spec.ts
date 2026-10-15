@@ -2,7 +2,7 @@ import { validateNavigation, validateScreen, validateTheme } from './validate';
 
 const minimal = () => ({
   schemaVersion: '1.0',
-  screen: 'ordini-elenco',
+  screen: 'order-list',
   components: [{ type: 'text', text: 'Ciao' }],
 });
 
@@ -19,19 +19,19 @@ describe('validateScreen', () => {
   it('accepts a table with an action conditioned by permissions', () => {
     const doc = {
       ...minimal(),
-      requires: 'ordini.ordine.leggi',
+      requires: 'orders.order.read',
       dataSources: { ordini: { type: 'rest', method: 'GET', url: '/api/ordini', paging: 'server' } },
       components: [
         {
           id: 'tabella-ordini',
           type: 'table',
-          source: 'ordini',
+          source: 'orders',
           columns: [{ field: 'numero' }],
           rowActions: [
             {
               label: 'Approva',
-              visibleIf: "{{can('ordini.ordine.approva') && row.stato == 'inviato'}}",
-              onClick: [{ call: 'approvaOrdine', onError: { toast: 'Errore' } }, { refresh: 'ordini' }],
+              visibleIf: "{{can('orders.order.approve') && row.status == 'submitted'}}",
+              onClick: [{ call: 'approveOrder', onError: { toast: 'Error' } }, { refresh: 'orders' }],
             },
           ],
         },
@@ -59,7 +59,7 @@ describe('validateScreen', () => {
   });
 
   it('an error inside a component does not get its legal properties reported as «unexpected»', () => {
-    const table = { type: 'table', source: 'ordini', columns: [{ field: 'n' }], rowActions: [{ label: 'X', onClick: [] }] };
+    const table = { type: 'table', source: 'orders', columns: [{ field: 'n' }], rowActions: [{ label: 'X', onClick: [] }] };
     const issues = issuesOf({ ...minimal(), components: [table] });
     expect(issues.some((i) => i.startsWith('/components/0/rowActions/0/onClick'))).toBe(true);
     expect(issues.filter((i) => i.includes('non prevista'))).toEqual([]);
@@ -68,7 +68,7 @@ describe('validateScreen', () => {
   });
 
   it('requires the properties specific to the type', () => {
-    const issues = issuesOf({ ...minimal(), components: [{ type: 'table', source: 'ordini' }] });
+    const issues = issuesOf({ ...minimal(), components: [{ type: 'table', source: 'orders' }] });
     expect(issues).toContain('/components/0 missing required property: columns');
   });
 
@@ -130,7 +130,7 @@ describe('validateTheme', () => {
 });
 
 describe('validateNavigation', () => {
-  const leaf = (id: string) => ({ id, label: id, screen: 'ordini-elenco' });
+  const leaf = (id: string) => ({ id, label: id, screen: 'order-list' });
   const doc = (items: unknown[]) => ({
     schemaVersion: '1.0',
     navigation: 'app',
@@ -163,7 +163,7 @@ describe('permission format domain.resource.action', () => {
     const screen = (requires: string) => ({ schemaVersion: '1.0', screen: 'x', requires, components: [{ type: 'text', text: 'a' }] });
     const nav = (requires: string) => ({ schemaVersion: '1.0', navigation: 'n', areas: [{ id: 'u', label: 'U', items: [{ id: 'a', label: 'A', screen: 's', requires }] }] });
     for (const make of [screen, nav]) {
-      expect(JSON.stringify(validateAny(make, 'ordini.ordine.approva'))).toContain('true');
+      expect(JSON.stringify(validateAny(make, 'orders.order.approve'))).toContain('true');
       expect(JSON.stringify(validateAny(make, 'ordini.approva'))).toContain('false');
       expect(JSON.stringify(validateAny(make, 'a.b.c.d'))).toContain('false');
     }
@@ -186,7 +186,7 @@ describe('new components: cell formats, tabs, detail, messages and confirmation'
         columns: [
           { field: 'importo', format: 'currency', currency: 'USD' },
           { field: 'stato', format: 'badge', badges: { pagata: 'success', scaduta: 'danger', bozza: 'neutral', inviata: 'primary' } },
-          { field: 'iban', hiddenIf: "{{!can('ordini.iban.leggi')}}" },
+          { field: 'iban', hiddenIf: "{{!can('orders.iban.read')}}" },
         ],
       },
     ]);
@@ -206,8 +206,8 @@ describe('new components: cell formats, tabs, detail, messages and confirmation'
       {
         type: 'tabs',
         tabs: [
-          { label: 'Dati', components: [{ type: 'detail', source: 'ordine', title: 'Ordine', fields: [{ field: 'cliente' }, { field: 'sconto', format: 'percent' }] }] },
-          { id: 'banca', label: 'Dati bancari', visibleIf: "{{can('ordini.iban.leggi')}}", components: [{ type: 'tabs', tabs: [{ label: 'Interna', components: [] }] }] },
+          { label: 'Data', components: [{ type: 'detail', source: 'order', title: 'Order', fields: [{ field: 'customer' }, { field: 'discount', format: 'percent' }] }] },
+          { id: 'bank', label: 'Bank details', visibleIf: "{{can('orders.iban.read')}}", components: [{ type: 'tabs', tabs: [{ label: 'Internal', components: [] }] }] },
         ],
       },
     ]);

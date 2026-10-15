@@ -146,7 +146,7 @@ describe('schema of the new components', () => {
   describe('dialog step', () => {
     const button = (onClick: unknown[]) => screen([{ type: 'button', label: 'Apri', onClick }]);
     it('accepts a window with title, fields, initial values and submit steps', () => {
-      expect(issuesOf(button([{ dialog: { title: 'Nota', fields: [{ name: 'testo', type: 'textarea' }], initial: { testo: '{{ row.nota }}' }, columns: 2, submitLabel: 'Salva', onSubmit: [{ call: 'salva' }] } }, { refresh: 'x' }]))).toEqual([]);
+      expect(issuesOf(button([{ dialog: { title: 'Note', fields: [{ name: 'text', type: 'textarea' }], initial: { text: '{{ row.note }}' }, columns: 2, submitLabel: 'Save', onSubmit: [{ call: 'save' }] } }, { refresh: 'x' }]))).toEqual([]);
     });
     it('rejects windows without title, fields or submit, or with foreign properties', () => {
       expect(issuesOf(button([{ dialog: { fields: [{ name: 'a', type: 'text' }], onSubmit: [{ toast: 'x' }] } }])).length).toBeGreaterThan(0);
@@ -206,7 +206,7 @@ describe('schema of the new components', () => {
     const chart = (extra: Record<string, unknown>) => screen([{ type: 'chart', kind: 'bar', source: 's', categoryField: 'c', series: [{ field: 'v' }], ...extra }]);
     it('accepts bars, lines and pies with formats and coloured series', () => {
       expect(issuesOf(chart({ categoryFormat: 'month', format: 'currency', currency: 'EUR', height: 300, series: [{ field: 'a', label: 'A', tone: 'success' }, { field: 'b' }] }))).toEqual([]);
-      expect(issuesOf(chart({ kind: 'pie', categoryKey: 'valori.stato' }))).toEqual([]);
+      expect(issuesOf(chart({ kind: 'pie', categoryKey: 'values.status' }))).toEqual([]);
       expect(issuesOf(chart({ stacked: true, rightFormat: 'percent', series: [{ field: 'a' }, { field: 'm', kind: 'line', axis: 'right' }] }))).toEqual([]);
       expect(issuesOf(chart({ series: [{ field: 'm', axis: 'top' }] })).length).toBeGreaterThan(0);
       expect(issuesOf(chart({ series: [{ field: 'm', kind: 'pie' }] })).length).toBeGreaterThan(0);
@@ -251,7 +251,7 @@ describe('schema of the new components', () => {
 
     it('accepts a field with state, initial value and steps on change', () => {
       expect(issuesOf(input({}))).toEqual([]);
-      expect(issuesOf(input({ bind: 'state.cliente.nome', default: 'Anna', onChange: [{ refresh: 'elenco' }] }))).toEqual([]);
+      expect(issuesOf(input({ bind: 'state.customer.name', default: 'Anna', onChange: [{ refresh: 'list' }] }))).toEqual([]);
       expect(issuesOf(screen([{ type: 'input', field: { name: 'c', type: 'lookup', lookup: { source: 'clienti', labelField: 'nome' } } }]))).toEqual([]);
     });
 
@@ -316,7 +316,7 @@ describe('schema of the new components', () => {
       const ok = validateMessages({ schemaVersion: '1.0', messages: 'pt-br', texts: { 'app.title': 'Olá', 'comune.n': '{n, number}' } });
       expect(ok.valid).toBe(true);
       expect(validateMessages({ schemaVersion: '1.0', messages: 'IT', texts: {} }).valid).toBe(false);
-      expect(validateMessages({ schemaVersion: '1.0', messages: 'it', texts: { 'chiave con spazi': 'x' } }).valid).toBe(false);
+      expect(validateMessages({ schemaVersion: '1.0', messages: 'it', texts: { 'key with spaces': 'x' } }).valid).toBe(false);
       expect(validateMessages({ schemaVersion: '1.0', messages: 'it', texts: { a: 1 } }).valid).toBe(false);
       expect(validateMessages({ schemaVersion: '1.0', messages: 'it' }).valid).toBe(false);
     });

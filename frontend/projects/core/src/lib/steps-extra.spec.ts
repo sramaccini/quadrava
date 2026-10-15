@@ -9,13 +9,13 @@ import { Fakes } from './testing';
 const screen: ScreenDefinition = {
   schemaVersion: '1.0',
   screen: 'prova',
-  dataSources: { fatture: { type: 'rest', method: 'GET', url: '/api/fatture', params: { stato: '{{ stato }}' } } },
+  dataSources: { invoices: { type: 'rest', method: 'GET', url: '/api/invoices', params: { status: '{{ status }}' } } },
   components: [],
 };
 
 describe('CSV', () => {
   it('semicolons, BOM, quotes when needed and neutralised formulas', () => {
-    const csv = toCsv(['Numero', 'Nota'], [
+    const csv = toCsv(['Number', 'Note'], [
       ['FT-1', 'semplice'],
       ['FT-2', 'con; punto e virgola'],
       ['FT-3', 'con "virgolette"'],
@@ -25,7 +25,7 @@ describe('CSV', () => {
     ]);
     expect(csv.charCodeAt(0)).toBe(0xfeff);
     expect(csv.slice(1).split('\r\n')).toEqual([
-      'Numero;Nota',
+      'Number;Note',
       'FT-1;semplice',
       'FT-2;"con; punto e virgola"',
       'FT-3;"con ""virgolette"""',
@@ -38,7 +38,7 @@ describe('CSV', () => {
 
   it('safe file names and rows from lists or pages', () => {
     expect(csvFileName(undefined)).toBe('export.csv');
-    expect(csvFileName('fatture 2026')).toBe('fatture 2026.csv');
+    expect(csvFileName('invoices 2026')).toBe('invoices 2026.csv');
     expect(csvFileName('../../x<y>.CSV')).toBe('....xy.CSV');
     expect(rowsOf([{ a: 1 }, 2, null])).toEqual([{ a: 1 }]);
     expect(rowsOf({ items: [{ a: 1 }], total: 1 })).toEqual([{ a: 1 }]);
@@ -94,15 +94,15 @@ describe('validate, print and export steps', () => {
     vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
       clicks.push(this.download);
     });
-    fakes.respond = () => ({ items: [{ numero: 'FT-1', importo: 10.5, cliente: 'Rossi' }], total: 1 });
+    fakes.respond = () => ({ items: [{ number: 'FT-1', amount: 10.5, customer: 'Smith' }], total: 1 });
     const rt = fakes.runtime(screen, injector);
-    const ok = await runSteps(rt, [{ export: { source: 'fatture', fileName: 'fatture', args: { stato: 'bozza' }, columns: [{ field: 'numero', label: "{{ t('x', 'Numero') }}" }, { field: 'importo' }] } }]);
+    const ok = await runSteps(rt, [{ export: { source: 'invoices', fileName: 'invoices', args: { status: 'draft' }, columns: [{ field: 'number', label: "{{ t('x', 'Number') }}" }, { field: 'amount' }] } }]);
     expect(ok).toBe(true);
-    expect(fakes.requests.at(-1)).toEqual({ method: 'GET', url: '/api/fatture', query: { stato: 'bozza' } });
-    expect(clicks).toEqual(['fatture.csv']);
+    expect(fakes.requests.at(-1)).toEqual({ method: 'GET', url: '/api/invoices', query: { status: 'draft' } });
+    expect(clicks).toEqual(['invoices.csv']);
     // The BOM is in the bytes (text() removes it while decoding).
     expect([...new Uint8Array(await saved[0].arrayBuffer()).slice(0, 3)]).toEqual([0xef, 0xbb, 0xbf]);
-    expect(await saved[0].text()).toBe('Numero;importo\r\nFT-1;10.5\r\n');
+    expect(await saved[0].text()).toBe('Number;amount\r\nFT-1;10.5\r\n');
     rt.destroy();
   });
 
@@ -111,7 +111,7 @@ describe('validate, print and export steps', () => {
       throw new Error('500');
     };
     const rt = fakes.runtime(screen, injector);
-    expect(await runSteps(rt, [{ export: { source: 'fatture', columns: [{ field: 'numero' }] } }, { toast: 'dopo' }])).toBe(false);
+    expect(await runSteps(rt, [{ export: { source: 'invoices', columns: [{ field: 'number' }] } }, { toast: 'after' }])).toBe(false);
     expect(fakes.toasts.map((t) => t.message)).toEqual(['Operation failed']);
     rt.destroy();
   });

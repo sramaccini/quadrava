@@ -140,7 +140,7 @@ class RegistryApiTest {
         String nav = "/registry/apps/demo/documents/navigation/principale";
         String navigation = """
                 {"schemaVersion":"1.0","navigation":"principale","areas":[{"id":"invoices","label":"Fatture","items":[
-                  {"id":"elenco","label":"Elenco","screen":"invoice-list"},{"id":"nuova","label":"Nuova","screen":"invoice-new"}]}]}""";
+                  {"id":"list","label":"List","screen":"invoice-list"},{"id":"new","label":"New","screen":"invoice-new"}]}]}""";
         String navHash = (String) json.readValue(mvc.perform(post(nav + "/versions").with(user("mario", "operator"))
                         .contentType(MediaType.APPLICATION_JSON).content(navigation))
                 .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString(), Map.class).get("hash");

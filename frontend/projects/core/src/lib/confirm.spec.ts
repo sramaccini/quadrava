@@ -7,11 +7,11 @@ import { Fakes } from './testing';
 
 const screen: ScreenDefinition = {
   schemaVersion: '1.0',
-  screen: 'ordini-elenco',
+  screen: 'order-list',
   dataSources: { approva: { type: 'rest', method: 'POST', url: '/api/ordini/{{id}}/approva' } },
   components: [
     { type: 'filterBar', bind: 'state.filtri', fields: [{ name: 'stato', type: 'select', options: ['a'] }] },
-    { type: 'tabs', tabs: [{ label: 'Uno', components: [{ type: 'filterBar', bind: 'state.altri', fields: [{ name: 'cliente', type: 'text' }] }] }] },
+    { type: 'tabs', tabs: [{ label: 'One', components: [{ type: 'filterBar', bind: 'state.others', fields: [{ name: 'customer', type: 'text' }] }] }] },
   ],
 };
 
@@ -66,7 +66,7 @@ describe('initial state of the filters', () => {
     const fakes = new Fakes();
     const rt = fakes.runtime(screen, TestBed.inject(Injector));
     expect(rt.getState('state.filtri.stato')).toBeNull();
-    expect(rt.getState('state.altri.cliente')).toBeNull();
+    expect(rt.getState('state.others.customer')).toBeNull();
     rt.destroy();
   });
 });

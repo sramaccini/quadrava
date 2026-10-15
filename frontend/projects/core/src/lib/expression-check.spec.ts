@@ -9,7 +9,7 @@ describe('checkScreenExpressions', () => {
   });
 
   it('gives the path of the wrong expressions', () => {
-    const issues = checkScreenExpressions({ components: [{ visibleIf: '{{can(1)}}' }, { text: '{{non chiusa' }] }, engine);
+    const issues = checkScreenExpressions({ components: [{ visibleIf: '{{can(1)}}' }, { text: '{{unclosed' }] }, engine);
     expect(issues.map((i) => i.path)).toEqual(['/components/0/visibleIf', '/components/1/text']);
   });
 });

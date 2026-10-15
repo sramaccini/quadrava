@@ -1,9 +1,9 @@
 /**
  * Message formatter, a subset of ICU MessageFormat:
- * - segnaposto semplice: `Ciao {nome}`;
+ * - simple placeholder: `Hello {name}`;
  * - plurals: `{n, plural, =0 {no invoices} one {# invoice} other {# invoices}}` (`#` is the formatted number);
- * - scelta: `{genere, select, f {Gentile} other {Gentile}}`;
- * - numero: `{importo, number}`.
+ * - choice: `{gender, select, f {Dear Ms} other {Dear Mr}}`;
+ * - number: `{amount, number}`.
  * Literal braces are written `\{` and `\}`. It never throws: if the message is malformed it returns the original text.
  * The result is always plain text (never HTML): the values of the placeholders are not interpreted.
  */

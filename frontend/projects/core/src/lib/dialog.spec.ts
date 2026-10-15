@@ -7,8 +7,8 @@ import { Fakes } from './testing';
 
 const screen: ScreenDefinition = {
   schemaVersion: '1.0',
-  screen: 'ordini-elenco',
-  dataSources: { nota: { type: 'rest', method: 'POST', url: '/api/ordini/{{id}}/nota', body: { testo: '{{ form.testo }}' } } },
+  screen: 'order-list',
+  dataSources: { note: { type: 'rest', method: 'POST', url: '/api/orders/{{id}}/note', body: { text: '{{ form.text }}' } } },
   components: [],
 };
 
@@ -25,26 +25,26 @@ describe('dialog step', () => {
   const steps: Step[] = [
     {
       dialog: {
-        title: 'Nota per {{ row.numero }}',
-        fields: [{ name: 'testo', type: 'textarea', required: true }],
-        initial: { testo: '{{ row.nota }}' },
-        onSubmit: [{ call: 'nota', args: { id: '{{ row.id }}' } }],
+        title: 'Note for {{ row.number }}',
+        fields: [{ name: 'text', type: 'textarea', required: true }],
+        initial: { text: '{{ row.note }}' },
+        onSubmit: [{ call: 'note', args: { id: '{{ row.id }}' } }],
       },
     },
     { toast: 'Nota salvata' },
   ];
-  const scope = { row: { id: 7, numero: 'ORD-0007', nota: 'vecchia' } };
+  const scope = { row: { id: 7, number: 'ORD-0007', note: 'old' } };
 
   it('opens the window with resolved title, form and submit action; if the submit succeeds the sequence goes on', async () => {
-    fakes.dialogValues.push({ testo: 'nuova' });
+    fakes.dialogValues.push({ text: 'new' });
     expect(await runSteps(rt, steps, scope)).toBe(true);
     const request = fakes.dialogs[0];
-    expect(request.title).toBe('Nota per ORD-0007');
-    expect(request.form.fields.map((f) => f.name)).toEqual(['testo']);
-    expect(request.form.initial).toEqual({ testo: '{{ row.nota }}' });
+    expect(request.title).toBe('Note for ORD-0007');
+    expect(request.form.fields.map((f) => f.name)).toEqual(['text']);
+    expect(request.form.initial).toEqual({ text: '{{ row.note }}' });
     expect(request.form.actions?.[0].label).toBe('Confirm');
     expect(request.scope).toEqual(scope);
-    expect(fakes.requests).toEqual([{ method: 'POST', url: '/api/ordini/7/nota', body: { testo: 'nuova' } }]);
+    expect(fakes.requests).toEqual([{ method: 'POST', url: '/api/orders/7/note', body: { text: 'new' } }]);
     expect(fakes.toasts.map((t) => t.message)).toEqual(['Nota salvata']);
   });
 

@@ -63,12 +63,12 @@ describe('steps before and after a call', () => {
     expect(fakes.toasts.map((t) => t.message)).toEqual(['altro stato', 'ancora', 'grande', 'fine']);
 
     fakes.toasts = [];
-    const ok = await runSteps(rt, [{ if: '{{ nonEsiste.campo }}', then: { toast: 'no' }, else: { toast: 'nemmeno' } }, { toast: 'dopo' }]);
+    const ok = await runSteps(rt, [{ if: '{{ missing.field }}', then: { toast: 'no' }, else: { toast: 'neither' } }, { toast: 'after' }]);
     expect(ok).toBe(false);
     expect(fakes.toasts).toEqual([{ message: 'Operation failed', kind: 'error' }]);
     // The value must be true or false: a string is not enough.
     fakes.toasts = [];
-    expect(await runSteps(rt, [{ if: "{{ 'sì' }}", then: { toast: 'no' } }])).toBe(false);
+    expect(await runSteps(rt, [{ if: "{{ 'yes' }}", then: { toast: 'no' } }])).toBe(false);
     expect(fakes.reports.map((r) => r.error)).toContain('the condition is neither true nor false');
   });
 
@@ -83,7 +83,7 @@ describe('steps before and after a call', () => {
     expect(fakes.toasts.at(-1)?.message).toBe('{{ has(creato) }}');
 
     fakes.toasts = [];
-    expect(await runSteps(rt, [{ run: 'manca' }, { toast: 'dopo' }])).toBe(false);
+    expect(await runSteps(rt, [{ run: 'manca' }, { toast: 'after' }])).toBe(false);
     expect(await runSteps(rt, [{ run: 'ciclo' }])).toBe(false);
     expect(fakes.toasts.map((t) => t.kind)).toEqual(['error', 'error']);
     expect(fakes.reports.map((r) => r.error)).toEqual(expect.arrayContaining(['unknown sequence', 'sequences called one inside the other too many times']));
@@ -92,7 +92,7 @@ describe('steps before and after a call', () => {
   it('onError sees error.status (from the services client or from the code at the start of the message), never the server message', async () => {
     const rt = fakes.runtime(screen, injector);
     const handler = [
-      { if: '{{ error.status == 409 }}', then: { toast: 'Già approvato' }, else: { toast: 'Errore {{ error.status }}' } },
+      { if: '{{ error.status == 409 }}', then: { toast: 'Already approved' }, else: { toast: 'Error {{ error.status }}' } },
       { toast: '{{ has(error.message) }}' },
     ];
     fakes.respond = () => {
@@ -107,6 +107,6 @@ describe('steps before and after a call', () => {
       throw new TypeError('Failed to fetch');
     };
     await runSteps(rt, [{ call: 'approva', args: { id: 1 }, onError: handler }]);
-    expect(fakes.toasts.map((t) => t.message)).toEqual(['Già approvato', 'false', 'Errore 404', 'false', 'Errore 0', 'false']);
+    expect(fakes.toasts.map((t) => t.message)).toEqual(['Already approved', 'false', 'Error 404', 'false', 'Error 0', 'false']);
   });
 });

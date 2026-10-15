@@ -56,7 +56,7 @@ describe('formatValue', () => {
     expect(formatValue(null, { format: 'currency' }).text).toBe('');
     expect(formatValue(undefined, { format: 'date' }).text).toBe('');
     expect(formatValue('abc', { format: 'currency' }).text).toBe('abc');
-    expect(formatValue('non una data', { format: 'date' }).text).toBe('non una data');
+    expect(formatValue('not a date', { format: 'date' }).text).toBe('not a date');
     expect(formatValue(NaN, { format: 'percent' }).text).toBe('NaN');
     expect(formatValue(5, { format: 'currency', currency: 'xx' }).text).toBe('5');
   });

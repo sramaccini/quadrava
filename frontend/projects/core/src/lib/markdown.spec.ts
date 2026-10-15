@@ -1,10 +1,10 @@
 import { markdownToPlain, parseInline, parseMarkdown, safeHref } from './markdown';
 
-describe('Markdown ristretto', () => {
+describe('Restricted Markdown', () => {
   it('paragraphs separated by empty lines; a line break inside a paragraph stays a line break', () => {
-    expect(parseMarkdown('Prima riga\nseconda riga\n\nAltro paragrafo')).toEqual([
-      { kind: 'paragraph', content: [{ kind: 'text', text: 'Prima riga' }, { kind: 'break' }, { kind: 'text', text: 'seconda riga' }] },
-      { kind: 'paragraph', content: [{ kind: 'text', text: 'Altro paragrafo' }] },
+    expect(parseMarkdown('First line\nsecond line\n\nAnother paragraph')).toEqual([
+      { kind: 'paragraph', content: [{ kind: 'text', text: 'First line' }, { kind: 'break' }, { kind: 'text', text: 'second line' }] },
+      { kind: 'paragraph', content: [{ kind: 'text', text: 'Another paragraph' }] },
     ]);
   });
 
@@ -44,7 +44,7 @@ describe('Markdown ristretto', () => {
 
   it('links only to https, mailto and relative paths: the others stay text', () => {
     expect(parseInline('[Sito](https://example.com/a?b=1)')).toEqual([{ kind: 'link', href: 'https://example.com/a?b=1', external: true, children: [{ kind: 'text', text: 'Sito' }] }]);
-    expect(parseInline('[Ordine](/ordini/7)')).toEqual([{ kind: 'link', href: '/ordini/7', external: false, children: [{ kind: 'text', text: 'Ordine' }] }]);
+    expect(parseInline('[Order](/orders/7)')).toEqual([{ kind: 'link', href: '/orders/7', external: false, children: [{ kind: 'text', text: 'Order' }] }]);
     for (const bad of ['javascript:alert(1)', 'http://x.test', '//evil.test', 'data:text/html,x', '/../segreto', 'JaVaScRiPt:alert(1)']) {
       expect(safeHref(bad), bad).toBeNull();
       expect(parseInline(`[x](${bad})`).every((n) => n.kind === 'text'), bad).toBe(true);

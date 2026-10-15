@@ -14,8 +14,8 @@ describe('I18n', () => {
     i18n.setLocale('en');
     expect(i18n.lookup('a.salva')).toEqual({ text: 'Save', found: true });
     expect(i18n.lookup('lc.altro')).toEqual({ text: 'Altro', found: true });
-    expect(i18n.lookup('x.nuovo', 'Nuovo testo')).toEqual({ text: 'Nuovo testo', found: true });
-    expect(i18n.lookup('x.nuovo')).toEqual({ text: 'x.nuovo', found: false });
+    expect(i18n.lookup('x.new', 'Nuovo testo')).toEqual({ text: 'Nuovo testo', found: true });
+    expect(i18n.lookup('x.new')).toEqual({ text: 'x.new', found: false });
   });
 
   it('i messaggi dell\'applicazione prevalgono su quelli integrati', () => {

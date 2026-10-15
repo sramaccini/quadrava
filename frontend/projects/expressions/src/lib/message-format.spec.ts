@@ -1,33 +1,33 @@
 import { formatMessage } from './message-format';
 
 describe('formatMessage', () => {
-  it('sostituisce i segnaposto semplici', () => {
-    expect(formatMessage('Ciao {nome}, hai {n} fatture', { nome: 'Mario', n: 3 })).toBe('Ciao Mario, hai 3 fatture');
+  it('replaces simple placeholders', () => {
+    expect(formatMessage('Hello {name}, you have {n} invoices', { name: 'Mario', n: 3 })).toBe('Hello Mario, you have 3 invoices');
   });
 
   it('leaves a placeholder without a value visible', () => {
-    expect(formatMessage('Ciao {nome}', {})).toBe('Ciao {nome}');
+    expect(formatMessage('Hello {name}', {})).toBe('Hello {name}');
   });
 
   it('chooses the plural form and replaces #', () => {
-    const p = '{n, plural, =0 {nessuna fattura} one {# fattura} other {# fatture}}';
-    expect(formatMessage(p, { n: 0 }, 'it')).toBe('nessuna fattura');
-    expect(formatMessage(p, { n: 1 }, 'it')).toBe('1 fattura');
-    expect(formatMessage(p, { n: 25000 }, 'it')).toBe('25.000 fatture');
-    expect(formatMessage(p, { n: 25000 }, 'en-GB')).toBe('25,000 fatture');
+    const p = '{n, plural, =0 {no invoices} one {# invoice} other {# invoices}}';
+    expect(formatMessage(p, { n: 0 }, 'it')).toBe('no invoices');
+    expect(formatMessage(p, { n: 1 }, 'it')).toBe('1 invoice');
+    expect(formatMessage(p, { n: 25000 }, 'it')).toBe('25.000 invoices');
+    expect(formatMessage(p, { n: 25000 }, 'en-GB')).toBe('25,000 invoices');
   });
 
-  it('gestisce select e segnaposto dentro i plurali', () => {
-    expect(formatMessage('{g, select, f {Gentile signora} other {Gentile signore}} {nome}', { g: 'f', nome: 'Rossi' })).toBe('Gentile signora Rossi');
-    expect(formatMessage('{n, plural, one {# riga di {chi}} other {# righe di {chi}}}', { n: 2, chi: 'Anna' })).toBe('2 righe di Anna');
+  it('handles select and placeholders inside plurals', () => {
+    expect(formatMessage('{g, select, f {Dear Ms} other {Dear Mr}} {name}', { g: 'f', name: 'Smith' })).toBe('Dear Ms Smith');
+    expect(formatMessage('{n, plural, one {# row of {who}} other {# rows of {who}}}', { n: 2, who: 'Anna' })).toBe('2 rows of Anna');
   });
 
   it('accepts literal braces with the backslash', () => {
-    expect(formatMessage('usa \\{chiave\\}', {})).toBe('usa {chiave}');
+    expect(formatMessage('use \\{key\\}', {})).toBe('use {key}');
   });
 
   it('does not throw on malformed messages and does not interpret HTML', () => {
-    expect(formatMessage('Ciao {nome', { nome: 'x' })).toBe('Ciao {nome');
-    expect(formatMessage('Ciao {nome}', { nome: '<b>x</b>' })).toBe('Ciao <b>x</b>');
+    expect(formatMessage('Hello {name', { name: 'x' })).toBe('Hello {name');
+    expect(formatMessage('Hello {name}', { name: '<b>x</b>' })).toBe('Hello <b>x</b>');
   });
 });
