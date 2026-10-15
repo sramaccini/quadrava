@@ -1,7 +1,8 @@
-import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { DataClient, type DataRequest, type DataRequestOptions } from 'core';
 import { DataError } from './errors';
+import { LOWCODE_TRACE } from './interceptor';
 import { isSameOriginRelative } from './trace';
 
 /** Corpo multipart: ogni voce del corpo è una parte di testo (gli oggetti come JSON), il file è la parte `field`. */
@@ -46,6 +47,8 @@ export class HttpDataClient extends DataClient {
         const subscription = this.http
           .request(request.method, request.url, {
             params: toParams(request.query),
+            // Per lo span HTTP: il data source (al posto dell'URL) e lo span da cui parte la chiamata.
+            context: new HttpContext().set(LOWCODE_TRACE, { source: options.source, parent: options.trace }),
             // Con un file la richiesta è multipart (il browser imposta da solo il Content-Type con il boundary).
             body: request.method === 'GET' || request.method === 'DELETE' ? undefined : request.file ? toFormData(request.body, request.file) : request.body,
           })

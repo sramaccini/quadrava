@@ -62,7 +62,6 @@
   "app.permissions": "{n, plural, =0 {no permissions} one {# permission} other {# permissions}}",
   "app.profile": "Demo profile",
   "app.screenInvalid": "The screen is not valid:",
-  "app.screenLoadFailed": "Screen not loaded: {e}",
   "app.settings": "Demo settings",
   "app.showcase.common": "Every component also has id, visibleIf, hiddenIf, enabledIf, readOnlyIf and tooltip. The full reference is in docs/schema-reference.md.",
   "app.showcase.helpTitle": "Help: {title}",

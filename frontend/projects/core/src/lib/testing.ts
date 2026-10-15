@@ -1,14 +1,42 @@
 import { Injector } from '@angular/core';
 import type { ScreenDefinition } from 'schema';
 import { runSteps } from './action-engine';
-import { Authorization, Confirmation, DataClient, FormDialog, Notifier, RuntimeDiagnostics, ScreenNavigator, UserProvider, type DataRequest, type FormDialogRequest } from './ports';
+import {
+  Authorization,
+  Confirmation,
+  DataClient,
+  FormDialog,
+  Notifier,
+  RuntimeDiagnostics,
+  RuntimeTracer,
+  ScreenNavigator,
+  UserProvider,
+  type DataRequest,
+  type DataRequestOptions,
+  type FormDialogRequest,
+  type SpanAttributes,
+  type SpanContext,
+} from './ports';
 import { I18n } from './i18n';
 import { ScreenRuntime } from './screen-runtime';
+
+/** Span registrato dal tracciatore finto: `ok` resta indefinito finché lo span è aperto. */
+export interface RecordedSpan {
+  name: string;
+  attributes: SpanAttributes;
+  parent?: SpanContext;
+  context: SpanContext;
+  ok?: boolean;
+  endAttributes?: SpanAttributes;
+}
 
 /** Doppioni di test per le porte: registrano le chiamate e permettono di scegliere le risposte. */
 export class Fakes {
   permissions = new Set<string>();
   requests: DataRequest[] = [];
+  /** Opzioni di ogni richiesta, nello stesso ordine di `requests`. */
+  requestOptions: (DataRequestOptions | undefined)[] = [];
+  spans: RecordedSpan[] = [];
   toasts: { message: string; kind?: string }[] = [];
   navigations: { screen: string; params: Record<string, unknown> }[] = [];
   reports: { screen: string; source: string; error: string }[] = [];
@@ -24,7 +52,13 @@ export class Fakes {
   readonly deps = {
     authorization: { can: (p: string) => this.permissions.has(p) } as Authorization,
     userProvider: { user: () => ({ username: 'test' }) } as UserProvider,
-    data: { request: async (r: DataRequest) => { this.requests.push(r); return this.respond(r); } } as DataClient,
+    data: {
+      request: async (r: DataRequest, options?: DataRequestOptions) => {
+        this.requests.push(r);
+        this.requestOptions.push(options);
+        return this.respond(r);
+      },
+    } as DataClient,
     navigator: { navigate: (screen: string, params: Record<string, unknown>) => this.navigations.push({ screen, params }) } as ScreenNavigator,
     notifier: { toast: (message: string, kind?: string) => this.toasts.push({ message, kind }) } as Notifier,
     confirmation: { confirm: async (message: string) => { this.confirmations.push(message); return this.confirmAnswers.shift() ?? false; } } as Confirmation,
@@ -37,6 +71,21 @@ export class Fakes {
       },
     } as FormDialog,
     i18n: this.i18n,
+    tracer: {
+      start: (name: string, attributes: SpanAttributes, parent?: SpanContext) => {
+        const id = String(this.spans.length + 1).padStart(16, '0');
+        const span: RecordedSpan = { name, attributes, parent, context: { traceId: parent?.traceId ?? id.padStart(32, '0'), spanId: id, sampled: true } };
+        this.spans.push(span);
+        return {
+          context: span.context,
+          end: (ok: boolean, endAttributes?: SpanAttributes) => {
+            if (span.ok !== undefined) return;
+            span.ok = ok;
+            span.endAttributes = endAttributes;
+          },
+        };
+      },
+    } as RuntimeTracer,
     diagnostics: { report: (e: { screen: string; source: string; error: string }) => this.reports.push(e) } as RuntimeDiagnostics,
   };
 

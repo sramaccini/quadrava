@@ -2,7 +2,7 @@ import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApplicationInitStatus } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { Authorization, DataClient, RuntimeDiagnostics, UserProvider } from 'core';
+import { Authorization, DataClient, RuntimeDiagnostics, RuntimeTracer, UserProvider } from 'core';
 import { HttpAuthorization } from './authorization';
 import { LOWCODE_REDIRECT, LOWCODE_SERVICES_CONFIG, resolveConfig } from './config';
 import { HttpDiagnostics, redact } from './diagnostics';
@@ -11,7 +11,8 @@ import { HttpDataClient } from './http-data-client';
 import { lowcodeHttpInterceptor } from './interceptor';
 import { provideLowcodeServices } from './provide';
 import { HttpSession } from './session';
-import { isSameOriginRelative, newTraceparent } from './trace';
+import { isSameOriginRelative, newSpanContext, traceparent } from './trace';
+import { HttpTracer } from './tracer';
 
 function setup(overrides: Partial<Parameters<typeof resolveConfig>[0]> = {}) {
   const redirects: string[] = [];
@@ -34,8 +35,15 @@ const caps = (permissions: string[], version: string, ttlSeconds?: number) => ({
 
 describe('trace', () => {
   it('genera un traceparent W3C valido', () => {
-    expect(newTraceparent().header).toMatch(/^00-[0-9a-f]{32}-[0-9a-f]{16}-01$/);
-    expect(newTraceparent(false).header.endsWith('-00')).toBe(true);
+    expect(traceparent(newSpanContext())).toMatch(/^00-[0-9a-f]{32}-[0-9a-f]{16}-01$/);
+    expect(traceparent(newSpanContext(undefined, false)).endsWith('-00')).toBe(true);
+  });
+  it('un figlio resta nella traccia del padre, con il suo campionamento', () => {
+    const parent = newSpanContext(undefined, false);
+    const child = newSpanContext(parent, true);
+    expect(child.traceId).toBe(parent.traceId);
+    expect(child.spanId).not.toBe(parent.spanId);
+    expect(child.sampled).toBe(false);
   });
   it('considera sicuri solo gli URL relativi', () => {
     expect(isSameOriginRelative('/api/x')).toBe(true);
@@ -273,6 +281,87 @@ describe('HttpDiagnostics', () => {
   });
 });
 
+describe('HttpTracer', () => {
+  const spansOf = (body: { resourceSpans: { scopeSpans: { spans: Record<string, unknown>[] }[] }[] }) => body.resourceSpans[0].scopeSpans[0].spans;
+  const attrs = (span: Record<string, unknown>) =>
+    Object.fromEntries((span['attributes'] as { key: string; value: Record<string, unknown> }[]).map((a) => [a.key, Object.values(a.value)[0]]));
+
+  it('la chiamata di un data source è uno span client figlio dello span di partenza, senza URL', async () => {
+    const { http } = setup();
+    const tracer = TestBed.inject(HttpTracer);
+    const action = tracer.start('action.run', { 'lowcode.action': 'call approva' });
+    const p = TestBed.inject(HttpDataClient).request({ method: 'POST', url: '/api/ordini/4242/approva', body: {} }, { source: 'approva', trace: action.context });
+    const req = http.expectOne('/api/ordini/4242/approva');
+    const header = req.request.headers.get('traceparent')!;
+    expect(header.startsWith(`00-${action.context.traceId}-`)).toBe(true);
+    expect(header).not.toContain(action.context.spanId);
+    req.flush({}, { status: 409, statusText: 'Conflict' });
+    await p.catch(() => undefined);
+    action.end(false);
+    void tracer.flush();
+    const sent = http.expectOne('/telemetry/v1/traces');
+    expect(sent.request.headers.has('traceparent')).toBe(false);
+    const [httpSpan, actionSpan] = spansOf(sent.request.body);
+    expect(httpSpan).toMatchObject({ name: 'http.client', kind: 3, traceId: action.context.traceId, parentSpanId: action.context.spanId, status: { code: 2 } });
+    expect(header).toContain(httpSpan['spanId'] as string);
+    expect(attrs(httpSpan)).toEqual({ 'http.request.method': 'POST', 'lowcode.datasource': 'approva', 'http.response.status_code': '409' });
+    expect(actionSpan).toMatchObject({ name: 'action.run', kind: 1, status: { code: 2 } });
+    expect(JSON.stringify(sent.request.body)).not.toContain('4242');
+    expect(sent.request.body.resourceSpans[0].resource.attributes).toContainEqual({ key: 'lowcode.app', value: { stringValue: 'demo' } });
+  });
+
+  it('le chiamate di piattaforma riportano il percorso senza query; quelle alla telemetria non si tracciano', () => {
+    const { http } = setup();
+    const client = TestBed.inject(HttpClient);
+    client.get('/registry/screens/elenco?utente=mario.rossi@example.com').subscribe();
+    http.expectOne((r) => r.url.startsWith('/registry/')).flush({});
+    void TestBed.inject(HttpTracer).flush();
+    const sent = http.expectOne('/telemetry/v1/traces');
+    const spans = spansOf(sent.request.body);
+    expect(spans).toHaveLength(1);
+    expect(attrs(spans[0])).toMatchObject({ 'url.path': '/registry/screens/elenco', 'http.response.status_code': '200' });
+    expect(spans[0]['status']).toEqual({});
+  });
+
+  it('con il campionamento a zero invia solo gli span in errore, e lo dice nel traceparent', () => {
+    const { http } = setup({ traceSampleRatio: 0 });
+    const client = TestBed.inject(HttpClient);
+    client.get('/api/a').subscribe();
+    client.get('/api/b').subscribe({ error: () => undefined });
+    const a = http.expectOne('/api/a');
+    expect(a.request.headers.get('traceparent')!.endsWith('-00')).toBe(true);
+    a.flush({});
+    http.expectOne('/api/b').flush({}, { status: 500, statusText: 'x' });
+    void TestBed.inject(HttpTracer).flush();
+    expect(spansOf(http.expectOne('/telemetry/v1/traces').request.body).map((s) => attrs(s)['url.path'])).toEqual(['/api/b']);
+  });
+
+  it('una chiamata annullata non è un errore', () => {
+    const { http } = setup();
+    const subscription = TestBed.inject(HttpClient).get('/api/lenta').subscribe();
+    http.expectOne('/api/lenta');
+    subscription.unsubscribe();
+    void TestBed.inject(HttpTracer).flush();
+    const [span] = spansOf(http.expectOne('/telemetry/v1/traces').request.body);
+    expect(span['status']).toEqual({});
+    expect(attrs(span)['lowcode.cancelled']).toBe(true);
+  });
+
+  it('quando la pagina si chiude svuota la coda con keepalive', () => {
+    const { http } = setup();
+    TestBed.inject(HttpTracer).start('screen.open', { 'lowcode.screen': 'elenco' }).end(true);
+    globalThis.dispatchEvent(new Event('pagehide'));
+    expect(http.expectOne('/telemetry/v1/traces').request.keepalive).toBe(true);
+  });
+
+  it('con la telemetria disattivata non invia nulla', () => {
+    const { http } = setup({ telemetry: false });
+    TestBed.inject(HttpTracer).start('action.run', {}).end(false);
+    void TestBed.inject(HttpTracer).flush();
+    http.expectNone('/telemetry/v1/traces');
+  });
+});
+
 describe('provideLowcodeServices', () => {
   it('all’avvio carica la sessione e poi i permessi', async () => {
     TestBed.configureTestingModule({
@@ -286,5 +375,6 @@ describe('provideLowcodeServices', () => {
     await ready;
     expect(TestBed.inject(Authorization).can('ordini.ordine.leggi')).toBe(true);
     expect(TestBed.inject(HttpAuthorization).count()).toBe(1);
+    expect(TestBed.inject(RuntimeTracer)).toBe(TestBed.inject(HttpTracer));
   });
 });

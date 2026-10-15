@@ -27,7 +27,7 @@ export class ExampleDefinitions extends DefinitionSource {
 
   private async load(url: string): Promise<unknown> {
     const response = await fetch(url);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    if (!response.ok) throw Object.assign(new Error(`HTTP ${response.status}`), { status: response.status });
     return response.json();
   }
 }

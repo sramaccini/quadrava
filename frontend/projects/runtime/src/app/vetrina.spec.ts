@@ -1,6 +1,7 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import navigationDoc from '../../public/examples/navigation.json';
+import invoices from '../../public/examples/fatture-elenco.json';
 import base from '../../public/examples/vetrina-base.json';
 import form from '../../public/examples/vetrina-form.json';
 import tables from '../../public/examples/vetrina-tabelle.json';
@@ -20,6 +21,8 @@ import { appConfig } from './app.config';
 describe('Vetrina dei componenti', () => {
   const files: Record<string, unknown> = {
     'examples/navigation.json': navigationDoc,
+    // La destinazione iniziale, che si apre prima di andare alla schermata della vetrina.
+    'examples/fatture-elenco.json': invoices,
     'examples/vetrina-base.json': base,
     'examples/vetrina-form.json': form,
     'examples/vetrina-tabelle.json': tables,

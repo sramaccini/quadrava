@@ -28,7 +28,10 @@ export class NavigationService {
   private readonly destroyRef = inject(DestroyRef);
 
   readonly runtime = signal<NavigationRuntime | null>(null);
+  /** Errori di validazione del documento di navigazione (per chi lo scrive). */
   readonly problems = signal<string[]>([]);
+  /** Il documento di navigazione non si è potuto caricare: l'utente vede un messaggio generico, il dettaglio va alle segnalazioni. */
+  readonly loadFailed = signal(false);
   /** Contatori delle voci del menu (id della voce → numero), se la navigazione li prevede. */
   readonly badges = signal<Record<string, number>>({});
   readonly current = signal<RouteLocation>({ useCase: null, screen: null, params: {} });
@@ -57,7 +60,8 @@ export class NavigationService {
       this.runtime.set(new NavigationRuntime(result.value, { authorization: this.authorization, userProvider: this.userProvider, diagnostics: this.diagnostics, i18n: this.i18n }));
       this.watchBadges(result.value.badges);
     } catch (e) {
-      this.problems.set([`Navigazione non caricata: ${e instanceof Error ? e.message : String(e)}`]);
+      this.diagnostics?.report({ screen: 'navigazione', source: 'caricamento navigazione', error: e instanceof Error ? e.message : String(e) });
+      this.loadFailed.set(true);
     }
   }
 

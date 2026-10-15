@@ -1,7 +1,22 @@
 import { effect, Injector, signal, computed, untracked, type EffectRef } from '@angular/core';
 import { ExpressionEngine, parseTemplate } from 'expressions';
 import type { DialogStep, InputNode, NodeDefinition, ScreenDefinition, Step } from 'schema';
-import { Authorization, Confirmation, DataClient, FormDialog, Notifier, RuntimeDiagnostics, ScreenNavigator, UserProvider, type DataRequest } from './ports';
+import {
+  Authorization,
+  Confirmation,
+  DataClient,
+  FormDialog,
+  Notifier,
+  RuntimeDiagnostics,
+  RuntimeTracer,
+  ScreenNavigator,
+  UserProvider,
+  type DataRequest,
+  type DataRequestOptions,
+  type SpanAttributes,
+  type SpanContext,
+  type TraceSpan,
+} from './ports';
 import type { I18n } from './i18n';
 import type { CallResult, DataSourceState, Scope } from './types';
 
@@ -12,6 +27,8 @@ export interface RuntimeDeps {
   navigator: ScreenNavigator;
   notifier: Notifier;
   diagnostics?: RuntimeDiagnostics | null;
+  /** Se manca, non si traccia nulla. */
+  tracer?: RuntimeTracer | null;
   /** Se manca, i passi `confirm` non procedono (fail-closed). */
   confirmation?: Confirmation | null;
   /** Se manca, i passi `dialog` non procedono (fail-closed). */
@@ -50,6 +67,11 @@ export class ScreenRuntime {
   private readonly validators = new Map<string, Set<() => boolean>>();
   /** Ultima richiesta del caricamento automatico di ogni data source GET (per non ripeterla se non cambia). */
   private readonly lastAutoRequest = new Map<string, string>();
+  /** Span dell'apertura: si chiude quando ogni data source GET ha finito la sua prima lettura. */
+  private readonly openSpan: TraceSpan | null;
+  /** Data source GET che non hanno ancora finito la prima lettura, e se qualcuna non è riuscita. */
+  private readonly pendingFirstLoad = new Set<string>();
+  private firstLoadFailed = false;
 
   constructor(
     readonly definition: ScreenDefinition,
@@ -75,16 +97,20 @@ export class ScreenRuntime {
     );
     // I filtri dichiarati esistono nello stato fin dall'inizio (nulli): i data source che li usano non vanno in errore al primo caricamento.
     this.seedFilters(definition.components);
+    const reads = Object.entries(definition.dataSources ?? {}).filter(([, source]) => source.method === 'GET');
+    for (const [name] of reads) this.pendingFirstLoad.add(name);
+    this.openSpan = this.startSpan('screen.open', { 'lowcode.datasources': reads.length });
+    if (reads.length === 0) this.openSpan?.end(true);
     // Ogni data source GET si carica da solo e si ricarica quando cambia la richiesta risolta (URL e parametri: filtri,
     // pagina, ordinamento…). Un cambiamento dello stato che non tocca la richiesta (una selezione, un passo, un nodo
     // scelto) non provoca una nuova chiamata: per ricaricare comunque c'è il passo refresh.
-    for (const [name, source] of Object.entries(definition.dataSources ?? {})) {
-      if (source.method !== 'GET') continue;
+    for (const [name] of reads) {
       this.effects.push(
         effect(
           () => {
             if (!this.allowed()) {
               this.lastAutoRequest.delete(name);
+              this.firstLoadDone(name, true);
               return;
             }
             const built = this.build(name, {});
@@ -92,8 +118,16 @@ export class ScreenRuntime {
               const key = built.ok ? JSON.stringify(built.request) : `errore: ${built.error}`;
               if (this.lastAutoRequest.get(name) === key) return;
               this.lastAutoRequest.set(name, key);
-              if (built.ok) void this.run(name, built.request);
-              else this.setSource(name, { status: 'error', data: null, error: built.error });
+              const first = this.pendingFirstLoad.has(name);
+              if (built.ok) {
+                void this.run(name, built.request, first ? this.openSpan?.context : undefined).then((result) => {
+                  // Una lettura annullata perché superata lascia l'esito a quella che l'ha sostituita.
+                  if (first && (result.ok || result.error !== 'annullata')) this.firstLoadDone(name, result.ok);
+                });
+              } else {
+                this.setSource(name, { status: 'error', data: null, error: built.error });
+                this.firstLoadDone(name, false);
+              }
             });
           },
           { injector },
@@ -139,11 +173,32 @@ export class ScreenRuntime {
   }
 
   destroy(): void {
+    this.openSpan?.end(!this.firstLoadFailed, { 'lowcode.interrupted': this.pendingFirstLoad.size > 0 });
     for (const e of this.effects) e.destroy();
     this.effects.length = 0;
     // Lasciata la schermata, le letture in corso non servono più.
     for (const controller of this.inflight.values()) controller.abort();
     this.inflight.clear();
+  }
+
+  /**
+   * Apre uno span con il nome della schermata tra gli attributi; null se non c'è un destinatario delle tracce. Una
+   * tracciatura che non riesce non disturba la schermata.
+   */
+  startSpan(name: string, attributes: SpanAttributes = {}, parent?: SpanContext): TraceSpan | null {
+    const tracer = this.deps.tracer;
+    if (!tracer) return null;
+    try {
+      return tracer.start(name, { 'lowcode.screen': this.definition.screen, ...attributes }, parent);
+    } catch {
+      return null;
+    }
+  }
+
+  private firstLoadDone(name: string, ok: boolean): void {
+    if (!this.pendingFirstLoad.delete(name)) return;
+    if (!ok) this.firstLoadFailed = true;
+    if (this.pendingFirstLoad.size === 0) this.openSpan?.end(!this.firstLoadFailed);
   }
 
   /** Contesto di valutazione: utente, stato, parametri e variabili del punto corrente. */
@@ -260,33 +315,34 @@ export class ScreenRuntime {
 
   /**
    * Esegue un data source con gli argomenti dati (variabili disponibili a `url` e `params`). Con `file` la richiesta
-   * diventa multipart: il file viaggia come file e non nel corpo JSON.
+   * diventa multipart: il file viaggia come file e non nel corpo JSON. `trace`: lo span dell'azione da cui parte.
    */
-  async execute(name: string, args: Record<string, unknown> = {}, scope: Scope = {}, file?: DataRequest['file']): Promise<CallResult> {
+  async execute(name: string, args: Record<string, unknown> = {}, scope: Scope = {}, file?: DataRequest['file'], trace?: SpanContext): Promise<CallResult> {
     const built = this.build(name, args, scope);
     if (!built.ok) {
       this.report(`call ${name}`, built.error);
       return { ok: false, error: built.error };
     }
-    return this.run(name, file && built.request.method !== 'GET' && built.request.method !== 'DELETE' ? { ...built.request, file } : built.request);
+    return this.run(name, file && built.request.method !== 'GET' && built.request.method !== 'DELETE' ? { ...built.request, file } : built.request, trace);
   }
 
   /**
    * Esegue un data source e restituisce la risposta senza toccare il suo stato condiviso (le righe mostrate dagli altri
    * componenti restano quelle di prima). Serve per richieste di servizio, come risolvere il testo di un valore.
    */
-  async query(name: string, args: Record<string, unknown> = {}, scope: Scope = {}): Promise<CallResult> {
+  async query(name: string, args: Record<string, unknown> = {}, scope: Scope = {}, trace?: SpanContext): Promise<CallResult> {
     const built = this.build(name, args, scope);
     if (!built.ok) {
       this.report(`call ${name}`, built.error);
       return { ok: false, error: built.error };
     }
+    const options: DataRequestOptions = { source: name, trace };
     try {
-      if (built.request.method !== 'GET') return { ok: true, data: await this.deps.data.request(built.request) };
+      if (built.request.method !== 'GET') return { ok: true, data: await this.deps.data.request(built.request, options) };
       const key = `${name} ${JSON.stringify(built.request)}`;
       let shared = this.sharedQueries.get(key);
       if (!shared) {
-        shared = this.deps.data.request(built.request);
+        shared = this.deps.data.request(built.request, options);
         this.sharedQueries.set(key, shared);
         const forget = () => this.sharedQueries.delete(key);
         shared.then(forget, forget);
@@ -304,7 +360,7 @@ export class ScreenRuntime {
    * esempio la ricerca di una serverDataTable, di solito POST) viene solo segnalato con `refreshCount`, e il
    * componente ripete le sue richieste.
    */
-  async refresh(name: string): Promise<CallResult> {
+  async refresh(name: string, trace?: SpanContext): Promise<CallResult> {
     const source = this.definition.dataSources?.[name];
     if (!source) {
       const error = `data source sconosciuto: ${name}`;
@@ -312,7 +368,7 @@ export class ScreenRuntime {
       return { ok: false, error };
     }
     this.refreshCount.update((all) => ({ ...all, [name]: (all[name] ?? 0) + 1 }));
-    return source.method === 'GET' ? this.execute(name) : { ok: true, data: null };
+    return source.method === 'GET' ? this.execute(name, {}, {}, undefined, trace) : { ok: true, data: null };
   }
 
   navigate(screen: string, params: Record<string, unknown>): void {
@@ -365,7 +421,7 @@ export class ScreenRuntime {
     queueMicrotask(() => diagnostics.report(event));
   }
 
-  private async run(name: string, request: DataRequest): Promise<CallResult> {
+  private async run(name: string, request: DataRequest, trace?: SpanContext): Promise<CallResult> {
     const seq = (this.sequence.get(name) ?? 0) + 1;
     this.sequence.set(name, seq);
     const previous = this.source(name);
@@ -378,7 +434,7 @@ export class ScreenRuntime {
       this.inflight.set(name, controller);
     }
     try {
-      const data = await this.deps.data.request(request, controller ? { signal: controller.signal } : undefined);
+      const data = await this.deps.data.request(request, { signal: controller?.signal, source: name, trace });
       // Una risposta più vecchia non deve sovrascrivere una più recente.
       if (this.sequence.get(name) === seq) this.setSource(name, { status: 'ready', data });
       return { ok: true, data };

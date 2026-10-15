@@ -44,6 +44,10 @@ export abstract class DataClient {
 
 export interface DataRequestOptions {
   signal?: AbortSignal;
+  /** Nome del data source: nelle tracce compare al posto dell'URL, che può contenere valori di dati. */
+  source?: string;
+  /** Span dell'azione o dell'apertura di schermata da cui parte la chiamata: lo span HTTP ne diventa figlio. */
+  trace?: SpanContext;
 }
 
 /** Cambio di schermata. */
@@ -59,6 +63,31 @@ export abstract class Notifier {
 /** Destinatario delle segnalazioni tecniche (errori di espressioni e di azioni). Non riceve mai valori di dati. */
 export abstract class RuntimeDiagnostics {
   abstract report(event: { screen: string; source: string; error: string }): void;
+}
+
+/** Identità di uno span (W3C Trace Context): `traceId` di 32 cifre esadecimali, `spanId` di 16. */
+export interface SpanContext {
+  traceId: string;
+  spanId: string;
+  /** Traccia campionata: gli span riusciti si inviano solo se è vera, quelli in errore sempre. */
+  sampled: boolean;
+}
+
+/** Attributi di uno span. Solo nomi e codici della definizione o del protocollo, mai valori di dati. */
+export type SpanAttributes = Record<string, string | number | boolean>;
+
+/** Span aperto: si chiude una sola volta con l'esito; le chiusure successive non fanno nulla. */
+export interface TraceSpan {
+  readonly context: SpanContext;
+  end(ok: boolean, attributes?: SpanAttributes): void;
+}
+
+/**
+ * Destinatario delle tracce: apertura di schermata, azione, chiamata HTTP. Facoltativo: se manca non si traccia nulla.
+ * Non deve mai lanciare errori.
+ */
+export abstract class RuntimeTracer {
+  abstract start(name: string, attributes: SpanAttributes, parent?: SpanContext): TraceSpan;
 }
 
 /** Chiede conferma all'utente prima di un'azione delicata. Risolve true solo se l'utente conferma esplicitamente. */
@@ -83,7 +112,8 @@ export abstract class FormDialog {
 /**
  * Fonte delle definizioni: schermate, navigazione e temi. In produzione il registro (i documenti pubblicati in un
  * ambiente), nella demo i file degli esempi. Restituisce il JSON così com'è: lo valida chi lo usa. Lancia un errore
- * se il documento non c'è o non si può caricare.
+ * se il documento non c'è o non si può caricare; l'errore ha `status` (codice HTTP, 0 se la fonte non risponde) quando
+ * la fonte lo conosce, così chi mostra l'errore distingue un documento inesistente da un guasto.
  */
 export abstract class DefinitionSource {
   abstract screen(id: string): Promise<unknown>;

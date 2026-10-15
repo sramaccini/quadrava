@@ -62,7 +62,6 @@
   "app.permissions": "{n, plural, =0 {nessun permesso} one {# permesso} other {# permessi}}",
   "app.profile": "Profilo demo",
   "app.screenInvalid": "La schermata non è valida:",
-  "app.screenLoadFailed": "Schermata non caricata: {e}",
   "app.settings": "Impostazioni della demo",
   "app.showcase.common": "Tutti i componenti hanno inoltre id, visibleIf, hiddenIf, enabledIf, readOnlyIf e tooltip. Il riferimento completo è in docs/schema-reference.md.",
   "app.showcase.helpTitle": "Aiuto: {title}",

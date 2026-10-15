@@ -217,7 +217,7 @@ Frontend libraries, from the bottom up:
 | `expressions` | CEL evaluator (cel-js) with KinetiX's operators and an isolated environment |
 | `core` | Interpreter: screen runtime, action engine, formatting, navigation runtime, theme service, the abstract **ports**, and the screen shell |
 | `components` | The standard component catalogue built on NG-ZORRO, the side menu, the confirmation dialog, the notifier, and the theme bridge |
-| `services` | Production implementations of the ports: HTTP data client, session (BFF), authorization with permissions version, OTLP telemetry |
+| `services` | Production implementations of the ports: HTTP data client, session (BFF), authorization with permissions version, OTLP telemetry (logs and traces) |
 
 ## Technology stack
 
@@ -373,7 +373,7 @@ npm run conformance:telemetry -- --user operatore --password operatore
 
 Every push to `main` and every pull request runs [`.github/workflows/ci.yml`](.github/workflows/ci.yml) on GitHub Actions: the front-end job (`schema:check`, `validate:examples`, `build:libs`, the tests of every project, the production builds of runtime and editor), the end-to-end job (Playwright in Chromium; report uploaded as an artifact when it fails) and the Java job (`mvn -B verify`).
 
-At the time of writing there are **595 automated tests**: schema 71, expressions 42, core 80, components 181, services 27, runtime 84, editor 110. The Java modules add 39 (`mvn verify`: authz 7, bff 8, registry 18 — including the parity of the server-side schema validation with Ajv on every example and the coherence between controller and contract —, telemetry 6).
+At the time of writing there are **610 automated tests**: schema 71, expressions 42, core 86, components 181, services 34, runtime 86, editor 110. The Java modules add 39 (`mvn verify`: authz 7, bff 8, registry 18 — including the parity of the server-side schema validation with Ajv on every example and the coherence between controller and contract —, telemetry 6).
 
 The unit tests run in jsdom, so layout, real focus handling and pixel-level rendering are **not** covered there; see the development guide for the helpers that make NG-ZORRO overlays testable.
 

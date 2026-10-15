@@ -92,7 +92,7 @@ The runtime is an Angular application (current version, standalone components an
 
 **Isolation between screens.** Every screen has its own state and its own expression context: screens communicate only through declared navigation parameters, not by sharing implicit variables.
 
-**Addresses and code structure.** Every screen has a URL like `/<useCase>/<screen>?parameters`, handled by the Angular Router: Back, bookmarks and shared links work. The code is split into libraries: `schema` (JSON Schema and types), `expressions` (CEL), `core` (interpreter and abstract ports: `Authorization`, `UserProvider`, `DataClient`, `ScreenNavigator`, `Notifier`, `RuntimeDiagnostics`), `components` (catalogue, `lc-sidebar` side menu and bridge to NG-ZORRO) and the `runtime` app. The core knows neither the router nor the back end, and of the UI library it uses only the screen shell (title and refusal message): it obtains them through the ports, replaceable in tests and in the demo. `Authorization` must be signal-based, so that the interface updates when permissions change; every failing condition denies (fail-closed) and the error is reported to `RuntimeDiagnostics` asynchronously, never during rendering.
+**Addresses and code structure.** Every screen has a URL like `/<useCase>/<screen>?parameters`, handled by the Angular Router: Back, bookmarks and shared links work. The code is split into libraries: `schema` (JSON Schema and types), `expressions` (CEL), `core` (interpreter and abstract ports: `Authorization`, `UserProvider`, `DataClient`, `ScreenNavigator`, `Notifier`, `RuntimeDiagnostics`, `RuntimeTracer`), `components` (catalogue, `lc-sidebar` side menu and bridge to NG-ZORRO) and the `runtime` app. The core knows neither the router nor the back end, and of the UI library it uses only the screen shell (title and refusal message): it obtains them through the ports, replaceable in tests and in the demo. `Authorization` must be signal-based, so that the interface updates when permissions change; every failing condition denies (fail-closed) and the error is reported to `RuntimeDiagnostics` asynchronously, never during rendering.
 
 **October 2026 updates.** Two new ports: `Confirmation` (the `confirm` step) and `FormDialog` (the `dialog` step, a window with a form); without an implementation the two steps do not proceed. `DataRequest` can carry a `file`: the HTTP client then sends a multipart body (`FormData`), up to 100 MB, instead of base64 inside the JSON. A GET data source reloads by itself only when the resolved request (URL and parameters) changes, not on every state change; `ScreenRuntime.query` runs a data source without touching its shared state (lookup fields use it). The component catalogue, with specifications and limits, is `docs/component-catalogue.md` in the repository.
 
@@ -160,7 +160,24 @@ The application back end implements a REST contract published by the platform as
 
 ## 8. Telemetry and audit
 
-The runtime uses the OpenTelemetry SDK for browsers. Traces start in the runtime, follow the REST call thanks to the `traceparent` header and continue in the back-end services, so a single user action can be reconstructed end to end.
+Traces start in the runtime, follow the REST call thanks to the `traceparent` header and continue in the back-end services, so a single user action can be reconstructed end to end. The runtime does not use the OpenTelemetry SDK for browsers: a small exporter of its own in `services` writes standard OTLP/HTTP JSON (ADR-05), so any collector can read it.
+
+| Span | Opened by | Ends | Attributes |
+| --- | --- | --- | --- |
+| `screen.open` | `ScreenRuntime`, when the screen is created | When every GET data source has finished its first read (at once if there are none) | `lowcode.screen`, `lowcode.datasources` (how many) |
+| `action.run` | `runSteps`, for every sequence a component starts (button, row action, form) | When the sequence finishes; error if a step fails | `lowcode.screen`, `lowcode.action` (`call salva, refresh elenco`) |
+| `http.client` | The HTTP interceptor, for every same-origin call | On the response; a cancelled call is not an error | `http.request.method`, `http.response.status_code`, `lowcode.datasource` (data calls) or `url.path` without the query (platform calls: registry, authorization) |
+
+An example: the user presses *Approva* on an order.
+
+```text
+action.run  lowcode.action = "call approva, refresh ordini"     trace 4bf9…, span a1…
+├─ http.client  POST, lowcode.datasource = approva, 200         span b2…  → traceparent 00-4bf9…-b2…-01
+│    └─ (back end) spans of the orders service, same trace 4bf9…
+└─ http.client  GET, lowcode.datasource = ordini, 200           span c3…
+```
+
+The parent travels explicitly: the action passes its span to the calls of its steps (also inside `run` and `onError`), the screen passes its own to the first reads. The `traceparent` of each call carries the identity of its `http.client` span, so the back-end spans are its children. The calls to the telemetry endpoint are not traced. The `RuntimeTracer` port is optional: without it (demo, tests) nothing is traced.
 
 | Signal | Origin | Path |
 | --- | --- | --- |
@@ -172,7 +189,7 @@ The runtime uses the OpenTelemetry SDK for browsers. Traces start in the runtime
 
 **Two-level redaction.** Fields marked `sensitive` in the JSON are excluded by the runtime at the source; the ingestion endpoint then applies additional rules (for example recognisable patterns such as tax codes or IBANs). Defence in depth: an error in one level does not become a data leak.
 
-**Sampling.** Configurable per application and environment; errors are always kept.
+**Sampling.** `traceSampleRatio` in `provideLowcodeServices` (1 if absent): decided at the root of the trace and passed to the children and, through the `traceparent` flag, to the back end; spans that end in error are always sent. Spans are sent in batches (every 20 or after 5 seconds, at most `traceMaxPerMinute`, 300 if absent); logs and traces share the same queue logic, which also empties when the page is closed or hidden (`keepalive` requests).
 
 **Audit.** The audit trail is written by the back end when the operation happens, in a store whose immutability and retention are defined by the customer. The front end never writes the audit directly, because it is not a trustworthy source. The link between technical trace and audit is the correlation identifier, which lets you move from an audit entry to the full trace.
 
@@ -252,7 +269,7 @@ Each decision lists the alternatives considered and its status. "Proposed" means
 | ADR-02 | The runtime interprets the JSON | Generating Angular code from the JSON | Immediate changes and faithful preview; security is recovered through validation | Proposed |
 | ADR-03 | Tokens handled with the BFF pattern, with SPA mode as an option | Tokens only in the browser | Safer for regulated contexts | Proposed |
 | ADR-04 | CEL for predicates | JSONata, JSONLogic | Safe, typed, verifiable; the same rules on the Java side too | Accepted |
-| ADR-05 | OpenTelemetry with OTLP/HTTP ingestion | Proprietary log protocol | Standard, existing tools, propagation to the back end | Proposed |
+| ADR-05 | OpenTelemetry with OTLP/HTTP ingestion; in the browser a small exporter of its own (spans and logs as OTLP/HTTP JSON in batches) instead of the OpenTelemetry SDK | Proprietary log protocol; the OpenTelemetry SDK for browsers | Standard, existing tools, propagation to the back end. The runtime needs three kinds of span with explicit parents and attributes chosen one by one (no data values): a few hundred lines without new dependencies, where the SDK would add weight and automatic instrumentation that could put URLs with data into the attributes | Accepted, amended (15 October 2026) |
 | ADR-06 | Audit written by the back end | Audit sent by the front end | The front end is not a trustworthy source | Proposed |
 | ADR-07 | A JSON Schema for every catalogue component | Descriptors in a custom format | The editor generates panels and validation automatically | Proposed |
 | ADR-08 | Editor preview in an isolated iframe | Preview in the same page | Isolation and fidelity to production | Accepted (13 October 2026) |

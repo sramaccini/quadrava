@@ -123,7 +123,7 @@ The Italian locale is patched in `provide.ts` (`rangeQuarterPlaceholder` is miss
 
 ## 7. Ports and dependency injection
 
-Everything external to the interpreter is an abstract class used as a DI token: `Authorization`, `UserProvider`, `DataClient`, `ScreenNavigator`, `Notifier`, `RuntimeDiagnostics`, `Confirmation`, `FormDialog` (the `dialog` step; implemented by `DialogForm` in `components`).
+Everything external to the interpreter is an abstract class used as a DI token: `Authorization`, `UserProvider`, `DataClient`, `ScreenNavigator`, `Notifier`, `RuntimeDiagnostics`, `RuntimeTracer` (optional: spans `screen.open`, `action.run`, `http.client`, architecture § 8), `Confirmation`, `FormDialog` (the `dialog` step; implemented by `DialogForm` in `components`).
 
 **Files.** `DataRequest` may carry a `file` (`field`, `name`, `type`, `blob`): `HttpDataClient` then sends a multipart body (`FormData`) with the file in its part and each body entry as a text part. `ScreenRuntime.execute(name, args, scope, file)` attaches it.
 
@@ -214,5 +214,5 @@ Real focus handling and the dark theme are not covered yet (the application shel
 * Layout containers (`box`, `grid`, `border`) read the position of each child from the child itself (`grow`, `span`, `region`, declared on every node in the schema). Inside them `--lc-input-max: none` lets fields fill the cell; a new container that holds nodes must also be added to `seedFilters` in `ScreenRuntime` (so that the state of nested fields exists before the first load) and to `LAYOUT_CONTAINERS` in the editor's `schema-info.ts`.
 * After `npm run build:libs` restart the dev servers: they do not reload `dist`, and one left running while `dist` is rebuilt fails with "module 'components' could not be found" until restarted.
 * `provideNzIcons` is not cumulative: a second call replaces the icons registered by `provideLowcodeComponents`. An app that registers its own icons must repeat `Object.values(ICON_TYPES).map((i) => i.icon)` (the editor does).
-* Developer diagnostics are not translated and stay in Italian: schema and expression issues, navigation loading errors, and the messages of the `services` library. Everything the end user reads is translatable.
+* Developer diagnostics are not translated and stay in Italian: schema and expression issues, the technical detail of loading errors, and the messages of the `services` library. Everything the end user reads is translatable: a screen or a menu that cannot be loaded shows `lc.screenNotFound` (404 or 403 from the definition source), `lc.screenLoadFailed` or `lc.navigationLoadFailed`, and the detail goes to `RuntimeDiagnostics`. A `DefinitionSource` puts the HTTP code in the error's `status` so that the two cases can be told apart.
 * Adding a language means adding `examples/i18n/<code>.json` (same keys as `it.json`), an entry in `LANGUAGES` of the demo, and, for the platform strings, a block in `components/src/lib/messages.ts` and a NG-ZORRO locale in `provide.ts`.

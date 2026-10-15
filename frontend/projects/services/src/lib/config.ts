@@ -17,6 +17,10 @@ export interface LowcodeServicesConfig {
   telemetry?: boolean;
   /** Massimo di segnalazioni inviate al minuto. */
   telemetryMaxPerMinute?: number;
+  /** Quota di tracce campionate, da 0 a 1 (1 se assente): si decide all'inizio della traccia; gli span in errore si inviano sempre. */
+  traceSampleRatio?: number;
+  /** Massimo di span inviati al minuto (300 se assente). */
+  traceMaxPerMinute?: number;
 }
 
 export interface ResolvedServicesConfig {
@@ -28,6 +32,8 @@ export interface ResolvedServicesConfig {
   telemetryBase: string;
   telemetry: boolean;
   telemetryMaxPerMinute: number;
+  traceSampleRatio: number;
+  traceMaxPerMinute: number;
 }
 
 export const LOWCODE_SERVICES_CONFIG = new InjectionToken<ResolvedServicesConfig>('LOWCODE_SERVICES_CONFIG');
@@ -42,6 +48,8 @@ export function resolveConfig(config: LowcodeServicesConfig): ResolvedServicesCo
     telemetryBase: config.telemetryBase ?? '/telemetry/v1',
     telemetry: config.telemetry ?? true,
     telemetryMaxPerMinute: config.telemetryMaxPerMinute ?? 30,
+    traceSampleRatio: config.traceSampleRatio ?? 1,
+    traceMaxPerMinute: config.traceMaxPerMinute ?? 300,
   };
 }
 

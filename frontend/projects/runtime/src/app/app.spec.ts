@@ -11,6 +11,7 @@ import packages from '../../public/examples/pacchetti-elenco.json';
 import expenses from '../../public/examples/spese-elenco.json';
 import chiaro from '../../public/examples/themes/chiaro.json';
 import scuro from '../../public/examples/themes/scuro.json';
+import { DemoDiagnostics } from '../demo/demo-ports';
 import { NavigationService } from './navigation.service';
 import { openSelect, stubViewportHeight } from './select-testing';
 import { App } from './app';
@@ -241,6 +242,29 @@ describe('App (demo)', () => {
     await until(fixture, () => !!el.querySelector('main [role=alert]'), 'rifiuto');
     expect(el.querySelector('main')?.textContent).toContain('Non hai i permessi');
     expect(rows(el)).toBe(0);
+  });
+
+  it('una schermata inesistente mostra un messaggio comprensibile e va alle segnalazioni tecniche', async () => {
+    const { fixture, el } = await start();
+    await until(fixture, () => rows(el) > 0, 'elenco fatture');
+    await TestBed.inject(Router).navigateByUrl('/consultazione-fatture/schermata-inesistente');
+    await until(fixture, () => !!el.querySelector('main [role=alert]'), 'errore');
+    const text = el.querySelector('main [role=alert]')?.textContent ?? '';
+    expect(text).toContain('La schermata richiesta non esiste o non è disponibile.');
+    expect(text).not.toContain('404');
+    expect(TestBed.inject(DemoDiagnostics).events()).toContainEqual({ screen: 'schermata-inesistente', source: 'caricamento schermata', error: 'HTTP 404' });
+  });
+
+  it('un menu che non si carica mostra un messaggio generico e va alle segnalazioni tecniche', async () => {
+    delete files['examples/navigation.json'];
+    try {
+      const { fixture, el } = await start();
+      await until(fixture, () => !!el.querySelector('[role=alert]'), 'errore');
+      expect(el.querySelector('[role=alert]')?.textContent).toContain('Non è stato possibile caricare il menu.');
+      expect(TestBed.inject(DemoDiagnostics).events()).toContainEqual({ screen: 'navigazione', source: 'caricamento navigazione', error: 'HTTP 404' });
+    } finally {
+      files['examples/navigation.json'] = navigationDoc;
+    }
   });
 
   it('il tema scuro cambia le variabili CSS', async () => {

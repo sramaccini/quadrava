@@ -1,5 +1,6 @@
 import type { Step } from 'schema';
 import { csvFileName, downloadText, rowsOf, toCsv } from './csv';
+import type { SpanContext } from './ports';
 import type { ScreenRuntime } from './screen-runtime';
 import type { Scope } from './types';
 
@@ -17,18 +18,50 @@ interface Outcome {
 
 const asList = (steps: Step | Step[]): Step[] => (Array.isArray(steps) ? steps : [steps]);
 
+/** Dove si trova una sequenza: profondità dei `run` annidati e span dell'azione che la contiene. */
+interface Run {
+  depth: number;
+  trace?: SpanContext;
+}
+
+const SIMPLE_KINDS = ['if', 'set', 'toast', 'confirm', 'dialog', 'validate', 'print'] as const;
+
+/** Passi di una sequenza per le tracce: tipo e nome dalla definizione (`call salva, refresh elenco`), mai valori. */
+export function describeSteps(steps: Step[]): string {
+  const named = (kind: string, name: string) => `${kind} ${name}`;
+  return steps
+    .map((step) => {
+      if ('call' in step) return named('call', step.call);
+      if ('run' in step) return named('run', step.run);
+      if ('refresh' in step) return named('refresh', step.refresh);
+      if ('navigate' in step) return named('navigate', step.navigate);
+      if ('export' in step) return named('export', step.export.source);
+      return SIMPLE_KINDS.find((kind) => kind in step) ?? 'step';
+    })
+    .join(', ')
+    .slice(0, 200);
+}
+
 /**
  * Esegue una sequenza di passi in ordine. Si ferma al primo passo che fallisce
  * (dopo aver eseguito il suo `onError`, se c'è). Non lancia mai eccezioni.
  * Restituisce true se tutti i passi sono riusciti. Le variabili aggiunte da un passo (`as` di una `call`) le vedono
  * i passi seguenti della stessa sequenza.
  */
-export async function runSteps(runtime: ScreenRuntime, steps: Step[], scope: Scope = {}, depth = 0): Promise<boolean> {
+export async function runSteps(runtime: ScreenRuntime, steps: Step[], scope: Scope = {}): Promise<boolean> {
+  // Ogni sequenza avviata da un componente è un'azione: uno span, di cui le chiamate HTTP dei passi sono figlie.
+  const span = runtime.startSpan('action.run', { 'lowcode.action': describeSteps(steps) });
+  const ok = await runSequence(runtime, steps, scope, { depth: 0, trace: span?.context });
+  span?.end(ok);
+  return ok;
+}
+
+async function runSequence(runtime: ScreenRuntime, steps: Step[], scope: Scope, run: Run): Promise<boolean> {
   let current = scope;
   for (const step of steps) {
     let outcome: Outcome = { ok: false };
     try {
-      outcome = await runStep(runtime, step, current, depth);
+      outcome = await runStep(runtime, step, current, run);
     } catch (e) {
       runtime.report('azione', e instanceof Error ? e.message : String(e));
       runtime.toast(genericError(runtime), 'error');
@@ -39,16 +72,16 @@ export async function runSteps(runtime: ScreenRuntime, steps: Step[], scope: Sco
   return true;
 }
 
-async function runStep(runtime: ScreenRuntime, step: Step, scope: Scope, depth: number): Promise<Outcome> {
+async function runStep(runtime: ScreenRuntime, step: Step, scope: Scope, run: Run): Promise<Outcome> {
   if ('call' in step) {
     const args = (runtime.resolveValue(step.args ?? {}, scope) ?? {}) as Record<string, unknown>;
-    const result = await runtime.execute(step.call, args, scope);
+    const result = await runtime.execute(step.call, args, scope, undefined, run.trace);
     // Con `as` i passi seguenti vedono la risposta con quel nome.
     if (result.ok) return { ok: true, scope: step.as ? { ...scope, [step.as]: result.data } : scope };
     // Il messaggio del server non viene mostrato all'utente: potrebbe contenere dettagli interni. I passi di onError
     // vedono solo il codice (error.status).
     const handler = step.onError === undefined ? [{ toast: genericError(runtime) }] : asList(step.onError);
-    await runSteps(runtime, handler, { ...scope, error: { status: result.status ?? 0 } }, depth);
+    await runSequence(runtime, handler, { ...scope, error: { status: result.status ?? 0 } }, run);
     return { ok: false };
   }
   if ('if' in step) {
@@ -59,24 +92,29 @@ async function runStep(runtime: ScreenRuntime, step: Step, scope: Scope, depth: 
       return { ok: false };
     }
     const branch = value ? step.then : step.else;
-    return { ok: branch === undefined ? true : await runSteps(runtime, asList(branch), scope, depth) };
+    return { ok: branch === undefined ? true : await runSequence(runtime, asList(branch), scope, run) };
   }
   if ('run' in step) {
     const steps = runtime.action(step.run);
-    if (!steps || depth >= MAX_RUN_DEPTH) {
+    if (!steps || run.depth >= MAX_RUN_DEPTH) {
       runtime.report(`run ${step.run}`, steps ? 'sequenze richiamate una dentro l\'altra troppe volte' : 'sequenza sconosciuta');
       runtime.toast(genericError(runtime), 'error');
       return { ok: false };
     }
-    return { ok: await runSteps(runtime, steps, scope, depth + 1) };
+    return { ok: await runSequence(runtime, steps, scope, { ...run, depth: run.depth + 1 }) };
   }
-  return { ok: await runSimpleStep(runtime, step, scope) };
+  return { ok: await runSimpleStep(runtime, step, scope, run.trace) };
 }
 
 /** I passi che non cambiano le variabili né richiamano altri passi. */
-async function runSimpleStep(runtime: ScreenRuntime, step: Exclude<Step, { call: string } | { if: string } | { run: string }>, scope: Scope): Promise<boolean> {
+async function runSimpleStep(
+  runtime: ScreenRuntime,
+  step: Exclude<Step, { call: string } | { if: string } | { run: string }>,
+  scope: Scope,
+  trace: SpanContext | undefined,
+): Promise<boolean> {
   if ('refresh' in step) {
-    const result = await runtime.refresh(step.refresh);
+    const result = await runtime.refresh(step.refresh, trace);
     if (!result.ok) runtime.toast(genericError(runtime), 'error');
     return result.ok;
   }
@@ -110,7 +148,7 @@ async function runSimpleStep(runtime: ScreenRuntime, step: Exclude<Step, { call:
   if ('export' in step) {
     const spec = step.export;
     const args = (runtime.resolveValue(spec.args ?? {}, scope) ?? {}) as Record<string, unknown>;
-    const result = await runtime.query(spec.source, args, scope);
+    const result = await runtime.query(spec.source, args, scope, trace);
     if (!result.ok) {
       runtime.toast(genericError(runtime), 'error');
       return false;

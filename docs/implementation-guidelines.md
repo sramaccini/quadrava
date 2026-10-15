@@ -24,7 +24,7 @@ The current stable version of every component is used; exact versions are pinned
 | Schema validation | JSON Schema with Ajv | The same schema serves editor, registry and runtime |
 | JSON text editor | Monaco with an associated schema | Real-time suggestions and errors |
 | Expressions | CEL | Confirmed: cel-js 8, after the proof of concept (architecture, section 5) |
-| Telemetry | OpenTelemetry for JavaScript, OTLP/HTTP export | To the ingestion endpoint |
+| Telemetry | OTLP/HTTP JSON export written in `services` (no OpenTelemetry SDK, ADR-05) | To the ingestion endpoint |
 | Identity | OIDC with Authorization Code and PKCE; Keycloak 26.8.0 (latest version) | No provider-specific logic |
 | Reference implementation (BFF, registry, authz, ingestion) | Spring Boot 4.1.1 on Java 21, multi-module Maven, Spring Security as OAuth2 client and resource server | Choice confirmed |
 | End-to-end tests | Playwright | Run against the example applications |
@@ -183,8 +183,8 @@ The ground rule: record **what happened**, never **which data was involved**. It
 | Element | Rule |
 | --- | --- |
 | Console use | `console.log` and similar are forbidden in production code; the telemetry service is used |
-| Trace names | `screen.open`, `action.run`, `http.client`, with agreed attributes |
-| Allowed attributes | Technical identifiers: `screenId`, `componentId`, `actionId`, `appVersion`, `schemaVersion`, outcome |
+| Trace names | `screen.open`, `action.run`, `http.client` (architecture § 8) |
+| Allowed attributes | Technical identifiers: `lowcode.screen`, `lowcode.action` (step kinds and names), `lowcode.datasource`, HTTP method and status, outcome; never a URL with its values (data calls carry the data source name instead) |
 | Data values | Never in attributes, error messages or logs |
 | `sensitive` fields | Excluded at the source by the runtime; the ingestion endpoint applies a second redaction |
 | Propagation | Every REST call carries `traceparent` and the context (screen, action) in the baggage |

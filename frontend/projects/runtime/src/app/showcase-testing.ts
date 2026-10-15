@@ -2,6 +2,7 @@ import { vi } from 'vitest';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import navigationDoc from '../../public/examples/navigation.json';
+import fattureElenco from '../../public/examples/fatture-elenco.json';
 import tabelleAvanzate from '../../public/examples/vetrina-tabelle-avanzate.json';
 import campi from '../../public/examples/vetrina-campi.json';
 import input from '../../public/examples/vetrina-input.json';
@@ -21,6 +22,8 @@ import { appConfig } from './app.config';
 /** Solo per i test: documenti serviti alla demo al posto di `fetch`. */
 export const SHOWCASE_FILES: Record<string, unknown> = {
   'examples/navigation.json': navigationDoc,
+  // La destinazione iniziale, che si apre prima di andare alla schermata della vetrina.
+  'examples/fatture-elenco.json': fattureElenco,
   'examples/vetrina-tabelle-avanzate.json': tabelleAvanzate,
   'examples/vetrina-campi.json': campi,
   'examples/vetrina-input.json': input,

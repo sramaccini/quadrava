@@ -10,7 +10,9 @@ import { NavigationService } from '../navigation.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `.pad { padding: var(--lc-content-padding, 24px); }`,
   template: `
-    @if (problems().length) {
+    @if (loadFailed()) {
+      <div class="pad" role="alert"><nz-alert nzType="error" nzShowIcon [nzMessage]="i18n.t('lc.navigationLoadFailed')" /></div>
+    } @else if (problems().length) {
       <div class="pad" role="alert">
         <nz-alert nzType="error" nzShowIcon [nzMessage]="i18n.t('app.menuInvalid')" [nzDescription]="list" />
         <ng-template #list><ul>@for (p of problems(); track p) { <li>{{ p }}</li> }</ul></ng-template>
@@ -26,6 +28,7 @@ export class HomePage {
   protected readonly i18n = inject(I18n);
   private readonly navigation = inject(NavigationService);
   protected readonly problems = this.navigation.problems;
+  protected readonly loadFailed = this.navigation.loadFailed;
   protected readonly empty = signal(false);
 
   constructor() {

@@ -341,3 +341,87 @@ describe('ScreenRuntime: corpo delle richieste', () => {
     });
   });
 });
+
+describe('tracce', () => {
+  let fakes: Fakes;
+  let injector: Injector;
+
+  beforeEach(() => {
+    fakes = new Fakes();
+    fakes.permissions.add('ordini.ordine.leggi');
+    injector = TestBed.inject(Injector);
+  });
+
+  async function settle(): Promise<void> {
+    TestBed.tick();
+    for (let i = 0; i < 4; i++) await Promise.resolve();
+    TestBed.tick();
+  }
+
+  it("l'apertura della schermata è uno span che si chiude dopo le prime letture, di cui è il padre", async () => {
+    const rt = fakes.runtime(screen, injector);
+    const open = fakes.spans[0];
+    expect(open).toMatchObject({ name: 'screen.open', attributes: { 'lowcode.screen': 'ordini-elenco', 'lowcode.datasources': 1 } });
+    expect(open.ok).toBeUndefined();
+    await settle();
+    expect(fakes.requestOptions[0]).toMatchObject({ source: 'ordini', trace: open.context });
+    expect(open.ok).toBe(true);
+    // Le letture successive non appartengono più all'apertura.
+    rt.setState('filtri.stato', 'inviato');
+    await settle();
+    expect(fakes.requestOptions.at(-1)?.trace).toBeUndefined();
+    rt.destroy();
+  });
+
+  it("una prima lettura fallita chiude l'apertura con esito negativo", async () => {
+    fakes.respond = () => {
+      throw new Error('500');
+    };
+    const rt = fakes.runtime(screen, injector);
+    await settle();
+    expect(fakes.spans[0].ok).toBe(false);
+    rt.destroy();
+  });
+
+  it('senza data source GET lo span di apertura si chiude subito', () => {
+    const rt = fakes.runtime({ ...screen, dataSources: { approva: { type: 'rest', method: 'POST', url: '/api/x' } } }, injector);
+    expect(fakes.spans[0]).toMatchObject({ name: 'screen.open', ok: true });
+    rt.destroy();
+  });
+
+  it("un'azione è uno span con i nomi dei passi, padre delle sue chiamate (anche dentro run e onError)", async () => {
+    const rt = fakes.runtime({ ...screen, actions: { salva: [{ call: 'approva', args: { id: 1 } }] } }, injector);
+    rt.setState('filtri', { stato: null });
+    const ok = await runSteps(rt, [{ run: 'salva' }, { refresh: 'ordini' }, { toast: 'fatto' }]);
+    const action = fakes.spans.find((s) => s.name === 'action.run')!;
+    expect(ok).toBe(true);
+    expect(action).toMatchObject({ attributes: { 'lowcode.screen': 'ordini-elenco', 'lowcode.action': 'run salva, refresh ordini, toast' }, ok: true });
+    const fromAction = fakes.requestOptions.filter((o) => o?.trace === action.context).map((o) => o?.source);
+    expect(fromAction).toEqual(['approva', 'ordini']);
+    rt.destroy();
+  });
+
+  it("un'azione non riuscita chiude lo span con esito negativo, e gli attributi non contengono valori", async () => {
+    fakes.respond = (r) => {
+      if (r.method === 'POST') throw new Error('409');
+      return {};
+    };
+    const rt = fakes.runtime(screen, injector);
+    await runSteps(rt, [{ call: 'approva', args: { id: '{{row.id}}' } }], { row: { id: 4242 } });
+    const action = fakes.spans.find((s) => s.name === 'action.run')!;
+    expect(action.ok).toBe(false);
+    expect(JSON.stringify(fakes.spans)).not.toContain('4242');
+    rt.destroy();
+  });
+
+  it('un tracciatore che lancia errori non ferma la schermata né le azioni', async () => {
+    fakes.deps.tracer = {
+      start: () => {
+        throw new Error('rotto');
+      },
+    };
+    const rt = fakes.runtime(screen, injector);
+    expect(await runSteps(rt, [{ call: 'approva', args: { id: 1 } }])).toBe(true);
+    rt.destroy();
+  });
+});
