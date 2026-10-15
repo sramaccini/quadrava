@@ -1,23 +1,23 @@
 # HANDOFF — KinetiX
 
-Documento di passaggio per continuare il lavoro con Claude Code in locale. Ultimo aggiornamento: 2026-10-13 sera, dopo il lavoro autonomo su tutto l'elenco di § 8b (registro 0.3, editor, componenti, menu, traduzioni dal registro, ottimizzazioni, accessibilità, stack in un comando).
+Stato del progetto, convenzioni e prossimi passi, per riprendere il lavoro in locale. Ultimo aggiornamento: 2026-10-13 sera, dopo il completamento dell'elenco di § 8b (registro 0.3, editor, componenti, menu, traduzioni dal registro, ottimizzazioni, accessibilità, stack in un comando).
 
 ## 1. Cos'è
 
 **KinetiX** è una piattaforma low-code per frontend gestionali/amministrativi **definiti da JSON** (schermate, data source, azioni, espressioni CEL), più l'editor visuale **KinetiX Studio** (schermate, navigazione, temi) e servizi di base. Il backend consiste in contratti OpenAPI e un'implementazione di riferimento Spring Boot non destinata alla produzione (compila e i test passano con `mvn verify`, JDK 21 e Maven 3.9, anche in CI).
 
-## 2. Preferenze di Simone (rispettale)
+## 2. Principi di lavoro
 
-- **Chiedi approvazione prima di fare modifiche** non richieste esplicitamente; in dubbio, proponi e aspetta.
+- **Approvazione prima delle modifiche** non richieste esplicitamente; in dubbio, si propone e si aspetta.
 - Modalità **architectural review**: segnala incongruenze, punti mancanti, insufficienze rispetto ai requisiti.
 - Documenti **in italiano** (termini tecnici in inglese), con figure ed esempi pratici spiegati semplicemente; contenuti integrati nelle sezioni pertinenti, non paragrafi di confronto isolati.
 - Stack più recente; soluzioni DSL/espressioni leggere e governabili (no rule engine pesanti).
 - README e DEVELOPMENT-GUIDE sono in **inglese**; `docs/README.md`, `docs/catalogo-componenti.md` e i documenti di progetto in italiano.
-- Lavoro lungo e autonomo quando lo chiede: un commit per componente, test e controllo visivo prima di passare al successivo.
+- Nei blocchi di lavoro lunghi: un commit per componente, test e controllo visivo prima di passare al successivo.
 
 ## 3. Stack e comandi
 
-Angular 22.2 (standalone, signals, OnPush), TypeScript 6.0, Node 24 (nella shell di Claude Code `node` è la 20: usare `eval "$(fnm env --shell bash)"; fnm use 24.21.0`), test con vitest via `ng test` (jsdom), Ajv 8, cel-js 8, ng-zorro-antd 22.1.1, date-fns 4, Spring Boot 4.1.1, Keycloak 26.8.
+Angular 22.2 (standalone, signals, OnPush), TypeScript 6.0, Node 24 (se la shell ha un'altra versione: `eval "$(fnm env --shell bash)"; fnm use 24.21.0`), test con vitest via `ng test` (jsdom), Ajv 8, cel-js 8, ng-zorro-antd 22.1.1, date-fns 4, Spring Boot 4.1.1, Keycloak 26.8.
 
 Da `frontend/`:
 
@@ -30,7 +30,7 @@ Da `frontend/`:
 - `npm run validate:examples` — valida gli esempi (schema + chiavi di traduzione)
 - `npm run demo:prepare` / `npm run start:runtime` — copia `examples/` in `projects/runtime/public/examples` e avvia la demo (porta 4200). Il dev server **non** ricarica `dist`: dopo modifiche a librerie o esempi va rilanciato.
 - `npm run start:editor` — KinetiX Studio (editor visuale) sulla porta 4201 (prepara anche gli esempi, con `examples/index.json`).
-- `.claude/launch.json` avvia una copia della demo sulla porta 4300, dell'editor sulla 4301 e delle due app in modalità registro sulla 4302 e 4303 (per l'anteprima nel pannello di Claude).
+- `.claude/launch.json` avvia una copia della demo sulla porta 4300, dell'editor sulla 4301 e delle due app in modalità registro sulla 4302 e 4303 (configurazioni di avvio per l'anteprima nel browser).
 - Registro locale senza Keycloak: `java -jar reference/registry/target/lowcode-registry-0.1.0-SNAPSHOT.jar --spring.profiles.active=senza-auth`, poi `npm run publish:examples`, poi `npm run start:runtime:registro` / `start:editor:registro`.
 - `runtime-config.json` (cartella pubblica del runtime) decide da dove vengono le definizioni: `examples` (demo) o `registry` (app, ambiente, navigazione, temi); la configurazione `registro` di angular.json usa `projects/runtime/config/registro/`. Con `services: { source: 'bff', appId }` il runtime usa le porte vere di `services` (configurazione `bff`, `projects/runtime/config/bff/`).
 - **Stack completo con Keycloak passo per passo** (Docker Desktop avviato): `cd idp && docker compose up -d`; in `reference/` `mvn -q package -DskipTests` e `java -jar <modulo>/target/*.jar` per registry (con `--lowcode.registry.storage-dir=<cartella>` per non perdere i dati), authz, telemetry, bff; in `frontend/` `npm run demo-api` (8084), `npm run publish:examples -- --user amministratore --password amministratore`, poi `npm run start:runtime:bff` (4200) e `start:editor:bff` (4201). Le origini ammesse dal BFF sono 4200 e 4201.
@@ -91,7 +91,7 @@ Le principali sono nella DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In breve:
 - Editor: sull'anteprima si aggiungono, spostano e ridimensionano (span, grow) i componenti; i lati del border si ridimensionano solo nel runtime; il confronto è tra una versione e il documento aperto, non tra due versioni.
 - `validate:examples` non controlla le espressioni CEL (lo fa il test `i18n-examples.spec.ts`).
 - Limiti dei componenti: catalogo § 3.
-- Documenti Claude Docs (architettura `81cf6668-…` e gli altri): non aggiornati dopo l'11–12 ottobre; il dettaglio è nel repository.
+- Documenti di progetto (architettura, funzionale, linee guida, collegati da `docs/README.md`): non aggiornati dopo l'11–12 ottobre; il dettaglio è nel repository.
 
 ## 8. Prossimi passi (nell'ordine suggerito)
 
@@ -100,11 +100,11 @@ Le principali sono nella DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In breve:
 3. Editor: confronto tra due versioni del registro; larghezze dei lati del border dall'anteprima.
 4. e2e in Firefox e WebKit.
 5. CEL in `validate:examples` e, a regime, nel registro.
-6. Aggiornare i documenti Claude Docs (architettura § 9, funzionale, linee guida) con lo stato di ottobre.
+6. Aggiornare i documenti di progetto (architettura § 9, funzionale, linee guida) con lo stato di ottobre.
 
 ## 8b. Cosa manca e ottimizzazioni proposte (13 ottobre 2026)
 
-Elenco redatto il 13 ottobre e **realizzato lo stesso giorno** (lavoro autonomo richiesto da Simone). Per ogni voce, dove sta:
+Elenco redatto il 13 ottobre e **realizzato lo stesso giorno**. Per ogni voce, dove sta:
 
 | Voce | Stato |
 | --- | --- |
@@ -126,7 +126,7 @@ Elenco redatto il 13 ottobre e **realizzato lo stesso giorno** (lavoro autonomo 
 
 ## 9. Convenzioni di lavoro
 
-- Commit in italiano, descrittivi, uno per componente, a nome dell'utente: nessun trailer `Co-Authored-By` di Claude (la storia è stata ripulita il 14-10-2026).
+- Commit in italiano, descrittivi, uno per componente, a nome dell'autore: nessun trailer di coautore (regole complete in `CLAUDE.md`).
 - Dopo ogni modifica al codice: `build:libs`, test dei progetti toccati, `validate:examples` se si toccano esempi o schemi; per la UI controllo nel browser (demo sulla 4300).
 - Gli schemi JSON sono la fonte: modificare `*.schema.json`, poi `schema:sync`, poi i tipi in `schema/src/lib/types.ts`.
 - Ogni componente nuovo: schema, tipo, componente registrato in `STANDARD_COMPONENTS`, test (schema in `schema/new-components.spec.ts`, componente in `components/*.spec.ts` con `renderScreen`, vetrina in `runtime/vetrina-avanzata.spec.ts` con `openShowcase`), esempio in `examples/vetrina-*.json` con testi in `examples/i18n/it.json` ed `en.json`.
@@ -136,5 +136,5 @@ Elenco redatto il 13 ottobre e **realizzato lo stesso giorno** (lavoro autonomo 
 ## 10. Riferimenti
 
 - `README.md`, `DEVELOPMENT-GUIDE.md` (inglese), `docs/README.md`, `docs/catalogo-componenti.md` (italiano).
-- Documenti Claude Docs: architettura `81cf6668-1f89-4814-aa01-06ef8b99ee8d`, funzionale `d3763c98-122d-4331-b9c4-2c4f18cffd1c`, linee guida `f286ccf2-9ad4-4470-8f34-da217be64031`, panoramica testi/i18n `b7da8557-c708-422d-be72-d1829a0b03e7`.
+- Documenti di progetto: funzionale, architettura e linee guida di implementazione (collegati da `docs/README.md`), più la panoramica su testi e traduzioni.
 - Cronologia recente: `b3d7a5d` editor: trascinamento, `221ae42` suggerimenti, `ab5057a` anteprima collegata, `8d7e462` elenchi campo per campo, `5840c9c` prima versione dell'editor; `9bae9b7` serverDataTable; `f42abdf` grafici impilati e doppio asse, `4a8379c` datatable per grandi volumi, `e783fbb` albero da tastiera, `b130599` lookup e file nelle righe, `62fe0ee` file in multipart, `7907884` testo dei valori nel lookup; `47a96ee` datatable … `2b51e38` ordinamento, `4d224fb` catalogo; `9d96798` fix ricaricamento data source; `85d0409` guscio responsive; `5230022` i18n completo.
