@@ -91,7 +91,7 @@ Le principali sono nella DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In breve:
 - Editor: sull'anteprima si aggiungono, spostano e ridimensionano (span, grow) i componenti; i lati del border si ridimensionano solo nel runtime; il confronto è tra una versione e il documento aperto, non tra due versioni.
 - `validate:examples` non controlla le espressioni CEL (lo fa il test `i18n-examples.spec.ts`).
 - Limiti dei componenti: catalogo § 3.
-- Documenti di progetto (architettura, funzionale, linee guida, collegati da `docs/README.md`): non aggiornati dopo l'11–12 ottobre; il dettaglio è nel repository.
+- Documenti di progetto in `docs/` (funzionale, architettura, linee guida, testi e traduzioni): fermi all'11–12 ottobre; il dettaglio più recente è nel catalogo, in `docs/editor.md` e nel codice.
 
 ## 8. Prossimi passi (nell'ordine suggerito)
 
@@ -136,5 +136,5 @@ Elenco redatto il 13 ottobre e **realizzato lo stesso giorno**. Per ogni voce, d
 ## 10. Riferimenti
 
 - `README.md`, `DEVELOPMENT-GUIDE.md` (inglese), `docs/README.md`, `docs/catalogo-componenti.md` (italiano).
-- Documenti di progetto: funzionale, architettura e linee guida di implementazione (collegati da `docs/README.md`), più la panoramica su testi e traduzioni.
+- Documenti di progetto: `docs/documento-funzionale.md`, `docs/architettura.md`, `docs/linee-guida.md`, `docs/testi-e-traduzioni.md` (indice in `docs/README.md`).
 - Cronologia recente: `b3d7a5d` editor: trascinamento, `221ae42` suggerimenti, `ab5057a` anteprima collegata, `8d7e462` elenchi campo per campo, `5840c9c` prima versione dell'editor; `9bae9b7` serverDataTable; `f42abdf` grafici impilati e doppio asse, `4a8379c` datatable per grandi volumi, `e783fbb` albero da tastiera, `b130599` lookup e file nelle righe, `62fe0ee` file in multipart, `7907884` testo dei valori nel lookup; `47a96ee` datatable … `2b51e38` ordinamento, `4d224fb` catalogo; `9d96798` fix ricaricamento data source; `85d0409` guscio responsive; `5230022` i18n completo.

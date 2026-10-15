@@ -2,11 +2,12 @@
 
 Per la descrizione del progetto e la guida ai contributori (in inglese) vedi [README.md](../README.md) e [DEVELOPMENT-GUIDE.md](../DEVELOPMENT-GUIDE.md).
 
-I documenti di riferimento sono mantenuti come documenti vivi (modificabili e commentabili):
+I documenti di riferimento:
 
-- [Documento funzionale](https://claude.ai/code/artifact/d3763c98-122d-4331-b9c4-2c4f18cffd1c): scopo, attori, perimetro, requisiti, esempi.
-- [Architettura](https://claude.ai/code/artifact/81cf6668-1f89-4814-aa01-06ef8b99ee8d): componenti, sicurezza, decisioni architetturali (ADR-11: NG-ZORRO come libreria UI target).
-- [Linee guida di implementazione](https://claude.ai/code/artifact/f286ccf2-9ad4-4470-8f34-da217be64031): stack, struttura, convenzioni, test, rilascio.
+- [Documento funzionale](documento-funzionale.md): scopo, attori, perimetro, requisiti, esempi.
+- [Architettura](architettura.md): componenti, sicurezza, decisioni architetturali (ADR-11: NG-ZORRO come libreria UI target).
+- [Linee guida di implementazione](linee-guida.md): stack, struttura, convenzioni, test, rilascio.
+- [Testi dinamici e traduzioni](testi-e-traduzioni.md): opzioni considerate per testi dinamici e i18n, scelta fatta (funzioni di presentazione e catalogo di applicazione) e scostamenti.
 - [Catalogo dei componenti](catalogo-componenti.md): componenti realizzati e in costruzione, con la specifica di ciascuno.
 - [Riferimento dello schema](riferimento-schema.md): tutte le proprietà di componenti, passi, campi e data source, generate da `screen.schema.json` (`npm run schema:docs`).
 - [KinetiX Studio](editor.md): com'è fatto l'editor visuale delle schermate, come genera il pannello delle proprietà dallo schema, l'anteprima, le scorciatoie, i limiti.
