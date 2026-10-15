@@ -1,19 +1,19 @@
 <h1 align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/brand/png/kinetix-logo-dark.png">
-    <img src="assets/brand/png/kinetix-logo.png" alt="KinetiX" width="420">
+    <source media="(prefers-color-scheme: dark)" srcset="assets/brand/png/quadrava-logo-dark.png">
+    <img src="assets/brand/png/quadrava-logo.png" alt="Quadrava" width="420">
   </picture>
 </h1>
 
-<p align="center"><b>Management and administrative front ends, described in JSON.</b><br>With <b>KinetiX Studio</b>, the visual editor that writes that JSON for you.</p>
+<p align="center"><b>Management and administrative front ends, described in JSON.</b><br>With <b>Quadrava Studio</b>, the visual editor that writes that JSON for you.</p>
 
 ---
 
-**KinetiX** is a platform for building **management and administrative front ends by describing them in JSON**, plus a visual editor, **KinetiX Studio**, that produces that JSON.
+**Quadrava** is a platform for building **management and administrative front ends by describing them in JSON**, plus a visual editor, **Quadrava Studio**, that produces that JSON.
 
-A KinetiX application is a set of JSON documents: screens (components, data sources, actions), a theme and a navigation menu. A generic runtime reads those documents and renders a working Angular application, built on the [NG-ZORRO](https://ng.ant.design) UI library (Ant Design for Angular). Authors never write Angular code: they declare *what* a screen shows and *which* API each action calls, and the platform takes care of authentication, authorization, tracing and error handling in one place.
+A Quadrava application is a set of JSON documents: screens (components, data sources, actions), a theme and a navigation menu. A generic runtime reads those documents and renders a working Angular application, built on the [NG-ZORRO](https://ng.ant.design) UI library (Ant Design for Angular). Authors never write Angular code: they declare *what* a screen shows and *which* API each action calls, and the platform takes care of authentication, authorization, tracing and error handling in one place.
 
-> **Product boundary.** On the back-end side KinetiX delivers **REST contracts (OpenAPI) and a non-production reference implementation only**. Business back ends and the identity provider belong to the customer. KinetiX never ships production back-end services.
+> **Product boundary.** On the back-end side Quadrava delivers **REST contracts (OpenAPI) and a non-production reference implementation only**. Business back ends and the identity provider belong to the customer. Quadrava never ships production back-end services.
 
 Contributor documentation: [DEVELOPMENT-GUIDE.md](DEVELOPMENT-GUIDE.md). Design documents (functional, architecture, implementation guidelines, component catalogue) are linked from [docs/README.md](docs/README.md).
 
@@ -28,7 +28,7 @@ Contributor documentation: [DEVELOPMENT-GUIDE.md](DEVELOPMENT-GUIDE.md). Design 
 5. [Technology stack](#technology-stack)
 6. [Run the demo](#run-the-demo)
 7. [Brand](#brand)
-8. [Run KinetiX Studio](#run-kinetix-studio)
+8. [Run Quadrava Studio](#run-quadrava-studio)
 9. [Run the full stack](#run-the-full-stack)
 10. [Testing](#testing)
 11. [Security model](#security-model)
@@ -43,7 +43,7 @@ Contributor documentation: [DEVELOPMENT-GUIDE.md](DEVELOPMENT-GUIDE.md). Design 
 | --- | --- | --- |
 | **Runtime** (`frontend/projects/runtime`) | Angular application that loads screens, theme and navigation, validates them, and renders them | Working demo, fake back end |
 | **Libraries** (`schema`, `expressions`, `core`, `components`, `services`) | JSON Schema and types, expression evaluator, interpreter, NG-ZORRO component catalogue, HTTP/session/authorization/telemetry services | Working, tested |
-| **KinetiX Studio**, the visual editor (`frontend/projects/editor`) | Builds screens and the navigation (areas and menus) with property panels generated from the JSON Schemas and live previews rendered by the real runtime | Screens, navigation and themes |
+| **Quadrava Studio**, the visual editor (`frontend/projects/editor`) | Builds screens and the navigation (areas and menus) with property panels generated from the JSON Schemas and live previews rendered by the real runtime | Screens, navigation and themes |
 | **Contracts** (`contracts/`) | OpenAPI 3.1: authorization, telemetry ingestion, registry | Defined and validated |
 | **Reference implementation** (`reference/`) | Spring Boot BFF, registry, authorization and telemetry services that implement the contracts | Compiles and its unit tests pass (JDK 21, Maven 3.9), in CI too |
 | **Identity provider** (`idp/`) | Keycloak with a sample realm for local development | Ready |
@@ -175,7 +175,7 @@ A theme is a document of **design tokens only** (colours, typography, radius, de
 
 ### Navigation
 
-A navigation document lists **areas** (the functional parts of the application), each with a menu of up to three levels (group → subgroup → item). Items point to a screen with optional parameters and may carry `requires` (a permission) and `visibleIf`. Groups and areas with no visible items disappear. KinetiX has no built-in areas; those in the examples are only examples.
+A navigation document lists **areas** (the functional parts of the application), each with a menu of up to three levels (group → subgroup → item). Items point to a screen with optional parameters and may carry `requires` (a permission) and `visibleIf`. Groups and areas with no visible items disappear. Quadrava has no built-in areas; those in the examples are only examples.
 
 An optional `badges.url` (a relative GET returning `{ "<item id>": number }`) shows counters next to the items, refreshed periodically and when the page becomes visible again; a closed group shows the sum of its items.
 
@@ -191,7 +191,7 @@ Every text is a string that may contain `{{ … }}` expressions, and every compo
 
 The lookup order is: active language, default language, the fallback written in the JSON, the key itself. Messages use a subset of ICU (`{n}`, `plural`, `select`). Expressions also offer `fmtCurrency(v, 'EUR')`, `fmtNumber(v)`, `fmtDate(v)` and `plural(n, 'one', '{n} many')`, all following the active language, and `user.locale` holds the language code.
 
-KinetiX's own strings (`lc.*`) ship in Italian and English; an application can override any of them. Menu labels, validation messages and the "required field" message are translated the same way.
+Quadrava's own strings (`lc.*`) ship in Italian and English; an application can override any of them. Menu labels, validation messages and the "required field" message are translated the same way.
 
 Values that come from the service (statuses, types) keep their original value and are translated only for display: a column takes `"valueKey": "valori.stato"` (the text shown is `t('valori.stato.<value>')`, with the value itself as fallback; badge colours stay bound to the original value) and a select field takes `"optionKey": "valori.tipo"`.
 
@@ -207,14 +207,14 @@ The demo remembers the chosen language and starts from the browser language when
 | `idp/` | Keycloak for local development (Docker Compose and sample realm) |
 | `examples/` | Reference JSON applications used by validation and tests |
 | `docs/` | Documentation entry point and architecture decision records |
-| `assets/brand/` | KinetiX brand: icons, logos, colours and usage rules (`assets/brand/README.md`) |
+| `assets/brand/` | Quadrava brand: icons, logos, colours and usage rules (`assets/brand/README.md`) |
 
 Frontend libraries, from the bottom up:
 
 | Library | Responsibility |
 | --- | --- |
 | `schema` | JSON Schemas (screen, theme, navigation) with generated TypeScript constants, Ajv validators, TypeScript types |
-| `expressions` | CEL evaluator (cel-js) with KinetiX's operators and an isolated environment |
+| `expressions` | CEL evaluator (cel-js) with Quadrava's operators and an isolated environment |
 | `core` | Interpreter: screen runtime, action engine, formatting, navigation runtime, theme service, the abstract **ports**, and the screen shell |
 | `components` | The standard component catalogue built on NG-ZORRO, the side menu, the confirmation dialog, the notifier, and the theme bridge |
 | `services` | Production implementations of the ports: HTTP data client, session (BFF), authorization with permissions version, OTLP telemetry (logs and traces) |
@@ -259,14 +259,14 @@ The libraries are not hot-reloaded: after changing anything in `frontend/project
 
 ## Brand
 
-The product is **KinetiX**; the visual editor is **KinetiX Studio**.
+The product is **Quadrava**; the visual editor is **Quadrava Studio**.
 
 * **Assets.** The sources live in `assets/brand/` (icons, logos, colours, usage). The PNG logos used in this README are rendered from the SVGs, with the Sora font embedded, by `node tools/brand-png.mjs`. Each app copies only what it needs into `public/brand/` (favicon in SVG with a 32 px PNG fallback, Apple touch icon, the small icon for the header).
-* **Logotype.** Drawn by `lc-kinetix-wordmark` (components library): the icon plus "Kineti**X**" (and "Studio") as HTML text in the Sora typeface, bundled locally from `@fontsource/sora` (weights 300 and 600, no request to Google), because an SVG logo used as an image cannot use the page's fonts. Brand colours are fixed (light and dark variants), not theme colours.
-* **Where it appears.** The demo puts the logotype in the side bar (icon only when the bar is collapsed, dark variant on a dark bar) through the side bar's `lcBrand` slot, which any application can use for its own brand; KinetiX Studio shows it at the top left.
+* **Logotype.** Drawn by `lc-quadrava-wordmark` (components library): the icon plus "**Q**uadrava" with the coloured Q (and "Studio") as HTML text in the Sora typeface, bundled locally from `@fontsource/sora` (weights 300 and 600, no request to Google), because an SVG logo used as an image cannot use the page's fonts. Brand colours are fixed (light and dark variants), not theme colours.
+* **Where it appears.** The demo puts the logotype in the side bar (icon only when the bar is collapsed, dark variant on a dark bar) through the side bar's `lcBrand` slot, which any application can use for its own brand; Quadrava Studio shows it at the top left.
 * **Technical identifiers** (Keycloak realm `lowcode`, Java packages, `lc-` prefixes, schema `$id`s) keep their names.
 
-## Run KinetiX Studio
+## Run Quadrava Studio
 
 ```bash
 cd frontend
@@ -333,11 +333,11 @@ cd frontend && npm run stack
 4. Publish the examples into the registry with a real token: `npm run publish:examples -- --user administrator --password administrator` (the script gets the token from the development client `lowcode-tools`, local realm only).
 5. Front end through the BFF: `npm run start:runtime:bff` (port 4200) and `npm run start:editor:bff` (port 4201). The dev servers proxy `/registry`, `/api`, `/authz`, `/telemetry`, `/bff`, `/oauth2` and `/logout` to the BFF, which keeps the session, adds the user's access token and `traceparent` to the forwarded calls and protects writes with CSRF (`XSRF-TOKEN` cookie, `X-XSRF-TOKEN` header). BFF routes (`lowcode.bff.routes`): `/registry` → registry, `/authz` → authorization, `/telemetry` → telemetry, `/api` → the application back end.
    * **Runtime** (`projects/runtime/config/bff/runtime-config.json`): without a session it goes straight to the Keycloak login and comes back; then it loads navigation, theme and screens published in the registry (application `demo`, environment `development`), the user's permissions from the authorization service, the data from `/api`, and sends diagnostics to the telemetry service. The header shows the user name, the number of permissions and an *Esci* button: logout closes the BFF session and the Keycloak session (OIDC end-session), so the next login asks for the password again.
-   * **KinetiX Studio**: the *Registry* panel offers *Sign in* when there is no session; versions are recorded with the user name as author.
+   * **Quadrava Studio**: the *Registry* panel offers *Sign in* when there is no session; versions are recorded with the user name as author.
    * After login the BFF returns only to the origins listed in `lowcode.bff.frontend-origins`; a visit to the BFF root goes to `lowcode.bff.home` (the runtime).
 6. Validate the examples against the schemas: `cd frontend && npm run validate:examples`.
 
-**Registry only, without Keycloak** (local development): start the registry with authentication switched off and publish the examples into it, then run the runtime and KinetiX Studio against it.
+**Registry only, without Keycloak** (local development): start the registry with authentication switched off and publish the examples into it, then run the runtime and Quadrava Studio against it.
 
 ```bash
 cd reference && mvn -q -pl registry -am package -DskipTests
@@ -357,7 +357,7 @@ Development users in Keycloak: `operator`, `manager`, `administrator` (password 
 cd frontend
 npm run test:libs                     # schema, expressions, core, components, services
 npx ng test runtime --watch=false     # end-to-end demo tests (needs `npm run demo:prepare` once)
-npx ng test editor --watch=false      # KinetiX Studio
+npx ng test editor --watch=false      # Quadrava Studio
 npm run schema:check                  # generated schema constants and precompiled validators are in sync
 npm run schema:docs:check             # docs/schema-reference.md is in sync (npm run schema:docs regenerates it)
 npm run validate:examples             # examples are valid
@@ -386,7 +386,7 @@ The conformance kits pass against the reference services: registry 17 of 17, aut
 * **No secrets in JSON.** Keys, passwords and tokens never appear in a definition; only references to configuration owned by the BFF or the environment.
 * **Tokens stay out of the browser** in BFF mode (HttpOnly, Secure, SameSite cookie); in SPA mode they live in memory only, never in `localStorage` / `sessionStorage`.
 * **Expressions are sandboxed** (CEL, no `eval`), and a failing expression denies.
-* **Values are always inserted as text.** `innerHTML` and sanitizer bypasses are forbidden. NG-ZORRO's modals and messages interpret strings as HTML, so KinetiX passes them text that has been neutralised or rendered through a component.
+* **Values are always inserted as text.** `innerHTML` and sanitizer bypasses are forbidden. NG-ZORRO's modals and messages interpret strings as HTML, so Quadrava passes them text that has been neutralised or rendered through a component.
 * **Rich text is never HTML.** Markdown is parsed into a tree and rendered with Angular templates, so HTML inside the text (from data or translations) stays visible text; links are accepted only with `https:`, `mailto:` or a relative `/` path. The rich text editor normalises whatever the browser produces back to the allowed Markdown (styles, scripts and unknown tags are dropped), pastes plain text only and refuses links with other schemes.
 * **URLs of data sources are relative**; absolute, protocol-relative, backslash and `..` forms are rejected, and tracing headers are sent same-origin only.
 * **Authorization is enforced by the back end.** The front end hides and disables for usability; permission versions (`X-Permissions-Version`) make the client refresh when permissions change.
@@ -395,31 +395,31 @@ The conformance kits pass against the reference services: registry 17 of 17, aut
 * **Definitions are validated twice**: in the browser by validators precompiled at build time (Ajv standalone: no `new Function`, so the Content-Security-Policy does not need `unsafe-eval`) and by the registry on every save, against the same JSON Schemas.
 * **URLs in components** are restricted: images accept relative, `https` and `data:image` addresses only; links accept screens, relative paths and `https` (opened with `noopener noreferrer`); never `javascript:` or other protocols.
 * **CSV exports** neutralise cells that a spreadsheet would run as formulas.
-* **The KinetiX Studio preview with live data** only reads (GET, same origin); writes are blocked.
+* **The Quadrava Studio preview with live data** only reads (GET, same origin); writes are blocked.
 
-Recommended Content-Security-Policy for the runtime and KinetiX Studio served behind the BFF: `default-src 'self'; img-src 'self' https: data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; frame-ancestors 'self'` (`unsafe-inline` styles are needed by Angular's inlined critical CSS and NG-ZORRO).
+Recommended Content-Security-Policy for the runtime and Quadrava Studio served behind the BFF: `default-src 'self'; img-src 'self' https: data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; frame-ancestors 'self'` (`unsafe-inline` styles are needed by Angular's inlined critical CSS and NG-ZORRO).
 
 ## Status and roadmap
 
-**Verified:** the four JSON Schemas (screens, navigation, themes, catalogues), the CEL evaluator, the interpreter, the NG-ZORRO component catalogue, the services library, the runtime and KinetiX Studio, with the automated tests above; the build of every app and library; the validity of the three OpenAPI contracts and of the examples.
+**Verified:** the four JSON Schemas (screens, navigation, themes, catalogues), the CEL evaluator, the interpreter, the NG-ZORRO component catalogue, the services library, the runtime and Quadrava Studio, with the automated tests above; the build of every app and library; the validity of the three OpenAPI contracts and of the examples.
 
 **End to end** in a browser with Keycloak 26.8 in Docker and every reference service started by `npm run stack` (October 13, 2026):
 
 * login through the BFF, navigation, themes, screens and catalogues from the registry, permissions from the authorization service;
 * data, writes with CSRF and menu counters through the BFF, logout that ends the Keycloak session;
-* in KinetiX Studio behind the BFF: saving, review (request, approval, protected environment), comparison, publishing and the live-data preview (writes blocked).
+* in Quadrava Studio behind the BFF: saving, review (request, approval, protected environment), comparison, publishing and the live-data preview (writes blocked).
 
 Also without Keycloak, with the registry's `no-auth` profile and file storage.
 
 **Not verified / known limits:**
 
 * The end-to-end suite runs in Chromium only; automatic accessibility checks find only part of the problems (keyboard and screen-reader checks by hand are still needed).
-* Expressions are not checked by the registry (KinetiX Studio and the runtime do it, fail-closed); a real implementation can add a server-side CEL check.
-* Component limits are listed in the catalogue (§ 3), KinetiX Studio limits in [docs/editor.md](docs/editor.md).
+* Expressions are not checked by the registry (Quadrava Studio and the runtime do it, fail-closed); a real implementation can add a server-side CEL check.
+* Component limits are listed in the catalogue (§ 3), Quadrava Studio limits in [docs/editor.md](docs/editor.md).
 
 **Next steps:**
 
-* KinetiX Studio: comparison between two registry versions (today: a version against the open document); resizing the border sides from the preview.
+* Quadrava Studio: comparison between two registry versions (today: a version against the open document); resizing the border sides from the preview.
 * Conformance kits in CI against the reference services (today they are run by hand, for example after `npm run stack`).
 * Firefox and WebKit in the end-to-end suite.
 * The full list of what was done and what remains is in [HANDOFF.md](HANDOFF.md).

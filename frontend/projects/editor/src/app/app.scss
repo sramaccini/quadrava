@@ -9,7 +9,7 @@
   grid-area: top; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 4px 12px;
   background: var(--lc-color-surface); border-bottom: 1px solid var(--lc-color-border);
 }
-.brand { display: flex; margin: 0 8px 0 0; --kx-wordmark-size: 18px; }
+.brand { display: flex; margin: 0 8px 0 0; --qv-wordmark-size: 18px; }
 .group { display: flex; gap: 4px; }
 .end { margin-left: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .status { display: flex; gap: 4px; }
@@ -58,5 +58,5 @@
   padding: 1px 6px; border: 1px solid var(--lc-color-border); border-bottom-width: 2px; border-radius: 4px;
   background: var(--lc-color-background); font-family: inherit; font-size: 12px; white-space: nowrap;
 }
-::ng-deep .about { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; --kx-wordmark-size: 22px; }
+::ng-deep .about { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; --qv-wordmark-size: 22px; }
 ::ng-deep .about p { margin: 0; }

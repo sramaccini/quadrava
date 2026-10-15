@@ -1,10 +1,10 @@
-# HANDOFF — KinetiX
+# HANDOFF — Quadrava
 
 Project status, conventions and next steps, for picking the work up locally. Last updated: evening of 2026-10-13, after completing the list in § 8b (registry 0.3, editor, components, menu, translations from the registry, optimisations, accessibility, one-command stack).
 
 ## 1. What it is
 
-**KinetiX** is a low-code platform for business/administrative front ends **defined in JSON** (screens, data sources, actions, CEL expressions), plus the visual editor **KinetiX Studio** (screens, navigation, themes) and base services. The back end consists of OpenAPI contracts and a Spring Boot reference implementation not meant for production (it builds and its tests pass with `mvn verify`, JDK 21 and Maven 3.9, in CI too).
+**Quadrava** is a low-code platform for business/administrative front ends **defined in JSON** (screens, data sources, actions, CEL expressions), plus the visual editor **Quadrava Studio** (screens, navigation, themes) and base services. The back end consists of OpenAPI contracts and a Spring Boot reference implementation not meant for production (it builds and its tests pass with `mvn verify`, JDK 21 and Maven 3.9, in CI too).
 
 ## 2. Working principles
 
@@ -29,7 +29,7 @@ From `frontend/`:
 - `npm run e2e` — Playwright (standalone fields, border layout, axe accessibility on the whole showcase)
 - `npm run validate:examples` — validates the examples (schema + translation keys)
 - `npm run demo:prepare` / `npm run start:runtime` — copies `examples/` into `projects/runtime/public/examples` and starts the demo (port 4200). The dev server does **not** reload `dist`: restart it after changing libraries or examples.
-- `npm run start:editor` — KinetiX Studio (visual editor) on port 4201 (it also prepares the examples, with `examples/index.json`).
+- `npm run start:editor` — Quadrava Studio (visual editor) on port 4201 (it also prepares the examples, with `examples/index.json`).
 - `.claude/launch.json` starts a copy of the demo on port 4300, of the editor on 4301 and of the two apps in registry mode on 4302 and 4303 (launch configurations for previewing in the browser).
 - Local registry without Keycloak: `java -jar reference/registry/target/lowcode-registry-0.1.0-SNAPSHOT.jar --spring.profiles.active=no-auth`, then `npm run publish:examples`, then `npm run start:runtime:registry` / `start:editor:registry`.
 - `runtime-config.json` (the runtime's public folder) decides where definitions come from: `examples` (demo) or `registry` (app, environment, navigation, themes); the `registry` configuration in angular.json uses `projects/runtime/config/registry/`. With `services: { source: 'bff', appId }` the runtime uses the real ports from `services` (`bff` configuration, `projects/runtime/config/bff/`).
@@ -44,7 +44,7 @@ Libraries (`frontend/projects/`): `schema` (JSON Schema + types), `expressions` 
 
 - Ports (abstract classes used as DI tokens): Authorization, UserProvider, DataClient (with `{ signal }` to cancel superseded reads, `source` and `trace` for the HTTP span), ScreenNavigator, Notifier, RuntimeDiagnostics, **RuntimeTracer** (optional; `HttpTracer` in `services` sends OTLP spans to `/telemetry/v1/traces`), Confirmation, **FormDialog** (`dialog` step), DefinitionSource (screens, navigation, themes and **catalogues** `messages(language)`).
 - Nodes: section (also `layout: "row"`), **box, grid, border** (layout containers; children declare `grow`, `span`, `region`; border with resizable sides), **input** (standalone field bound to the state, with a validation `group`), text, **image, link**, button, filterBar, table, **dataTable**, **serverDataTable**, form, tabs, detail, alert, **stats, progress, timeline, kanban**, **wizard**, **tree**, **calendar**, **chart**. Steps: set, call, refresh, navigate, toast, confirm, **dialog, validate, print, export** (CSV).
-- Brand: the product is called **KinetiX**, the editor **KinetiX Studio** (`assets/brand/`, brand README). Logotype `lc-kinetix-wordmark` (text in Sora from `@fontsource/sora`, not the SVGs with `<text>`), in the demo's side bar through the `lcBrand` slot and at the top left in the editor; favicon in both. Technical identifiers (realm `lowcode`, Java packages, `lc-` prefixes) stay as they are.
+- Brand: the product is called **Quadrava**, the editor **Quadrava Studio** (`assets/brand/`, brand README). Logotype `lc-quadrava-wordmark` (text in Sora from `@fontsource/sora`, not the SVGs with `<text>`), in the demo's side bar through the `lcBrand` slot and at the top left in the editor; favicon in both. Technical identifiers (realm `lowcode`, Java packages, `lc-` prefixes) stay as they are.
 - Fields: text, number, select, checkbox, date, **textarea, datetime, radio, switch, multiselect, lookup, file, repeater, richtext**. Formats: **number**, currency, percent, date, datetime, boolean, badge, markdown.
 - Formatted text: `format: markdown` on text, alert and detail fields (restricted Markdown: `core/src/lib/markdown.ts`, drawn by `lc-markdown` without HTML); `richtext` editor (`lc-rich-text-editor`, contenteditable + browser commands, value in Markdown). Labels deliberately stay plain text. Catalogue § 2.26.
 - Table: sorting (in the page or server-side with `sort.bind`), selection + bulk actions, action menu (`rowActionsInline`), expandable rows, clickable cells, totals row (`aggregate`).
@@ -58,7 +58,7 @@ Libraries (`frontend/projects/`): `schema` (JSON Schema + types), `expressions` 
 
 `docs/component-catalogue.md`: specification of every component added (up to § 2.28), common rules and **known limits** (§ 3); `docs/schema-reference.md`: all the properties, generated from the schema. The demo showcase has twelve screens: Componenti base, Form, Attività e avanzamento, Contenitori di layout, Campi a sé, Campi e form, Filtri e tabelle, Tabelle avanzate, Datatable, Schede/dettaglio/messaggi, Cruscotto, Procedure e viste.
 
-## 5b. KinetiX Studio (visual editor)
+## 5b. Quadrava Studio (visual editor)
 
 `docs/editor.md` describes everything. In short: palette (click or drag), structure (select, move, duplicate, cut/paste, drag), property panel **generated from `screen.schema.json`** (lists of columns/fields/actions/steps editable item by item, steps by variant, objects as groups), preview with the real runtime and fake ports (sample data per data source, permissions, widths, parameters, log; Alt+click selects), JSON view, data-source panel (renaming updates references), texts panel (make translatable, it/en translations applied to the preview, export for the catalogues), problems (schema, CEL, repeated ids, missing data sources), undo history, draft in the browser, File menu with open / save on file (rewriting the same file where the browser allows it), open from / save to the registry and an «Unsaved changes» tag. A new component needs only its template in `model/templates.ts`, its group in the palette and `ed.type.<type>` in the messages. Since 13 October: expression completion while typing; components dragged from the palette straight onto the preview; preview with **live data** (reads only, editor behind the BFF); «Registry» panel with review status, Request review/Approve/Reject, Compare (version against the open document), concurrent-change warning (If-Match), registry validation errors item by item; «Texts» panel that saves and publishes the catalogues to the registry.
 

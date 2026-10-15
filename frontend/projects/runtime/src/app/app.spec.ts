@@ -144,11 +144,11 @@ describe('App (demo)', () => {
     await until(fixture, () => rows(el) > 0, 'elenco fatture');
     const crumbs = [...el.querySelectorAll('main nz-breadcrumb-item')].map((n) => (n.textContent ?? '').replace('/', '').trim());
     expect(crumbs).toEqual(['Consultazione Fatture', 'Elenco fatture']);
-    // Il marchio KinetiX: icona e logotipo, con il nome per i lettori di schermo; a barra compressa resta l'icona.
-    const brand = el.querySelector('lc-sidebar .logo lc-kinetix-wordmark') as HTMLElement;
-    expect(brand.querySelector('img')?.getAttribute('src')).toBe('brand/kinetix-icon-small.svg');
-    expect(brand.querySelector('[role="img"]')?.getAttribute('aria-label')).toBe('KinetiX');
-    expect(brand.querySelector('.word')?.textContent).toBe('KinetiX');
+    // Il marchio Quadrava: icona e logotipo, con il nome per i lettori di schermo; a barra compressa resta l'icona.
+    const brand = el.querySelector('lc-sidebar .logo lc-quadrava-wordmark') as HTMLElement;
+    expect(brand.querySelector('img')?.getAttribute('src')).toBe('brand/quadrava-icon-small.svg');
+    expect(brand.querySelector('[role="img"]')?.getAttribute('aria-label')).toBe('Quadrava');
+    expect(brand.querySelector('.word')?.textContent).toBe('Quadrava');
     expect(el.querySelector('lc-sidebar .logo .name')).toBeNull();
     (el.querySelector('lc-sidebar button.toggle') as HTMLButtonElement).click();
     await until(fixture, () => !brand.querySelector('.word'), 'barra compressa');

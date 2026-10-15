@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: KinetiX - Registry contract
+  title: Quadrava - Registry contract
   version: 0.5.0
   description: >
     Registry of the application definitions. An application is made of separate documents: every screen, the

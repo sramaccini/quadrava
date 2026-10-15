@@ -233,7 +233,7 @@ export class SidebarComponent {
   protected readonly i18n = inject(I18n);
   readonly navigation = input.required<NavigationRuntime>();
   /** Name shown next to the logo. */
-  readonly brand = input('KinetiX');
+  readonly brand = input('Quadrava');
   /** (Relative) address of the logo image; if missing an icon is shown. */
   readonly logo = input<string | null>(null);
   /** Area shown; if missing or not visible the first available one is shown. */

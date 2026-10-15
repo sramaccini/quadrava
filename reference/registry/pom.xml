@@ -10,7 +10,7 @@
   </parent>
 
   <artifactId>lowcode-registry</artifactId>
-  <name>KinetiX reference - registry</name>
+  <name>Quadrava reference - registry</name>
   <description>Sample registry with immutable versions (contract registry.yaml).</description>
 
   <dependencies>

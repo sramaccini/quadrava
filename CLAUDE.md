@@ -1,6 +1,6 @@
-# KinetiX: project rules
+# Quadrava: project rules
 
-KinetiX is a low-code platform for business front ends defined in JSON (screens, data sources, actions, CEL expressions), with the Angular runtime, the visual editor **KinetiX Studio** and base services described by OpenAPI contracts. What the project does: [README.md](README.md). How to work on it in detail: [DEVELOPMENT-GUIDE.md](DEVELOPMENT-GUIDE.md). Status and next steps: [HANDOFF.md](HANDOFF.md).
+Quadrava is a low-code platform for business front ends defined in JSON (screens, data sources, actions, CEL expressions), with the Angular runtime, the visual editor **Quadrava Studio** and base services described by OpenAPI contracts. What the project does: [README.md](README.md). How to work on it in detail: [DEVELOPMENT-GUIDE.md](DEVELOPMENT-GUIDE.md). Status and next steps: [HANDOFF.md](HANDOFF.md).
 
 This file collects the rules to follow at all times. Where the development guide goes into detail, only the pointer is given here.
 

@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: KinetiX - Telemetry ingestion contract
+  title: Quadrava - Telemetry ingestion contract
   version: 0.1.0
   description: >
     REST endpoint to which the runtime sends traces and logs in OTLP/HTTP (JSON) format.

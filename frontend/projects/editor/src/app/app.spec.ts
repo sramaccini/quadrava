@@ -552,7 +552,7 @@ describe('editor delle schermate', () => {
     expect([...document.querySelectorAll('.shortcuts h3')].map((h) => h.textContent)).toEqual(['Generali', 'Struttura (fuori dai campi di testo)', 'Barra dei menu', 'Pannelli e anteprima']);
     expect([...document.querySelectorAll('.shortcuts kbd')].map((k) => k.textContent)).toContain('Maiusc+F10');
     await menuCommand('help', 'about');
-    await until(() => !!document.querySelector('.about lc-kinetix-wordmark'), 'informazioni');
+    await until(() => !!document.querySelector('.about lc-quadrava-wordmark'), 'informazioni');
   });
 
   it('lati ridimensionabili: il bordo si sposta da tastiera e si ricorda; Invio torna alla larghezza prevista', async () => {

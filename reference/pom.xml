@@ -14,7 +14,7 @@
   <artifactId>lowcode-reference</artifactId>
   <version>0.1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
-  <name>KinetiX - Reference implementation</name>
+  <name>Quadrava - Reference implementation</name>
   <description>Reference implementation of the REST contracts (not for production).</description>
 
   <properties>

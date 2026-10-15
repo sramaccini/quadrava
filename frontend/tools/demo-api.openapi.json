@@ -1,6 +1,6 @@
 {
   "openapi": "3.0.1",
-  "info": { "title": "KinetiX demo API", "version": "1.0", "description": "Le API del backend di esempio della demo (tools/demo-api.mjs), descritte come le pubblicherebbe springdoc in Spring Boot." },
+  "info": { "title": "Quadrava demo API", "version": "1.0", "description": "Le API del backend di esempio della demo (tools/demo-api.mjs), descritte come le pubblicherebbe springdoc in Spring Boot." },
   "servers": [{ "url": "http://localhost:8084", "description": "Generated server url" }],
   "tags": [
     { "name": "ordini", "description": "Ordini dei clienti" },

@@ -1,7 +1,7 @@
 {
   "name": "schema",
   "version": "0.0.1",
-  "description": "Schema JSON e tipi del linguaggio di definizione delle applicazioni KinetiX, con validatori precompilati (nessuna dipendenza da Ajv a runtime).",
+  "description": "JSON Schemas and types of the Quadrava application definition language, with precompiled validators (no run-time dependency on Ajv).",
   "dependencies": {
     "tslib": "^2.3.0"
   },

@@ -4,7 +4,7 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://lowcode.example/schemas/screen.schema.json",
   "title": "Screen",
-  "description": "Core of the definition language: a screen of a KinetiX application with the catalogue of base components.",
+  "description": "Core of the definition language: a screen of a Quadrava application with the catalogue of base components.",
   "type": "object",
   "required": [
     "schemaVersion",
@@ -732,7 +732,7 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                   "plain",
                   "markdown"
                 ],
-                "description": "plain (default): simple text. markdown: text formatted with the KinetiX restricted Markdown: paragraphs, headings (#, ##, ###), bulleted (-) and numbered (1.) lists, also nested, quotes (>), **bold**, *italic*, ~~strikethrough~~, `code`, [links](https://…). Never HTML: even a text coming from the data is safe."
+                "description": "plain (default): simple text. markdown: text formatted with the Quadrava restricted Markdown: paragraphs, headings (#, ##, ###), bulleted (-) and numbered (1.) lists, also nested, quotes (>), **bold**, *italic*, ~~strikethrough~~, `code`, [links](https://…). Never HTML: even a text coming from the data is safe."
               }
             }
           }
@@ -1060,7 +1060,7 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                   "plain",
                   "markdown"
                 ],
-                "description": "plain (default): simple text. markdown: text formatted with the KinetiX restricted Markdown: paragraphs, headings (#, ##, ###), bulleted (-) and numbered (1.) lists, also nested, quotes (>), **bold**, *italic*, ~~strikethrough~~, `code`, [links](https://…). Never HTML: even a text coming from the data is safe."
+                "description": "plain (default): simple text. markdown: text formatted with the Quadrava restricted Markdown: paragraphs, headings (#, ##, ###), bulleted (-) and numbered (1.) lists, also nested, quotes (>), **bold**, *italic*, ~~strikethrough~~, `code`, [links](https://…). Never HTML: even a text coming from the data is safe."
               }
             }
           }

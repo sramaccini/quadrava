@@ -10,7 +10,7 @@
   </parent>
 
   <artifactId>lowcode-authz</artifactId>
-  <name>KinetiX reference - autorizzazione</name>
+  <name>Quadrava reference - authorization</name>
   <description>Sample authorization service (contract authz.yaml).</description>
 
   <dependencies>

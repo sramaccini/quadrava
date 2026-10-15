@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, injec
 import { FormsModule } from '@angular/forms';
 import { RouterOutlet } from '@angular/router';
 import { NgTemplateOutlet } from '@angular/common';
-import { IconComponent, KinetixWordmarkComponent, SidebarComponent, UserMenuComponent, type UserMenuItem } from 'components';
+import { IconComponent, QuadravaWordmarkComponent, SidebarComponent, UserMenuComponent, type UserMenuItem } from 'components';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzDrawerModule } from 'ng-zorro-antd/drawer';
 import { NzDropdownModule } from 'ng-zorro-antd/dropdown';
@@ -62,7 +62,7 @@ function initialLanguage(): string {
 /** Guscio dell'applicazione: barra superiore (profilo e tema della demo), menu laterale, contenuto e notifiche. */
 @Component({
   selector: 'lc-root',
-  imports: [FormsModule, NgTemplateOutlet, RouterOutlet, IconComponent, KinetixWordmarkComponent, SidebarComponent, UserMenuComponent, NzButtonModule, NzDrawerModule, NzDropdownModule, NzLayoutModule, NzMenuModule, NzSelectModule],
+  imports: [FormsModule, NgTemplateOutlet, RouterOutlet, IconComponent, QuadravaWordmarkComponent, SidebarComponent, UserMenuComponent, NzButtonModule, NzDrawerModule, NzDropdownModule, NzLayoutModule, NzMenuModule, NzSelectModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './app.scss',
   templateUrl: './app.html',

@@ -1,30 +1,41 @@
-# KinetiX – brand assets
+# Quadrava – brand assets
 
-Chosen direction: **1a Scia** (trail).
+**Quadrava** is the platform; **Quadrava Studio** is its visual editor. The name comes from *quadro* and *inquadrare*: composing a screen and framing the view precisely.
+
+## The symbol
+
+A viewfinder frames a composed screen:
+
+- three corner marks delimit the view (the precision of the framing);
+- inside, blocks laid out like a page (a header, a column and an accent block) stand for the composition;
+- the fourth corner is replaced by a diagonal stroke in cyan: the tail of the **Q**, and a lens that looks closely.
+
+The same symbol is used by both products: Quadrava on blue, Quadrava Studio on indigo.
 
 ## Colours
 | Token | Hex | Use |
 |---|---|---|
-| blue | #1F4FD8 | KinetiX icon background, the logotype's "X" on light |
-| indigo | #4338CA | KinetiX Studio icon background, "Studio" on light |
-| cyan | #38C6F4 | accent, first stroke of the trail, "X" on dark |
-| trail 2/3/4 | #32AEEE / #2C95E8 / #277DE2 | the following blocks of the trail |
+| blue | #1F4FD8 | Quadrava icon background, the logotype's "Q" on light |
+| indigo | #4338CA | Quadrava Studio icon background, "Studio" on light |
+| cyan | #38C6F4 | accent block and tail of the symbol, "Q" on dark |
 | navy | #0B1630 | text on light, dark background |
 | lavender | #B9B3FF | "Studio" on dark |
 
 ## Typography
-Logotype: **Sora** (Google Fonts) 600, "Studio" in 300. The SVG logos use `<text>`: load Sora in the app (e.g. `@fontsource/sora` or Google Fonts) or convert the text to paths before external use.
+Logotype: **Sora** (Google Fonts, OFL) 600, "Studio" in 300; the "Q" takes the accent colour. The SVG logos use `<text>`: load Sora in the app (for example `@fontsource/sora`) or convert the text to paths before external use.
 
 ## Files
-- `svg/kinetix-icon.svg`, `svg/kinetix-studio-icon.svg` – main icons (≥ 48 px)
-- `svg/*-icon-small.svg` – simplified versions for ≤ 32 px (favicon, tab, toolbar)
-- `svg/kinetix-mark.svg` – symbol only, without background (meant for blue/dark backgrounds)
-- `svg/kinetix-logo(-dark).svg`, `svg/kinetix-studio-logo(-dark).svg` – full logo for light/dark backgrounds
-- `png/<product>-icon-<size>.png` – 16, 24, 32, 48, 64, 76, 128, 180, 192, 256, 512, 1024 px
-- `png/kinetix-logo(-dark).png`, `png/kinetix-studio-logo(-dark).png` – full logo as PNG (4x, transparent background) with Sora embedded, for places where SVG cannot load the typeface (README on GitHub, documents). Regenerate them from the SVGs with `cd frontend && node tools/brand-png.mjs`.
+- `svg/quadrava-icon.svg`, `svg/quadrava-studio-icon.svg` – main icons (≥ 48 px)
+- `svg/quadrava-icon-small.svg`, `svg/quadrava-studio-icon-small.svg` – bolder versions for ≤ 32 px (favicon, tab, toolbar)
+- `svg/quadrava-mark.svg` – symbol only, without background (meant for blue or dark backgrounds)
+- `svg/quadrava-logo(-dark).svg`, `svg/quadrava-studio-logo(-dark).svg` – full logo for light/dark backgrounds
+- `png/<product>-icon-<size>.png` – 16, 24, 32, 48, 64, 76, 128, 180, 192, 256, 512, 1024 px (the small SVG below 48 px)
+- `png/quadrava-logo(-dark).png`, `png/quadrava-studio-logo(-dark).png` – full logo as PNG (4x, transparent background) with Sora embedded, for places where SVG cannot load the typeface (README on GitHub, documents)
+
+Every PNG is rendered from the SVGs: `cd frontend && node tools/brand-png.mjs` (add `--only <name>` for a single file).
 
 ## Recommended use
-- Favicon: `kinetix-icon-small.svg` + fallback `kinetix-icon-32.png`
-- Apple touch icon: `kinetix-icon-180.png`; PWA manifest: 192 and 512
-- Platform header: `kinetix-logo.svg`; editor header: `kinetix-studio-logo.svg`
+- Favicon: `quadrava-icon-small.svg` + fallback `quadrava-icon-32.png`
+- Apple touch icon: `quadrava-icon-180.png`; PWA manifest: 192 and 512
+- Platform header: `quadrava-logo.svg`; editor header: `quadrava-studio-logo.svg`
 - Do not recolour or distort; clear space around the logo ≥ 1/4 of the icon height.

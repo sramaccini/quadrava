@@ -1,6 +1,6 @@
 {
   "realm": "lowcode",
-  "displayName": "KinetiX",
+  "displayName": "Quadrava",
   "enabled": true,
   "sslRequired": "none",
   "registrationAllowed": false,
@@ -24,7 +24,7 @@
   "clients": [
     {
       "clientId": "lowcode-bff",
-      "name": "KinetiX BFF",
+      "name": "Quadrava BFF",
       "enabled": true,
       "protocol": "openid-connect",
       "publicClient": false,
@@ -46,7 +46,7 @@
     },
     {
       "clientId": "lowcode-tools",
-      "name": "KinetiX development tools (local scripts, never in production)",
+      "name": "Quadrava development tools (local scripts, never in production)",
       "enabled": true,
       "protocol": "openid-connect",
       "publicClient": true,

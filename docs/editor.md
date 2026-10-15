@@ -1,6 +1,6 @@
-# KinetiX Studio (visual editor)
+# Quadrava Studio (visual editor)
 
-KinetiX Studio, the visual editor of KinetiX (`frontend/projects/editor`), edits **screens**, **navigation** (areas and menus) and the **theme**; a selector in the toolbar switches between them. For screens it produces the same JSON the runtime reads: its users compose the screen with palette, structure and property panel, and immediately see the result drawn by the real runtime. There is no intermediate format: what is exported goes into `examples/` (or is published in the registry) as it is.
+Quadrava Studio, the visual editor of Quadrava (`frontend/projects/editor`), edits **screens**, **navigation** (areas and menus) and the **theme**; a selector in the toolbar switches between them. For screens it produces the same JSON the runtime reads: its users compose the screen with palette, structure and property panel, and immediately see the result drawn by the real runtime. There is no intermediate format: what is exported goes into `examples/` (or is published in the registry) as it is.
 
 Start it with `cd frontend && npm run start:editor` (port 4201; it builds the libraries and copies the examples).
 
@@ -10,7 +10,7 @@ The editor's interface is available in Italian and English; the labels below are
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│ ▣ KinetiX Studio  File  Edit  ↶ ↷  Validate [Screen|Navigation|Theme]     EN │
+│ ▣ Quadrava Studio  File  Edit  ↶ ↷  Validate [Screen|Navigation|Theme]     EN │
 ├───────────────┬──────────────────────────────────────────┬───────────────────┤
 │ COMPONENTS    │ [Desktop|Tablet|Phone] [Permissions] …   │ PROPERTIES        │
 │ Section Text  │                                          │ Table             │
@@ -26,7 +26,7 @@ The editor's interface is available in Italian and English; the labels below are
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
-At the top left is the **KinetiX Studio** logotype (icon and name; the Studio icon in the browser tab), then a **menu bar** as in desktop applications:
+At the top left is the **Quadrava Studio** logotype (icon and name; the Studio icon in the browser tab), then a **menu bar** as in desktop applications:
 
 - **File**: New, Open… (Ctrl+O), Open from registry…, Open example ▸ (submenu with the examples of the current mode), Save (Ctrl+S), Save to registry, Registry…. Every command works on the document of the current mode (screen, navigation or theme):
   - **New**: for screens it opens a window that asks for the **title** and the **identifier** (`screen`): the identifier is derived from the title (kebab-case, without accents, up to 60 characters) until you edit it, and «Create» stays disabled while the title is missing or the identifier is not valid. For navigation and theme it creates the starting document.
@@ -38,7 +38,7 @@ At the top left is the **KinetiX Studio** logotype (icon and name; the Studio ic
   - Next to the document status the tag **«Unsaved changes»** appears while the document differs from the last one saved (to file or to the registry), opened or created. New, Open… and the open commands ask for confirmation only when there are unsaved changes.
 - **Edit**: Undo, Redo; for screens Cut, Copy, Paste; Duplicate, Delete, Move up, Move down (in navigation too). Every item shows its shortcut; those that cannot be used (nothing to undo, no node selected, empty clipboard) are disabled.
 - **View**: the pinned state of «Components», «Structure» and «Properties» (the panels of the mode) and «Problems panel» (items with a check mark); for screens, the central view (Preview, JSON, Data sources, Texts), as single-choice items.
-- **Help**: «Keyboard shortcuts» (also **F1**), a window with all the shortcuts by group, and «About KinetiX Studio».
+- **Help**: «Keyboard shortcuts» (also **F1**), a window with all the shortcuts by group, and «About Quadrava Studio».
 
 A click opens and closes a menu and, with a menu open, moving over another title switches menu; a click outside closes it. From the keyboard (WAI-ARIA «menubar» pattern): Tab reaches the bar, left and right arrows move between menus, down (or Enter, Space) opens it and moves through the items skipping disabled ones, Home and End, right enters a submenu and left leaves it, Esc closes and returns focus to the title. After a command focus goes back where it was. Next to the menus are the undo and redo icons; on the right the document status, the **Screen / Navigation / Theme** selector and the language, which stay together even when the bar wraps.
 

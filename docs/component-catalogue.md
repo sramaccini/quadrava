@@ -1,10 +1,10 @@
-# KinetiX component catalogue
+# Quadrava component catalogue
 
-List of the components of the KinetiX JSON language, with the specification of those added in October 2026. Every new component has unit tests in the `components` library and an example in the demo **showcase** (area «Vetrina componenti»).
+List of the components of the Quadrava JSON language, with the specification of those added in October 2026. Every new component has unit tests in the `components` library and an example in the demo **showcase** (area «Vetrina componenti»).
 
 Rules common to all components, new ones included:
 
-- texts go through `{{ }}` and the translation catalogue (`t('key', 'fallback')`); KinetiX's own strings are `lc.*` keys in Italian and English;
+- texts go through `{{ }}` and the translation catalogue (`t('key', 'fallback')`); Quadrava's own strings are `lc.*` keys in Italian and English;
 - no HTML from data or translations: values are always shown as text;
 - expressions are **fail-closed**: if a condition cannot be evaluated, the component is hidden or disabled;
 - `visibleIf`, `hiddenIf`, `tooltip` apply to every node (the `lc-node` container applies them); `grow`, `span` and `region` apply to every node inside a layout container (§ 2.21);
@@ -39,7 +39,7 @@ Rules common to all components, new ones included:
 | Fields | `text`, `number`, `select`, `checkbox`, `date`, `textarea`, `datetime`, `radio`, `switch`, `multiselect`, `lookup`, `file`, `repeater`, `richtext` (§ 2.26). |
 | Cell formats | `text`, `number`, `currency`, `percent`, `date`, `datetime`, `boolean`, `badge`, `markdown`. |
 | Steps | `set`, `call` (with `as` and `onError`), `refresh`, `navigate`, `toast`, `confirm`, `dialog`, `validate`, `print`, `export` (§ 2.22), `if` and `run`; named sequences in `actions` (§ 2.22b). |
-| Shell | Side bar (`lc-sidebar`, with search, counters and keyboard support: § 2.25; the application brand is inserted with an `lcBrand` element, otherwise logo and name), user menu (`lc-user-menu`), responsive top bar, `lc-kinetix-wordmark` logotype, syntax-highlighted code viewer `lc-code-view`, tools in section headers (`SectionTools`: «JSON» and «Aiuto» in the demo showcase). |
+| Shell | Side bar (`lc-sidebar`, with search, counters and keyboard support: § 2.25; the application brand is inserted with an `lcBrand` element, otherwise logo and name), user menu (`lc-user-menu`), responsive top bar, `lc-quadrava-wordmark` logotype, syntax-highlighted code viewer `lc-code-view`, tools in section headers (`SectionTools`: «JSON» and «Aiuto» in the demo showcase). |
 
 ## 2. Added in October 2026
 
@@ -241,7 +241,7 @@ Month view with the events in the days (at most three, then «+n»). When the mo
   "format": "currency", "rightFormat": "percent", "height": 280 }
 ```
 
-`bar`, `line` and `pie` types, drawn in SVG by KinetiX (no external library) with the theme colours. Bars can be side by side or stacked (`stacked`, negatives downwards); a series can sit on a second axis on the right (`axis: "right"`, format `rightFormat`) and have its own type (`kind`), for combined charts such as bars plus a line. Every chart has a legend, values on hover and, for accessibility, an equivalent table readable by screen readers.
+`bar`, `line` and `pie` types, drawn in SVG by Quadrava (no external library) with the theme colours. Bars can be side by side or stacked (`stacked`, negatives downwards); a series can sit on a second axis on the right (`axis: "right"`, format `rightFormat`) and have its own type (`kind`), for combined charts such as bars plus a line. Every chart has a legend, values on hover and, for accessibility, an equivalent table readable by screen readers.
 
 ### 2.18 Data table
 
@@ -451,7 +451,7 @@ What **must** happen regardless (checks, rules, audit, several calls to keep con
 | `[text](https://…)` | link: only `https:`, `mailto:` or paths starting with `/`; others stay text. External addresses open in a new tab |
 | `\*` | the character without special meaning |
 
-**Security.** Text is parsed and drawn with elements built by KinetiX: **never HTML**. An `<img onerror=…>` or a `<script>` in the text, even when it comes from data or a translation, is shown as text. `javascript:`, `data:` and similar links do not become links. Text is limited to 20,000 characters.
+**Security.** Text is parsed and drawn with elements built by Quadrava: **never HTML**. An `<img onerror=…>` or a `<script>` in the text, even when it comes from data or a translation, is shown as text. `javascript:`, `data:` and similar links do not become links. Text is limited to 20,000 characters.
 
 **In tables** the `markdown` column format shows the plain text (without symbols); in the detail card it is formatted.
 

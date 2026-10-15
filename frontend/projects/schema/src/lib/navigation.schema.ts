@@ -3,7 +3,7 @@
 export const NAVIGATION_SCHEMA: Record<string, unknown> = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://lowcode.example/schemas/navigation.schema.json",
-  "title": "Navigation of a KinetiX application",
+  "title": "Navigation of a Quadrava application",
   "description": "Side menu organised in areas, up to three levels (group, subgroup, item). The menu works with permissions: roles stay in the identity provider. It is only a navigation convenience: enforcement stays in the screen's `requires` and in the back end.",
   "type": "object",
   "required": [

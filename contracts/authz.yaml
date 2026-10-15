@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: KinetiX - Authorization contract
+  title: Quadrava - Authorization contract
   version: 0.1.0
   description: >
     REST contract that every application back end implements to expose the permissions of the current user.

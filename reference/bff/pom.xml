@@ -10,7 +10,7 @@
   </parent>
 
   <artifactId>lowcode-bff</artifactId>
-  <name>KinetiX reference - bff</name>
+  <name>Quadrava reference - bff</name>
   <description>Backend For Frontend: OIDC session with Keycloak, tokens on the server side only.</description>
 
   <dependencies>

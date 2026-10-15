@@ -71,9 +71,9 @@ describe('SidebarComponent', () => {
   const groupTitle = (el: HTMLElement, label: string): HTMLElement =>
     [...el.querySelectorAll<HTMLElement>('.ant-menu-submenu-title')].find((n) => text(n) === label)!;
 
-  it('senza un marchio proprio (lcBrand) mostra l’icona predefinita e il nome, KinetiX se non indicato', async () => {
+  it('senza un marchio proprio (lcBrand) mostra l’icona predefinita e il nome, Quadrava se non indicato', async () => {
     const { fixture, el } = await render(['fatture.fattura.crea']);
-    expect(text(el.querySelector('.logo .name'))).toBe('KinetiX');
+    expect(text(el.querySelector('.logo .name'))).toBe('Quadrava');
     expect(el.querySelector('.logo .mark')).not.toBeNull();
     fixture.componentRef.setInput('brand', 'Acme');
     fixture.componentRef.setInput('logo', 'acme.svg');

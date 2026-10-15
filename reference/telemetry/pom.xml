@@ -10,7 +10,7 @@
   </parent>
 
   <artifactId>lowcode-telemetry</artifactId>
-  <name>KinetiX reference - telemetria</name>
+  <name>Quadrava reference - telemetry</name>
   <description>Sample ingestion endpoint (contract telemetry.yaml).</description>
 
   <dependencies>
