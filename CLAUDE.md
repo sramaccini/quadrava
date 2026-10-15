@@ -27,7 +27,7 @@ The project is published as open source: **everything is in English**. Italian s
 | User-facing texts (platform, editor, demo) | English and Italian catalogues (`messages.ts`, `examples/i18n/en.json`, `it.json`) |
 | Commit messages | English |
 
-The move from Italian is in progress (October 2026): code that still has Italian comments or names is translated when it is touched, and new code is written in English only.
+The move from Italian was completed in October 2026: what remains in Italian is the Italian catalogue and the tests that check it.
 
 Documents explain things simply, with figures and practical examples. New content goes into the relevant sections, not into isolated comparison paragraphs. File names in `docs/` are in English.
 
@@ -39,6 +39,7 @@ Documents explain things simply, with figures and practical examples. New conten
 - Tests and documentation updated in the same commit as the change.
 - Never `push --force`, history rewrites or `reset --hard` on `main` without explicit confirmation. Before rewriting, `git fetch` and check that nobody else has pushed in the meantime.
 - Never commit secrets, tokens, `.env` files, personal data, `dist/`, `data/`, `.stack/`.
+- Licence: MPL-2.0 ([LICENSE](LICENSE)); the brand in `assets/brand/` is excluded ([TRADEMARKS.md](TRADEMARKS.md)). External contributions need the [CLA](CLA.md) accepted in the pull request (CONTRIBUTING.md); the «no trailers» rule above is about our own commits.
 
 ## 4. Environment and commands
 

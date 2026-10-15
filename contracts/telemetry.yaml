@@ -7,8 +7,8 @@ info:
     The payload follows the OpenTelemetry specification; this contract defines paths, security and limits.
     The endpoint applies a second redaction of sensitive data and forwards to the collector.
   license:
-    name: Proprietary
-    identifier: LicenseRef-Proprietary
+    name: Mozilla Public License 2.0
+    identifier: MPL-2.0
 servers:
   - url: /
 tags:

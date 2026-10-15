@@ -17,6 +17,14 @@
   <name>Quadrava - Reference implementation</name>
   <description>Reference implementation of the REST contracts (not for production).</description>
 
+  <licenses>
+    <license>
+      <name>MPL-2.0</name>
+      <url>https://mozilla.org/MPL/2.0/</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
   <properties>
     <java.version>21</java.version>
   </properties>

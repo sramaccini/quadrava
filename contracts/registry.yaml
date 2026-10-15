@@ -23,8 +23,8 @@ info:
     0.5 (not compatible with 0.4): English values. Review states draft, in-review, approved, rejected; actions
     request, approve, reject; sample environments development, testing, production.
   license:
-    name: Proprietary
-    identifier: LicenseRef-Proprietary
+    name: Mozilla Public License 2.0
+    identifier: MPL-2.0
 servers:
   - url: /
 tags:

@@ -39,3 +39,5 @@ Every PNG is rendered from the SVGs: `cd frontend && node tools/brand-png.mjs` (
 - Apple touch icon: `quadrava-icon-180.png`; PWA manifest: 192 and 512
 - Platform header: `quadrava-logo.svg`; editor header: `quadrava-studio-logo.svg`
 - Do not recolour or distort; clear space around the logo ≥ 1/4 of the icon height.
+
+The brand assets are not covered by the MPL-2.0 licence of the code: see [TRADEMARKS.md](../../TRADEMARKS.md).

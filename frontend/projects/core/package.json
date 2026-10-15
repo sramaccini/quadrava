@@ -2,6 +2,7 @@
   "name": "core",
   "version": "0.0.1",
   "description": "Interpreter of the Quadrava language: state, data sources, actions, visibility, component catalogue and themes.",
+  "license": "MPL-2.0",
   "peerDependencies": {
     "@angular/common": "^22.2.0",
     "@angular/core": "^22.2.0",

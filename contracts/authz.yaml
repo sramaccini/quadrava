@@ -7,8 +7,8 @@ info:
     The front end uses this information only to hide or disable parts of the interface:
     the back end always checks every request and filters the outgoing data.
   license:
-    name: Proprietary
-    identifier: LicenseRef-Proprietary
+    name: Mozilla Public License 2.0
+    identifier: MPL-2.0
 servers:
   - url: /
 tags:
