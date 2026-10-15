@@ -52,7 +52,7 @@ editor  ──► components ──► core   (the preview renders screens with 
 | `npm run publish:examples -- --user <u> --password <p>` | Publishes every example into the registry with a token from the development client `lowcode-strumenti` (local realm only); without arguments it works against the `senza-auth` registry |
 | `npm run publish:examples` | Publishes every example screen, the navigation, every theme and every language catalogue (as `messages` documents) to a registry (`--registry`, `--app`, `--env`, `--token`) |
 | `npm run schema:sync` / `schema:check` | Regenerate / verify the generated schema constants and the precompiled validators (`validators.generated.ts`, Ajv standalone) |
-| `npm run schema:docs` / `schema:docs:check` | Regenerate / verify `docs/riferimento-schema.md` from the schema descriptions |
+| `npm run schema:docs` / `schema:docs:check` | Regenerate / verify `docs/schema-reference.md` from the schema descriptions |
 | `npm run conformance:registry` / `conformance:authz` / `conformance:telemetry` | Conformance kits: check a service over HTTP against its contract (`--registry`, `--authz`, `--telemetry` for the address; `--user`/`--password` or `--token`; `--reviewer-user` for the registry, `--other-user` for authorization). Shared helpers in `tools/conformance-lib.mjs` |
 | `npm run validate:examples` | Validates every JSON in `examples/` against the schemas |
 | `npx ng build runtime` | Production build (budgets: warning 2.5 MB, error 4 MB initial) |
@@ -177,7 +177,7 @@ Real focus handling and the dark theme are not covered yet (the application shel
 * TypeScript strict; no `any` without a comment; prefer `readonly`, signals and `computed`.
 * Standalone components, `OnPush`, `input()` / `output()` functions, new control flow (`@if`, `@for`).
 * Accessibility: landmarks and labels (`role`, `aria-label`), keyboard operability, no colour-only meaning.
-* Code, identifiers and comments are in English. The user-facing demo strings and the Italian design documents under `docs/` are in Italian by project choice.
+* Code and identifiers are in English; comments follow the rest of the file (mostly Italian today). All documentation (README, this guide, `HANDOFF.md`, `CLAUDE.md`, `docs/`) is in English. Schema descriptions, user-facing demo strings (which also have an English catalogue) and commit messages are in Italian by project choice.
 * Keep libraries free of application knowledge: there are no built-in use cases or domains.
 
 ## 11. Contracts and reference implementation

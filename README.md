@@ -114,7 +114,7 @@ Key design choices:
 }
 ```
 
-**Components** (node `type`): `section`, `box`, `grid`, `border`, `text`, `image`, `link`, `button`, `input`, `filterBar`, `table`, `dataTable`, `serverDataTable`, `form`, `tabs`, `detail`, `alert`, `stats`, `progress`, `timeline`, `kanban`, `wizard`, `tree`, `calendar`, `chart`. Every property of every component is listed in [docs/riferimento-schema.md](docs/riferimento-schema.md) (Italian, generated from the schema).
+**Components** (node `type`): `section`, `box`, `grid`, `border`, `text`, `image`, `link`, `button`, `input`, `filterBar`, `table`, `dataTable`, `serverDataTable`, `form`, `tabs`, `detail`, `alert`, `stats`, `progress`, `timeline`, `kanban`, `wizard`, `tree`, `calendar`, `chart`. Every property of every component is listed in [docs/schema-reference.md](docs/schema-reference.md) (generated from the schema; descriptions in Italian).
 
 **Display components**: `image` (mandatory alternative text; only relative, `https` or `data:image` addresses), `link` (to a screen with parameters, or to an `https` address opened in a new tab without access to the opener), `progress` (bar or circle), `timeline` (events of a data source ordered by date, coloured by a field) and `kanban` (cards in columns by a field, moved by dragging or with a keyboard-accessible *Sposta in* menu, which runs the `onMove` steps with `row`, `from` and `to`; `moveIf` decides which cards can move).
 
@@ -148,7 +148,7 @@ The position properties live on the children, like the constraints of classic la
 
 **Rich text.** `text` and `alert` with `"format": "markdown"`, and detail fields with the `markdown` format, show classic typography — paragraphs, three heading levels, nested bulleted and numbered lists, quotes, bold, italic, strikethrough, inline code and links — written in a restricted Markdown dialect; tables show the same values as plain text. The `richtext` field edits that same Markdown, so its value can be stored and shown anywhere.
 
-Plain text keeps its line breaks. Labels (fields, columns, buttons, menu) deliberately stay plain text. The component catalogue ([docs/catalogo-componenti.md](docs/catalogo-componenti.md), in Italian) lists what exists and specifies what is being built.
+Plain text keeps its line breaks. Labels (fields, columns, buttons, menu) deliberately stay plain text. The component catalogue ([docs/component-catalogue.md](docs/component-catalogue.md)) lists what exists and specifies what is being built.
 
 **Actions** are sequences of steps:
 
@@ -273,7 +273,7 @@ cd frontend
 npm run start:editor         # builds the libraries, copies the examples, serves on http://localhost:4201
 ```
 
-Open an example (*File → Apri esempio*) or start a new screen. Details, shortcuts and limits are in [docs/editor.md](docs/editor.md) (Italian).
+Open an example (*File → Apri esempio*) or start a new screen. Details, shortcuts and limits are in [docs/editor.md](docs/editor.md).
 
 ### Workspace
 
@@ -359,7 +359,7 @@ npm run test:libs                     # schema, expressions, core, components, s
 npx ng test runtime --watch=false     # end-to-end demo tests (needs `npm run demo:prepare` once)
 npx ng test editor --watch=false      # KinetiX Studio
 npm run schema:check                  # generated schema constants and precompiled validators are in sync
-npm run schema:docs:check             # docs/riferimento-schema.md is in sync (npm run schema:docs regenerates it)
+npm run schema:docs:check             # docs/schema-reference.md is in sync (npm run schema:docs regenerates it)
 npm run validate:examples             # examples are valid
 npx playwright install chromium       # once: the browser used by the end-to-end tests
 npm run e2e                           # Playwright end-to-end tests in a real browser (needs `npm run demo:prepare`)
@@ -422,7 +422,7 @@ Also without Keycloak, with the registry's `senza-auth` profile and file storage
 * KinetiX Studio: comparison between two registry versions (today: a version against the open document); resizing the border sides from the preview.
 * Conformance kits in CI against the reference services (today they are run by hand, for example after `npm run stack`).
 * Firefox and WebKit in the end-to-end suite.
-* The full list of what was done and what remains is in [HANDOFF.md](HANDOFF.md) (Italian).
+* The full list of what was done and what remains is in [HANDOFF.md](HANDOFF.md).
 
 ## License
 

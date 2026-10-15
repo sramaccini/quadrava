@@ -1,140 +1,140 @@
 # HANDOFF — KinetiX
 
-Stato del progetto, convenzioni e prossimi passi, per riprendere il lavoro in locale. Ultimo aggiornamento: 2026-10-13 sera, dopo il completamento dell'elenco di § 8b (registro 0.3, editor, componenti, menu, traduzioni dal registro, ottimizzazioni, accessibilità, stack in un comando).
+Project status, conventions and next steps, for picking the work up locally. Last updated: evening of 2026-10-13, after completing the list in § 8b (registry 0.3, editor, components, menu, translations from the registry, optimisations, accessibility, one-command stack).
 
-## 1. Cos'è
+## 1. What it is
 
-**KinetiX** è una piattaforma low-code per frontend gestionali/amministrativi **definiti da JSON** (schermate, data source, azioni, espressioni CEL), più l'editor visuale **KinetiX Studio** (schermate, navigazione, temi) e servizi di base. Il backend consiste in contratti OpenAPI e un'implementazione di riferimento Spring Boot non destinata alla produzione (compila e i test passano con `mvn verify`, JDK 21 e Maven 3.9, anche in CI).
+**KinetiX** is a low-code platform for business/administrative front ends **defined in JSON** (screens, data sources, actions, CEL expressions), plus the visual editor **KinetiX Studio** (screens, navigation, themes) and base services. The back end consists of OpenAPI contracts and a Spring Boot reference implementation not meant for production (it builds and its tests pass with `mvn verify`, JDK 21 and Maven 3.9, in CI too).
 
-## 2. Principi di lavoro
+## 2. Working principles
 
-- **Approvazione prima delle modifiche** non richieste esplicitamente; in dubbio, si propone e si aspetta.
-- Modalità **architectural review**: segnala incongruenze, punti mancanti, insufficienze rispetto ai requisiti.
-- Documenti **in italiano** (termini tecnici in inglese), con figure ed esempi pratici spiegati semplicemente; contenuti integrati nelle sezioni pertinenti, non paragrafi di confronto isolati.
-- Stack più recente; soluzioni DSL/espressioni leggere e governabili (no rule engine pesanti).
-- README e DEVELOPMENT-GUIDE sono in **inglese**; `docs/README.md`, `docs/catalogo-componenti.md` e i documenti di progetto in italiano.
-- Nei blocchi di lavoro lunghi: un commit per componente, test e controllo visivo prima di passare al successivo.
+- **Approval before changes** that were not explicitly requested; when in doubt, propose and wait.
+- **Architectural review** mode: point out inconsistencies, missing pieces and shortcomings against the requirements.
+- Documents explain things simply, with figures and practical examples; new content goes into the relevant sections, not into isolated comparison paragraphs.
+- Latest stack; lightweight, governable DSL/expression solutions (no heavy rule engines).
+- All documentation is in **English** (README, DEVELOPMENT-GUIDE, `docs/`, this file, `CLAUDE.md`). Commit messages, the descriptions in the JSON schemas and the demo's user-facing texts are in Italian (the demo also has an English catalogue).
+- In long blocks of work: one commit per component, tests and a visual check before moving on to the next.
 
-## 3. Stack e comandi
+## 3. Stack and commands
 
-Angular 22.2 (standalone, signals, OnPush), TypeScript 6.0, Node 24 (se la shell ha un'altra versione: `eval "$(fnm env --shell bash)"; fnm use 24.21.0`), test con vitest via `ng test` (jsdom), Ajv 8, cel-js 8, ng-zorro-antd 22.1.1, date-fns 4, Spring Boot 4.1.1, Keycloak 26.8.
+Angular 22.2 (standalone, signals, OnPush), TypeScript 6.0, Node 24 (if the shell has another version: `eval "$(fnm env --shell bash)"; fnm use 24.21.0`), tests with vitest through `ng test` (jsdom), Ajv 8, cel-js 8, ng-zorro-antd 22.1.1, date-fns 4, Spring Boot 4.1.1, Keycloak 26.8.
 
-Da `frontend/`:
+From `frontend/`:
 
-- `npm ci` (obbligatorio dopo ogni pull che cambia le dipendenze)
-- `npm run build:libs` — **prima** di build e test delle app: i path di tsconfig puntano a `./dist/*`
-- **`npm run stack`** — tutto lo stack con il login vero in un comando (Keycloak in Docker, servizi Java, backend della demo, esempi pubblicati, runtime 4200 ed editor 4201 dietro il BFF); log in `.stack/logs`, dati del registro in `data/registry`; Ctrl+C ferma tutto tranne Keycloak
-- `npm run schema:sync` — rigenera i `*.schema.ts` e i validatori precompilati (`validators.generated.ts`) dagli schemi JSON; `schema:docs` rigenera `docs/riferimento-schema.md`
-- `npm run conformance:registry` / `conformance:authz` / `conformance:telemetry` — kit di conformità dei servizi ai contratti (vedi README)
-- `npm run e2e` — Playwright (campi a sé, border layout, accessibilità axe su tutta la vetrina)
-- `npm run validate:examples` — valida gli esempi (schema + chiavi di traduzione)
-- `npm run demo:prepare` / `npm run start:runtime` — copia `examples/` in `projects/runtime/public/examples` e avvia la demo (porta 4200). Il dev server **non** ricarica `dist`: dopo modifiche a librerie o esempi va rilanciato.
-- `npm run start:editor` — KinetiX Studio (editor visuale) sulla porta 4201 (prepara anche gli esempi, con `examples/index.json`).
-- `.claude/launch.json` avvia una copia della demo sulla porta 4300, dell'editor sulla 4301 e delle due app in modalità registro sulla 4302 e 4303 (configurazioni di avvio per l'anteprima nel browser).
-- Registro locale senza Keycloak: `java -jar reference/registry/target/lowcode-registry-0.1.0-SNAPSHOT.jar --spring.profiles.active=senza-auth`, poi `npm run publish:examples`, poi `npm run start:runtime:registro` / `start:editor:registro`.
-- `runtime-config.json` (cartella pubblica del runtime) decide da dove vengono le definizioni: `examples` (demo) o `registry` (app, ambiente, navigazione, temi); la configurazione `registro` di angular.json usa `projects/runtime/config/registro/`. Con `services: { source: 'bff', appId }` il runtime usa le porte vere di `services` (configurazione `bff`, `projects/runtime/config/bff/`).
-- **Stack completo con Keycloak passo per passo** (Docker Desktop avviato): `cd idp && docker compose up -d`; in `reference/` `mvn -q package -DskipTests` e `java -jar <modulo>/target/*.jar` per registry (con `--lowcode.registry.storage-dir=<cartella>` per non perdere i dati), authz, telemetry, bff; in `frontend/` `npm run demo-api` (8084), `npm run publish:examples -- --user amministratore --password amministratore`, poi `npm run start:runtime:bff` (4200) e `start:editor:bff` (4201). Le origini ammesse dal BFF sono 4200 e 4201.
-- test per progetto: `npx ng test <schema|expressions|core|components|services|runtime|editor> --watch=false`
+- `npm ci` (mandatory after every pull that changes dependencies)
+- `npm run build:libs` — **before** building and testing the apps: the tsconfig paths point to `./dist/*`
+- **`npm run stack`** — the whole stack with the real login in one command (Keycloak in Docker, Java services, demo back end, examples published, runtime on 4200 and editor on 4201 behind the BFF); logs in `.stack/logs`, registry data in `data/registry`; Ctrl+C stops everything except Keycloak
+- `npm run schema:sync` — regenerates the `*.schema.ts` files and the precompiled validators (`validators.generated.ts`) from the JSON schemas; `schema:docs` regenerates `docs/schema-reference.md`
+- `npm run conformance:registry` / `conformance:authz` / `conformance:telemetry` — conformance kits of the services against the contracts (see README)
+- `npm run e2e` — Playwright (standalone fields, border layout, axe accessibility on the whole showcase)
+- `npm run validate:examples` — validates the examples (schema + translation keys)
+- `npm run demo:prepare` / `npm run start:runtime` — copies `examples/` into `projects/runtime/public/examples` and starts the demo (port 4200). The dev server does **not** reload `dist`: restart it after changing libraries or examples.
+- `npm run start:editor` — KinetiX Studio (visual editor) on port 4201 (it also prepares the examples, with `examples/index.json`).
+- `.claude/launch.json` starts a copy of the demo on port 4300, of the editor on 4301 and of the two apps in registry mode on 4302 and 4303 (launch configurations for previewing in the browser).
+- Local registry without Keycloak: `java -jar reference/registry/target/lowcode-registry-0.1.0-SNAPSHOT.jar --spring.profiles.active=senza-auth`, then `npm run publish:examples`, then `npm run start:runtime:registro` / `start:editor:registro`.
+- `runtime-config.json` (the runtime's public folder) decides where definitions come from: `examples` (demo) or `registry` (app, environment, navigation, themes); the `registro` configuration in angular.json uses `projects/runtime/config/registro/`. With `services: { source: 'bff', appId }` the runtime uses the real ports from `services` (`bff` configuration, `projects/runtime/config/bff/`).
+- **Full stack with Keycloak step by step** (Docker Desktop running): `cd idp && docker compose up -d`; in `reference/` `mvn -q package -DskipTests` and `java -jar <module>/target/*.jar` for registry (with `--lowcode.registry.storage-dir=<folder>` to keep the data), authz, telemetry, bff; in `frontend/` `npm run demo-api` (8084), `npm run publish:examples -- --user amministratore --password amministratore`, then `npm run start:runtime:bff` (4200) and `start:editor:bff` (4201). The origins allowed by the BFF are 4200 and 4201.
+- tests per project: `npx ng test <schema|expressions|core|components|services|runtime|editor> --watch=false`
 
-Stato test (tutti verdi): schema 71, expressions 42, core 80, components 181, services 27, runtime 84, editor 110 (**595**); Java 39 (authz 7, bff 8, registry 18, telemetry 6); Playwright 18 (di cui 12 di accessibilità e 2 sull'editor di testo formattato); kit di conformità: registro 17/17, autorizzazioni 11/11, telemetria 6/6. Build di produzione: runtime 2,46 MB iniziali (422 kB trasferiti), editor 818 kB iniziali (l'anteprima e l'editor si caricano a parte).
+Test status (all green): schema 71, expressions 42, core 80, components 181, services 27, runtime 84, editor 110 (**595**); Java 39 (authz 7, bff 8, registry 18, telemetry 6); Playwright 18 (12 of them for accessibility and 2 for the rich text editor); conformance kits: registry 17/17, authorization 11/11, telemetry 6/6. Production builds: runtime 2.46 MB initial (422 kB transferred), editor 818 kB initial (preview and editor load separately).
 
-## 4. Architettura in breve
+## 4. Architecture in brief
 
-Librerie (`frontend/projects/`): `schema` (JSON Schema + tipi), `expressions` (CEL, template `{{ }}`, formattatore messaggi), `core` (ScreenRuntime, motore delle azioni, NavigationRuntime, I18n, porte astratte, catalogo, tema), `components` (NG-ZORRO), `services` (porte reali: HTTP/BFF/OIDC). App: `runtime` (demo/shell), `editor` (editor visuale, vedi § 5b).
+Libraries (`frontend/projects/`): `schema` (JSON Schema + types), `expressions` (CEL, `{{ }}` templates, message formatter), `core` (ScreenRuntime, action engine, NavigationRuntime, I18n, abstract ports, catalogue, theme), `components` (NG-ZORRO), `services` (real ports: HTTP/BFF/OIDC). Apps: `runtime` (demo/shell), `editor` (visual editor, see § 5b).
 
-- Porte (classi astratte come token DI): Authorization, UserProvider, DataClient (con `{ signal }` per annullare le letture superate), ScreenNavigator, Notifier, RuntimeDiagnostics, Confirmation, **FormDialog** (passo `dialog`), DefinitionSource (schermate, navigazione, temi e **cataloghi** `messages(lingua)`).
-- Nodi: section (anche `layout: "row"`), **box, grid, border** (contenitori di layout; i figli dichiarano `grow`, `span`, `region`; border con lati ridimensionabili), **input** (campo a sé legato allo stato, con `group` di validazione), text, **image, link**, button, filterBar, table, **dataTable**, **serverDataTable**, form, tabs, detail, alert, **stats, progress, timeline, kanban**, **wizard**, **tree**, **calendar**, **chart**. Passi: set, call, refresh, navigate, toast, confirm, **dialog, validate, print, export** (CSV).
-- Marchio: il prodotto si chiama **KinetiX**, l'editor **KinetiX Studio** (`assets/brand/`, README del marchio). Logotipo `lc-kinetix-wordmark` (testo in Sora da `@fontsource/sora`, non gli SVG con `<text>`), nella barra laterale della demo con lo spazio `lcBrand` e in alto a sinistra nell'editor; favicon in entrambi. Gli identificativi tecnici (realm `lowcode`, pacchetti Java, prefissi `lc-`) restano.
-- Campi: text, number, select, checkbox, date, **textarea, datetime, radio, switch, multiselect, lookup, file, repeater, richtext**. Formati: **number**, currency, percent, date, datetime, boolean, badge, markdown.
-- Testo formattato: `format: markdown` su text, alert e campi del detail (Markdown ristretto: `core/src/lib/markdown.ts`, disegnato da `lc-markdown` senza HTML); editor `richtext` (`lc-rich-text-editor`, contenteditable + comandi del browser, valore in Markdown). Le etichette restano testo semplice di proposito. Catalogo § 2.26.
-- Tabella: ordinamento (in pagina o lato server con `sort.bind`), selezione + azioni multiple, menu azioni (`rowActionsInline`), righe espandibili, celle cliccabili, riga dei totali (`aggregate`).
-- `lc-node` applica `visibleIf/hiddenIf` e `tooltip`, ed espone `data-node-id`/`data-node-type` (per l'editor e i test). Permessi `dominio.risorsa.azione`; espressioni **fail-closed**.
-- I data source GET si ricaricano **solo se cambia la richiesta risolta** (URL e parametri); `refresh` ricarica comunque. `ScreenRuntime.query` esegue un data source senza toccarne lo stato condiviso (usato dai lookup e dalla serverDataTable). `refresh` su un data source non GET incrementa solo `ScreenRuntime.refreshCount`, che la serverDataTable osserva per ricaricarsi.
-- `DataRequest.file`: invio multipart dei file (`HttpDataClient` usa `FormData`), fino a 100 MB; il base64 nel JSON resta per file fino a 10 MB.
-- Variabili sempre presenti nei data source: `search` e `lookupKey` (lookup), `request` (serverDataTable, contratto nel catalogo § 2.19), `file` nei data source di `upload`.
-- Shell responsive a tre fasce (≥1200 espansa, 768–1199 compressa, <768 cassetto); pulsante tondo accanto al logo.
+- Ports (abstract classes used as DI tokens): Authorization, UserProvider, DataClient (with `{ signal }` to cancel superseded reads), ScreenNavigator, Notifier, RuntimeDiagnostics, Confirmation, **FormDialog** (`dialog` step), DefinitionSource (screens, navigation, themes and **catalogues** `messages(language)`).
+- Nodes: section (also `layout: "row"`), **box, grid, border** (layout containers; children declare `grow`, `span`, `region`; border with resizable sides), **input** (standalone field bound to the state, with a validation `group`), text, **image, link**, button, filterBar, table, **dataTable**, **serverDataTable**, form, tabs, detail, alert, **stats, progress, timeline, kanban**, **wizard**, **tree**, **calendar**, **chart**. Steps: set, call, refresh, navigate, toast, confirm, **dialog, validate, print, export** (CSV).
+- Brand: the product is called **KinetiX**, the editor **KinetiX Studio** (`assets/brand/`, brand README). Logotype `lc-kinetix-wordmark` (text in Sora from `@fontsource/sora`, not the SVGs with `<text>`), in the demo's side bar through the `lcBrand` slot and at the top left in the editor; favicon in both. Technical identifiers (realm `lowcode`, Java packages, `lc-` prefixes) stay as they are.
+- Fields: text, number, select, checkbox, date, **textarea, datetime, radio, switch, multiselect, lookup, file, repeater, richtext**. Formats: **number**, currency, percent, date, datetime, boolean, badge, markdown.
+- Formatted text: `format: markdown` on text, alert and detail fields (restricted Markdown: `core/src/lib/markdown.ts`, drawn by `lc-markdown` without HTML); `richtext` editor (`lc-rich-text-editor`, contenteditable + browser commands, value in Markdown). Labels deliberately stay plain text. Catalogue § 2.26.
+- Table: sorting (in the page or server-side with `sort.bind`), selection + bulk actions, action menu (`rowActionsInline`), expandable rows, clickable cells, totals row (`aggregate`).
+- `lc-node` applies `visibleIf/hiddenIf` and `tooltip`, and exposes `data-node-id`/`data-node-type` (for the editor and tests). Permissions `domain.resource.action`; expressions **fail-closed**.
+- GET data sources reload **only if the resolved request changes** (URL and parameters); `refresh` reloads anyway. `ScreenRuntime.query` runs a data source without touching its shared state (used by lookups and by the serverDataTable). `refresh` on a non-GET data source only increments `ScreenRuntime.refreshCount`, which the serverDataTable watches to reload.
+- `DataRequest.file`: multipart file upload (`HttpDataClient` uses `FormData`), up to 100 MB; base64 inside the JSON remains for files up to 10 MB.
+- Variables always present in data sources: `search` and `lookupKey` (lookup), `request` (serverDataTable, contract in the catalogue § 2.19), `file` in `upload` data sources.
+- Responsive shell with three bands (≥1200 expanded, 768–1199 collapsed, <768 drawer); round button next to the logo.
 
-## 5. Catalogo componenti
+## 5. Component catalogue
 
-`docs/catalogo-componenti.md`: specifica di ogni componente aggiunto (fino al § 2.25), regole comuni e **limiti noti** (§ 3); `docs/riferimento-schema.md`: tutte le proprietà, generate dallo schema. La vetrina della demo ha dodici schermate: Componenti base, Form, Attività e avanzamento, Contenitori di layout, Campi a sé, Campi e form, Filtri e tabelle, Tabelle avanzate, Datatable, Schede/dettaglio/messaggi, Cruscotto, Procedure e viste.
+`docs/component-catalogue.md`: specification of every component added (up to § 2.28), common rules and **known limits** (§ 3); `docs/schema-reference.md`: all the properties, generated from the schema. The demo showcase has twelve screens: Componenti base, Form, Attività e avanzamento, Contenitori di layout, Campi a sé, Campi e form, Filtri e tabelle, Tabelle avanzate, Datatable, Schede/dettaglio/messaggi, Cruscotto, Procedure e viste.
 
-## 5b. KinetiX Studio (editor visuale)
+## 5b. KinetiX Studio (visual editor)
 
-`docs/editor.md` descrive tutto. In breve: tavolozza (clic o trascinamento), struttura (seleziona, sposta, duplica, taglia/incolla, trascina), pannello delle proprietà **generato da `screen.schema.json`** (elenchi di colonne/campi/azioni/passi modificabili elemento per elemento, passi per variante, oggetti come gruppi), anteprima con il runtime vero e porte finte (dati di esempio per data source, permessi, larghezze, parametri, registro; Alt+clic seleziona), vista JSON, pannello dei data source (rinomina con aggiornamento dei riferimenti), pannello dei testi (rendi traducibile, traduzioni it/en applicate all'anteprima, esportazione per i cataloghi), problemi (schema, CEL, id ripetuti, data source mancanti), cronologia di annullamento, bozza nel browser, apri esempio / importa / esporta. Un componente nuovo richiede solo il modello in `model/templates.ts`, il gruppo nella tavolozza e `ed.type.<tipo>` nei messaggi. Dal 13 ottobre: completamento delle espressioni mentre si scrive; componenti trascinati dalla tavolozza direttamente sull'anteprima; anteprima con **dati veri** (solo letture, editor dietro il BFF); pannello «Registro» con stato di revisione, Chiedi revisione/Approva/Respingi, Confronta (versione contro documento aperto), avviso di modifiche concorrenti (If-Match), errori di validazione del registro punto per punto; pannello «Testi» che salva e pubblica i cataloghi nel registro.
+`docs/editor.md` describes everything. In short: palette (click or drag), structure (select, move, duplicate, cut/paste, drag), property panel **generated from `screen.schema.json`** (lists of columns/fields/actions/steps editable item by item, steps by variant, objects as groups), preview with the real runtime and fake ports (sample data per data source, permissions, widths, parameters, log; Alt+click selects), JSON view, data-source panel (renaming updates references), texts panel (make translatable, it/en translations applied to the preview, export for the catalogues), problems (schema, CEL, repeated ids, missing data sources), undo history, draft in the browser, open example / import / export. A new component needs only its template in `model/templates.ts`, its group in the palette and `ed.type.<type>` in the messages. Since 13 October: expression completion while typing; components dragged from the palette straight onto the preview; preview with **live data** (reads only, editor behind the BFF); «Registry» panel with review status, Request review/Approve/Reject, Compare (version against the open document), concurrent-change warning (If-Match), registry validation errors item by item; «Texts» panel that saves and publishes the catalogues to the registry.
 
-Modalità «Navigazione» (selettore nella barra): struttura di casi d'uso/gruppi/voci con «+ Caso d'uso / Gruppo / Voce», campi da `navigation.schema.json`, anteprima del menu vero con profilo simulato (permessi da spegnere), problemi (schema, id ripetuti tra fratelli, schermate non note, default inesistente). Modalità «Tema»: token dai campi dello schema dei temi (selettore per i colori), anteprima della schermata e del menu correnti con il tema. **Anteprime in iframe** (ADR-08): la stessa app con `?anteprima` (`PreviewApp`, `preview-config.ts`), messaggi definiti in `preview/protocol.ts` (stato → anteprima; pronto, selezione, eventi → editor), solo stessa origine e proprio iframe; lo stato arriva clonato e l'anteprima confronta per contenuto per non ridisegnare a ogni selezione. `DocumentState` è la base comune; `ed-fields` e la vista JSON lo iniettano, e l'editor della navigazione lo ridirige su `NavigationStore` con un provider.
+«Navigation» mode (selector in the bar): structure of use cases/groups/items with «+ Use case / Group / Item», fields from `navigation.schema.json`, preview of the real menu with a simulated profile (permissions that can be switched off), problems (schema, ids repeated among siblings, unknown screens, missing default). «Theme» mode: tokens from the fields of the theme schema (colour pickers), preview of the current screen and menu with the theme. **Previews in an iframe** (ADR-08): the same app with `?anteprima` (`PreviewApp`, `preview-config.ts`), messages defined in `preview/protocol.ts` (state → preview; ready, selection, events → editor), same origin and own iframe only; the state arrives cloned and the preview compares by content so it does not redraw on every selection. `DocumentState` is the common base; `ed-fields` and the JSON view inject it, and the navigation editor redirects it to `NavigationStore` with a provider.
 
-## 6. Trappole note (NG-ZORRO / Angular / strumenti)
+## 6. Known traps (NG-ZORRO / Angular / tools)
 
-Le principali sono nella DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In breve:
+The main ones are in the DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In short:
 
-- Stringhe in modal, message e titoli dell'albero sono **HTML** → componenti di contenuto, `escapeHtml` o template propri.
-- jsdom non ha `execCommand`: la barra dell'editor di testo formattato si prova solo in e2e. Nei testi di riserva di `t()` gli a capo si scrivono `\n` (CEL non ammette a capo veri tra apici).
-- Icone da registrare in `ICON_TYPES`. Array e date in `ngModel` vanno calcolati una volta per valore (`computed`), altrimenti NG0103.
-- Lingua dei selettori di date: `NzDateAdapter.setLocale`. Ordinando una colonna `nz-table` azzera le altre.
-- Ajv strict: `type: object` accanto a `properties`, proprietà dichiarate accanto ai `required` di `if/then`/`anyOf`.
-- Script con espressioni regolari: scriverli in un file, non in un heredoc della shell (le doppie barre rovesciate si perdono).
-- CEL: `has(state.x)` per chiavi che non esistono ancora; `dyn(...)` nelle mappe di parametri miste di `t()`; `{n, number}` per i numeri nei messaggi.
-- Nei test: `stubViewportHeight` + attesa delle opzioni per `nz-select`; `Element.scrollTo` simulato; le finestre chiuse restano nel DOM.
-- `provideNzIcons` non si somma: una seconda chiamata sostituisce le icone di `provideLowcodeComponents` (l'editor le ripete).
-- NG-ZORRO 22: `NzTooltipModule` (non `NzToolTipModule`), `nz-tabs` (non `nz-tabset`), niente `nzAutosize` sulle textarea (si usa `field-sizing: content`). Angular non ha il modificatore `.capture` negli eventi: `addEventListener(..., true)`.
-- `nz-input` (NG-ZORRO 22) ha un input `readonly` che scrive l'attributo: legare `[readonly]`, mai `[readOnly]`. Un campo si disegna in `lc-field-control`, condiviso da form e `input`.
-- Dopo `build:libs` riavviare i dev server: uno rimasto acceso mentre `dist` si ricompila fallisce («module 'components' could not be found») finché non si riavvia.
-- Messaggi con graffe letterali (`{{ }}`, JSON): vanno scritte `\\{` `\\}` nel sorgente TypeScript.
+- Strings in modals, messages and tree titles are **HTML** → content components, `escapeHtml` or custom templates.
+- jsdom has no `execCommand`: the rich text editor toolbar is tested only end to end. In fallback texts of `t()` line breaks are written `\n` (CEL does not allow real line breaks inside quotes).
+- Icons must be registered in `ICON_TYPES`. Arrays and dates in `ngModel` must be computed once per value (`computed`), otherwise NG0103.
+- Date picker language: `NzDateAdapter.setLocale`. Sorting one column makes `nz-table` reset the others.
+- Ajv strict: `type: object` next to `properties`, properties declared next to the `required` of `if/then`/`anyOf`.
+- Scripts with regular expressions: write them in a file, not in a shell heredoc (double backslashes get lost).
+- CEL: `has(state.x)` for keys that do not exist yet; `dyn(...)` in mixed parameter maps of `t()`; `{n, number}` for numbers in messages.
+- In tests: `stubViewportHeight` + wait for the options of `nz-select`; `Element.scrollTo` stubbed; closed dialogs stay in the DOM.
+- `provideNzIcons` is not cumulative: a second call replaces the icons of `provideLowcodeComponents` (the editor repeats them).
+- NG-ZORRO 22: `NzTooltipModule` (not `NzToolTipModule`), `nz-tabs` (not `nz-tabset`), no `nzAutosize` on textareas (`field-sizing: content` is used). Angular has no `.capture` event modifier: `addEventListener(..., true)`.
+- `nz-input` (NG-ZORRO 22) has a `readonly` input that writes the attribute: bind `[readonly]`, never `[readOnly]`. A field is drawn in `lc-field-control`, shared by form and `input`.
+- After `build:libs` restart the dev servers: one left running while `dist` is rebuilt fails («module 'components' could not be found») until restarted.
+- Messages with literal braces (`{{ }}`, JSON): write them `\\{` `\\}` in the TypeScript source.
 
-## 7. Limiti noti / debito
+## 7. Known limits / debt
 
-- Runtime: in modalità `bff` usa `provideLowcodeServices` (sessione, autorizzazione, data client, telemetria) e `BffShellSession`; in demo le porte finte e `DemoShellSession`. La logica dei dati della demo sta in `runtime/src/demo/demo-backend.ts`, usata da `MockDataClient` e da `tools/demo-api.mjs`.
-- BFF: rotte `/registry`, `/authz`, `/telemetry`, `/api`; CSRF per SPA; logout OIDC. Provato dal vivo il 13 ottobre 2026 (anche con `npm run stack`).
-- Registro di riferimento (contratto 0.3): validazione con gli stessi JSON Schema del frontend (networknt), revisione a quattro occhi (ruoli `responsabile`, `amministratore`), ambienti protetti `collaudo` e `produzione`, If-Match, archivio su file opzionale, documenti `messages` per le traduzioni. Le espressioni CEL **non** si controllano lato server (le controllano editor e runtime).
-- e2e solo in Chromium; il controllo automatico di accessibilità non sostituisce le prove a mano.
-- Editor: sull'anteprima si aggiungono, spostano e ridimensionano (span, grow) i componenti; i lati del border si ridimensionano solo nel runtime; il confronto è tra una versione e il documento aperto, non tra due versioni.
-- `validate:examples` non controlla le espressioni CEL (lo fa il test `i18n-examples.spec.ts`).
-- Limiti dei componenti: catalogo § 3.
-- Documenti di progetto in `docs/` (funzionale, architettura, linee guida, testi e traduzioni): fermi all'11–12 ottobre; il dettaglio più recente è nel catalogo, in `docs/editor.md` e nel codice.
+- Runtime: in `bff` mode it uses `provideLowcodeServices` (session, authorization, data client, telemetry) and `BffShellSession`; in the demo the fake ports and `DemoShellSession`. The demo's data logic lives in `runtime/src/demo/demo-backend.ts`, used by `MockDataClient` and by `tools/demo-api.mjs`.
+- BFF: routes `/registry`, `/authz`, `/telemetry`, `/api`; CSRF for SPAs; OIDC logout. Tried live on 13 October 2026 (also with `npm run stack`).
+- Reference registry (contract 0.3): validation with the same JSON Schemas as the front end (networknt), four-eyes review (roles `responsabile`, `amministratore`), protected environments `collaudo` and `produzione`, If-Match, optional file store, `messages` documents for translations. CEL expressions are **not** checked server-side (editor and runtime check them).
+- e2e in Chromium only; the automatic accessibility check does not replace manual testing.
+- Editor: on the preview components can be added, moved and resized (span, grow); the border's sides can be resized only in the runtime; comparison is between a version and the open document, not between two versions.
+- `validate:examples` does not check CEL expressions (the `i18n-examples.spec.ts` test does).
+- Component limits: catalogue § 3.
+- Project documents in `docs/` (functional specification, architecture, implementation guidelines, dynamic texts and i18n): they stop at 11–12 October; the most recent detail is in the catalogue, in `docs/editor.md` and in the code.
 
-## 8. Prossimi passi (nell'ordine suggerito)
+## 8. Next steps (in the suggested order)
 
-1. Review del lavoro del 13 ottobre (commit da `64be1d5` in poi).
-2. Kit di conformità in CI contro i servizi di riferimento (oggi si eseguono a mano, per esempio dopo `npm run stack`).
-3. Editor: confronto tra due versioni del registro; larghezze dei lati del border dall'anteprima.
-4. e2e in Firefox e WebKit.
-5. CEL in `validate:examples` e, a regime, nel registro.
-6. Aggiornare i documenti di progetto (architettura § 9, funzionale, linee guida) con lo stato di ottobre.
+1. Review of the work of 13 October (commits from `0086d31` onwards).
+2. Conformance kits in CI against the reference services (today they are run by hand, for example after `npm run stack`).
+3. Editor: comparison between two registry versions; border side widths from the preview.
+4. e2e in Firefox and WebKit.
+5. CEL in `validate:examples` and, eventually, in the registry.
+6. Bring the project documents (architecture § 9, functional specification, guidelines) up to date with the October status.
 
-## 8b. Cosa manca e ottimizzazioni proposte (13 ottobre 2026)
+## 8b. What was missing and proposed optimisations (13 October 2026)
 
-Elenco redatto il 13 ottobre e **realizzato lo stesso giorno**. Per ogni voce, dove sta:
+List drawn up on 13 October and **implemented the same day**. For each item, where it is:
 
-| Voce | Stato |
+| Item | Status |
 | --- | --- |
-| CI e prima suite e2e | fatto (sessione dedicata): `.github/workflows/ci.yml`, `frontend/e2e` |
-| Controllo di accessibilità (axe) | fatto: `e2e/accessibilita.spec.ts` su 12 schermate; corretti contrasti, etichette, `nz-steps`, `nz-tree`, titoli dei gruppi del menu |
-| Kit di conformità | fatto per registro (17/17), autorizzazioni (11/11) e telemetria (6/6); hanno trovato e fatto correggere differenze nei servizi di riferimento |
-| Registro persistente, revisione, confronto, promozione, validazione al salvataggio | fatto: registro 0.3 (archivio su file, quattro occhi, ambienti protetti, If-Match, JSON Schema lato server); confronto nell'editor |
-| Completamento delle espressioni, modifica diretta nell'anteprima, dati veri, modifiche concorrenti | fatto (sull'anteprima si aggiungono, spostano e ridimensionano i componenti) |
-| Validazione a livello di schermata, CSV, stampa | fatto: passi `validate`, `export`, `print` |
-| Immagine, link, avanzamento, timeline, kanban | fatto (`image`, `link`, `progress`, `timeline`, `kanban`); i tag colorati esistono già come formato `badge` |
-| Border con divisori trascinabili | fatto (`resizable`) |
-| Menu con tastiera, badge, ricerca | fatto, con i contatori anche sui gruppi chiusi |
-| Cataloghi delle lingue da un servizio | fatto: documenti `messages` nel registro |
-| CSP senza `unsafe-eval` | fatto: validatori precompilati (Ajv standalone) |
-| Node fissato | fatto (`.nvmrc`, `engines`) |
-| Ottimizzazione 2 (validare alla pubblicazione) | fatto (validazione nel registro + validatori precompilati); la cache HTTP `immutable` delle versioni non è stata aggiunta |
-| Ottimizzazione 3 (caricamento differito) | fatto in parte: editor e anteprima separati; il runtime resta in un bundle (NG-ZORRO serve quasi tutto alla prima schermata) |
-| Ottimizzazioni 4, 5, 6, 7 | fatte: annullamento e unione delle richieste, cache CEL, `npm run stack`, `filterBar` su `lc-field-control` e `schema:docs` |
+| CI and first e2e suite | done (dedicated session): `.github/workflows/ci.yml`, `frontend/e2e` |
+| Accessibility check (axe) | done: `e2e/accessibilita.spec.ts` on 12 screens; fixed contrasts, labels, `nz-steps`, `nz-tree`, menu group titles |
+| Conformance kits | done for registry (17/17), authorization (11/11) and telemetry (6/6); they found differences in the reference services, which were fixed |
+| Persistent registry, review, comparison, promotion, validation on save | done: registry 0.3 (file store, four eyes, protected environments, If-Match, server-side JSON Schema); comparison in the editor |
+| Expression completion, direct editing on the preview, live data, concurrent changes | done (on the preview components can be added, moved and resized) |
+| Screen-level validation, CSV, printing | done: `validate`, `export`, `print` steps |
+| Image, link, progress, timeline, kanban | done (`image`, `link`, `progress`, `timeline`, `kanban`); coloured tags already exist as the `badge` format |
+| Border with draggable dividers | done (`resizable`) |
+| Menu with keyboard, badges, search | done, with counters on closed groups too |
+| Language catalogues from a service | done: `messages` documents in the registry |
+| CSP without `unsafe-eval` | done: precompiled validators (Ajv standalone) |
+| Pinned Node | done (`.nvmrc`, `engines`) |
+| Optimisation 2 (validate on publication) | done (validation in the registry + precompiled validators); the `immutable` HTTP cache for versions was not added |
+| Optimisation 3 (deferred loading) | partly done: editor and preview split; the runtime stays in one bundle (NG-ZORRO needs almost everything for the first screen) |
+| Optimisations 4, 5, 6, 7 | done: request cancellation and merging, CEL cache, `npm run stack`, `filterBar` on `lc-field-control` and `schema:docs` |
 
-## 9. Convenzioni di lavoro
+## 9. Working conventions
 
-- Commit in italiano, descrittivi, uno per componente, a nome dell'autore: nessun trailer di coautore (regole complete in `CLAUDE.md`).
-- Dopo ogni modifica al codice: `build:libs`, test dei progetti toccati, `validate:examples` se si toccano esempi o schemi; per la UI controllo nel browser (demo sulla 4300).
-- Gli schemi JSON sono la fonte: modificare `*.schema.json`, poi `schema:sync`, poi i tipi in `schema/src/lib/types.ts`.
-- Ogni componente nuovo: schema, tipo, componente registrato in `STANDARD_COMPONENTS`, test (schema in `schema/new-components.spec.ts`, componente in `components/*.spec.ts` con `renderScreen`, vetrina in `runtime/vetrina-avanzata.spec.ts` con `openShowcase`), esempio in `examples/vetrina-*.json` con testi in `examples/i18n/it.json` ed `en.json`.
-- Mai colori scritti a mano nei componenti: `var(--lc-*)` o token NG-ZORRO. Mai testo utente nei componenti: `runtime().text(...)` o chiavi `lc.*` in `messages.ts` (it ed en).
-- Sicurezza (non negoziabile): niente HTML da dati o traduzioni, espressioni fail-closed, nessun valore di dato nelle diagnostiche, l'enforcement vero sta nel backend.
+- Commits in Italian, descriptive, one per component, in the author's name: no co-author trailer (full rules in `CLAUDE.md`).
+- After every code change: `build:libs`, tests of the projects touched, `validate:examples` if examples or schemas are touched; for the UI a check in the browser (demo on 4300).
+- The JSON schemas are the source: edit `*.schema.json`, then `schema:sync`, then the types in `schema/src/lib/types.ts`.
+- Every new component: schema, type, component registered in `STANDARD_COMPONENTS`, tests (schema in `schema/new-components.spec.ts`, component in `components/*.spec.ts` with `renderScreen`, showcase in `runtime/vetrina-avanzata.spec.ts` with `openShowcase`), example in `examples/vetrina-*.json` with texts in `examples/i18n/it.json` and `en.json`.
+- Never hard-coded colours in components: `var(--lc-*)` or NG-ZORRO tokens. Never user-facing text in components: `runtime().text(...)` or `lc.*` keys in `messages.ts` (it and en).
+- Security (non-negotiable): no HTML from data or translations, fail-closed expressions, no data values in diagnostics, real enforcement lives in the back end.
 
-## 10. Riferimenti
+## 10. References
 
-- `README.md`, `DEVELOPMENT-GUIDE.md` (inglese), `docs/README.md`, `docs/catalogo-componenti.md` (italiano).
-- Documenti di progetto: `docs/documento-funzionale.md`, `docs/architettura.md`, `docs/linee-guida.md`, `docs/testi-e-traduzioni.md` (indice in `docs/README.md`).
-- Cronologia recente: `b3d7a5d` editor: trascinamento, `221ae42` suggerimenti, `ab5057a` anteprima collegata, `8d7e462` elenchi campo per campo, `5840c9c` prima versione dell'editor; `9bae9b7` serverDataTable; `f42abdf` grafici impilati e doppio asse, `4a8379c` datatable per grandi volumi, `e783fbb` albero da tastiera, `b130599` lookup e file nelle righe, `62fe0ee` file in multipart, `7907884` testo dei valori nel lookup; `47a96ee` datatable … `2b51e38` ordinamento, `4d224fb` catalogo; `9d96798` fix ricaricamento data source; `85d0409` guscio responsive; `5230022` i18n completo.
+- `README.md`, `DEVELOPMENT-GUIDE.md`, `docs/README.md` (index of the documentation).
+- Project documents: `docs/functional-spec.md`, `docs/architecture.md`, `docs/implementation-guidelines.md`, `docs/dynamic-texts-and-i18n.md`; `docs/component-catalogue.md`, `docs/editor.md`, `docs/schema-reference.md`.
+- Recent history: `0a81b58` editor: drag and drop, `5e45e21` suggestions, `01a3233` linked preview, `7ba8c36` field-by-field lists, `ac3988f` first version of the editor; `417c426` serverDataTable; `3347671` stacked charts and dual axis, `3115710` data table for large volumes, `35b0faf` keyboard tree, `d57f0c8` lookup and file in rows, `59c2971` multipart files, `7c621e5` text of values in the lookup; `01c6367` data table … `72af122` sorting, `659c4f3` catalogue; `bc1424d` data source reload fix; `90224d7` responsive shell; `e67dfbe` full i18n.

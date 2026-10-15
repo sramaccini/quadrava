@@ -64,7 +64,7 @@
   "app.screenInvalid": "The screen is not valid:",
   "app.screenLoadFailed": "Screen not loaded: {e}",
   "app.settings": "Demo settings",
-  "app.showcase.common": "Every component also has id, visibleIf, hiddenIf, enabledIf, readOnlyIf and tooltip. The full reference is in docs/riferimento-schema.md.",
+  "app.showcase.common": "Every component also has id, visibleIf, hiddenIf, enabledIf, readOnlyIf and tooltip. The full reference is in docs/schema-reference.md.",
   "app.showcase.helpTitle": "Help: {title}",
   "app.showcase.properties": "Properties",
   "app.showcase.related": "Data sources and sequences used",

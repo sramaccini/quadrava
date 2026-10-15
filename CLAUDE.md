@@ -1,128 +1,128 @@
-# KinetiX: regole del progetto
+# KinetiX: project rules
 
-KinetiX è una piattaforma low-code per frontend gestionali definiti da JSON (schermate, data source, azioni, espressioni CEL), con il runtime Angular, l'editor visuale **KinetiX Studio** e servizi di base descritti da contratti OpenAPI. Cosa fa il progetto: [README.md](README.md). Come si lavora nel dettaglio: [DEVELOPMENT-GUIDE.md](DEVELOPMENT-GUIDE.md). Stato e prossimi passi: [HANDOFF.md](HANDOFF.md).
+KinetiX is a low-code platform for business front ends defined in JSON (screens, data sources, actions, CEL expressions), with the Angular runtime, the visual editor **KinetiX Studio** and base services described by OpenAPI contracts. What the project does: [README.md](README.md). How to work on it in detail: [DEVELOPMENT-GUIDE.md](DEVELOPMENT-GUIDE.md). Status and next steps: [HANDOFF.md](HANDOFF.md).
 
-Questo file raccoglie le regole da rispettare sempre. Dove la guida di sviluppo entra nel dettaglio, qui c'è solo il rimando.
+This file collects the rules to follow at all times. Where the development guide goes into detail, only the pointer is given here.
 
-## 1. Modo di lavorare
+## 1. Way of working
 
-- **Si fa quello che è stato chiesto.** Una modifica non richiesta (un refactoring, una dipendenza nuova, un cambio di comportamento) si propone e si aspetta l'approvazione. I problemi trovati per strada si segnalano a parte, non si correggono di nascosto.
-- **Revisione architetturale.** Incongruenze, punti mancanti e insufficienze rispetto ai requisiti si segnalano esplicitamente, anche quando non sono l'oggetto del lavoro.
-- **Prima si guarda il codice.** Comportamenti, valori predefiniti e nomi si verificano nei sorgenti prima di scriverne (nel codice, nei documenti, nelle descrizioni dello schema).
-- **Soluzioni leggere e governabili.** Stack aggiornato, DSL ed espressioni semplici; niente motori di regole pesanti né framework in più per problemi piccoli.
-- **Un'attività, un commit, un push.** Nel lavoro lungo: un commit per componente, con test e controllo visivo prima di passare al successivo.
-- **Esiti riportati fedelmente.** Se un test fallisce o un controllo è stato saltato, lo si dice.
+- **Do what was asked.** An unrequested change (a refactoring, a new dependency, a change in behaviour) is proposed first and waits for approval. Problems found along the way are reported separately, not fixed quietly.
+- **Architectural review.** Inconsistencies, missing pieces and shortcomings against the requirements are pointed out explicitly, even when they are not the subject of the work.
+- **Look at the code first.** Behaviour, defaults and names are checked in the sources before writing about them (in code, documents or schema descriptions).
+- **Light, governable solutions.** Up-to-date stack, simple DSLs and expressions; no heavy rule engines or extra frameworks for small problems.
+- **One task, one commit, one push.** In long work: one commit per component, with tests and a visual check before moving on to the next.
+- **Report outcomes faithfully.** If a test fails or a check was skipped, say so.
 
-## 2. Lingue
+## 2. Languages
 
-| Cosa | Lingua |
+| What | Language |
 | --- | --- |
-| Codice, identificatori | inglese |
-| Commenti nel codice | come quelli del file (oggi per lo più italiano) |
-| `README.md`, `DEVELOPMENT-GUIDE.md` | inglese |
-| `HANDOFF.md`, `docs/`, descrizioni degli schemi JSON | italiano (termini tecnici in inglese) |
-| Testi della demo e degli esempi | italiano e inglese (`examples/i18n/it.json`, `en.json`) |
-| Diagnostiche per sviluppatori (schema, espressioni, `services`) | italiano, non tradotte |
-| Messaggi di commit | italiano |
+| Code, identifiers | English |
+| Comments in code | as in the rest of the file (today mostly Italian) |
+| All documentation: `README.md`, `DEVELOPMENT-GUIDE.md`, `HANDOFF.md`, `CLAUDE.md`, `docs/`, package READMEs | English |
+| Descriptions in the JSON schemas (shown in the editor and in the showcase's «Aiuto») | Italian |
+| Demo and example texts | Italian and English (`examples/i18n/it.json`, `en.json`) |
+| Developer diagnostics (schema, expressions, `services`) | Italian, not translated |
+| Commit messages | Italian |
 
-I documenti spiegano in modo semplice, con figure ed esempi pratici. I contenuti nuovi vanno nelle sezioni pertinenti, non in paragrafi di confronto isolati.
+Documents explain things simply, with figures and practical examples. New content goes into the relevant sections, not into isolated comparison paragraphs. File names in `docs/` are in English.
 
-## 3. Commit e storia
+## 3. Commits and history
 
-- Conventional Commits in italiano, con un ambito quando aiuta: `feat(editor): …`, `fix(tabelle): …`, `docs(schema): …`. Il corpo spiega cosa cambia e perché.
-- I commit sono a nome dell'autore del repository e basta: **nessun trailer** (`Co-Authored-By`, `Signed-off-by` automatici, identificativi di sessione), né riferimenti a strumenti usati per scrivere codice o testi nei commit, nei commenti, nei documenti o nelle pull request.
-- I file generati si committano insieme alla loro fonte (`*.schema.json` con `*.schema.ts`, `validators.generated.ts` e `docs/riferimento-schema.md`).
-- Test e documentazione aggiornati nello stesso commit della modifica.
-- Mai `push --force`, riscritture della storia o `reset --hard` su `main` senza conferma esplicita. Prima di riscrivere, `git fetch` e controllo che nessun altro abbia spinto nel frattempo.
-- Mai committare segreti, token, file `.env`, dati personali, `dist/`, `data/`, `.stack/`.
+- Conventional Commits in Italian, with a scope when it helps: `feat(editor): …`, `fix(tabelle): …`, `docs(schema): …`. The body explains what changes and why.
+- Commits are in the repository author's name only: **no trailers** (`Co-Authored-By`, automatic `Signed-off-by`, session identifiers), and no references to tools used to write code or text in commits, comments, documents or pull requests.
+- Generated files are committed together with their source (`*.schema.json` with `*.schema.ts`, `validators.generated.ts` and `docs/schema-reference.md`).
+- Tests and documentation updated in the same commit as the change.
+- Never `push --force`, history rewrites or `reset --hard` on `main` without explicit confirmation. Before rewriting, `git fetch` and check that nobody else has pushed in the meantime.
+- Never commit secrets, tokens, `.env` files, personal data, `dist/`, `data/`, `.stack/`.
 
-## 4. Ambiente e comandi
+## 4. Environment and commands
 
-- Node 24 (`.nvmrc`). Se la shell ha un'altra versione: `eval "$(fnm env --shell bash)"; fnm use 24.21.0`. JDK 21 e Maven 3.9 solo per `reference/`; Docker solo per Keycloak in `idp/`.
-- Si lavora da `frontend/`. **`npm run build:libs` prima di provare o testare le app**: i path di `tsconfig` puntano a `./dist/*`, e un `dist` vecchio dà errori fuorvianti. Dopo `build:libs` si riavviano i dev server.
-- Test di un progetto: `npx ng test <schema|expressions|core|components|services|runtime|editor> --watch=false`. Gli spec del runtime vogliono prima `npm run demo:prepare`.
-- I comandi lunghi (build, suite di test, `npm run stack`) si lanciano in background.
-- Tabella completa dei comandi: DEVELOPMENT-GUIDE § 3.
+- Node 24 (`.nvmrc`). If the shell has another version: `eval "$(fnm env --shell bash)"; fnm use 24.21.0`. JDK 21 and Maven 3.9 only for `reference/`; Docker only for Keycloak in `idp/`.
+- Work from `frontend/`. **`npm run build:libs` before running or testing the apps**: the `tsconfig` paths point to `./dist/*`, and a stale `dist` gives misleading errors. Restart the dev servers after `build:libs`.
+- Tests of one project: `npx ng test <schema|expressions|core|components|services|runtime|editor> --watch=false`. Runtime specs need `npm run demo:prepare` first.
+- Long commands (builds, test suites, `npm run stack`) run in the background.
+- Full command table: DEVELOPMENT-GUIDE § 3.
 
-### Prima di considerare finito un lavoro
+### Before considering a piece of work finished
 
-Si eseguono i controlli toccati dalla modifica, e tutti prima di una pull request:
+Run the checks affected by the change, and all of them before a pull request:
 
-1. `npm run schema:check` e `npm run schema:docs:check` (se è cambiato uno schema: prima `schema:sync` e `schema:docs`);
+1. `npm run schema:check` and `npm run schema:docs:check` (if a schema changed: first `schema:sync` and `schema:docs`);
 2. `npm run validate:examples`;
 3. `npm run build:libs`;
-4. test dei progetti toccati (prima di una PR: `npm run test:libs` più runtime ed editor);
-5. per la UI: controllo nel browser sulla demo (porta 4300, `.claude/launch.json`) e, se serve, `npm run e2e`;
-6. per `reference/`: `mvn verify`.
+4. tests of the projects touched (before a PR: `npm run test:libs` plus runtime and editor);
+5. for the UI: a check in the browser on the demo (port 4300, `.claude/launch.json`) and, if needed, `npm run e2e`;
+6. for `reference/`: `mvn verify`.
 
-La CI (`.github/workflows/ci.yml`) ripete gli stessi controlli: deve restare verde.
+CI (`.github/workflows/ci.yml`) repeats the same checks: it must stay green.
 
-## 5. Architettura: confini da non violare
+## 5. Architecture: boundaries not to cross
 
-- Dipendenze solo verso il basso, mai cicli: `runtime → components → core → expressions / schema`, `runtime → services → core`, `editor → components → core`.
-- `core` non contiene codice NG-ZORRO (tranne avviso e tipografia del guscio della schermata); tutto ciò che usa NG-ZORRO sta in `components`.
-- Tutto ciò che è esterno all'interprete è una **porta** (classe astratta come token DI). I componenti dipendono dall'astrazione; la demo ha implementazioni finte, `services` quelle vere.
-- Le librerie non sanno nulla delle applicazioni: niente casi d'uso o domini incorporati.
-- **Contract first.** Si cambia `contracts/*.yaml`, lo si valida, poi il codice. Le modifiche incompatibili vogliono una nuova versione del percorso.
-- L'implementazione di riferimento (`reference/`) non è per la produzione: resta semplice e dichiarata come tale.
-- Le decisioni di architettura si registrano come ADR.
+- Dependencies only downwards, never cycles: `runtime → components → core → expressions / schema`, `runtime → services → core`, `editor → components → core`.
+- `core` contains no NG-ZORRO code (except the screen shell's alert and typography); everything that uses NG-ZORRO lives in `components`.
+- Everything external to the interpreter is a **port** (an abstract class used as a DI token). Components depend on the abstraction; the demo has fake implementations, `services` the real ones.
+- Libraries know nothing about applications: no built-in use cases or domains.
+- **Contract first.** Change `contracts/*.yaml`, validate it, then the code. Breaking changes need a new version path.
+- The reference implementation (`reference/`) is not for production: it stays simple and labelled as such.
+- Architectural decisions are recorded as ADRs.
 
-## 6. Schemi JSON
+## 6. JSON schemas
 
-- Gli schemi `*.schema.json` sono l'unica fonte. Dopo ogni modifica: `npm run schema:sync`, i tipi in `schema/src/lib/types.ts`, `npm run schema:docs`. I `*.schema.ts` e `validators.generated.ts` non si modificano a mano.
-- **Ogni proprietà ha una `description`** breve e corretta in italiano: compare nel pannello delle proprietà dell'editor, nell'«Aiuto» della vetrina e nel riferimento generato. Accanto a un `$ref` la descrizione sta nello stesso oggetto. Indicare il valore predefinito quando c'è («(3 se assente)»).
-- Nelle descrizioni niente `<…>` letterali: diventano HTML nel riferimento Markdown.
-- Ajv in modalità strict: `type: object` accanto a `properties`; una proprietà in un `required` dentro `if/then` o `anyOf` va dichiarata anche lì. Nodi chiusi con `additionalProperties: false` o `unevaluatedProperties: false`.
-- Le espressioni regolari si scrivono da un file di script, non da un heredoc della shell (le doppie barre rovesciate si perdono).
+- The `*.schema.json` schemas are the only source. After every change: `npm run schema:sync`, the types in `schema/src/lib/types.ts`, `npm run schema:docs`. `*.schema.ts` and `validators.generated.ts` are never edited by hand.
+- **Every property has a `description`**, short, accurate and in Italian: it appears in the editor's property panel, in the showcase's «Aiuto» and in the generated reference. Next to a `$ref` the description goes in the same object. State the default value when there is one («(3 se assente)»).
+- No literal `<…>` in descriptions: they become HTML in the Markdown reference.
+- Ajv in strict mode: `type: object` next to `properties`; a property in a `required` inside `if/then` or `anyOf` must be declared there too. Closed nodes with `additionalProperties: false` or `unevaluatedProperties: false`.
+- Regular expressions are written from a script file, not from a shell heredoc (double backslashes get lost).
 
-## 7. Componenti
+## 7. Components
 
-Il percorso completo per un componente nuovo è nella DEVELOPMENT-GUIDE § 4. In sintesi: schema e tipo, componente standalone `OnPush` con `input()`, registrazione in `STANDARD_COMPONENTS`, test, esempio nella vetrina con i testi in `it.json` ed `en.json`, modello e tavolozza nell'editor con `ed.type.<tipo>`, catalogo in `docs/catalogo-componenti.md`.
+The full path for a new component is in DEVELOPMENT-GUIDE § 4. In short: schema and type, standalone `OnPush` component with `input()`, registration in `STANDARD_COMPONENTS`, tests, showcase example with its texts in `it.json` and `en.json`, template and palette entry in the editor with `ed.type.<type>`, entry in `docs/component-catalogue.md`.
 
-- Le espressioni si risolvono solo attraverso il runtime della schermata (`runtime().text(...)`, `isVisible`, `isEnabled`); mai valutare stringhe da sé.
-- La logica sui dati sta in funzioni pure testabili senza disegnare (come `table-data.ts`, `chart-geometry.ts`).
-- Un componente che scrive nello stato (`bind`) gli dà un valore iniziale in `ScreenRuntime.seedFilters`.
-- Un componente che legge un data source usa `<lc-busy>` per l'attesa; niente indicatori propri, niente «nessun risultato» durante il caricamento.
-- I campi singoli si disegnano in `lc-field-control`, condiviso da `form`, `input` e `filterBar`: un tipo di campo nuovo va lì una volta.
-- Il pannello delle proprietà dell'editor si genera dallo schema: nessun form scritto a mano per un componente.
-- Le trappole note di NG-ZORRO (stringhe HTML in modal e message, icone da registrare, array e date in `ngModel`, `nzScroll`, `[readonly]`, ecc.) sono nella DEVELOPMENT-GUIDE § 5 e nel HANDOFF § 6: leggerle prima di toccare un componente.
+- Expressions are resolved only through the screen runtime (`runtime().text(...)`, `isVisible`, `isEnabled`); never evaluate strings yourself.
+- Data logic lives in pure functions that can be tested without rendering (like `table-data.ts`, `chart-geometry.ts`).
+- A component that writes to the state (`bind`) gives it an initial value in `ScreenRuntime.seedFilters`.
+- A component that reads a data source uses `<lc-busy>` for waiting; no indicators of its own, no «no results» while loading.
+- Single fields are drawn in `lc-field-control`, shared by `form`, `input` and `filterBar`: a new field type goes there once.
+- The editor's property panel is generated from the schema: no hand-written form for a component.
+- The known NG-ZORRO traps (HTML strings in modals and messages, icons to register, arrays and dates in `ngModel`, `nzScroll`, `[readonly]`, etc.) are in DEVELOPMENT-GUIDE § 5 and HANDOFF § 6: read them before touching a component.
 
-## 8. Testi, lingue e tema
+## 8. Texts, languages and theme
 
-- Mai testo per l'utente scritto in un componente. I testi del JSON passano da `runtime().text(value, scope)`; quelli della piattaforma da `inject(I18n).t('lc.…')` con la chiave in `components/src/lib/messages.ts`, in italiano **e** inglese.
-- Il risultato di una traduzione è sempre testo semplice.
-- Mai colori scritti a mano: `var(--lc-*)` o i token NG-ZORRO. Unica eccezione i colori del marchio (`assets/brand/`), che non seguono il tema.
+- Never user-facing text written in a component. Texts from the JSON go through `runtime().text(value, scope)`; the platform's own through `inject(I18n).t('lc.…')` with the key in `components/src/lib/messages.ts`, in Italian **and** English.
+- The result of a translation is always plain text.
+- Never hard-coded colours: `var(--lc-*)` or the NG-ZORRO tokens. The only exception is the brand colours (`assets/brand/`), which do not follow the theme.
 
-## 9. Sicurezza (non negoziabile)
+## 9. Security (non-negotiable)
 
-- Niente HTML dai dati, dalle traduzioni o dal JSON: niente `innerHTML`, `bypassSecurityTrust*`, `eval`, `new Function`. Il testo formattato passa da `parseMarkdown` e `lc-markdown`; il dialetto Markdown non accetta HTML.
-- Stringhe dinamiche verso `NzModalService` / `NzMessageService` solo attraverso un componente di contenuto o `escapeHtml`.
-- Nessun segreto, token o dato personale in JSON, log, URL, diagnostiche o storage del browser. I token restano nel BFF.
-- Gli URL dei data source sono relativi alla stessa origine: il browser parla solo con il BFF, che aggiunge il token dell'utente e protegge le scritture con CSRF.
-- Espressioni **fail-closed**: un errore non concede, non mostra e non abilita; finisce in `RuntimeDiagnostics`, mai in un'eccezione durante il disegno.
-- Permessi nel formato `dominio.risorsa.azione`. Il frontend non è un confine di autorizzazione: ogni regola vale anche nel backend.
+- No HTML from data, translations or the JSON: no `innerHTML`, `bypassSecurityTrust*`, `eval`, `new Function`. Formatted text goes through `parseMarkdown` and `lc-markdown`; the Markdown dialect does not accept HTML.
+- Dynamic strings towards `NzModalService` / `NzMessageService` only through a content component or `escapeHtml`.
+- No secrets, tokens or personal data in JSON, logs, URLs, diagnostics or browser storage. Tokens stay in the BFF.
+- Data-source URLs are relative to the same origin: the browser talks only to the BFF, which adds the user's token and protects writes with CSRF.
+- Expressions are **fail-closed**: an error grants nothing, shows nothing and enables nothing; it goes to `RuntimeDiagnostics`, never into an exception during rendering.
+- Permissions in the format `domain.resource.action`. The front end is not an authorization boundary: every rule also holds in the back end.
 
-## 10. Test
+## 10. Tests
 
-- Uno `*.spec.ts` accanto all'unità; si descrive il comportamento, non l'implementazione.
-- I test che disegnano componenti NG-ZORRO usano `provideLowcodeComponents()`; le schermate si provano con `renderScreen` (`components`) o `openShowcase` (`runtime`).
-- `settle(fixture)` e le asserzioni con attesa automatica, mai timeout fissi.
-- I test della vetrina verificano che le diagnostiche restino vuote: un errore di espressione in un esempio è un bug.
-- Ciò che jsdom non vede (layout, overlay veri, focus) si prova con Playwright in `frontend/e2e/`, con localizzatori accessibili (`getByLabel`, `getByRole`).
-- I test non confrontano testi che cambiano spesso (descrizioni dello schema, documentazione): si confrontano struttura e comportamento.
-- Un bug corretto porta con sé un test che lo avrebbe trovato.
+- One `*.spec.ts` next to the unit; describe behaviour, not implementation.
+- Tests that render NG-ZORRO components use `provideLowcodeComponents()`; screens are tested with `renderScreen` (`components`) or `openShowcase` (`runtime`).
+- `settle(fixture)` and auto-waiting assertions, never fixed timeouts.
+- Showcase tests check that diagnostics stay empty: an expression error in an example is a bug.
+- What jsdom cannot see (layout, real overlays, focus) is tested with Playwright in `frontend/e2e/`, with accessible locators (`getByLabel`, `getByRole`).
+- Tests do not compare texts that change often (schema descriptions, documentation): they compare structure and behaviour.
+- A fixed bug comes with a test that would have caught it.
 
-## 11. Qualità del codice
+## 11. Code quality
 
-- TypeScript strict; niente `any` senza un commento che lo giustifichi; `readonly`, signals e `computed`.
-- Componenti standalone, `OnPush`, `input()` / `output()`, nuovo control flow (`@if`, `@for`).
-- Accessibilità: landmark ed etichette, tutto usabile da tastiera, nessun significato affidato al solo colore.
-- Il codice nuovo somiglia a quello intorno: stessi nomi, stessa densità di commenti, stessi idiomi. Niente codice morto, niente astrazioni anticipate.
-- Formato da `.editorconfig`: UTF-8, LF, due spazi (quattro in Java), a capo finale.
-- Le dipendenze nuove si propongono prima di aggiungerle.
+- Strict TypeScript; no `any` without a comment justifying it; `readonly`, signals and `computed`.
+- Standalone components, `OnPush`, `input()` / `output()`, the new control flow (`@if`, `@for`).
+- Accessibility: landmarks and labels, everything operable from the keyboard, no meaning conveyed by colour alone.
+- New code looks like the code around it: same names, same density of comments, same idioms. No dead code, no premature abstractions.
+- Formatting from `.editorconfig`: UTF-8, LF, two spaces (four in Java), final newline.
+- New dependencies are proposed before being added.
 
-## 12. Documentazione
+## 12. Documentation
 
-- Una modifica visibile aggiorna i documenti nello stesso commit: catalogo dei componenti, `docs/editor.md`, README o guida di sviluppo secondo il caso.
-- `HANDOFF.md` si aggiorna alla fine di un blocco di lavoro: stato dei test, limiti noti, prossimi passi.
-- `docs/riferimento-schema.md` non si scrive a mano: si genera con `npm run schema:docs`.
+- A visible change updates the documents in the same commit: component catalogue, `docs/editor.md`, README or development guide as appropriate.
+- `HANDOFF.md` is updated at the end of a block of work: test status, known limits, next steps.
+- `docs/schema-reference.md` is not written by hand: it is generated with `npm run schema:docs`.
