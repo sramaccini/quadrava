@@ -18,8 +18,8 @@ export interface ResourceRef {
 type Status = 'idle' | 'loading' | 'ready' | 'error';
 
 /**
- * Permessi dell'utente dal contratto `authz`. Si basa su signal: quando cambiano, l'interfaccia si aggiorna.
- * In caso di errore l'insieme resta vuoto (fail-closed). Il backend ricontrolla comunque ogni richiesta.
+ * User permissions from the `authz` contract. Based on signals: when they change, the interface updates.
+ * On error the set stays empty (fail-closed). The back end checks every request anyway.
  */
 @Injectable({ providedIn: 'root' })
 export class HttpAuthorization extends Authorization {
@@ -31,7 +31,7 @@ export class HttpAuthorization extends Authorization {
 
   readonly status = signal<Status>('idle');
   readonly version = signal<string | null>(null);
-  /** Quanti permessi ha l'utente (per il menu utente). */
+  /** How many permissions the user has (for the user menu). */
   readonly count = computed(() => this.permissions().size);
 
   constructor() {
@@ -51,9 +51,9 @@ export class HttpAuthorization extends Authorization {
       const res = await firstValueFrom(
         this.http.get<Capabilities>(`${this.config.authzBase}/capabilities`, { params: { app: this.config.appId }, observe: 'response' }),
       );
-      if (generation !== this.generation) return; // è partito un caricamento più recente
+      if (generation !== this.generation) return; // a more recent load has started
       const body = res.body;
-      if (!body || !Array.isArray(body.permissions)) throw new Error('risposta non valida');
+      if (!body || !Array.isArray(body.permissions)) throw new Error('invalid response');
       this.permissions.set(new Set(body.permissions));
       this.version.set(body.version ?? res.headers.get('X-Permissions-Version'));
       this.status.set('ready');
@@ -67,12 +67,12 @@ export class HttpAuthorization extends Authorization {
     }
   }
 
-  /** Chiamato dall'interceptor a ogni risposta: se la versione dei permessi cambia, si ricaricano. */
+  /** Called by the interceptor on every response: if the permissions version changes, they are reloaded. */
   observeVersion(version: string): void {
     if (this.status() === 'ready' && this.version() !== version) void this.load();
   }
 
-  /** Verifica puntuale su una risorsa (permessi per singolo record). Errore o risposta incompleta: negato. */
+  /** Point check on a resource (per-record permissions). Error or incomplete response: denied. */
   async check(permission: string, resource?: ResourceRef): Promise<boolean> {
     try {
       const res: HttpResponse<{ results?: { allowed: boolean }[] }> = await firstValueFrom(

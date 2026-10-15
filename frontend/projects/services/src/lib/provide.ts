@@ -10,8 +10,8 @@ import { HttpSession } from './session';
 import { HttpTracer } from './tracer';
 
 /**
- * Collega le porte del core alle implementazioni reali. All'avvio carica l'utente e i permessi:
- * se la sessione manca, il flusso riparte dal login e non si carica altro.
+ * Connects the core ports to the real implementations. At start-up it loads the user and the permissions:
+ * if the session is missing, the flow restarts from the login and nothing else is loaded.
  */
 export function provideLowcodeServices(config: LowcodeServicesConfig): EnvironmentProviders {
   return makeEnvironmentProviders([
@@ -23,7 +23,7 @@ export function provideLowcodeServices(config: LowcodeServicesConfig): Environme
     { provide: RuntimeDiagnostics, useExisting: HttpDiagnostics },
     { provide: RuntimeTracer, useExisting: HttpTracer },
     provideAppInitializer(async () => {
-      // Tutte le dipendenze prima del primo await: dopo, inject() non è più nel contesto di iniezione.
+      // All dependencies before the first await: afterwards, inject() is no longer in the injection context.
       const session = inject(HttpSession);
       const authorization = inject(HttpAuthorization);
       await session.load();

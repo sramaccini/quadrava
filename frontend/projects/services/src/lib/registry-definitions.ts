@@ -3,33 +3,33 @@ import { Injectable, InjectionToken, inject, type Provider } from '@angular/core
 import { DefinitionSource } from 'core';
 import { firstValueFrom } from 'rxjs';
 
-/** Dove il runtime prende le definizioni pubblicate nel registro. */
+/** Where the runtime takes the definitions published in the registry. */
 export interface RegistryDefinitionsConfig {
-  /** Applicazione nel registro. */
+  /** Application in the registry. */
   app: string;
-  /** Ambiente di cui caricare le versioni pubblicate (per esempio `production`). */
+  /** Environment whose published versions are loaded (for example `production`). */
   env: string;
-  /** Identificativo del documento di navigazione. */
+  /** Identifier of the navigation document. */
   navigation: string;
-  /** Temi tra cui scegliere; il primo è quello iniziale. */
+  /** Themes to choose from; the first is the initial one. */
   themes: string[];
-  /** Base delle API del registro (stessa origine, servita dal BFF). */
+  /** Base of the registry APIs (same origin, served by the BFF). */
   base?: string;
 }
 
 export const REGISTRY_DEFINITIONS_CONFIG = new InjectionToken<RegistryDefinitionsConfig>('REGISTRY_DEFINITIONS_CONFIG');
 
-/** Documento non caricato dal registro: lo stato HTTP (0 se il servizio non risponde). Mai il corpo della risposta. */
+/** Document not loaded from the registry: the HTTP status (0 if the service does not respond). Never the response body. */
 export class DefinitionLoadError extends Error {
   constructor(readonly status: number) {
-    super(status ? `HTTP ${status}` : 'registro non raggiungibile');
+    super(status ? `HTTP ${status}` : 'registry unreachable');
   }
 }
 
 /**
- * Definizioni dal registro (contracts/registry.yaml 0.5): ogni schermata, la navigazione, ogni tema e il catalogo di ogni lingua sono documenti
- * separati, e il runtime carica la versione pubblicata nell'ambiente configurato. Le risposte si ricordano con il
- * loro ETag: ricaricando lo stesso documento il registro risponde 304 e si riusa la copia già scaricata.
+ * Definitions from the registry (contracts/registry.yaml 0.5): every screen, the navigation, every theme and the catalogue of every language are separate
+ * documents, and the runtime loads the version published in the configured environment. Responses are remembered with their
+ * ETag: when the same document is loaded again the registry answers 304 and the copy already downloaded is reused.
  */
 @Injectable()
 export class RegistryDefinitions extends DefinitionSource {
@@ -53,7 +53,7 @@ export class RegistryDefinitions extends DefinitionSource {
     return this.config.themes;
   }
 
-  /** Catalogo pubblicato della lingua (documento `messages`): si restituiscono i testi, chiave → testo. */
+  /** Published catalogue of the language (`messages` document): the texts are returned, key → text. */
   async messages(locale: string): Promise<unknown> {
     const doc = (await this.published('messages', locale)) as { texts?: unknown } | null;
     return doc && typeof doc === 'object' ? doc.texts : null;
@@ -78,7 +78,7 @@ export class RegistryDefinitions extends DefinitionSource {
   }
 }
 
-/** Il runtime carica schermate, navigazione e temi dal registro. Richiede `HttpClient` (vedi `provideLowcodeServices`). */
+/** The runtime loads screens, navigation and themes from the registry. Requires `HttpClient` (see `provideLowcodeServices`). */
 export function provideRegistryDefinitions(config: RegistryDefinitionsConfig): Provider[] {
   return [{ provide: REGISTRY_DEFINITIONS_CONFIG, useValue: config }, RegistryDefinitions, { provide: DefinitionSource, useExisting: RegistryDefinitions }];
 }

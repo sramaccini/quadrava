@@ -6,7 +6,7 @@ import { redact } from './diagnostics';
 import { OtlpQueue, attribute, runtimeResource, unixNano } from './otlp';
 import { newSpanContext } from './trace';
 
-/** Tipo di span OTLP: interno al runtime (schermata, azione) o client di una chiamata HTTP. */
+/** OTLP span kind: internal to the runtime (screen, action) or client of an HTTP call. */
 export type SpanKind = 'internal' | 'client';
 
 interface FinishedSpan {
@@ -21,9 +21,9 @@ interface FinishedSpan {
 }
 
 /**
- * Invia le tracce come span OTLP/HTTP (JSON), a lotti e con un tetto al minuto. Il campionamento si decide alla radice
- * della traccia (`traceSampleRatio`) e passa ai figli; gli span in errore si inviano comunque. I testi degli attributi
- * passano da `redact`. Non lancia mai errori.
+ * Sends the traces as OTLP/HTTP (JSON) spans, in batches and with a per-minute cap. Sampling is decided at the root
+ * of the trace (`traceSampleRatio`) and passed on to the children; spans in error are sent anyway. Attribute texts
+ * go through `redact`. Never throws.
  */
 @Injectable({ providedIn: 'root' })
 export class HttpTracer extends RuntimeTracer {
@@ -44,12 +44,12 @@ export class HttpTracer extends RuntimeTracer {
                 spanId: span.context.spanId,
                 ...(span.parentSpanId ? { parentSpanId: span.parentSpanId } : {}),
                 name: span.name,
-                // OTLP: 1 = interno, 3 = client.
+                // OTLP: 1 = internal, 3 = client.
                 kind: span.kind === 'client' ? 3 : 1,
                 startTimeUnixNano: unixNano(span.start),
                 endTimeUnixNano: unixNano(span.end),
                 attributes: Object.entries(span.attributes).map(([key, value]) => attribute(key, typeof value === 'string' ? redact(value) : value)),
-                // Esito non impostato se riuscito (come raccomanda OpenTelemetry), 2 = errore.
+                // Status unset when successful (as OpenTelemetry recommends), 2 = error.
                 status: span.ok ? {} : { code: 2 },
               })),
             },

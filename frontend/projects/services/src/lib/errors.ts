@@ -1,4 +1,4 @@
-/** Errore di una chiamata dati. Non contiene mai il testo di errore del server, che non va mostrato all'utente. */
+/** Error of a data call. It never contains the server's error text, which must not be shown to the user. */
 export class DataError extends Error {
   constructor(
     readonly status: number,

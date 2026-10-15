@@ -12,7 +12,7 @@ interface BffUser {
   roles?: string[];
 }
 
-/** Utente corrente, letto dal BFF. I token restano nel BFF: il browser ha solo il cookie di sessione. */
+/** Current user, read from the BFF. Tokens stay in the BFF: the browser has only the session cookie. */
 @Injectable({ providedIn: 'root' })
 export class HttpSession extends UserProvider {
   private readonly http = inject(HttpClient);
@@ -37,7 +37,7 @@ export class HttpSession extends UserProvider {
     return u ? { name: u.name ?? '', username: u.username ?? '', roles: u.roles ?? [] } : {};
   }
 
-  /** Sessione assente o scaduta: si svuota l'utente e si riparte dal login, che poi riporta a questa pagina. */
+  /** Session missing or expired: the user is cleared and the flow restarts from the login, which then returns to this page. */
   markExpired(): void {
     if (this.state() === 'expired') return;
     this.info.set(null);
@@ -46,15 +46,15 @@ export class HttpSession extends UserProvider {
   }
 
   /**
-   * Uscita: un POST al BFF (HttpClient vi aggiunge il token CSRF del cookie), che chiude la sessione e risponde con
-   * l'indirizzo di fine sessione del provider di identità; la pagina ci va, e da lì si torna al login.
+   * Logout: a POST to the BFF (HttpClient adds the CSRF token from the cookie), which closes the session and answers with
+   * the end-session address of the identity provider; the page goes there, and from there back to the login.
    */
   async logout(): Promise<void> {
     try {
       const reply = await firstValueFrom(this.http.post<{ redirect?: string }>(this.config.logoutUrl, null, { headers: { Accept: 'application/json' } }));
       this.redirect(typeof reply?.redirect === 'string' ? reply.redirect : '/');
     } catch {
-      // Sessione già chiusa: si riparte dal login.
+      // Session already closed: restart from the login.
       this.markExpired();
     }
   }

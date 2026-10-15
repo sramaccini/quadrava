@@ -8,13 +8,13 @@ import { HttpSession } from './session';
 import { isSameOriginRelative, traceparent } from './trace';
 import { HttpTracer } from './tracer';
 
-/** Contesto di traccia di una richiesta: il data source che la fa e lo span (azione, apertura) da cui parte. */
+/** Trace context of a request: the data source making it and the span (action, opening) it starts from. */
 export const LOWCODE_TRACE = new HttpContextToken<{ source?: string; parent?: SpanContext }>(() => ({}));
 
 /**
- * Per le chiamate alla stessa origine: apre lo span HTTP e ne mette l'identità in `traceparent` (i servizi continuano
- * la stessa traccia), osserva `X-Permissions-Version` (se cambia, ricarica i permessi) e su 401 rimanda al login.
- * Gli invii alla telemetria non si tracciano: genererebbero altri span.
+ * For calls to the same origin: opens the HTTP span and puts its identity in `traceparent` (the services continue
+ * the same trace), watches `X-Permissions-Version` (if it changes, reloads the permissions) and on 401 redirects to the login.
+ * Sends to telemetry are not traced: they would generate more spans.
  */
 export const lowcodeHttpInterceptor: HttpInterceptorFn = (req, next) => {
   if (!isSameOriginRelative(req.url)) return next(req);
@@ -22,7 +22,7 @@ export const lowcodeHttpInterceptor: HttpInterceptorFn = (req, next) => {
   const config = injector.get(LOWCODE_SERVICES_CONFIG);
   const untraced = req.headers.has('traceparent') || req.url.startsWith(`${config.telemetryBase}/`);
   const { source, parent } = req.context.get(LOWCODE_TRACE);
-  // Per le chiamate dei data source il nome, non l'URL: percorso e query possono contenere valori di dati.
+  // For data-source calls the name, not the URL: path and query may contain data values.
   const attributes: SpanAttributes = source ? { 'http.request.method': req.method, 'lowcode.datasource': source } : { 'http.request.method': req.method, 'url.path': req.url.split(/[?#]/)[0] };
   const span = untraced ? null : injector.get(HttpTracer).start('http.client', attributes, parent, 'client');
   const traced = span ? req.clone({ setHeaders: { traceparent: traceparent(span.context) } }) : req;
@@ -40,7 +40,7 @@ export const lowcodeHttpInterceptor: HttpInterceptorFn = (req, next) => {
         if (error instanceof HttpErrorResponse && error.status === 401) injector.get(HttpSession).markExpired();
       },
     }),
-    // Chiamata annullata (lettura superata, schermata lasciata): non è un errore.
+    // Call cancelled (read superseded, screen left): not an error.
     finalize(() => span?.end(true, { 'lowcode.cancelled': true })),
   );
 };

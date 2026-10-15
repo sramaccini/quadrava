@@ -5,7 +5,7 @@ import { DataError } from './errors';
 import { LOWCODE_TRACE } from './interceptor';
 import { isSameOriginRelative } from './trace';
 
-/** Corpo multipart: ogni voce del corpo è una parte di testo (gli oggetti come JSON), il file è la parte `field`. */
+/** Multipart body: every entry of the body is a text part (objects as JSON), the file is the `field` part. */
 function toFormData(body: Record<string, unknown> | undefined, file: NonNullable<DataRequest['file']>): FormData {
   const form = new FormData();
   for (const [key, value] of Object.entries(body ?? {})) {
@@ -31,7 +31,7 @@ function abortError(): DOMException {
   return new DOMException('Richiesta annullata', 'AbortError');
 }
 
-/** Esegue le chiamate REST dei data source. Solo URL relativi: il browser parla con il BFF, mai con host arbitrari. */
+/** Runs the REST calls of the data sources. Relative URLs only: the browser talks to the BFF, never to arbitrary hosts. */
 @Injectable({ providedIn: 'root' })
 export class HttpDataClient extends DataClient {
   private readonly http = inject(HttpClient);
@@ -47,13 +47,13 @@ export class HttpDataClient extends DataClient {
         const subscription = this.http
           .request(request.method, request.url, {
             params: toParams(request.query),
-            // Per lo span HTTP: il data source (al posto dell'URL) e lo span da cui parte la chiamata.
+            // For the HTTP span: the data source (instead of the URL) and the span the call starts from.
             context: new HttpContext().set(LOWCODE_TRACE, { source: options.source, parent: options.trace }),
-            // Con un file la richiesta è multipart (il browser imposta da solo il Content-Type con il boundary).
+            // With a file the request is multipart (the browser sets the Content-Type with the boundary by itself).
             body: request.method === 'GET' || request.method === 'DELETE' ? undefined : request.file ? toFormData(request.body, request.file) : request.body,
           })
           .subscribe({ next: resolve, error: reject, complete: () => resolve(null) });
-        // Annullare l'iscrizione interrompe la chiamata HTTP in corso.
+        // Unsubscribing interrupts the HTTP call in progress.
         signal?.addEventListener(
           'abort',
           () => {

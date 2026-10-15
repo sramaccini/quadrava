@@ -34,34 +34,34 @@ function setup(overrides: Partial<Parameters<typeof resolveConfig>[0]> = {}) {
 const caps = (permissions: string[], version: string, ttlSeconds?: number) => ({ permissions, version, ttlSeconds });
 
 describe('trace', () => {
-  it('genera un traceparent W3C valido', () => {
+  it('generates a valid W3C traceparent', () => {
     expect(traceparent(newSpanContext())).toMatch(/^00-[0-9a-f]{32}-[0-9a-f]{16}-01$/);
     expect(traceparent(newSpanContext(undefined, false)).endsWith('-00')).toBe(true);
   });
-  it('un figlio resta nella traccia del padre, con il suo campionamento', () => {
+  it('a child stays in the trace of the parent, with its sampling', () => {
     const parent = newSpanContext(undefined, false);
     const child = newSpanContext(parent, true);
     expect(child.traceId).toBe(parent.traceId);
     expect(child.spanId).not.toBe(parent.spanId);
     expect(child.sampled).toBe(false);
   });
-  it('considera sicuri solo gli URL relativi', () => {
+  it('considers only relative URLs safe', () => {
     expect(isSameOriginRelative('/api/x')).toBe(true);
     for (const bad of ['https://evil.test/x', '//evil.test/x', 'api/x', '/a\\b']) expect(isSameOriginRelative(bad)).toBe(false);
   });
 });
 
 describe('interceptor', () => {
-  it('aggiunge traceparent alla stessa origine e non a terzi', () => {
+  it('adds traceparent to the same origin and not to third parties', () => {
     const { http } = setup();
     const client = TestBed.inject(HttpClient);
     client.get('/api/a').subscribe();
-    client.get('https://terzi.test/b').subscribe();
+    client.get('https://third.test/b').subscribe();
     expect(http.expectOne('/api/a').request.headers.get('traceparent')).toMatch(/^00-/);
-    expect(http.expectOne('https://terzi.test/b').request.headers.has('traceparent')).toBe(false);
+    expect(http.expectOne('https://third.test/b').request.headers.has('traceparent')).toBe(false);
   });
 
-  it('su 401 svuota la sessione e rimanda al login una volta sola', async () => {
+  it('on 401 clears the session and redirects to the login only once', async () => {
     const { http, redirects } = setup();
     const client = TestBed.inject(HttpClient);
     client.get('/api/a').subscribe({ error: () => undefined });
@@ -74,7 +74,7 @@ describe('interceptor', () => {
 });
 
 describe('HttpSession', () => {
-  it('carica l\'utente dal BFF', async () => {
+  it('loads the user from the BFF', async () => {
     const { http } = setup();
     const session = TestBed.inject(HttpSession);
     const p = session.load();
@@ -83,7 +83,7 @@ describe('HttpSession', () => {
     expect(session.state()).toBe('authenticated');
     expect(session.user()).toEqual({ name: 'Mario Rossi', username: 'mrossi', roles: [] });
   });
-  it('se il BFF non risponde considera la sessione scaduta', async () => {
+  it('if the BFF does not respond it considers the session expired', async () => {
     const { http, redirects } = setup();
     const p = TestBed.inject(HttpSession).load();
     http.expectOne('/bff/user').flush({}, { status: 500, statusText: 'x' });
@@ -91,7 +91,7 @@ describe('HttpSession', () => {
     expect(redirects).toHaveLength(1);
     expect(TestBed.inject(HttpSession).user()).toEqual({});
   });
-  it('l’uscita chiama il BFF e poi va all’indirizzo di fine sessione del provider', async () => {
+  it('logout calls the BFF and then goes to the end-session address of the provider', async () => {
     const { http, redirects } = setup();
     const done = TestBed.inject(HttpSession).logout();
     const request = http.expectOne('/logout');
@@ -104,20 +104,20 @@ describe('HttpSession', () => {
 });
 
 describe('HttpAuthorization', () => {
-  it('carica i permessi per l\'applicazione e li espone', async () => {
+  it('loads the permissions for the application and exposes them', async () => {
     const { http } = setup();
     const authz = TestBed.inject(HttpAuthorization);
     const p = authz.load();
     const req = http.expectOne((r) => r.url === '/authz/capabilities');
     expect(req.request.params.get('app')).toBe('demo');
-    req.flush(caps(['ordini.ordine.leggi'], 'v1'));
+    req.flush(caps(['orders.order.read'], 'v1'));
     await p;
-    expect(authz.can('ordini.ordine.leggi')).toBe(true);
-    expect(authz.can('ordini.ordine.approva')).toBe(false);
+    expect(authz.can('orders.order.read')).toBe(true);
+    expect(authz.can('orders.order.approve')).toBe(false);
     expect(authz.version()).toBe('v1');
   });
 
-  it('in caso di errore o risposta non valida nega tutto', async () => {
+  it('on error or invalid response it denies everything', async () => {
     const { http } = setup();
     const authz = TestBed.inject(HttpAuthorization);
     let p = authz.load();
@@ -130,7 +130,7 @@ describe('HttpAuthorization', () => {
     expect(authz.status()).toBe('error');
   });
 
-  it('ricarica quando una risposta porta una nuova X-Permissions-Version', async () => {
+  it('reloads when a response carries a new X-Permissions-Version', async () => {
     const { http } = setup();
     const authz = TestBed.inject(HttpAuthorization);
     let p = authz.load();
@@ -142,68 +142,68 @@ describe('HttpAuthorization', () => {
     http.expectOne((r) => r.url === '/authz/capabilities').flush(caps(['a.b.c', 'd.e.f'], 'v2'));
     await new Promise((r) => setTimeout(r));
     expect(authz.can('d.e.f')).toBe(true);
-    // Stessa versione: nessun nuovo caricamento.
+    // Same version: no new load.
     TestBed.inject(HttpClient).get('/api/y').subscribe();
     http.expectOne('/api/y').flush({}, { headers: { 'X-Permissions-Version': 'v2' } });
     http.expectNone((r) => r.url === '/authz/capabilities');
     await p;
   });
 
-  it('check: vero solo se il server lo dice; errore = negato', async () => {
+  it('check: true only if the server says so; error = denied', async () => {
     const { http } = setup();
     const authz = TestBed.inject(HttpAuthorization);
-    const ok = authz.check('ordini.ordine.approva', { type: 'ordine', id: '7' });
+    const ok = authz.check('orders.order.approve', { type: 'order', id: '7' });
     const req = http.expectOne('/authz/check');
-    expect(req.request.body).toEqual({ checks: [{ permission: 'ordini.ordine.approva', resource: { type: 'ordine', id: '7' } }] });
-    req.flush({ results: [{ permission: 'ordini.ordine.approva', allowed: true }] });
+    expect(req.request.body).toEqual({ checks: [{ permission: 'orders.order.approve', resource: { type: 'order', id: '7' } }] });
+    req.flush({ results: [{ permission: 'orders.order.approve', allowed: true }] });
     expect(await ok).toBe(true);
-    const ko = authz.check('ordini.ordine.approva');
+    const ko = authz.check('orders.order.approve');
     http.expectOne('/authz/check').flush({}, { status: 500, statusText: 'x' });
     expect(await ko).toBe(false);
   });
 });
 
 describe('HttpDataClient', () => {
-  it('serializza la query saltando i valori nulli', async () => {
+  it('serializes the query skipping null values', async () => {
     const { http } = setup();
-    const p = TestBed.inject(HttpDataClient).request({ method: 'GET', url: '/api/ordini', query: { stato: 'inviato', page: 0, x: null, t: ['a', 'b'] } });
-    const req = http.expectOne((r) => r.url === '/api/ordini');
-    expect(req.request.params.toString()).toBe('stato=inviato&page=0&t=a&t=b');
+    const p = TestBed.inject(HttpDataClient).request({ method: 'GET', url: '/api/orders', query: { status: 'sent', page: 0, x: null, t: ['a', 'b'] } });
+    const req = http.expectOne((r) => r.url === '/api/orders');
+    expect(req.request.params.toString()).toBe('status=sent&page=0&t=a&t=b');
     req.flush([{ id: 1 }]);
     expect(await p).toEqual([{ id: 1 }]);
   });
 
-  it('invia il corpo solo per i metodi che lo prevedono', async () => {
+  it('sends the body only for the methods that allow it', async () => {
     const { http } = setup();
-    const p = TestBed.inject(HttpDataClient).request({ method: 'POST', url: '/api/ordini/7/approva', body: { nota: 'ok' } });
-    const req = http.expectOne('/api/ordini/7/approva');
+    const p = TestBed.inject(HttpDataClient).request({ method: 'POST', url: '/api/orders/7/approve', body: { nota: 'ok' } });
+    const req = http.expectOne('/api/orders/7/approve');
     expect(req.request.body).toEqual({ nota: 'ok' });
     req.flush(null);
     await p;
   });
 
-  it('con un file invia un corpo multipart: il file nella sua parte, le voci del corpo come testo', async () => {
+  it('with a file it sends a multipart body: the file in its part, the entries of the body as text', async () => {
     const { http } = setup();
-    const blob = new Blob(['ciao'], { type: 'text/plain' });
+    const blob = new Blob(['test'], { type: 'text/plain' });
     const p = TestBed.inject(HttpDataClient).request({
       method: 'POST',
-      url: '/api/allegati',
-      body: { name: 'nota.txt', size: 4, extra: { a: 1 }, vuoto: null },
-      file: { field: 'file', name: 'nota.txt', type: 'text/plain', blob },
+      url: '/api/attachments',
+      body: { name: 'note.txt', size: 4, extra: { a: 1 }, vuoto: null },
+      file: { field: 'file', name: 'note.txt', type: 'text/plain', blob },
     });
-    const req = http.expectOne('/api/allegati');
+    const req = http.expectOne('/api/attachments');
     const form = req.request.body as FormData;
     expect(form).toBeInstanceOf(FormData);
-    expect(form.get('name')).toBe('nota.txt');
+    expect(form.get('name')).toBe('note.txt');
     expect(form.get('size')).toBe('4');
     expect(form.get('extra')).toBe('{"a":1}');
-    expect(form.has('vuoto')).toBe(false);
-    expect((form.get('file') as File).name).toBe('nota.txt');
+    expect(form.has('empty')).toBe(false);
+    expect((form.get('file') as File).name).toBe('note.txt');
     req.flush({ id: 9 });
     expect(await p).toEqual({ id: 9 });
   });
 
-  it('rifiuta URL assoluti o con ".." senza fare richieste', async () => {
+  it('rejects absolute URLs or URLs with ".." without making requests', async () => {
     const { http } = setup();
     const client = TestBed.inject(HttpDataClient);
     for (const url of ['https://evil.test/x', '//evil.test/x', '/api/../admin']) {
@@ -212,10 +212,10 @@ describe('HttpDataClient', () => {
     http.verify();
   });
 
-  it('su errore lancia DataError con stato e correlationId, senza il testo del server', async () => {
+  it('on error throws DataError with status and correlationId, without the text of the server', async () => {
     const { http } = setup();
     const p = TestBed.inject(HttpDataClient).request({ method: 'GET', url: '/api/x' });
-    http.expectOne('/api/x').flush({ title: 'Errore SQL su tabella clienti', correlationId: 'abc-123' }, { status: 500, statusText: 'x' });
+    http.expectOne('/api/x').flush({ title: 'SQL error on table customers', correlationId: 'abc-123' }, { status: 500, statusText: 'x' });
     const err = (await p.catch((e: unknown) => e)) as DataError;
     expect(err).toBeInstanceOf(DataError);
     expect(err.status).toBe(500);
@@ -224,19 +224,19 @@ describe('HttpDataClient', () => {
   });
 });
 
-describe('HttpDataClient: annullamento', () => {
-  it('un segnale annullato interrompe la chiamata HTTP e rifiuta con AbortError', async () => {
+describe('HttpDataClient: cancellation', () => {
+  it('a cancelled signal interrupts the HTTP call and rejects with AbortError', async () => {
     const { http } = setup();
     const controller = new AbortController();
-    const p = TestBed.inject(HttpDataClient).request({ method: 'GET', url: '/api/lenta' }, { signal: controller.signal });
-    const req = http.expectOne('/api/lenta');
+    const p = TestBed.inject(HttpDataClient).request({ method: 'GET', url: '/api/slow' }, { signal: controller.signal });
+    const req = http.expectOne('/api/slow');
     controller.abort();
     expect(req.cancelled).toBe(true);
     const err = (await p.catch((e: unknown) => e)) as DOMException;
     expect(err.name).toBe('AbortError');
   });
 
-  it('un segnale già annullato non fa partire la chiamata', async () => {
+  it('an already cancelled signal does not start the call', async () => {
     const { http } = setup();
     const controller = new AbortController();
     controller.abort();
@@ -246,20 +246,20 @@ describe('HttpDataClient: annullamento', () => {
 });
 
 describe('HttpDiagnostics', () => {
-  it('redige e invia log OTLP a lotti', async () => {
+  it('redacts and sends OTLP logs in batches', async () => {
     const { http } = setup();
     const diag = TestBed.inject(HttpDiagnostics);
-    diag.report({ screen: 'ordini-elenco', source: 'ordini', error: 'GET /api/ordini?cliente=Rossi fallita per mario.rossi@example.com id 123456789' });
+    diag.report({ screen: 'order-list', source: 'orders', error: 'GET /api/orders?customer=Smith failed for mario.rossi@example.com id 123456789' });
     void diag.flush();
     const req = http.expectOne('/telemetry/v1/logs');
     const record = req.request.body.resourceLogs[0].scopeLogs[0].logRecords[0];
-    expect(record.body.stringValue).toBe('GET /api/ordini?… fallita per [email] id [num]');
+    expect(record.body.stringValue).toBe('GET /api/orders?… failed for [email] id [num]');
     expect(record.severityText).toBe('ERROR');
     expect(req.request.body.resourceLogs[0].resource.attributes).toContainEqual({ key: 'lowcode.app', value: { stringValue: 'demo' } });
     req.flush(null, { status: 202, statusText: 'Accepted' });
   });
 
-  it('rispetta il tetto al minuto e la telemetria disattivata', async () => {
+  it('respects the per-minute cap and disabled telemetry', async () => {
     const { http } = setup({ telemetryMaxPerMinute: 2 });
     const diag = TestBed.inject(HttpDiagnostics);
     for (let i = 0; i < 5; i++) diag.report({ screen: 's', source: 'x', error: 'e' });
@@ -267,7 +267,7 @@ describe('HttpDiagnostics', () => {
     expect(http.expectOne('/telemetry/v1/logs').request.body.resourceLogs[0].scopeLogs[0].logRecords).toHaveLength(2);
   });
 
-  it('non lancia se l\'endpoint è giù', async () => {
+  it('does not throw if the endpoint is down', async () => {
     const { http } = setup();
     const diag = TestBed.inject(HttpDiagnostics);
     diag.report({ screen: 's', source: 'x', error: 'e' });
@@ -276,7 +276,7 @@ describe('HttpDiagnostics', () => {
     await expect(p).resolves.toBeUndefined();
   });
 
-  it('redact tronca i testi lunghi', () => {
+  it('redact truncates long texts', () => {
     expect(redact('x'.repeat(500))).toHaveLength(200);
   });
 });
@@ -286,12 +286,12 @@ describe('HttpTracer', () => {
   const attrs = (span: Record<string, unknown>) =>
     Object.fromEntries((span['attributes'] as { key: string; value: Record<string, unknown> }[]).map((a) => [a.key, Object.values(a.value)[0]]));
 
-  it('la chiamata di un data source è uno span client figlio dello span di partenza, senza URL', async () => {
+  it('the call of a data source is a client span child of the starting span, without URL', async () => {
     const { http } = setup();
     const tracer = TestBed.inject(HttpTracer);
-    const action = tracer.start('action.run', { 'lowcode.action': 'call approva' });
-    const p = TestBed.inject(HttpDataClient).request({ method: 'POST', url: '/api/ordini/4242/approva', body: {} }, { source: 'approva', trace: action.context });
-    const req = http.expectOne('/api/ordini/4242/approva');
+    const action = tracer.start('action.run', { 'lowcode.action': 'call approve' });
+    const p = TestBed.inject(HttpDataClient).request({ method: 'POST', url: '/api/orders/4242/approve', body: {} }, { source: 'approve', trace: action.context });
+    const req = http.expectOne('/api/orders/4242/approve');
     const header = req.request.headers.get('traceparent')!;
     expect(header.startsWith(`00-${action.context.traceId}-`)).toBe(true);
     expect(header).not.toContain(action.context.spanId);
@@ -304,26 +304,26 @@ describe('HttpTracer', () => {
     const [httpSpan, actionSpan] = spansOf(sent.request.body);
     expect(httpSpan).toMatchObject({ name: 'http.client', kind: 3, traceId: action.context.traceId, parentSpanId: action.context.spanId, status: { code: 2 } });
     expect(header).toContain(httpSpan['spanId'] as string);
-    expect(attrs(httpSpan)).toEqual({ 'http.request.method': 'POST', 'lowcode.datasource': 'approva', 'http.response.status_code': '409' });
+    expect(attrs(httpSpan)).toEqual({ 'http.request.method': 'POST', 'lowcode.datasource': 'approve', 'http.response.status_code': '409' });
     expect(actionSpan).toMatchObject({ name: 'action.run', kind: 1, status: { code: 2 } });
     expect(JSON.stringify(sent.request.body)).not.toContain('4242');
     expect(sent.request.body.resourceSpans[0].resource.attributes).toContainEqual({ key: 'lowcode.app', value: { stringValue: 'demo' } });
   });
 
-  it('le chiamate di piattaforma riportano il percorso senza query; quelle alla telemetria non si tracciano', () => {
+  it('platform calls report the path without query; those to telemetry are not traced', () => {
     const { http } = setup();
     const client = TestBed.inject(HttpClient);
-    client.get('/registry/screens/elenco?utente=mario.rossi@example.com').subscribe();
+    client.get('/registry/screens/list?user=mario.rossi@example.com').subscribe();
     http.expectOne((r) => r.url.startsWith('/registry/')).flush({});
     void TestBed.inject(HttpTracer).flush();
     const sent = http.expectOne('/telemetry/v1/traces');
     const spans = spansOf(sent.request.body);
     expect(spans).toHaveLength(1);
-    expect(attrs(spans[0])).toMatchObject({ 'url.path': '/registry/screens/elenco', 'http.response.status_code': '200' });
+    expect(attrs(spans[0])).toMatchObject({ 'url.path': '/registry/screens/list', 'http.response.status_code': '200' });
     expect(spans[0]['status']).toEqual({});
   });
 
-  it('con il campionamento a zero invia solo gli span in errore, e lo dice nel traceparent', () => {
+  it('with sampling at zero it sends only spans in error, and says so in the traceparent', () => {
     const { http } = setup({ traceSampleRatio: 0 });
     const client = TestBed.inject(HttpClient);
     client.get('/api/a').subscribe();
@@ -336,10 +336,10 @@ describe('HttpTracer', () => {
     expect(spansOf(http.expectOne('/telemetry/v1/traces').request.body).map((s) => attrs(s)['url.path'])).toEqual(['/api/b']);
   });
 
-  it('una chiamata annullata non è un errore', () => {
+  it('a cancelled call is not an error', () => {
     const { http } = setup();
-    const subscription = TestBed.inject(HttpClient).get('/api/lenta').subscribe();
-    http.expectOne('/api/lenta');
+    const subscription = TestBed.inject(HttpClient).get('/api/slow').subscribe();
+    http.expectOne('/api/slow');
     subscription.unsubscribe();
     void TestBed.inject(HttpTracer).flush();
     const [span] = spansOf(http.expectOne('/telemetry/v1/traces').request.body);
@@ -347,14 +347,14 @@ describe('HttpTracer', () => {
     expect(attrs(span)['lowcode.cancelled']).toBe(true);
   });
 
-  it('quando la pagina si chiude svuota la coda con keepalive', () => {
+  it('when the page closes it empties the queue with keepalive', () => {
     const { http } = setup();
-    TestBed.inject(HttpTracer).start('screen.open', { 'lowcode.screen': 'elenco' }).end(true);
+    TestBed.inject(HttpTracer).start('screen.open', { 'lowcode.screen': 'list' }).end(true);
     globalThis.dispatchEvent(new Event('pagehide'));
     expect(http.expectOne('/telemetry/v1/traces').request.keepalive).toBe(true);
   });
 
-  it('con la telemetria disattivata non invia nulla', () => {
+  it('with telemetry disabled it sends nothing', () => {
     const { http } = setup({ telemetry: false });
     TestBed.inject(HttpTracer).start('action.run', {}).end(false);
     void TestBed.inject(HttpTracer).flush();
@@ -363,7 +363,7 @@ describe('HttpTracer', () => {
 });
 
 describe('provideLowcodeServices', () => {
-  it('all’avvio carica la sessione e poi i permessi', async () => {
+  it('at start-up it loads the session and then the permissions', async () => {
     TestBed.configureTestingModule({
       providers: [provideLowcodeServices({ appId: 'demo' }), provideHttpClientTesting(), { provide: LOWCODE_REDIRECT, useValue: () => undefined }],
     });
@@ -371,9 +371,9 @@ describe('provideLowcodeServices', () => {
     const ready = TestBed.inject(ApplicationInitStatus).donePromise;
     http.expectOne('/bff/user').flush({ name: 'Mario Rossi', username: 'mrossi' });
     await new Promise((r) => setTimeout(r, 0));
-    http.expectOne((r) => r.url === '/authz/capabilities').flush(caps(['ordini.ordine.leggi'], 'v1'));
+    http.expectOne((r) => r.url === '/authz/capabilities').flush(caps(['orders.order.read'], 'v1'));
     await ready;
-    expect(TestBed.inject(Authorization).can('ordini.ordine.leggi')).toBe(true);
+    expect(TestBed.inject(Authorization).can('orders.order.read')).toBe(true);
     expect(TestBed.inject(HttpAuthorization).count()).toBe(1);
     expect(TestBed.inject(RuntimeTracer)).toBe(TestBed.inject(HttpTracer));
   });

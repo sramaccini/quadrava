@@ -11,22 +11,22 @@ export interface OtlpAttribute {
   value: OtlpValue;
 }
 
-/** Attributo OTLP/HTTP JSON (gli interi a 64 bit viaggiano come stringhe). */
+/** OTLP/HTTP JSON attribute (64-bit integers travel as strings). */
 export function attribute(key: string, value: string | number | boolean): OtlpAttribute {
   if (typeof value === 'string') return { key, value: { stringValue: value } };
   if (typeof value === 'boolean') return { key, value: { boolValue: value } };
   return { key, value: Number.isInteger(value) ? { intValue: String(value) } : { doubleValue: value } };
 }
 
-/** Istante in nanosecondi dall'epoca, come stringa (OTLP JSON). */
+/** Instant in nanoseconds since the epoch, as a string (OTLP JSON). */
 export function unixNano(ms: number): string {
   return String(BigInt(Math.round(ms)) * 1_000_000n);
 }
 
 /**
- * Coda verso un endpoint OTLP/HTTP (JSON): invia a lotti (ogni BATCH elementi o dopo FLUSH_MS), con un tetto al
- * minuto, e svuota la coda quando la pagina si chiude o va in secondo piano (con `keepalive`, perché la richiesta
- * sopravviva alla pagina). Non lancia mai errori.
+ * Queue towards an OTLP/HTTP (JSON) endpoint: sends in batches (every BATCH items or after FLUSH_MS), with a per-minute
+ * cap, and empties the queue when the page closes or goes to the background (with `keepalive`, so that the request
+ * outlives the page). Never throws.
  */
 export class OtlpQueue<T> {
   private queue: T[] = [];
@@ -54,7 +54,7 @@ export class OtlpQueue<T> {
     });
   }
 
-  /** Accoda un elemento; oltre il tetto al minuto lo scarta. */
+  /** Queues an item; beyond the per-minute cap it is dropped. */
   add(item: T): void {
     const now = Date.now();
     if (now - this.windowStart >= 60_000) {
@@ -77,12 +77,12 @@ export class OtlpQueue<T> {
     try {
       await firstValueFrom(this.http.post(this.url, this.body(batch), { keepalive }));
     } catch {
-      // La telemetria non deve mai disturbare l'applicazione.
+      // Telemetry must never disturb the application.
     }
   }
 }
 
-/** Risorsa comune di log e tracce: il runtime e l'applicazione. */
+/** Common resource of logs and traces: the runtime and the application. */
 export function runtimeResource(appId: string): { attributes: OtlpAttribute[] } {
   return { attributes: [attribute('service.name', 'lowcode-runtime'), attribute('lowcode.app', appId)] };
 }

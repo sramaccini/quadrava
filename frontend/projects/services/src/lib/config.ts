@@ -1,25 +1,25 @@
 import { InjectionToken } from '@angular/core';
 
 export interface LowcodeServicesConfig {
-  /** Identificativo dell'applicazione, passato al servizio di autorizzazione e alla telemetria. */
+  /** Identifier of the application, passed to the authorization service and to telemetry. */
   appId: string;
-  /** Endpoint del BFF con i dati dell'utente autenticato. */
+  /** BFF endpoint with the data of the authenticated user. */
   sessionUrl?: string;
-  /** Dove mandare l'utente se la sessione manca o è scaduta: il BFF avvia il login OIDC e poi riporta alla pagina (`?return=`). */
+  /** Where to send the user when the session is missing or expired: the BFF starts the OIDC login and then returns to the page (`?return=`). */
   loginUrl?: string;
-  /** Uscita: POST al BFF, che chiude anche la sessione del provider di identità. */
+  /** Logout: POST to the BFF, which also closes the session of the identity provider. */
   logoutUrl?: string;
-  /** Base del contratto di autorizzazione. */
+  /** Base of the authorization contract. */
   authzBase?: string;
-  /** Base del contratto di telemetria. */
+  /** Base of the telemetry contract. */
   telemetryBase?: string;
-  /** Telemetria attiva. Gli errori sono sempre inviati, entro il limite per minuto. */
+  /** Telemetry enabled. Errors are always sent, within the per-minute limit. */
   telemetry?: boolean;
-  /** Massimo di segnalazioni inviate al minuto. */
+  /** Maximum number of reports sent per minute. */
   telemetryMaxPerMinute?: number;
-  /** Quota di tracce campionate, da 0 a 1 (1 se assente): si decide all'inizio della traccia; gli span in errore si inviano sempre. */
+  /** Share of sampled traces, from 0 to 1 (1 when absent): decided at the start of the trace; spans in error are always sent. */
   traceSampleRatio?: number;
-  /** Massimo di span inviati al minuto (300 se assente). */
+  /** Maximum number of spans sent per minute (300 when absent). */
   traceMaxPerMinute?: number;
 }
 
@@ -53,7 +53,7 @@ export function resolveConfig(config: LowcodeServicesConfig): ResolvedServicesCo
   };
 }
 
-/** Indirizzamento verso un'altra pagina (login). Sostituibile nei test. */
+/** Redirection to another page (login). Replaceable in tests. */
 export const LOWCODE_REDIRECT = new InjectionToken<(url: string) => void>('LOWCODE_REDIRECT', {
   providedIn: 'root',
   factory: () => (url: string) => globalThis.location.assign(url),

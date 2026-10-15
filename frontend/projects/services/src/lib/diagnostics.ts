@@ -12,7 +12,7 @@ interface Event {
 
 const MAX_TEXT = 200;
 
-/** Toglie query string, sequenze lunghe di cifre e indirizzi email, poi tronca: nulla che somigli a un dato finisce nei log. */
+/** Removes query strings, long digit sequences and email addresses, then truncates: nothing resembling data ends up in the logs. */
 export function redact(text: string): string {
   return text
     .replace(/\?[^\s'"]*/g, '?…')
@@ -21,7 +21,7 @@ export function redact(text: string): string {
     .slice(0, MAX_TEXT);
 }
 
-/** Invia le segnalazioni tecniche come log OTLP/HTTP (JSON), a lotti e con un tetto al minuto. Non lancia mai errori. */
+/** Sends technical reports as OTLP/HTTP (JSON) logs, in batches and with a per-minute cap. Never throws. */
 @Injectable({ providedIn: 'root' })
 export class HttpDiagnostics extends RuntimeDiagnostics {
   private readonly config = inject(LOWCODE_SERVICES_CONFIG);
