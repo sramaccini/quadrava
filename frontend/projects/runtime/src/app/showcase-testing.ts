@@ -2,45 +2,45 @@ import { vi } from 'vitest';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import navigationDoc from '../../public/examples/navigation.json';
-import fattureElenco from '../../public/examples/fatture-elenco.json';
-import tabelleAvanzate from '../../public/examples/vetrina-tabelle-avanzate.json';
-import campi from '../../public/examples/vetrina-campi.json';
-import input from '../../public/examples/vetrina-input.json';
-import contenitori from '../../public/examples/vetrina-contenitori.json';
-import attivita from '../../public/examples/vetrina-attivita.json';
-import layout from '../../public/examples/vetrina-layout.json';
-import cruscotto from '../../public/examples/vetrina-cruscotto.json';
-import viste from '../../public/examples/vetrina-viste.json';
-import datatable from '../../public/examples/vetrina-datatable.json';
-import chiaro from '../../public/examples/themes/chiaro.json';
+import fattureElenco from '../../public/examples/invoice-list.json';
+import tabelleAvanzate from '../../public/examples/showcase-advanced-tables.json';
+import campi from '../../public/examples/showcase-fields.json';
+import input from '../../public/examples/showcase-input.json';
+import contenitori from '../../public/examples/showcase-containers.json';
+import attivita from '../../public/examples/showcase-tasks.json';
+import layout from '../../public/examples/showcase-layout.json';
+import cruscotto from '../../public/examples/showcase-dashboard.json';
+import viste from '../../public/examples/showcase-views.json';
+import datatable from '../../public/examples/showcase-datatable.json';
+import light from '../../public/examples/themes/light.json';
 import catalogIt from '../../public/examples/i18n/it.json';
 import catalogEn from '../../public/examples/i18n/en.json';
 import { openSelect } from './select-testing';
 import { App } from './app';
 import { appConfig } from './app.config';
 
-/** Solo per i test: documenti serviti alla demo al posto di `fetch`. */
+/** For tests only: documents served to the demo instead of `fetch`. */
 export const SHOWCASE_FILES: Record<string, unknown> = {
   'examples/navigation.json': navigationDoc,
-  // La destinazione iniziale, che si apre prima di andare alla schermata della vetrina.
-  'examples/fatture-elenco.json': fattureElenco,
-  'examples/vetrina-tabelle-avanzate.json': tabelleAvanzate,
-  'examples/vetrina-campi.json': campi,
-  'examples/vetrina-input.json': input,
-  'examples/vetrina-contenitori.json': contenitori,
-  'examples/vetrina-attivita.json': attivita,
-  'examples/vetrina-layout.json': layout,
-  'examples/vetrina-cruscotto.json': cruscotto,
-  'examples/vetrina-viste.json': viste,
-  'examples/vetrina-datatable.json': datatable,
+  // The initial destination, which opens before going to the showcase screen.
+  'examples/invoice-list.json': fattureElenco,
+  'examples/showcase-advanced-tables.json': tabelleAvanzate,
+  'examples/showcase-fields.json': campi,
+  'examples/showcase-input.json': input,
+  'examples/showcase-containers.json': contenitori,
+  'examples/showcase-tasks.json': attivita,
+  'examples/showcase-layout.json': layout,
+  'examples/showcase-dashboard.json': cruscotto,
+  'examples/showcase-views.json': viste,
+  'examples/showcase-datatable.json': datatable,
   'examples/i18n/it.json': catalogIt,
   'examples/i18n/en.json': catalogEn,
-  'examples/themes/chiaro.json': chiaro,
+  'examples/themes/light.json': light,
 };
 
-/** Prepara il modulo di test della demo: lingua italiana e `fetch` finto sui documenti della vetrina. */
+/** Prepares the test module of the demo: Italian language and a fake `fetch` over the showcase documents. */
 export function setupShowcase(): void {
-  // jsdom non ha scrollTo, che la lista delle opzioni di NG-ZORRO chiama con un ritardo.
+  // jsdom has no scrollTo, which the NG-ZORRO option list calls with a delay.
   if (typeof Element.prototype.scrollTo !== 'function') Element.prototype.scrollTo = () => undefined;
   localStorage.setItem('lc.language', 'it');
   vi.stubGlobal('fetch', async (url: string) => {
@@ -63,7 +63,7 @@ export interface Showcase {
   settle(): Promise<void>;
 }
 
-/** Apre una schermata della demo (con il profilo indicato) e aspetta che il contenuto sia disegnato. */
+/** Opens a screen of the demo (with the given profile) and waits until the content is drawn. */
 export async function openShowcase(path: string, user = 'operator'): Promise<Showcase> {
   const fixture = TestBed.createComponent(App);
   const el = fixture.nativeElement as HTMLElement;
@@ -81,24 +81,24 @@ export async function openShowcase(path: string, user = 'operator'): Promise<Sho
   };
   fixture.detectChanges();
   await TestBed.inject(Router).navigateByUrl('/');
-  await until(() => !!el.querySelector('nz-header nz-select'), 'barra superiore');
+  await until(() => !!el.querySelector('nz-header nz-select'), 'top bar');
   if (user !== 'operator') {
     const options = await openSelect(el.querySelector('nz-header nz-select') as HTMLElement, settle);
     (options.find((o) => (o.textContent ?? '').trim() === user) as HTMLElement).click();
   }
   await TestBed.inject(Router).navigateByUrl(path);
-  await until(() => !!el.querySelector('main h2'), 'contenuto');
+  await until(() => !!el.querySelector('main h2'), 'content');
   return { fixture, el, until, settle };
 }
 
 export const plainText = (text: string | null | undefined): string => (text ?? '').replace(/[  \s]+/g, ' ').trim();
 
-/** Testi di una colonna delle righe di dati della tabella `table` (in ordine di pagina). */
+/** Texts of a column of the data rows of table `table` (in page order). */
 export const cells = (el: HTMLElement, table: number, column: number): string[] =>
   [...(el.querySelectorAll('main nz-table')[table]?.querySelectorAll('tbody tr:not(.ant-table-placeholder)') ?? [])]
     .filter((tr) => !tr.classList.contains('lc-extra-row'))
     .map((tr) => plainText(tr.querySelectorAll('td')[column]?.textContent));
 
-/** Intestazione di colonna della tabella `table` con il testo dato. */
+/** Column header of table `table` with the given text. */
 export const headerCell = (el: HTMLElement, table: number, text: string): HTMLElement =>
   [...(el.querySelectorAll('main nz-table')[table]?.querySelectorAll<HTMLElement>('th') ?? [])].find((th) => plainText(th.textContent) === text)!;

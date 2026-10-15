@@ -1,0 +1,268 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "showcase-input",
+  "title": "{{ t('showcase_input.showcase_standalone_fields', 'Showcase: standalone fields') }}",
+  "description": "{{ t('showcase_input.description_rich_text', 'Description (rich text)') }}",
+  "requires": "showcase.components.read",
+  "dataSources": {
+    "invoices": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/invoices",
+      "params": {
+        "type": "{{ state.type }}",
+        "status": "{{ state.statuses }}",
+        "customer": "{{ state.customer }}"
+      }
+    },
+    "customers": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/customers",
+      "params": {
+        "q": "{{ search }}",
+        "id": "{{ lookupKey }}"
+      }
+    }
+  },
+  "components": [
+    {
+      "id": "title",
+      "type": "text",
+      "style": "heading",
+      "text": "{{ t('showcase_input.standalone_fields', 'Standalone fields') }}"
+    },
+    {
+      "id": "section-search",
+      "type": "section",
+      "title": "{{ t('showcase_input.search_with_side_by_side_fields', 'Search with side-by-side fields') }}",
+      "layout": "row",
+      "components": [
+        {
+          "id": "field-type",
+          "type": "input",
+          "field": {
+            "name": "type",
+            "type": "select",
+            "label": "{{ t('common.type', 'Type') }}",
+            "options": [
+              "sales",
+              "purchase"
+            ],
+            "optionKey": "values.type"
+          }
+        },
+        {
+          "id": "field-statuses",
+          "type": "input",
+          "field": {
+            "name": "statuses",
+            "type": "multiselect",
+            "label": "{{ t('common.status', 'Status') }}",
+            "options": [
+              "draft",
+              "sent",
+              "paid"
+            ],
+            "optionKey": "values.status"
+          }
+        },
+        {
+          "id": "field-customer",
+          "type": "input",
+          "field": {
+            "name": "customer",
+            "type": "select",
+            "label": "{{ t('common.customer', 'Customer') }}",
+            "options": [
+              "Smith Ltd",
+              "Baker Inc",
+              "Walker & Co.",
+              "Nolan Group"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "invoice-table",
+      "type": "table",
+      "source": "invoices",
+      "columns": [
+        {
+          "field": "number",
+          "label": "{{ t('common.number', 'Number') }}"
+        },
+        {
+          "field": "customer",
+          "label": "{{ t('common.customer', 'Customer') }}"
+        },
+        {
+          "field": "type",
+          "label": "{{ t('common.type', 'Type') }}",
+          "valueKey": "values.type"
+        },
+        {
+          "field": "status",
+          "label": "{{ t('common.status', 'Status') }}",
+          "valueKey": "values.status"
+        }
+      ]
+    },
+    {
+      "id": "section-types",
+      "type": "section",
+      "title": "{{ t('showcase_input.other_fields', 'Other fields') }}",
+      "components": [
+        {
+          "id": "field-name",
+          "type": "input",
+          "field": {
+            "name": "name",
+            "type": "text",
+            "label": "{{ t('showcase_input.name', 'Name') }}",
+            "required": true,
+            "tooltip": "{{ t('showcase_input.the_greeting_below_updates_when', 'The greeting below updates when you leave the field') }}"
+          },
+          "group": "order"
+        },
+        {
+          "id": "field-email",
+          "type": "input",
+          "field": {
+            "name": "email",
+            "type": "text",
+            "label": "{{ t('showcase_input.email', 'Email') }}",
+            "validate": {
+              "rule": "{{ value.matches('^[^@ ]+@[^@ ]+$') }}",
+              "message": "{{ t('showcase_input.invalid_email_address', 'Invalid email address') }}"
+            }
+          },
+          "group": "order"
+        },
+        {
+          "id": "field-quantity",
+          "type": "input",
+          "default": 1,
+          "field": {
+            "name": "quantity",
+            "type": "number",
+            "label": "{{ t('showcase_input.quantity', 'Quantity') }}"
+          }
+        },
+        {
+          "id": "field-date",
+          "type": "input",
+          "field": {
+            "name": "delivery",
+            "type": "date",
+            "label": "{{ t('showcase_input.delivery_date', 'Delivery date') }}"
+          }
+        },
+        {
+          "id": "field-representative",
+          "type": "input",
+          "bind": "state.order.representative",
+          "field": {
+            "name": "representative",
+            "type": "lookup",
+            "label": "{{ t('showcase_input.customer_search', 'Customer (search)') }}",
+            "lookup": {
+              "source": "customers",
+              "labelField": "name"
+            }
+          }
+        },
+        {
+          "id": "field-urgent",
+          "type": "input",
+          "field": {
+            "name": "urgent",
+            "type": "switch",
+            "label": "{{ t('showcase_input.urgent', 'Urgent') }}"
+          },
+          "onChange": [
+            {
+              "toast": "{{ value ? t('showcase_input.marked_as_urgent', 'Marked as urgent') : t('showcase_input.no_longer_urgent', 'No longer urgent') }}"
+            }
+          ]
+        },
+        {
+          "id": "field-note",
+          "type": "input",
+          "readOnlyIf": "{{ !state.urgent }}",
+          "field": {
+            "name": "note",
+            "type": "textarea",
+            "rows": 2,
+            "label": "{{ t('showcase_input.reason_for_urgency_only_when_urg', 'Reason for urgency (only when urgent)') }}"
+          }
+        },
+        {
+          "id": "summary",
+          "type": "text",
+          "text": "{{ t('showcase_input.hello_pieces_delivery', 'Hello {name}: {q, number} pieces, delivery {d}', {'name': dyn(state.name == null ? '—' : state.name), 'q': dyn(state.quantity == null ? 0 : state.quantity), 'd': dyn(state.delivery == null ? '—' : state.delivery)}) }}"
+        },
+        {
+          "id": "btn-confirm",
+          "type": "button",
+          "label": "{{ t('showcase_input.confirm_checks_name_and_email', 'Confirm (checks name and email)') }}",
+          "onClick": [
+            {
+              "validate": "order"
+            },
+            {
+              "toast": "{{ t('showcase_input.data_is_correct', 'Data is correct') }}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "section-formatted",
+      "type": "section",
+      "title": "{{ t('showcase_input.rich_text', 'Rich text') }}",
+      "components": [
+        {
+          "id": "explanation",
+          "type": "text",
+          "format": "markdown",
+          "text": "{{ t('showcase_input.texts_can_use_classic_typography', 'Texts can use **classic typography**:\\n\\n- bulleted and numbered lists, also nested\\n- *italic*, **bold**, ~~strikethrough~~ and `code`\\n- quotes and [links](https://ng.ant.design/)\\n\\nNo HTML: even text coming from data is safe.') }}"
+        },
+        {
+          "id": "box-formatted",
+          "type": "box",
+          "align": "start",
+          "components": [
+            {
+              "id": "field-description",
+              "type": "input",
+              "grow": 1,
+              "default": "{{ t('showcase_input.delivery_1_pick_up_at_the_wareho', '## Delivery\\n\\n1. Pick up at the **warehouse**\\n2. Check the parcels\\n\\n> Call before arriving') }}",
+              "field": {
+                "name": "description",
+                "type": "richtext",
+                "label": "{{ t('showcase_input.description_rich_text', 'Description (rich text)') }}",
+                "rows": 6
+              }
+            },
+            {
+              "id": "preview-formatted",
+              "type": "section",
+              "grow": 1,
+              "title": "{{ t('showcase_input.how_it_looks', 'How it looks') }}",
+              "components": [
+                {
+                  "id": "result-formatted",
+                  "type": "text",
+                  "format": "markdown",
+                  "text": "{{ state.description }}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

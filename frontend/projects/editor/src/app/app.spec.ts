@@ -1,7 +1,7 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { vi } from 'vitest';
-import layout from '../../public/examples/vetrina-layout.json';
+import layout from '../../public/examples/showcase-layout.json';
 import { I18n } from 'core';
 import { App } from './app';
 import { appConfig } from './app.config';
@@ -12,7 +12,7 @@ import { EDITOR_REDIRECT } from './model/registry-client';
 import { PreviewComponent } from './preview/preview.component';
 import { isToPreview, type PreviewState } from './preview/protocol';
 
-const FILES: Record<string, unknown> = { 'examples/index.json': ['vetrina-layout'], 'examples/vetrina-layout.json': layout };
+const FILES: Record<string, unknown> = { 'examples/index.json': ['showcase-layout'], 'examples/showcase-layout.json': layout };
 
 describe('editor delle schermate', () => {
   let fixture: ComponentFixture<App>;
@@ -167,7 +167,7 @@ describe('editor delle schermate', () => {
     await menuCommand('edit', 'delete');
     expect(store.doc()).toMatchObject({ components: [] });
 
-    // File → Apri esempio → vetrina-layout.
+    // File → Apri esempio → showcase-layout.
     (el.querySelector('ed-menu-bar [data-menu="file"]') as HTMLButtonElement).click();
     await settle();
     expect([...el.querySelectorAll('ed-menu-bar [data-level="0"] .label')].map((l) => l.textContent)).toEqual([
@@ -180,10 +180,10 @@ describe('editor delle schermate', () => {
       'Registro…',
     ]);
     item('open-example')!.click();
-    await until(() => !!item('example:vetrina-layout'), 'esempi nel sottomenu');
+    await until(() => !!item('example:showcase-layout'), 'esempi nel sottomenu');
     // Il documento è tornato quello di partenza (annulla ed elimina): niente da perdere, quindi nessuna conferma.
-    item('example:vetrina-layout')!.click();
-    await until(() => (store.doc() as { screen?: string }).screen === 'vetrina-layout', 'esempio aperto');
+    item('example:showcase-layout')!.click();
+    await until(() => (store.doc() as { screen?: string }).screen === 'showcase-layout', 'esempio aperto');
     expect(item('open-example')).toBeNull();
   });
 
@@ -1148,9 +1148,9 @@ describe('editor delle schermate', () => {
     expect(JSON.parse(written[1])).toMatchObject({ title: 'Elenco ordini aperti' });
     // Senza modifiche non salvate, aprire un esempio non chiede conferma.
     await menuCommand('file', 'open-example');
-    await until(() => !!el.querySelector('ed-menu-bar [data-item="example:vetrina-layout"]'), 'esempi');
-    (el.querySelector('ed-menu-bar [data-item="example:vetrina-layout"]') as HTMLButtonElement).click();
-    await until(() => (store.doc() as { screen?: string }).screen === 'vetrina-layout', 'esempio aperto senza conferma');
+    await until(() => !!el.querySelector('ed-menu-bar [data-item="example:showcase-layout"]'), 'esempi');
+    (el.querySelector('ed-menu-bar [data-item="example:showcase-layout"]') as HTMLButtonElement).click();
+    await until(() => (store.doc() as { screen?: string }).screen === 'showcase-layout', 'esempio aperto senza conferma');
   });
 
   it('menu File con il registro: «Apri da registro…» sceglie applicazione, documento e versione; «Salva in registro» riparte da lì', async () => {

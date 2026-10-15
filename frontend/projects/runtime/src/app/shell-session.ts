@@ -3,17 +3,17 @@ import { HttpAuthorization, HttpSession } from 'services';
 import { DEMO_PROFILES, DemoDiagnostics, DemoSession } from '../demo/demo-ports';
 
 /**
- * Quello che il guscio sa dell'utente: nome, permessi, entrata e uscita. Nella demo i profili si scelgono da un
- * elenco; con i servizi veri l'utente è quello della sessione del BFF e i permessi vengono dal servizio di
- * autorizzazione.
+ * What the shell knows about the user: name, permissions, sign-in and logout. In the demo the profiles are chosen from a
+ * list; with the real services the user is the one of the BFF session and the permissions come from the
+ * authorization service.
  */
 export abstract class ShellSession {
   abstract readonly loggedIn: Signal<boolean>;
   abstract readonly username: Signal<string>;
-  /** Profili tra cui scegliere (solo nella demo); vuoto = nessun selettore. */
+  /** Profiles to choose from (only in the demo); empty = no selector. */
   abstract readonly profiles: string[];
   abstract readonly permissionCount: Signal<number>;
-  /** Segnalazioni tecniche mostrate in fondo alla pagina (solo nella demo; altrimenti vanno alla telemetria). */
+  /** Technical reports shown at the bottom of the page (only in the demo; otherwise they go to telemetry). */
   abstract readonly diagnosticsCount: Signal<number>;
   abstract selectProfile(name: string): void;
   abstract login(): void;
@@ -57,7 +57,7 @@ export class BffShellSession extends ShellSession {
   readonly diagnosticsCount = computed(() => 0);
 
   selectProfile(): void {
-    // Con i servizi veri il profilo è quello dell'utente autenticato.
+    // With the real services the profile is the one of the authenticated user.
   }
 
   login(): void {

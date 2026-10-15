@@ -15,22 +15,22 @@ import { NavigationService } from './navigation.service';
 import { ShellSession } from './shell-session';
 import { DemoNetwork, NETWORK_SPEEDS, type NetworkSpeed } from '../demo/demo-ports';
 
-/** Lingue della demo: per ciascuna esiste `examples/i18n/<lingua>.json`. */
+/** Languages of the demo: each has its `examples/i18n/<language>.json`. */
 const LANGUAGES = ['it', 'en'];
 
 const LANGUAGE_KEY = 'lc.language';
 
 /**
- * Fasce di larghezza del guscio, come in Ant Design Pro:
- * - wide (≥ 1200px): barra laterale espansa, impostazioni della demo nella barra superiore;
- * - medium (768–1199px): barra laterale compressa a icone (si può espandere), impostazioni in un menu;
- * - narrow (< 768px): barra laterale in un cassetto aperto dal pulsante «menu», impostazioni in un menu.
+ * Width bands of the shell, as in Ant Design Pro:
+ * - wide (≥ 1200px): sidebar expanded, demo settings in the top bar;
+ * - medium (768–1199px): sidebar collapsed to icons (it can be expanded), settings in a menu;
+ * - narrow (< 768px): sidebar in a drawer opened by the «menu» button, settings in a menu.
  */
 export type Viewport = 'wide' | 'medium' | 'narrow';
 const WIDE = '(min-width: 1200px)';
 const MEDIUM = '(min-width: 768px)';
 
-/** Fascia corrente, aggiornata quando la finestra cambia dimensione. Senza matchMedia (test, server) vale `wide`. */
+/** Current band, updated when the window changes size. Without matchMedia (tests, server) it is `wide`. */
 function viewportSignal(destroyRef: DestroyRef) {
   const current = signal<Viewport>('wide');
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return current.asReadonly();
@@ -47,19 +47,19 @@ function viewportSignal(destroyRef: DestroyRef) {
   return current.asReadonly();
 }
 
-/** Lingua iniziale: l'ultima scelta, altrimenti quella del browser se supportata, altrimenti l'italiano. */
+/** Initial language: the last one chosen, otherwise the browser's if supported, otherwise Italian. */
 function initialLanguage(): string {
   try {
     const stored = localStorage.getItem(LANGUAGE_KEY);
     if (stored && LANGUAGES.includes(stored)) return stored;
   } catch {
-    // vedi sopra
+    // see above
   }
   const browser = (typeof navigator === 'undefined' ? '' : navigator.language).slice(0, 2);
   return LANGUAGES.includes(browser) ? browser : 'it';
 }
 
-/** Guscio dell'applicazione: barra superiore (profilo e tema della demo), menu laterale, contenuto e notifiche. */
+/** Shell of the application: top bar (profile and theme of the demo), side menu, content and notifications. */
 @Component({
   selector: 'lc-root',
   imports: [FormsModule, NgTemplateOutlet, RouterOutlet, IconComponent, QuadravaWordmarkComponent, SidebarComponent, UserMenuComponent, NzButtonModule, NzDrawerModule, NzDropdownModule, NzLayoutModule, NzMenuModule, NzSelectModule],
@@ -75,7 +75,7 @@ export class App {
   protected readonly languages = LANGUAGES;
 
   protected readonly profiles = this.session.profiles;
-  /** Rete simulata: solo nella demo con il backend nel browser (dove ci sono i profili da scegliere). */
+  /** Simulated network: only in the demo with the back end in the browser (where there are profiles to choose). */
   protected readonly network = inject(DemoNetwork);
   protected readonly speeds = Object.keys(NETWORK_SPEEDS) as NetworkSpeed[];
   private readonly definitions = inject(DefinitionSource);
@@ -83,11 +83,11 @@ export class App {
   protected readonly themeName = signal(this.themes[0]);
   protected readonly viewport = viewportSignal(inject(DestroyRef));
   protected readonly collapsed = signal(false);
-  /** Cassetto con la barra laterale, solo nella fascia stretta. */
+  /** Drawer with the sidebar, only in the narrow band. */
   protected readonly drawerOpen = signal(false);
-  /** Voci del menu utente prima dell'uscita, che il componente aggiunge da sé come ultima. */
+  /** User menu items before the logout, which the component adds by itself as the last one. */
   protected readonly userItems = computed<UserMenuItem[]>(() => [{ id: 'permessi', label: this.i18n.t('app.permissions', { n: this.session.permissionCount() }), icon: 'safety', disabled: true }]);
-  /** Stile del menu: lo dice il tema (barra laterale chiara o scura). */
+  /** Style of the menu: the theme says it (light or dark sidebar). */
   protected readonly siderTone = computed(() => {
     const theme = this.themeService.current();
     return theme?.tokens.layout?.sider?.tone ?? (theme?.mode === 'dark' ? 'dark' : 'light');
@@ -99,7 +99,7 @@ export class App {
   protected readonly hrefFor = (area: string, leaf: VisibleLeaf): string => this.navigation.href(area, leaf);
 
   constructor() {
-    // I cataloghi vengono dalla stessa fonte delle definizioni: i file della demo oppure le versioni pubblicate nel registro.
+    // The catalogues come from the same source as the definitions: the demo files or the versions published in the registry.
     void loadCatalogs(this.i18n, LANGUAGES, (l) => this.definitions.messages(l)).then((problems) => problems.forEach((p) => console.warn('[i18n]', p)));
     this.i18n.setLocale(initialLanguage());
     effect(() => {
@@ -108,11 +108,11 @@ export class App {
       try {
         localStorage.setItem(LANGUAGE_KEY, locale);
       } catch {
-        // Archiviazione non disponibile (navigazione privata, blocchi): la scelta vale solo per questa sessione.
+        // Storage not available (private browsing, blockers): the choice holds only for this session.
       }
     });
-    // Al cambio di fascia la barra si adatta: compressa nella media, espansa nella larga, cassetto chiuso altrimenti.
-    // Dentro la stessa fascia vale la scelta dell'utente.
+    // When the band changes the bar adapts: collapsed in the medium one, expanded in the wide one, drawer closed otherwise.
+    // Within the same band the user's choice holds.
     effect(() => {
       const viewport = this.viewport();
       untracked(() => {
@@ -132,7 +132,7 @@ export class App {
     });
   }
 
-  /** Apre una voce del menu; nel cassetto lo chiude (il cambio di area invece lo lascia aperto per scegliere la voce). */
+  /** Opens a menu item; in the drawer it closes it (a change of area instead leaves it open to choose the item). */
   protected open(area: string, leaf: VisibleLeaf): void {
     this.drawerOpen.set(false);
     this.navigation.open(area, leaf.screen, leaf.params);

@@ -86,27 +86,27 @@ Key design choices:
 ```json
 {
   "schemaVersion": "1.0",
-  "screen": "ordini-elenco",
+  "screen": "order-list",
   "title": "Orders",
-  "requires": "ordini.ordine.leggi",
+  "requires": "orders.order.read",
   "dataSources": {
-    "ordini": { "type": "rest", "method": "GET", "url": "/api/ordini",
-                "params": { "stato": "{{state.filtri.stato}}", "page": "{{state.page}}" },
+    "orders": { "type": "rest", "method": "GET", "url": "/api/orders",
+                "params": { "status": "{{state.filters.status}}", "page": "{{state.page}}" },
                 "paging": "server" },
-    "approvaOrdine": { "type": "rest", "method": "POST", "url": "/api/ordini/{{id}}/approva" }
+    "approveOrder": { "type": "rest", "method": "POST", "url": "/api/orders/{{id}}/approve" }
   },
   "components": [
-    { "type": "filterBar", "bind": "state.filtri",
-      "fields": [{ "name": "stato", "type": "select", "label": "Status", "options": ["bozza", "inviato", "approvato"] }] },
-    { "type": "table", "source": "ordini",
-      "columns": [{ "field": "numero" }, { "field": "stato", "format": "badge" }],
+    { "type": "filterBar", "bind": "state.filters",
+      "fields": [{ "name": "status", "type": "select", "label": "Status", "options": ["draft", "submitted", "approved"] }] },
+    { "type": "table", "source": "orders",
+      "columns": [{ "field": "number" }, { "field": "status", "format": "badge" }],
       "rowActions": [{
         "label": "Approve",
-        "visibleIf": "{{can('ordini.ordine.approva') && row.stato == 'inviato'}}",
+        "visibleIf": "{{can('orders.order.approve') && row.status == 'submitted'}}",
         "onClick": [
-          { "confirm": "Approve order {{row.numero}}?" },
-          { "call": "approvaOrdine", "args": { "id": "{{row.id}}" }, "onError": { "toast": "Approval failed" } },
-          { "refresh": "ordini" },
+          { "confirm": "Approve order {{row.number}}?" },
+          { "call": "approveOrder", "args": { "id": "{{row.id}}" }, "onError": { "toast": "Approval failed" } },
+          { "refresh": "orders" },
           { "toast": "Order approved" }
         ]
       }] }
@@ -167,7 +167,7 @@ GET data sources reload by themselves only when their resolved request (URL and 
 
 **Expressions** are written in [CEL](https://github.com/google/cel-spec) inside `{{ ... }}` and see these variables: `user`, `state`, `params`, `row`, `form`, `value`, and the function `can('domain.resource.action')`. Visibility (`visibleIf`, `hiddenIf`), read-only (`readOnlyIf`), enablement (`enabledIf`) and permissions (`requires`) all use them.
 
-**Permissions** always have three lowercase parts, `domain.resource.action` (for example `ordini.iban.leggi`). The schema rejects any other shape. Record-level permissions arrive as `row._perm.update` / `form._perm.update`.
+**Permissions** always have three lowercase parts, `domain.resource.action` (for example `orders.iban.read`). The schema rejects any other shape. Record-level permissions arrive as `row._perm.update` / `form._perm.update`.
 
 ### Theme
 
@@ -186,14 +186,14 @@ The side menu has a search box (case- and accent-insensitive, also by group name
 Every text is a string that may contain `{{ … }}` expressions, and every component (and every action, field and column) accepts an optional `tooltip` (plain text, never HTML). Translations live in **catalogues**, one per language: flat JSON files in the demo (`examples/i18n/it.json`, `en.json`) and `messages` documents in the registry (versioned, reviewed and published like screens; the runtime loads them from the same source as the definitions). A screen refers to them with `t('key', 'fallback text', {params})`:
 
 ```json
-{ "type": "button", "label": "{{ t('fatture.nuova', 'Nuova fattura') }}", "tooltip": "{{ t('fatture.nuova_aiuto', 'Crea una fattura') }}" }
+{ "type": "button", "label": "{{ t('invoices.new', 'New invoice') }}", "tooltip": "{{ t('invoices.new_help', 'Creates an invoice') }}" }
 ```
 
 The lookup order is: active language, default language, the fallback written in the JSON, the key itself. Messages use a subset of ICU (`{n}`, `plural`, `select`). Expressions also offer `fmtCurrency(v, 'EUR')`, `fmtNumber(v)`, `fmtDate(v)` and `plural(n, 'one', '{n} many')`, all following the active language, and `user.locale` holds the language code.
 
 Quadrava's own strings (`lc.*`) ship in Italian and English; an application can override any of them. Menu labels, validation messages and the "required field" message are translated the same way.
 
-Values that come from the service (statuses, types) keep their original value and are translated only for display: a column takes `"valueKey": "valori.stato"` (the text shown is `t('valori.stato.<value>')`, with the value itself as fallback; badge colours stay bound to the original value) and a select field takes `"optionKey": "valori.tipo"`.
+Values that come from the service (statuses, types) keep their original value and are translated only for display: a column takes `"valueKey": "values.status"` (the text shown is `t('values.status.<value>')`, with the value itself as fallback; badge colours stay bound to the original value) and a select field takes `"optionKey": "values.type"`.
 
 The demo remembers the chosen language and starts from the browser language when it is supported. `validate:examples` checks that every language has the same keys and that every key used with `t()` exists, and a runtime test checks that no text in the example screens is left untranslated.
 
@@ -249,11 +249,11 @@ In the top bar choose the **user** (`operator`, `manager`, `administrator`) and 
 
 * Switch the simulated **network** (normal, slow, very slow) in the top bar to see the activity indicators.
 * Switch users: the available areas and menu entries follow the permissions of the profile. The URL of a screen you may not open shows a denial even if typed by hand.
-* *Inserimento Fattura*: a form with validation that saves a draft and navigates to the drafts list.
-* *Revisione Spese*: two menu entries open the same screen with different parameters; Approve and Reject only appear with the review permission.
-* **Component showcase** (visible to every profile): eleven screens, `examples/vetrina-*.json`, exercising every component: basics and actions; forms; layout containers (box, grid, border layout); standalone fields; fields and forms (new field types, lookup, file upload, grid, repeatable rows, form dialogs); filters and tables; advanced tables (sorting, selection, action menus, expandable rows, totals); the data table; tabs, detail view and in-page messages; a dashboard (KPI tiles and charts); procedures and views (wizard, tree, calendar).
+* *Invoice entry*: a form with validation that saves a draft and navigates to the drafts list.
+* *Expense review*: two menu entries open the same screen with different parameters; Approve and Reject only appear with the review permission.
+* **Component showcase** (visible to every profile): eleven screens, `examples/showcase-*.json`, exercising every component: basics and actions; forms; layout containers (box, grid, border layout); standalone fields; fields and forms (new field types, lookup, file upload, grid, repeatable rows, form dialogs); filters and tables; advanced tables (sorting, selection, action menus, expandable rows, totals); the data table; tabs, detail view and in-page messages; a dashboard (KPI tiles and charts); procedures and views (wizard, tree, calendar).
   Every example section has **JSON** (its definition with syntax highlighting, plus the data sources and named sequences it uses, with a copy button) and **Help** (what each component in it does, with its properties from the schema) in its header.
-* The look follows Ant Design Pro and is entirely driven by the theme: full-height light side bar with the logo above the use-case selector and a round collapse button on its edge, top bar with the user menu (name, avatar, sign-out as the last entry), page header with breadcrumb, title and description, cards on a light grey background. Three themes are provided: `chiaro`, `classico` (dark navy side bar) and `scuro`. The round button on the side bar edge collapses it to icons (groups then open as pop-ups). *Sign out* in the user menu ends the demo session.
+* The look follows Ant Design Pro and is entirely driven by the theme: full-height light side bar with the logo above the area selector and a round collapse button on its edge, top bar with the user menu (name, avatar, sign-out as the last entry), page header with breadcrumb, title and description, cards on a light grey background. Three themes are provided: `light`, `classic` (dark navy side bar) and `dark`. The round button on the side bar edge collapses it to icons (groups then open as pop-ups). *Sign out* in the user menu ends the demo session.
 
 The libraries are not hot-reloaded: after changing anything in `frontend/projects/<library>` run `npm run build:libs` again.
 

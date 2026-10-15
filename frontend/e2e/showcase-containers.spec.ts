@@ -1,11 +1,11 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
-/** Border layout della demo: regioni affiancate su schermi larghi, impilate sotto i 768px. */
-test.describe('Vetrina: contenitori di layout', () => {
+/** Border layout of the demo: regions side by side on wide screens, stacked below 768px. */
+test.describe('Showcase: layout containers', () => {
   async function open(page: Page, width: number): Promise<(name: string) => Locator> {
     await page.setViewportSize({ width, height: 900 });
     await page.addInitScript(() => localStorage.setItem('lc.language', 'it'));
-    await page.goto('/vetrina/vetrina-contenitori');
+    await page.goto('/showcase/showcase-containers');
     const border = page.locator('lc-border').first();
     await expect(border.locator('[data-region="center"] tbody tr').first()).toBeVisible();
     return (name) => border.locator(`[data-region="${name}"]`);
@@ -13,15 +13,15 @@ test.describe('Vetrina: contenitori di layout', () => {
 
   async function box(region: Locator): Promise<{ x: number; y: number; width: number; height: number }> {
     const b = await region.boundingBox();
-    if (!b) throw new Error('regione non visibile');
+    if (!b) throw new Error('region not visible');
     return b;
   }
 
-  test('a 1400px: nord e sud su tutta la larghezza, ovest, centro ed est affiancati', async ({ page }) => {
+  test('at 1400px: north and south across the whole width, west, center and east side by side', async ({ page }) => {
     const region = await open(page, 1400);
     const [north, west, center, east, south] = await Promise.all(['north', 'west', 'center', 'east', 'south'].map((r) => box(region(r))));
 
-    // Ovest, centro ed est sulla stessa riga, nell'ordine, sotto il nord e sopra il sud.
+    // West, center and east on the same row, in order, below the north and above the south.
     expect(Math.abs(west.y - center.y)).toBeLessThan(2);
     expect(Math.abs(east.y - center.y)).toBeLessThan(2);
     expect(west.x + west.width).toBeLessThanOrEqual(center.x);
@@ -29,12 +29,12 @@ test.describe('Vetrina: contenitori di layout', () => {
     expect(north.y + north.height).toBeLessThanOrEqual(center.y);
     expect(south.y).toBeGreaterThanOrEqual(center.y + center.height);
 
-    // Le colonne laterali hanno la larghezza fissata (220px), il centro prende il resto.
+    // The side columns have the fixed width (220px), the center takes the rest.
     expect(Math.round(west.width)).toBe(220);
     expect(Math.round(east.width)).toBe(220);
     expect(center.width).toBeGreaterThan(west.width);
 
-    // Nord e sud occupano tutta la larghezza del border.
+    // North and south take the whole width of the border.
     const left = west.x;
     const right = east.x + east.width;
     for (const full of [north, south]) {
@@ -43,7 +43,7 @@ test.describe('Vetrina: contenitori di layout', () => {
     }
   });
 
-  test('a 375px: le regioni si impilano nell’ordine nord, ovest, centro, est, sud', async ({ page }) => {
+  test('at 375px: the regions stack in the order north, west, center, east, south', async ({ page }) => {
     const region = await open(page, 375);
     const boxes = await Promise.all(['north', 'west', 'center', 'east', 'south'].map((r) => box(region(r))));
 

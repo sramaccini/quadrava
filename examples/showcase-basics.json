@@ -1,0 +1,322 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "showcase-basics",
+  "title": "{{ t('showcase_basics.showcase_basic_components', 'Showcase: basic components') }}",
+  "requires": "showcase.components.read",
+  "dataSources": {
+    "flag": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/showcase/flag",
+      "body": {
+        "message": "{{state.message}}"
+      }
+    },
+    "flagWithError": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/showcase/error"
+    },
+    "flagConflict": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/showcase/conflict"
+    }
+  },
+  "actions": {
+    "sendReport": [
+      {
+        "confirm": "{{ t('showcase_basics.send_the_report', 'Send the report?') }}"
+      },
+      {
+        "set": {
+          "path": "message",
+          "value": "Report from the showcase"
+        }
+      },
+      {
+        "call": "flag",
+        "as": "receipt"
+      },
+      {
+        "toast": "{{ t('showcase_basics.report_registered_with_reference', 'Report registered with reference {p}', {'p': receipt.protocol}) }}"
+      },
+      {
+        "set": {
+          "path": "lastProtocol",
+          "value": "{{ receipt.protocol }}"
+        }
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "title",
+      "type": "text",
+      "style": "heading",
+      "text": "{{ t('showcase_basics.basic_components', 'Basic components') }}"
+    },
+    {
+      "id": "intro",
+      "type": "text",
+      "tooltip": "{{ t('showcase_basics.every_component_can_have_an_opti', 'Every component can have an optional tooltip (plain text, expressions allowed)') }}",
+      "text": "{{ t('showcase_basics.this_screen_shows_text_sections', 'This screen shows text, sections and buttons with the five available actions: set, call, refresh, navigate and toast.') }}"
+    },
+    {
+      "id": "section-text",
+      "type": "section",
+      "title": "{{ t('showcase_basics.text_with_dynamic_values', 'Text with dynamic values') }}",
+      "components": [
+        {
+          "id": "greeting",
+          "type": "text",
+          "text": "{{ t('showcase_basics.signed_in_user', 'Signed-in user: {username}', {'username': dyn(user.username)}) }}"
+        },
+        {
+          "id": "counter-text",
+          "type": "text",
+          "text": "{{ t('showcase_basics.you_pressed_the_button_times', 'You pressed the button {counter} times.', {'counter': dyn(has(state.counter) ? state.counter : 0)}) }}"
+        }
+      ]
+    },
+    {
+      "id": "section-languages",
+      "type": "section",
+      "title": "{{ t('showcase.languages_and_translations', 'Languages and translations') }}",
+      "components": [
+        {
+          "id": "languages-intro",
+          "type": "text",
+          "text": "{{ t('showcase.change_the_language_from_the_sel', 'Change the language from the selector at the top: the texts in this section come from a catalogue per language.') }}"
+        },
+        {
+          "id": "languages-active",
+          "type": "text",
+          "text": "{{ t('showcase.active_language', 'Active language: {lingua}', {'lingua': user.locale}) }}"
+        },
+        {
+          "id": "languages-amount",
+          "type": "text",
+          "text": "{{ t('showcase.amount_formatted_in_the_active_l', 'Amount formatted in the active language: {v}', {'v': fmtCurrency(1234.5, 'EUR')}) }}"
+        },
+        {
+          "id": "languages-date",
+          "type": "text",
+          "text": "{{ t('showcase.formatted_date', 'Formatted date: {v}', {'v': fmtDate('2026-10-09')}) }}"
+        },
+        {
+          "id": "languages-rows",
+          "type": "text",
+          "text": "{{ t('showcase.one_other', '{n, plural, =0 {No presses recorded} one {# press recorded} other {# presses recorded}}', {'n': has(state.counter) ? state.counter : 0}) }}"
+        },
+        {
+          "id": "languages-button",
+          "type": "button",
+          "label": "{{ t('showcase.button_with_translated_tooltip', 'Button with translated tooltip') }}",
+          "tooltip": "{{ t('showcase.this_tooltip_changes_with_the_la', 'This tooltip changes with the language') }}",
+          "onClick": [
+            {
+              "toast": "{{ t('showcase.hello', 'Hello {name}!', {'name': user.username}) }}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "section-actions",
+      "type": "section",
+      "title": "{{ t('showcase_basics.buttons_and_actions', 'Buttons and actions') }}",
+      "components": [
+        {
+          "id": "btn-increment",
+          "type": "button",
+          "label": "{{ t('showcase_basics.increment_the_counter_set', 'Increment the counter (set)') }}",
+          "tooltip": "{{ t('showcase_basics.the_counter_is_each_click_increa', 'The counter is {counter}: each click increases it by one', {'counter': dyn(has(state.counter) ? state.counter : 0)}) }}",
+          "onClick": [
+            {
+              "set": {
+                "path": "counter",
+                "value": "{{has(state.counter) ? state.counter + 1 : 1}}"
+              }
+            }
+          ]
+        },
+        {
+          "id": "btn-toast",
+          "type": "button",
+          "label": "{{ t('showcase_basics.show_a_message_toast', 'Show a message (toast)') }}",
+          "onClick": [
+            {
+              "toast": "{{ t('showcase_basics.this_is_an_informational_message', 'This is an informational message') }}"
+            }
+          ]
+        },
+        {
+          "id": "btn-call",
+          "type": "button",
+          "label": "{{ t('showcase_basics.call_a_service_call', 'Call a service (call)') }}",
+          "onClick": [
+            {
+              "set": {
+                "path": "message",
+                "value": "Hello from the showcase"
+              }
+            },
+            {
+              "call": "flag",
+              "onError": {
+                "toast": "{{ t('showcase_basics.call_failed', 'Call failed') }}"
+              }
+            },
+            {
+              "toast": "{{ t('showcase_basics.service_called', 'Service called') }}"
+            }
+          ]
+        },
+        {
+          "id": "btn-error",
+          "type": "button",
+          "label": "{{ t('showcase_basics.failing_call_onerror', 'Failing call (onError)') }}",
+          "onClick": [
+            {
+              "call": "flagWithError",
+              "onError": {
+                "toast": "{{ t('showcase_basics.error_handled_the_sequence_stops', 'Error handled: the sequence stops here') }}"
+              }
+            },
+            {
+              "toast": "{{ t('showcase_basics.this_message_never_appears', 'This message never appears') }}"
+            }
+          ]
+        },
+        {
+          "id": "btn-navigate",
+          "type": "button",
+          "label": "{{ t('showcase_basics.go_to_the_tables_showcase_naviga', 'Go to the tables showcase (navigate)') }}",
+          "onClick": [
+            {
+              "navigate": "showcase-tables",
+              "params": {
+                "highlight": "submitted"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "section-sequences",
+      "type": "section",
+      "title": "{{ t('showcase_basics.sequences_and_responses', 'Sequences and responses') }}",
+      "components": [
+        {
+          "id": "sequences-explanation",
+          "type": "text",
+          "text": "{{ t('showcase_basics.before_and_after_a_call_a_named', 'Before and after a call: a named sequence (actions, run step) asks for confirmation, calls the service, reads the response (as) and uses it in the next steps; the if step chooses what to do; onError tells errors apart with error.status.') }}"
+        },
+        {
+          "id": "sequences-actions",
+          "type": "box",
+          "gap": "small",
+          "components": [
+            {
+              "id": "btn-run",
+              "type": "button",
+              "label": "{{ t('showcase_basics.named_sequence_run_as', 'Named sequence (run, as)') }}",
+              "onClick": [
+                {
+                  "run": "sendReport"
+                }
+              ]
+            },
+            {
+              "id": "btn-if",
+              "type": "button",
+              "label": "{{ t('showcase_basics.decide_on_the_counter_if', 'Decide on the counter (if)') }}",
+              "onClick": [
+                {
+                  "if": "{{ has(state.counter) && state.counter >= 3 }}",
+                  "then": {
+                    "toast": "{{ t('showcase_basics.the_counter_is_at_least_3_going', 'The counter is at least 3: going on') }}"
+                  },
+                  "else": {
+                    "toast": "{{ t('showcase_basics.the_counter_is_below_3_press_inc', 'The counter is below 3: press “Increment the counter” again') }}"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "btn-status",
+              "type": "button",
+              "label": "{{ t('showcase_basics.distinct_error_error_status', 'Distinct error (error.status)') }}",
+              "onClick": [
+                {
+                  "call": "flagConflict",
+                  "onError": {
+                    "if": "{{ error.status == 409 }}",
+                    "then": {
+                      "toast": "{{ t('showcase_basics.conflict_409_the_case_was_alread', 'Conflict (409): the case was already sent') }}"
+                    },
+                    "else": {
+                      "toast": "{{ t('showcase_basics.error', 'Error {s}', {'s': error.status}) }}"
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "last-protocol",
+          "type": "text",
+          "text": "{{ has(state.lastProtocol) ? t('showcase_basics.last_reference', 'Last reference: {p}', {'p': state.lastProtocol}) : t('showcase_basics.no_report_sent_yet', 'No report sent yet') }}"
+        }
+      ]
+    },
+    {
+      "id": "section-conditions",
+      "type": "section",
+      "title": "{{ t('showcase_basics.visibility_and_enablement', 'Visibility and enablement') }}",
+      "components": [
+        {
+          "id": "txt-conditions",
+          "type": "text",
+          "text": "{{ t('showcase_basics.the_buttons_below_change_with_th', 'The buttons below change with the user\\'s permissions: try them with the three profiles in the selector at the top.') }}"
+        },
+        {
+          "id": "btn-manager-only",
+          "type": "button",
+          "label": "{{ t('showcase_basics.visible_only_with_the_permission', 'Visible only with the permission to approve orders') }}",
+          "visibleIf": "{{can('orders.order.approve')}}",
+          "onClick": [
+            {
+              "toast": "{{ t('showcase_basics.you_have_the_permission_orders_o', 'You have the permission orders.order.approve') }}"
+            }
+          ]
+        },
+        {
+          "id": "btn-hidden-admin",
+          "type": "button",
+          "label": "{{ t('showcase_basics.hidden_from_those_who_can_read_i', 'Hidden from those who can read IBANs') }}",
+          "hiddenIf": "{{can('orders.iban.read')}}",
+          "onClick": [
+            {
+              "toast": "{{ t('showcase_basics.you_cannot_see_ibans', 'You cannot see IBANs') }}"
+            }
+          ]
+        },
+        {
+          "id": "btn-enabled",
+          "type": "button",
+          "label": "{{ t('showcase_basics.enabled_after_at_least_two_incre', 'Enabled after at least two increments') }}",
+          "enabledIf": "{{has(state.counter) && state.counter >= 2}}",
+          "onClick": [
+            {
+              "toast": "{{ t('showcase_basics.enabled_by_the_screen_state', 'Enabled by the screen state') }}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

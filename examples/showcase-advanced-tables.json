@@ -1,0 +1,418 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "showcase-advanced-tables",
+  "title": "{{ t('showcase_advanced.showcase_advanced_tables', 'Showcase: advanced tables') }}",
+  "description": "{{ t('showcase_advanced.sorting_selection_action_menus_e', 'Sorting, selection, action menus, expandable rows and totals.') }}",
+  "requires": "showcase.components.read",
+  "dataSources": {
+    "orders": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/orders",
+      "params": {
+        "sort": "{{state.sorting.field}}",
+        "dir": "{{state.sorting.direction}}",
+        "page": "{{state.page}}"
+      },
+      "paging": "server"
+    },
+    "invoices": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/invoices"
+    },
+    "sendInvoices": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/invoices/send",
+      "body": {
+        "ids": "{{ids}}"
+      }
+    },
+    "sendInvoice": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/invoices/{{id}}/send"
+    }
+  },
+  "components": [
+    {
+      "id": "title",
+      "type": "text",
+      "style": "heading",
+      "text": "{{ t('showcase_advanced.advanced_tables', 'Advanced tables') }}"
+    },
+    {
+      "id": "section-sorting",
+      "type": "section",
+      "title": "{{ t('showcase_advanced.sorting', 'Sorting') }}",
+      "components": [
+        {
+          "id": "explain-sorting-server",
+          "type": "text",
+          "text": "{{ t('showcase_advanced.orders_with_server_side_paging_t', 'Orders with server-side paging: the service sorts them, reading the order from the screen state. They open sorted by number, descending.') }}"
+        },
+        {
+          "id": "sorted-orders",
+          "type": "table",
+          "source": "orders",
+          "sort": {
+            "bind": "state.sorting",
+            "default": {
+              "field": "number",
+              "direction": "desc"
+            }
+          },
+          "columns": [
+            {
+              "field": "number",
+              "label": "{{ t('common.number', 'Number') }}",
+              "sortable": true
+            },
+            {
+              "field": "customer",
+              "label": "{{ t('common.customer', 'Customer') }}",
+              "sortable": true
+            },
+            {
+              "field": "discount",
+              "label": "{{ t('common.discount', 'Discount') }}",
+              "format": "percent",
+              "sortable": true
+            },
+            {
+              "field": "status",
+              "label": "{{ t('common.status', 'Status') }}",
+              "format": "badge",
+              "badges": {
+                "draft": "neutral",
+                "submitted": "primary",
+                "approved": "success"
+              },
+              "valueKey": "values.status"
+            }
+          ]
+        },
+        {
+          "id": "explain-sorting-page",
+          "type": "text",
+          "text": "{{ t('showcase_advanced.invoices_without_server_side_pag', 'Invoices without server-side paging: sorting happens in the page, on the rows already loaded, with no new requests.') }}"
+        },
+        {
+          "id": "sorted-invoices",
+          "type": "table",
+          "source": "invoices",
+          "columns": [
+            {
+              "field": "number",
+              "label": "{{ t('common.number', 'Number') }}",
+              "sortable": true
+            },
+            {
+              "field": "customer",
+              "label": "{{ t('common.customer', 'Customer') }}",
+              "sortable": true
+            },
+            {
+              "field": "issued",
+              "label": "{{ t('common.issued_on', 'Issued on') }}",
+              "format": "date",
+              "sortable": true
+            },
+            {
+              "field": "amount",
+              "label": "{{ t('common.amount', 'Amount (€)') }}",
+              "format": "currency",
+              "sortable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "section-selection",
+      "type": "section",
+      "title": "{{ t('showcase_advanced.selection_and_bulk_actions', 'Selection and bulk actions') }}",
+      "components": [
+        {
+          "id": "explain-selection",
+          "type": "text",
+          "text": "{{ t('showcase_advanced.pick_invoices_with_the_check_box', 'Pick invoices with the check boxes. “Send selected” is enabled only when every selected row is a draft.') }}"
+        },
+        {
+          "id": "selectable-invoices",
+          "type": "table",
+          "source": "invoices",
+          "selection": {
+            "bind": "state.chosenInvoices"
+          },
+          "columns": [
+            {
+              "field": "number",
+              "label": "{{ t('common.number', 'Number') }}"
+            },
+            {
+              "field": "customer",
+              "label": "{{ t('common.customer', 'Customer') }}"
+            },
+            {
+              "field": "status",
+              "label": "{{ t('common.status', 'Status') }}",
+              "format": "badge",
+              "badges": {
+                "draft": "neutral",
+                "sent": "primary",
+                "paid": "success"
+              },
+              "valueKey": "values.status"
+            }
+          ],
+          "bulkActions": [
+            {
+              "id": "btn-send-selected",
+              "label": "{{ t('showcase_advanced.send_selected', 'Send selected') }}",
+              "tooltip": "{{ t('showcase_advanced.only_drafts_can_be_sent', 'Only drafts can be sent') }}",
+              "enabledIf": "{{ size(selection) > 0 && selection.all(r, r.status == 'draft') }}",
+              "onClick": [
+                {
+                  "confirm": "{{ t('showcase_advanced.send_other', 'Send {n, plural, one {# invoice} other {# invoices}}?', {'n': size(selection)}) }}"
+                },
+                {
+                  "call": "sendInvoices",
+                  "args": {
+                    "ids": "{{ selection.map(r, r.id) }}"
+                  }
+                },
+                {
+                  "set": {
+                    "path": "state.chosenInvoices",
+                    "value": []
+                  }
+                },
+                {
+                  "refresh": "invoices"
+                },
+                {
+                  "toast": "{{ t('showcase_advanced.invoices_sent', 'Invoices sent') }}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "section-menu-actions",
+      "type": "section",
+      "title": "{{ t('showcase_advanced.row_action_menu', 'Row action menu') }}",
+      "components": [
+        {
+          "id": "explain-menu-actions",
+          "type": "text",
+          "text": "{{ t('showcase_advanced.with_rowactionsinline_1_only_the', 'With rowActionsInline: 1 only the first visible action is a button; the others live in the “⋯” menu. Unavailable actions stay visible but disabled.') }}"
+        },
+        {
+          "id": "invoices-with-menu",
+          "type": "table",
+          "source": "invoices",
+          "rowActionsInline": 1,
+          "columns": [
+            {
+              "field": "number",
+              "label": "{{ t('common.number', 'Number') }}"
+            },
+            {
+              "field": "customer",
+              "label": "{{ t('common.customer', 'Customer') }}"
+            },
+            {
+              "field": "status",
+              "label": "{{ t('common.status', 'Status') }}",
+              "format": "badge",
+              "badges": {
+                "draft": "neutral",
+                "sent": "primary",
+                "paid": "success"
+              },
+              "valueKey": "values.status"
+            }
+          ],
+          "rowActions": [
+            {
+              "id": "btn-send",
+              "label": "{{ t('showcase_advanced.send', 'Send') }}",
+              "enabledIf": "{{ row.status == 'draft' }}",
+              "onClick": [
+                {
+                  "call": "sendInvoice",
+                  "args": {
+                    "id": "{{row.id}}"
+                  }
+                },
+                {
+                  "refresh": "invoices"
+                },
+                {
+                  "toast": "{{ t('showcase_advanced.invoice_sent', 'Invoice {number} sent', {'number': row.number}) }}"
+                }
+              ]
+            },
+            {
+              "id": "btn-duplicate",
+              "label": "{{ t('showcase_advanced.duplicate', 'Duplicate') }}",
+              "onClick": [
+                {
+                  "toast": "{{ t('showcase_advanced.copy_of_created_example', 'Copy of {number} created (example)', {'number': row.number}) }}"
+                }
+              ]
+            },
+            {
+              "id": "btn-remind",
+              "label": "{{ t('showcase_advanced.send_a_payment_reminder', 'Send a payment reminder') }}",
+              "tooltip": "{{ t('showcase_advanced.only_for_invoices_sent_and_not_y', 'Only for invoices sent and not yet paid') }}",
+              "enabledIf": "{{ row.status == 'sent' }}",
+              "onClick": [
+                {
+                  "toast": "{{ t('showcase_advanced.reminder_sent_to', 'Reminder sent to {customer}', {'customer': row.customer}) }}"
+                }
+              ]
+            },
+            {
+              "id": "btn-cancel",
+              "label": "{{ t('showcase_advanced.cancel_the_invoice', 'Cancel the invoice') }}",
+              "visibleIf": "{{ row.status == 'draft' }}",
+              "onClick": [
+                {
+                  "confirm": "{{ t('showcase_advanced.cancel_invoice', 'Cancel invoice {number}?', {'number': row.number}) }}"
+                },
+                {
+                  "toast": "{{ t('showcase_advanced.cancellation_simulated', 'Cancellation simulated') }}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "section-expandable",
+      "type": "section",
+      "title": "{{ t('showcase_advanced.expandable_detail_rows', 'Expandable detail rows') }}",
+      "components": [
+        {
+          "id": "explain-expandable",
+          "type": "text",
+          "text": "{{ t('showcase_advanced.the_button_on_the_left_opens_an', 'The button on the left opens an area below the row with other components, which see the row as row. Approved orders do not expand (expandIf).') }}"
+        },
+        {
+          "id": "expandable-orders",
+          "type": "table",
+          "source": "orders",
+          "columns": [
+            {
+              "field": "number",
+              "label": "{{ t('common.number', 'Number') }}"
+            },
+            {
+              "field": "customer",
+              "label": "{{ t('common.customer', 'Customer') }}"
+            },
+            {
+              "field": "status",
+              "label": "{{ t('common.status', 'Status') }}",
+              "format": "badge",
+              "badges": {
+                "draft": "neutral",
+                "submitted": "primary",
+                "approved": "success"
+              },
+              "valueKey": "values.status"
+            }
+          ],
+          "expand": {
+            "expandIf": "{{ row.status != 'approved' }}",
+            "components": [
+              {
+                "id": "order-summary",
+                "type": "text",
+                "text": "{{ t('showcase_advanced.customer_discount', 'Customer {customer}, discount {discount}%.', {'customer': row.customer, 'discount': row.discount}) }}"
+              },
+              {
+                "id": "notice-draft",
+                "type": "alert",
+                "kind": "info",
+                "visibleIf": "{{ row.status == 'draft' }}",
+                "text": "{{ t('showcase_advanced.draft_order_not_yet_sent_to_the', 'Draft order: not yet sent to the customer.') }}"
+              },
+              {
+                "id": "open-order",
+                "type": "button",
+                "label": "{{ t('showcase_advanced.open_the_order', 'Open the order') }}",
+                "onClick": [
+                  {
+                    "navigate": "order-detail",
+                    "params": {
+                      "id": "{{row.id}}"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "section-totals",
+      "type": "section",
+      "title": "{{ t('showcase_advanced.numbers_links_and_totals', 'Numbers, links and totals') }}",
+      "components": [
+        {
+          "id": "explain-totals",
+          "type": "text",
+          "text": "{{ t('showcase_advanced.the_invoice_number_is_a_link_onc', 'The invoice number is a link (onClick on the column). At the bottom, the totals row: sum of lines and amounts, average VAT rate and number of customers.') }}"
+        },
+        {
+          "id": "invoice-totals",
+          "type": "table",
+          "source": "invoices",
+          "columns": [
+            {
+              "field": "number",
+              "label": "{{ t('common.number', 'Number') }}",
+              "onClick": [
+                {
+                  "toast": "{{ t('showcase_advanced.you_opened_invoice', 'You opened invoice {number}', {'number': row.number}) }}"
+                }
+              ]
+            },
+            {
+              "field": "customer",
+              "label": "{{ t('common.customer', 'Customer') }}",
+              "aggregate": "count"
+            },
+            {
+              "field": "rows",
+              "label": "{{ t('showcase_advanced.lines', 'Lines') }}",
+              "format": "number",
+              "decimals": 0,
+              "aggregate": "sum"
+            },
+            {
+              "field": "rate",
+              "label": "{{ t('showcase_advanced.vat_rate', 'VAT rate') }}",
+              "format": "percent",
+              "aggregate": "avg"
+            },
+            {
+              "field": "amount",
+              "label": "{{ t('common.amount', 'Amount (€)') }}",
+              "format": "currency",
+              "aggregate": "sum"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

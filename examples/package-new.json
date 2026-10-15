@@ -1,0 +1,54 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "package-new",
+  "title": "{{ t('package_new.new_package', 'New package') }}",
+  "requires": "packages.package.create",
+  "dataSources": {
+    "createPackage": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/packages",
+      "body": "{{form}}"
+    }
+  },
+  "components": [
+    {
+      "id": "package-form",
+      "type": "form",
+      "fields": [
+        {
+          "name": "name",
+          "type": "text",
+          "label": "{{ t('package_new.package_name', 'Package name') }}",
+          "required": true
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "label": "{{ t('common.description', 'Description') }}"
+        }
+      ],
+      "actions": [
+        {
+          "id": "btn-create",
+          "label": "{{ t('package_new.create_package', 'Create package') }}",
+          "enabledIf": "{{can('packages.package.create')}}",
+          "onClick": [
+            {
+              "call": "createPackage",
+              "onError": {
+                "toast": "{{ t('package_new.creation_failed', 'Creation failed') }}"
+              }
+            },
+            {
+              "toast": "{{ t('package_new.package_created', 'Package created') }}"
+            },
+            {
+              "navigate": "package-list"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

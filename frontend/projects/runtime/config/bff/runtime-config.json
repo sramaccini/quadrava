@@ -3,11 +3,11 @@
     "source": "registry",
     "app": "demo",
     "env": "development",
-    "navigation": "fatturazione",
+    "navigation": "invoicing",
     "themes": [
-      "chiaro",
-      "classico",
-      "scuro"
+      "light",
+      "classic",
+      "dark"
     ]
   },
   "services": {

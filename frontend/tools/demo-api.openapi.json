@@ -1,98 +1,98 @@
 {
   "openapi": "3.0.1",
-  "info": { "title": "Quadrava demo API", "version": "1.0", "description": "Le API del backend di esempio della demo (tools/demo-api.mjs), descritte come le pubblicherebbe springdoc in Spring Boot." },
+  "info": { "title": "Quadrava demo API", "version": "1.0", "description": "The APIs of the sample back end of the demo (tools/demo-api.mjs), described as springdoc would publish them in Spring Boot." },
   "servers": [{ "url": "http://localhost:8084", "description": "Generated server url" }],
   "tags": [
-    { "name": "ordini", "description": "Ordini dei clienti" },
-    { "name": "fatture", "description": "Fatture attive e passive" },
-    { "name": "anagrafiche", "description": "Clienti e contatti" },
-    { "name": "spese", "description": "Note spese da revisionare" }
+    { "name": "orders", "description": "Customer orders" },
+    { "name": "invoices", "description": "Sales and purchase invoices" },
+    { "name": "registry", "description": "Customers and contacts" },
+    { "name": "expenses", "description": "Expense claims to review" }
   ],
   "paths": {
-    "/api/ordini": {
+    "/api/orders": {
       "get": {
-        "tags": ["ordini"],
-        "summary": "Elenco degli ordini, a pagine",
-        "operationId": "listOrdini",
+        "tags": ["orders"],
+        "summary": "List of orders, in pages",
+        "operationId": "listOrders",
         "parameters": [
-          { "name": "stato", "in": "query", "required": false, "schema": { "type": "string", "enum": ["bozza", "inviato", "approvato"] } },
+          { "name": "status", "in": "query", "required": false, "schema": { "type": "string", "enum": ["draft", "submitted", "approved"] } },
           { "name": "page", "in": "query", "required": false, "schema": { "type": "integer", "format": "int32", "default": 0 } },
           { "name": "sort", "in": "query", "required": false, "schema": { "type": "string" } }
         ],
-        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/PaginaOrdini" } } } } }
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/OrderPage" } } } } }
       }
     },
-    "/api/ordini/{id}": {
+    "/api/orders/{id}": {
       "get": {
-        "tags": ["ordini"],
-        "summary": "Dettaglio di un ordine",
-        "operationId": "getOrdine",
+        "tags": ["orders"],
+        "summary": "Detail of an order",
+        "operationId": "getOrder",
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer", "format": "int64" } }],
-        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/Ordine" } } } }, "404": { "description": "Non trovato" } }
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/Order" } } } }, "404": { "description": "Not found" } }
       },
       "put": {
-        "tags": ["ordini"],
-        "summary": "Modifica cliente, tipo e sconto di un ordine",
-        "operationId": "updateOrdine",
+        "tags": ["orders"],
+        "summary": "Changes customer, type and discount of an order",
+        "operationId": "updateOrder",
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer", "format": "int64" } }],
-        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ModificaOrdine" } } }, "required": true },
-        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/Ordine" } } } } }
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrderUpdate" } } }, "required": true },
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/Order" } } } } }
       }
     },
-    "/api/ordini/{id}/approva": {
+    "/api/orders/{id}/approve": {
       "post": {
-        "tags": ["ordini"],
-        "summary": "Approva un ordine inviato",
-        "operationId": "approvaOrdine",
+        "tags": ["orders"],
+        "summary": "Approves a submitted order",
+        "operationId": "approveOrder",
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer", "format": "int64" } }],
-        "responses": { "200": { "description": "OK" }, "409": { "description": "L'ordine non è in stato inviato" } }
+        "responses": { "200": { "description": "OK" }, "409": { "description": "The order is not submitted" } }
       }
     },
-    "/api/fatture": {
+    "/api/invoices": {
       "get": {
-        "tags": ["fatture"],
-        "summary": "Elenco delle fatture, a pagine e con filtri",
-        "operationId": "listFatture",
+        "tags": ["invoices"],
+        "summary": "List of invoices, in pages and with filters",
+        "operationId": "listInvoices",
         "parameters": [
-          { "name": "stato", "in": "query", "required": false, "schema": { "type": "array", "items": { "type": "string", "enum": ["bozza", "inviata", "pagata"] } } },
-          { "name": "tipo", "in": "query", "required": false, "schema": { "type": "string", "enum": ["attiva", "passiva"] } },
-          { "name": "cliente", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "status", "in": "query", "required": false, "schema": { "type": "array", "items": { "type": "string", "enum": ["draft", "sent", "paid"] } } },
+          { "name": "type", "in": "query", "required": false, "schema": { "type": "string", "enum": ["sales", "purchase"] } },
+          { "name": "customer", "in": "query", "required": false, "schema": { "type": "string" } },
           { "name": "page", "in": "query", "required": false, "schema": { "type": "integer", "format": "int32", "default": 0 } }
         ],
-        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/PaginaFatture" } } } } }
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/InvoicePage" } } } } }
       },
       "post": {
-        "tags": ["fatture"],
-        "summary": "Crea una fattura in bozza",
-        "operationId": "createFattura",
-        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/NuovaFattura" } } }, "required": true },
-        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/Creato" } } } } }
+        "tags": ["invoices"],
+        "summary": "Creates a draft invoice",
+        "operationId": "createInvoice",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/NewInvoice" } } }, "required": true },
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/Created" } } } } }
       }
     },
-    "/api/fatture/{id}/invia": {
+    "/api/invoices/{id}/send": {
       "post": {
-        "tags": ["fatture"],
-        "summary": "Invia una fattura in bozza",
-        "operationId": "inviaFattura",
+        "tags": ["invoices"],
+        "summary": "Sends a draft invoice",
+        "operationId": "sendInvoice",
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer", "format": "int64" } }],
         "responses": { "200": { "description": "OK" } }
       }
     },
-    "/api/scadenze": {
+    "/api/deadlines": {
       "get": {
-        "tags": ["fatture"],
-        "summary": "Scadenze di un mese",
-        "operationId": "listScadenze",
-        "parameters": [{ "name": "mese", "in": "query", "required": true, "description": "AAAA-MM", "schema": { "type": "string", "pattern": "^\\d{4}-\\d{2}$", "example": "2026-10" } }],
+        "tags": ["invoices"],
+        "summary": "Deadlines of a month",
+        "operationId": "listDeadlines",
+        "parameters": [{ "name": "month", "in": "query", "required": true, "description": "YYYY-MM", "schema": { "type": "string", "pattern": "^\\d{4}-\\d{2}$", "example": "2026-10" } }],
         "responses": {
           "200": {
             "description": "OK",
             "content": {
               "*/*": {
-                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Scadenza" } },
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Deadline" } },
                 "example": [
-                  { "id": 1, "data": "2026-10-03", "titolo": "Affitto ufficio", "stato": "pagata", "importo": 150 },
-                  { "id": 2, "data": "2026-10-08", "titolo": "F24 contributi", "stato": "da-pagare", "importo": 370 }
+                  { "id": 1, "date": "2026-10-03", "title": "Office rent", "status": "paid", "amount": 150 },
+                  { "id": 2, "date": "2026-10-08", "title": "Social security payment", "status": "to-pay", "amount": 370 }
                 ]
               }
             }
@@ -100,104 +100,104 @@
         }
       }
     },
-    "/api/clienti": {
+    "/api/customers": {
       "get": {
-        "tags": ["anagrafiche"],
-        "summary": "Clienti, con ricerca per nome",
-        "operationId": "listClienti",
+        "tags": ["registry"],
+        "summary": "Customers, searched by name",
+        "operationId": "listCustomers",
         "parameters": [{ "name": "q", "in": "query", "required": false, "schema": { "type": "string" } }],
-        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Cliente" } } } } } }
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Customer" } } } } } }
       }
     },
-    "/api/contatti": {
+    "/api/contacts": {
       "get": {
-        "tags": ["anagrafiche"],
-        "summary": "Contatti",
-        "operationId": "listContatti",
-        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Contatto" } } } } } }
+        "tags": ["registry"],
+        "summary": "Contacts",
+        "operationId": "listContacts",
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Contact" } } } } } }
       },
       "post": {
-        "tags": ["anagrafiche"],
-        "summary": "Nuovo contatto",
-        "operationId": "createContatto",
-        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Contatto" } } }, "required": true },
-        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/Creato" } } } } }
+        "tags": ["registry"],
+        "summary": "New contact",
+        "operationId": "createContact",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Contact" } } }, "required": true },
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/Created" } } } } }
       }
     },
-    "/api/spese": {
+    "/api/expenses": {
       "get": {
-        "tags": ["spese"],
-        "summary": "Note spese",
-        "operationId": "listSpese",
-        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Spesa" } } } } } }
+        "tags": ["expenses"],
+        "summary": "Expense claims",
+        "operationId": "listExpenses",
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Expense" } } } } } }
       }
     }
   },
   "components": {
     "schemas": {
-      "Ordine": {
+      "Order": {
         "type": "object",
         "properties": {
           "id": { "type": "integer", "format": "int64", "example": 1001 },
-          "numero": { "type": "string", "example": "ORD-2026-001" },
-          "cliente": { "type": "string", "example": "Rossi Srl" },
-          "tipo": { "type": "string", "enum": ["standard", "urgente"] },
-          "stato": { "type": "string", "enum": ["bozza", "inviato", "approvato"] },
-          "importo": { "type": "number", "format": "double", "example": 1250.5 },
-          "data": { "type": "string", "format": "date" },
-          "sconto": { "type": "number", "format": "double" }
+          "number": { "type": "string", "example": "ORD-2026-001" },
+          "customer": { "type": "string", "example": "Smith Ltd" },
+          "type": { "type": "string", "enum": ["private", "business"] },
+          "status": { "type": "string", "enum": ["draft", "submitted", "approved"] },
+          "amount": { "type": "number", "format": "double", "example": 1250.5 },
+          "date": { "type": "string", "format": "date" },
+          "discount": { "type": "number", "format": "double" }
         }
       },
-      "ModificaOrdine": {
+      "OrderUpdate": {
         "type": "object",
-        "properties": { "cliente": { "type": "string" }, "tipo": { "type": "string", "enum": ["standard", "urgente"] }, "sconto": { "type": "number" } }
+        "properties": { "customer": { "type": "string" }, "type": { "type": "string", "enum": ["private", "business"] }, "discount": { "type": "number" } }
       },
-      "PaginaOrdini": {
+      "OrderPage": {
         "type": "object",
-        "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Ordine" } }, "total": { "type": "integer", "example": 42 }, "size": { "type": "integer", "example": 10 } }
+        "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Order" } }, "total": { "type": "integer", "example": 42 }, "size": { "type": "integer", "example": 10 } }
       },
-      "Fattura": {
+      "Invoice": {
         "type": "object",
         "properties": {
           "id": { "type": "integer", "format": "int64" },
-          "numero": { "type": "string", "example": "FT-2026-001" },
-          "cliente": { "type": "string", "example": "Bianchi SpA" },
-          "tipo": { "type": "string", "enum": ["attiva", "passiva"] },
-          "importo": { "type": "number", "format": "double", "example": 980 },
-          "stato": { "type": "string", "enum": ["bozza", "inviata", "pagata"] },
-          "emessa": { "type": "string", "format": "date" },
-          "incassata": { "type": "boolean" }
+          "number": { "type": "string", "example": "FT-2026-001" },
+          "customer": { "type": "string", "example": "Baker Inc" },
+          "type": { "type": "string", "enum": ["sales", "purchase"] },
+          "amount": { "type": "number", "format": "double", "example": 980 },
+          "status": { "type": "string", "enum": ["draft", "sent", "paid"] },
+          "issued": { "type": "string", "format": "date" },
+          "collected": { "type": "boolean" }
         }
       },
-      "NuovaFattura": {
+      "NewInvoice": {
         "type": "object",
-        "required": ["numero", "cliente"],
-        "properties": { "numero": { "type": "string" }, "cliente": { "type": "string" }, "tipo": { "type": "string", "enum": ["attiva", "passiva"] }, "importo": { "type": "number" } }
+        "required": ["number", "customer"],
+        "properties": { "number": { "type": "string" }, "customer": { "type": "string" }, "type": { "type": "string", "enum": ["sales", "purchase"] }, "amount": { "type": "number" } }
       },
-      "PaginaFatture": {
+      "InvoicePage": {
         "type": "object",
-        "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Fattura" } }, "total": { "type": "integer", "example": 24 }, "size": { "type": "integer", "example": 10 } }
+        "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Invoice" } }, "total": { "type": "integer", "example": 24 }, "size": { "type": "integer", "example": 10 } }
       },
-      "Scadenza": {
+      "Deadline": {
         "type": "object",
-        "properties": { "id": { "type": "integer" }, "data": { "type": "string", "format": "date" }, "titolo": { "type": "string" }, "stato": { "type": "string", "enum": ["pagata", "da-pagare", "scaduta"] }, "importo": { "type": "number" } }
+        "properties": { "id": { "type": "integer" }, "date": { "type": "string", "format": "date" }, "title": { "type": "string" }, "status": { "type": "string", "enum": ["paid", "to-pay", "overdue"] }, "amount": { "type": "number" } }
       },
-      "Cliente": { "type": "object", "properties": { "id": { "type": "string", "example": "C001" }, "nome": { "type": "string", "example": "Rossi Srl" } } },
-      "Contatto": {
+      "Customer": { "type": "object", "properties": { "id": { "type": "string", "example": "C001" }, "name": { "type": "string", "example": "Smith Ltd" } } },
+      "Contact": {
         "type": "object",
-        "properties": { "id": { "type": "integer" }, "nome": { "type": "string" }, "email": { "type": "string", "format": "email" }, "telefono": { "type": "string" } }
+        "properties": { "id": { "type": "integer" }, "name": { "type": "string" }, "email": { "type": "string", "format": "email" }, "phone": { "type": "string" } }
       },
-      "Spesa": {
+      "Expense": {
         "type": "object",
         "properties": {
           "id": { "type": "integer" },
-          "descrizione": { "type": "string", "example": "Treno Milano-Roma" },
-          "dipendente": { "type": "string", "example": "M. Conti" },
-          "importo": { "type": "number", "example": 39 },
-          "stato": { "type": "string", "enum": ["da-revisionare", "approvata", "respinta"] }
+          "description": { "type": "string", "example": "Train Milan-Rome" },
+          "employee": { "type": "string", "example": "M. Conti" },
+          "amount": { "type": "number", "example": 39 },
+          "status": { "type": "string", "enum": ["to-review", "accepted", "rejected"] }
         }
       },
-      "Creato": { "type": "object", "properties": { "id": { "type": "integer", "format": "int64", "example": 1025 } } }
+      "Created": { "type": "object", "properties": { "id": { "type": "integer", "format": "int64", "example": 1025 } } }
     }
   }
 }

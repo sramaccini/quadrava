@@ -1,0 +1,261 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "showcase-containers",
+  "title": "{{ t('showcase_containers.showcase_layout_containers', 'Showcase: layout containers') }}",
+  "description": "{{ t('showcase_containers.row_or_column_box_column_grid_an', 'Row or column box, column grid and border layout with north, south, west, east and centre regions.') }}",
+  "requires": "showcase.components.read",
+  "dataSources": {
+    "invoices": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/invoices",
+      "params": {
+        "status": "{{ state.invoiceStatus }}"
+      }
+    }
+  },
+  "components": [
+    {
+      "id": "bar",
+      "type": "box",
+      "justify": "between",
+      "align": "center",
+      "components": [
+        {
+          "id": "title",
+          "type": "text",
+          "style": "heading",
+          "text": "{{ t('showcase_containers.layout_containers', 'Layout containers') }}"
+        },
+        {
+          "id": "actions",
+          "type": "box",
+          "gap": "small",
+          "components": [
+            {
+              "id": "btn-refresh",
+              "type": "button",
+              "label": "{{ t('showcase_containers.refresh', 'Refresh') }}",
+              "onClick": [
+                {
+                  "refresh": "invoices"
+                }
+              ]
+            },
+            {
+              "id": "btn-export",
+              "type": "button",
+              "label": "{{ t('showcase_containers.export_csv', 'Export CSV') }}",
+              "onClick": [
+                {
+                  "export": {
+                    "source": "invoices",
+                    "fileName": "invoices",
+                    "columns": [
+                      {
+                        "field": "number",
+                        "label": "{{ t('common.number', 'Number') }}"
+                      },
+                      {
+                        "field": "customer",
+                        "label": "{{ t('common.customer', 'Customer') }}"
+                      },
+                      {
+                        "field": "amount",
+                        "label": "{{ t('common.amount', 'Amount (€)') }}"
+                      },
+                      {
+                        "field": "status",
+                        "label": "{{ t('common.status', 'Status') }}"
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "id": "btn-print",
+              "type": "button",
+              "label": "{{ t('showcase_containers.print', 'Print') }}",
+              "onClick": [
+                {
+                  "print": true
+                }
+              ]
+            },
+            {
+              "id": "btn-help",
+              "type": "button",
+              "label": "{{ t('showcase_containers.help', 'Help') }}",
+              "onClick": [
+                {
+                  "toast": "{{ t('showcase_containers.row_box_title_on_the_left_button', 'Row box: title on the left, buttons on the right') }}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "section-border",
+      "type": "section",
+      "title": "{{ t('showcase_containers.border_layout', 'Border layout') }}",
+      "components": [
+        {
+          "id": "border",
+          "type": "border",
+          "westWidth": 220,
+          "eastWidth": 220,
+          "components": [
+            {
+              "id": "north",
+              "type": "alert",
+              "region": "north",
+              "kind": "info",
+              "text": "{{ t('showcase_containers.north_full_width_below_768px_the', 'North: full width. Below 768px the regions stack.') }}"
+            },
+            {
+              "id": "filter-status",
+              "type": "input",
+              "region": "west",
+              "field": {
+                "name": "invoiceStatus",
+                "type": "radio",
+                "label": "{{ t('common.status', 'Status') }}",
+                "options": [
+                  "draft",
+                  "sent",
+                  "paid"
+                ],
+                "optionKey": "values.status"
+              }
+            },
+            {
+              "id": "table",
+              "type": "table",
+              "region": "center",
+              "source": "invoices",
+              "columns": [
+                {
+                  "field": "number",
+                  "label": "{{ t('common.number', 'Number') }}"
+                },
+                {
+                  "field": "customer",
+                  "label": "{{ t('common.customer', 'Customer') }}"
+                },
+                {
+                  "field": "status",
+                  "label": "{{ t('common.status', 'Status') }}",
+                  "valueKey": "values.status"
+                }
+              ]
+            },
+            {
+              "id": "east",
+              "type": "text",
+              "region": "east",
+              "text": "{{ t('showcase_containers.east_a_fixed_width_side_column_f', 'East: a fixed-width side column, for notes or summaries.') }}"
+            },
+            {
+              "id": "south",
+              "type": "text",
+              "region": "south",
+              "text": "{{ t('showcase_containers.south_full_width_footer', 'South: full-width footer.') }}"
+            }
+          ],
+          "resizable": true
+        }
+      ]
+    },
+    {
+      "id": "section-grid",
+      "type": "section",
+      "title": "{{ t('showcase_containers.three_column_grid', 'Three-column grid') }}",
+      "components": [
+        {
+          "id": "grid",
+          "type": "grid",
+          "columns": 3,
+          "components": [
+            {
+              "id": "field-company",
+              "type": "input",
+              "span": 2,
+              "field": {
+                "name": "companyName",
+                "type": "text",
+                "label": "{{ t('showcase_containers.company_name_2_columns', 'Company name (2 columns)') }}"
+              }
+            },
+            {
+              "id": "field-vat",
+              "type": "input",
+              "field": {
+                "name": "vatNumber",
+                "type": "text",
+                "label": "{{ t('showcase_containers.vat_number', 'VAT number') }}"
+              }
+            },
+            {
+              "id": "field-address",
+              "type": "input",
+              "span": 3,
+              "field": {
+                "name": "address",
+                "type": "text",
+                "label": "{{ t('showcase_containers.address_3_columns', 'Address (3 columns)') }}"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "box-proportions",
+      "type": "box",
+      "components": [
+        {
+          "id": "section-two-thirds",
+          "type": "section",
+          "grow": 2,
+          "title": "{{ t('showcase_containers.box_two_thirds_grow_2', 'Box: two thirds (grow 2)') }}",
+          "components": [
+            {
+              "id": "text-two-thirds",
+              "type": "text",
+              "text": "{{ t('showcase_containers.in_a_row_box_grow_shares_the_fre', 'In a row box, grow shares the free space: here 2 to 1.') }}"
+            }
+          ]
+        },
+        {
+          "id": "section-one-third",
+          "type": "section",
+          "grow": 1,
+          "title": "{{ t('showcase_containers.one_third_grow_1', 'One third (grow 1)') }}",
+          "components": [
+            {
+              "id": "column",
+              "type": "box",
+              "direction": "column",
+              "gap": "small",
+              "components": [
+                {
+                  "id": "row-1",
+                  "type": "text",
+                  "text": "{{ t('showcase_containers.column_box', 'Column box,') }}"
+                },
+                {
+                  "id": "row-2",
+                  "type": "text",
+                  "text": "{{ t('showcase_containers.small_gap', 'small gap') }}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

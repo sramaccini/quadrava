@@ -25,31 +25,31 @@ lowcode:
   authz:
     role-permissions:
       operator:
-        - vetrina.componenti.leggi
-        - fatture.fattura.leggi
-        - fatture.fattura.crea
-        - ordini.ordine.leggi
+        - showcase.components.read
+        - invoices.invoice.read
+        - invoices.invoice.create
+        - orders.order.read
       manager:
-        - vetrina.componenti.leggi
-        - fatture.fattura.leggi
-        - fatture.fattura.crea
-        - ordini.ordine.leggi
-        - ordini.ordine.scrivi
-        - ordini.ordine.approva
-        - pacchetti.pacchetto.leggi
-        - pacchetti.pacchetto.crea
-        - spese.spesa.leggi
-        - spese.spesa.revisiona
+        - showcase.components.read
+        - invoices.invoice.read
+        - invoices.invoice.create
+        - orders.order.read
+        - orders.order.write
+        - orders.order.approve
+        - packages.package.read
+        - packages.package.create
+        - expenses.expense.read
+        - expenses.expense.review
       administrator:
-        - vetrina.componenti.leggi
-        - fatture.fattura.leggi
-        - fatture.fattura.crea
-        - ordini.ordine.leggi
-        - ordini.ordine.scrivi
-        - ordini.ordine.approva
-        - ordini.iban.leggi
-        - ordini.iban.scrivi
-        - pacchetti.pacchetto.leggi
-        - pacchetti.pacchetto.crea
-        - spese.spesa.leggi
-        - spese.spesa.revisiona
+        - showcase.components.read
+        - invoices.invoice.read
+        - invoices.invoice.create
+        - orders.order.read
+        - orders.order.write
+        - orders.order.approve
+        - orders.iban.read
+        - orders.iban.write
+        - packages.package.read
+        - packages.package.create
+        - expenses.expense.read
+        - expenses.expense.review

@@ -69,8 +69,8 @@ The structure makes the architectural boundaries visible: the front end in `fron
 | --- | --- |
 | JSON keys | camelCase (for example `visibleIf`, `dataSources`) |
 | Component types | camelCase (for example `filterBar`, `table`) |
-| Screen identifiers | kebab-case (for example `ordini-elenco`) |
-| Permissions | `domain.resource.action` in lower case (for example `ordini.iban.scrivi`) |
+| Screen identifiers | kebab-case (for example `order-list`) |
+| Permissions | `domain.resource.action` in lower case (for example `orders.iban.write`) |
 | TypeScript | Strict mode; `any` forbidden; errors as explicit types, not strings |
 | Angular | Standalone components with `OnPush`; state with signals; no business logic in templates |
 | Commits | Conventional Commits; one commit, one logical change |
@@ -84,7 +84,7 @@ A well-written application reads like a table of contents: screens with clear na
 
 | Prefer | Avoid | Why |
 | --- | --- | --- |
-| `can('ordini.ordine.approva')` | Checking roles by hand, for example `user.roles` contains 'admin' | Roles change; permissions are the contract with the back end |
+| `can('orders.order.approve')` | Checking roles by hand, for example `user.roles` contains 'admin' | Roles change; permissions are the contract with the back end |
 | Short, one-line expressions | Long expressions with many nested conditions | If it cannot be read at a glance, the logic belongs in the back end or in a data source |
 | `$ref` to a shared fragment | Copying the same block into several screens | One fix, one place |
 | Translation keys for texts | Texts written directly in the JSON | Allows internationalisation without changing the logic |
@@ -100,16 +100,16 @@ A well-written application reads like a table of contents: screens with clear na
 // Avoid: role written by hand, error not handled
 { "label": "Approva",
   "visibleIf": "{{user.roles.contains('admin')}}",
-  "onClick": [ { "call": "approvaOrdine" } ] }
+  "onClick": [ { "call": "approveOrder" } ] }
 
 // Prefer: permission, correct state, error handled
-{ "id": "btn-approva", "label": "@ordini.approva",
-  "visibleIf": "{{can('ordini.ordine.approva') && row.stato == 'inviato'}}",
-  "onClick": [ { "call": "approvaOrdine", "args": { "id": "{{row.id}}" },
+{ "id": "btn-approve", "label": "@orders.approva",
+  "visibleIf": "{{can('orders.order.approve') && row.status == 'submitted'}}",
+  "onClick": [ { "call": "approveOrder", "args": { "id": "{{row.id}}" },
                  "onError": { "toast": "@errori.approvazione" } } ] }
 ```
 
-**Permission names.** Always `domain.resource.action`, exactly three parts in lower-case letters and digits (for example `ordini.ordine.approva`, `ordini.iban.leggi`). The schema rejects any other format. In row or form expressions the permissions of the single record are read as `row._perm.update` or `form._perm.update`.
+**Permission names.** Always `domain.resource.action`, exactly three parts in lower-case letters and digits (for example `orders.order.approve`, `orders.iban.read`). The schema rejects any other format. In row or form expressions the permissions of the single record are read as `row._perm.update` or `form._perm.update`.
 
 **Themes.** A component never writes a fixed colour, font or size: it uses only the `--lc-*` variables (`--lc-color-*`, `--lc-font-family`, `--lc-font-size`, `--lc-radius`, `--lc-gap`, `--lc-control-height`). A new look is obtained with a theme document, not with extra CSS. The standard components are built with NG-ZORRO: their colours (primary, success, error, light or dark) come from the theme through the bridge in the components library, so the ant-\* classes are not overridden with custom CSS. The --lc-\* variables serve the parts written in house (screen shell, side menu, page header, spacing). The shell has its own: --lc-sider-\*, --lc-header-\*, --lc-page-header-\* and --lc-content-padding, declared in the theme's layout group with fallbacks derived from the base colours; side menu and page header read only those, and the theme's tone (light or dark) only selects the library's menu style. Colour and font values follow the schema patterns, which prevent CSS injection.
 

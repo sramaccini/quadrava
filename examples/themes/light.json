@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0",
-  "theme": "classico",
-  "label": "Classico (barra laterale scura)",
+  "theme": "light",
+  "label": "Light",
   "mode": "light",
   "tokens": {
     "colors": {
@@ -25,13 +25,13 @@
     "density": "comfortable",
     "layout": {
       "sider": {
-        "tone": "dark",
-        "background": "#001529",
-        "text": "rgba(255,255,255,0.85)",
-        "mutedText": "rgba(255,255,255,0.55)",
-        "activeBackground": "#1f5fbf",
-        "activeText": "#ffffff",
-        "border": "#001529",
+        "tone": "light",
+        "background": "#ffffff",
+        "text": "#1b2430",
+        "mutedText": "#5d6b7a",
+        "activeBackground": "#e8f0fb",
+        "activeText": "#1f5fbf",
+        "border": "#e3e8ef",
         "width": 256,
         "collapsedWidth": 80
       },

@@ -72,7 +72,7 @@ Example: adding a `progress` node.
    * If it reads a data source, wrap its content in `<lc-busy [busy]="source().status === 'loading'" [empty]="…no data yet…">`: the shared activity indicator (delay, minimum time, "taking longer than usual", `aria-busy` and the live announcement). Do not draw a loading state of your own, and do not show "no results" while loading.
 3. **Register.** Add it to `STANDARD_COMPONENTS` (and export it from `public-api.ts`). Application-specific components are registered with `provideLowcodeComponents(extra)`.
 4. **Tests.** Cover rendering, expression-driven state (`visibleIf`, `enabledIf`, `can()`), the fail-closed behaviour, and any action it triggers.
-5. **Example.** Add the usage to a showcase screen in `examples/vetrina-*.json` and run `npm run validate:examples`.
+5. **Example.** Add the usage to a showcase screen in `examples/showcase-*.json` and run `npm run validate:examples`.
 6. **Editor.** Add a starting template in `projects/editor/src/app/model/templates.ts` (and its data source in `TEMPLATE_SOURCES` if it reads one), put the type in a palette group (`ui/palette.component.ts`) and add `ed.type.<type>` to the editor messages (it and en). A test fails if a schema type has no valid template or is missing from the palette. Properties need nothing: the panel reads them from the schema.
 7. **Docs.** Update the component catalogue and, if the language changed, the functional document.
 
@@ -165,7 +165,7 @@ Vitest runs in jsdom through `ng test`. Conventions:
 
 What jsdom cannot see (layout, real NG-ZORRO overlays, attributes as the browser applies them) is tested with Playwright in `frontend/e2e/`, against the demo with its in-browser fake back end (`playwright.config.ts`).
 
-* One `*.spec.ts` per showcase screen; open it by URL (`/vetrina/<screen>`) after fixing the language with `page.addInitScript(() => localStorage.setItem('lc.language', 'it'))`.
+* One `*.spec.ts` per showcase screen; open it by URL (`/showcase/<screen>`) after fixing the language with `page.addInitScript(() => localStorage.setItem('lc.language', 'it'))`.
 * Prefer user-facing locators: `getByLabel` (field labels are `<label for>`; for `nz-select` and `nz-switch` they point at the control), `getByRole`, the visible text of `nz-option-item`. Use `data-region`, `data-node-id` and `data-node-type` when there is no accessible name.
 * Check layout with `boundingBox()` at explicit viewport sizes (`page.setViewportSize`), with a tolerance of a pixel or two, not with full-page screenshots.
 * Rely on Playwright's auto-waiting assertions (`toBeVisible`, `toBeEditable`, `toHaveCount`), never on fixed timeouts.
@@ -198,7 +198,7 @@ Real focus handling and the dark theme are not covered yet (the application shel
 * The collapsed side menu opens groups in a popup.
 * The reference registry keeps its data in memory unless `lowcode.registry.storage-dir` is set (`npm run stack` sets it to `data/registry`). Logout from the apps is a JSON call (`Accept: application/json`, CSRF header) answered with `{"redirect": …}`: with `csrf().spa()` a form field would need the masked token.
 * The Playwright suite runs in Chromium only.
-* jsdom has no `document.execCommand`: the rich text toolbar is tested end to end (`e2e/vetrina-input.spec.ts`); unit tests cover the Markdown ↔ DOM conversions and the value flow.
+* jsdom has no `document.execCommand`: the rich text toolbar is tested end to end (`e2e/showcase-input.spec.ts`); unit tests cover the Markdown ↔ DOM conversions and the value flow.
 * Inside a CEL single-quoted string a real newline is a syntax error: write `\n` in `t()` fallbacks (in screen JSON, `\\n`).
 * `validate:examples` checks translation keys but not CEL expressions (the runtime test `i18n-examples.spec.ts` does).
 * Component limits that remain (no nested repeaters, no chart zoom, no row selection in the server data table) are listed in the component catalogue, § 3.

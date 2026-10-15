@@ -1,0 +1,100 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "order-list",
+  "title": "{{ t('order_list.orders', 'Orders') }}",
+  "description": "{{ t('order_list.orders_with_row_actions_accordin', 'Orders with row actions according to permissions.') }}",
+  "requires": "orders.order.read",
+  "dataSources": {
+    "orders": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/orders",
+      "params": {
+        "status": "{{state.filters.status}}",
+        "page": "{{state.page}}"
+      },
+      "paging": "server"
+    },
+    "approveOrder": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/orders/{{id}}/approve"
+    }
+  },
+  "components": [
+    {
+      "id": "order-filters",
+      "type": "filterBar",
+      "bind": "state.filters",
+      "fields": [
+        {
+          "name": "status",
+          "type": "select",
+          "label": "{{ t('common.status', 'Status') }}",
+          "options": [
+            "draft",
+            "submitted",
+            "approved"
+          ],
+          "optionKey": "values.status"
+        }
+      ]
+    },
+    {
+      "id": "order-table",
+      "type": "table",
+      "source": "orders",
+      "columns": [
+        {
+          "field": "number",
+          "label": "{{ t('common.number', 'Number') }}"
+        },
+        {
+          "field": "customer",
+          "label": "{{ t('common.customer', 'Customer') }}"
+        },
+        {
+          "field": "status",
+          "label": "{{ t('common.status', 'Status') }}",
+          "valueKey": "values.status"
+        }
+      ],
+      "rowActions": [
+        {
+          "id": "btn-open",
+          "label": "{{ t('common.open', 'Open') }}",
+          "onClick": [
+            {
+              "navigate": "order-detail",
+              "params": {
+                "id": "{{row.id}}"
+              }
+            }
+          ]
+        },
+        {
+          "id": "btn-approve",
+          "label": "{{ t('common.approve', 'Approve') }}",
+          "visibleIf": "{{can('orders.order.approve') && row.status == 'submitted'}}",
+          "onClick": [
+            {
+              "call": "approveOrder",
+              "args": {
+                "id": "{{row.id}}"
+              },
+              "onError": {
+                "toast": "{{ t('common.approval_failed', 'Approval failed') }}"
+              }
+            },
+            {
+              "refresh": "orders"
+            },
+            {
+              "toast": "{{ t('common.order_approved', 'Order approved') }}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

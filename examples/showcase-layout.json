@@ -1,0 +1,178 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "showcase-layout",
+  "title": "{{ t('showcase_layout.showcase_tabs_detail_and_message', 'Showcase: tabs, detail and messages') }}",
+  "requires": "showcase.components.read",
+  "dataSources": {
+    "order": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/orders/{{has(params.id) ? params.id : 1}}"
+    },
+    "invoices": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/invoices",
+      "params": {
+        "status": "paid"
+      }
+    },
+    "deleteDraft": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/showcase/flag"
+    }
+  },
+  "components": [
+    {
+      "id": "title",
+      "type": "text",
+      "style": "heading",
+      "text": "{{ t('showcase_layout.tabs_detail_and_messages', 'Tabs, detail and messages') }}"
+    },
+    {
+      "id": "notice-info",
+      "type": "alert",
+      "kind": "info",
+      "text": "{{ t('showcase_layout.an_in_page_message_informs_witho', 'An in-page message informs without interrupting: this one is of type info.') }}"
+    },
+    {
+      "id": "notice-read-only",
+      "type": "alert",
+      "kind": "error",
+      "visibleIf": "{{!can('orders.order.write')}}",
+      "text": "{{ t('showcase_layout.your_profile_cannot_edit_orders', 'Your profile cannot edit orders: this message disappears with the permission orders.order.write (try the manager profile).') }}"
+    },
+    {
+      "id": "tabs",
+      "type": "tabs",
+      "tabs": [
+        {
+          "id": "tab-data",
+          "label": "{{ t('showcase_layout.order_data', 'Order data') }}",
+          "components": [
+            {
+              "id": "order-details",
+              "type": "detail",
+              "source": "order",
+              "title": "{{ t('showcase_layout.read_only_order', 'Read-only order') }}",
+              "fields": [
+                {
+                  "field": "number",
+                  "label": "{{ t('common.number', 'Number') }}"
+                },
+                {
+                  "field": "customer",
+                  "label": "{{ t('common.customer', 'Customer') }}"
+                },
+                {
+                  "field": "type",
+                  "label": "{{ t('common.type', 'Type') }}",
+                  "valueKey": "values.type"
+                },
+                {
+                  "field": "discount",
+                  "label": "{{ t('common.discount', 'Discount') }}",
+                  "format": "percent",
+                  "tooltip": "{{ t('showcase_layout.percentage_applied_to_the_order', 'Percentage applied to the order total') }}"
+                },
+                {
+                  "field": "status",
+                  "label": "{{ t('common.status', 'Status') }}",
+                  "format": "badge",
+                  "badges": {
+                    "draft": "neutral",
+                    "submitted": "primary",
+                    "approved": "success"
+                  },
+                  "valueKey": "values.status",
+                  "tooltip": "{{ t('showcase_layout.draft_sent_to_the_customer_or_ap', 'Draft, sent to the customer or approved') }}"
+                },
+                {
+                  "field": "iban",
+                  "label": "{{ t('showcase_layout.iban', 'IBAN') }}",
+                  "hiddenIf": "{{!can('orders.iban.read')}}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "tab-invoices",
+          "label": "{{ t('showcase_layout.paid_invoices', 'Paid invoices') }}",
+          "components": [
+            {
+              "id": "invoice-table",
+              "type": "table",
+              "source": "invoices",
+              "columns": [
+                {
+                  "field": "number",
+                  "label": "{{ t('common.number', 'Number') }}"
+                },
+                {
+                  "field": "amount",
+                  "label": "{{ t('common.amount_2', 'Amount') }}",
+                  "format": "currency"
+                },
+                {
+                  "field": "issued",
+                  "label": "{{ t('common.issued_on', 'Issued on') }}",
+                  "format": "date"
+                },
+                {
+                  "field": "collected",
+                  "label": "{{ t('common.collected', 'Collected') }}",
+                  "format": "boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "tab-actions",
+          "label": "{{ t('showcase_layout.actions_with_confirmation', 'Actions with confirmation') }}",
+          "components": [
+            {
+              "id": "txt-confirm",
+              "type": "text",
+              "text": "{{ t('showcase_layout.before_a_sensitive_action_confir', 'Before a sensitive action, confirmation is requested. If you press Cancel nothing happens and no error appears.') }}"
+            },
+            {
+              "id": "btn-delete",
+              "type": "button",
+              "label": "{{ t('showcase_layout.delete_the_draft', 'Delete the draft') }}",
+              "onClick": [
+                {
+                  "confirm": "{{ t('showcase_layout.permanently_delete_the_draft_of', 'Permanently delete the draft of {username}?', {'username': dyn(user.username)}) }}"
+                },
+                {
+                  "call": "deleteDraft",
+                  "onError": {
+                    "toast": "{{ t('showcase_layout.deletion_failed', 'Deletion failed') }}"
+                  }
+                },
+                {
+                  "toast": "{{ t('showcase_layout.draft_deleted', 'Draft deleted') }}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "tab-restricted",
+          "label": "{{ t('showcase_layout.restricted_data', 'Restricted data') }}",
+          "visibleIf": "{{can('orders.iban.read')}}",
+          "components": [
+            {
+              "id": "notice-restricted",
+              "type": "alert",
+              "kind": "success",
+              "text": "{{ t('showcase_layout.this_tab_exists_only_for_those_w', 'This tab exists only for those who can read IBANs: without the permission not even its title appears.') }}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

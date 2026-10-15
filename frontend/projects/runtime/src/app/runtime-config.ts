@@ -1,22 +1,22 @@
 import type { RegistryDefinitionsConfig } from 'services';
 
 /**
- * Configurazione letta all'avvio da `runtime-config.json` (cartella pubblica): da dove vengono schermate,
- * navigazione e temi (esempi o versioni pubblicate nel registro) e quali porte usare (demo o servizi veri attraverso il
- * BFF). Le configurazioni `registry` e `bff` di angular.json usano i file di `projects/runtime/config/`.
+ * Configuration read at start-up from `runtime-config.json` (public folder): where screens,
+ * navigation and themes come from (examples or versions published in the registry) and which ports to use (demo or real services through the
+ * BFF). The `registry` and `bff` configurations of angular.json use the files of `projects/runtime/config/`.
  */
 export interface RuntimeConfig {
   definitions: { source: 'examples' } | ({ source: 'registry' } & RegistryDefinitionsConfig);
   /**
-   * Porte del runtime: `demo` (profili, dati e segnalazioni finti nel browser) oppure `bff` (sessione, permessi,
-   * dati e telemetria attraverso il BFF, libreria `services`). Se manca: demo.
+   * Ports of the runtime: `demo` (fake profiles, data and reports in the browser) or `bff` (session, permissions,
+   * data and telemetry through the BFF, `services` library). When missing: demo.
    */
   services?: { source: 'demo' } | { source: 'bff'; appId: string };
 }
 
 export const DEFAULT_RUNTIME_CONFIG: RuntimeConfig = { definitions: { source: 'examples' } };
 
-/** Legge la configurazione; se manca o non è valida si usano gli esempi (la demo funziona sempre). */
+/** Reads the configuration; if it is missing or invalid the examples are used (the demo always works). */
 export async function loadRuntimeConfig(url = 'runtime-config.json'): Promise<RuntimeConfig> {
   try {
     const response = await fetch(url);
@@ -24,7 +24,7 @@ export async function loadRuntimeConfig(url = 'runtime-config.json'): Promise<Ru
     const config = (await response.json()) as RuntimeConfig;
     const services = config?.services as Record<string, unknown> | undefined;
     if (services && services['source'] === 'bff' && typeof services['appId'] !== 'string') {
-      console.warn('[runtime-config] servizi bff senza appId: si usa la demo');
+      console.warn('[runtime-config] bff services without appId: using the demo');
       return DEFAULT_RUNTIME_CONFIG;
     }
     const definitions = config?.definitions as Record<string, unknown> | undefined;
@@ -37,7 +37,7 @@ export async function loadRuntimeConfig(url = 'runtime-config.json'): Promise<Ru
         (definitions['themes'] as unknown[]).every((t) => typeof t === 'string') &&
         (definitions['themes'] as unknown[]).length > 0;
       if (!ok) {
-        console.warn('[runtime-config] configurazione del registro incompleta: si usano gli esempi');
+        console.warn('[runtime-config] incomplete registry configuration: using the examples');
         return DEFAULT_RUNTIME_CONFIG;
       }
       return config;

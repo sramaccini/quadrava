@@ -20,7 +20,7 @@
         </lc-sidebar>
       </ng-template>
       @if (viewport() === 'narrow') {
-        <!-- Fascia stretta: la barra laterale vive in un cassetto sopra il contenuto. -->
+        <!-- Narrow band: the sidebar lives in a drawer above the content. -->
         <nz-drawer [nzVisible]="drawerOpen()" nzPlacement="left" [nzClosable]="false" nzWidth="var(--lc-sider-width, 256px)" [nzBodyStyle]="{ padding: '0' }" nzWrapClassName="lc-sider-drawer" (nzOnClose)="drawerOpen.set(false)">
           <ng-container *nzDrawerContent>
             <ng-container [ngTemplateOutlet]="sidebar" [ngTemplateOutletContext]="{ $implicit: true }" />
@@ -69,7 +69,7 @@
             </nz-select>
           }
         } @else {
-          <!-- Fasce più strette: profilo, tema e lingua in un menu, perché la barra superiore non vada mai a capo. -->
+          <!-- Narrower bands: profile, theme and language in a menu, so that the top bar never wraps. -->
           <button nz-button nzType="text" class="settings-button" type="button" nz-dropdown nzTrigger="click" nzPlacement="bottomRight" [nzDropdownMenu]="settingsMenu"
             [attr.aria-label]="i18n.t('app.settings')" aria-haspopup="menu">
             <lc-icon name="settings" />

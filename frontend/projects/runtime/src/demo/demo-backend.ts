@@ -1,21 +1,21 @@
 import type { DataRequest } from 'core';
-import { movementArchive, searchMovements } from './demo-search';
+import { transactionArchive, searchTransactions } from './demo-search';
 
-interface Invoice { id: number; numero: string; cliente: string; tipo: string; importo: number; stato: 'bozza' | 'inviata' | 'pagata'; emessa: string; incassata: boolean; righe: number; aliquota: number }
-interface Package { id: number; nome: string; descrizione: string; creato: string }
-interface Expense { id: number; descrizione: string; dipendente: string; importo: number; stato: 'da-revisionare' | 'approvata' | 'respinta' }
+interface Invoice { id: number; number: string; customer: string; type: string; amount: number; status: 'draft' | 'sent' | 'paid'; issued: string; collected: boolean; rows: number; rate: number }
+interface Package { id: number; name: string; description: string; created: string }
+interface Expense { id: number; description: string; employee: string; amount: number; status: 'to-review' | 'accepted' | 'rejected' }
 
 interface Order {
   id: number;
-  numero: string;
-  cliente: string;
-  stato: 'bozza' | 'inviato' | 'approvato';
-  tipo: 'privato' | 'business';
-  sconto: number;
+  number: string;
+  customer: string;
+  status: 'draft' | 'submitted' | 'approved';
+  type: 'private' | 'business';
+  discount: number;
   iban: string;
 }
 
-/** Ordinamento lato server della demo: parametri `sort` (campo) e `dir` (`asc` o `desc`). */
+/** Server-side sorting of the demo: parameters `sort` (field) and `dir` (`asc` or `desc`). */
 function sortBy<T extends object>(rows: T[], query: DataRequest['query']): T[] {
   const field = query?.['sort'];
   if (typeof field !== 'string' || !field) return rows;
@@ -24,124 +24,127 @@ function sortBy<T extends object>(rows: T[], query: DataRequest['query']): T[] {
   return [...rows].sort((a, b) => {
     const x = value(a);
     const y = value(b);
-    return sign * (typeof x === 'number' && typeof y === 'number' ? x - y : String(x ?? '').localeCompare(String(y ?? ''), 'it', { numeric: true }));
+    return sign * (typeof x === 'number' && typeof y === 'number' ? x - y : String(x ?? '').localeCompare(String(y ?? ''), 'en', { numeric: true }));
   });
 }
 
+const CUSTOMERS = ['Smith Ltd', 'Baker Inc', 'Walker & Co.', 'Nolan Group'];
+const MONTHS = ['July', 'August', 'September', 'October'];
+
 /**
- * Backend della demo, in memoria: stessa forma delle risposte REST attese dal catalogo (items/total/size, _perm).
- * Non dipende da Angular: lo usa il browser (MockDataClient, demo senza servizi) e il server di esempio
- * (tools/demo-api.mjs, dietro il BFF). Un errore si segnala lanciando `Error('<stato HTTP>')`; una richiesta che non
- * corrisponde a nulla restituisce `undefined` (404 per il server).
+ * In-memory back end of the demo: same shape as the REST responses the catalogue expects (items/total/size, _perm).
+ * It does not depend on Angular: the browser uses it (MockDataClient, demo without services) and so does the sample
+ * server (tools/demo-api.mjs, behind the BFF). An error is reported by throwing `Error('<HTTP status>')`; a request that
+ * matches nothing returns `undefined` (404 for the server).
  */
 export class DemoBackend {
   static readonly PAGE_SIZE = 8;
   private readonly orders: Order[] = Array.from({ length: 21 }, (_, i) => ({
     id: i + 1,
-    numero: `ORD-${String(i + 1).padStart(4, '0')}`,
-    cliente: ['Rossi Srl', 'Bianchi SpA', 'Verdi & C.', 'Neri Group'][i % 4],
-    stato: (['bozza', 'inviato', 'approvato'] as const)[i % 3],
-    tipo: i % 2 ? 'business' : 'privato',
-    sconto: i % 2 ? 10 : 0,
+    number: `ORD-${String(i + 1).padStart(4, '0')}`,
+    customer: CUSTOMERS[i % 4],
+    status: (['draft', 'submitted', 'approved'] as const)[i % 3],
+    type: i % 2 ? 'business' : 'private',
+    discount: i % 2 ? 10 : 0,
     iban: `IT60X0542811101${String(i).padStart(12, '0')}`,
   }));
 
   private readonly invoices: Invoice[] = Array.from({ length: 14 }, (_, i) => ({
     id: 100 + i,
-    numero: `FT-2026-${String(i + 1).padStart(3, '0')}`,
-    cliente: ['Rossi Srl', 'Bianchi SpA', 'Verdi & C.', 'Neri Group'][i % 4],
-    tipo: i % 3 === 2 ? 'passiva' : 'attiva',
-    importo: 250 + i * 135,
-    stato: (['bozza', 'inviata', 'pagata'] as const)[i % 3],
-    emessa: `2026-09-${String(i + 1).padStart(2, '0')}`,
-    incassata: i % 3 === 2,
-    righe: 1 + (i % 5),
-    aliquota: i % 4 === 3 ? 10 : 22,
+    number: `FT-2026-${String(i + 1).padStart(3, '0')}`,
+    customer: CUSTOMERS[i % 4],
+    type: i % 3 === 2 ? 'purchase' : 'sales',
+    amount: 250 + i * 135,
+    status: (['draft', 'sent', 'paid'] as const)[i % 3],
+    issued: `2026-09-${String(i + 1).padStart(2, '0')}`,
+    collected: i % 3 === 2,
+    rows: 1 + (i % 5),
+    rate: i % 4 === 3 ? 10 : 22,
   }));
-  /** Anagrafica clienti per i campi lookup: si cerca per nome o città. */
-  private readonly clients = [
-    'Rossi Srl|Milano', 'Bianchi SpA|Torino', 'Verdi & C.|Bologna', 'Neri Group|Roma', 'Rossetti SpA|Firenze', 'Bruni Logistica|Verona',
-    'Colombo Impianti|Bergamo', 'Ferrari Ricambi|Modena', 'Esposito Food|Napoli', 'Romano Tessuti|Prato', 'Ricci Consulting|Genova',
-    'Marino Edilizia|Bari', 'Greco Trasporti|Palermo', 'Gallo Energia|Padova', 'Conti Software|Trento',
-  ].map((entry, i) => ({ id: i + 1, nome: entry.split('|')[0], citta: entry.split('|')[1] }));
+  /** Customer register for the lookup fields: searched by name or city. */
+  private readonly customers = [
+    'Smith Ltd|Milan', 'Baker Inc|Turin', 'Walker & Co.|Bologna', 'Nolan Group|Rome', 'Smithson Inc|Florence', 'Brown Logistics|Verona',
+    'Dove Systems|Bergamo', 'Smithers Parts|Modena', 'Exposure Foods|Naples', 'Roman Textiles|Prato', 'Curly Consulting|Genoa',
+    'Marine Builders|Bari', 'Greek Transport|Palermo', 'Rooster Energy|Padua', 'Count Software|Trento',
+  ].map((entry, i) => ({ id: i + 1, name: entry.split('|')[0], city: entry.split('|')[1] }));
   private attachments = 0;
   private reports = 0;
-  /** Attività del kanban della vetrina: lo stato cambia con /api/attivita/{id}/sposta. */
-  private readonly tasks: { id: number; titolo: string; chi: string; stato: string }[] = [
-    { id: 1, titolo: 'Preventivo Rossi Srl', chi: 'Anna', stato: 'da-fare' },
-    { id: 2, titolo: 'Contratto Bianchi SpA', chi: 'Luca', stato: 'da-fare' },
-    { id: 3, titolo: 'Fattura FT-2026-012', chi: 'Anna', stato: 'in-corso' },
-    { id: 4, titolo: 'Sollecito Verdi & C.', chi: 'Marta', stato: 'in-corso' },
-    { id: 5, titolo: 'Ordine 1001 spedito', chi: 'Luca', stato: 'fatto' },
+  /** Tasks of the showcase kanban: the status changes with /api/tasks/{id}/move. */
+  private readonly tasks: { id: number; title: string; who: string; status: string }[] = [
+    { id: 1, title: 'Quote for Smith Ltd', who: 'Anna', status: 'to-do' },
+    { id: 2, title: 'Contract for Baker Inc', who: 'Luca', status: 'to-do' },
+    { id: 3, title: 'Invoice FT-2026-012', who: 'Anna', status: 'in-progress' },
+    { id: 4, title: 'Reminder to Walker & Co.', who: 'Marta', status: 'in-progress' },
+    { id: 5, title: 'Order 1001 shipped', who: 'Luca', status: 'done' },
   ];
-  /** Movimenti per la datatable: 60 righe deterministiche su tre conti e sei categorie, da luglio a ottobre 2026. */
-  private readonly movements = Array.from({ length: 60 }, (_, i) => {
-    const categorie = ['Affitti', 'Utenze', 'Stipendi', 'Incassi clienti', 'Fornitori', 'Spese varie'];
-    const categoria = categorie[(i * 7) % categorie.length];
-    const entrata = categoria === 'Incassi clienti';
-    const base = { Affitti: 1800, Utenze: 240, Stipendi: 3100, 'Incassi clienti': 2600, Fornitori: 950, 'Spese varie': 75 }[categoria] ?? 100;
-    const importo = Math.round((base + ((i * 37) % 11) * (base / 20)) * 100) / 100;
-    const mese = 7 + (i % 4);
-    const giorno = 1 + ((i * 5) % 27);
+  /** Transactions for the datatable: 60 deterministic rows over three accounts and six categories, from July to October 2026. */
+  private readonly transactions = Array.from({ length: 60 }, (_, i) => {
+    const categories = ['Rent', 'Utilities', 'Salaries', 'Customer receipts', 'Suppliers', 'Sundry expenses'];
+    const category = categories[(i * 7) % categories.length];
+    const income = category === 'Customer receipts';
+    const base = { Rent: 1800, Utilities: 240, Salaries: 3100, 'Customer receipts': 2600, Suppliers: 950, 'Sundry expenses': 75 }[category] ?? 100;
+    const amount = Math.round((base + ((i * 37) % 11) * (base / 20)) * 100) / 100;
+    const month = 7 + (i % 4);
+    const day = 1 + ((i * 5) % 27);
     return {
       id: 1000 + i,
-      data: `2026-${String(mese).padStart(2, '0')}-${String(giorno).padStart(2, '0')}`,
-      conto: ['Banca Intesa', 'Banca Sella', 'Cassa'][i % 3 === 2 && categoria !== 'Spese varie' ? 0 : i % 3],
-      categoria,
-      descrizione: `${categoria} ${['luglio', 'agosto', 'settembre', 'ottobre'][mese - 7]} n. ${i + 1}`,
-      importo: entrata ? importo : -importo,
-      stato: i % 9 === 4 ? 'da-verificare' : 'registrato',
+      date: `2026-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
+      account: ['Alpha Bank', 'Beta Bank', 'Cash'][i % 3 === 2 && category !== 'Sundry expenses' ? 0 : i % 3],
+      category,
+      description: `${category} ${MONTHS[month - 7]} no. ${i + 1}`,
+      amount: income ? amount : -amount,
+      status: i % 9 === 4 ? 'to-check' : 'registered',
     };
   });
-  private readonly contacts: { id: number; nome: string; email: string; ruolo: string }[] = [
-    { id: 1, nome: 'Anna Conti', email: 'anna.conti@example.com', ruolo: 'acquisti' },
-    { id: 2, nome: 'Luca Fabbri', email: 'luca.fabbri@example.com', ruolo: 'amministrazione' },
+  private readonly contacts: { id: number; name: string; email: string; role: string }[] = [
+    { id: 1, name: 'Anna Conti', email: 'anna.conti@example.com', role: 'purchases' },
+    { id: 2, name: 'Luca Fabbri', email: 'luca.fabbri@example.com', role: 'administration' },
   ];
   private readonly packages: Package[] = [
-    { id: 1, nome: 'Chiusura settembre', descrizione: 'Fatture attive del mese', creato: '2026-10-01' },
-    { id: 2, nome: 'Fornitori Q3', descrizione: 'Fatture passive del trimestre', creato: '2026-09-28' },
+    { id: 1, name: 'September closing', description: 'Sales invoices of the month', created: '2026-10-01' },
+    { id: 2, name: 'Suppliers Q3', description: 'Purchase invoices of the quarter', created: '2026-09-28' },
   ];
   private readonly expenses: Expense[] = Array.from({ length: 12 }, (_, i) => ({
     id: 500 + i,
-    descrizione: ['Treno Milano-Roma', 'Hotel', 'Cena con cliente', 'Taxi', 'Materiale ufficio'][i % 5],
-    dipendente: ['M. Conti', 'L. Fabbri', 'S. Greco'][i % 3],
-    importo: 18 + i * 21,
-    stato: (['da-revisionare', 'da-revisionare', 'approvata', 'respinta'] as const)[i % 4],
+    description: ['Train Milan-Rome', 'Hotel', 'Dinner with a customer', 'Taxi', 'Office supplies'][i % 5],
+    employee: ['M. Conti', 'L. Fabbri', 'S. Greco'][i % 3],
+    amount: 18 + i * 21,
+    status: (['to-review', 'to-review', 'accepted', 'rejected'] as const)[i % 4],
   }));
 
   async handle(req: DataRequest): Promise<unknown> {
     const path = req.url.split('?')[0];
 
-    if (req.method === 'GET' && path === '/api/ordini') {
-      const stato = req.query?.['stato'];
+    if (req.method === 'GET' && path === '/api/orders') {
+      const status = req.query?.['status'];
       const page = Number(req.query?.['page'] ?? 0);
-      const filtered = sortBy(this.orders.filter((o) => !stato || o.stato === stato), req.query);
+      const filtered = sortBy(this.orders.filter((o) => !status || o.status === status), req.query);
       const size = DemoBackend.PAGE_SIZE;
       return { items: filtered.slice(page * size, page * size + size).map((o) => this.view(o)), total: filtered.length, size };
     }
-    const detail = /^\/api\/ordini\/(\d+)$/.exec(path);
+    const detail = /^\/api\/orders\/(\d+)$/.exec(path);
     if (detail) {
       const order = this.orders.find((o) => o.id === Number(detail[1]));
       if (!order) throw new Error('404');
       if (req.method === 'GET') return this.view(order);
       if (req.method === 'PUT') {
         const body = req.body ?? {};
-        Object.assign(order, { cliente: body['cliente'] ?? order.cliente, tipo: body['tipo'] ?? order.tipo, sconto: body['sconto'] ?? order.sconto });
+        Object.assign(order, { customer: body['customer'] ?? order.customer, type: body['type'] ?? order.type, discount: body['discount'] ?? order.discount });
         return this.view(order);
       }
     }
-    const approva = /^\/api\/ordini\/(\d+)\/approva$/.exec(path);
-    if (approva && req.method === 'POST') {
-      const order = this.orders.find((o) => o.id === Number(approva[1]));
-      if (!order || order.stato !== 'inviato') throw new Error('409');
-      order.stato = 'approvato';
+    const approve = /^\/api\/orders\/(\d+)\/approve$/.exec(path);
+    if (approve && req.method === 'POST') {
+      const order = this.orders.find((o) => o.id === Number(approve[1]));
+      if (!order || order.status !== 'submitted') throw new Error('409');
+      order.status = 'approved';
       return {};
     }
-    // Una segnalazione restituisce il suo protocollo (i passi seguenti lo leggono con `as`).
-    if (path === '/api/vetrina/segnala' && req.method === 'POST') return { protocollo: `PR-${String(++this.reports).padStart(4, '0')}`, ricevuta: true };
-    // Sempre in conflitto: per provare onError con error.status.
-    if (path === '/api/vetrina/conflitto' && req.method === 'POST') throw new Error('409');
-    if (path === '/api/vetrina/errore') throw new Error('500');
+    // A report returns its protocol number (the following steps read it with `as`).
+    if (path === '/api/showcase/flag' && req.method === 'POST') return { protocol: `PR-${String(++this.reports).padStart(4, '0')}`, receipt: true };
+    // Always in conflict: to try onError with error.status.
+    if (path === '/api/showcase/conflict' && req.method === 'POST') throw new Error('409');
+    if (path === '/api/showcase/error') throw new Error('500');
     const other = this.handleBilling(req, path);
     if (other !== undefined) return other;
     throw new Error(`404 ${req.method} ${req.url}`);
@@ -153,123 +156,123 @@ export class DemoBackend {
     return { items: rows.slice(page * size, page * size + size), total: rows.length, size };
   }
 
-  /** Fatture, pacchetti e spese: i dati delle aree di esempio. */
+  /** Invoices, packages and expenses: the data of the sample areas. */
   private handleBilling(req: DataRequest, path: string): unknown {
-    if (path === '/api/fatture' && req.method === 'GET') {
-      // stato: un valore o un elenco (selezione multipla); tipo: attiva o passiva.
-      const stato = req.query?.['stato'];
-      const stati = Array.isArray(stato) ? stato : stato ? [stato] : [];
-      const tipo = req.query?.['tipo'];
-      const cliente = req.query?.['cliente'];
-      const match = (f: Invoice): boolean => (stati.length === 0 || stati.includes(f.stato)) && (!tipo || f.tipo === tipo) && (!cliente || f.cliente === cliente);
+    if (path === '/api/invoices' && req.method === 'GET') {
+      // status: one value or a list (multiple selection); type: sales or purchase.
+      const status = req.query?.['status'];
+      const statuses = Array.isArray(status) ? status : status ? [status] : [];
+      const type = req.query?.['type'];
+      const customer = req.query?.['customer'];
+      const match = (f: Invoice): boolean => (statuses.length === 0 || statuses.includes(f.status)) && (!type || f.type === type) && (!customer || f.customer === customer);
       return this.page(this.invoices.filter(match).map((f) => ({ ...f })), req.query);
     }
-    if (path === '/api/fatture' && req.method === 'POST') {
+    if (path === '/api/invoices' && req.method === 'POST') {
       const body = req.body ?? {};
-      if (!body['numero'] || !body['cliente']) throw new Error('400');
+      if (!body['number'] || !body['customer']) throw new Error('400');
       const id = Math.max(...this.invoices.map((f) => f.id)) + 1;
-      this.invoices.unshift({ id, numero: String(body['numero']), cliente: String(body['cliente']), tipo: String(body['tipo'] ?? 'attiva'), importo: Number(body['importo'] ?? 0), stato: 'bozza', emessa: '2026-10-07', incassata: false, righe: 1, aliquota: 22 });
+      this.invoices.unshift({ id, number: String(body['number']), customer: String(body['customer']), type: String(body['type'] ?? 'sales'), amount: Number(body['amount'] ?? 0), status: 'draft', issued: '2026-10-07', collected: false, rows: 1, rate: 22 });
       return { id };
     }
-    if (path === '/api/fatture/invia' && req.method === 'POST') {
+    if (path === '/api/invoices/send' && req.method === 'POST') {
       const ids = Array.isArray(req.body?.['ids']) ? (req.body['ids'] as unknown[]) : [];
-      const drafts = this.invoices.filter((f) => ids.includes(f.id) && f.stato === 'bozza');
+      const drafts = this.invoices.filter((f) => ids.includes(f.id) && f.status === 'draft');
       if (drafts.length !== ids.length) throw new Error('409');
-      drafts.forEach((f) => (f.stato = 'inviata'));
-      return { inviate: drafts.length };
+      drafts.forEach((f) => (f.status = 'sent'));
+      return { sent: drafts.length };
     }
-    const send = /^\/api\/fatture\/(\d+)\/invia$/.exec(path);
+    const send = /^\/api\/invoices\/(\d+)\/send$/.exec(path);
     if (send && req.method === 'POST') {
       const invoice = this.invoices.find((f) => f.id === Number(send[1]));
-      if (!invoice || invoice.stato !== 'bozza') throw new Error('409');
-      invoice.stato = 'inviata';
+      if (!invoice || invoice.status !== 'draft') throw new Error('409');
+      invoice.status = 'sent';
       return {};
     }
-    if (path === '/api/scadenze' && req.method === 'GET') {
-      // Scadenze finte per qualunque mese AAAA-MM: sempre gli stessi giorni, con stati diversi.
-      const mese = String(req.query?.['mese'] ?? '');
-      if (!/^\d{4}-\d{2}$/.test(mese)) return [];
-      const voci: [number, string, string][] = [
-        [3, 'Affitto ufficio', 'pagata'], [8, 'F24 contributi', 'da-pagare'], [8, 'Fornitore Bruni', 'scaduta'], [8, 'Leasing auto', 'da-pagare'],
-        [8, 'Assicurazione', 'pagata'], [12, 'Utenze', 'da-pagare'], [15, 'Stipendi', 'da-pagare'], [22, 'Fornitore Colombo', 'scaduta'], [28, 'IVA trimestrale', 'da-pagare'],
+    if (path === '/api/deadlines' && req.method === 'GET') {
+      // Fake deadlines for any month YYYY-MM: always the same days, with different statuses.
+      const month = String(req.query?.['month'] ?? '');
+      if (!/^\d{4}-\d{2}$/.test(month)) return [];
+      const items: [number, string, string][] = [
+        [3, 'Office rent', 'paid'], [8, 'Social security payment', 'to-pay'], [8, 'Supplier Brown', 'overdue'], [8, 'Car lease', 'to-pay'],
+        [8, 'Insurance', 'paid'], [12, 'Utilities', 'to-pay'], [15, 'Salaries', 'to-pay'], [22, 'Supplier Dove', 'overdue'], [28, 'Quarterly VAT', 'to-pay'],
       ];
-      return voci.map(([giorno, titolo, stato], i) => ({ id: i + 1, data: `${mese}-${String(giorno).padStart(2, '0')}`, titolo, stato, importo: 150 + i * 220 }));
+      return items.map(([day, title, status], i) => ({ id: i + 1, date: `${month}-${String(day).padStart(2, '0')}`, title, status, amount: 150 + i * 220 }));
     }
-    if (path === '/api/categorie' && req.method === 'GET') {
-      const leaf = (id: string, nome: string, voci: number): Record<string, unknown> => ({ id, nome, voci, figli: [] });
+    if (path === '/api/categories' && req.method === 'GET') {
+      const leaf = (id: string, name: string, items: number): Record<string, unknown> => ({ id, name, items, children: [] });
       return [
-        { id: 'acq', nome: 'Acquisti', voci: 42, figli: [leaf('acq-can', 'Cancelleria', 12), leaf('acq-inf', 'Informatica', 18), leaf('acq-arr', 'Arredi', 12)] },
-        { id: 'ser', nome: 'Servizi', voci: 27, figli: [leaf('ser-con', 'Consulenze', 9), { id: 'ser-man', nome: 'Manutenzione', voci: 18, figli: [leaf('ser-man-imp', 'Impianti', 11), leaf('ser-man-edi', 'Edifici', 7)] }] },
-        { id: 'per', nome: 'Personale', voci: 35, figli: [{ id: 'per-tra', nome: 'Trasferte', voci: 25, figli: [leaf('per-tra-tre', 'Treni', 10), leaf('per-tra-hot', 'Hotel', 15)] }, leaf('per-for', 'Formazione', 10)] },
+        { id: 'pur', name: 'Purchases', items: 42, children: [leaf('pur-sta', 'Stationery', 12), leaf('pur-it', 'IT', 18), leaf('pur-fur', 'Furniture', 12)] },
+        { id: 'ser', name: 'Services', items: 27, children: [leaf('ser-con', 'Consulting', 9), { id: 'ser-mnt', name: 'Maintenance', items: 18, children: [leaf('ser-mnt-sys', 'Systems', 11), leaf('ser-mnt-bld', 'Buildings', 7)] }] },
+        { id: 'stf', name: 'Staff', items: 35, children: [{ id: 'stf-trv', name: 'Business travel', items: 25, children: [leaf('stf-trv-trn', 'Trains', 10), leaf('stf-trv-htl', 'Hotel', 15)] }, leaf('stf-trn', 'Training', 10)] },
       ];
     }
-    if (path === '/api/movimenti/ricerca' && req.method === 'POST') return searchMovements(movementArchive(), req.body);
-    const verify = /^\/api\/movimenti\/(\d+)\/verifica$/.exec(path);
+    if (path === '/api/transactions/search' && req.method === 'POST') return searchTransactions(transactionArchive(), req.body);
+    const verify = /^\/api\/transactions\/(\d+)\/check$/.exec(path);
     if (verify && req.method === 'POST') {
-      const row = movementArchive().find((m) => m['id'] === Number(verify[1]));
+      const row = transactionArchive().find((m) => m['id'] === Number(verify[1]));
       if (!row) throw new Error('404');
-      row['stato'] = 'registrato';
+      row['status'] = 'registered';
       return {};
     }
-    if (path === '/api/movimenti' && req.method === 'GET') {
-      // Con quanti=N (fino a 50.000) un archivio sintetico più grande, per provare la datatable con molti dati.
-      const quanti = Math.min(50000, Number(req.query?.['quanti'] ?? 0));
-      if (quanti > 0) return Array.from({ length: quanti }, (_, i) => ({ ...this.movements[i % this.movements.length], id: 100000 + i, descrizione: `Movimento ${i + 1}` }));
-      return this.movements.map((m) => ({ ...m }));
+    if (path === '/api/transactions' && req.method === 'GET') {
+      // With count=N (up to 50,000) a larger synthetic archive, to try the datatable with a lot of data.
+      const count = Math.min(50000, Number(req.query?.['count'] ?? 0));
+      if (count > 0) return Array.from({ length: count }, (_, i) => ({ ...this.transactions[i % this.transactions.length], id: 100000 + i, description: `Transaction ${i + 1}` }));
+      return this.transactions.map((m) => ({ ...m }));
     }
-    if (path === '/api/vendite-mensili' && req.method === 'GET') {
-      // Dodici mesi del 2026 con un andamento stagionale riconoscibile.
+    if (path === '/api/monthly-sales' && req.method === 'GET') {
+      // Twelve months of 2026 with a recognisable seasonal trend.
       return Array.from({ length: 12 }, (_, i) => {
-        const attive = 9000 + Math.round(4000 * Math.sin((i + 1) / 2)) + i * 600;
-        const passive = 6000 + Math.round(2500 * Math.cos(i / 2)) + i * 300;
-        // Margine in punti percentuali, con una cifra decimale.
-        return { mese: `2026-${String(i + 1).padStart(2, '0')}`, attive, passive, margine: Math.round(((attive - passive) / attive) * 1000) / 10 };
+        const sales = 9000 + Math.round(4000 * Math.sin((i + 1) / 2)) + i * 600;
+        const purchases = 6000 + Math.round(2500 * Math.cos(i / 2)) + i * 300;
+        // Margin in percentage points, with one decimal digit.
+        return { month: `2026-${String(i + 1).padStart(2, '0')}`, sales, purchases, margin: Math.round(((sales - purchases) / sales) * 1000) / 10 };
       });
     }
-    if (path === '/api/fatture-per-stato' && req.method === 'GET') {
-      const count = (stato: string): number => this.invoices.filter((f) => f.stato === stato).length;
-      return ['bozza', 'inviata', 'pagata'].map((stato) => ({ stato, numero: count(stato) }));
+    if (path === '/api/invoices-by-status' && req.method === 'GET') {
+      const count = (status: string): number => this.invoices.filter((f) => f.status === status).length;
+      return ['draft', 'sent', 'paid'].map((status) => ({ status, number: count(status) }));
     }
-    if (path === '/api/riepilogo' && req.method === 'GET') {
-      const attive = this.invoices.filter((f) => f.tipo === 'attiva');
-      const sum = (rows: Invoice[]): number => rows.reduce((t, f) => t + f.importo, 0);
+    if (path === '/api/summary' && req.method === 'GET') {
+      const sales = this.invoices.filter((f) => f.type === 'sales');
+      const sum = (rows: Invoice[]): number => rows.reduce((t, f) => t + f.amount, 0);
       return {
-        fatturato: sum(attive),
-        daIncassare: sum(attive.filter((f) => f.stato === 'inviata')),
-        aperte: this.invoices.filter((f) => f.stato !== 'pagata').length,
-        totale: this.invoices.length,
-        clienti: new Set(this.invoices.map((f) => f.cliente)).size,
-        crescita: 12.5,
+        revenue: sum(sales),
+        toCollect: sum(sales.filter((f) => f.status === 'sent')),
+        open: this.invoices.filter((f) => f.status !== 'paid').length,
+        total: this.invoices.length,
+        customers: new Set(this.invoices.map((f) => f.customer)).size,
+        growth: 12.5,
       };
     }
-    if (path === '/api/articoli' && req.method === 'GET') {
-      const articoli = [
-        ['CAR-A4', 'Risma carta A4'], ['CAR-A3', 'Risma carta A3'], ['GRA-01', 'Graffette'], ['PEN-BL', 'Penne blu'], ['PEN-RO', 'Penne rosse'],
-        ['MAT-HB', 'Matite HB'], ['EVI-GI', 'Evidenziatori gialli'], ['CAR-RA', 'Raccoglitori ad anelli'], ['TON-01', 'Toner stampante'], ['BUS-A4', 'Buste A4'],
-      ].map(([codice, nome]) => ({ codice, nome }));
+    if (path === '/api/articles' && req.method === 'GET') {
+      const articles = [
+        ['CAR-A4', 'A4 paper ream'], ['CAR-A3', 'A3 paper ream'], ['GRA-01', 'Paper clips'], ['PEN-BL', 'Blue pens'], ['PEN-RO', 'Red pens'],
+        ['MAT-HB', 'HB pencils'], ['EVI-GI', 'Yellow highlighters'], ['CAR-RA', 'Ring binders'], ['TON-01', 'Printer toner'], ['BUS-A4', 'A4 envelopes'],
+      ].map(([code, name]) => ({ code, name }));
       const id = req.query?.['id'];
-      if (id !== undefined) return articoli.filter((a) => a.codice === id);
+      if (id !== undefined) return articles.filter((a) => a.code === id);
       const q = String(req.query?.['q'] ?? '').toLowerCase();
-      return articoli.filter((a) => !q || a.nome.toLowerCase().includes(q)).slice(0, 6);
+      return articles.filter((a) => !q || a.name.toLowerCase().includes(q)).slice(0, 6);
     }
-    if (path === '/api/contatti' && req.method === 'GET') return this.contacts.map((c) => ({ ...c }));
-    if (path === '/api/contatti' && req.method === 'POST') {
+    if (path === '/api/contacts' && req.method === 'GET') return this.contacts.map((c) => ({ ...c }));
+    if (path === '/api/contacts' && req.method === 'POST') {
       const body = req.body ?? {};
-      if (!body['nome'] || !String(body['email'] ?? '').includes('@')) throw new Error('400');
+      if (!body['name'] || !String(body['email'] ?? '').includes('@')) throw new Error('400');
       const id = Math.max(0, ...this.contacts.map((c) => c.id)) + 1;
-      this.contacts.push({ id, nome: String(body['nome']), email: String(body['email']), ruolo: String(body['ruolo'] ?? 'acquisti') });
+      this.contacts.push({ id, name: String(body['name']), email: String(body['email']), role: String(body['role'] ?? 'purchases') });
       return { id };
     }
-    const contact = /^\/api\/contatti\/(\d+)$/.exec(path);
+    const contact = /^\/api\/contacts\/(\d+)$/.exec(path);
     if (contact && req.method === 'PUT') {
       const found = this.contacts.find((c) => c.id === Number(contact[1]));
       const body = req.body ?? {};
-      if (!found || !body['nome'] || !String(body['email'] ?? '').includes('@')) throw new Error('400');
-      Object.assign(found, { nome: String(body['nome']), email: String(body['email']), ruolo: String(body['ruolo'] ?? found.ruolo) });
+      if (!found || !body['name'] || !String(body['email'] ?? '').includes('@')) throw new Error('400');
+      Object.assign(found, { name: String(body['name']), email: String(body['email']), role: String(body['role'] ?? found.role) });
       return { ...found };
     }
-    if (path === '/api/allegati' && req.method === 'POST') {
-      // Un vero servizio salverebbe il file; qui basta verificare che sia arrivato (come file o in base64) e rispondere con un id.
+    if (path === '/api/attachments' && req.method === 'POST') {
+      // A real service would store the file; here it is enough to check that it arrived (as a file or in base64) and answer with an id.
       if (req.file) {
         if (!(req.file.blob instanceof Blob) || req.file.blob.size !== req.body?.['size']) throw new Error('400');
       } else {
@@ -279,64 +282,64 @@ export class DemoBackend {
       this.attachments += 1;
       return { id: this.attachments };
     }
-    if (path === '/api/attivita' && req.method === 'GET') return this.tasks.map((t) => ({ ...t }));
-    if (path === '/api/menu/contatori' && req.method === 'GET') {
-      // Contatori del menu: fatture in bozza, spese da revisionare, attività non concluse.
+    if (path === '/api/tasks' && req.method === 'GET') return this.tasks.map((t) => ({ ...t }));
+    if (path === '/api/menu/counters' && req.method === 'GET') {
+      // Menu counters: draft invoices, expenses to review, tasks not finished.
       return {
-        bozze: this.invoices.filter((f) => f.stato === 'bozza').length,
-        'da-revisionare': this.expenses.filter((s) => s.stato === 'da-revisionare').length,
-        'vetrina-attivita': this.tasks.filter((t) => t.stato !== 'fatto').length,
+        drafts: this.invoices.filter((f) => f.status === 'draft').length,
+        'to-review': this.expenses.filter((s) => s.status === 'to-review').length,
+        'showcase-tasks': this.tasks.filter((t) => t.status !== 'done').length,
       };
     }
-    const move = /^\/api\/attivita\/(\d+)\/sposta$/.exec(path);
+    const move = /^\/api\/tasks\/(\d+)\/move$/.exec(path);
     if (move && req.method === 'POST') {
       const task = this.tasks.find((t) => t.id === Number(move[1]));
-      const stato = req.body?.['stato'];
+      const status = req.body?.['status'];
       if (!task) throw new Error('404');
-      if (typeof stato !== 'string' || !['da-fare', 'in-corso', 'fatto'].includes(stato)) throw new Error('400');
-      task.stato = stato;
+      if (typeof status !== 'string' || !['to-do', 'in-progress', 'done'].includes(status)) throw new Error('400');
+      task.status = status;
       return {};
     }
-    if (path === '/api/eventi' && req.method === 'GET') {
+    if (path === '/api/events' && req.method === 'GET') {
       return [
-        { data: '2026-10-01T09:15', titolo: 'Ordine 1001 ricevuto', nota: 'Dal portale clienti', esito: 'ok' },
-        { data: '2026-10-02T11:40', titolo: 'Ordine 1001 approvato', nota: 'Da Luca, responsabile', esito: 'ok' },
-        { data: '2026-10-03T16:05', titolo: 'Spedizione in ritardo', nota: 'Il corriere segnala un giorno di ritardo', esito: 'ko' },
-        { data: '2026-10-05T10:00', titolo: 'Ordine 1001 consegnato', esito: 'ok' },
+        { date: '2026-10-01T09:15', title: 'Order 1001 received', note: 'From the customer portal', outcome: 'ok' },
+        { date: '2026-10-02T11:40', title: 'Order 1001 approved', note: 'By Luca, manager', outcome: 'ok' },
+        { date: '2026-10-03T16:05', title: 'Shipment delayed', note: 'The courier reports a one-day delay', outcome: 'ko' },
+        { date: '2026-10-05T10:00', title: 'Order 1001 delivered', outcome: 'ok' },
       ];
     }
-    if (path === '/api/clienti' && req.method === 'GET') {
-      // Ricerca senza distinzione tra maiuscole e minuscole su nome e città; al massimo 8 risultati.
-      // Con id: la riga di quel cliente (per mostrare il testo di un valore già scelto).
+    if (path === '/api/customers' && req.method === 'GET') {
+      // Case-insensitive search on name and city; at most 8 results.
+      // With id: the row of that customer (to show the text of a value already chosen).
       const id = req.query?.['id'];
-      if (id !== undefined) return this.clients.filter((c) => String(c.id) === String(id));
+      if (id !== undefined) return this.customers.filter((c) => String(c.id) === String(id));
       const q = String(req.query?.['q'] ?? '').toLowerCase();
-      return this.clients.filter((c) => !q || c.nome.toLowerCase().includes(q) || c.citta.toLowerCase().includes(q)).slice(0, 8);
+      return this.customers.filter((c) => !q || c.name.toLowerCase().includes(q) || c.city.toLowerCase().includes(q)).slice(0, 8);
     }
-    if (path === '/api/pacchetti' && req.method === 'GET') return this.packages.map((p) => ({ ...p }));
-    if (path === '/api/pacchetti' && req.method === 'POST') {
+    if (path === '/api/packages' && req.method === 'GET') return this.packages.map((p) => ({ ...p }));
+    if (path === '/api/packages' && req.method === 'POST') {
       const body = req.body ?? {};
-      if (!body['nome']) throw new Error('400');
-      this.packages.unshift({ id: this.packages.length + 1, nome: String(body['nome']), descrizione: String(body['descrizione'] ?? ''), creato: '2026-10-07' });
+      if (!body['name']) throw new Error('400');
+      this.packages.unshift({ id: this.packages.length + 1, name: String(body['name']), description: String(body['description'] ?? ''), created: '2026-10-07' });
       return {};
     }
-    if (path === '/api/spese' && req.method === 'GET') {
-      const stato = req.query?.['stato'];
-      const match = (e: Expense): boolean => !stato || (stato === 'revisionata' ? e.stato !== 'da-revisionare' : e.stato === stato);
+    if (path === '/api/expenses' && req.method === 'GET') {
+      const status = req.query?.['status'];
+      const match = (e: Expense): boolean => !status || (status === 'reviewed' ? e.status !== 'to-review' : e.status === status);
       return this.page(this.expenses.filter(match).map((e) => ({ ...e })), req.query);
     }
-    const review = /^\/api\/spese\/(\d+)\/revisiona$/.exec(path);
+    const review = /^\/api\/expenses\/(\d+)\/review$/.exec(path);
     if (review && req.method === 'POST') {
       const expense = this.expenses.find((e) => e.id === Number(review[1]));
-      const esito = req.body?.['esito'];
-      if (!expense || expense.stato !== 'da-revisionare' || (esito !== 'approvata' && esito !== 'respinta')) throw new Error('409');
-      expense.stato = esito;
+      const outcome = req.body?.['outcome'];
+      if (!expense || expense.status !== 'to-review' || (outcome !== 'accepted' && outcome !== 'rejected')) throw new Error('409');
+      expense.status = outcome;
       return {};
     }
     return undefined;
   }
 
   private view(o: Order): Record<string, unknown> {
-    return { ...o, _perm: { update: o.stato !== 'approvato' } };
+    return { ...o, _perm: { update: o.status !== 'approved' } };
   }
 }

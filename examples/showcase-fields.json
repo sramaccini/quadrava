@@ -1,0 +1,613 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "showcase-fields",
+  "title": "{{ t('showcase_fields.showcase_fields_and_forms', 'Showcase: fields and forms') }}",
+  "description": "{{ t('showcase_fields.additional_field_types_data_sour', 'Additional field types, data-source lookups, files, grid, repeatable rows and form dialogs.') }}",
+  "requires": "showcase.components.read",
+  "dataSources": {
+    "invoices": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/invoices",
+      "params": {
+        "status": "{{state.fieldFilters.statuses}}",
+        "type": "{{state.fieldFilters.type}}",
+        "customer": "{{state.fieldFilters.customer}}"
+      }
+    },
+    "customers": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/customers",
+      "params": {
+        "q": "{{ search }}",
+        "id": "{{ lookupKey }}"
+      }
+    },
+    "uploadAttachment": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/attachments",
+      "body": "{{ file }}"
+    },
+    "contacts": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/contacts"
+    },
+    "createContact": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/contacts",
+      "body": "{{ form }}"
+    },
+    "editContact": {
+      "type": "rest",
+      "method": "PUT",
+      "url": "/api/contacts/{{ id }}",
+      "body": "{{ form }}"
+    },
+    "articles": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/articles",
+      "params": {
+        "q": "{{ search }}",
+        "id": "{{ lookupKey }}"
+      }
+    }
+  },
+  "components": [
+    {
+      "id": "title",
+      "type": "text",
+      "style": "heading",
+      "text": "{{ t('showcase_fields.fields_and_forms', 'Fields and forms') }}"
+    },
+    {
+      "id": "section-types",
+      "type": "section",
+      "title": "{{ t('showcase_fields.new_field_types', 'New field types') }}",
+      "components": [
+        {
+          "id": "form-types",
+          "type": "form",
+          "initial": {
+            "delivery": "2026-10-20T09:30",
+            "urgent": false,
+            "channels": [
+              "email"
+            ]
+          },
+          "fields": [
+            {
+              "name": "note",
+              "type": "textarea",
+              "label": "{{ t('showcase_fields.notes_for_the_courier', 'Notes for the courier') }}",
+              "rows": 3,
+              "required": true
+            },
+            {
+              "name": "delivery",
+              "type": "datetime",
+              "label": "{{ t('showcase_fields.delivery', 'Delivery') }}",
+              "tooltip": "{{ t('showcase_fields.date_and_time_in_local_time', 'Date and time, in local time') }}"
+            },
+            {
+              "name": "priority",
+              "type": "radio",
+              "label": "{{ t('showcase_fields.priority', 'Priority') }}",
+              "options": [
+                "low",
+                "normal",
+                "high"
+              ],
+              "optionKey": "values.priority"
+            },
+            {
+              "name": "urgent",
+              "type": "switch",
+              "label": "{{ t('showcase_fields.express_shipping', 'Express shipping') }}"
+            },
+            {
+              "name": "channels",
+              "type": "multiselect",
+              "label": "{{ t('showcase_fields.notify_via', 'Notify via') }}",
+              "options": [
+                "email",
+                "sms",
+                "app"
+              ],
+              "optionKey": "values.channel",
+              "required": true
+            }
+          ],
+          "actions": [
+            {
+              "id": "btn-send-types",
+              "label": "{{ t('showcase_fields.send', 'Send') }}",
+              "onClick": [
+                {
+                  "toast": "{{ t('showcase_fields.priority_other_notifications_on', 'Priority {p, select, low {low} normal {normal} high {high} other {{p}}}, {u, select, true {express shipping} other {standard shipping}}, notifications on {n} channels', {'p': dyn(form.priority == null ? '—' : form.priority), 'u': dyn(string(form.urgent == true)), 'n': dyn(size(form.channels))}) }}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "section-lookup",
+      "type": "section",
+      "title": "{{ t('showcase_fields.data_source_lookup', 'Data-source lookup') }}",
+      "components": [
+        {
+          "id": "explain-lookup",
+          "type": "text",
+          "text": "{{ t('showcase_fields.type_at_least_two_letters_of_the', 'Type at least two letters of the name or city: the field queries the customer service and suggests the results. The saved value is the customer id; the form starts with a customer that is not among the first results, and the field asks the service for its name.') }}"
+        },
+        {
+          "id": "form-lookup",
+          "type": "form",
+          "fields": [
+            {
+              "name": "customer",
+              "type": "lookup",
+              "label": "{{ t('common.customer', 'Customer') }}",
+              "required": true,
+              "lookup": {
+                "source": "customers",
+                "valueField": "id",
+                "labelField": "name",
+                "minChars": 2
+              }
+            }
+          ],
+          "actions": [
+            {
+              "id": "btn-choose-customer",
+              "label": "{{ t('showcase_fields.confirm', 'Confirm') }}",
+              "onClick": [
+                {
+                  "toast": "{{ t('showcase_fields.customer_chosen_id', 'Customer chosen: id {id}', {'id': form.customer}) }}"
+                }
+              ]
+            }
+          ],
+          "initial": {
+            "customer": 12
+          }
+        }
+      ]
+    },
+    {
+      "id": "section-file",
+      "type": "section",
+      "title": "{{ t('showcase_fields.file_upload', 'File upload') }}",
+      "components": [
+        {
+          "id": "explain-file",
+          "type": "text",
+          "text": "{{ t('showcase_fields.pdfs_or_images_up_to_20_mb_the_f', 'PDFs or images up to 20 MB. The file goes straight to the service as a real file (multipart), the service answers with an id and the form then saves the id with the name.') }}"
+        },
+        {
+          "id": "form-file",
+          "type": "form",
+          "fields": [
+            {
+              "name": "attachment",
+              "type": "file",
+              "label": "{{ t('showcase_fields.attachment', 'Attachment') }}",
+              "accept": ".pdf,image/*",
+              "maxSizeKb": 20480,
+              "upload": "uploadAttachment",
+              "required": true
+            },
+            {
+              "name": "description",
+              "type": "text",
+              "label": "{{ t('common.description', 'Description') }}"
+            }
+          ],
+          "actions": [
+            {
+              "id": "btn-save-attachment",
+              "label": "{{ t('common.save', 'Save') }}",
+              "onClick": [
+                {
+                  "toast": "{{ t('showcase_fields.attachment_saved_id', 'Attachment {name} saved (id {id})', {'name': dyn(form.attachment.name), 'id': dyn(form.attachment.id)}) }}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "section-grid",
+      "type": "section",
+      "title": "{{ t('showcase_fields.column_grid', 'Column grid') }}",
+      "components": [
+        {
+          "id": "explain-grid",
+          "type": "text",
+          "text": "{{ t('showcase_fields.the_form_has_three_columns_colum', 'The form has three columns (columns: 3); company name and address take two (span: 2), notes take all of them. On a narrow window the form goes back to one column.') }}"
+        },
+        {
+          "id": "form-grid",
+          "type": "form",
+          "columns": 3,
+          "fields": [
+            {
+              "name": "companyName",
+              "type": "text",
+              "label": "{{ t('showcase_fields.company_name', 'Company name') }}",
+              "span": 2,
+              "required": true
+            },
+            {
+              "name": "vatNumber",
+              "type": "text",
+              "label": "{{ t('showcase_fields.vat_number', 'VAT number') }}"
+            },
+            {
+              "name": "address",
+              "type": "text",
+              "label": "{{ t('showcase_fields.address', 'Address') }}",
+              "span": 2
+            },
+            {
+              "name": "postcode",
+              "type": "text",
+              "label": "{{ t('showcase_fields.postcode', 'Postcode') }}"
+            },
+            {
+              "name": "city",
+              "type": "text",
+              "label": "{{ t('showcase_fields.city', 'City') }}"
+            },
+            {
+              "name": "province",
+              "type": "select",
+              "label": "{{ t('showcase_fields.province', 'Province') }}",
+              "options": [
+                "MI",
+                "TO",
+                "BO",
+                "RM",
+                "NA"
+              ]
+            },
+            {
+              "name": "customer",
+              "type": "switch",
+              "label": "{{ t('showcase_fields.existing_customer', 'Existing customer') }}"
+            },
+            {
+              "name": "note",
+              "type": "textarea",
+              "label": "{{ t('showcase_fields.notes', 'Notes') }}",
+              "rows": 2,
+              "span": 3
+            }
+          ],
+          "actions": [
+            {
+              "id": "btn-save-profile",
+              "label": "{{ t('common.save', 'Save') }}",
+              "onClick": [
+                {
+                  "toast": "{{ t('showcase_fields.details_of_saved', 'Details of {name} saved', {'name': form.companyName}) }}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "section-rows",
+      "type": "section",
+      "title": "{{ t('showcase_fields.repeatable_rows', 'Repeatable rows') }}",
+      "components": [
+        {
+          "id": "explain-rows",
+          "type": "text",
+          "text": "{{ t('showcase_fields.the_lines_of_an_order_at_least_o', 'The lines of an order: at least one, at most ten. The item is searched in the catalogue (a lookup in the row); quantity must be above zero, checked row by row when saving.') }}"
+        },
+        {
+          "id": "form-rows",
+          "type": "form",
+          "initial": {
+            "rows": [
+              {
+                "article": "TON-01",
+                "quantity": 2,
+                "price": 49.9,
+                "free": false
+              }
+            ]
+          },
+          "fields": [
+            {
+              "name": "rows",
+              "type": "repeater",
+              "label": "{{ t('showcase_fields.order_lines', 'Order lines') }}",
+              "minRows": 1,
+              "maxRows": 10,
+              "addLabel": "{{ t('showcase_fields.add_an_item', 'Add an item') }}",
+              "fields": [
+                {
+                  "name": "article",
+                  "type": "lookup",
+                  "label": "{{ t('showcase_fields.item', 'Item') }}",
+                  "required": true,
+                  "lookup": {
+                    "source": "articles",
+                    "valueField": "code",
+                    "labelField": "name",
+                    "minChars": 0
+                  }
+                },
+                {
+                  "name": "quantity",
+                  "type": "number",
+                  "label": "{{ t('showcase_fields.quantity', 'Quantity') }}",
+                  "required": true,
+                  "validate": {
+                    "rule": "{{ value > 0 }}",
+                    "message": "{{ t('showcase_fields.must_be_above_zero', 'Must be above zero') }}"
+                  }
+                },
+                {
+                  "name": "price",
+                  "type": "number",
+                  "label": "{{ t('showcase_fields.price', 'Price (€)') }}"
+                },
+                {
+                  "name": "free",
+                  "type": "checkbox",
+                  "label": "{{ t('showcase_fields.free_of_charge', 'Free of charge') }}"
+                }
+              ]
+            }
+          ],
+          "actions": [
+            {
+              "id": "btn-save-rows",
+              "label": "{{ t('common.save', 'Save') }}",
+              "onClick": [
+                {
+                  "toast": "{{ t('showcase_fields.order_saved_with_other', 'Order saved with {n, plural, one {# line} other {# lines}}', {'n': size(form.rows)}) }}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "section-dialog",
+      "type": "section",
+      "title": "{{ t('showcase_fields.form_dialog', 'Form dialog') }}",
+      "components": [
+        {
+          "id": "explain-dialog",
+          "type": "text",
+          "text": "{{ t('showcase_fields.the_dialog_step_opens_a_window_w', 'The dialog step opens a window with a form. If saving succeeds the window closes and the sequence goes on (reload and message); Cancel stops it.') }}"
+        },
+        {
+          "id": "btn-new-contact",
+          "type": "button",
+          "label": "{{ t('showcase_fields.new_contact', 'New contact') }}",
+          "onClick": [
+            {
+              "dialog": {
+                "title": "{{ t('showcase_fields.new_contact', 'New contact') }}",
+                "fields": [
+                  {
+                    "name": "name",
+                    "type": "text",
+                    "label": "{{ t('showcase_fields.full_name', 'Full name') }}",
+                    "required": true
+                  },
+                  {
+                    "name": "email",
+                    "type": "text",
+                    "label": "{{ t('showcase_fields.email', 'Email') }}",
+                    "required": true,
+                    "validate": {
+                      "rule": "{{ value.contains('@') }}",
+                      "message": "{{ t('showcase_fields.invalid_email_address', 'Invalid email address') }}"
+                    }
+                  },
+                  {
+                    "name": "role",
+                    "type": "radio",
+                    "label": "{{ t('showcase_fields.role', 'Role') }}",
+                    "options": [
+                      "purchases",
+                      "administration",
+                      "technical"
+                    ],
+                    "optionKey": "values.role"
+                  }
+                ],
+                "initial": {
+                  "role": "purchases"
+                },
+                "submitLabel": "{{ t('common.save', 'Save') }}",
+                "onSubmit": [
+                  {
+                    "call": "createContact"
+                  }
+                ]
+              }
+            },
+            {
+              "refresh": "contacts"
+            },
+            {
+              "toast": "{{ t('showcase_fields.contact_created', 'Contact created') }}"
+            }
+          ]
+        },
+        {
+          "id": "contact-table",
+          "type": "table",
+          "source": "contacts",
+          "columns": [
+            {
+              "field": "name",
+              "label": "{{ t('showcase_fields.full_name', 'Full name') }}"
+            },
+            {
+              "field": "email",
+              "label": "{{ t('showcase_fields.email', 'Email') }}"
+            },
+            {
+              "field": "role",
+              "label": "{{ t('showcase_fields.role', 'Role') }}",
+              "valueKey": "values.role"
+            }
+          ],
+          "rowActions": [
+            {
+              "id": "btn-edit-contact",
+              "label": "{{ t('showcase_fields.edit', 'Edit') }}",
+              "onClick": [
+                {
+                  "dialog": {
+                    "title": "{{ t('showcase_fields.edit_2', 'Edit {name}', {'name': row.name}) }}",
+                    "fields": [
+                      {
+                        "name": "name",
+                        "type": "text",
+                        "label": "{{ t('showcase_fields.full_name', 'Full name') }}",
+                        "required": true
+                      },
+                      {
+                        "name": "email",
+                        "type": "text",
+                        "label": "{{ t('showcase_fields.email', 'Email') }}",
+                        "required": true,
+                        "validate": {
+                          "rule": "{{ value.contains('@') }}",
+                          "message": "{{ t('showcase_fields.invalid_email_address', 'Invalid email address') }}"
+                        }
+                      },
+                      {
+                        "name": "role",
+                        "type": "radio",
+                        "label": "{{ t('showcase_fields.role', 'Role') }}",
+                        "options": [
+                          "purchases",
+                          "administration",
+                          "technical"
+                        ],
+                        "optionKey": "values.role"
+                      }
+                    ],
+                    "initial": {
+                      "name": "{{ row.name }}",
+                      "email": "{{ row.email }}",
+                      "role": "{{ row.role }}"
+                    },
+                    "submitLabel": "{{ t('common.save', 'Save') }}",
+                    "onSubmit": [
+                      {
+                        "call": "editContact",
+                        "args": {
+                          "id": "{{ row.id }}"
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "refresh": "contacts"
+                },
+                {
+                  "toast": "{{ t('showcase_fields.contact_updated', 'Contact updated') }}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "section-new-filters",
+      "type": "section",
+      "title": "{{ t('showcase_fields.the_new_types_in_the_filter_bar', 'The new types in the filter bar') }}",
+      "components": [
+        {
+          "id": "field-filters",
+          "type": "filterBar",
+          "bind": "state.fieldFilters",
+          "fields": [
+            {
+              "name": "statuses",
+              "type": "multiselect",
+              "label": "{{ t('common.status', 'Status') }}",
+              "options": [
+                "draft",
+                "sent",
+                "paid"
+              ],
+              "optionKey": "values.status"
+            },
+            {
+              "name": "type",
+              "type": "radio",
+              "label": "{{ t('common.type', 'Type') }}",
+              "options": [
+                "sales",
+                "purchase"
+              ],
+              "optionKey": "values.type"
+            },
+            {
+              "name": "customer",
+              "type": "lookup",
+              "label": "{{ t('common.customer', 'Customer') }}",
+              "lookup": {
+                "source": "customers",
+                "valueField": "name",
+                "labelField": "name",
+                "minChars": 0
+              }
+            }
+          ]
+        },
+        {
+          "id": "filtered-invoices",
+          "type": "table",
+          "source": "invoices",
+          "columns": [
+            {
+              "field": "number",
+              "label": "{{ t('common.number', 'Number') }}"
+            },
+            {
+              "field": "type",
+              "label": "{{ t('common.type', 'Type') }}",
+              "valueKey": "values.type"
+            },
+            {
+              "field": "status",
+              "label": "{{ t('common.status', 'Status') }}",
+              "format": "badge",
+              "badges": {
+                "draft": "neutral",
+                "sent": "primary",
+                "paid": "success"
+              },
+              "valueKey": "values.status"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

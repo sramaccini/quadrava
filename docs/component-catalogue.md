@@ -43,7 +43,7 @@ Rules common to all components, new ones included:
 
 ## 2. Added in October 2026
 
-Built in this order, one per commit, each with tests (schema, component and showcase) and an example in the demo showcase: «Tabelle avanzate» (1–5), «Campi e form» (6–11), «Schede, dettaglio e messaggi» (12), «Cruscotto» (13, 17), «Procedure e viste» (14–16), «Datatable» (18, 19), «Campi a sé» (20, 22), «Contenitori di layout» (21, 22), «Attività e avanzamento» (23, 24); the menu (25) is visible in all of them.
+Built in this order, one per commit, each with tests (schema, component and showcase) and an example in the demo showcase: «Advanced tables» (1–5), «Fields and forms» (6–11), «Tabs, detail and messages» (12), «Dashboard» (13, 17), «Procedures and views» (14–16), «Data table» (18, 19), «Standalone fields» (20, 22), «Layout containers» (21, 22), «Tasks and progress» (23, 24); the menu (25) is visible in all of them.
 
 | # | Component | Area | Status |
 | --- | --- | --- | --- |
@@ -78,23 +78,23 @@ Built in this order, one per commit, each with tests (schema, component and show
 Columns with `sortable: true` show the sort arrows. A click cycles through ascending, descending and no sorting.
 
 ```json
-{ "type": "table", "source": "ordini",
-  "sort": { "bind": "state.ordinamento", "default": { "field": "numero", "direction": "desc" } },
-  "columns": [{ "field": "numero", "sortable": true }, { "field": "cliente", "sortable": true }] }
+{ "type": "table", "source": "orders",
+  "sort": { "bind": "state.sorting", "default": { "field": "number", "direction": "desc" } },
+  "columns": [{ "field": "number", "sortable": true }, { "field": "customer", "sortable": true }] }
 ```
 
 - **Table without server-side paging**: it sorts the loaded rows in the page (numbers as numbers, texts according to the active language, ISO dates as text).
-- **Table with `paging: server`**: the service does the sorting. The table writes `{ "field": …, "direction": "asc" | "desc" }` to the state given by `sort.bind` and goes back to the first page; the data source reads it in its parameters, for example `"sort": "{{state.ordinamento.field}}"`. Without `bind` the rows of the current page are sorted in the page only, with a technical diagnostic.
+- **Table with `paging: server`**: the service does the sorting. The table writes `{ "field": …, "direction": "asc" | "desc" }` to the state given by `sort.bind` and goes back to the first page; the data source reads it in its parameters, for example `"sort": "{{state.sorting.field}}"`. Without `bind` the rows of the current page are sorted in the page only, with a technical diagnostic.
 - `sort.default` applies when the screen opens (the state already exists at the first load, as for filters).
 
 ### 2.2 Row selection and bulk actions
 
 ```json
-{ "type": "table", "source": "fatture",
-  "selection": { "bind": "state.selezionate", "key": "id" },
-  "bulkActions": [{ "label": "{{ t('fatture.invia_selezionate', 'Invia le selezionate') }}",
+{ "type": "table", "source": "invoices",
+  "selection": { "bind": "state.selected", "key": "id" },
+  "bulkActions": [{ "label": "{{ t('invoices.send_selected', 'Send the selected ones') }}",
     "enabledIf": "{{ size(selection) > 0 }}",
-    "onClick": [{ "call": "inviaMolte", "args": { "ids": "{{ selection.map(r, r.id) }}" } }, { "refresh": "fatture" }] }] }
+    "onClick": [{ "call": "sendMany", "args": { "ids": "{{ selection.map(r, r.id) }}" } }, { "refresh": "invoices" }] }] }
 ```
 
 - One checkbox per row and one in the header (all / none / partial).
@@ -135,12 +135,12 @@ They work in the form and, where it makes sense, in the filter bar (`switch`, `m
 ### 2.7 Field with search on a data source (lookup)
 
 ```json
-{ "name": "cliente", "type": "lookup",
-  "lookup": { "source": "clienti", "valueField": "id", "labelField": "nome", "minChars": 2 } }
+{ "name": "customer", "type": "lookup",
+  "lookup": { "source": "customers", "valueField": "id", "labelField": "name", "minChars": 2 } }
 ```
 
 ```json
-"clienti": { "type": "rest", "method": "GET", "url": "/api/clienti",
+"customers": { "type": "rest", "method": "GET", "url": "/api/customers",
              "params": { "q": "{{ search }}", "id": "{{ lookupKey }}" } }
 ```
 
@@ -151,7 +151,7 @@ If the current value is not among the known rows (for example in an edit form) a
 ### 2.8 File upload
 
 ```json
-{ "name": "allegato", "type": "file", "accept": ".pdf,image/*", "maxSizeKb": 20480, "upload": "caricaAllegato" }
+{ "name": "attachment", "type": "file", "accept": ".pdf,image/*", "maxSizeKb": 20480, "upload": "uploadAttachment" }
 ```
 
 - One file per field; `accept` and `maxSizeKb` are checked before anything is sent.
@@ -167,8 +167,8 @@ If the current value is not among the known rows (for example in an edit form) a
 ### 2.10 Repeatable rows in the form
 
 ```json
-{ "name": "righe", "type": "repeater", "minRows": 1, "maxRows": 20,
-  "fields": [{ "name": "descrizione", "type": "text", "required": true }, { "name": "importo", "type": "number" }] }
+{ "name": "rows", "type": "repeater", "minRows": 1, "maxRows": 20,
+  "fields": [{ "name": "description", "type": "text", "required": true }, { "name": "amount", "type": "number" }] }
 ```
 
 The value is a list of objects. Every row has its own fields (`text`, `number`, `select`, `checkbox`, `date`, `textarea`, `switch`, `lookup`, `file`; no nested rows) and a button to remove it; below is the button to add one. Required flags and validation rules apply row by row; rules and data sources of the row's fields see the row as `item`. A form with repeatable rows widens up to 880 px.
@@ -178,10 +178,10 @@ The value is a list of objects. Every row has its own fields (`text`, `number`, 
 New `dialog` step: it opens a window with a form; the `onSubmit` steps see the values in `form`. If they succeed the window closes and the sequence continues; if the user cancels, the sequence stops silently (like `confirm`).
 
 ```json
-{ "dialog": { "title": "{{ t('ordini.nota', 'Aggiungi una nota') }}",
+{ "dialog": { "title": "{{ t('orders.add_note', 'Add a note') }}",
   "fields": [{ "name": "testo", "type": "textarea", "required": true }],
   "initial": { "testo": "{{ row.note }}" },
-  "submitLabel": "{{ t('comune.salva', 'Salva') }}",
+  "submitLabel": "{{ t('common.save', 'Save') }}",
   "onSubmit": [{ "call": "salvaNota", "args": { "id": "{{ row.id }}" } }] } }
 ```
 
@@ -194,9 +194,9 @@ The window is a new core port (`FormDialog`), implemented with the NG-ZORRO moda
 ### 2.13 Indicators (KPIs)
 
 ```json
-{ "type": "stats", "source": "riepilogo",
-  "items": [{ "label": "{{ t('cruscotto.fatturato', 'Fatturato') }}", "field": "fatturato", "format": "currency", "tone": "success" },
-            { "label": "{{ t('cruscotto.da_incassare', 'Da incassare') }}", "value": "{{ state.totale }}", "format": "number" }] }
+{ "type": "stats", "source": "summary",
+  "items": [{ "label": "{{ t('dashboard.revenue', 'Revenue') }}", "field": "revenue", "format": "currency", "tone": "success" },
+            { "label": "{{ t('dashboard.to_collect', 'To collect') }}", "value": "{{ state.total }}", "format": "number" }] }
 ```
 
 A row of tiles with a label and a large value. The value comes from a field of the data source (`field`) or from an expression (`value`), with the same formats as columns. They are laid out in a grid and wrap on narrow screens.
@@ -204,8 +204,8 @@ A row of tiles with a label and a large value. The value comes from a field of t
 ### 2.14 Step-by-step procedure (wizard)
 
 ```json
-{ "type": "wizard", "bind": "state.passo",
-  "steps": [{ "label": "Dati", "components": [...], "nextIf": "{{ state.cliente != null }}" },
+{ "type": "wizard", "bind": "state.step",
+  "steps": [{ "label": "Data", "components": [...], "nextIf": "{{ state.customer != null }}" },
             { "label": "Riepilogo", "components": [...] }] }
 ```
 
@@ -214,8 +214,8 @@ Step indicator at the top, content of the current step, Back and Next buttons. T
 ### 2.15 Tree view
 
 ```json
-{ "type": "tree", "source": "categorie", "keyField": "id", "labelField": "nome", "childrenField": "figli",
-  "bind": "state.categoria", "searchable": true, "onSelect": [{ "toast": "{{ row.nome }}" }] }
+{ "type": "tree", "source": "categories", "keyField": "id", "labelField": "name", "childrenField": "children",
+  "bind": "state.category", "searchable": true, "onSelect": [{ "toast": "{{ row.name }}" }] }
 ```
 
 The data source returns the root nodes with their children nested. Choosing a node writes its key to the state (`bind`) and runs `onSelect` with the node in `row`. With `searchable` a field appears that highlights and opens the matching branches.
@@ -225,9 +225,9 @@ From the keyboard it follows the WAI-ARIA «tree» pattern: up and down arrows b
 ### 2.16 Calendar
 
 ```json
-{ "type": "calendar", "source": "scadenze", "dateField": "data", "labelField": "titolo",
-  "badgeField": "stato", "badges": { "scaduta": "danger", "pagata": "success" },
-  "bind": "state.mese", "onSelect": [{ "navigate": "fattura-dettaglio", "params": { "id": "{{ row.id }}" } }] }
+{ "type": "calendar", "source": "deadlines", "dateField": "data", "labelField": "title",
+  "badgeField": "status", "badges": { "overdue": "danger", "paid": "success" },
+  "bind": "state.month", "onSelect": [{ "navigate": "invoice-detail", "params": { "id": "{{ row.id }}" } }] }
 ```
 
 Month view with the events in the days (at most three, then «+n»). When the month changes the calendar writes `YYYY-MM` to the `bind` state, so the data source can load just that month. A click on an event runs `onSelect` with the event in `row`.
@@ -235,9 +235,9 @@ Month view with the events in the days (at most three, then «+n»). When the mo
 ### 2.17 Charts
 
 ```json
-{ "type": "chart", "kind": "bar", "stacked": true, "source": "vendite", "categoryField": "mese", "categoryFormat": "month",
-  "series": [{ "field": "attive", "label": "Attive" }, { "field": "passive", "label": "Passive", "tone": "danger" },
-             { "field": "margine", "label": "Margine", "kind": "line", "axis": "right" }],
+{ "type": "chart", "kind": "bar", "stacked": true, "source": "sales", "categoryField": "month", "categoryFormat": "month",
+  "series": [{ "field": "sales", "label": "Sales" }, { "field": "purchases", "label": "Purchases", "tone": "danger" },
+             { "field": "margin", "label": "Margin", "kind": "line", "axis": "right" }],
   "format": "currency", "rightFormat": "percent", "height": 280 }
 ```
 
@@ -248,13 +248,13 @@ Month view with the events in the days (at most three, then «+n»). When the mo
 Table for analysing an already loaded set of rows in the page: every column can be filtered, sorted and used for grouping.
 
 ```json
-{ "type": "dataTable", "source": "movimenti", "pageSize": 15, "groupBy": ["conto"],
+{ "type": "dataTable", "source": "transactions", "pageSize": 15, "groupBy": ["account"],
   "columns": [
     { "field": "data", "format": "date", "sortable": true, "filter": "date" },
-    { "field": "conto", "sortable": true, "filter": "select", "groupable": true },
-    { "field": "categoria", "filter": "select", "groupable": true },
-    { "field": "descrizione", "filter": "text" },
-    { "field": "importo", "format": "currency", "sortable": true, "filter": "number", "aggregate": "sum" }] }
+    { "field": "account", "sortable": true, "filter": "select", "groupable": true },
+    { "field": "category", "filter": "select", "groupable": true },
+    { "field": "description", "filter": "text" },
+    { "field": "amount", "format": "currency", "sortable": true, "filter": "number", "aggregate": "sum" }] }
 ```
 
 - **Per-column filters** from the header: `text` (contains), `select` (choice among the values present), `number` (from / to), `date` (range). A button clears all filters.
@@ -268,10 +268,10 @@ Table for analysing an already loaded set of rows in the page: every column can 
 The same interface as the data table (header filters, sorting, group choice, totals, row actions), but the browser receives only the visible page and groups: all computation belongs to the service. Suited to stores of hundreds of thousands or millions of rows.
 
 ```json
-"dataSources": { "ricerca": { "type": "rest", "method": "POST", "url": "/api/movimenti/ricerca", "body": "{{ request }}" } },
+"dataSources": { "search": { "type": "rest", "method": "POST", "url": "/api/transactions/search", "body": "{{ request }}" } },
 ...
-{ "type": "serverDataTable", "source": "ricerca", "groupBy": ["conto"], "pageSize": 15,
-  "defaultSort": { "field": "data", "direction": "desc" }, "bind": "state.ricercaMovimenti",
+{ "type": "serverDataTable", "source": "search", "groupBy": ["account"], "pageSize": 15,
+  "defaultSort": { "field": "data", "direction": "desc" }, "bind": "state.transactionSearch",
   "columns": [ ...as in the dataTable... ] }
 ```
 
@@ -280,20 +280,20 @@ The same interface as the data table (header filters, sorting, group choice, tot
 ```json
 { "page": 0, "size": 15,
   "sort": { "field": "data", "direction": "desc" },
-  "filters": [ { "field": "descrizione", "kind": "text", "text": "affitto" },
-               { "field": "conto", "kind": "select", "values": ["Cassa"] },
-               { "field": "importo", "kind": "number", "from": 100, "to": null },
+  "filters": [ { "field": "description", "kind": "text", "text": "affitto" },
+               { "field": "account", "kind": "select", "values": ["Cassa"] },
+               { "field": "amount", "kind": "number", "from": 100, "to": null },
                { "field": "data", "kind": "date", "from": "2026-01-01", "to": "2026-03-31" } ],
-  "groupBy": ["conto"], "groupPath": [ { "field": "conto", "value": "Cassa" } ],
-  "distinct": "categoria" }
+  "groupBy": ["account"], "groupPath": [ { "field": "account", "value": "Cassa" } ],
+  "distinct": "category" }
 ```
 
 - `groupPath` tells which open group is being read; empty at the first level.
 - `distinct` is present only when the table asks for the values of a choice filter: the response is `{ "values": [...] }`, computed with the other filters applied.
 
 **Response.**
-- If `groupPath` is shorter than `groupBy`, the service responds with the groups of the next level: `{ "groups": [ { "value": "Cassa", "count": 50000, "aggregates": { "importo": -1234.5 } } ], "total": 4, "totals": { "importo": ... } }`.
-- Otherwise it responds with the rows: `{ "items": [...], "total": 50000, "totals": { "importo": ... } }`.
+- If `groupPath` is shorter than `groupBy`, the service responds with the groups of the next level: `{ "groups": [ { "value": "Cassa", "count": 50000, "aggregates": { "amount": -1234.5 } } ], "total": 4, "totals": { "amount": ... } }`.
+- Otherwise it responds with the rows: `{ "items": [...], "total": 50000, "totals": { "amount": ... } }`.
 - `total` is the number of groups or rows at that level (used for paging); `totals` are the grand totals of the columns with `aggregate`, shown at the bottom.
 
 **Behaviour.**
@@ -307,9 +307,9 @@ The same interface as the data table (header filters, sorting, group choice, tot
 A field used on its own, outside forms and filters: text box, number, drop-down, multiple choice, radio buttons, checkbox, switch, date, date and time, search (lookup), file, repeatable rows. The value lives in the **screen state**, so data sources, expressions, texts and steps read it like any other state.
 
 ```json
-{ "type": "input", "bind": "state.filtro.tipo", "default": "attiva",
-  "field": { "name": "tipo", "type": "select", "label": "Tipo", "options": ["attiva", "passiva"], "optionKey": "valori.tipo" },
-  "onChange": [ { "refresh": "fatture" } ] }
+{ "type": "input", "bind": "state.filtro.type", "default": "sales",
+  "field": { "name": "type", "type": "select", "label": "Tipo", "options": ["sales", "purchase"], "optionKey": "values.type" },
+  "onChange": [ { "refresh": "invoices" } ] }
 ```
 
 - `field` has the same properties as form fields (type, label, options, `required`, `validate`, `readOnlyIf`, `lookup`, `upload`…). Form and standalone field draw the control with the same component (`lc-field-control`).
@@ -317,7 +317,7 @@ A field used on its own, outside forms and filters: text box, number, drop-down,
 - Free text (text, number, text area) is written to the state when leaving the field or on Enter, so data sources are not reloaded on every keystroke; the other types on every choice. A cleared field is `null`; numbers arrive as numbers.
 - `onChange`: steps run after every change, with the new value in `value`.
 - `required` and `validate` errors after the first change. The node also accepts `enabledIf` and `readOnlyIf`, which add to those of the field.
-- In the editor palette every type is an item of the «Campi» group (Casella di testo, Elenco a discesa…); names of new fields are not repeated within the screen.
+- In the editor palette every type is an item of the «Fields» group (Text box, Drop-down list…); names of new fields are not repeated within the screen.
 
 To put several fields side by side: a `section` with `layout: "row"` (200 to 360 px wide each, wrapping when space runs out) or a `box` or a `grid` (§ 2.21).
 
@@ -353,8 +353,8 @@ Three containers that decide only **where** their children go (no frame or backg
 ```json
 { "type": "border", "westWidth": 220, "components": [
   { "type": "alert", "region": "north", "kind": "info", "text": "..." },
-  { "type": "input", "region": "west", "field": { "name": "stato", "type": "radio", ... } },
-  { "type": "table", "source": "fatture", "columns": [ ... ] } ] }
+  { "type": "input", "region": "west", "field": { "name": "status", "type": "radio", ... } },
+  { "type": "table", "source": "invoices", "columns": [ ... ] } ] }
 ```
 
 Common rules: a hidden child (`visibleIf`) takes no space; inside containers fields fill the cell (outside they stay at most 560 px wide); sections side by side stretch to the row height. Containers nest freely (a box inside a border region, a grid in a section…). In the editor they are in the «Struttura e testi» group; the border starts with three sample areas (north, west, centre).
@@ -363,10 +363,10 @@ Common rules: a hidden child (`visibleIf`) takes no space; inside containers fie
 
 ```json
 "onClick": [
-  { "validate": "ordine" },
-  { "call": "salva", "args": { "nome": "{{ state.nome }}" } },
-  { "export": { "source": "fatture", "fileName": "fatture",
-                "columns": [ { "field": "numero", "label": "{{ t('comune.numero', 'Numero') }}" }, { "field": "importo" } ] } },
+  { "validate": "order" },
+  { "call": "save", "args": { "name": "{{ state.name }}" } },
+  { "export": { "source": "invoices", "fileName": "invoices",
+                "columns": [ { "field": "number", "label": "{{ t('common.number', 'Numero') }}" }, { "field": "amount" } ] } },
   { "print": true }
 ]
 ```
@@ -381,20 +381,20 @@ Steps are a sequence: what has to happen before a call (`validate`, `confirm`, `
 
 ```json
 "actions": {
-  "salvaOrdine": [
-    { "validate": "ordine" },
-    { "confirm": "{{ t('ordini.conferma', 'Salvare l\\'ordine?') }}" },
-    { "call": "creaOrdine", "as": "creato",
-      "onError": { "if": "{{ error.status == 409 }}", "then": { "toast": "Ordine già presente" }, "else": { "toast": "Salvataggio non riuscito" } } },
-    { "if": "{{ creato.stato == 'bozza' }}", "then": { "toast": "Salvato come bozza" } },
-    { "refresh": "ordini" },
-    { "navigate": "ordine-dettaglio", "params": { "id": "{{ creato.id }}" } }
+  "saveOrder": [
+    { "validate": "order" },
+    { "confirm": "{{ t('orders.confirm_save', 'Save the order?') }}" },
+    { "call": "creaOrdine", "as": "created",
+      "onError": { "if": "{{ error.status == 409 }}", "then": { "toast": "Order already exists" }, "else": { "toast": "Saving failed" } } },
+    { "if": "{{ created.status == 'draft' }}", "then": { "toast": "Saved as a draft" } },
+    { "refresh": "orders" },
+    { "navigate": "order-detail", "params": { "id": "{{ created.id }}" } }
   ]
 },
-"components": [{ "type": "button", "label": "Salva", "onClick": { "run": "salvaOrdine" } }]
+"components": [{ "type": "button", "label": "Save", "onClick": { "run": "saveOrder" } }]
 ```
 
-- **`as` in the `call` step**: the following steps of the same sequence see the response under that name (`{{ creato.id }}`). The name cannot be that of an existing variable (`user`, `state`, `params`, `row`, `form`, `error`…).
+- **`as` in the `call` step**: the following steps of the same sequence see the response under that name (`{{ created.id }}`). The name cannot be that of an existing variable (`user`, `state`, `params`, `row`, `form`, `error`…).
 - **`if`** with `then` and `else` (optional): one step or a list of steps per branch. The condition must yield true or false; if it cannot be evaluated (or yields something else) the sequence stops with the generic warning and the technical diagnostic, without running either branch (fail-closed).
 - **`actions` and `run`**: named sequences of the screen, called from buttons, row actions, forms… with the variables of the place where they are called (`row`, `form`). Variables created inside (`as`) stay theirs. A sequence that does not exist, or calls nested more than eight levels deep (a cycle), stop the sequence. The editor suggests the names in `run` and flags missing ones.
 - **`error.status` in `onError`**: the HTTP status of the response (0 if the service cannot be reached), to behave differently according to the error. The server's message is not available: it might contain internal details.
@@ -410,13 +410,13 @@ What **must** happen regardless (checks, rules, audit, several calls to keep con
 ### 2.24 Timeline and kanban
 
 ```json
-{ "type": "timeline", "source": "eventi", "dateField": "data", "labelField": "titolo", "descriptionField": "nota",
-  "toneField": "esito", "tones": { "ok": "success", "ko": "danger" }, "withTime": true }
+{ "type": "timeline", "source": "events", "dateField": "data", "labelField": "title", "descriptionField": "note",
+  "toneField": "outcome", "tones": { "ok": "success", "ko": "danger" }, "withTime": true }
 
-{ "type": "kanban", "source": "attivita", "columnField": "stato", "titleField": "titolo", "descriptionField": "chi",
-  "columns": [ { "value": "da-fare", "label": "Da fare" }, { "value": "fatto", "label": "Fatto", "tone": "success" } ],
-  "moveIf": "{{ can('attivita.attivita.modifica') }}",
-  "onMove": [ { "call": "sposta", "args": { "id": "{{ row.id }}", "stato": "{{ to }}" } }, { "refresh": "attivita" } ] }
+{ "type": "kanban", "source": "tasks", "columnField": "status", "titleField": "title", "descriptionField": "who",
+  "columns": [ { "value": "to-do", "label": "Da fare" }, { "value": "done", "label": "Fatto", "tone": "success" } ],
+  "moveIf": "{{ can('tasks.tasks.modifica') }}",
+  "onMove": [ { "call": "move", "args": { "id": "{{ row.id }}", "status": "{{ to }}" } }, { "refresh": "tasks" } ] }
 ```
 
 - **timeline**: the data-source rows in date order (`order`: `desc` by default, `asc`); a date without a time counts as a local day; rows without a valid date are not shown.
@@ -425,7 +425,7 @@ What **must** happen regardless (checks, rules, audit, several calls to keep con
 ### 2.25 Menu: search, counters, keyboard
 
 - **Search**: a box at the top of the menu (expanded bar). It finds the area's items whose name, or whose group's name, contains the text, ignoring case and accents; every result shows its path. Enter opens the first one, Down arrow moves into the results, Esc clears.
-- **Counters**: in the navigation, `"badges": { "url": "/api/menu/contatori", "refreshSeconds": 60 }`. The service (relative GET, through the BFF) responds `{ "<item id>": number }`; positive integers are kept, above 99 «99+», a dot when the bar is collapsed. A closed group shows the sum of its items' counters (subgroups included); when open, the numbers move to the items. They are re-read periodically (only while the page is visible) and when returning to the page. Screen readers read «Bozze, 3 da gestire» (Drafts, 3 to handle).
+- **Counters**: in the navigation, `"badges": { "url": "/api/menu/counters", "refreshSeconds": 60 }`. The service (relative GET, through the BFF) responds `{ "<item id>": number }`; positive integers are kept, above 99 «99+», a dot when the bar is collapsed. A closed group shows the sum of its items' counters (subgroups included); when open, the numbers move to the items. They are re-read periodically (only while the page is visible) and when returning to the page. Screen readers read «Bozze, 3 da gestire» (Drafts, 3 to handle).
 - **Keyboard**: up and down arrows between visible items and groups, Home and End, right opens a group (or enters the first item), left closes it (or goes back to the group), Enter and Space on groups. Group titles are reachable with Tab and say whether they are open (`aria-expanded`).
 
 ### 2.26 Formatted text and rich text editor
@@ -438,7 +438,7 @@ What **must** happen regardless (checks, rules, audit, several calls to keep con
 
 ```json
 { "type": "text", "format": "markdown",
-  "text": "{{ t('ordini.istruzioni', 'Prima di **inviare**:\\n\\n- controlla i dati\\n- allega la fattura') }}" }
+  "text": "{{ t('orders.instructions', 'Before **sending**:\\n\\n- check the data\\n- attach the invoice') }}" }
 ```
 
 | Written | Result |
@@ -468,7 +468,7 @@ All components that read a data source (table, data table, server data table, ch
 - **A spinner, for large tables too.** Not a *skeleton*: for a table you cannot know how many rows will arrive, and grey rows standing still for seconds look like a broken page. The table header (the columns are in the definition) is visible immediately.
 - **First load.** The spinner takes the place of the content, in an area with a reserved minimum height (`--lc-busy-min-height`, 160 px), so the page jumps little when the data arrives. While waiting the table does not say «Nessun risultato» (no results).
 - **Reload** (filters, `refresh`, page). The previous data stays visible and dimmed (`--lc-busy-dim`), with the spinner on top. The indicator does not intercept clicks: filters, grouping and scrolling stay usable. On a long table the spinner stays in the visible part while scrolling.
-- **Timing.** The spinner appears only if the wait exceeds 300 ms, so fast responses do not make it flash; once shown it stays at least 400 ms. After 8 seconds the label becomes «Ci vuole più del solito…» (taking longer than usual).
+- **Timing.** The spinner appears only if the wait exceeds 300 ms, so fast responses do not make it flash; once shown it stays at least 400 ms. After 8 seconds the label becomes «This is taking longer than usual…».
 - **Accessibility.** The content has `aria-busy` throughout the wait. A `status` region, always present, announces «Caricamento…» (loading) when the spinner appears. With the operating system's "reduce motion" setting the spinner does not spin.
 - **Actions.** Buttons, form actions and file uploads keep the spinner inside the button, which is disabled meanwhile.
 

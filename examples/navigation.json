@@ -1,137 +1,137 @@
 {
   "schemaVersion": "1.0",
-  "navigation": "fatturazione",
+  "navigation": "invoicing",
   "badges": {
-    "url": "/api/menu/contatori",
+    "url": "/api/menu/counters",
     "refreshSeconds": 30
   },
-  "default": "consultazione-fatture",
+  "default": "invoice-lookup",
   "areas": [
     {
-      "id": "inserimento-fattura",
-      "label": "{{ t('nav.inserimento_fattura', 'Inserimento Fattura') }}",
+      "id": "invoice-entry",
+      "label": "{{ t('nav.invoice_entry', 'Invoice entry') }}",
       "icon": "file-plus",
-      "requires": "fatture.fattura.crea",
+      "requires": "invoices.invoice.create",
       "items": [
         {
-          "id": "nuova-fattura",
-          "label": "{{ t('nav.nuova_fattura', 'Nuova fattura') }}",
+          "id": "new-invoice",
+          "label": "{{ t('nav.new_invoice', 'New invoice') }}",
           "icon": "file-plus",
           "children": [
             {
-              "id": "fattura-attiva",
-              "label": "{{ t('nav.fattura_attiva', 'Fattura attiva') }}",
-              "screen": "fattura-nuova",
+              "id": "sales-invoice",
+              "label": "{{ t('nav.sales_invoice', 'Sales invoice') }}",
+              "screen": "invoice-new",
               "params": {
-                "tipo": "attiva"
+                "type": "sales"
               }
             },
             {
-              "id": "fattura-passiva",
-              "label": "{{ t('nav.fattura_passiva', 'Fattura passiva') }}",
-              "screen": "fattura-nuova",
+              "id": "purchase-invoice",
+              "label": "{{ t('nav.purchase_invoice', 'Purchase invoice') }}",
+              "screen": "invoice-new",
               "params": {
-                "tipo": "passiva"
+                "type": "purchase"
               }
             },
             {
-              "id": "da-ordine",
-              "label": "{{ t('nav.da_ordine', 'Da ordine') }}",
+              "id": "from-order",
+              "label": "{{ t('nav.from_order', 'From order') }}",
               "children": [
                 {
-                  "id": "scegli-ordine",
-                  "label": "{{ t('nav.scegli_l_ordine', 'Scegli l\\'ordine') }}",
-                  "screen": "ordini-elenco",
-                  "requires": "ordini.ordine.leggi"
+                  "id": "choose-order",
+                  "label": "{{ t('nav.choose_the_order', 'Choose the order') }}",
+                  "screen": "order-list",
+                  "requires": "orders.order.read"
                 }
               ]
             }
           ]
         },
         {
-          "id": "bozze",
-          "label": "{{ t('nav.le_mie_bozze', 'Le mie bozze') }}",
+          "id": "drafts",
+          "label": "{{ t('nav.my_drafts', 'My drafts') }}",
           "icon": "inbox",
-          "screen": "fatture-elenco",
+          "screen": "invoice-list",
           "params": {
-            "stato": "bozza"
+            "status": "draft"
           }
         }
       ]
     },
     {
-      "id": "consultazione-fatture",
-      "label": "{{ t('nav.consultazione_fatture', 'Consultazione Fatture') }}",
+      "id": "invoice-lookup",
+      "label": "{{ t('nav.invoice_lookup', 'Invoice lookup') }}",
       "icon": "search",
-      "requires": "fatture.fattura.leggi",
+      "requires": "invoices.invoice.read",
       "items": [
         {
-          "id": "elenco-fatture",
-          "label": "{{ t('nav.elenco_fatture', 'Elenco fatture') }}",
+          "id": "invoice-list",
+          "label": "{{ t('nav.invoice_list', 'Invoice list') }}",
           "icon": "receipt",
-          "screen": "fatture-elenco"
+          "screen": "invoice-list"
         },
         {
-          "id": "ordini-collegati",
-          "label": "{{ t('nav.ordini_collegati', 'Ordini collegati') }}",
+          "id": "linked-orders",
+          "label": "{{ t('nav.linked_orders', 'Linked orders') }}",
           "icon": "folder",
-          "requires": "ordini.ordine.leggi",
+          "requires": "orders.order.read",
           "children": [
             {
-              "id": "ordini",
-              "label": "{{ t('nav.ordini', 'Ordini') }}",
-              "screen": "ordini-elenco"
+              "id": "orders",
+              "label": "{{ t('nav.orders', 'Orders') }}",
+              "screen": "order-list"
             }
           ]
         }
       ]
     },
     {
-      "id": "creazione-pacchetto",
-      "label": "{{ t('nav.creazione_pacchetto', 'Creazione pacchetto') }}",
+      "id": "package-creation",
+      "label": "{{ t('nav.package_creation', 'Package creation') }}",
       "icon": "package",
-      "requires": "pacchetti.pacchetto.leggi",
+      "requires": "packages.package.read",
       "items": [
         {
-          "id": "nuovo-pacchetto",
-          "label": "{{ t('nav.nuovo_pacchetto', 'Nuovo pacchetto') }}",
+          "id": "new-package",
+          "label": "{{ t('nav.new_package', 'New package') }}",
           "icon": "package",
-          "screen": "pacchetto-nuovo",
-          "requires": "pacchetti.pacchetto.crea"
+          "screen": "package-new",
+          "requires": "packages.package.create"
         },
         {
-          "id": "pacchetti",
-          "label": "{{ t('nav.pacchetti_creati', 'Pacchetti creati') }}",
+          "id": "packages",
+          "label": "{{ t('nav.created_packages', 'Created packages') }}",
           "icon": "list",
-          "screen": "pacchetti-elenco"
+          "screen": "package-list"
         }
       ]
     },
     {
-      "id": "revisione-spese",
-      "label": "{{ t('nav.revisione_spese', 'Revisione Spese') }}",
+      "id": "expense-review",
+      "label": "{{ t('nav.expense_review', 'Expense review') }}",
       "icon": "check-circle",
-      "requires": "spese.spesa.leggi",
+      "requires": "expenses.expense.read",
       "items": [
         {
-          "id": "spese",
-          "label": "{{ t('nav.spese', 'Spese') }}",
+          "id": "expenses",
+          "label": "{{ t('nav.expenses', 'Expenses') }}",
           "icon": "euro",
           "children": [
             {
-              "id": "da-revisionare",
-              "label": "{{ t('nav.da_revisionare', 'Da revisionare') }}",
-              "screen": "spese-elenco",
+              "id": "to-review",
+              "label": "{{ t('nav.to_review', 'To review') }}",
+              "screen": "expense-list",
               "params": {
-                "stato": "da-revisionare"
+                "status": "to-review"
               }
             },
             {
-              "id": "revisionate",
-              "label": "{{ t('nav.revisionate', 'Revisionate') }}",
-              "screen": "spese-elenco",
+              "id": "reviewed",
+              "label": "{{ t('nav.reviewed', 'Reviewed') }}",
+              "screen": "expense-list",
               "params": {
-                "stato": "revisionata"
+                "status": "reviewed"
               }
             }
           ]
@@ -139,75 +139,75 @@
       ]
     },
     {
-      "id": "vetrina",
-      "label": "{{ t('nav.vetrina_componenti', 'Vetrina componenti') }}",
+      "id": "showcase",
+      "label": "{{ t('nav.component_showcase', 'Component showcase') }}",
       "icon": "list",
-      "requires": "vetrina.componenti.leggi",
+      "requires": "showcase.components.read",
       "items": [
         {
-          "id": "componenti",
-          "label": "{{ t('nav.componenti', 'Componenti') }}",
+          "id": "components",
+          "label": "{{ t('nav.components', 'Components') }}",
           "icon": "folder",
           "children": [
             {
-              "id": "vetrina-base",
-              "label": "{{ t('nav.componenti_base', 'Componenti base') }}",
-              "screen": "vetrina-base"
+              "id": "showcase-basics",
+              "label": "{{ t('nav.basic_components', 'Basic components') }}",
+              "screen": "showcase-basics"
             },
             {
-              "id": "vetrina-form",
-              "label": "{{ t('nav.form', 'Form') }}",
-              "screen": "vetrina-form"
+              "id": "showcase-form",
+              "label": "{{ t('nav.forms', 'Forms') }}",
+              "screen": "showcase-form"
             },
             {
-              "id": "vetrina-attivita",
-              "label": "{{ t('nav.attivita', 'Attività e avanzamento') }}",
-              "screen": "vetrina-attivita"
+              "id": "showcase-tasks",
+              "label": "{{ t('nav.tasks_and_progress', 'Tasks and progress') }}",
+              "screen": "showcase-tasks"
             },
             {
-              "id": "vetrina-contenitori",
-              "label": "{{ t('nav.contenitori', 'Contenitori di layout') }}",
-              "screen": "vetrina-contenitori"
+              "id": "showcase-containers",
+              "label": "{{ t('nav.layout_containers', 'Layout containers') }}",
+              "screen": "showcase-containers"
             },
             {
-              "id": "vetrina-input",
-              "label": "{{ t('nav.campi_a_se', 'Campi a sé') }}",
-              "screen": "vetrina-input"
+              "id": "showcase-input",
+              "label": "{{ t('nav.standalone_fields', 'Standalone fields') }}",
+              "screen": "showcase-input"
             },
             {
-              "id": "vetrina-campi",
-              "label": "{{ t('nav.campi_e_form', 'Campi e form') }}",
-              "screen": "vetrina-campi"
+              "id": "showcase-fields",
+              "label": "{{ t('nav.fields_and_forms', 'Fields and forms') }}",
+              "screen": "showcase-fields"
             },
             {
-              "id": "vetrina-tabelle",
-              "label": "{{ t('nav.filtri_e_tabelle', 'Filtri e tabelle') }}",
-              "screen": "vetrina-tabelle"
+              "id": "showcase-tables",
+              "label": "{{ t('nav.filters_and_tables', 'Filters and tables') }}",
+              "screen": "showcase-tables"
             },
             {
-              "id": "vetrina-tabelle-avanzate",
-              "label": "{{ t('nav.tabelle_avanzate', 'Tabelle avanzate') }}",
-              "screen": "vetrina-tabelle-avanzate"
+              "id": "showcase-advanced-tables",
+              "label": "{{ t('nav.advanced_tables', 'Advanced tables') }}",
+              "screen": "showcase-advanced-tables"
             },
             {
-              "id": "vetrina-datatable",
-              "label": "{{ t('nav.datatable', 'Datatable') }}",
-              "screen": "vetrina-datatable"
+              "id": "showcase-datatable",
+              "label": "{{ t('nav.data_table', 'Data table') }}",
+              "screen": "showcase-datatable"
             },
             {
-              "id": "vetrina-layout",
-              "label": "{{ t('nav.schede_dettaglio_e_messaggi', 'Schede, dettaglio e messaggi') }}",
-              "screen": "vetrina-layout"
+              "id": "showcase-layout",
+              "label": "{{ t('nav.cards_detail_and_messages', 'Cards, detail and messages') }}",
+              "screen": "showcase-layout"
             },
             {
-              "id": "vetrina-cruscotto",
-              "label": "{{ t('nav.cruscotto', 'Cruscotto') }}",
-              "screen": "vetrina-cruscotto"
+              "id": "showcase-dashboard",
+              "label": "{{ t('nav.dashboard', 'Dashboard') }}",
+              "screen": "showcase-dashboard"
             },
             {
-              "id": "vetrina-viste",
-              "label": "{{ t('nav.procedure_e_viste', 'Procedure e viste') }}",
-              "screen": "vetrina-viste"
+              "id": "showcase-views",
+              "label": "{{ t('nav.procedures_and_views', 'Procedures and views') }}",
+              "screen": "showcase-views"
             }
           ]
         }

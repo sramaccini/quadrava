@@ -61,7 +61,7 @@ The whole application is a JSON document built from a few concepts, always the s
 | Expression | A small formula for conditions and calculations | "show only if status = draft" |
 | State | The values the screen remembers | Chosen filter, selected row |
 | Area | A functional area of the application with its own menu, chosen from a selector | "Invoice Entry", "Expense Review" |
-| Permission | A key that enables an action, in the format domain.resource.action | ordini.ordine.approva |
+| Permission | A key that enables an action, in the format domain.resource.action | orders.order.approve |
 
 | ID | Requirement | Priority |
 | --- | --- | --- |
@@ -79,7 +79,7 @@ The whole application is a JSON document built from a few concepts, always the s
 | RF-DEF-12 | The menu is defined by a navigation document separate from the screens: a list of areas, each with a tree of items up to three levels deep (group, subgroup, item); an item opens a screen with static parameters | M |
 | RF-DEF-13 | Menu items are visible according to permissions (requires) and to an expression (visibleIf); groups and areas with no visible items do not appear; an expression in error hides the item. The menu is only a convenience: the check stays in the screen and in the back end | M |
 | RF-DEF-14 | A selector switches from one area to another: it shows only those the user is allowed, does not appear if there is only one, and switching returns to the last screen visited in that area | M |
-| RF-DEF-15 | Every screen has an address like /use-case/screen?parameters: Back, bookmarks and shared links work, and the active menu item is highlighted | M |
+| RF-DEF-15 | Every screen has an address like /area/screen?parameters: Back, bookmarks and shared links work, and the active menu item is highlighted | M |
 | RF-DEF-16 | A form may have no data source (insertion) and start from declared initial values; actions can send the form values as the request body | M |
 | RF-DEF-17 | Translations (i18n) can be declared and are applied uniformly | S |
 | RF-DEF-18 | Tables sort (in the page or through the service), select rows with bulk actions, gather row actions in a menu, open detail rows and show a totals row; the data table filters, sorts and groups tens of thousands of loaded rows in the page | M |
@@ -175,37 +175,37 @@ The editor lets those who do not want to write JSON by hand build an application
 
 ## 9. Practical examples
 
-The examples show the indicative syntax of the language; the exact field names will be fixed in the official JSON Schema. Formulas in double braces are expressions; `can(...)` queries the user's permissions, with names in the format domain.resource.action (for example ordini.ordine.approva); row.\_perm and form.\_perm carry the permissions on the single record.
+The examples show the indicative syntax of the language; the exact field names will be fixed in the official JSON Schema. Formulas in double braces are expressions; `can(...)` queries the user's permissions, with names in the format domain.resource.action (for example ordini.order.approva); row.\_perm and form.\_perm carry the permissions on the single record.
 
 **Example 1 — Order list with a filter and a row action.** The "Approva" button appears only if the user has the permission and the order is in the right state.
 
 ```json
 {
   "schemaVersion": "1.0",
-  "screen": "ordini-elenco",
+  "screen": "order-list",
   "title": "Ordini",
-  "requires": "ordini.ordine.leggi",
+  "requires": "orders.order.read",
   "dataSources": {
-    "ordini": {
-      "type": "rest", "method": "GET", "url": "/api/ordini",
-      "params": { "stato": "{{state.filtri.stato}}", "page": "{{state.page}}" },
+    "orders": {
+      "type": "rest", "method": "GET", "url": "/api/orders",
+      "params": { "status": "{{state.filters.status}}", "page": "{{state.page}}" },
       "paging": "server"
     },
-    "approvaOrdine": { "type": "rest", "method": "POST", "url": "/api/ordini/{{id}}/approva" }
+    "approveOrder": { "type": "rest", "method": "POST", "url": "/api/orders/{{id}}/approve" }
   },
   "components": [
-    { "type": "filterBar", "bind": "state.filtri",
-      "fields": [ { "name": "stato", "type": "select", "label": "Stato",
-                    "options": ["bozza", "inviato", "approvato"] } ] },
-    { "type": "table", "source": "ordini",
-      "columns": [ { "field": "numero" }, { "field": "cliente" }, { "field": "stato" } ],
+    { "type": "filterBar", "bind": "state.filters",
+      "fields": [ { "name": "status", "type": "select", "label": "Status",
+                    "options": ["draft", "submitted", "approved"] } ] },
+    { "type": "table", "source": "orders",
+      "columns": [ { "field": "number" }, { "field": "customer" }, { "field": "status" } ],
       "rowActions": [ {
-        "label": "Approva",
-        "visibleIf": "{{can('ordini.ordine.approva') && row.stato == 'inviato'}}",
+        "label": "Approve",
+        "visibleIf": "{{can('orders.order.approve') && row.status == 'submitted'}}",
         "onClick": [
-          { "call": "approvaOrdine", "args": { "id": "{{row.id}}" } },
-          { "refresh": "ordini" },
-          { "toast": "Ordine approvato" }
+          { "call": "approveOrder", "args": { "id": "{{row.id}}" } },
+          { "refresh": "orders" },
+          { "toast": "Order approved" }
         ]
       } ]
     }
@@ -218,24 +218,24 @@ The examples show the indicative syntax of the language; the exact field names w
 ```json
 {
   "schemaVersion": "1.0",
-  "screen": "ordine-dettaglio",
-  "requires": "ordini.ordine.leggi",
+  "screen": "order-detail",
+  "requires": "orders.order.read",
   "components": [ {
-    "type": "form", "source": "ordine",
+    "type": "form", "source": "order",
     "fields": [
-      { "name": "cliente", "type": "text", "required": true },
-      { "name": "tipo", "type": "select", "options": ["privato", "business"] },
-      { "name": "sconto", "type": "number",
-        "visibleIf": "{{form.tipo == 'business'}}",
+      { "name": "customer", "type": "text", "required": true },
+      { "name": "type", "type": "select", "options": ["private", "business"] },
+      { "name": "discount", "type": "number",
+        "visibleIf": "{{form.type == 'business'}}",
         "validate": { "rule": "{{value <= 20}}", "message": "Sconto massimo 20%" } },
       { "name": "iban", "type": "text", "sensitive": true,
-        "hiddenIf": "{{!can('ordini.iban.leggi')}}",
-        "readOnlyIf": "{{!can('ordini.iban.scrivi')}}" }
+        "hiddenIf": "{{!can('orders.iban.read')}}",
+        "readOnlyIf": "{{!can('orders.iban.write')}}" }
     ],
     "actions": [ {
-      "label": "Salva",
-      "enabledIf": "{{can('ordini.ordine.scrivi') && form._perm.update}}",
-      "onClick": [ { "call": "salvaOrdine" }, { "navigate": "ordini-elenco" } ]
+      "label": "Save",
+      "enabledIf": "{{can('orders.order.write') && form._perm.update}}",
+      "onClick": [ { "call": "saveOrder" }, { "navigate": "order-list" } ]
     } ]
   } ]
 }
@@ -248,23 +248,23 @@ The `sensitive: true` field tells the runtime never to include that value in tra
 ```json
 {
   "schemaVersion": "1.0",
-  "navigation": "fatturazione",
-  "default": "consultazione-fatture",
+  "navigation": "invoicing",
+  "default": "invoice-lookup",
   "areas": [
-    { "id": "inserimento-fattura", "label": "Inserimento Fattura", "requires": "fatture.fattura.crea",
-      "items": [ { "id": "nuova-fattura", "label": "Nuova fattura", "children": [
-        { "id": "fattura-attiva", "label": "Fattura attiva", "screen": "fattura-nuova", "params": { "tipo": "attiva" } },
-        { "id": "da-ordine", "label": "Da ordine", "children": [
-          { "id": "scegli-ordine", "label": "Scegli l'ordine", "screen": "ordini-elenco", "requires": "ordini.ordine.leggi" } ] } ] } ] },
-    { "id": "revisione-spese", "label": "Revisione Spese", "requires": "spese.spesa.leggi",
-      "items": [ { "id": "spese", "label": "Spese", "children": [
-        { "id": "da-revisionare", "label": "Da revisionare", "screen": "spese-elenco", "params": { "stato": "da-revisionare" } },
-        { "id": "revisionate", "label": "Revisionate", "screen": "spese-elenco", "params": { "stato": "revisionata" } } ] } ] }
+    { "id": "invoice-entry", "label": "Invoice entry", "requires": "invoices.invoice.create",
+      "items": [ { "id": "new-invoice", "label": "New invoice", "children": [
+        { "id": "sales-invoice", "label": "Sales invoice", "screen": "invoice-new", "params": { "type": "sales" } },
+        { "id": "from-order", "label": "From order", "children": [
+          { "id": "choose-order", "label": "Choose the order", "screen": "order-list", "requires": "orders.order.read" } ] } ] } ] },
+    { "id": "expense-review", "label": "Expense review", "requires": "expenses.expense.read",
+      "items": [ { "id": "expenses", "label": "Expenses", "children": [
+        { "id": "to-review", "label": "To review", "screen": "expense-list", "params": { "status": "to-review" } },
+        { "id": "reviewed", "label": "Reviewed", "screen": "expense-list", "params": { "status": "reviewed" } } ] } ] }
   ]
 }
 ```
 
-The areas in this example are just data: the platform has no built-in ones. Every screen has an address such as /revisione-spese/spese-elenco?stato=da-revisionare, so Back, bookmarks and shared links work.
+The areas in this example are just data: the platform has no built-in ones. Every screen has an address such as /expense-review/expense-list?status=to-review, so Back, bookmarks and shared links work.
 
 ## 10. Non-functional requirements
 

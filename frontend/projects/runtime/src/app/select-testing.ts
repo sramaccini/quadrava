@@ -1,6 +1,6 @@
 /**
- * Utilità per i test che usano `nz-select` in jsdom. Il menu delle opzioni di NG-ZORRO usa lo scorrimento virtuale
- * di CDK, che in jsdom (nessun layout) vede una finestra alta zero e non disegna nulla: la si simula alta 500px.
+ * Utilities for tests using `nz-select` in jsdom. The NG-ZORRO options menu uses the virtual scrolling
+ * of the CDK, which in jsdom (no layout) sees a zero-height viewport and draws nothing: it is simulated 500px high.
  */
 export function stubViewportHeight(): () => void {
   const original = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientHeight');
@@ -11,7 +11,7 @@ export function stubViewportHeight(): () => void {
   };
 }
 
-/** Apre il menu di un `nz-select` e restituisce le opzioni visibili. */
+/** Opens the menu of an `nz-select` and returns the visible options. */
 export async function openSelect(select: Element, settle: () => Promise<void>): Promise<HTMLElement[]> {
   (select.querySelector('.ant-select-selector') as HTMLElement).dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
   (select as HTMLElement).click();

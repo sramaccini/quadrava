@@ -9,7 +9,7 @@ import { validateScreen, type ScreenDefinition } from 'schema';
 
 type Loaded = { ok: true; definition: ScreenDefinition } | { ok: false; issues: string[] } | { ok: false; failed: 'lc.screenNotFound' | 'lc.screenLoadFailed' };
 
-/** Pagina del router: carica (dalla fonte delle definizioni) la schermata indicata nell'URL, la valida e la mostra con i parametri della query. */
+/** Router page: loads (from the definition source) the screen named in the URL, validates it and shows it with the query parameters. */
 @Component({
   selector: 'lc-screen-page',
   imports: [ScreenComponent, NzAlertModule],
@@ -48,7 +48,7 @@ export class ScreenPage {
   private readonly definitions = inject(DefinitionSource);
   private readonly diagnostics = inject(RuntimeDiagnostics, { optional: true });
 
-  /** Percorso nel menu (area, gruppi, voce) mostrato come briciole di pane sopra il titolo. */
+  /** Path in the menu (area, groups, item) shown as breadcrumbs above the title. */
   protected readonly breadcrumb = computed<string[]>(() => {
     const here = this.navigation.current();
     const runtime = this.navigation.runtime();
@@ -69,8 +69,8 @@ export class ScreenPage {
       try {
         document = await this.definitions.screen(name);
       } catch (e) {
-        // All'utente un messaggio comprensibile; il dettaglio tecnico va alle segnalazioni.
-        this.diagnostics?.report({ screen: name, source: 'caricamento schermata', error: e instanceof Error ? e.message : String(e) });
+        // To the user an understandable message; the technical detail goes to the reports.
+        this.diagnostics?.report({ screen: name, source: 'screen loading', error: e instanceof Error ? e.message : String(e) });
         const status = (e as { status?: unknown } | null)?.status;
         return { ok: false, failed: status === 404 || status === 403 ? 'lc.screenNotFound' : 'lc.screenLoadFailed' };
       }

@@ -91,7 +91,7 @@ components:
       type: string
       description: Format domain.resource.action, lower case.
       pattern: '^[a-z0-9]+\.[a-z0-9]+\.[a-z0-9]+$'
-      examples: ['ordini.ordine.approva']
+      examples: ['orders.order.approve']
     Capabilities:
       type: object
       required: [permissions, version]

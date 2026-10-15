@@ -1,7 +1,7 @@
 /**
- * Servizio di ricerca finto per la serverDataTable della demo: un archivio di movimenti generato una sola volta e una
- * funzione che risponde alla richiesta della tabella come farebbe un vero servizio (filtri, ordinamento, gruppi con
- * conteggi e somme, pagine, valori distinti). Serve solo alla demo.
+ * Fake search service for the serverDataTable of the demo: an archive of transactions generated only once and a
+ * function answering the table's request as a real service would (filters, sorting, groups with counts and sums,
+ * pages, distinct values). Only for the demo.
  */
 
 type Row = Record<string, unknown>;
@@ -25,30 +25,30 @@ interface SearchRequest {
   distinct?: string;
 }
 
-const CONTI = ['Banca Intesa', 'Banca Sella', 'Cassa', 'Carta aziendale'];
-const CATEGORIE = ['Affitti', 'Utenze', 'Stipendi', 'Incassi clienti', 'Fornitori', 'Spese varie', 'Imposte', 'Consulenze'];
-const BASE: Record<string, number> = { Affitti: 1800, Utenze: 240, Stipendi: 3100, 'Incassi clienti': 2600, Fornitori: 950, 'Spese varie': 75, Imposte: 1400, Consulenze: 1200 };
+const ACCOUNTS = ['Alpha Bank', 'Beta Bank', 'Cash', 'Company card'];
+const CATEGORIES = ['Rent', 'Utilities', 'Salaries', 'Customer receipts', 'Suppliers', 'Sundry expenses', 'Taxes', 'Consulting'];
+const BASE: Record<string, number> = { Rent: 1800, Utilities: 240, Salaries: 3100, 'Customer receipts': 2600, Suppliers: 950, 'Sundry expenses': 75, Taxes: 1400, Consulting: 1200 };
 
 let archive: Row[] | null = null;
 
-/** Archivio di `size` movimenti tra il 2024 e il 2026, sempre uguale (generato in modo deterministico). */
-export function movementArchive(size = 200000): Row[] {
+/** Archive of `size` transactions between 2024 and 2026, always the same (generated deterministically). */
+export function transactionArchive(size = 200000): Row[] {
   if (archive && archive.length === size) return archive;
   archive = Array.from({ length: size }, (_, i) => {
-    const categoria = CATEGORIE[(i * 7) % CATEGORIE.length];
-    const base = BASE[categoria];
-    const importo = Math.round((base + ((i * 37) % 23) * (base / 40)) * 100) / 100;
-    const anno = 2024 + (i % 3);
-    const mese = 1 + ((i * 5) % 12);
-    const giorno = 1 + ((i * 11) % 28);
+    const category = CATEGORIES[(i * 7) % CATEGORIES.length];
+    const base = BASE[category];
+    const amount = Math.round((base + ((i * 37) % 23) * (base / 40)) * 100) / 100;
+    const year = 2024 + (i % 3);
+    const month = 1 + ((i * 5) % 12);
+    const day = 1 + ((i * 11) % 28);
     return {
       id: i + 1,
-      data: `${anno}-${String(mese).padStart(2, '0')}-${String(giorno).padStart(2, '0')}`,
-      conto: CONTI[(i * 3) % CONTI.length],
-      categoria,
-      descrizione: `${categoria} n. ${i + 1}`,
-      importo: categoria === 'Incassi clienti' ? importo : -importo,
-      stato: i % 13 === 4 ? 'da-verificare' : 'registrato',
+      date: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
+      account: ACCOUNTS[(i * 3) % ACCOUNTS.length],
+      category,
+      description: `${category} no. ${i + 1}`,
+      amount: category === 'Customer receipts' ? amount : -amount,
+      status: i % 13 === 4 ? 'to-check' : 'registered',
     };
   });
   return archive;
@@ -74,19 +74,19 @@ function matches(row: Row, f: Filter): boolean {
 
 function compare(a: unknown, b: unknown): number {
   if (typeof a === 'number' && typeof b === 'number') return a - b;
-  return String(a ?? '').localeCompare(String(b ?? ''), 'it', { numeric: true });
+  return String(a ?? '').localeCompare(String(b ?? ''), 'en', { numeric: true });
 }
 
 const sum = (rows: Row[], field: string): number => Math.round(rows.reduce((t, r) => t + (typeof r[field] === 'number' ? (r[field] as number) : 0), 0) * 100) / 100;
 
-/** Risposta alla richiesta della serverDataTable. */
-export function searchMovements(rows: Row[], request: unknown): unknown {
+/** Answer to the request of the serverDataTable. */
+export function searchTransactions(rows: Row[], request: unknown): unknown {
   const req = request as SearchRequest;
   if (!req || typeof req.page !== 'number' || typeof req.size !== 'number') throw new Error('400');
   let found = rows.filter((row) => (req.filters ?? []).every((f) => matches(row, f)));
   for (const { field, value } of req.groupPath ?? []) found = found.filter((row) => row[field] === value);
   if (req.distinct) return { values: [...new Set(found.map((r) => r[req.distinct!]))].sort(compare) };
-  const totals = { importo: sum(found, 'importo'), categoria: found.length };
+  const totals = { amount: sum(found, 'amount'), category: found.length };
   const slice = <T,>(items: T[]): T[] => items.slice(req.page * req.size, req.page * req.size + req.size);
   const groupBy = req.groupBy ?? [];
   if ((req.groupPath ?? []).length < groupBy.length) {
@@ -99,7 +99,7 @@ export function searchMovements(rows: Row[], request: unknown): unknown {
     }
     const groups = [...buckets.entries()]
       .sort(([a], [b]) => compare(a, b))
-      .map(([value, items]) => ({ value, count: items.length, aggregates: { importo: sum(items, 'importo'), categoria: items.length } }));
+      .map(([value, items]) => ({ value, count: items.length, aggregates: { amount: sum(items, 'amount'), category: items.length } }));
     return { groups: slice(groups), total: groups.length, totals };
   }
   if (req.sort) {

@@ -1,0 +1,179 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "showcase-tasks",
+  "title": "{{ t('showcase_tasks.showcase_tasks_and_progress', 'Showcase: tasks and progress') }}",
+  "description": "{{ t('showcase_tasks.kanban_with_movable_cards_event', 'Kanban with movable cards, event timeline, progress bars, images and links.') }}",
+  "requires": "showcase.components.read",
+  "dataSources": {
+    "tasks": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/tasks"
+    },
+    "moveTask": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/tasks/{{ id }}/move",
+      "body": {
+        "status": "{{ status }}"
+      }
+    },
+    "events": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/events"
+    }
+  },
+  "components": [
+    {
+      "id": "header",
+      "type": "box",
+      "align": "center",
+      "components": [
+        {
+          "id": "illustration",
+          "type": "image",
+          "src": "examples/images/tasks.svg",
+          "alt": "{{ t('showcase_tasks.clipboard_with_the_task_list', 'Clipboard with the task list') }}",
+          "width": 40,
+          "height": 40
+        },
+        {
+          "id": "title",
+          "type": "text",
+          "style": "heading",
+          "text": "{{ t('showcase_tasks.tasks_and_progress', 'Tasks and progress') }}"
+        }
+      ]
+    },
+    {
+      "id": "section-progress",
+      "type": "section",
+      "title": "{{ t('showcase_tasks.progress', 'Progress') }}",
+      "components": [
+        {
+          "id": "grid-progress",
+          "type": "grid",
+          "columns": 3,
+          "components": [
+            {
+              "id": "progress-done",
+              "type": "progress",
+              "label": "{{ t('showcase_tasks.steps_completed_3_of_5', 'Steps completed (3 of 5)') }}",
+              "value": 3,
+              "max": 5,
+              "tone": "success"
+            },
+            {
+              "id": "progress-budget",
+              "type": "progress",
+              "label": "{{ t('showcase_tasks.budget_used', 'Budget used') }}",
+              "value": 82,
+              "tone": "danger"
+            },
+            {
+              "id": "progress-circle",
+              "type": "progress",
+              "label": "{{ t('showcase_tasks.quarterly_target', 'Quarterly target') }}",
+              "value": 64,
+              "kind": "circle"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "section-kanban",
+      "type": "section",
+      "title": "{{ t('showcase_tasks.kanban_drag_a_card_or_use_move_t', 'Kanban: drag a card or use “Move to”') }}",
+      "components": [
+        {
+          "id": "kanban",
+          "type": "kanban",
+          "source": "tasks",
+          "columnField": "status",
+          "titleField": "title",
+          "descriptionField": "who",
+          "columns": [
+            {
+              "value": "to-do",
+              "label": "{{ t('showcase_tasks.to_do', 'To do') }}"
+            },
+            {
+              "value": "in-progress",
+              "label": "{{ t('showcase_tasks.in_progress', 'In progress') }}",
+              "tone": "primary"
+            },
+            {
+              "value": "done",
+              "label": "{{ t('showcase_tasks.done', 'Done') }}",
+              "tone": "success"
+            }
+          ],
+          "moveIf": "{{ can('showcase.components.read') }}",
+          "onMove": [
+            {
+              "call": "moveTask",
+              "args": {
+                "id": "{{ row.id }}",
+                "status": "{{ to }}"
+              },
+              "onError": {
+                "toast": "{{ t('showcase_tasks.move_failed', 'Move failed') }}"
+              }
+            },
+            {
+              "refresh": "tasks"
+            },
+            {
+              "toast": "{{ t('showcase_tasks.moved', '“{title}” moved', {'title': row.title}) }}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "section-events",
+      "type": "section",
+      "title": "{{ t('showcase_tasks.history_of_order_1001', 'History of order 1001') }}",
+      "components": [
+        {
+          "id": "timeline",
+          "type": "timeline",
+          "source": "events",
+          "dateField": "date",
+          "labelField": "title",
+          "descriptionField": "note",
+          "toneField": "outcome",
+          "tones": {
+            "ok": "success",
+            "ko": "danger"
+          },
+          "withTime": true
+        },
+        {
+          "id": "links",
+          "type": "box",
+          "gap": "large",
+          "components": [
+            {
+              "id": "link-order",
+              "type": "link",
+              "label": "{{ t('showcase_tasks.open_order_1001', 'Open order 1001') }}",
+              "screen": "order-detail",
+              "params": {
+                "id": 1001
+              }
+            },
+            {
+              "id": "link-external",
+              "type": "link",
+              "label": "{{ t('showcase_tasks.ng_zorro_documentation', 'NG-ZORRO documentation') }}",
+              "href": "https://ng.ant.design/"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

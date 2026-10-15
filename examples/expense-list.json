@@ -1,0 +1,100 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "expense-list",
+  "title": "{{ t('expense_list.expense_review', 'Expense review') }}",
+  "requires": "expenses.expense.read",
+  "dataSources": {
+    "expenses": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/expenses",
+      "paging": "server",
+      "params": {
+        "status": "{{has(params.status) ? params.status : ''}}",
+        "page": "{{state.page}}"
+      }
+    },
+    "reviewExpense": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/expenses/{{id}}/review",
+      "body": {
+        "outcome": "{{outcome}}"
+      }
+    }
+  },
+  "components": [
+    {
+      "id": "expense-table",
+      "type": "table",
+      "source": "expenses",
+      "columns": [
+        {
+          "field": "description",
+          "label": "{{ t('common.description', 'Description') }}"
+        },
+        {
+          "field": "employee",
+          "label": "{{ t('expense_list.employee', 'Employee') }}"
+        },
+        {
+          "field": "amount",
+          "label": "{{ t('common.amount', 'Amount (€)') }}"
+        },
+        {
+          "field": "status",
+          "label": "{{ t('common.status', 'Status') }}",
+          "valueKey": "values.status"
+        }
+      ],
+      "rowActions": [
+        {
+          "id": "btn-approve-expense",
+          "label": "{{ t('common.approve', 'Approve') }}",
+          "visibleIf": "{{can('expenses.expense.review') && row.status == 'to-review'}}",
+          "onClick": [
+            {
+              "call": "reviewExpense",
+              "args": {
+                "id": "{{row.id}}",
+                "outcome": "accepted"
+              },
+              "onError": {
+                "toast": "{{ t('expense_list.operation_failed', 'Operation failed') }}"
+              }
+            },
+            {
+              "refresh": "expenses"
+            },
+            {
+              "toast": "{{ t('expense_list.expense_approved', 'Expense approved') }}"
+            }
+          ]
+        },
+        {
+          "id": "btn-reject-expense",
+          "label": "{{ t('expense_list.reject', 'Reject') }}",
+          "visibleIf": "{{can('expenses.expense.review') && row.status == 'to-review'}}",
+          "onClick": [
+            {
+              "call": "reviewExpense",
+              "args": {
+                "id": "{{row.id}}",
+                "outcome": "rejected"
+              },
+              "onError": {
+                "toast": "{{ t('expense_list.operation_failed', 'Operation failed') }}"
+              }
+            },
+            {
+              "refresh": "expenses"
+            },
+            {
+              "toast": "{{ t('expense_list.expense_rejected', 'Expense rejected') }}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

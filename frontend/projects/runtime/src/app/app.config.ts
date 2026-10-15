@@ -12,7 +12,7 @@ import { ShowcaseTools } from './showcase/showcase-tools';
 import { DEFAULT_RUNTIME_CONFIG, type RuntimeConfig } from './runtime-config';
 import { BffShellSession, DemoShellSession, ShellSession } from './shell-session';
 
-/** Da dove vengono schermate, navigazione e temi: gli esempi della demo o le versioni pubblicate nel registro. */
+/** Where screens, navigation and themes come from: the demo examples or the versions published in the registry. */
 function definitions(config: RuntimeConfig): Provider[] {
   if (config.definitions.source === 'registry') {
     const { source: _, ...registry } = config.definitions;
@@ -22,8 +22,8 @@ function definitions(config: RuntimeConfig): Provider[] {
 }
 
 /**
- * Le porte: nella demo finte (profili, dati in memoria, segnalazioni in pagina); con il BFF quelle vere della
- * libreria `services` (sessione, permessi dal servizio di autorizzazione, dati e telemetria attraverso il BFF).
+ * The ports: fake ones in the demo (profiles, in-memory data, reports in the page); with the BFF the real ones of the
+ * `services` library (session, permissions from the authorization service, data and telemetry through the BFF).
  */
 function ports(config: RuntimeConfig): (Provider | EnvironmentProviders)[] {
   if (config.services?.source === 'bff') {
@@ -49,11 +49,11 @@ export function appConfigFor(config: RuntimeConfig): ApplicationConfig {
       ...ports(config),
       { provide: ScreenNavigator, useExisting: RouterNavigator },
       { provide: Notifier, useExisting: NzNotifier },
-      // Nelle vetrine ogni sezione ha «JSON» e «Aiuto».
+      // In the showcases every section has «JSON» and «Help».
       { provide: SectionTools, useExisting: ShowcaseTools },
     ],
   };
 }
 
-/** Configurazione della demo (definizioni dagli esempi, porte finte), usata anche dai test. */
+/** Configuration of the demo (definitions from the examples, fake ports), also used by the tests. */
 export const appConfig: ApplicationConfig = appConfigFor(DEFAULT_RUNTIME_CONFIG);

@@ -1,14 +1,14 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import navigationDoc from '../../public/examples/navigation.json';
-import invoices from '../../public/examples/fatture-elenco.json';
-import base from '../../public/examples/vetrina-base.json';
-import form from '../../public/examples/vetrina-form.json';
-import tables from '../../public/examples/vetrina-tabelle.json';
-import layout from '../../public/examples/vetrina-layout.json';
-import detail from '../../public/examples/ordine-dettaglio.json';
-import chiaro from '../../public/examples/themes/chiaro.json';
-import scuro from '../../public/examples/themes/scuro.json';
+import invoices from '../../public/examples/invoice-list.json';
+import base from '../../public/examples/showcase-basics.json';
+import form from '../../public/examples/showcase-form.json';
+import tables from '../../public/examples/showcase-tables.json';
+import layout from '../../public/examples/showcase-layout.json';
+import detail from '../../public/examples/order-detail.json';
+import light from '../../public/examples/themes/light.json';
+import dark from '../../public/examples/themes/dark.json';
 import { DemoDiagnostics } from '../demo/demo-ports';
 import { openSelect, stubViewportHeight } from './select-testing';
 import catalogIt from '../../public/examples/i18n/it.json';
@@ -17,21 +17,21 @@ import { I18n } from 'core';
 import { App } from './app';
 import { appConfig } from './app.config';
 
-/** La vetrina deve funzionare davvero: ogni schermata si apre senza errori e i suoi esempi fanno quello che dicono. */
-describe('Vetrina dei componenti', () => {
+/** The showcase must really work: every screen opens without errors and its examples do what they say. */
+describe('Component showcase', () => {
   const files: Record<string, unknown> = {
     'examples/navigation.json': navigationDoc,
-    // La destinazione iniziale, che si apre prima di andare alla schermata della vetrina.
-    'examples/fatture-elenco.json': invoices,
-    'examples/vetrina-base.json': base,
-    'examples/vetrina-form.json': form,
-    'examples/vetrina-tabelle.json': tables,
-    'examples/vetrina-layout.json': layout,
-    'examples/ordine-dettaglio.json': detail,
+    // The initial destination, which opens before going to the showcase screen.
+    'examples/invoice-list.json': invoices,
+    'examples/showcase-basics.json': base,
+    'examples/showcase-form.json': form,
+    'examples/showcase-tables.json': tables,
+    'examples/showcase-layout.json': layout,
+    'examples/order-detail.json': detail,
     'examples/i18n/it.json': catalogIt,
     'examples/i18n/en.json': catalogEn,
-    'examples/themes/chiaro.json': chiaro,
-    'examples/themes/scuro.json': scuro,
+    'examples/themes/light.json': light,
+    'examples/themes/dark.json': dark,
   };
 
   let restoreViewport: () => void;
@@ -39,7 +39,7 @@ describe('Vetrina dei componenti', () => {
   afterAll(() => restoreViewport());
 
   beforeEach(() => {
-    // Lingua della demo fissata: jsdom dichiara un browser in inglese.
+    // Demo language fixed: jsdom declares an English browser.
     localStorage.setItem('lc.language', 'it');
     vi.stubGlobal('fetch', async (url: string) => {
       const body = files[url];
@@ -69,14 +69,14 @@ describe('Vetrina dei componenti', () => {
     const el = fixture.nativeElement as HTMLElement;
     fixture.detectChanges();
     await TestBed.inject(Router).navigateByUrl('/');
-    await until(fixture, () => !!el.querySelector('nz-header nz-select'), 'barra superiore');
+    await until(fixture, () => !!el.querySelector('nz-header nz-select'), 'top bar');
     if (user !== 'operator') await pick(fixture, el.querySelector('nz-header nz-select') as HTMLElement, user);
     await TestBed.inject(Router).navigateByUrl(path);
-    await until(fixture, () => !!el.querySelector('main h2'), 'contenuto');
+    await until(fixture, () => !!el.querySelector('main h2'), 'content');
     return { fixture, el };
   }
 
-  /** Sceglie una voce di un menu a tendina di NG-ZORRO dal suo testo. */
+  /** Chooses an item of an NG-ZORRO drop-down from its text. */
   async function pick(fixture: ComponentFixture<App>, select: HTMLElement, label: string): Promise<void> {
     const options = await openSelect(select, async () => {
       fixture.detectChanges();
@@ -91,7 +91,7 @@ describe('Vetrina dei componenti', () => {
     [...el.querySelectorAll('main button')].find((b) => b.textContent?.trim().startsWith(text)) as HTMLButtonElement | undefined;
   const rows = (el: HTMLElement, table = 0): number => el.querySelectorAll('main nz-table')[table]?.querySelectorAll('tbody tr:not(.ant-table-placeholder)').length ?? 0;
   const plain = (text: string | null | undefined): string => (text ?? '').replace(/[\u00a0\u202f\s]+/g, ' ').trim();
-  // Una finestra appena chiusa resta nel documento fino alla fine dell'animazione: conta l'ultima.
+  // A dialog just closed stays in the document until the end of the animation: the last one counts.
   const dialog = (): HTMLElement | null => [...document.body.querySelectorAll<HTMLElement>('.ant-modal-confirm')].at(-1) ?? null;
   const answer = (action: 'confirm' | 'cancel'): void => {
     const buttons = [...document.body.querySelectorAll<HTMLElement>('.ant-modal-confirm-btns')].at(-1)!.querySelectorAll<HTMLButtonElement>('button');
@@ -107,13 +107,13 @@ describe('Vetrina dei componenti', () => {
     f.dispatchEvent(new Event('input'));
   };
 
-  it('l’area compare nel menu e le tre schermate si aprono senza errori', async () => {
+  it('the area appears in the menu and the screens open without errors', async () => {
     const diagnostics = TestBed.inject(DemoDiagnostics);
     for (const [path, titolo] of [
-      ['/vetrina/vetrina-base', 'Componenti base'],
-      ['/vetrina/vetrina-form', 'Form'],
-      ['/vetrina/vetrina-tabelle', 'Filtri e tabelle'],
-      ['/vetrina/vetrina-layout', 'Schede, dettaglio e messaggi'],
+      ['/showcase/showcase-basics', 'Componenti base'],
+      ['/showcase/showcase-form', 'Form'],
+      ['/showcase/showcase-tables', 'Filtri e tabelle'],
+      ['/showcase/showcase-layout', 'Schede, dettaglio e messaggi'],
     ]) {
       const { el, fixture } = await open(path);
       await until(fixture, () => main(el).includes(titolo), titolo);
@@ -123,21 +123,21 @@ describe('Vetrina dei componenti', () => {
     expect(diagnostics.events(), JSON.stringify(diagnostics.events())).toEqual([]);
   });
 
-  describe('componenti base', () => {
-    it('il contatore cambia il testo e abilita il pulsante condizionato dallo stato', async () => {
-      const { fixture, el } = await open('/vetrina/vetrina-base');
+  describe('basic components', () => {
+    it('the counter changes the text and enables the button conditioned by the state', async () => {
+      const { fixture, el } = await open('/showcase/showcase-basics');
       expect(main(el)).toContain('Hai premuto il pulsante 0 volte');
       expect(button(el, 'Abilitato dopo')!.disabled).toBe(true);
       button(el, 'Incrementa')!.click();
-      await until(fixture, () => main(el).includes('1 volte'), 'primo incremento');
-      await new Promise((r) => setTimeout(r, 30)); // il pulsante resta occupato finché l'azione non termina
+      await until(fixture, () => main(el).includes('1 volte'), 'first increment');
+      await new Promise((r) => setTimeout(r, 30)); // the button stays busy until the action ends
       button(el, 'Incrementa')!.click();
-      await until(fixture, () => main(el).includes('2 volte'), 'secondo incremento');
+      await until(fixture, () => main(el).includes('2 volte'), 'second increment');
       expect(button(el, 'Abilitato dopo')!.disabled).toBe(false);
     });
 
-    it('la chiamata che fallisce mostra solo il messaggio di onError e ferma la sequenza', async () => {
-      const { fixture, el } = await open('/vetrina/vetrina-base');
+    it('the failing call shows only the onError message and stops the sequence', async () => {
+      const { fixture, el } = await open('/showcase/showcase-basics');
       button(el, 'Chiamata che fallisce')!.click();
       await until(fixture, () => !!toast(), 'toast');
       expect(toast()?.textContent).toContain('Errore gestito');
@@ -145,103 +145,103 @@ describe('Vetrina dei componenti', () => {
       expect(el.textContent).not.toContain('non compare mai');
     });
 
-    it('la visibilità segue i permessi del profilo', async () => {
-      const { el } = await open('/vetrina/vetrina-base');
+    it('visibility follows the permissions of the profile', async () => {
+      const { el } = await open('/showcase/showcase-basics');
       expect(button(el, 'Visibile solo con il permesso')).toBeUndefined();
       expect(button(el, 'Nascosto a chi può leggere')).toBeDefined();
-      const admin = await open('/vetrina/vetrina-base', 'administrator');
+      const admin = await open('/showcase/showcase-basics', 'administrator');
       expect(button(admin.el, 'Visibile solo con il permesso')).toBeDefined();
       expect(button(admin.el, 'Nascosto a chi può leggere')).toBeUndefined();
     });
   });
 
   describe('form', () => {
-    it('i campi obbligatori e le regole mostrano gli errori solo dopo l’invio', async () => {
-      const { fixture, el } = await open('/vetrina/vetrina-form');
+    it('required fields and rules show their errors only after submitting', async () => {
+      const { fixture, el } = await open('/showcase/showcase-form');
       expect(el.querySelectorAll('main .ant-form-item-explain-error').length).toBe(0);
       button(el, 'Invia')!.click();
-      await until(fixture, () => el.querySelectorAll('main .ant-form-item-explain-error').length > 0, 'errore del nome');
-      await type(fixture, el, 'nome', 'Mario');
-      await type(fixture, el, 'eta', '12');
+      await until(fixture, () => el.querySelectorAll('main .ant-form-item-explain-error').length > 0, 'name error');
+      await type(fixture, el, 'name', 'Mario');
+      await type(fixture, el, 'age', '12');
       button(el, 'Invia')!.click();
-      await until(fixture, () => main(el).includes("L'età deve essere tra 18 e 120"), 'regola sull’età');
-      await type(fixture, el, 'eta', '40');
+      await until(fixture, () => main(el).includes("L'età deve essere tra 18 e 120"), 'age rule');
+      await type(fixture, el, 'age', '40');
       button(el, 'Invia')!.click();
-      await until(fixture, () => !!toast(), 'invio riuscito');
+      await until(fixture, () => !!toast(), 'sent successfully');
       expect(toast()?.textContent).toContain('Dati inviati');
     });
 
-    it('il campo partita IVA compare solo per i business e diventa obbligatorio', async () => {
-      const { fixture, el } = await open('/vetrina/vetrina-form');
-      expect(field(el, 'partitaIva')).toBeNull();
-      await type(fixture, el, 'categoria', 'Business');
-      await until(fixture, () => !!field(el, 'partitaIva'), 'campo condizionale');
-      await type(fixture, el, 'nome', 'Mario');
+    it('the VAT number field appears only for business customers and becomes required', async () => {
+      const { fixture, el } = await open('/showcase/showcase-form');
+      expect(field(el, 'vatNumber')).toBeNull();
+      await type(fixture, el, 'category', 'Business');
+      await until(fixture, () => !!field(el, 'vatNumber'), 'conditional field');
+      await type(fixture, el, 'name', 'Mario');
       button(el, 'Invia')!.click();
-      await until(fixture, () => main(el).includes('Campo obbligatorio'), 'partita IVA obbligatoria');
-      await type(fixture, el, 'partitaIva', '123');
+      await until(fixture, () => main(el).includes('Campo obbligatorio'), 'VAT number required');
+      await type(fixture, el, 'vatNumber', '123');
       button(el, 'Invia')!.click();
-      await until(fixture, () => main(el).includes('La partita IVA ha 11 cifre'), 'regola partita IVA');
+      await until(fixture, () => main(el).includes('La partita IVA ha 11 cifre'), 'VAT number rule');
     });
 
-    it('il form di modifica carica i dati e protegge IBAN e salvataggio secondo i permessi', async () => {
-      const operator = await open('/vetrina/vetrina-form');
-      await until(operator.fixture, () => (field(operator.el, 'cliente') as HTMLInputElement | null)?.value === 'Rossi Srl', 'dati caricati');
+    it('the edit form loads the data and protects IBAN and saving according to the permissions', async () => {
+      const operator = await open('/showcase/showcase-form');
+      await until(operator.fixture, () => (field(operator.el, 'customer') as HTMLInputElement | null)?.value === 'Smith Ltd', 'data loaded');
       expect(field(operator.el, 'iban')).toBeNull();
       expect(button(operator.el, 'Salva')!.disabled).toBe(true);
       operator.fixture.destroy();
-      const admin = await open('/vetrina/vetrina-form', 'administrator');
-      await until(admin.fixture, () => (field(admin.el, 'cliente') as HTMLInputElement | null)?.value === 'Rossi Srl', 'dati caricati');
+      const admin = await open('/showcase/showcase-form', 'administrator');
+      await until(admin.fixture, () => (field(admin.el, 'customer') as HTMLInputElement | null)?.value === 'Smith Ltd', 'data loaded');
       expect(field(admin.el, 'iban')).not.toBeNull();
-      await until(admin.fixture, () => button(admin.el, 'Salva')!.disabled === false, 'salvataggio abilitato');
+      await until(admin.fixture, () => button(admin.el, 'Salva')!.disabled === false, 'saving enabled');
     });
   });
 
-  describe('filtri e tabelle', () => {
-    it('il filtro ricarica la tabella e la paginazione scorre le pagine', async () => {
-      const { fixture, el } = await open('/vetrina/vetrina-tabelle');
-      await until(fixture, () => rows(el, 0) === 8, 'prima pagina');
+  describe('filters and tables', () => {
+    it('the filter reloads the table and paging moves through the pages', async () => {
+      const { fixture, el } = await open('/showcase/showcase-tables');
+      await until(fixture, () => rows(el, 0) === 8, 'first page');
       (el.querySelector('main .ant-pagination-next button') as HTMLButtonElement).click();
-      await until(fixture, () => el.querySelector('main .ant-pagination-item-active')?.textContent?.trim() === '2' && rows(el, 0) === 8, 'seconda pagina');
-      await type(fixture, el, 'stato', 'Approvato');
-      // Filtrate stanno in una pagina sola: si torna alla prima e le pagine spariscono.
-      await until(fixture, () => rows(el, 0) === 7 && !el.querySelector('main lc-table-footer .ant-pagination'), 'filtro applicato');
+      await until(fixture, () => el.querySelector('main .ant-pagination-item-active')?.textContent?.trim() === '2' && rows(el, 0) === 8, 'second page');
+      await type(fixture, el, 'status', 'Approvato');
+      // Filtered rows fit in a single page: back to the first one and the pages disappear.
+      await until(fixture, () => rows(el, 0) === 7 && !el.querySelector('main lc-table-footer .ant-pagination'), 'filter applied');
     });
 
-    it('le azioni di riga rispettano permessi e stato della riga', async () => {
-      const operator = await open('/vetrina/vetrina-tabelle');
-      await until(operator.fixture, () => rows(operator.el, 0) > 0, 'righe');
+    it('row actions respect permissions and row status', async () => {
+      const operator = await open('/showcase/showcase-tables');
+      await until(operator.fixture, () => rows(operator.el, 0) > 0, 'rows');
       expect(button(operator.el, 'Approva')).toBeUndefined();
       operator.fixture.destroy();
-      const manager = await open('/vetrina/vetrina-tabelle', 'manager');
-      await until(manager.fixture, () => rows(manager.el, 0) > 0, 'righe');
+      const manager = await open('/showcase/showcase-tables', 'manager');
+      await until(manager.fixture, () => rows(manager.el, 0) > 0, 'rows');
       const approve = [...manager.el.querySelectorAll('main button')].filter((b) => b.textContent?.trim() === 'Approva');
       expect(approve.length).toBeGreaterThan(0);
-      expect(approve.length).toBeLessThan(8); // solo gli ordini "inviato"
+      expect(approve.length).toBeLessThan(8); // only "submitted" orders
       const before = approve.length;
       (approve[0] as HTMLButtonElement).click();
-      // L'approvazione chiede conferma: se si annulla non cambia nulla.
-      await until(manager.fixture, () => !!dialog(), 'finestra di conferma');
+      // Approval asks for confirmation: cancelling changes nothing.
+      await until(manager.fixture, () => !!dialog(), 'confirmation dialog');
       expect(dialog()?.textContent).toMatch(/Approvare l'ordine ORD-\d{4}\?/);
       answer('cancel');
       await new Promise((r) => setTimeout(r, 300));
       expect(toast()).toBeNull();
       expect([...manager.el.querySelectorAll('main button')].filter((b) => b.textContent?.trim() === 'Approva').length).toBe(before);
       (approve[0] as HTMLButtonElement).click();
-      await until(manager.fixture, () => !!dialog(), 'seconda finestra di conferma');
+      await until(manager.fixture, () => !!dialog(), 'second confirmation dialog');
       answer('confirm');
-      await until(manager.fixture, () => !!toast(), 'conferma');
-      await until(manager.fixture, () => [...manager.el.querySelectorAll('main button')].filter((b) => b.textContent?.trim() === 'Approva').length === before - 1, 'riga aggiornata');
+      await until(manager.fixture, () => !!toast(), 'confirmation');
+      await until(manager.fixture, () => [...manager.el.querySelectorAll('main button')].filter((b) => b.textContent?.trim() === 'Approva').length === before - 1, 'row updated');
     });
 
-    it('la tabella semplice mostra un array di righe', async () => {
-      const { fixture, el } = await open('/vetrina/vetrina-tabelle');
-      await until(fixture, () => rows(el, 1) === 2, 'pacchetti');
-      expect(main(el)).toContain('Chiusura settembre');
+    it('the simple table shows an array of rows', async () => {
+      const { fixture, el } = await open('/showcase/showcase-tables');
+      await until(fixture, () => rows(el, 1) === 2, 'packages');
+      expect(main(el)).toContain('September closing');
     });
-    it('i formati di cella: percentuale e badge degli ordini, importo, data e sì/no delle fatture', async () => {
-      const { fixture, el } = await open('/vetrina/vetrina-tabelle');
-      await until(fixture, () => rows(el, 0) > 0 && rows(el, 2) > 0, 'righe');
+    it('cell formats: percentage and badge of the orders, amount, date and yes/no of the invoices', async () => {
+      const { fixture, el } = await open('/showcase/showcase-tables');
+      await until(fixture, () => rows(el, 0) > 0 && rows(el, 2) > 0, 'rows');
       const first = [...el.querySelectorAll('main nz-table')[0].querySelectorAll('tbody tr')[0].querySelectorAll('td')].map((c) => plain(c.textContent));
       expect(first[3]).toBe('0 %');
       expect(el.querySelector('main nz-table tbody tr nz-tag')?.className).toContain('ant-tag-');
@@ -253,16 +253,16 @@ describe('Vetrina dei componenti', () => {
     });
   });
 
-  describe('schede, dettaglio e messaggi', () => {
+  describe('tabs, detail and messages', () => {
     const tabs = (el: HTMLElement): string[] => [...el.querySelectorAll('main [role=tab]')].map((t) => plain(t.textContent));
     const openTab = async (fixture: ComponentFixture<App>, el: HTMLElement, label: string): Promise<void> => {
       ([...el.querySelectorAll('main [role=tab]')].find((t) => plain(t.textContent) === label) as HTMLElement).click();
       await until(fixture, () => !(el.querySelector('main [role=tabpanel][aria-hidden=false]') === null), label);
     };
 
-    it('l\'operator vede il dettaglio dell\'ordine, il messaggio di sola lettura e tre schede', async () => {
-      const { fixture, el } = await open('/vetrina/vetrina-layout');
-      await until(fixture, () => main(el).includes('ORD-0001'), 'dettaglio');
+    it('the operator sees the order detail, the read-only message and three tabs', async () => {
+      const { fixture, el } = await open('/showcase/showcase-layout');
+      await until(fixture, () => main(el).includes('ORD-0001'), 'detail');
       expect(tabs(el)).toEqual(["Dati dell'ordine", 'Fatture pagate', 'Azioni con conferma']);
       expect(el.querySelector('main lc-alert .ant-alert-error')?.textContent).toContain('non può modificare');
       const pairs = [...el.querySelectorAll('main .ant-descriptions-item-label')].map((l) => plain(`${l.textContent} ${l.nextElementSibling?.textContent}`));
@@ -270,51 +270,51 @@ describe('Vetrina dei componenti', () => {
       expect(main(el)).not.toContain('IBAN');
     });
 
-    it('il responsabile non vede più il messaggio; l\'administrator ha anche IBAN e la scheda riservata', async () => {
-      const manager = await open('/vetrina/vetrina-layout', 'manager');
-      await until(manager.fixture, () => main(manager.el).includes('ORD-0001'), 'dettaglio');
+    it('the manager no longer sees the message; the administrator also has the IBAN and the restricted tab', async () => {
+      const manager = await open('/showcase/showcase-layout', 'manager');
+      await until(manager.fixture, () => main(manager.el).includes('ORD-0001'), 'detail');
       expect(manager.el.querySelector('main lc-alert .ant-alert-error')).toBeNull();
       manager.fixture.destroy();
-      const admin = await open('/vetrina/vetrina-layout', 'administrator');
-      await until(admin.fixture, () => main(admin.el).includes('ORD-0001'), 'dettaglio');
+      const admin = await open('/showcase/showcase-layout', 'administrator');
+      await until(admin.fixture, () => main(admin.el).includes('ORD-0001'), 'detail');
       expect(tabs(admin.el)).toEqual(["Dati dell'ordine", 'Fatture pagate', 'Azioni con conferma', 'Dati riservati']);
       expect(main(admin.el)).toContain('IBAN');
       expect(main(admin.el)).toContain('IT60X0542811101');
     });
 
-    it('la scheda delle fatture mostra importo, data e sì/no formattati', async () => {
-      const { fixture, el } = await open('/vetrina/vetrina-layout');
+    it('the invoices tab shows amount, date and yes/no formatted', async () => {
+      const { fixture, el } = await open('/showcase/showcase-layout');
       await openTab(fixture, el, 'Fatture pagate');
-      await until(fixture, () => rows(el, 0) > 0, 'fatture pagate');
+      await until(fixture, () => rows(el, 0) > 0, 'paid invoices');
       const cells = [...el.querySelectorAll('main nz-table tbody tr')[0].querySelectorAll('td')].map((c) => plain(c.textContent));
       expect(cells[1]).toMatch(/,00 €$/);
       expect(cells[2]).toMatch(/^\d{2}\/09\/26$/);
       expect(cells[3]).toBe('Sì');
     });
 
-    it('l\'azione con conferma: Annulla non fa nulla, Conferma esegue e avvisa', async () => {
-      const { fixture, el } = await open('/vetrina/vetrina-layout');
+    it('the action with confirmation: Cancel does nothing, Confirm runs and notifies', async () => {
+      const { fixture, el } = await open('/showcase/showcase-layout');
       await openTab(fixture, el, 'Azioni con conferma');
       button(el, 'Elimina la bozza')!.click();
-      await until(fixture, () => !!dialog(), 'finestra');
+      await until(fixture, () => !!dialog(), 'dialog');
       expect(dialog()?.textContent).toContain('bozza di operator');
       answer('cancel');
       await new Promise((r) => setTimeout(r, 300));
       expect(toast()).toBeNull();
       button(el, 'Elimina la bozza')!.click();
-      await until(fixture, () => !!dialog(), 'seconda finestra');
+      await until(fixture, () => !!dialog(), 'second dialog');
       answer('confirm');
-      await until(fixture, () => !!toast(), 'conferma');
+      await until(fixture, () => !!toast(), 'confirmation');
       expect(toast()?.textContent).toContain('Bozza eliminata');
     });
   });
 
-  it('cambiando lingua cambiano titolo, menu, testi della schermata e scritte del guscio', async () => {
-    const { fixture, el } = await open('/inserimento-fattura/vetrina-base');
-    await until(fixture, () => !!el.querySelector('h1') && el.querySelector('h1')!.textContent!.includes('Vetrina: componenti base'), 'titolo in italiano');
+  it('changing language changes title, menu, screen texts and shell labels', async () => {
+    const { fixture, el } = await open('/invoice-entry/showcase-basics');
+    await until(fixture, () => !!el.querySelector('h1') && el.querySelector('h1')!.textContent!.includes('Vetrina: componenti base'), 'title in Italian');
     expect(el.querySelector('lc-sidebar')!.textContent).toContain('Inserimento Fattura');
     TestBed.inject(I18n).setLocale('en');
-    await until(fixture, () => el.querySelector('h1')!.textContent!.includes('Showcase: basic components'), 'titolo in inglese');
+    await until(fixture, () => el.querySelector('h1')!.textContent!.includes('Showcase: basic components'), 'title in English');
     expect(el.querySelector('lc-sidebar')!.textContent).toContain('Invoice entry');
     expect(el.textContent).toContain('Active language: en');
     expect(el.textContent).toContain('Language');

@@ -32,9 +32,9 @@ import tools.jackson.databind.json.JsonMapper;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class RegistryApiTest {
 
-    private static final String BASE = "/registry/apps/demo/documents/screen/fatture-elenco";
+    private static final String BASE = "/registry/apps/demo/documents/screen/invoice-list";
     private static final String VALID = """
-            {"schemaVersion":"1.0","screen":"fatture-elenco","components":[{"type":"text","text":"Fatture"}]}""";
+            {"schemaVersion":"1.0","screen":"invoice-list","components":[{"type":"text","text":"Fatture"}]}""";
 
     @Autowired
     WebApplicationContext context;
@@ -76,7 +76,7 @@ class RegistryApiTest {
     @Test
     void aDocumentNotMatchingTheSchemaIsRejectedWithDetails() throws Exception {
         String invalid = """
-                {"schemaVersion":"1.0","screen":"fatture-elenco","components":[{"type":"tabella"},{"type":"text"}]}""";
+                {"schemaVersion":"1.0","screen":"invoice-list","components":[{"type":"table"},{"type":"text"}]}""";
         mvc.perform(post(BASE + "/versions").with(user("mario", "operator")).contentType(MediaType.APPLICATION_JSON).content(invalid))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.title").value("The document does not match the schema"))
@@ -139,8 +139,8 @@ class RegistryApiTest {
     void aNavigationIsPublishedInProductionOnlyWithItsScreens() throws Exception {
         String nav = "/registry/apps/demo/documents/navigation/principale";
         String navigation = """
-                {"schemaVersion":"1.0","navigation":"principale","areas":[{"id":"fatture","label":"Fatture","items":[
-                  {"id":"elenco","label":"Elenco","screen":"fatture-elenco"},{"id":"nuova","label":"Nuova","screen":"fattura-nuova"}]}]}""";
+                {"schemaVersion":"1.0","navigation":"principale","areas":[{"id":"invoices","label":"Fatture","items":[
+                  {"id":"elenco","label":"Elenco","screen":"invoice-list"},{"id":"nuova","label":"Nuova","screen":"invoice-new"}]}]}""";
         String navHash = (String) json.readValue(mvc.perform(post(nav + "/versions").with(user("mario", "operator"))
                         .contentType(MediaType.APPLICATION_JSON).content(navigation))
                 .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString(), Map.class).get("hash");
@@ -152,7 +152,7 @@ class RegistryApiTest {
                 .andExpect(jsonPath("$.env").doesNotExist())
                 .andExpect(jsonPath("$.references.length()").value(2))
                 .andExpect(jsonPath("$.missing.length()").value(1))
-                .andExpect(jsonPath("$.missing[0].screen").value("fattura-nuova"))
+                .andExpect(jsonPath("$.missing[0].screen").value("invoice-new"))
                 .andExpect(jsonPath("$.missing[0].path").value("/areas/0/items/1/screen"));
         // In development neither is published, but the navigation is published anyway.
         mvc.perform(get(nav + "/versions/" + navHash + "/references").param("env", "development").with(user("mario")))
@@ -176,7 +176,7 @@ class RegistryApiTest {
                         .contentType(MediaType.APPLICATION_JSON).content("{\"hash\":\"" + navHash + "\"}"))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.missingReferences.length()").value(1))
-                .andExpect(jsonPath("$.missingReferences[0].screen").value("fattura-nuova"));
+                .andExpect(jsonPath("$.missingReferences[0].screen").value("invoice-new"));
 
         // Version not found or invalid environment.
         mvc.perform(get(nav + "/versions/inesistente/references").with(user("mario"))).andExpect(status().isNotFound());

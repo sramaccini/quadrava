@@ -273,7 +273,7 @@ export class App {
   constructor() {
     // Traduzioni e tema degli esempi, così l'anteprima appare come nel runtime.
     void loadMessages(this.i18n, LANGUAGES, (l) => `examples/i18n/${l}.json`).then((problems) => problems.forEach((p) => console.warn('[i18n]', p)));
-    void fetch('examples/themes/chiaro.json')
+    void fetch('examples/themes/light.json')
       .then((r) => (r.ok ? r.json() : null))
       .then((doc: unknown) => {
         const result = doc ? validateTheme(doc) : null;

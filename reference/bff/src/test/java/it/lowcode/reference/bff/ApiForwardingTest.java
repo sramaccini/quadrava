@@ -132,7 +132,7 @@ class ApiForwardingTest {
 
     @Test
     void forwardsWithTheSessionTokenWithoutCookiesAndReturnsOnlySafeHeaders() throws Exception {
-        mvc.perform(get("/registry/apps/demo/documents/screen/ordini-elenco/published").queryParam("env", "production")
+        mvc.perform(get("/registry/apps/demo/documents/screen/order-list/published").queryParam("env", "production")
                         .with(oauth2Login())
                         .header("traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
                         .header("Authorization", "Bearer from-the-browser")
@@ -145,7 +145,7 @@ class ApiForwardingTest {
                 .andExpect(header().doesNotExist("X-Internal"));
         assertThat(received).hasSize(1);
         Received r = received.getFirst();
-        assertThat(r.uri()).isEqualTo("/registry/apps/demo/documents/screen/ordini-elenco/published?env=production");
+        assertThat(r.uri()).isEqualTo("/registry/apps/demo/documents/screen/order-list/published?env=production");
         assertThat(r.headers().get("Authorization")).containsExactly("Bearer test-token");
         assertThat(r.headers().get("Traceparent")).containsExactly("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01");
         assertThat(r.headers()).doesNotContainKey("Cookie");
@@ -164,12 +164,12 @@ class ApiForwardingTest {
     // clean context is used.
     @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
     void writesRequireTheCsrfToken() throws Exception {
-        String doc = "{\"schemaVersion\":\"1.0\",\"screen\":\"ordini-elenco\"}";
-        mvc.perform(post("/registry/apps/demo/documents/screen/ordini-elenco/versions").with(oauth2Login())
+        String doc = "{\"schemaVersion\":\"1.0\",\"screen\":\"order-list\"}";
+        mvc.perform(post("/registry/apps/demo/documents/screen/order-list/versions").with(oauth2Login())
                         .contentType(MediaType.APPLICATION_JSON).content(doc))
                 .andExpect(status().isForbidden());
         assertThat(received).isEmpty();
-        mvc.perform(post("/registry/apps/demo/documents/screen/ordini-elenco/versions").with(oauth2Login()).with(csrf())
+        mvc.perform(post("/registry/apps/demo/documents/screen/order-list/versions").with(oauth2Login()).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON).content(doc))
                 .andExpect(status().isCreated());
         assertThat(received.getFirst().method()).isEqualTo("POST");

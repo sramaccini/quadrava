@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { DefinitionSource } from 'core';
 
-/** Definizioni della demo: i file di `examples/` copiati nella cartella pubblica (tools/copy-examples.mjs). */
+/** Definitions of the demo: the files of `examples/` copied into the public folder (tools/copy-examples.mjs). */
 @Injectable({ providedIn: 'root' })
 export class ExampleDefinitions extends DefinitionSource {
   screen(id: string): Promise<unknown> {
@@ -17,10 +17,10 @@ export class ExampleDefinitions extends DefinitionSource {
   }
 
   themes(): string[] {
-    return ['chiaro', 'classico', 'scuro'];
+    return ['light', 'classic', 'dark'];
   }
 
-  /** Nella demo i cataloghi sono i file `examples/i18n/<lingua>.json` (chiave → testo). */
+  /** In the demo the catalogues are the files `examples/i18n/<language>.json` (key → text). */
   messages(locale: string): Promise<unknown> {
     return this.load(`examples/i18n/${encodeURIComponent(locale)}.json`);
   }

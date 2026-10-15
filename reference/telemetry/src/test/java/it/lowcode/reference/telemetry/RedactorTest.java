@@ -22,7 +22,7 @@ class RedactorTest {
 
     @Test
     void leavesNeutralTextAlone() {
-        String text = "{\"event\":\"action.run\",\"screenId\":\"ordini-elenco\"}";
+        String text = "{\"event\":\"action.run\",\"screenId\":\"order-list\"}";
         assertThat(redactor.redact(text)).isEqualTo(text);
     }
 }

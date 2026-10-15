@@ -1,21 +1,21 @@
 import { TestBed } from '@angular/core/testing';
 import { DemoNetwork, NETWORK_SPEEDS } from './demo-ports';
 
-describe('Rete simulata della demo', () => {
-  afterEach(() => sessionStorage.removeItem('lc.demo.rete'));
+describe('Network simulated by the demo', () => {
+  afterEach(() => sessionStorage.removeItem('lc.demo.network'));
 
-  it('parte normale, cambia ritardo e lo ricorda per la scheda del browser', () => {
-    sessionStorage.removeItem('lc.demo.rete');
+  it('starts normal, changes delay and remembers it for the browser tab', () => {
+    sessionStorage.removeItem('lc.demo.network');
     const network = TestBed.inject(DemoNetwork);
-    expect(network.speed()).toBe('normale');
-    expect(network.latency()).toBe(NETWORK_SPEEDS.normale);
-    network.set('moltoLenta');
+    expect(network.speed()).toBe('normal');
+    expect(network.latency()).toBe(NETWORK_SPEEDS.normal);
+    network.set('verySlow');
     expect(network.latency()).toBe(9000);
-    expect(sessionStorage.getItem('lc.demo.rete')).toBe('moltoLenta');
+    expect(sessionStorage.getItem('lc.demo.network')).toBe('verySlow');
   });
 
-  it('un valore memorizzato sconosciuto torna a normale', () => {
-    sessionStorage.setItem('lc.demo.rete', 'istantanea');
-    expect(TestBed.inject(DemoNetwork).speed()).toBe('normale');
+  it('an unknown stored value goes back to normal', () => {
+    sessionStorage.setItem('lc.demo.network', 'instant');
+    expect(TestBed.inject(DemoNetwork).speed()).toBe('normal');
   });
 });

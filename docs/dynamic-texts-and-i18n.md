@@ -4,7 +4,7 @@ Simone Ramaccini · 9 October 2026
 
 ## Summary
 
-Texts in the JSON are already dynamic thanks to `{{ … }}` expressions, but they cannot be translated. The proposal is to add a message catalogue per language, referenced by a key (`{{ t('fatture.salva') }}`), with the text written in the JSON as a fallback. This way a screen works even without translations and the catalogue can grow little by little.
+Texts in the JSON are already dynamic thanks to `{{ … }}` expressions, but they cannot be translated. The proposal is to add a message catalogue per language, referenced by a key (`{{ t('invoices.save') }}`), with the text written in the JSON as a fallback. This way a screen works even without translations and the catalogue can grow little by little.
 
 The **optional tooltip** is already implemented (commit `f3f24bd`): every node can have `"tooltip": "…"`, and the same goes for actions, fields and columns. It is plain text only (never HTML) and accepts `{{ }}` expressions, so it follows the choice made below straight away.
 
@@ -31,7 +31,7 @@ Texts are not all alike: they differ in who writes them, where they live and whe
 | Validation messages | `validate.message` | The screen designer | Language and entered values | Fixed string |
 | Navigation and theme | `label` of menu items and areas, `brand` | The application designer | Language | Fixed string |
 | Runtime strings | "Tutti", "Conferma", "Annulla", "Caricamento…", "Nessun risultato." | Us (the platform) | Language | Written in the code, in Italian |
-| Texts from the back end | Errors and messages returned by the APIs, status values (e.g. `inviato`) | The external service | Language of the request | Shown as they arrive |
+| Texts from the back end | Errors and messages returned by the APIs, status values (e.g. `submitted`) | The external service | Language of the request | Shown as they arrive |
 | Formats | Currencies, dates, numbers, percentages | The runtime with `Intl` | Language and region | Fixed locale |
 
 A useful distinction follows: the first three groups are *content* of the screen and belong in the JSON files or their catalogues; the fourth is *product*, and we handle it with catalogues shipped by the library; the last two are not translated by hand but governed by the session language.
@@ -43,16 +43,16 @@ Making a text dynamic means making its content depend on data, state or user. Th
 **A1. Inline `{{ }}` expressions (already there).** The text contains CEL fragments evaluated against the screen context.
 
 ```json
-{ "type": "button", "label": "Approva {{row.numero}}",
-  "tooltip": "Solo {{user.username}} può approvare ordini sopra {{state.soglia}} €" }
+{ "type": "button", "label": "Approve {{row.number}}",
+  "tooltip": "Only {{user.username}} can approve orders above {{state.threshold}} €" }
 ```
 
 It reads at a glance and needs nothing new. The limit is that presentation logic (plurals, formats, capitalisation) ends up inside the string and has to be rewritten in every screen.
 
-**A2. Presentation functions for expressions.** We add a small set of safe, side-effect-free functions to CEL: `fmt.currency(v, 'EUR')`, `fmt.date(v)`, `fmt.number(v)`, `plural(n, 'una fattura', '{n} fatture')`, `upper(s)`, `truncate(s, 20)`.
+**A2. Presentation functions for expressions.** We add a small set of safe, side-effect-free functions to CEL: `fmt.currency(v, 'EUR')`, `fmt.date(v)`, `fmt.number(v)`, `plural(n, 'one invoice', '{n} invoices')`, `upper(s)`, `truncate(s, 20)`.
 
 ```json
-{ "type": "text", "text": "Totale: {{ fmt.currency(state.totale, 'EUR') }} ({{ plural(size(state.righe), 'una riga', '{n} righe') }})" }
+{ "type": "text", "text": "Total: {{ fmt.currency(state.total, 'EUR') }} ({{ plural(size(state.rows), 'one row', '{n} rows') }})" }
 ```
 
 It is the smallest change with the biggest return: it takes logic out of the texts and prepares i18n, because these functions read the active language. It costs little and stays within the safe perimeter of the language (no network or DOM access).
@@ -60,8 +60,8 @@ It is the smallest change with the biggest return: it takes logic out of the tex
 **A3. Texts coming from a data source.** The label points to a value loaded from an API or a file, for example a content service that lets a business user change a text without republishing the screen.
 
 ```json
-"dataSources": { "testi": { "type": "rest", "method": "GET", "url": "/api/contenuti/fatture" } },
-"components": [{ "type": "button", "label": "{{ state.testi.salva }}", "onClick": [] }]
+"dataSources": { "texts": { "type": "rest", "method": "GET", "url": "/api/contents/invoices" } },
+"components": [{ "type": "button", "label": "{{ state.texts.save }}", "onClick": [] }]
 ```
 
 It is the most flexible form, but it moves the truth about texts outside the JSON: the editor cannot show the preview or check that the key exists, and a network error leaves the button without a label.
@@ -69,7 +69,7 @@ It is the most flexible form, but it moves the truth about texts outside the JSO
 **A4. Dynamic non-text properties.** Today only strings and conditions (`visibleIf`, `enabledIf`…) are dynamic. For the tone, icon, placeholder or format of a column the rule can be extended: every string property accepts `{{ }}`.
 
 ```json
-{ "type": "button", "label": "Elimina", "tone": "{{ row.stato == 'bozza' ? 'danger' : 'neutral' }}" }
+{ "type": "button", "label": "Delete", "tone": "{{ row.status == 'draft' ? 'danger' : 'neutral' }}" }
 ```
 
 It requires declaring in the schema which properties are "dynamic" (otherwise the editor does not know what to validate). Useful, but not urgent.
@@ -80,13 +80,13 @@ i18n needs three things: an **active language** (per session), **translated text
 
 ```mermaid
 flowchart LR
-  s["In the screen: t(‘fatture.nuova’, ‘Nuova fattura’), with active language en"] --> l1
-  l1["1. Active language<br/>en catalogue<br/>found: Save"] -- missing --> l2["2. Default<br/>it catalogue<br/>Nuova fattura"]
+  s["In the screen: t(‘invoices.new’, ‘New invoice’), with active language en"] --> l1
+  l1["1. Active language<br/>en catalogue<br/>found: New invoice"] -- missing --> l2["2. Default<br/>it catalogue<br/>Nuova fattura"]
   l2 -- missing --> l3["3. Inline text<br/>second argument of t()"]
-  l3 -- missing --> l4["4. The key<br/>fatture.nuova, reported"]
+  l3 -- missing --> l4["4. The key<br/>invoices.new, reported"]
 ```
 
-*A text is looked up in four places and the first one that exists wins. Here the key exists in English: the lookup stops at the first step and shows Save.*
+*A text is looked up in four places and the first one that exists wins. Here the key exists in English: the lookup stops at the first step and shows «New invoice».*
 
 The fallback chain applies to every key-based option (B2, B3, B4): without a translation the text does not disappear, it falls through to the next step.
 
@@ -102,9 +102,9 @@ Getting started is immediate and whoever reads the JSON sees all languages toget
 **B2. Catalogue inside each screen.** The screen has a `messages` block with the languages, and components use keys.
 
 ```json
-{ "screen": "fatture-elenco",
-  "messages": { "it": { "salva": "Salva" }, "en": { "salva": "Save" } },
-  "components": [{ "type": "button", "label": "{{ t('salva') }}" }] }
+{ "screen": "invoice-list",
+  "messages": { "it": { "save": "Salva" }, "en": { "save": "Save" } },
+  "components": [{ "type": "button", "label": "{{ t('save') }}" }] }
 ```
 
 Screens stay self-contained and are published as a single file. But common words ("Salva", "Annulla", "Elimina") are duplicated everywhere and translations have no single place where they can be reviewed.
@@ -113,11 +113,11 @@ Screens stay self-contained and are published as a single file. But common words
 
 ```json
 // i18n/it.json                          // i18n/en.json
-{ "comune.salva": "Salva",                { "comune.salva": "Save",
-  "fatture.nuova": "Nuova fattura" }        "fatture.nuova": "New invoice" }
+{ "common.save": "Salva",                { "common.save": "Save",
+  "invoices.new": "Nuova fattura" }          "invoices.new": "New invoice" }
 
 // in the screen
-{ "type": "button", "label": "{{ t('fatture.nuova', 'Nuova fattura') }}" }
+{ "type": "button", "label": "{{ t('invoices.new', 'New invoice') }}" }
 ```
 
 Translation happens in one place, common words are reused, files can be exchanged with translation tools (ICU, XLIFF, PO formats) and the editor can list missing keys. The price is one more file to ship and to keep aligned with the screens.
@@ -125,8 +125,8 @@ Translation happens in one place, common words are reused, files can be exchange
 **B4. Catalogue served at run time by a service.** Like B3, but the catalogue is not a file in the package: the runtime downloads it at start-up (or when the language changes) from an API, behind which there can be a professional translation system.
 
 ```json
-GET /api/i18n/en?app=gestionale&v=42
-{ "comune.salva": "Save", "fatture.nuova": "New invoice" }
+GET /api/i18n/en?app=accounting&v=42
+{ "common.save": "Save", "invoices.new": "New invoice" }
 ```
 
 It allows fixing a translation without releasing anything and having translators who never touch the code. It does, however, require one more service, a versioned cache and a plan for when the API does not respond (B3's inline fallback helps with that too).
@@ -143,11 +143,11 @@ Whatever option is chosen, some common rules remain to be decided. For each one 
 | --- | --- | --- |
 | Active language | Where it comes from and how it changes | A single session value (`locale`), available in expressions as `user.locale`; order: the user's choice, profile, browser language, the app's default language. Changing language updates everything without reloading. |
 | Fallback | What to show if the translation is missing | Fixed chain: active language, default language, inline text, the key itself. In development a missing key is reported in the diagnostics. |
-| Plurals and placeholders | "1 fattura" / "3 fatture", "Ciao {nome}" | Messages in ICU format (`{n, plural, one {# fattura} other {# fatture}}`): it is the standard of translation tools and handles languages with several plural forms. |
+| Plurals and placeholders | "1 invoice" / "3 invoices", "Hello {name}" | Messages in ICU format (`{n, plural, one {# invoice} other {# invoices}}`): it is the standard of translation tools and handles languages with several plural forms. |
 | Formats | Currencies, dates, numbers, percentages | The runtime uses `Intl` with the active language; the currency stays a property of the column (`currency`), the language only decides the form. |
-| Component library | NG-ZORRO locale (calendars, pagination, "Nessun dato") | Changes together with the active language; today it is fixed to Italian. |
-| Runtime strings | "Tutti", "Conferma", "Annulla", "Caricamento…" | They go into a library catalogue (it and en to begin with), with `lc.*` keys, which the application can override. |
-| Texts coming from the APIs | Errors and status values in the server's language | The runtime sends the active language (`Accept-Language`); fixed values (such as statuses) are translated in the catalogue with a key built from the value (`stato.inviato`). |
+| Component library | NG-ZORRO locale (calendars, pagination, "No data") | Changes together with the active language; today it is fixed to Italian. |
+| Runtime strings | "All", "Confirm", "Cancel", "Loading…" | They go into a library catalogue (it and en to begin with), with `lc.*` keys, which the application can override. |
+| Texts coming from the APIs | Errors and status values in the server's language | The runtime sends the active language (`Accept-Language`); fixed values (such as statuses) are translated in the catalogue with a key built from the value (`status.submitted`). |
 | Security | A translation is external input | Always plain text, never HTML, as for tooltips and messages: a wrong or hostile translation cannot inject markup. Placeholders receive values already as text. |
 | Writing direction | Arabic, Hebrew (right to left) | Outside the first step; NG-ZORRO supports it, and the theme will need to be able to declare it. |
 
@@ -201,7 +201,7 @@ A2 + B3 were confirmed, with Italian and English, catalogues as files in the pac
 Three departures from what is written above:
 
 - **Function names**: CEL does not accept prefixed functions (`fmt.currency`), so they are called `fmtCurrency`, `fmtNumber` and `fmtDate`. `t()` and `plural()` stay as they were.
-- **Parameters of `t()`**: a map with values of different types needs `dyn(...)` around hand-written values, for example `{'n': dyn(1), 'nome': state.nome}`. With values coming from the state it is not needed.
+- **Parameters of `t()`**: a map with values of different types needs `dyn(...)` around hand-written values, for example `{'n': dyn(1), 'name': state.name}`. With values coming from the state it is not needed.
 - **Where the language changes**: the active language is a value of the `I18n` service, read in expressions as `user.locale`. The demo has a "Lingua" selector in the top bar.
 
 The menu, the invoice list and the "Lingue e traduzioni" section of the base showcase use keys; the other screens stay in Italian and show the fallback. The key helper in the editor is still to be done, once the editor exists.

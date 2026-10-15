@@ -12,8 +12,8 @@ export interface RouteLocation {
 }
 
 /**
- * Collega menu e router. L'URL è `/<caso-d-uso>/<schermata>?<parametri>`: è l'unica fonte della posizione corrente,
- * quindi funzionano Indietro, preferiti e link condivisi.
+ * Connects menu and router. The URL is `/<area>/<screen>?<parameters>`: it is the only source of the current position,
+ * so Back, bookmarks and shared links work.
  */
 @Injectable({ providedIn: 'root' })
 export class NavigationService {
@@ -28,11 +28,11 @@ export class NavigationService {
   private readonly destroyRef = inject(DestroyRef);
 
   readonly runtime = signal<NavigationRuntime | null>(null);
-  /** Errori di validazione del documento di navigazione (per chi lo scrive). */
+  /** Validation errors of the navigation document (for whoever writes it). */
   readonly problems = signal<string[]>([]);
-  /** Il documento di navigazione non si è potuto caricare: l'utente vede un messaggio generico, il dettaglio va alle segnalazioni. */
+  /** The navigation document could not be loaded: the user sees a generic message, the detail goes to the reports. */
   readonly loadFailed = signal(false);
-  /** Contatori delle voci del menu (id della voce → numero), se la navigazione li prevede. */
+  /** Counters of the menu items (item id → number), if the navigation has them. */
   readonly badges = signal<Record<string, number>>({});
   readonly current = signal<RouteLocation>({ area: null, screen: null, params: {} });
   private readonly lastScreen = new Map<string, { screen: string; params: Record<string, string> }>();
@@ -44,7 +44,7 @@ export class NavigationService {
     void this.load();
   }
 
-  /** Carica il documento di navigazione, lo valida (schema e coerenza) e prepara il menu. */
+  /** Loads the navigation document, validates it (schema and consistency) and prepares the menu. */
   private async load(): Promise<void> {
     try {
       const result = validateNavigation(await this.definitions.navigation());
@@ -60,19 +60,19 @@ export class NavigationService {
       this.runtime.set(new NavigationRuntime(result.value, { authorization: this.authorization, userProvider: this.userProvider, diagnostics: this.diagnostics, i18n: this.i18n }));
       this.watchBadges(result.value.badges);
     } catch (e) {
-      this.diagnostics?.report({ screen: 'navigazione', source: 'caricamento navigazione', error: e instanceof Error ? e.message : String(e) });
+      this.diagnostics?.report({ screen: 'navigation', source: 'navigation loading', error: e instanceof Error ? e.message : String(e) });
       this.loadFailed.set(true);
     }
   }
 
   /**
-   * Contatori del menu: si leggono subito (anche con la pagina in secondo piano), poi a intervalli (solo con la pagina visibile) e quando si torna sulla
-   * pagina. Si tengono solo i numeri interi positivi; un errore lascia i contatori di prima e finisce nelle
-   * segnalazioni tecniche, senza disturbare l'utente.
+   * Menu counters: read at once (even with the page in the background), then at intervals (only with the page visible) and when coming back to the
+   * page. Only positive integers are kept; an error leaves the previous counters and ends up in the
+   * technical reports, without disturbing the user.
    */
   private watchBadges(badges: NavigationDefinition['badges']): void {
     if (!badges || typeof document === 'undefined') return;
-    // La prima lettura avviene sempre; quelle periodiche solo con la pagina visibile.
+    // The first read always happens; the periodic ones only with the page visible.
     const read = async (always = false) => {
       if (!always && document.visibilityState === 'hidden') return;
       try {
@@ -83,7 +83,7 @@ export class NavigationService {
         }
         this.badges.set(counts);
       } catch (e) {
-        this.diagnostics?.report({ screen: 'navigazione', source: 'contatori del menu', error: e instanceof Error ? e.message : String(e) });
+        this.diagnostics?.report({ screen: 'navigation', source: 'menu counters', error: e instanceof Error ? e.message : String(e) });
       }
     };
     void read(true);
@@ -106,7 +106,7 @@ export class NavigationService {
     if (here.area && here.screen) this.lastScreen.set(here.area, { screen: here.screen, params });
   }
 
-  /** Indirizzo di una voce, per i link (apribili in una nuova scheda). */
+  /** Address of an item, for links (that can be opened in a new tab). */
   href(area: string, leaf: VisibleLeaf): string {
     return this.location.prepareExternalUrl(this.router.serializeUrl(this.router.createUrlTree([area, leaf.screen], { queryParams: leaf.params })));
   }
@@ -115,7 +115,7 @@ export class NavigationService {
     void this.router.navigate([area, screen], { queryParams: params });
   }
 
-  /** Cambio schermata richiesto da un'azione (`navigate`): resta nell’area corrente se la schermata le appartiene. */
+  /** Screen change requested by an action (`navigate`): stays in the current area if the screen belongs to it. */
   openScreen(screen: string, params: Record<string, unknown>): void {
     const runtime = this.runtime();
     const here = this.current().area;
@@ -123,7 +123,7 @@ export class NavigationService {
     if (area) this.open(area, screen, params);
   }
 
-  /** Selettore delle aree: torna all'ultima schermata visitata, altrimenti alla prima voce. */
+  /** Area selector: goes back to the last screen visited, otherwise to the first item. */
   switchArea(area: string): void {
     const last = this.lastScreen.get(area);
     if (last && this.runtime()?.locate(area, last.screen, last.params)) {
@@ -134,7 +134,7 @@ export class NavigationService {
     if (leaf) this.open(area, leaf.screen, leaf.params);
   }
 
-  /** Destinazione iniziale per l'utente corrente. */
+  /** Initial destination for the current user. */
   openDefault(): boolean {
     const target = this.runtime()?.defaultTarget();
     if (!target) return false;
@@ -143,7 +143,7 @@ export class NavigationService {
   }
 }
 
-/** Porta `ScreenNavigator` realizzata con il router: i passi `navigate` delle schermate diventano cambi di URL. */
+/** `ScreenNavigator` port implemented with the router: the `navigate` steps of the screens become URL changes. */
 @Injectable({ providedIn: 'root' })
 export class RouterNavigator extends ScreenNavigator {
   private readonly navigation = inject(NavigationService);

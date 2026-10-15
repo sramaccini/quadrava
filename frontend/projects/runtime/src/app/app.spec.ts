@@ -1,35 +1,35 @@
 import { Location } from '@angular/common';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import detail from '../../public/examples/ordine-dettaglio.json';
-import list from '../../public/examples/ordini-elenco.json';
+import detail from '../../public/examples/order-detail.json';
+import list from '../../public/examples/order-list.json';
 import navigationDoc from '../../public/examples/navigation.json';
-import invoices from '../../public/examples/fatture-elenco.json';
-import newInvoice from '../../public/examples/fattura-nuova.json';
-import newPackage from '../../public/examples/pacchetto-nuovo.json';
-import packages from '../../public/examples/pacchetti-elenco.json';
-import expenses from '../../public/examples/spese-elenco.json';
-import chiaro from '../../public/examples/themes/chiaro.json';
-import scuro from '../../public/examples/themes/scuro.json';
+import invoices from '../../public/examples/invoice-list.json';
+import newInvoice from '../../public/examples/invoice-new.json';
+import newPackage from '../../public/examples/package-new.json';
+import packages from '../../public/examples/package-list.json';
+import expenses from '../../public/examples/expense-list.json';
+import light from '../../public/examples/themes/light.json';
+import dark from '../../public/examples/themes/dark.json';
 import { DemoDiagnostics } from '../demo/demo-ports';
 import { NavigationService } from './navigation.service';
 import { openSelect, stubViewportHeight } from './select-testing';
 import { App } from './app';
 import { appConfig } from './app.config';
 
-/** Prova end-to-end della demo: menu, router, schermate JSON reali, porte finte, catalogo standard e temi. */
+/** End-to-end test of the demo: menu, router, real JSON screens, fake ports, standard catalogue and themes. */
 describe('App (demo)', () => {
   const files: Record<string, unknown> = {
     'examples/navigation.json': navigationDoc,
-    'examples/ordini-elenco.json': list,
-    'examples/ordine-dettaglio.json': detail,
-    'examples/fatture-elenco.json': invoices,
-    'examples/fattura-nuova.json': newInvoice,
-    'examples/pacchetto-nuovo.json': newPackage,
-    'examples/pacchetti-elenco.json': packages,
-    'examples/spese-elenco.json': expenses,
-    'examples/themes/chiaro.json': chiaro,
-    'examples/themes/scuro.json': scuro,
+    'examples/order-list.json': list,
+    'examples/order-detail.json': detail,
+    'examples/invoice-list.json': invoices,
+    'examples/invoice-new.json': newInvoice,
+    'examples/package-new.json': newPackage,
+    'examples/package-list.json': packages,
+    'examples/expense-list.json': expenses,
+    'examples/themes/light.json': light,
+    'examples/themes/dark.json': dark,
   };
 
   let restoreViewport: () => void;
@@ -37,7 +37,7 @@ describe('App (demo)', () => {
   afterAll(() => restoreViewport());
 
   beforeEach(() => {
-    // Lingua della demo fissata: jsdom dichiara un browser in inglese.
+    // Demo language fixed: jsdom declares an English browser.
     localStorage.setItem('lc.language', 'it');
     vi.stubGlobal('fetch', async (url: string) => {
       const body = files[url];
@@ -70,7 +70,7 @@ describe('App (demo)', () => {
     fixture.detectChanges();
     await TestBed.inject(Router).navigateByUrl('/');
     if (user !== 'operator') {
-      await until(fixture, () => !!headerSelect(el, 0), 'barra superiore');
+      await until(fixture, () => !!headerSelect(el, 0), 'top bar');
       await choose(fixture, headerSelect(el, 0), user);
     }
     return { fixture, el, url };
@@ -79,11 +79,11 @@ describe('App (demo)', () => {
   const buttonsOf = (el: HTMLElement): string[] => [...el.querySelectorAll('button')].map((b) => b.textContent?.trim() ?? '');
   const headerSelect = (el: HTMLElement, index: number): HTMLElement => el.querySelectorAll('nz-header nz-select')[index] as HTMLElement;
   const areaSelect = (el: HTMLElement): HTMLElement | null => el.querySelector('lc-sidebar nz-select');
-  /** Aree offerte all'utente (lette dallo stato del menu, non dal menu a tendina). */
+  /** Areas offered to the user (read from the menu state, not from the drop-down). */
   const areas = (): string[] => TestBed.inject(NavigationService).runtime()?.areas().map((u) => u.label) ?? [];
   const sideLabels = (el: HTMLElement): string[] =>
     [...el.querySelectorAll('lc-sidebar a.leaf .label, lc-sidebar .ant-menu-submenu-title')].map((n) => (n.textContent ?? '').replace(/\s+/g, ' ').trim());
-  /** Sceglie una voce di un menu a tendina di NG-ZORRO dal suo testo. */
+  /** Chooses an item of an NG-ZORRO drop-down from its text. */
   const choose = async (fixture: ComponentFixture<App>, select: HTMLElement, label: string): Promise<void> => {
     const options = await openSelect(select, async () => {
       fixture.detectChanges();
@@ -99,17 +99,17 @@ describe('App (demo)', () => {
   const heading = (el: HTMLElement): string | undefined => el.querySelector('h1')?.textContent?.trim();
   const rows = (el: HTMLElement): number => el.querySelectorAll('main tbody tr:not(.ant-table-placeholder)').length;
 
-  it('all’avvio apre l’area predefinita e applica il tema', async () => {
+  it('at start-up it opens the default area and applies the theme', async () => {
     const { fixture, el, url } = await start();
-    await until(fixture, () => rows(el) > 0, 'elenco fatture');
-    expect(url()).toBe('/consultazione-fatture/fatture-elenco');
-    expect(heading(el)).toBe('Fatture');
+    await until(fixture, () => rows(el) > 0, 'invoice list');
+    expect(url()).toBe('/invoice-lookup/invoice-list');
+    expect(heading(el)).toBe('Invoices');
     expect(document.documentElement.style.getPropertyValue('--lc-color-primary')).toBe('#1f5fbf');
-    expect(el.querySelector('lc-sidebar a[aria-current="page"]')?.textContent).toContain('Elenco fatture');
+    expect(el.querySelector('lc-sidebar a[aria-current="page"]')?.textContent).toContain('Invoice list');
   });
 
-  it('su schermo stretto il menu sta in un cassetto e le impostazioni della demo in un menu', async () => {
-    // jsdom non ha matchMedia: lo simulo con una finestra larga 390px.
+  it('on a narrow screen the menu is in a drawer and the demo settings in a menu', async () => {
+    // jsdom has no matchMedia: it is simulated with a window 390px wide.
     vi.stubGlobal('matchMedia', (query: string) => ({
       matches: /min-width: (\d+)px/.test(query) && 390 >= Number(/min-width: (\d+)px/.exec(query)![1]),
       media: query,
@@ -119,176 +119,176 @@ describe('App (demo)', () => {
       removeListener: () => undefined,
     }));
     const { fixture, el, url } = await start();
-    await until(fixture, () => rows(el) > 0, 'elenco fatture');
+    await until(fixture, () => rows(el) > 0, 'invoice list');
     expect(el.querySelector('lc-sidebar')).toBeNull();
     expect(el.querySelector('nz-header nz-select')).toBeNull();
-    // Qui i cataloghi della demo non sono caricati: basta che il pulsante abbia un nome accessibile.
+    // Here the demo catalogues are not loaded: it is enough that the button has an accessible name.
     expect(el.querySelector('nz-header button.settings-button')?.getAttribute('aria-label')).toBeTruthy();
     const menuButton = el.querySelector('nz-header button.menu-button') as HTMLButtonElement;
     expect(menuButton.getAttribute('aria-expanded')).toBe('false');
     menuButton.click();
-    await until(fixture, () => !!document.querySelector('.lc-sider-drawer lc-sidebar a.leaf'), 'cassetto aperto');
+    await until(fixture, () => !!document.querySelector('.lc-sider-drawer lc-sidebar a.leaf'), 'drawer open');
     expect(menuButton.getAttribute('aria-expanded')).toBe('true');
-    // Nel cassetto la barra è sempre espansa e senza pulsante tondo.
+    // In the drawer the bar is always expanded and without the round button.
     expect(document.querySelector('.lc-sider-drawer lc-sidebar .side')?.classList.contains('collapsed')).toBe(false);
     expect(document.querySelector('.lc-sider-drawer lc-sidebar button.toggle')).toBeNull();
-    clickLabel(document.body, '.lc-sider-drawer lc-sidebar .ant-menu-submenu-title', 'Ordini collegati');
-    await until(fixture, () => [...document.querySelectorAll('.lc-sider-drawer a.leaf')].some((a) => a.textContent?.trim() === 'Ordini'), 'gruppo aperto');
-    clickLabel(document.body, '.lc-sider-drawer lc-sidebar a.leaf', 'Ordini');
-    await until(fixture, () => url().startsWith('/consultazione-fatture/ordini-elenco'), 'navigazione dal cassetto');
+    clickLabel(document.body, '.lc-sider-drawer lc-sidebar .ant-menu-submenu-title', 'Linked orders');
+    await until(fixture, () => [...document.querySelectorAll('.lc-sider-drawer a.leaf')].some((a) => a.textContent?.trim() === 'Orders'), 'group open');
+    clickLabel(document.body, '.lc-sider-drawer lc-sidebar a.leaf', 'Orders');
+    await until(fixture, () => url().startsWith('/invoice-lookup/order-list'), 'navigation from the drawer');
     expect(menuButton.getAttribute('aria-expanded')).toBe('false');
   });
 
-  it('l’intestazione di pagina mostra le briciole di pane dal menu e il logo sta sopra il menu', async () => {
+  it('the page header shows the breadcrumbs from the menu and the logo sits above the menu', async () => {
     const { fixture, el } = await start();
-    await until(fixture, () => rows(el) > 0, 'elenco fatture');
+    await until(fixture, () => rows(el) > 0, 'invoice list');
     const crumbs = [...el.querySelectorAll('main nz-breadcrumb-item')].map((n) => (n.textContent ?? '').replace('/', '').trim());
-    expect(crumbs).toEqual(['Consultazione Fatture', 'Elenco fatture']);
-    // Il marchio Quadrava: icona e logotipo, con il nome per i lettori di schermo; a barra compressa resta l'icona.
+    expect(crumbs).toEqual(['Invoice lookup', 'Invoice list']);
+    // The Quadrava brand: icon and logotype, with the name for screen readers; with the bar collapsed the icon stays.
     const brand = el.querySelector('lc-sidebar .logo lc-quadrava-wordmark') as HTMLElement;
     expect(brand.querySelector('img')?.getAttribute('src')).toBe('brand/quadrava-icon-small.svg');
     expect(brand.querySelector('[role="img"]')?.getAttribute('aria-label')).toBe('Quadrava');
     expect(brand.querySelector('.word')?.textContent).toBe('Quadrava');
     expect(el.querySelector('lc-sidebar .logo .name')).toBeNull();
     (el.querySelector('lc-sidebar button.toggle') as HTMLButtonElement).click();
-    await until(fixture, () => !brand.querySelector('.word'), 'barra compressa');
+    await until(fixture, () => !brand.querySelector('.word'), 'collapsed bar');
     expect(brand.querySelector('img')).not.toBeNull();
   });
 
-  it('il menu utente mostra il nome e termina la sessione con l’ultima voce, poi si può accedere di nuovo', async () => {
+  it('the user menu shows the name and ends the session with the last item, then one can sign in again', async () => {
     const { fixture, el } = await start();
-    await until(fixture, () => rows(el) > 0, 'elenco fatture');
+    await until(fixture, () => rows(el) > 0, 'invoice list');
     expect(el.querySelector('lc-user-menu .name')?.textContent?.trim()).toBe('operator');
     (el.querySelector('lc-user-menu button.trigger') as HTMLButtonElement).click();
-    await until(fixture, () => document.querySelectorAll('.ant-dropdown li[nz-menu-item]').length > 0, 'menu utente');
+    await until(fixture, () => document.querySelectorAll('.ant-dropdown li[nz-menu-item]').length > 0, 'user menu');
     const items = [...document.querySelectorAll<HTMLElement>('.ant-dropdown li[nz-menu-item]')];
     expect(items.at(-1)?.textContent?.trim()).toBe('Esci');
     items.at(-1)!.click();
-    await until(fixture, () => !!el.querySelector('.signed-out'), 'sessione terminata');
+    await until(fixture, () => !!el.querySelector('.signed-out'), 'session ended');
     expect(el.querySelector('lc-sidebar')).toBeNull();
     (el.querySelector('.signed-out button') as HTMLButtonElement).click();
-    await until(fixture, () => !el.querySelector('.signed-out'), 'di nuovo collegato');
+    await until(fixture, () => !el.querySelector('.signed-out'), 'signed in again');
   });
 
-  it('le aree dipendono dai permessi del profilo', async () => {
+  it('the areas depend on the permissions of the profile', async () => {
     const { fixture, el } = await start();
-    await until(fixture, () => areas().length > 0, 'selettore');
-    expect(areas()).toEqual(['Inserimento Fattura', 'Consultazione Fatture', 'Vetrina componenti']);
+    await until(fixture, () => areas().length > 0, 'selector');
+    expect(areas()).toEqual(['Invoice entry', 'Invoice lookup', 'Component showcase']);
     await choose(fixture, headerSelect(el, 0), 'manager');
-    await until(fixture, () => areas().length === 5, 'quattro aree');
-    expect(areas()).toEqual(['Inserimento Fattura', 'Consultazione Fatture', 'Creazione pacchetto', 'Revisione Spese', 'Vetrina componenti']);
+    await until(fixture, () => areas().length === 5, 'four areas');
+    expect(areas()).toEqual(['Invoice entry', 'Invoice lookup', 'Package creation', 'Expense review', 'Component showcase']);
   });
 
-  it('cambiare area porta alla sua prima voce e aggiorna l’URL', async () => {
+  it('changing area goes to its first item and updates the URL', async () => {
     const { fixture, el, url } = await start();
-    await until(fixture, () => areas().length > 0, 'selettore');
-    await choose(fixture, areaSelect(el)!, 'Inserimento Fattura');
-    await until(fixture, () => heading(el) === 'Nuova fattura', 'form nuova fattura');
-    expect(url()).toBe('/inserimento-fattura/fattura-nuova?tipo=attiva');
-    // il tipo arriva dai parametri della voce di menu
-    expect(el.querySelector('main nz-select .ant-select-selection-item')?.textContent?.trim()).toBe('attiva');
-    // il menu mostra i tre livelli: gruppo, sottogruppo, voce
-    expect(sideLabels(el)).toContain('Fattura passiva');
-    clickLabel(el, 'lc-sidebar .ant-menu-submenu-title', 'Da ordine');
-    await until(fixture, () => sideLabels(el).includes("Scegli l'ordine"), 'terzo livello');
+    await until(fixture, () => areas().length > 0, 'selector');
+    await choose(fixture, areaSelect(el)!, 'Invoice entry');
+    await until(fixture, () => heading(el) === 'New invoice', 'new invoice form');
+    expect(url()).toBe('/invoice-entry/invoice-new?type=sales');
+    // the type comes from the parameters of the menu item
+    expect(el.querySelector('main nz-select .ant-select-selection-item')?.textContent?.trim()).toBe('sales');
+    // the menu shows the three levels: group, subgroup, item
+    expect(sideLabels(el)).toContain('Purchase invoice');
+    clickLabel(el, 'lc-sidebar .ant-menu-submenu-title', 'From order');
+    await until(fixture, () => sideLabels(el).includes('Choose the order'), 'third level');
   });
 
-  it('inserire una fattura la salva in bozza e porta all’elenco delle bozze', async () => {
+  it('entering an invoice saves it as a draft and goes to the list of drafts', async () => {
     const { fixture, el, url } = await start();
-    await until(fixture, () => areas().length > 0, 'selettore');
-    await choose(fixture, areaSelect(el)!, 'Inserimento Fattura');
-    await until(fixture, () => heading(el) === 'Nuova fattura', 'form nuova fattura');
+    await until(fixture, () => areas().length > 0, 'selector');
+    await choose(fixture, areaSelect(el)!, 'Invoice entry');
+    await until(fixture, () => heading(el) === 'New invoice', 'new invoice form');
     const input = (name: string): HTMLInputElement => [...el.querySelectorAll('main input')].find((i) => i.id.endsWith(`-${name}`)) as HTMLInputElement;
     const type = (name: string, value: string): void => {
       input(name).value = value;
       input(name).dispatchEvent(new Event('input'));
     };
-    // senza dati obbligatori il salvataggio non parte e compaiono gli errori
+    // without the required data saving does not start and the errors appear
     (el.querySelector('main .actions button') as HTMLButtonElement).click();
-    await until(fixture, () => el.querySelectorAll('main .ant-form-item-explain-error').length > 0, 'errori di validazione');
-    type('numero', 'FT-2026-900');
-    type('cliente', 'Gialli Srl');
-    type('importo', '1200');
+    await until(fixture, () => el.querySelectorAll('main .ant-form-item-explain-error').length > 0, 'validation errors');
+    type('number', 'FT-2026-900');
+    type('customer', 'Yellow Ltd');
+    type('amount', '1200');
     (el.querySelector('main .actions button') as HTMLButtonElement).click();
-    await until(fixture, () => heading(el) === 'Fatture' && rows(el) > 0, 'elenco delle bozze');
-    expect(url()).toBe('/inserimento-fattura/fatture-elenco?stato=bozza');
+    await until(fixture, () => heading(el) === 'Invoices' && rows(el) > 0, 'list of drafts');
+    expect(url()).toBe('/invoice-entry/invoice-list?status=draft');
     expect(el.querySelector('main')?.textContent).toContain('FT-2026-900');
-    // con ?stato fisso il filtro non compare
+    // with a fixed ?status the filter does not appear
     expect(el.querySelector('main nz-select')).toBeNull();
   });
 
-  it('la revisione spese: voce con parametri, approvazione e messaggio', async () => {
+  it('expense review: item with parameters, approval and message', async () => {
     const { fixture, el, url } = await start('manager');
-    await until(fixture, () => areas().length === 5, 'quattro aree');
-    await choose(fixture, areaSelect(el)!, 'Revisione Spese');
-    await until(fixture, () => rows(el) > 0, 'elenco spese');
-    expect(url()).toBe('/revisione-spese/spese-elenco?stato=da-revisionare');
+    await until(fixture, () => areas().length === 5, 'four areas');
+    await choose(fixture, areaSelect(el)!, 'Expense review');
+    await until(fixture, () => rows(el) > 0, 'expense list');
+    expect(url()).toBe('/expense-review/expense-list?status=to-review');
     const before = rows(el);
-    expect(buttonsOf(el)).toContain('Respingi');
-    clickLabel(el, 'main button', 'Approva');
-    await until(fixture, () => !!toast(), 'conferma');
-    expect(toast()?.textContent).toContain('Spesa approvata');
-    await until(fixture, () => rows(el) === before - 1, 'riga sparita dall’elenco da revisionare');
-    // l'altra voce, stessa schermata con altri parametri, mostra le spese revisionate
-    clickLabel(el, 'lc-sidebar a.leaf', 'Revisionate');
-    await until(fixture, () => url().endsWith('stato=revisionata') && rows(el) > 0, 'spese revisionate');
-    expect(buttonsOf(el)).not.toContain('Respingi');
+    expect(buttonsOf(el)).toContain('Reject');
+    clickLabel(el, 'main button', 'Approve');
+    await until(fixture, () => !!toast(), 'confirmation');
+    expect(toast()?.textContent).toContain('Expense approved');
+    await until(fixture, () => rows(el) === before - 1, 'row gone from the list to review');
+    // the other item, same screen with other parameters, shows the reviewed expenses
+    clickLabel(el, 'lc-sidebar a.leaf', 'Reviewed');
+    await until(fixture, () => url().endsWith('status=reviewed') && rows(el) > 0, 'reviewed expenses');
+    expect(buttonsOf(el)).not.toContain('Reject');
   });
 
-  it('l’operatore non può aprire una schermata senza permesso nemmeno scrivendo l’URL', async () => {
+  it('the operator cannot open a screen without permission, not even by typing the URL', async () => {
     const { fixture, el } = await start();
-    await until(fixture, () => rows(el) > 0, 'elenco fatture');
-    await TestBed.inject(Router).navigateByUrl('/revisione-spese/spese-elenco?stato=da-revisionare');
-    await until(fixture, () => !!el.querySelector('main [role=alert]'), 'rifiuto');
+    await until(fixture, () => rows(el) > 0, 'invoice list');
+    await TestBed.inject(Router).navigateByUrl('/expense-review/expense-list?status=to-review');
+    await until(fixture, () => !!el.querySelector('main [role=alert]'), 'refusal');
     expect(el.querySelector('main')?.textContent).toContain('Non hai i permessi');
     expect(rows(el)).toBe(0);
   });
 
-  it('una schermata inesistente mostra un messaggio comprensibile e va alle segnalazioni tecniche', async () => {
+  it('a screen that does not exist shows an understandable message and goes to the technical reports', async () => {
     const { fixture, el } = await start();
-    await until(fixture, () => rows(el) > 0, 'elenco fatture');
-    await TestBed.inject(Router).navigateByUrl('/consultazione-fatture/schermata-inesistente');
-    await until(fixture, () => !!el.querySelector('main [role=alert]'), 'errore');
+    await until(fixture, () => rows(el) > 0, 'invoice list');
+    await TestBed.inject(Router).navigateByUrl('/invoice-lookup/missing-screen');
+    await until(fixture, () => !!el.querySelector('main [role=alert]'), 'error');
     const text = el.querySelector('main [role=alert]')?.textContent ?? '';
     expect(text).toContain('La schermata richiesta non esiste o non è disponibile.');
     expect(text).not.toContain('404');
-    expect(TestBed.inject(DemoDiagnostics).events()).toContainEqual({ screen: 'schermata-inesistente', source: 'caricamento schermata', error: 'HTTP 404' });
+    expect(TestBed.inject(DemoDiagnostics).events()).toContainEqual({ screen: 'missing-screen', source: 'screen loading', error: 'HTTP 404' });
   });
 
-  it('un menu che non si carica mostra un messaggio generico e va alle segnalazioni tecniche', async () => {
+  it('a menu that does not load shows a generic message and goes to the technical reports', async () => {
     delete files['examples/navigation.json'];
     try {
       const { fixture, el } = await start();
-      await until(fixture, () => !!el.querySelector('[role=alert]'), 'errore');
+      await until(fixture, () => !!el.querySelector('[role=alert]'), 'error');
       expect(el.querySelector('[role=alert]')?.textContent).toContain('Non è stato possibile caricare il menu.');
-      expect(TestBed.inject(DemoDiagnostics).events()).toContainEqual({ screen: 'navigazione', source: 'caricamento navigazione', error: 'HTTP 404' });
+      expect(TestBed.inject(DemoDiagnostics).events()).toContainEqual({ screen: 'navigation', source: 'navigation loading', error: 'HTTP 404' });
     } finally {
       files['examples/navigation.json'] = navigationDoc;
     }
   });
 
-  it('il tema scuro cambia le variabili CSS', async () => {
+  it('the dark theme changes the CSS variables', async () => {
     const { fixture, el } = await start();
-    await until(fixture, () => rows(el) > 0, 'elenco fatture');
-    await choose(fixture, headerSelect(el, 1), 'scuro');
-    await until(fixture, () => document.documentElement.style.getPropertyValue('--lc-color-primary') === '#6aa6ff', 'tema scuro');
+    await until(fixture, () => rows(el) > 0, 'invoice list');
+    await choose(fixture, headerSelect(el, 1), 'dark');
+    await until(fixture, () => document.documentElement.style.getPropertyValue('--lc-color-primary') === '#6aa6ff', 'dark theme');
     expect(document.documentElement.style.getPropertyValue('color-scheme')).toBe('dark');
-    // il ponte verso NG-ZORRO imposta i suoi colori e carica lo stylesheet scuro
-    await until(fixture, () => document.documentElement.style.getPropertyValue('--ant-primary-color') === '#6aa6ff', 'colori di NG-ZORRO');
+    // the bridge to NG-ZORRO sets its colours and loads the dark stylesheet
+    await until(fixture, () => document.documentElement.style.getPropertyValue('--ant-primary-color') === '#6aa6ff', 'NG-ZORRO colours');
     expect(document.getElementById('lc-nz-dark-theme')?.getAttribute('href')).toBe('nz-dark.css');
-    await choose(fixture, headerSelect(el, 1), 'chiaro');
-    await until(fixture, () => document.documentElement.style.getPropertyValue('--ant-primary-color') === '#1f5fbf', 'tema chiaro');
+    await choose(fixture, headerSelect(el, 1), 'light');
+    await until(fixture, () => document.documentElement.style.getPropertyValue('--ant-primary-color') === '#1f5fbf', 'light theme');
     expect(document.getElementById('lc-nz-dark-theme')).toBeNull();
   });
 
-  it('naviga al dettaglio di un ordine e mostra il form con i campi protetti', async () => {
+  it('navigates to the detail of an order and shows the form with the protected fields', async () => {
     const { fixture, el } = await start();
-    await until(fixture, () => rows(el) > 0, 'elenco fatture');
-    await TestBed.inject(Router).navigateByUrl('/consultazione-fatture/ordini-elenco');
-    await until(fixture, () => rows(el) > 0, 'elenco ordini');
-    clickLabel(el, 'main button', 'Apri');
-    await until(fixture, () => heading(el) === 'Dettaglio ordine', 'dettaglio');
-    await until(fixture, () => (el.querySelector('main input[type=text]') as HTMLInputElement | null)?.value === 'Rossi Srl', 'valori del form');
+    await until(fixture, () => rows(el) > 0, 'invoice list');
+    await TestBed.inject(Router).navigateByUrl('/invoice-lookup/order-list');
+    await until(fixture, () => rows(el) > 0, 'order list');
+    clickLabel(el, 'main button', 'Open');
+    await until(fixture, () => heading(el) === 'Order detail', 'detail');
+    await until(fixture, () => (el.querySelector('main input[type=text]') as HTMLInputElement | null)?.value === 'Smith Ltd', 'form values');
     expect(el.querySelector('main')?.textContent).not.toContain('iban');
     expect((el.querySelector('main .actions button') as HTMLButtonElement).disabled).toBe(true);
   });

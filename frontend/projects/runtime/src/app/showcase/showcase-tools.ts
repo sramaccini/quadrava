@@ -10,8 +10,8 @@ type Json = Record<string, unknown>;
 const isObject = (v: unknown): v is Json => typeof v === 'object' && v !== null && !Array.isArray(v);
 
 /**
- * Le sezioni delle vetrine (schermate `vetrina-*`) hanno nell'intestazione «JSON», con la definizione dell'esempio e
- * i data source e le sequenze che usa, e «Aiuto», con la spiegazione dei componenti che contiene.
+ * The sections of the showcases (`showcase-*` screens) have «JSON» in their header, with the definition of the example and
+ * the data sources and sequences it uses, and «Help», with the explanation of the components it contains.
  */
 @Injectable({ providedIn: 'root' })
 export class ShowcaseTools extends SectionTools {
@@ -19,7 +19,7 @@ export class ShowcaseTools extends SectionTools {
   private readonly i18n = inject(I18n);
 
   applies({ runtime }: SectionContext): boolean {
-    return runtime.definition.screen.startsWith('vetrina-');
+    return runtime.definition.screen.startsWith('showcase-');
   }
 
   showSource({ node, runtime, title }: SectionContext): void {
@@ -43,20 +43,20 @@ export class ShowcaseTools extends SectionTools {
   }
 }
 
-/** I tipi da spiegare: quelli dentro la sezione (la sezione stessa solo se non contiene altro). */
+/** The types to explain: those inside the section (the section itself only if it contains nothing else). */
 export function helpTypes(section: unknown): string[] {
   const types = nodeTypesIn(section);
   return types.length > 1 ? types.filter((t) => t !== 'section') : types;
 }
 
-/** I tipi di componente nella sezione (lei compresa), nell'ordine in cui compaiono, senza ripetizioni. */
+/** The component types in the section (itself included), in the order they appear, without repetitions. */
 export function nodeTypesIn(section: unknown): string[] {
   const types: string[] = [];
   const visit = (value: unknown, isNode: boolean): void => {
     if (Array.isArray(value)) return value.forEach((v) => visit(v, isNode));
     if (!isObject(value)) return;
     if (isNode && typeof value['type'] === 'string' && !types.includes(value['type'])) types.push(value['type']);
-    // Sono componenti gli elementi di un elenco `components` (nella sezione, nei contenitori, nelle schede, nei passi).
+    // Components are the elements of a `components` list (in the section, in the containers, in the tabs, in the steps).
     for (const [key, child] of Object.entries(value)) visit(child, key === 'components');
   };
   visit(section, true);
@@ -64,8 +64,8 @@ export function nodeTypesIn(section: unknown): string[] {
 }
 
 /**
- * Data source e sequenze con nome (`actions`) della schermata che la sezione usa: quelli il cui nome compare come
- * valore nella sezione (`dataSource`, `call`, `refresh`, `run`…), e a loro volta quelli usati dalle sequenze.
+ * Data sources and named sequences (`actions`) of the screen that the section uses: those whose name appears as a
+ * value in the section (`dataSource`, `call`, `refresh`, `run`…), and in turn those used by the sequences.
  */
 export function relatedDefinitions(section: unknown, screen: Json): Json | null {
   const dataSources = isObject(screen['dataSources']) ? screen['dataSources'] : {};
@@ -131,7 +131,7 @@ export class SourceDialog {
       await navigator.clipboard.writeText(block.code);
       this.copied.set(block.key);
     } catch {
-      // Appunti non disponibili (permesso negato, pagina non sicura): il testo resta selezionabile a mano.
+      // Clipboard not available (permission denied, insecure page): the text can still be selected by hand.
       this.copied.set(null);
     }
   }
@@ -149,7 +149,7 @@ interface PropertyHelp {
 
 const NODE_SCHEMA = (SCREEN_SCHEMA as unknown as { $defs: Record<string, Json> }).$defs['node'];
 
-/** Le proprietà proprie di un tipo di componente secondo lo schema delle schermate, con la loro descrizione. */
+/** The own properties of a component type according to the screen schema, with their description. */
 export function propertiesOf(type: string): PropertyHelp[] {
   for (const branch of (NODE_SCHEMA['allOf'] as Json[]) ?? []) {
     const condition = (branch['if'] as { properties?: { type?: { const?: string } } }).properties?.type?.const;

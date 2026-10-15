@@ -14,8 +14,8 @@ import org.junit.jupiter.api.io.TempDir;
 class VersionStoreTest {
 
     private final VersionStore store = new VersionStore();
-    private final DocumentKey elenco = new DocumentKey("ordini", Kind.SCREEN, "ordini-elenco");
-    private final DocumentKey menu = new DocumentKey("ordini", Kind.NAVIGATION, "ordini");
+    private final DocumentKey elenco = new DocumentKey("orders", Kind.SCREEN, "order-list");
+    private final DocumentKey menu = new DocumentKey("orders", Kind.NAVIGATION, "orders");
 
     @Test
     void sameContentSameVersion() {
@@ -44,22 +44,22 @@ class VersionStoreTest {
 
     @Test
     void separateDocumentsWithTheirOwnVersionsAndPublications() {
-        var screen = store.save(elenco, "{\"schemaVersion\":\"1.0\",\"screen\":\"ordini-elenco\"}", "mario");
-        store.save(menu, "{\"schemaVersion\":\"1.0\",\"navigation\":\"ordini\"}", "mario");
-        assertThat(store.documents("ordini")).containsExactlyInAnyOrder(elenco, menu);
+        var screen = store.save(elenco, "{\"schemaVersion\":\"1.0\",\"screen\":\"order-list\"}", "mario");
+        store.save(menu, "{\"schemaVersion\":\"1.0\",\"navigation\":\"orders\"}", "mario");
+        assertThat(store.documents("orders")).containsExactlyInAnyOrder(elenco, menu);
         // A version of one document is not published as a version of another.
         assertThat(store.publish(menu, "production", screen.hash())).isFalse();
         assertThat(store.publish(elenco, "production", screen.hash())).isTrue();
         assertThat(store.publishedEnvironments(elenco)).containsEntry("production", screen.hash());
         assertThat(store.publishedEnvironments(menu)).isEmpty();
-        assertThat(store.appIds()).containsExactly("ordini");
+        assertThat(store.appIds()).containsExactly("orders");
     }
 
     @Test
     void theContentMustHaveTheIdentifierOfThePath() {
-        assertThat(RegistryController.checkContent(elenco, "{\"schemaVersion\":\"1.0\",\"screen\":\"ordini-elenco\"}")).isEmpty();
+        assertThat(RegistryController.checkContent(elenco, "{\"schemaVersion\":\"1.0\",\"screen\":\"order-list\"}")).isEmpty();
         assertThat(RegistryController.checkContent(elenco, "{\"schemaVersion\":\"1.0\",\"screen\":\"other\"}")).isPresent();
-        assertThat(RegistryController.checkContent(menu, "{\"navigation\":\"ordini\"}")).isPresent();
+        assertThat(RegistryController.checkContent(menu, "{\"navigation\":\"orders\"}")).isPresent();
         assertThat(RegistryController.checkContent(menu, "[1, 2]")).isPresent();
     }
 
@@ -90,12 +90,12 @@ class VersionStoreTest {
         first.review(elenco, v1.hash(), "request", "mario", null);
         first.review(elenco, v1.hash(), "approve", "luisa", "ok");
         first.publish(elenco, "production", v1.hash());
-        first.save(menu, "{\"schemaVersion\":\"1.0\",\"navigation\":\"ordini\"}", "mario");
-        assertThat(Files.exists(dir.resolve("ordini/screen/ordini-elenco/index.json"))).isTrue();
-        assertThat(Files.exists(dir.resolve("ordini/screen/ordini-elenco/" + v1.hash() + ".json"))).isTrue();
+        first.save(menu, "{\"schemaVersion\":\"1.0\",\"navigation\":\"orders\"}", "mario");
+        assertThat(Files.exists(dir.resolve("orders/screen/order-list/index.json"))).isTrue();
+        assertThat(Files.exists(dir.resolve("orders/screen/order-list/" + v1.hash() + ".json"))).isTrue();
 
         var second = new VersionStore(dir);
-        assertThat(second.documents("ordini")).containsExactlyInAnyOrder(elenco, menu);
+        assertThat(second.documents("orders")).containsExactlyInAnyOrder(elenco, menu);
         assertThat(second.versions(elenco)).extracting(Model.DocumentVersion::hash).containsExactly(v2.hash(), v1.hash());
         assertThat(second.version(elenco, v1.hash()).orElseThrow().state()).isEqualTo("approved");
         assertThat(second.version(elenco, v1.hash()).orElseThrow().reviewedBy()).isEqualTo("luisa");

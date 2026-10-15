@@ -1,0 +1,200 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "showcase-form",
+  "title": "{{ t('showcase_form.showcase_forms', 'Showcase: forms') }}",
+  "requires": "showcase.components.read",
+  "dataSources": {
+    "save": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/showcase/flag",
+      "body": "{{form}}"
+    },
+    "order": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/orders/{{has(params.id) ? params.id : 1}}"
+    },
+    "saveOrder": {
+      "type": "rest",
+      "method": "PUT",
+      "url": "/api/orders/{{has(params.id) ? params.id : 1}}",
+      "body": "{{form}}"
+    }
+  },
+  "components": [
+    {
+      "id": "title",
+      "type": "text",
+      "style": "heading",
+      "text": "{{ t('showcase_form.forms', 'Forms') }}"
+    },
+    {
+      "id": "intro",
+      "type": "text",
+      "text": "{{ t('showcase_form.all_field_types_required_fields', 'All field types, required fields, rule-based validation, and fields that appear, lock or disappear according to values and permissions.') }}"
+    },
+    {
+      "id": "section-entry",
+      "type": "section",
+      "title": "{{ t('showcase_form.entry_form_all_field_types', 'Entry form: all field types') }}",
+      "components": [
+        {
+          "id": "form-types",
+          "type": "form",
+          "initial": {
+            "category": "private",
+            "newsletter": true
+          },
+          "fields": [
+            {
+              "name": "name",
+              "type": "text",
+              "label": "{{ t('common.name', 'Name') }}",
+              "required": true
+            },
+            {
+              "name": "age",
+              "type": "number",
+              "label": "{{ t('showcase_form.age', 'Age') }}",
+              "validate": {
+                "rule": "{{value >= 18 && value <= 120}}",
+                "message": "{{ t('showcase_form.age_must_be_between_18_and_120', 'Age must be between 18 and 120') }}"
+              }
+            },
+            {
+              "name": "category",
+              "type": "select",
+              "label": "{{ t('showcase_form.category', 'Category') }}",
+              "options": [
+                "private",
+                "business"
+              ],
+              "required": true,
+              "optionKey": "values.type"
+            },
+            {
+              "name": "vatNumber",
+              "type": "text",
+              "label": "{{ t('showcase_form.vat_number_business_only', 'VAT number (business only)') }}",
+              "visibleIf": "{{form.category == 'business'}}",
+              "required": true,
+              "validate": {
+                "rule": "{{size(string(value)) == 11}}",
+                "message": "{{ t('showcase_form.the_vat_number_has_11_digits', 'The VAT number has 11 digits') }}"
+              }
+            },
+            {
+              "name": "birth",
+              "type": "date",
+              "label": "{{ t('showcase_form.date_of_birth', 'Date of birth') }}"
+            },
+            {
+              "name": "newsletter",
+              "type": "checkbox",
+              "label": "{{ t('showcase_form.i_want_to_receive_the_newsletter', 'I want to receive the newsletter') }}"
+            },
+            {
+              "name": "taxCode",
+              "type": "text",
+              "label": "{{ t('showcase_form.tax_code_sensitive_data', 'Tax code (sensitive data)') }}",
+              "sensitive": true
+            }
+          ],
+          "actions": [
+            {
+              "id": "btn-send",
+              "label": "{{ t('showcase_form.submit', 'Submit') }}",
+              "onClick": [
+                {
+                  "call": "save",
+                  "onError": {
+                    "toast": "{{ t('showcase_form.submission_failed', 'Submission failed') }}"
+                  }
+                },
+                {
+                  "toast": "{{ t('showcase_form.data_submitted', 'Data submitted') }}"
+                }
+              ]
+            },
+            {
+              "id": "btn-reset",
+              "label": "{{ t('showcase_form.what_do_actions_receive', 'What do actions receive?') }}",
+              "onClick": [
+                {
+                  "toast": "{{ t('showcase_form.a_form_s_actions_receive_the_val', 'A form\\'s actions receive the values in \\'form\\'') }}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "section-edit",
+      "type": "section",
+      "title": "{{ t('showcase_form.edit_form_data_from_the_service', 'Edit form: data from the service, fields and actions according to permissions') }}",
+      "components": [
+        {
+          "id": "order-form",
+          "type": "form",
+          "source": "order",
+          "fields": [
+            {
+              "name": "customer",
+              "label": "{{ t('common.customer', 'Customer') }}",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "type",
+              "label": "{{ t('common.type', 'Type') }}",
+              "type": "select",
+              "options": [
+                "private",
+                "business"
+              ],
+              "optionKey": "values.type"
+            },
+            {
+              "name": "discount",
+              "label": "{{ t('common.discount', 'Discount') }}",
+              "type": "number",
+              "visibleIf": "{{form.type == 'business'}}",
+              "validate": {
+                "rule": "{{value <= 20}}",
+                "message": "{{ t('common.maximum_discount_is_20', 'Maximum discount is 20%') }}"
+              }
+            },
+            {
+              "name": "iban",
+              "label": "{{ t('showcase_layout.iban', 'IBAN') }}",
+              "type": "text",
+              "sensitive": true,
+              "hiddenIf": "{{!can('orders.iban.read')}}",
+              "readOnlyIf": "{{!can('orders.iban.write')}}"
+            }
+          ],
+          "actions": [
+            {
+              "id": "btn-save",
+              "label": "{{ t('common.save', 'Save') }}",
+              "enabledIf": "{{can('orders.order.write') && form._perm.update}}",
+              "onClick": [
+                {
+                  "call": "saveOrder",
+                  "onError": {
+                    "toast": "{{ t('common.saving_failed', 'Saving failed') }}"
+                  }
+                },
+                {
+                  "toast": "{{ t('showcase_form.order_saved', 'Order saved') }}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

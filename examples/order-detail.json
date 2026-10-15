@@ -1,0 +1,80 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "order-detail",
+  "title": "{{ t('order_detail.order_detail', 'Order detail') }}",
+  "requires": "orders.order.read",
+  "dataSources": {
+    "order": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/orders/{{params.id}}"
+    },
+    "saveOrder": {
+      "type": "rest",
+      "method": "PUT",
+      "url": "/api/orders/{{params.id}}",
+      "body": "{{form}}"
+    }
+  },
+  "components": [
+    {
+      "id": "order-form",
+      "type": "form",
+      "source": "order",
+      "fields": [
+        {
+          "name": "customer",
+          "label": "{{ t('common.customer', 'Customer') }}",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "type",
+          "label": "{{ t('common.type', 'Type') }}",
+          "type": "select",
+          "options": [
+            "private",
+            "business"
+          ],
+          "optionKey": "values.type"
+        },
+        {
+          "name": "discount",
+          "label": "{{ t('common.discount', 'Discount') }}",
+          "type": "number",
+          "visibleIf": "{{form.type == 'business'}}",
+          "validate": {
+            "rule": "{{value <= 20}}",
+            "message": "{{ t('common.maximum_discount_is_20', 'Maximum discount is 20%') }}"
+          }
+        },
+        {
+          "name": "iban",
+          "label": "{{ t('showcase_layout.iban', 'IBAN') }}",
+          "type": "text",
+          "sensitive": true,
+          "hiddenIf": "{{!can('orders.iban.read')}}",
+          "readOnlyIf": "{{!can('orders.iban.write')}}"
+        }
+      ],
+      "actions": [
+        {
+          "id": "btn-save",
+          "label": "{{ t('common.save', 'Save') }}",
+          "enabledIf": "{{can('orders.order.write') && form._perm.update}}",
+          "onClick": [
+            {
+              "call": "saveOrder",
+              "onError": {
+                "toast": "{{ t('common.saving_failed', 'Saving failed') }}"
+              }
+            },
+            {
+              "navigate": "order-list"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

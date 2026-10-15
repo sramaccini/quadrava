@@ -1,0 +1,305 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "showcase-datatable",
+  "title": "{{ t('showcase_datatable.showcase_data_table', 'Showcase: data table') }}",
+  "description": "{{ t('showcase_datatable.columns_you_can_filter_sort_and', 'Columns you can filter, sort and group by, with totals per group.') }}",
+  "requires": "showcase.components.read",
+  "dataSources": {
+    "transactions": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/transactions"
+    },
+    "archive": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/transactions",
+      "params": {
+        "count": 20000
+      }
+    },
+    "search": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/transactions/search",
+      "body": "{{ request }}"
+    },
+    "checkTransaction": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/transactions/{{ id }}/check"
+    }
+  },
+  "components": [
+    {
+      "id": "title",
+      "type": "text",
+      "style": "heading",
+      "text": "{{ t('showcase_datatable.data_table', 'Data table') }}"
+    },
+    {
+      "id": "section-transactions",
+      "type": "section",
+      "title": "{{ t('showcase_datatable.account_movements', 'Account movements') }}",
+      "components": [
+        {
+          "id": "explain-transactions",
+          "type": "text",
+          "text": "{{ t('showcase_datatable.sixty_movements_loaded_once_filt', 'Sixty movements loaded once: filter from the icon in the headers, sort with the arrows, pick one or more columns to group by. Each group shows the number of movements and the balance.') }}"
+        },
+        {
+          "id": "datatable-transactions",
+          "type": "dataTable",
+          "source": "transactions",
+          "refreshable": true,
+          "groupBy": [
+            "account"
+          ],
+          "defaultSort": {
+            "field": "date",
+            "direction": "desc"
+          },
+          "pageSize": 15,
+          "rowActionsInline": 1,
+          "columns": [
+            {
+              "field": "date",
+              "label": "{{ t('showcase_datatable.date', 'Date') }}",
+              "format": "date",
+              "sortable": true,
+              "filter": "date"
+            },
+            {
+              "field": "account",
+              "label": "{{ t('showcase_datatable.account', 'Account') }}",
+              "sortable": true,
+              "filter": "select",
+              "groupable": true
+            },
+            {
+              "field": "category",
+              "label": "{{ t('showcase_datatable.category', 'Category') }}",
+              "filter": "select",
+              "groupable": true,
+              "aggregate": "count"
+            },
+            {
+              "field": "description",
+              "label": "{{ t('common.description', 'Description') }}",
+              "filter": "text"
+            },
+            {
+              "field": "status",
+              "label": "{{ t('common.status', 'Status') }}",
+              "format": "badge",
+              "badges": {
+                "registered": "success",
+                "to-check": "danger"
+              },
+              "valueKey": "values.transaction",
+              "filter": "select",
+              "groupable": true
+            },
+            {
+              "field": "amount",
+              "label": "{{ t('common.amount', 'Amount (€)') }}",
+              "format": "currency",
+              "sortable": true,
+              "filter": "number",
+              "aggregate": "sum"
+            }
+          ],
+          "rowActions": [
+            {
+              "id": "btn-check",
+              "label": "{{ t('showcase_datatable.check', 'Check') }}",
+              "enabledIf": "{{ row.status == 'to-check' }}",
+              "onClick": [
+                {
+                  "toast": "{{ t('showcase_datatable.movement_checked_example', 'Movement {d} checked (example)', {'d': row.description}) }}"
+                }
+              ]
+            },
+            {
+              "id": "btn-details",
+              "label": "{{ t('showcase_datatable.details', 'Details') }}",
+              "onClick": [
+                {
+                  "toast": "{{ t('showcase_datatable.text', '{d}: {i}', {'d': dyn(row.description), 'i': dyn(fmtCurrency(row.amount, 'EUR'))}) }}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "section-archive",
+      "type": "section",
+      "title": "{{ t('showcase_datatable.large_volumes_20_000_movements', 'Large volumes: 20,000 movements') }}",
+      "components": [
+        {
+          "id": "explain-archive",
+          "type": "text",
+          "text": "{{ t('showcase_datatable.the_same_component_with_20_000_r', 'The same component with 20,000 rows loaded at once: only the current page is drawn, cell texts are computed once and the text filter waits for a short pause between keystrokes.') }}"
+        },
+        {
+          "id": "datatable-archive",
+          "type": "dataTable",
+          "source": "archive",
+          "refreshable": true,
+          "groupBy": [
+            "account",
+            "category"
+          ],
+          "pageSize": 20,
+          "columns": [
+            {
+              "field": "date",
+              "label": "{{ t('showcase_datatable.date', 'Date') }}",
+              "format": "date",
+              "sortable": true,
+              "filter": "date"
+            },
+            {
+              "field": "account",
+              "label": "{{ t('showcase_datatable.account', 'Account') }}",
+              "sortable": true,
+              "filter": "select",
+              "groupable": true
+            },
+            {
+              "field": "category",
+              "label": "{{ t('showcase_datatable.category', 'Category') }}",
+              "filter": "select",
+              "groupable": true,
+              "aggregate": "count"
+            },
+            {
+              "field": "description",
+              "label": "{{ t('common.description', 'Description') }}",
+              "filter": "text"
+            },
+            {
+              "field": "status",
+              "label": "{{ t('common.status', 'Status') }}",
+              "format": "badge",
+              "badges": {
+                "registered": "success",
+                "to-check": "danger"
+              },
+              "valueKey": "values.transaction",
+              "filter": "select",
+              "groupable": true
+            },
+            {
+              "field": "amount",
+              "label": "{{ t('common.amount', 'Amount (€)') }}",
+              "format": "currency",
+              "sortable": true,
+              "filter": "number",
+              "aggregate": "sum"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "section-server",
+      "type": "section",
+      "title": "{{ t('showcase_datatable.server_side_200_000_movements', 'Server side: 200,000 movements') }}",
+      "components": [
+        {
+          "id": "explain-server",
+          "type": "text",
+          "text": "{{ t('showcase_datatable.same_interface_but_filters_sorti', 'Same interface, but filters, sorting, groups, totals and pages are computed by the service: the browser receives only the page and the groups in view. Opening a group loads its rows page by page.') }}"
+        },
+        {
+          "id": "table-server",
+          "type": "serverDataTable",
+          "source": "search",
+          "refreshable": true,
+          "groupBy": [
+            "account"
+          ],
+          "defaultSort": {
+            "field": "date",
+            "direction": "desc"
+          },
+          "pageSize": 15,
+          "bind": "state.transactionSearch",
+          "rowActionsInline": 1,
+          "columns": [
+            {
+              "field": "date",
+              "label": "{{ t('showcase_datatable.date', 'Date') }}",
+              "format": "date",
+              "sortable": true,
+              "filter": "date"
+            },
+            {
+              "field": "account",
+              "label": "{{ t('showcase_datatable.account', 'Account') }}",
+              "sortable": true,
+              "filter": "select",
+              "groupable": true
+            },
+            {
+              "field": "category",
+              "label": "{{ t('showcase_datatable.category', 'Category') }}",
+              "filter": "select",
+              "groupable": true,
+              "aggregate": "count"
+            },
+            {
+              "field": "description",
+              "label": "{{ t('common.description', 'Description') }}",
+              "filter": "text"
+            },
+            {
+              "field": "status",
+              "label": "{{ t('common.status', 'Status') }}",
+              "format": "badge",
+              "badges": {
+                "registered": "success",
+                "to-check": "danger"
+              },
+              "valueKey": "values.transaction",
+              "filter": "select",
+              "groupable": true
+            },
+            {
+              "field": "amount",
+              "label": "{{ t('common.amount', 'Amount (€)') }}",
+              "format": "currency",
+              "sortable": true,
+              "filter": "number",
+              "aggregate": "sum"
+            }
+          ],
+          "rowActions": [
+            {
+              "id": "btn-check-server",
+              "label": "{{ t('showcase_datatable.check', 'Check') }}",
+              "enabledIf": "{{ row.status == 'to-check' }}",
+              "onClick": [
+                {
+                  "call": "checkTransaction",
+                  "args": {
+                    "id": "{{ row.id }}"
+                  }
+                },
+                {
+                  "refresh": "search"
+                },
+                {
+                  "toast": "{{ t('showcase_datatable.movement_checked', 'Movement {d} checked', {'d': row.description}) }}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

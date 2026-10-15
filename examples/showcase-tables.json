@@ -1,0 +1,242 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "showcase-tables",
+  "title": "{{ t('showcase_tables.showcase_filters_and_tables', 'Showcase: filters and tables') }}",
+  "requires": "showcase.components.read",
+  "dataSources": {
+    "orders": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/orders",
+      "params": {
+        "status": "{{state.filters.status}}",
+        "page": "{{state.page}}"
+      },
+      "paging": "server"
+    },
+    "approveOrder": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/orders/{{id}}/approve"
+    },
+    "packages": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/packages"
+    },
+    "invoices": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/invoices",
+      "params": {
+        "status": "sent"
+      }
+    }
+  },
+  "components": [
+    {
+      "id": "title",
+      "type": "text",
+      "style": "heading",
+      "text": "{{ t('showcase_tables.filters_and_tables', 'Filters and tables') }}"
+    },
+    {
+      "id": "intro",
+      "type": "text",
+      "text": "{{ t('showcase_tables.a_filter_bar_writes_into_the_scr', 'A filter bar writes into the screen state; the table reloads by itself when the filters change. Rows have actions conditioned by permissions and by the row state.') }}"
+    },
+    {
+      "id": "section-paged",
+      "type": "section",
+      "title": "{{ t('showcase_tables.table_with_filters_server_side_p', 'Table with filters, server-side paging and row actions') }}",
+      "components": [
+        {
+          "id": "filters",
+          "type": "filterBar",
+          "bind": "state.filters",
+          "fields": [
+            {
+              "name": "status",
+              "type": "select",
+              "label": "{{ t('common.status', 'Status') }}",
+              "options": [
+                "draft",
+                "submitted",
+                "approved"
+              ],
+              "optionKey": "values.status"
+            }
+          ]
+        },
+        {
+          "id": "order-table",
+          "type": "table",
+          "source": "orders",
+          "refreshable": true,
+          "columns": [
+            {
+              "field": "number",
+              "label": "{{ t('common.number', 'Number') }}"
+            },
+            {
+              "field": "customer",
+              "label": "{{ t('common.customer', 'Customer') }}"
+            },
+            {
+              "field": "type",
+              "label": "{{ t('common.type', 'Type') }}",
+              "valueKey": "values.type"
+            },
+            {
+              "field": "discount",
+              "label": "{{ t('common.discount', 'Discount') }}",
+              "format": "percent"
+            },
+            {
+              "field": "status",
+              "label": "{{ t('common.status', 'Status') }}",
+              "format": "badge",
+              "badges": {
+                "draft": "neutral",
+                "submitted": "primary",
+                "approved": "success"
+              },
+              "valueKey": "values.status"
+            }
+          ],
+          "rowActions": [
+            {
+              "id": "btn-open",
+              "label": "{{ t('common.open', 'Open') }}",
+              "onClick": [
+                {
+                  "navigate": "order-detail",
+                  "params": {
+                    "id": "{{row.id}}"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "btn-approve",
+              "label": "{{ t('common.approve', 'Approve') }}",
+              "visibleIf": "{{can('orders.order.approve') && row.status == 'submitted'}}",
+              "onClick": [
+                {
+                  "confirm": "{{ t('showcase_tables.approve_order', 'Approve order {number}?', {'number': dyn(row.number)}) }}"
+                },
+                {
+                  "call": "approveOrder",
+                  "args": {
+                    "id": "{{row.id}}"
+                  },
+                  "onError": {
+                    "toast": "{{ t('common.approval_failed', 'Approval failed') }}"
+                  }
+                },
+                {
+                  "refresh": "orders"
+                },
+                {
+                  "toast": "{{ t('common.order_approved', 'Order approved') }}"
+                }
+              ]
+            },
+            {
+              "id": "btn-edit",
+              "label": "{{ t('showcase_tables.edit', 'Edit') }}",
+              "enabledIf": "{{row._perm.update}}",
+              "onClick": [
+                {
+                  "navigate": "showcase-form",
+                  "params": {
+                    "id": "{{row.id}}"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "section-simple",
+      "type": "section",
+      "title": "{{ t('showcase_tables.simple_table_all_rows_in_an_arra', 'Simple table: all rows in an array, no filters or pages') }}",
+      "components": [
+        {
+          "id": "package-table",
+          "type": "table",
+          "source": "packages",
+          "columns": [
+            {
+              "field": "name",
+              "label": "{{ t('common.name', 'Name') }}"
+            },
+            {
+              "field": "description",
+              "label": "{{ t('common.description', 'Description') }}"
+            },
+            {
+              "field": "created",
+              "label": "{{ t('common.created_on', 'Created on') }}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "section-formats",
+      "type": "section",
+      "title": "{{ t('showcase_tables.cell_formats_amount_date_yes_no', 'Cell formats: amount, date, yes/no and status label') }}",
+      "components": [
+        {
+          "id": "txt-formats",
+          "type": "text",
+          "text": "{{ t('showcase_tables.sent_invoices_each_column_choose', 'Sent invoices: each column chooses how to show the value with the format property. Values stay those of the service, only how they read changes.') }}"
+        },
+        {
+          "id": "invoice-table",
+          "type": "table",
+          "source": "invoices",
+          "columns": [
+            {
+              "field": "number",
+              "label": "{{ t('common.number', 'Number') }}"
+            },
+            {
+              "field": "customer",
+              "label": "{{ t('common.customer', 'Customer') }}"
+            },
+            {
+              "field": "amount",
+              "label": "{{ t('common.amount_2', 'Amount') }}",
+              "format": "currency"
+            },
+            {
+              "field": "issued",
+              "label": "{{ t('common.issued_on', 'Issued on') }}",
+              "format": "date"
+            },
+            {
+              "field": "collected",
+              "label": "{{ t('common.collected', 'Collected') }}",
+              "format": "boolean"
+            },
+            {
+              "field": "status",
+              "label": "{{ t('common.status', 'Status') }}",
+              "format": "badge",
+              "badges": {
+                "draft": "neutral",
+                "sent": "primary",
+                "paid": "success"
+              },
+              "valueKey": "values.status"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,8 +1,8 @@
 :host { display: block; min-height: 100vh; }
 .shell { min-height: 100vh; flex-direction: row; background: var(--lc-color-background); }
 .main { flex: 1; min-width: 0; flex-direction: column; background: var(--lc-color-background); }
-/* La barra superiore non va mai a capo: ha altezza fissa e quello che non ci sta finisce nel menu delle impostazioni.
-   A sinistra lascia spazio al pulsante tondo della barra laterale, che sporge di 13px. */
+/* The top bar never wraps: it has a fixed height and whatever does not fit goes to the settings menu.
+   On the left it leaves room for the round button of the sidebar, which sticks out by 13px. */
 .bar {
   display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; height: var(--lc-header-height); line-height: 1.5715; padding: 0 16px 0 40px;
   background: var(--lc-header-bg); color: var(--lc-header-text); border-bottom: 1px solid var(--lc-header-border); position: relative; z-index: 1;
@@ -10,7 +10,7 @@
 .crumb { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--lc-color-muted); }
 .spacer { flex: 1; }
 .bar label { margin-left: 8px; color: var(--lc-color-muted); white-space: nowrap; }
-/* Quattro scelte (profilo, tema, lingua, rete) devono stare nella barra anche a 1200px con la barra laterale aperta. */
+/* Four choices (profile, theme, language, network) must fit in the bar even at 1200px with the sidebar open. */
 .pick { min-width: 112px; }
 .menu-button, .settings-button { flex: none; color: inherit; font-size: 18px; }
 lc-user-menu { height: 100%; flex: none; }
@@ -19,6 +19,6 @@ main { color: var(--lc-color-on-surface); }
 .diag { text-align: center; font-size: .8em; color: var(--lc-color-muted); background: transparent; }
 .signed-out { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; background: var(--lc-color-background); color: var(--lc-color-on-surface); text-align: center; padding: 24px; }
 .signed-out h1 { margin: 0; font-size: 24px; }
-/* Fascia stretta: niente barra laterale accanto al contenuto (sta nel cassetto), margini ridotti. */
+/* Narrow band: no sidebar next to the content (it is in the drawer), smaller margins. */
 .narrow .bar { gap: 4px; padding: 0 8px; }
 .narrow .main { --lc-content-padding: 16px; }

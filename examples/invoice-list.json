@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "invoice-list",
+  "title": "{{ t('invoices.invoices', 'Invoices') }}",
+  "description": "{{ t('invoices.list_of_invoices_with_a_status_f', 'List of invoices with a status filter and sending of drafts.') }}",
+  "requires": "invoices.invoice.read",
+  "dataSources": {
+    "invoices": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/invoices",
+      "paging": "server",
+      "params": {
+        "status": "{{has(params.status) ? params.status : state.filters.status}}",
+        "page": "{{state.page}}"
+      }
+    },
+    "sendInvoice": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/invoices/{{id}}/send"
+    }
+  },
+  "components": [
+    {
+      "id": "invoice-filters",
+      "type": "filterBar",
+      "bind": "state.filters",
+      "hiddenIf": "{{has(params.status)}}",
+      "fields": [
+        {
+          "name": "status",
+          "type": "select",
+          "label": "{{ t('common.status', 'Status') }}",
+          "options": [
+            "draft",
+            "sent",
+            "paid"
+          ],
+          "optionKey": "values.status"
+        }
+      ]
+    },
+    {
+      "id": "invoice-table",
+      "type": "table",
+      "source": "invoices",
+      "columns": [
+        {
+          "field": "number",
+          "label": "{{ t('common.number', 'Number') }}"
+        },
+        {
+          "field": "customer",
+          "label": "{{ t('common.customer', 'Customer') }}"
+        },
+        {
+          "field": "amount",
+          "label": "{{ t('common.amount', 'Amount (€)') }}"
+        },
+        {
+          "field": "status",
+          "label": "{{ t('common.status', 'Status') }}",
+          "valueKey": "values.status"
+        }
+      ],
+      "rowActions": [
+        {
+          "id": "btn-send",
+          "label": "{{ t('invoices.send', 'Send') }}",
+          "visibleIf": "{{can('invoices.invoice.create') && row.status == 'draft'}}",
+          "onClick": [
+            {
+              "call": "sendInvoice",
+              "args": {
+                "id": "{{row.id}}"
+              },
+              "onError": {
+                "toast": "{{ t('invoices.sending_failed', 'Sending failed') }}"
+              }
+            },
+            {
+              "refresh": "invoices"
+            },
+            {
+              "toast": "{{ t('invoices.invoice_sent', 'Invoice {n} sent', {'n': row.number}) }}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

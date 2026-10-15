@@ -71,7 +71,7 @@ The language has three levels, so that the core stays small and stable while the
 
 **Linked documents: theme and menu.** Besides screens there are two documents with their own schema. The *theme* contains only design tokens (colours, font, radius, spacing, control height, compact or comfortable density), validated with a restrictive pattern to prevent CSS injection; the runtime applies them as `--lc-*` CSS variables, so components carry no colours of their own. A bridge (theme-bridge, in the components library) then translates the primary, success and error colours into NG-ZORRO's --ant-\* variables, computing the tonal scale, and for dark themes loads the library's dark stylesheet; this way switching theme at run time also applies to its components. The *navigation* lists the areas, the functional parts of the application, with one menu each, up to three fixed levels imposed by the schema (group, subgroup, item); an item points to a screen with optional parameters and may have `requires` (permission) and `visibleIf` (CEL). A group or area with no visible items is not shown.
 
-**Application shell, driven by the theme.** The overall look follows the Ant Design Pro style: on the left a full-height side bar, with the logo at the top, above the use-case selector and the multi-level menu, collapsible to icons only (groups open in a popup) with a round button on its edge; at the top the bar with the demo's choices and, on the right, the user menu (avatar, name and application items, with sign-out always as the last item); in the centre the page header (breadcrumbs derived from the menu, title, optional description) and the content in cards on a light grey background. None of this is fixed in the code: the theme document has an optional `layout` group with the colours, tone (light or dark) and width of the side bar, the colours and height of the top bar, the colours of the page header and the content padding, which become the variables `--lc-sider-*`, `--lc-header-*`, `--lc-page-header-*` and `--lc-content-padding`. If missing, they are derived from the base colours (light side bar as in Ant Design Pro). The repository provides three themes: light, classic (dark blue side bar) and dark. Long menu items wrap instead of being truncated.
+**Application shell, driven by the theme.** The overall look follows the Ant Design Pro style: on the left a full-height side bar, with the logo at the top, above the area selector and the multi-level menu, collapsible to icons only (groups open in a popup) with a round button on its edge; at the top the bar with the demo's choices and, on the right, the user menu (avatar, name and application items, with sign-out always as the last item); in the centre the page header (breadcrumbs derived from the menu, title, optional description) and the content in cards on a light grey background. None of this is fixed in the code: the theme document has an optional `layout` group with the colours, tone (light or dark) and width of the side bar, the colours and height of the top bar, the colours of the page header and the content padding, which become the variables `--lc-sider-*`, `--lc-header-*`, `--lc-page-header-*` and `--lc-content-padding`. If missing, they are derived from the base colours (light side bar as in Ant Design Pro). The repository provides three themes: light, classic (dark blue side bar) and dark. Long menu items wrap instead of being truncated.
 
 ## 4. Runtime
 
@@ -148,7 +148,7 @@ The application back end implements a REST contract published by the platform as
 | `POST /authz/check` | Batch check of action/resource pairs | For cases with too many combinations for a global list |
 | `_perm` field in the data | Per-row permissions returned with the resource, for example `{ "update": true, "delete": false }` | Read by expressions as `row._perm.update` |
 
-**Permission names.** A convention of exactly three parts, `domain.resource.action` (for example `ordini.iban.scrivi`), so that the level of granularity is readable in the name and a specific field needs no separate mechanism.
+**Permission names.** A convention of exactly three parts, `domain.resource.action` (for example `orders.iban.write`), so that the level of granularity is readable in the name and a specific field needs no separate mechanism.
 
 **Caching and refresh.** Capabilities are kept in memory by the runtime. The back end includes in every response a header with the current version of the user's permissions; if the runtime notices a version different from the cached one, it reloads the capabilities. This avoids both continuous requests and interfaces that go stale.
 
@@ -165,16 +165,16 @@ Traces start in the runtime, follow the REST call thanks to the `traceparent` he
 | Span | Opened by | Ends | Attributes |
 | --- | --- | --- | --- |
 | `screen.open` | `ScreenRuntime`, when the screen is created | When every GET data source has finished its first read (at once if there are none) | `lowcode.screen`, `lowcode.datasources` (how many) |
-| `action.run` | `runSteps`, for every sequence a component starts (button, row action, form) | When the sequence finishes; error if a step fails | `lowcode.screen`, `lowcode.action` (`call salva, refresh elenco`) |
+| `action.run` | `runSteps`, for every sequence a component starts (button, row action, form) | When the sequence finishes; error if a step fails | `lowcode.screen`, `lowcode.action` (`call save, refresh elenco`) |
 | `http.client` | The HTTP interceptor, for every same-origin call | On the response; a cancelled call is not an error | `http.request.method`, `http.response.status_code`, `lowcode.datasource` (data calls) or `url.path` without the query (platform calls: registry, authorization) |
 
 An example: the user presses *Approva* on an order.
 
 ```text
-action.run  lowcode.action = "call approva, refresh ordini"     trace 4bf9…, span a1…
+action.run  lowcode.action = "call approve, refresh orders"     trace 4bf9…, span a1…
 ├─ http.client  POST, lowcode.datasource = approva, 200         span b2…  → traceparent 00-4bf9…-b2…-01
 │    └─ (back end) spans of the orders service, same trace 4bf9…
-└─ http.client  GET, lowcode.datasource = ordini, 200           span c3…
+└─ http.client  GET, lowcode.datasource = orders, 200           span c3…
 ```
 
 The parent travels explicitly: the action passes its span to the calls of its steps (also inside `run` and `onError`), the screen passes its own to the first reads. The `traceparent` of each call carries the identity of its `http.client` span, so the back-end spans are its children. The calls to the telemetry endpoint are not traced. The `RuntimeTracer` port is optional: without it (demo, tests) nothing is traced.
@@ -232,7 +232,7 @@ The registry is a REST service that stores application definitions. Every versio
 
 **Environments.** Development, testing and production point to different versions of the same application; promotion from one environment to the next is an explicit, tracked operation.
 
-**Cross-document references.** Screens and navigation are separate documents, linked only by identifier: a navigation item opens a screen (`"screen": "fatture-elenco"`), a step `{ "navigate": "ordine-dettaglio" }` or a `link` node with `screen` leads from one screen to another. The registry reads these references from each version (`GET …/versions/{hash}/references?env=…`, contract 0.5) and says which screens are missing in an environment, that is, have no version published there (without `env`: do not exist in the application at all). References to the screen itself and values with an expression (`{{ }}`) are not checked. What happens at publication:
+**Cross-document references.** Screens and navigation are separate documents, linked only by identifier: a navigation item opens a screen (`"screen": "invoice-list"`), a step `{ "navigate": "order-detail" }` or a `link` node with `screen` leads from one screen to another. The registry reads these references from each version (`GET …/versions/{hash}/references?env=…`, contract 0.5) and says which screens are missing in an environment, that is, have no version published there (without `env`: do not exist in the application at all). References to the screen itself and values with an expression (`{{ }}`) are not checked. What happens at publication:
 
 | Publishing… | in a non-protected environment (development) | in a protected environment (testing, production) |
 | --- | --- | --- |
@@ -243,7 +243,7 @@ Screens are only warned about because links between screens often form cycles (a
 
 ```json
 { "title": "The navigation cites screens not published in the «production» environment", "status": 409,
-  "missingReferences": [{ "screen": "fattura-nuova", "path": "/areas/0/items/1/screen" }] }
+  "missingReferences": [{ "screen": "invoice-new", "path": "/areas/0/items/1/screen" }] }
 ```
 
 Themes and translation catalogues are not referenced by identifier, so they have no references to check.

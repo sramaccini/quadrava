@@ -1,0 +1,233 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "showcase-views",
+  "title": "{{ t('showcase_views.showcase_procedures_and_views', 'Showcase: procedures and views') }}",
+  "description": "{{ t('showcase_views.step_by_step_procedure_tree_view', 'Step-by-step procedure, tree view and calendar.') }}",
+  "requires": "showcase.components.read",
+  "dataSources": {
+    "categories": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/categories"
+    },
+    "deadlines": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/deadlines",
+      "params": {
+        "month": "{{ state.month }}"
+      }
+    }
+  },
+  "components": [
+    {
+      "id": "title",
+      "type": "text",
+      "style": "heading",
+      "text": "{{ t('showcase_views.procedures_and_views', 'Procedures and views') }}"
+    },
+    {
+      "id": "section-wizard",
+      "type": "section",
+      "title": "{{ t('showcase_views.step_by_step_procedure', 'Step-by-step procedure') }}",
+      "components": [
+        {
+          "id": "wizard-request",
+          "type": "wizard",
+          "bind": "state.step",
+          "steps": [
+            {
+              "id": "step-data",
+              "label": "{{ t('showcase_views.request_details', 'Request details') }}",
+              "description": "{{ t('showcase_views.subject_and_priority', 'Subject and priority') }}",
+              "nextIf": "{{ has(state.request) && state.request != null }}",
+              "components": [
+                {
+                  "id": "form-request",
+                  "type": "form",
+                  "fields": [
+                    {
+                      "name": "subject",
+                      "type": "text",
+                      "label": "{{ t('showcase_views.subject', 'Subject') }}",
+                      "required": true
+                    },
+                    {
+                      "name": "priority",
+                      "type": "radio",
+                      "label": "{{ t('showcase_fields.priority', 'Priority') }}",
+                      "options": [
+                        "low",
+                        "normal",
+                        "high"
+                      ],
+                      "optionKey": "values.priority",
+                      "required": true
+                    }
+                  ],
+                  "actions": [
+                    {
+                      "id": "btn-continue",
+                      "label": "{{ t('showcase_views.continue', 'Continue') }}",
+                      "onClick": [
+                        {
+                          "set": {
+                            "path": "state.request",
+                            "value": "{{ form }}"
+                          }
+                        },
+                        {
+                          "set": {
+                            "path": "state.step",
+                            "value": 1
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "step-summary",
+              "label": "{{ t('showcase_views.summary', 'Summary') }}",
+              "components": [
+                {
+                  "id": "request-summary",
+                  "type": "text",
+                  "text": "{{ t('showcase_views.subject_priority', 'Subject: {o}. Priority: {p, select, low {low} normal {normal} high {high} other {{p}}}.', {'o': state.request.subject, 'p': state.request.priority}) }}"
+                }
+              ]
+            },
+            {
+              "id": "step-sending",
+              "label": "{{ t('showcase_views.send', 'Send') }}",
+              "components": [
+                {
+                  "id": "explain-sending",
+                  "type": "text",
+                  "hiddenIf": "{{ has(state.sent) && state.sent == true }}",
+                  "text": "{{ t('showcase_views.all_set_send_the_request', 'All set: send the request.') }}"
+                },
+                {
+                  "id": "btn-send-request",
+                  "type": "button",
+                  "label": "{{ t('showcase_views.send_the_request', 'Send the request') }}",
+                  "hiddenIf": "{{ has(state.sent) && state.sent == true }}",
+                  "onClick": [
+                    {
+                      "set": {
+                        "path": "state.sent",
+                        "value": true
+                      }
+                    },
+                    {
+                      "toast": "{{ t('showcase_views.request_sent', 'Request sent') }}"
+                    }
+                  ]
+                },
+                {
+                  "id": "request-outcome",
+                  "type": "alert",
+                  "kind": "success",
+                  "visibleIf": "{{ has(state.sent) && state.sent == true }}",
+                  "text": "{{ t('showcase_views.the_request_has_been_sent', 'The request “{o}” has been sent.', {'o': state.request.subject}) }}"
+                },
+                {
+                  "id": "btn-new-request",
+                  "type": "button",
+                  "label": "{{ t('showcase_views.new_request', 'New request') }}",
+                  "visibleIf": "{{ has(state.sent) && state.sent == true }}",
+                  "onClick": [
+                    {
+                      "set": {
+                        "path": "state.step",
+                        "value": 0
+                      }
+                    },
+                    {
+                      "set": {
+                        "path": "state.sent",
+                        "value": false
+                      }
+                    },
+                    {
+                      "set": {
+                        "path": "state.request",
+                        "value": null
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "section-tree",
+      "type": "section",
+      "title": "{{ t('showcase_views.tree_view', 'Tree view') }}",
+      "components": [
+        {
+          "id": "explain-tree",
+          "type": "text",
+          "text": "{{ t('showcase_views.expense_categories_on_several_le', 'Expense categories on several levels. Pick a category or search: matches are highlighted. With the keyboard: arrows to move, expand and collapse, Home and End, Enter to pick.') }}"
+        },
+        {
+          "id": "category-tree",
+          "type": "tree",
+          "source": "categories",
+          "keyField": "id",
+          "labelField": "name",
+          "childrenField": "children",
+          "bind": "state.category",
+          "searchable": true,
+          "onSelect": [
+            {
+              "toast": "{{ t('showcase_views.expense_items', '{name}: {n} expense items', {'name': row.name, 'n': row.items}) }}"
+            }
+          ]
+        },
+        {
+          "id": "current-category",
+          "type": "text",
+          "text": "{{ t('showcase_views.chosen_code', 'Chosen code: {c}', {'c': state.category == null ? '—' : state.category}) }}"
+        }
+      ]
+    },
+    {
+      "id": "section-calendar",
+      "type": "section",
+      "title": "{{ t('showcase_views.calendar', 'Calendar') }}",
+      "components": [
+        {
+          "id": "explain-calendar",
+          "type": "text",
+          "text": "{{ t('showcase_views.the_month_s_due_dates_coloured_b', 'The month\\'s due dates, coloured by status. When the month changes the calendar writes YYYY-MM to the state and the service loads only that month.') }}"
+        },
+        {
+          "id": "deadline-calendar",
+          "type": "calendar",
+          "source": "deadlines",
+          "dateField": "date",
+          "labelField": "title",
+          "badgeField": "status",
+          "badges": {
+            "overdue": "danger",
+            "paid": "success",
+            "to-pay": "primary"
+          },
+          "bind": "state.month",
+          "maxPerDay": 3,
+          "onSelect": [
+            {
+              "toast": "{{ t('showcase_views.text', '{title}: {amount}', {'title': dyn(row.title), 'amount': dyn(fmtCurrency(row.amount, 'EUR'))}) }}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

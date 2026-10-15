@@ -1,0 +1,87 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "invoice-new",
+  "title": "{{ t('invoice_new.new_invoice', 'New invoice') }}",
+  "requires": "invoices.invoice.create",
+  "dataSources": {
+    "createInvoice": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/invoices",
+      "body": "{{form}}"
+    }
+  },
+  "components": [
+    {
+      "id": "invoice-form",
+      "type": "form",
+      "initial": {
+        "type": "{{has(params.type) ? params.type : 'sales'}}"
+      },
+      "fields": [
+        {
+          "name": "number",
+          "type": "text",
+          "label": "{{ t('common.number', 'Number') }}",
+          "required": true
+        },
+        {
+          "name": "customer",
+          "type": "text",
+          "label": "{{ t('invoice_new.customer_supplier', 'Customer / supplier') }}",
+          "required": true
+        },
+        {
+          "name": "type",
+          "type": "select",
+          "label": "{{ t('common.type', 'Type') }}",
+          "options": [
+            "sales",
+            "purchase"
+          ],
+          "required": true,
+          "optionKey": "values.type"
+        },
+        {
+          "name": "amount",
+          "type": "number",
+          "label": "{{ t('common.amount', 'Amount (€)') }}",
+          "required": true,
+          "validate": {
+            "rule": "{{value > 0}}",
+            "message": "{{ t('invoice_new.the_amount_must_be_greater_than', 'The amount must be greater than zero') }}"
+          }
+        },
+        {
+          "name": "date",
+          "type": "date",
+          "label": "{{ t('invoice_new.date', 'Date') }}"
+        }
+      ],
+      "actions": [
+        {
+          "id": "btn-save",
+          "label": "{{ t('invoice_new.save_as_draft', 'Save as draft') }}",
+          "enabledIf": "{{can('invoices.invoice.create')}}",
+          "onClick": [
+            {
+              "call": "createInvoice",
+              "onError": {
+                "toast": "{{ t('common.saving_failed', 'Saving failed') }}"
+              }
+            },
+            {
+              "toast": "{{ t('invoice_new.invoice_saved_as_draft', 'Invoice saved as draft') }}"
+            },
+            {
+              "navigate": "invoice-list",
+              "params": {
+                "status": "draft"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

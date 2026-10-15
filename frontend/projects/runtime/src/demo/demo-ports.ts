@@ -2,23 +2,23 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Authorization, DataClient, RuntimeDiagnostics, UserProvider, type DataRequest, type DataRequestOptions } from 'core';
 import { DemoBackend } from './demo-backend';
 
-/** Profili della demo: i permessi sono quelli che in produzione darebbe il servizio di autorizzazione. */
+/** Profiles of the demo: the permissions are those the authorization service would give in production. */
 export const DEMO_PROFILES: Record<string, string[]> = {
-  // Inserisce e consulta fatture e vede gli ordini: due aree.
-  operator: ['vetrina.componenti.leggi', 'fatture.fattura.leggi', 'fatture.fattura.crea', 'ordini.ordine.leggi'],
-  // Aggiunge pacchetti, revisione spese e approvazione ordini: tutte e quattro le aree.
-  manager: ['vetrina.componenti.leggi', 'fatture.fattura.leggi', 'fatture.fattura.crea', 'ordini.ordine.leggi', 'ordini.ordine.approva', 'ordini.ordine.scrivi', 'pacchetti.pacchetto.leggi', 'pacchetti.pacchetto.crea', 'spese.spesa.leggi', 'spese.spesa.revisiona'],
+  // Enters and looks up invoices and sees the orders: two areas.
+  operator: ['showcase.components.read', 'invoices.invoice.read', 'invoices.invoice.create', 'orders.order.read'],
+  // Adds packages, expense review and order approval: all four areas.
+  manager: ['showcase.components.read', 'invoices.invoice.read', 'invoices.invoice.create', 'orders.order.read', 'orders.order.approve', 'orders.order.write', 'packages.package.read', 'packages.package.create', 'expenses.expense.read', 'expenses.expense.review'],
   administrator: [
-    'vetrina.componenti.leggi', 'fatture.fattura.leggi', 'fatture.fattura.crea', 'ordini.ordine.leggi', 'ordini.ordine.approva', 'ordini.ordine.scrivi', 'ordini.iban.leggi', 'ordini.iban.scrivi',
-    'pacchetti.pacchetto.leggi', 'pacchetti.pacchetto.crea', 'spese.spesa.leggi', 'spese.spesa.revisiona',
+    'showcase.components.read', 'invoices.invoice.read', 'invoices.invoice.create', 'orders.order.read', 'orders.order.approve', 'orders.order.write', 'orders.iban.read', 'orders.iban.write',
+    'packages.package.read', 'packages.package.create', 'expenses.expense.read', 'expenses.expense.review',
   ],
 };
 
-/** Autorizzazione finta, basata su signal: cambiando profilo la schermata si ridisegna. */
+/** Fake authorization, based on signals: changing profile redraws the screen. */
 @Injectable({ providedIn: 'root' })
 export class DemoSession extends Authorization implements UserProvider {
   readonly username = signal('operator');
-  /** Falso dopo l'uscita: nessun permesso finché non si accede di nuovo. */
+  /** False after logging out: no permission until signing in again. */
   readonly loggedIn = signal(true);
 
   logout(): void {
@@ -48,14 +48,14 @@ export class DemoDiagnostics extends RuntimeDiagnostics {
   }
 }
 
-/** Velocità della rete simulata nella demo: ritardo di ogni risposta in millisecondi. */
-export const NETWORK_SPEEDS = { normale: 200, lenta: 1500, moltoLenta: 9000 } as const;
+/** Speed of the network simulated in the demo: delay of every response in milliseconds. */
+export const NETWORK_SPEEDS = { normal: 200, slow: 1500, verySlow: 9000 } as const;
 export type NetworkSpeed = keyof typeof NETWORK_SPEEDS;
-const NETWORK_KEY = 'lc.demo.rete';
+const NETWORK_KEY = 'lc.demo.network';
 
 /**
- * Rete simulata della demo: con «lenta» e «molto lenta» si vedono gli indicatori di attività (e, oltre otto secondi,
- * il messaggio «Ci vuole più del solito…»). Vale per la scheda del browser (sessionStorage), poi torna normale.
+ * Network simulated by the demo: with «slow» and «very slow» the activity indicators show (and, beyond eight seconds,
+ * the «Taking longer than usual…» message). It holds for the browser tab (sessionStorage), then goes back to normal.
  */
 @Injectable({ providedIn: 'root' })
 export class DemoNetwork {
@@ -66,7 +66,7 @@ export class DemoNetwork {
     try {
       sessionStorage.setItem(NETWORK_KEY, speed);
     } catch {
-      // Memoria della sessione non disponibile: vale solo fino al ricaricamento.
+      // Session storage not available: it holds only until the page reloads.
     }
   }
 
@@ -77,14 +77,14 @@ export class DemoNetwork {
   private static stored(): NetworkSpeed {
     try {
       const value = sessionStorage.getItem(NETWORK_KEY);
-      return value && value in NETWORK_SPEEDS ? (value as NetworkSpeed) : 'normale';
+      return value && value in NETWORK_SPEEDS ? (value as NetworkSpeed) : 'normal';
     } catch {
-      return 'normale';
+      return 'normal';
     }
   }
 }
 
-/** DataClient della demo senza servizi: il backend in memoria nel browser, con il ritardo della rete simulata. */
+/** DataClient of the demo without services: the in-memory back end in the browser, with the delay of the simulated network. */
 @Injectable({ providedIn: 'root' })
 export class MockDataClient extends DataClient {
   static readonly PAGE_SIZE = DemoBackend.PAGE_SIZE;
@@ -93,8 +93,8 @@ export class MockDataClient extends DataClient {
 
   async request(req: DataRequest, options: DataRequestOptions = {}): Promise<unknown> {
     await new Promise((resolve) => setTimeout(resolve, this.network.latency()));
-    // Come una rete vera: una lettura annullata durante l'attesa non arriva al backend.
-    if (options.signal?.aborted) throw new DOMException('Richiesta annullata', 'AbortError');
+    // Like a real network: a read cancelled during the wait does not reach the back end.
+    if (options.signal?.aborted) throw new DOMException('Request cancelled', 'AbortError');
     return this.backend.handle(req);
   }
 }

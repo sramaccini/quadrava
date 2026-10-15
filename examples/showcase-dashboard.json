@@ -1,0 +1,176 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "showcase-dashboard",
+  "title": "{{ t('showcase_dashboard.showcase_dashboard', 'Showcase: dashboard') }}",
+  "description": "{{ t('showcase_dashboard.indicators_and_charts_computed_f', 'Indicators and charts computed from the service data.') }}",
+  "requires": "showcase.components.read",
+  "dataSources": {
+    "summary": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/summary"
+    },
+    "sales": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/monthly-sales"
+    },
+    "byStatus": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/invoices-by-status"
+    }
+  },
+  "components": [
+    {
+      "id": "title",
+      "type": "text",
+      "style": "heading",
+      "text": "{{ t('showcase_dashboard.dashboard', 'Dashboard') }}"
+    },
+    {
+      "id": "section-kpi",
+      "type": "section",
+      "title": "{{ t('showcase_dashboard.indicators', 'Indicators') }}",
+      "components": [
+        {
+          "id": "kpi-invoices",
+          "type": "stats",
+          "source": "summary",
+          "items": [
+            {
+              "id": "kpi-revenue",
+              "label": "{{ t('showcase_dashboard.revenue', 'Revenue') }}",
+              "field": "revenue",
+              "format": "currency",
+              "tone": "success",
+              "caption": "{{ t('showcase_dashboard.on_last_month', '+{p, number}% on last month', {'p': row.growth}) }}"
+            },
+            {
+              "id": "kpi-to-collect",
+              "label": "{{ t('showcase_dashboard.to_be_collected', 'To be collected') }}",
+              "field": "toCollect",
+              "format": "currency",
+              "tone": "primary",
+              "tooltip": "{{ t('showcase_dashboard.sales_invoices_sent_and_not_yet', 'Sales invoices sent and not yet paid') }}"
+            },
+            {
+              "id": "kpi-open",
+              "label": "{{ t('showcase_dashboard.open_invoices', 'Open invoices') }}",
+              "field": "open",
+              "format": "number",
+              "decimals": 0,
+              "tone": "danger",
+              "caption": "{{ t('showcase_dashboard.out_of', 'out of {n}', {'n': row.total}) }}"
+            },
+            {
+              "id": "kpi-average",
+              "label": "{{ t('showcase_dashboard.average_revenue_per_customer', 'Average revenue per customer') }}",
+              "value": "{{ row.revenue / row.customers }}",
+              "format": "currency"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "section-charts",
+      "type": "section",
+      "title": "{{ t('showcase_dashboard.charts', 'Charts') }}",
+      "components": [
+        {
+          "id": "explain-charts",
+          "type": "text",
+          "text": "{{ t('showcase_dashboard.drawn_in_svg_with_the_theme_colo', 'Drawn in SVG with the theme colours: hover bars, points and slices to read the values. For screen readers every chart is also a table.') }}"
+        },
+        {
+          "id": "bar-chart",
+          "type": "chart",
+          "kind": "bar",
+          "source": "sales",
+          "categoryField": "month",
+          "categoryFormat": "month",
+          "series": [
+            {
+              "field": "sales",
+              "label": "{{ t('showcase_dashboard.sales_invoices', 'Sales invoices') }}"
+            },
+            {
+              "field": "purchases",
+              "label": "{{ t('showcase_dashboard.purchase_invoices', 'Purchase invoices') }}",
+              "tone": "danger"
+            }
+          ],
+          "format": "currency",
+          "caption": "{{ t('showcase_dashboard.sales_and_purchase_invoices_by_m', 'Sales and purchase invoices by month, 2026') }}"
+        },
+        {
+          "id": "combined-chart",
+          "type": "chart",
+          "kind": "bar",
+          "stacked": true,
+          "source": "sales",
+          "categoryField": "month",
+          "categoryFormat": "month",
+          "format": "currency",
+          "rightFormat": "percent",
+          "decimals": 1,
+          "series": [
+            {
+              "field": "sales",
+              "label": "{{ t('showcase_dashboard.sales_invoices', 'Sales invoices') }}"
+            },
+            {
+              "field": "purchases",
+              "label": "{{ t('showcase_dashboard.purchase_invoices', 'Purchase invoices') }}",
+              "tone": "danger"
+            },
+            {
+              "field": "margin",
+              "label": "{{ t('showcase_dashboard.margin', 'Margin') }}",
+              "kind": "line",
+              "axis": "right",
+              "tone": "success"
+            }
+          ],
+          "caption": "{{ t('showcase_dashboard.sales_and_purchase_invoices_stac', 'Sales and purchase invoices stacked by month and margin percentage on the right axis, 2026') }}"
+        },
+        {
+          "id": "line-chart",
+          "type": "chart",
+          "kind": "line",
+          "source": "sales",
+          "categoryField": "month",
+          "categoryFormat": "month",
+          "series": [
+            {
+              "field": "sales",
+              "label": "{{ t('showcase_dashboard.sales_invoices', 'Sales invoices') }}"
+            }
+          ],
+          "format": "currency",
+          "height": 220,
+          "caption": "{{ t('showcase_dashboard.sales_invoices_trend_2026', 'Sales invoices trend, 2026') }}"
+        },
+        {
+          "id": "pie-chart",
+          "type": "chart",
+          "kind": "pie",
+          "source": "byStatus",
+          "categoryField": "status",
+          "categoryKey": "values.status",
+          "series": [
+            {
+              "field": "number",
+              "label": "{{ t('showcase_dashboard.number_of_invoices', 'Number of invoices') }}"
+            }
+          ],
+          "format": "number",
+          "decimals": 0,
+          "height": 240,
+          "caption": "{{ t('showcase_dashboard.invoices_by_status', 'Invoices by status') }}"
+        }
+      ]
+    }
+  ]
+}

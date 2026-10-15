@@ -129,7 +129,7 @@ export class PreviewApp {
 
   constructor() {
     void loadMessages(this.i18n, LANGUAGES, (l) => `examples/i18n/${l}.json`);
-    void fetch('examples/themes/chiaro.json')
+    void fetch('examples/themes/light.json')
       .then((r) => (r.ok ? r.json() : null))
       .then((doc: unknown) => {
         const result = doc ? validateTheme(doc) : null;

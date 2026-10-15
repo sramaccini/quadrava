@@ -3,7 +3,7 @@ import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { I18n } from 'core';
 import { NavigationService } from '../navigation.service';
 
-/** Pagina iniziale: porta alla destinazione predefinita dell'utente, oppure spiega che non ha funzioni disponibili. */
+/** Home page: takes the user to their default destination, or explains that they have no functions available. */
 @Component({
   selector: 'lc-home-page',
   imports: [NzAlertModule],
@@ -35,7 +35,7 @@ export class HomePage {
     effect(() => {
       const runtime = this.navigation.runtime();
       if (!runtime) return;
-      // Legge le aree nell'effect: se cambiano i permessi riprova.
+      // Reads the areas in the effect: if the permissions change it tries again.
       runtime.areas();
       untracked(() => this.empty.set(!this.navigation.openDefault()));
     });

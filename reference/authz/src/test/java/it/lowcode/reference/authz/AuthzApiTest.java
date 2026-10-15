@@ -71,7 +71,7 @@ class AuthzApiTest {
         String tooMany = "{\"checks\":[" + String.join(",", java.util.Collections.nCopies(AuthzController.MAX_CHECKS + 1, "{\"permission\":\"a.b.c\"}")) + "]}";
         mvc.perform(post("/authz/check").with(operator()).contentType(MediaType.APPLICATION_JSON).content(tooMany))
                 .andExpect(status().isBadRequest());
-        mvc.perform(post("/authz/check").with(operator()).contentType(MediaType.APPLICATION_JSON).content("{\"checks\":[{\"permission\":\"fatture.fattura.leggi\"},{\"permission\":\"x.y.z\"}]}"))
+        mvc.perform(post("/authz/check").with(operator()).contentType(MediaType.APPLICATION_JSON).content("{\"checks\":[{\"permission\":\"invoices.invoice.read\"},{\"permission\":\"x.y.z\"}]}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.results[0].allowed").value(true))
                 .andExpect(jsonPath("$.results[1].allowed").value(false));
