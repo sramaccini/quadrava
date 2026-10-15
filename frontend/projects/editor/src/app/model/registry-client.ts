@@ -2,7 +2,7 @@ import { Injectable, InjectionToken } from '@angular/core';
 import type { Json } from './doc-ops';
 
 /**
- * Client del registro (contracts/registry.yaml 0.4): ogni schermata, la navigazione e ogni tema sono documenti
+ * Client del registro (contracts/registry.yaml 0.5): ogni schermata, la navigazione e ogni tema sono documenti
  * separati, con versioni immutabili e pubblicazioni per ambiente. Le chiamate sono relative all'origine dell'editor,
  * che in produzione è servito dal BFF (sessione nel cookie, niente token nel browser).
  *
@@ -44,15 +44,15 @@ export const REGISTRY_SETTINGS_KEY = 'lc.editor.registry';
 export function readRegistrySettings(): RegistrySettings {
   try {
     const parsed = JSON.parse(localStorage.getItem(REGISTRY_SETTINGS_KEY) ?? '{}') as Partial<RegistrySettings>;
-    return { appId: typeof parsed.appId === 'string' ? parsed.appId : '', env: typeof parsed.env === 'string' ? parsed.env : 'sviluppo' };
+    return { appId: typeof parsed.appId === 'string' ? parsed.appId : '', env: typeof parsed.env === 'string' ? parsed.env : 'development' };
   } catch {
-    return { appId: '', env: 'sviluppo' };
+    return { appId: '', env: 'development' };
   }
 }
 
 /** Stato di revisione di una versione. */
-export type ReviewState = 'bozza' | 'in-revisione' | 'approvata' | 'respinta';
-export type ReviewAction = 'richiedi' | 'approva' | 'respingi';
+export type ReviewState = 'draft' | 'in-review' | 'approved' | 'rejected';
+export type ReviewAction = 'request' | 'approve' | 'reject';
 
 export interface DocumentVersion {
   hash: string;

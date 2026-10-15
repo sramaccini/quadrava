@@ -60,7 +60,7 @@ await check('capacità senza app: 400 in formato Problem', async () => {
 await check('verifica a lotti: un esito per richiesta, nello stesso ordine, coerente con le capacità', async () => {
   const granted = capabilities?.permissions?.[0];
   expect(granted, 'l’utente non ha permessi: usare un utente con almeno un permesso');
-  const denied = 'conformita.inesistente.prova';
+  const denied = 'conformance.missing.test';
   const checks = [{ permission: denied }, { permission: granted, resource: { type: 'ordine', id: '7' } }, { permission: granted }];
   const r = await call('POST', '/authz/check', { body: { checks } });
   expect(r.status === 200, `atteso 200, ricevuto ${r.status}`);
@@ -89,7 +89,7 @@ await check('verifica senza checks: 400', async () => {
 });
 
 await check('più di 200 verifiche in un lotto: 400', async () => {
-  const checks = Array.from({ length: 201 }, () => ({ permission: 'conformita.prova.leggi' }));
+  const checks = Array.from({ length: 201 }, () => ({ permission: 'conformance.test.read' }));
   const r = await call('POST', '/authz/check', { body: { checks } });
   expect(r.status === 400, `atteso 400, ricevuto ${r.status}`);
 });

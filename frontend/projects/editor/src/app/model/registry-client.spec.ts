@@ -25,11 +25,11 @@ describe('client del registro', () => {
     reply = () => ({ status: 201, body: { hash: 'abc', createdAt: '2026-10-13T08:00:00Z', author: 'mario' } });
     await client.save('ordini', 'navigation', 'ordini', { schemaVersion: '1.0', navigation: 'ordini' });
     reply = () => ({ status: 204 });
-    await client.publish('ordini', 'theme', 'chiaro', 'pre produzione', 'abc');
+    await client.publish('ordini', 'theme', 'chiaro', 'pre production', 'abc');
     expect(calls).toEqual([
       { url: '/registry/apps/gestione%20ordini/documents/screen/ordini-elenco/versions', method: 'GET', body: undefined },
       { url: '/registry/apps/ordini/documents/navigation/ordini/versions', method: 'POST', body: '{"schemaVersion":"1.0","navigation":"ordini"}' },
-      { url: '/registry/apps/ordini/documents/theme/chiaro/published?env=pre%20produzione', method: 'PUT', body: '{"hash":"abc"}' },
+      { url: '/registry/apps/ordini/documents/theme/chiaro/published?env=pre%20production', method: 'PUT', body: '{"hash":"abc"}' },
     ]);
   });
 
@@ -50,14 +50,14 @@ describe('client del registro', () => {
       const { status, body } = reply(url);
       return { ok: status < 400, status, json: async () => body };
     });
-    reply = () => ({ status: 201, body: { hash: 'def', createdAt: '2026-10-13T08:00:00Z', author: 'mario', state: 'bozza' } });
+    reply = () => ({ status: 201, body: { hash: 'def', createdAt: '2026-10-13T08:00:00Z', author: 'mario', state: 'draft' } });
     await client.save('ordini', 'screen', 'x', { schemaVersion: '1.0', screen: 'x' }, 'abc');
     expect(seen.at(-1)?.['If-Match']).toBe('"abc"');
     await client.save('ordini', 'screen', 'x', { schemaVersion: '1.0', screen: 'x' });
     expect(seen.at(-1)?.['If-Match']).toBeUndefined();
-    reply = () => ({ status: 200, body: { hash: 'def', createdAt: '2026-10-13T08:00:00Z', author: 'mario', state: 'in-revisione' } });
-    await client.review('ordini', 'screen', 'x', 'def', 'respingi', 'Manca il titolo');
-    expect(calls.at(-1)).toEqual({ url: '/registry/apps/ordini/documents/screen/x/versions/def/review', method: 'POST', body: '{"action":"respingi","note":"Manca il titolo"}' });
+    reply = () => ({ status: 200, body: { hash: 'def', createdAt: '2026-10-13T08:00:00Z', author: 'mario', state: 'in-review' } });
+    await client.review('ordini', 'screen', 'x', 'def', 'reject', 'Manca il titolo');
+    expect(calls.at(-1)).toEqual({ url: '/registry/apps/ordini/documents/screen/x/versions/def/review', method: 'POST', body: '{"action":"reject","note":"Manca il titolo"}' });
     reply = () => ({ status: 400, body: { title: 'Il documento non rispetta lo schema', errors: [{ path: '/components/0', message: 'tipo sconosciuto' }, { path: 1 }, 'x'] } });
     const invalid = (await client.save('o', 'screen', 'x', {}).catch((e: unknown) => e)) as RegistryError;
     expect(invalid.issues).toEqual([{ path: '/components/0', message: 'tipo sconosciuto' }]);
@@ -67,16 +67,16 @@ describe('client del registro', () => {
   });
 
   it('0.4: riferimenti di una versione (con e senza ambiente) e schermate mancanti nel rifiuto della pubblicazione', async () => {
-    reply = () => ({ status: 200, body: { env: 'produzione', references: [], missing: [] } });
-    await client.references('ordini', 'navigation', 'menu', 'abc', 'produzione');
+    reply = () => ({ status: 200, body: { env: 'production', references: [], missing: [] } });
+    await client.references('ordini', 'navigation', 'menu', 'abc', 'production');
     await client.references('ordini', 'screen', 'x', 'abc');
     expect(calls.map((c) => c.url)).toEqual([
-      '/registry/apps/ordini/documents/navigation/menu/versions/abc/references?env=produzione',
+      '/registry/apps/ordini/documents/navigation/menu/versions/abc/references?env=production',
       '/registry/apps/ordini/documents/screen/x/versions/abc/references',
     ]);
     const missingReferences = [{ screen: 'ordini-elenco', path: '/useCases/0/items/0/screen' }, { screen: 3 }, 'x'];
     reply = () => ({ status: 409, body: { title: 'La navigazione cita schermate non pubblicate', missingReferences } });
-    const rejected = (await client.publish('ordini', 'navigation', 'menu', 'produzione', 'abc').catch((e: unknown) => e)) as RegistryError;
+    const rejected = (await client.publish('ordini', 'navigation', 'menu', 'production', 'abc').catch((e: unknown) => e)) as RegistryError;
     expect([rejected.status, rejected.missingReferences]).toEqual([409, [{ screen: 'ordini-elenco', path: '/useCases/0/items/0/screen' }]]);
   });
 

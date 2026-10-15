@@ -10,7 +10,7 @@ import { NavigationService } from './navigation.service';
 import { BffShellSession, ShellSession } from './shell-session';
 import { DEFAULT_RUNTIME_CONFIG, loadRuntimeConfig, type RuntimeConfig } from './runtime-config';
 
-const registry: RuntimeConfig = { definitions: { source: 'registry', app: 'demo', env: 'sviluppo', navigation: 'fatturazione', themes: ['chiaro', 'scuro'] } };
+const registry: RuntimeConfig = { definitions: { source: 'registry', app: 'demo', env: 'development', navigation: 'fatturazione', themes: ['chiaro', 'scuro'] } };
 
 describe('configurazione del runtime: da dove vengono le definizioni', () => {
   afterEach(() => vi.unstubAllGlobals());
@@ -50,7 +50,7 @@ describe('configurazione del runtime: da dove vengono le definizioni', () => {
     expect(source.themes()).toEqual(['chiaro', 'scuro']);
     const http = TestBed.inject(HttpTestingController);
     const navigation = TestBed.inject(NavigationService);
-    http.expectOne('/registry/apps/demo/documents/navigation/fatturazione/published?env=sviluppo').flush(navigationDoc);
+    http.expectOne('/registry/apps/demo/documents/navigation/fatturazione/published?env=development').flush(navigationDoc);
     await new Promise((r) => setTimeout(r, 0));
     expect(navigation.problems()).toEqual([]);
     expect(navigation.runtime()?.definition.navigation).toBe('fatturazione');

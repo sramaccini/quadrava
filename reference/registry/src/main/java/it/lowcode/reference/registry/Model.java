@@ -53,10 +53,10 @@ public final class Model {
 
     /** Stato di revisione di una versione. */
     public enum State {
-        BOZZA("bozza"),
-        IN_REVISIONE("in-revisione"),
-        APPROVATA("approvata"),
-        RESPINTA("respinta");
+        DRAFT("draft"),
+        IN_REVIEW("in-review"),
+        APPROVED("approved"),
+        REJECTED("rejected");
 
         private final String value;
 
@@ -84,7 +84,7 @@ public final class Model {
         }
 
         DocumentVersion withReview(State next, String reviewer, String note) {
-            boolean decision = next == State.APPROVATA || next == State.RESPINTA;
+            boolean decision = next == State.APPROVED || next == State.REJECTED;
             return new DocumentVersion(hash, createdAt, author, next.value(),
                     decision ? reviewer : null, decision ? Instant.now() : null, decision ? note : null);
         }

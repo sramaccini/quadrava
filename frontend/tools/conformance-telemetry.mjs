@@ -4,7 +4,7 @@
 //   node tools/conformance-telemetry.mjs --telemetry http://localhost:8083
 //        [--token <JWT> | --user <utente> --password <password>] [--issuer …] [--max-bytes 1000000]
 //
-// Manda solo dati di prova (servizio «lowcode-conformita»). Esce con codice 1 se una prova fallisce.
+// Manda solo dati di prova (servizio «lowcode-conformance»). Esce con codice 1 se una prova fallisce.
 import { call as httpCall, expect, isProblem, parseArgs, suite, tokenFromArgs } from './conformance-lib.mjs';
 
 const args = parseArgs();
@@ -14,18 +14,18 @@ const token = await tokenFromArgs(args);
 const call = (method, path, options = {}) => httpCall(base, method, path, { token, ...options });
 const { check, report } = suite();
 
-const resource = { attributes: [{ key: 'service.name', value: { stringValue: 'lowcode-conformita' } }] };
+const resource = { attributes: [{ key: 'service.name', value: { stringValue: 'lowcode-conformance' } }] };
 const now = String(BigInt(Date.now()) * 1_000_000n);
 const traces = {
   resourceSpans: [
     {
       resource,
-      scopeSpans: [{ scope: { name: 'conformita' }, spans: [{ traceId: '4bf92f3577b34da6a3ce929d0e0e4736', spanId: '00f067aa0ba902b7', name: 'prova', kind: 1, startTimeUnixNano: now, endTimeUnixNano: now }] }],
+      scopeSpans: [{ scope: { name: 'conformance' }, spans: [{ traceId: '4bf92f3577b34da6a3ce929d0e0e4736', spanId: '00f067aa0ba902b7', name: 'prova', kind: 1, startTimeUnixNano: now, endTimeUnixNano: now }] }],
     },
   ],
 };
 const logs = {
-  resourceLogs: [{ resource, scopeLogs: [{ scope: { name: 'conformita' }, logRecords: [{ timeUnixNano: now, severityNumber: 9, severityText: 'INFO', body: { stringValue: 'prova di conformità' } }] }] }],
+  resourceLogs: [{ resource, scopeLogs: [{ scope: { name: 'conformance' }, logRecords: [{ timeUnixNano: now, severityNumber: 9, severityText: 'INFO', body: { stringValue: 'prova di conformità' } }] }] }],
 };
 
 await check('senza token: 401', async () => {
@@ -57,7 +57,7 @@ await check('JSON che non è un payload OTLP del segnale: 400', async () => {
 });
 
 await check(`corpo oltre il limite (${maxBytes} byte): 413 in formato Problem`, async () => {
-  const big = { resourceLogs: [{ resource, scopeLogs: [{ scope: { name: 'conformita' }, logRecords: [{ timeUnixNano: now, body: { stringValue: 'x'.repeat(maxBytes + 1) } }] }] }] };
+  const big = { resourceLogs: [{ resource, scopeLogs: [{ scope: { name: 'conformance' }, logRecords: [{ timeUnixNano: now, body: { stringValue: 'x'.repeat(maxBytes + 1) } }] }] }] };
   const r = await call('POST', '/telemetry/v1/logs', { body: big });
   expect(r.status === 413, `atteso 413, ricevuto ${r.status}`);
   expect(isProblem(r), 'la risposta non è un Problem');

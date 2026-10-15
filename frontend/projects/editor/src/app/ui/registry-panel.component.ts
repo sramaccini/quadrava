@@ -21,7 +21,7 @@ import { RegistrySession } from '../model/registry-session';
 import { SavedDocuments } from '../model/saved-documents';
 
 /** Colore dell'etichetta di ogni stato di revisione. */
-const STATE_COLORS: Record<string, string> = { bozza: 'default', 'in-revisione': 'orange', approvata: 'cyan', respinta: 'red' };
+const STATE_COLORS: Record<string, string> = { draft: 'default', 'in-review': 'orange', approved: 'cyan', rejected: 'red' };
 
 /**
  * Pannello del registro per il documento aperto (schermata, navigazione o tema): salva una versione (solo se il
@@ -146,12 +146,12 @@ const STATE_COLORS: Record<string, string> = { bozza: 'default', 'in-revisione':
               <button nz-button nzSize="small" type="button" [disabled]="busy() || !env()" (click)="publish(v)">{{ i18n.t('ed.registry.publish', { env: env() }) }}</button>
             </div>
             <div class="item-actions">
-              @if (v.state === 'bozza' || v.state === 'respinta') {
-                <button nz-button nzSize="small" type="button" [disabled]="busy()" (click)="review(v, 'richiedi')">{{ i18n.t('ed.registry.requestReview') }}</button>
+              @if (v.state === 'draft' || v.state === 'rejected') {
+                <button nz-button nzSize="small" type="button" [disabled]="busy()" (click)="review(v, 'request')">{{ i18n.t('ed.registry.requestReview') }}</button>
               }
-              @if (v.state === 'in-revisione') {
-                <button nz-button nzSize="small" type="button" [disabled]="busy()" (click)="review(v, 'approva')">{{ i18n.t('ed.registry.approve') }}</button>
-                <button nz-button nzSize="small" nzDanger type="button" [disabled]="busy()" (click)="review(v, 'respingi')">{{ i18n.t('ed.registry.reject') }}</button>
+              @if (v.state === 'in-review') {
+                <button nz-button nzSize="small" type="button" [disabled]="busy()" (click)="review(v, 'approve')">{{ i18n.t('ed.registry.approve') }}</button>
+                <button nz-button nzSize="small" nzDanger type="button" [disabled]="busy()" (click)="review(v, 'reject')">{{ i18n.t('ed.registry.reject') }}</button>
               }
             </div>
           </li>

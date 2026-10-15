@@ -63,7 +63,7 @@
               "extractLicenses": false,
               "sourceMap": true
             },
-            "registro": {
+            "registry": {
               "assets": [
                 {
                   "glob": "**/*",
@@ -74,7 +74,7 @@
                 },
                 {
                   "glob": "runtime-config.json",
-                  "input": "projects/runtime/config/registro",
+                  "input": "projects/runtime/config/registry",
                   "output": "/"
                 }
               ]
@@ -107,8 +107,8 @@
             "development": {
               "buildTarget": "runtime:build:development"
             },
-            "registro": {
-              "buildTarget": "runtime:build:development,registro",
+            "registry": {
+              "buildTarget": "runtime:build:development,registry",
               "proxyConfig": "proxy.registry.json"
             },
             "bff": {
@@ -195,7 +195,7 @@
             "development": {
               "buildTarget": "editor:build:development"
             },
-            "registro": {
+            "registry": {
               "buildTarget": "editor:build:development",
               "proxyConfig": "proxy.registry.json"
             },

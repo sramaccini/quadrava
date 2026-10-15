@@ -13,7 +13,7 @@ describe('definizioni dal registro', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        provideRegistryDefinitions({ app: 'gestione ordini', env: 'produzione', navigation: 'ordini', themes: ['chiaro', 'scuro'] }),
+        provideRegistryDefinitions({ app: 'gestione ordini', env: 'production', navigation: 'ordini', themes: ['chiaro', 'scuro'] }),
       ],
     });
     http = TestBed.inject(HttpTestingController);
@@ -24,10 +24,10 @@ describe('definizioni dal registro', () => {
 
   it('carica la versione pubblicata di ogni documento, separatamente', async () => {
     const screen = source.screen('ordini-elenco');
-    http.expectOne('/registry/apps/gestione%20ordini/documents/screen/ordini-elenco/published?env=produzione').flush({ screen: 'ordini-elenco' });
+    http.expectOne('/registry/apps/gestione%20ordini/documents/screen/ordini-elenco/published?env=production').flush({ screen: 'ordini-elenco' });
     expect(await screen).toEqual({ screen: 'ordini-elenco' });
     const navigation = source.navigation();
-    http.expectOne('/registry/apps/gestione%20ordini/documents/navigation/ordini/published?env=produzione').flush({ navigation: 'ordini' });
+    http.expectOne('/registry/apps/gestione%20ordini/documents/navigation/ordini/published?env=production').flush({ navigation: 'ordini' });
     expect(await navigation).toEqual({ navigation: 'ordini' });
     const theme = source.theme('scuro');
     http.expectOne((r) => r.url === '/registry/apps/gestione%20ordini/documents/theme/scuro/published').flush({ theme: 'scuro' });
@@ -55,7 +55,7 @@ describe('definizioni dal registro', () => {
   it('il catalogo di una lingua è il documento messages pubblicato: se ne restituiscono i testi', async () => {
     const p = source.messages('en');
     const req = http.expectOne((r) => r.url === '/registry/apps/gestione%20ordini/documents/messages/en/published');
-    expect(req.request.params.get('env')).toBe('produzione');
+    expect(req.request.params.get('env')).toBe('production');
     req.flush({ schemaVersion: '1.0', messages: 'en', texts: { 'app.title': 'Hello' } }, { headers: { ETag: '"m1"' } });
     expect(await p).toEqual({ 'app.title': 'Hello' });
   });

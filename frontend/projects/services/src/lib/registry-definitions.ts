@@ -7,7 +7,7 @@ import { firstValueFrom } from 'rxjs';
 export interface RegistryDefinitionsConfig {
   /** Applicazione nel registro. */
   app: string;
-  /** Ambiente di cui caricare le versioni pubblicate (per esempio `produzione`). */
+  /** Ambiente di cui caricare le versioni pubblicate (per esempio `production`). */
   env: string;
   /** Identificativo del documento di navigazione. */
   navigation: string;
@@ -27,7 +27,7 @@ export class DefinitionLoadError extends Error {
 }
 
 /**
- * Definizioni dal registro (contracts/registry.yaml 0.3): ogni schermata, la navigazione, ogni tema e il catalogo di ogni lingua sono documenti
+ * Definizioni dal registro (contracts/registry.yaml 0.5): ogni schermata, la navigazione, ogni tema e il catalogo di ogni lingua sono documenti
  * separati, e il runtime carica la versione pubblicata nell'ambiente configurato. Le risposte si ricordano con il
  * loro ETag: ricaricando lo stesso documento il registro risponde 304 e si riusa la copia già scaricata.
  */

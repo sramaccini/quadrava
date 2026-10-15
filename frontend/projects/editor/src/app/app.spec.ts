@@ -809,7 +809,7 @@ describe('editor delle schermate', () => {
     expect((el.querySelector('ed-preview iframe') as HTMLIFrameElement).style.width).toBe('768px');
   });
   it('testi: le traduzioni si salvano nel registro unite al catalogo esistente e si pubblicano', async () => {
-    localStorage.setItem('lc.editor.registry', JSON.stringify({ appId: 'demo', env: 'sviluppo' }));
+    localStorage.setItem('lc.editor.registry', JSON.stringify({ appId: 'demo', env: 'development' }));
     const calls: { url: string; method: string; body?: string; ifMatch?: string }[] = [];
     vi.stubGlobal('fetch', async (url: string, init: RequestInit = {}) => {
       const method = init.method ?? 'GET';
@@ -838,8 +838,8 @@ describe('editor delle schermate', () => {
     // Le chiavi già nel catalogo restano; quelle modificate si sostituiscono.
     expect(JSON.parse(saves[0].body!)).toEqual({ schemaVersion: '1.0', messages: 'it', texts: { 'app.title': 'Titolo', 'x.y': 'nuovo' } });
     expect(calls.filter((c) => c.method === 'PUT').map((c) => c.url)).toEqual([
-      '/registry/apps/demo/documents/messages/it/published?env=sviluppo',
-      '/registry/apps/demo/documents/messages/en/published?env=sviluppo',
+      '/registry/apps/demo/documents/messages/it/published?env=development',
+      '/registry/apps/demo/documents/messages/en/published?env=development',
     ]);
     localStorage.removeItem('lc.editor.registry');
   });
@@ -934,7 +934,7 @@ describe('editor delle schermate', () => {
       const json = (body: unknown, status = 200) => ({ ok: true, status, json: async () => body });
       if (url.endsWith('/versions') && method === 'POST') return json(versions[0], 201);
       if (url.endsWith('/versions')) return json(versions);
-      if (url.endsWith('/documents')) return json([{ kind: 'screen', id: 'nuova-schermata', publishedEnvironments: { sviluppo: 'a1b2c3d4e5f6' } }]);
+      if (url.endsWith('/documents')) return json([{ kind: 'screen', id: 'nuova-schermata', publishedEnvironments: { development: 'a1b2c3d4e5f6' } }]);
       if (url.includes('/published')) return { ok: true, status: 204, json: async () => undefined };
       const body = FILES[url];
       return body ? json(body) : { ok: false, status: 404, json: async () => ({}) };
@@ -952,13 +952,13 @@ describe('editor delle schermate', () => {
     // Le letture (verifica del registro, schermate dell'applicazione) partono prima; qui conta il salvataggio.
     expect(calls.filter((c) => c.method === 'POST').slice(0, 1)).toEqual([{ url: '/registry/apps/ordini/documents/screen/nuova-schermata/versions', method: 'POST' }]);
     expect(panel.querySelector('ol li')?.textContent).toContain('a1b2c3d4e5');
-    expect(panel.querySelector('ol li nz-tag')?.textContent?.trim()).toBe('sviluppo');
+    expect(panel.querySelector('ol li nz-tag')?.textContent?.trim()).toBe('development');
     // Pubblicare chiede conferma.
-    button('Pubblica in sviluppo').click();
+    button('Pubblica in development').click();
     await until(() => !!document.querySelector('.ant-modal-confirm, .ant-modal'), 'conferma');
     ([...document.querySelectorAll<HTMLButtonElement>('.ant-modal button')].find((b) => b.textContent?.includes('Conferma')) as HTMLButtonElement).click();
     await until(() => calls.some((c) => c.method === 'PUT'), 'pubblicazione');
-    expect(calls.find((c) => c.method === 'PUT')?.url).toBe('/registry/apps/ordini/documents/screen/nuova-schermata/published?env=sviluppo');
+    expect(calls.find((c) => c.method === 'PUT')?.url).toBe('/registry/apps/ordini/documents/screen/nuova-schermata/published?env=development');
     // Con errori il salvataggio è bloccato.
     store.setValue(['screen'], 'Non Valido');
     await settle();
@@ -968,17 +968,17 @@ describe('editor delle schermate', () => {
 
   it('registro: revisione, confronto con il documento aperto, salvataggio in conflitto ed errori di validazione', async () => {
     const calls: { url: string; method: string; body?: string; ifMatch?: string }[] = [];
-    let state = 'bozza';
+    let state = 'draft';
     let conflict = true;
     vi.stubGlobal('fetch', async (url: string, init: RequestInit = {}) => {
       const method = init.method ?? 'GET';
       const headers = (init.headers ?? {}) as Record<string, string>;
       if (url.startsWith('/registry')) calls.push({ url, method, body: init.body as string | undefined, ifMatch: headers['If-Match'] });
       const json = (body: unknown, status = 200) => ({ ok: status < 400, status, json: async () => body });
-      const version = () => ({ hash: 'a1b2c3d4e5f6', createdAt: '2026-10-13T08:00:00Z', author: 'mario', state, ...(state === 'respinta' ? { reviewedBy: 'luisa', reviewedAt: '2026-10-13T09:00:00Z', reviewNote: 'Titolo da rivedere' } : {}) });
+      const version = () => ({ hash: 'a1b2c3d4e5f6', createdAt: '2026-10-13T08:00:00Z', author: 'mario', state, ...(state === 'rejected' ? { reviewedBy: 'luisa', reviewedAt: '2026-10-13T09:00:00Z', reviewNote: 'Titolo da rivedere' } : {}) });
       if (url.endsWith('/review')) {
         const action = JSON.parse(init.body as string).action;
-        state = action === 'richiedi' ? 'in-revisione' : action === 'approva' ? 'approvata' : 'respinta';
+        state = action === 'request' ? 'in-review' : action === 'approve' ? 'approved' : 'rejected';
         return json(version());
       }
       if (url.includes('/versions/a1b2c3d4e5f6')) return json({ schemaVersion: '1.0', screen: 'nuova-schermata', title: 'Vecchio titolo', components: [] });
@@ -1015,7 +1015,7 @@ describe('editor delle schermate', () => {
     await settle();
     button('Respingi').click();
     await until(() => panel.textContent!.includes('respinta') && panel.textContent!.includes('Decisa da luisa'), 'respinta con nota');
-    expect(JSON.parse(calls.filter((c) => c.url.endsWith('/review')).at(-1)!.body!)).toEqual({ action: 'respingi', note: 'Titolo da rivedere' });
+    expect(JSON.parse(calls.filter((c) => c.url.endsWith('/review')).at(-1)!.body!)).toEqual({ action: 'reject', note: 'Titolo da rivedere' });
 
     // Confronto: la versione salvata contro il documento aperto.
     button('Confronta').click();
@@ -1052,9 +1052,9 @@ describe('editor delle schermate', () => {
       if (url.startsWith('/registry')) calls.push({ url, method });
       const json = (body: unknown, status = 200) => ({ ok: status < 400, status, json: async () => body });
       const missing = [{ screen: 'ordini-elenco', path: '/actions/indietro/0/navigate' }];
-      if (url.endsWith('/references?env=produzione')) return json({ env: 'produzione', references: missing, missing });
+      if (url.endsWith('/references?env=production')) return json({ env: 'production', references: missing, missing });
       if (url.includes('/published')) return json({ title: 'Schermate non pubblicate', missingReferences: missing }, 409);
-      if (url.endsWith('/versions')) return json([{ hash: 'a1b2c3d4e5f6', createdAt: '2026-10-13T08:00:00Z', author: 'mario', state: 'approvata' }]);
+      if (url.endsWith('/versions')) return json([{ hash: 'a1b2c3d4e5f6', createdAt: '2026-10-13T08:00:00Z', author: 'mario', state: 'approved' }]);
       if (url.endsWith('/documents')) return json([{ kind: 'screen', id: 'nuova-schermata' }, { kind: 'screen', id: 'solo-nel-registro' }]);
       if (url === '/registry/apps') return json([]);
       const body = FILES[url];
@@ -1064,14 +1064,14 @@ describe('editor delle schermate', () => {
     await until(() => !!document.querySelector('ed-registry-panel'), 'pannello del registro');
     const panel = document.querySelector('ed-registry-panel') as HTMLElement;
     type(panel.querySelector('#registry-app') as HTMLInputElement, 'ordini');
-    type(panel.querySelector('#registry-env') as HTMLInputElement, 'produzione');
+    type(panel.querySelector('#registry-env') as HTMLInputElement, 'production');
     await settle();
     // Le schermate dell'applicazione nel registro si aggiungono agli esempi tra quelle note.
     await until(() => store.knownScreens().includes('solo-nel-registro'), 'schermate del registro');
     const button = (label: string): HTMLButtonElement => [...panel.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.trim().startsWith(label))!;
     button('Storico').click();
     await until(() => !!panel.querySelector('ol li .hash'), 'storico');
-    button('Pubblica in produzione').click();
+    button('Pubblica in production').click();
     const last = () => [...document.querySelectorAll<HTMLElement>('.ant-modal')].at(-1);
     await until(() => !!last()?.textContent?.includes('Pubblicare comunque'), 'conferma con le schermate mancanti');
     expect(last()?.textContent).toContain('ordini-elenco');
@@ -1079,7 +1079,7 @@ describe('editor delle schermate', () => {
     await until(() => !!panel.querySelector('.issues li'), 'schermate mancanti nel pannello');
     expect(panel.querySelector('.issues li')?.textContent).toContain('/actions/indietro/0/navigate');
     expect(panel.querySelector('.issues li')?.textContent).toContain('ordini-elenco');
-    expect(calls.filter((c) => c.url.includes('/references')).map((c) => c.url)).toEqual(['/registry/apps/ordini/documents/screen/nuova-schermata/versions/a1b2c3d4e5f6/references?env=produzione']);
+    expect(calls.filter((c) => c.url.includes('/references')).map((c) => c.url)).toEqual(['/registry/apps/ordini/documents/screen/nuova-schermata/versions/a1b2c3d4e5f6/references?env=production']);
   });
 
   it('registro senza sessione: il pannello propone l’accesso attraverso il BFF e poi si torna all’editor', async () => {
@@ -1163,7 +1163,7 @@ describe('editor delle schermate', () => {
       if (url === '/registry/apps') return json([{ id: 'ordini', name: 'Ordini' }]);
       if (url.endsWith('/documents'))
         return json([
-          { kind: 'screen', id: 'elenco-ordini', latest: { hash: 'cccccccccccc', createdAt: '', author: 'mario', state: 'bozza' }, publishedEnvironments: { sviluppo: 'aaaaaaaaaaaa' } },
+          { kind: 'screen', id: 'elenco-ordini', latest: { hash: 'cccccccccccc', createdAt: '', author: 'mario', state: 'draft' }, publishedEnvironments: { development: 'aaaaaaaaaaaa' } },
           { kind: 'theme', id: 'chiaro' },
         ]);
       if (url.includes('/versions/aaaaaaaaaaaa')) return json(content);
@@ -1182,8 +1182,8 @@ describe('editor delle schermate', () => {
     (dialog.querySelector('input[type="radio"]') as HTMLInputElement).dispatchEvent(new Event('change'));
     await settle();
     const select = dialog.querySelector('#registry-open-version') as HTMLSelectElement;
-    expect([...select.options].map((o) => o.textContent?.trim())).toEqual(['Ultima versione (cccccccccc)', 'Pubblicata in sviluppo (aaaaaaaaaa)']);
-    select.value = 'env:sviluppo';
+    expect([...select.options].map((o) => o.textContent?.trim())).toEqual(['Ultima versione (cccccccccc)', 'Pubblicata in development (aaaaaaaaaa)']);
+    select.value = 'env:development';
     select.dispatchEvent(new Event('change'));
     await settle();
     ([...dialog.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.trim() === 'Apri') as HTMLButtonElement).click();

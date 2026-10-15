@@ -33,7 +33,7 @@ const definition: NavigationDefinition = {
       requires: 'fatture.fattura.leggi',
       items: [
         { id: 'elenco', label: 'Elenco', screen: 'fatture-elenco' },
-        { id: 'solo-admin', label: 'Solo admin', screen: 'x', visibleIf: "{{'amministratore' in user.roles}}" },
+        { id: 'solo-admin', label: 'Solo admin', screen: 'x', visibleIf: "{{'administrator' in user.roles}}" },
         { id: 'rotta', label: 'Rotta', screen: 'y', visibleIf: '{{user.inesistente == 1}}' },
       ],
     },
@@ -78,12 +78,12 @@ describe('NavigationRuntime', () => {
   });
 
   it('visibleIf: vero mostra, errore nasconde e segnala', async () => {
-    const { nav, reports } = setup(['fatture.fattura.leggi'], ['amministratore']);
+    const { nav, reports } = setup(['fatture.fattura.leggi'], ['administrator']);
     const ids = nav.useCase('consultazione')?.items.map((i) => i.id);
     expect(ids).toEqual(['elenco', 'solo-admin']);
     await Promise.resolve();
     expect(reports.length).toBeGreaterThan(0);
-    expect(setup(['fatture.fattura.leggi'], ['operatore']).nav.useCase('consultazione')?.items.map((i) => i.id)).toEqual(['elenco']);
+    expect(setup(['fatture.fattura.leggi'], ['operator']).nav.useCase('consultazione')?.items.map((i) => i.id)).toEqual(['elenco']);
   });
 
   it('sceglie la destinazione iniziale: default se visibile, altrimenti il primo caso d’uso', () => {

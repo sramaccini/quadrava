@@ -64,13 +64,13 @@ describe('Vetrina dei componenti', () => {
     throw new Error(`timeout: ${label}\n${(fixture.nativeElement as HTMLElement).querySelector('main')?.innerHTML.slice(0, 1500)}`);
   }
 
-  async function open(path: string, user = 'operatore'): Promise<{ fixture: ComponentFixture<App>; el: HTMLElement }> {
+  async function open(path: string, user = 'operator'): Promise<{ fixture: ComponentFixture<App>; el: HTMLElement }> {
     const fixture = TestBed.createComponent(App);
     const el = fixture.nativeElement as HTMLElement;
     fixture.detectChanges();
     await TestBed.inject(Router).navigateByUrl('/');
     await until(fixture, () => !!el.querySelector('nz-header nz-select'), 'barra superiore');
-    if (user !== 'operatore') await pick(fixture, el.querySelector('nz-header nz-select') as HTMLElement, user);
+    if (user !== 'operator') await pick(fixture, el.querySelector('nz-header nz-select') as HTMLElement, user);
     await TestBed.inject(Router).navigateByUrl(path);
     await until(fixture, () => !!el.querySelector('main h2'), 'contenuto');
     return { fixture, el };
@@ -149,7 +149,7 @@ describe('Vetrina dei componenti', () => {
       const { el } = await open('/vetrina/vetrina-base');
       expect(button(el, 'Visibile solo con il permesso')).toBeUndefined();
       expect(button(el, 'Nascosto a chi può leggere')).toBeDefined();
-      const admin = await open('/vetrina/vetrina-base', 'amministratore');
+      const admin = await open('/vetrina/vetrina-base', 'administrator');
       expect(button(admin.el, 'Visibile solo con il permesso')).toBeDefined();
       expect(button(admin.el, 'Nascosto a chi può leggere')).toBeUndefined();
     });
@@ -190,7 +190,7 @@ describe('Vetrina dei componenti', () => {
       expect(field(operator.el, 'iban')).toBeNull();
       expect(button(operator.el, 'Salva')!.disabled).toBe(true);
       operator.fixture.destroy();
-      const admin = await open('/vetrina/vetrina-form', 'amministratore');
+      const admin = await open('/vetrina/vetrina-form', 'administrator');
       await until(admin.fixture, () => (field(admin.el, 'cliente') as HTMLInputElement | null)?.value === 'Rossi Srl', 'dati caricati');
       expect(field(admin.el, 'iban')).not.toBeNull();
       await until(admin.fixture, () => button(admin.el, 'Salva')!.disabled === false, 'salvataggio abilitato');
@@ -213,7 +213,7 @@ describe('Vetrina dei componenti', () => {
       await until(operator.fixture, () => rows(operator.el, 0) > 0, 'righe');
       expect(button(operator.el, 'Approva')).toBeUndefined();
       operator.fixture.destroy();
-      const manager = await open('/vetrina/vetrina-tabelle', 'responsabile');
+      const manager = await open('/vetrina/vetrina-tabelle', 'manager');
       await until(manager.fixture, () => rows(manager.el, 0) > 0, 'righe');
       const approve = [...manager.el.querySelectorAll('main button')].filter((b) => b.textContent?.trim() === 'Approva');
       expect(approve.length).toBeGreaterThan(0);
@@ -260,7 +260,7 @@ describe('Vetrina dei componenti', () => {
       await until(fixture, () => !(el.querySelector('main [role=tabpanel][aria-hidden=false]') === null), label);
     };
 
-    it('l\'operatore vede il dettaglio dell\'ordine, il messaggio di sola lettura e tre schede', async () => {
+    it('l\'operator vede il dettaglio dell\'ordine, il messaggio di sola lettura e tre schede', async () => {
       const { fixture, el } = await open('/vetrina/vetrina-layout');
       await until(fixture, () => main(el).includes('ORD-0001'), 'dettaglio');
       expect(tabs(el)).toEqual(["Dati dell'ordine", 'Fatture pagate', 'Azioni con conferma']);
@@ -270,12 +270,12 @@ describe('Vetrina dei componenti', () => {
       expect(main(el)).not.toContain('IBAN');
     });
 
-    it('il responsabile non vede più il messaggio; l\'amministratore ha anche IBAN e la scheda riservata', async () => {
-      const manager = await open('/vetrina/vetrina-layout', 'responsabile');
+    it('il responsabile non vede più il messaggio; l\'administrator ha anche IBAN e la scheda riservata', async () => {
+      const manager = await open('/vetrina/vetrina-layout', 'manager');
       await until(manager.fixture, () => main(manager.el).includes('ORD-0001'), 'dettaglio');
       expect(manager.el.querySelector('main lc-alert .ant-alert-error')).toBeNull();
       manager.fixture.destroy();
-      const admin = await open('/vetrina/vetrina-layout', 'amministratore');
+      const admin = await open('/vetrina/vetrina-layout', 'administrator');
       await until(admin.fixture, () => main(admin.el).includes('ORD-0001'), 'dettaglio');
       expect(tabs(admin.el)).toEqual(["Dati dell'ordine", 'Fatture pagate', 'Azioni con conferma', 'Dati riservati']);
       expect(main(admin.el)).toContain('IBAN');
@@ -297,7 +297,7 @@ describe('Vetrina dei componenti', () => {
       await openTab(fixture, el, 'Azioni con conferma');
       button(el, 'Elimina la bozza')!.click();
       await until(fixture, () => !!dialog(), 'finestra');
-      expect(dialog()?.textContent).toContain('bozza di operatore');
+      expect(dialog()?.textContent).toContain('bozza di operator');
       answer('cancel');
       await new Promise((r) => setTimeout(r, 300));
       expect(toast()).toBeNull();

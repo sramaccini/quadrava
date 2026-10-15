@@ -1,10 +1,10 @@
 // Backend di esempio della demo, per l'avvio con il BFF: espone come vere API REST (/api/...) lo stesso backend in
 // memoria che la demo usa nel browser (projects/runtime/src/demo/demo-backend.ts). Solo per lo sviluppo locale.
 //
-//   node tools/demo-api.mjs [--port 8084] [--issuer http://localhost:8180/realms/lowcode] [--senza-auth]
+//   node tools/demo-api.mjs [--port 8084] [--issuer http://localhost:8180/realms/lowcode] [--no-auth]
 //
 // Ogni richiesta deve portare un token di Keycloak valido (Authorization: Bearer, lo aggiunge il BFF): firma RS256
-// verificata con le chiavi pubblicate dal realm, emittente e scadenza. Con --senza-auth il controllo è spento (avviso
+// verificata con le chiavi pubblicate dal realm, emittente e scadenza. Con --no-auth il controllo è spento (avviso
 // nel log). Gli errori del backend tornano come Problem (RFC 9457) con il solo stato, mai con dettagli.
 import { readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
@@ -22,7 +22,7 @@ const args = Object.fromEntries(
 );
 const port = Number(args.port ?? 8084);
 const issuer = String(args.issuer ?? process.env.KEYCLOAK_ISSUER_URI ?? 'http://localhost:8180/realms/lowcode').replace(/\/+$/, '');
-const withoutAuth = args['senza-auth'] === true;
+const withoutAuth = args['no-auth'] === true;
 
 // Il backend TypeScript, impacchettato al volo.
 const here = dirname(fileURLToPath(import.meta.url));
@@ -142,6 +142,6 @@ createServer(async (req, res) => {
     }
   }
 }).listen(port, '127.0.0.1', () => {
-  if (withoutAuth) console.warn('[demo-api] AVVIATO SENZA AUTENTICAZIONE (--senza-auth): solo per lo sviluppo locale.');
+  if (withoutAuth) console.warn('[demo-api] AVVIATO SENZA AUTENTICAZIONE (--no-auth): solo per lo sviluppo locale.');
   console.log(`[demo-api] http://localhost:${port}/api — token verificati con ${withoutAuth ? '(nessuno)' : issuer}`);
 });

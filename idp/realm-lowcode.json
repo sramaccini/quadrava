@@ -8,16 +8,16 @@
   "roles": {
     "realm": [
       {
-        "name": "operatore",
-        "description": "Legge e modifica gli ordini"
+        "name": "operator",
+        "description": "Reads and edits orders"
       },
       {
-        "name": "responsabile",
-        "description": "Come operatore, e approva gli ordini"
+        "name": "manager",
+        "description": "Like operator, and approves orders"
       },
       {
-        "name": "amministratore",
-        "description": "Tutti i permessi dell'applicazione di esempio"
+        "name": "administrator",
+        "description": "Every permission of the sample application"
       }
     ]
   },
@@ -45,8 +45,8 @@
       }
     },
     {
-      "clientId": "lowcode-strumenti",
-      "name": "KinetiX strumenti di sviluppo (script locali, mai in produzione)",
+      "clientId": "lowcode-tools",
+      "name": "KinetiX development tools (local scripts, never in production)",
       "enabled": true,
       "protocol": "openid-connect",
       "publicClient": true,
@@ -57,57 +57,57 @@
   ],
   "users": [
     {
-      "username": "operatore",
+      "username": "operator",
       "enabled": true,
-      "email": "operatore@example.test",
+      "email": "operator@example.test",
       "emailVerified": true,
-      "firstName": "Utente",
-      "lastName": "Operatore",
+      "firstName": "Demo",
+      "lastName": "Operator",
       "credentials": [
         {
           "type": "password",
-          "value": "operatore",
+          "value": "operator",
           "temporary": false
         }
       ],
       "realmRoles": [
-        "operatore"
+        "operator"
       ]
     },
     {
-      "username": "responsabile",
+      "username": "manager",
       "enabled": true,
-      "email": "responsabile@example.test",
+      "email": "manager@example.test",
       "emailVerified": true,
-      "firstName": "Utente",
-      "lastName": "Responsabile",
+      "firstName": "Demo",
+      "lastName": "Manager",
       "credentials": [
         {
           "type": "password",
-          "value": "responsabile",
+          "value": "manager",
           "temporary": false
         }
       ],
       "realmRoles": [
-        "responsabile"
+        "manager"
       ]
     },
     {
-      "username": "amministratore",
+      "username": "administrator",
       "enabled": true,
-      "email": "amministratore@example.test",
+      "email": "administrator@example.test",
       "emailVerified": true,
-      "firstName": "Utente",
-      "lastName": "Amministratore",
+      "firstName": "Demo",
+      "lastName": "Administrator",
       "credentials": [
         {
           "type": "password",
-          "value": "amministratore",
+          "value": "administrator",
           "temporary": false
         }
       ],
       "realmRoles": [
-        "amministratore"
+        "administrator"
       ]
     }
   ]

@@ -30,7 +30,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Registry secondo contracts/registry.yaml (0.4): documenti separati per schermate, navigazione e temi, ognuno con le
+ * Registry secondo contracts/registry.yaml (0.5): documenti separati per schermate, navigazione e temi, ognuno con le
  * proprie versioni e pubblicazioni.
  *
  * <ul>
@@ -141,11 +141,11 @@ public class RegistryController {
             return problem(HttpStatus.NOT_FOUND, "Documento sconosciuto");
         }
         String action = request.action() == null ? "" : request.action();
-        if (!List.of("richiedi", "approva", "respingi").contains(action)) {
+        if (!List.of("request", "approve", "reject").contains(action)) {
             return problem(HttpStatus.BAD_REQUEST, "Azione di revisione sconosciuta");
         }
         Actor actor = Actor.of(principal);
-        if (!action.equals("richiedi")) {
+        if (!action.equals("request")) {
             Optional<DocumentVersion> version = store.version(key.get(), hash);
             if (version.isEmpty()) {
                 return problem(HttpStatus.NOT_FOUND, "Versione inesistente");
@@ -198,7 +198,7 @@ public class RegistryController {
             return problem(HttpStatus.BAD_REQUEST, "Versione inesistente");
         }
         if (properties.protectedEnvironments().contains(env)) {
-            if (!version.get().state().equals(State.APPROVATA.value())) {
+            if (!version.get().state().equals(State.APPROVED.value())) {
                 return problem(HttpStatus.CONFLICT, "Nell'ambiente «" + env + "» si pubblicano solo versioni approvate");
             }
             // Una navigazione con voci verso schermate assenti nell'ambiente non si pubblica; per le schermate i
@@ -274,13 +274,13 @@ public class RegistryController {
 
     /**
      * Chi fa la richiesta: nome utente e ruoli del realm di Keycloak ({@code realm_access.roles}). Senza autenticazione
-     * (profilo senza-auth) è «sviluppo», senza ruoli né controlli di revisione.
+     * (profilo no-auth) è «developer», senza ruoli né controlli di revisione.
      */
     record Actor(String name, List<String> roles, boolean authenticated) {
 
         static Actor of(Principal principal) {
             if (principal == null) {
-                return new Actor("sviluppo", List.of(), false);
+                return new Actor("developer", List.of(), false);
             }
             List<String> roles = List.of();
             if (principal instanceof JwtAuthenticationToken jwt && jwt.getToken().getClaim("realm_access") instanceof Map<?, ?> access

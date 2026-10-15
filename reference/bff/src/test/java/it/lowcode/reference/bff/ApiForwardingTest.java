@@ -132,7 +132,7 @@ class ApiForwardingTest {
 
     @Test
     void inoltraConIlTokenDellaSessioneSenzaCookieERestituisceSoloIntestazioniSicure() throws Exception {
-        mvc.perform(get("/registry/apps/demo/documents/screen/ordini-elenco/published").queryParam("env", "produzione")
+        mvc.perform(get("/registry/apps/demo/documents/screen/ordini-elenco/published").queryParam("env", "production")
                         .with(oauth2Login())
                         .header("traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
                         .header("Authorization", "Bearer dal-browser")
@@ -145,7 +145,7 @@ class ApiForwardingTest {
                 .andExpect(header().doesNotExist("X-Interno"));
         assertThat(received).hasSize(1);
         Received r = received.getFirst();
-        assertThat(r.uri()).isEqualTo("/registry/apps/demo/documents/screen/ordini-elenco/published?env=produzione");
+        assertThat(r.uri()).isEqualTo("/registry/apps/demo/documents/screen/ordini-elenco/published?env=production");
         assertThat(r.headers().get("Authorization")).containsExactly("Bearer token-di-prova");
         assertThat(r.headers().get("Traceparent")).containsExactly("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01");
         assertThat(r.headers()).doesNotContainKey("Cookie");

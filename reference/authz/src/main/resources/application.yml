@@ -24,12 +24,12 @@ management:
 lowcode:
   authz:
     role-permissions:
-      operatore:
+      operator:
         - vetrina.componenti.leggi
         - fatture.fattura.leggi
         - fatture.fattura.crea
         - ordini.ordine.leggi
-      responsabile:
+      manager:
         - vetrina.componenti.leggi
         - fatture.fattura.leggi
         - fatture.fattura.crea
@@ -40,7 +40,7 @@ lowcode:
         - pacchetti.pacchetto.crea
         - spese.spesa.leggi
         - spese.spesa.revisiona
-      amministratore:
+      administrator:
         - vetrina.componenti.leggi
         - fatture.fattura.leggi
         - fatture.fattura.crea

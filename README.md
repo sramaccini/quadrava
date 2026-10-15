@@ -245,7 +245,7 @@ npm ci
 npm run start:runtime        # builds the libraries, copies the examples, serves on http://localhost:4200
 ```
 
-In the top bar choose the **user** (`operatore`, `responsabile`, `amministratore`) and the **theme** (light, dark). The side menu is defined by `examples/navigation.json`; a selector at its top switches the use case. Things to try:
+In the top bar choose the **user** (`operator`, `manager`, `administrator`) and the **theme** (light, dark). The side menu is defined by `examples/navigation.json`; a selector at its top switches the use case. Things to try:
 
 * Switch the simulated **network** (normal, slow, very slow) in the top bar to see the activity indicators.
 * Switch users: the available use cases and menu entries follow the permissions of the profile. The URL of a screen you may not open shows a denial even if typed by hand.
@@ -305,7 +305,7 @@ Open an example (*File → Apri esempio*) or start a new screen. Details, shortc
 
 ### Registry
 
-The *Registro* panel:
+The *Registry* panel:
 
 * saves the open document as a new immutable version, warning when someone else saved in the meantime and listing the registry validation errors point by point;
 * lists its history with the review state and the environments it is published to;
@@ -323,17 +323,17 @@ Prerequisites: Node.js 24, JDK 21, Maven 3.9+, Docker.
 cd frontend && npm run stack
 ```
 
-`tools/stack.mjs` starts Keycloak in Docker, builds the Java modules when their jars are missing (`-- --ricompila` forces it), starts registry (file storage in `data/registry`), authorization, telemetry, BFF and the demo back end waiting for each to answer, publishes the examples with a real user, then serves the runtime (http://localhost:4200) and the editor (http://localhost:4201) behind the BFF (`-- --solo-servizi` skips them). Logs go to `.stack/logs/`; Ctrl+C stops everything except Keycloak (`cd idp && docker compose down`).
+`tools/stack.mjs` starts Keycloak in Docker, builds the Java modules when their jars are missing (`-- --rebuild` forces it), starts registry (file storage in `data/registry`), authorization, telemetry, BFF and the demo back end waiting for each to answer, publishes the examples with a real user, then serves the runtime (http://localhost:4200) and the editor (http://localhost:4201) behind the BFF (`-- --services-only` skips them). Logs go to `.stack/logs/`; Ctrl+C stops everything except Keycloak (`cd idp && docker compose down`).
 
 **Step by step:**
 
 1. Identity provider: `cd idp && docker compose up` (console at http://localhost:8180, user `admin`, password `admin`).
 2. Reference implementation: `cd reference && mvn verify`, then `mvn -pl <module> spring-boot:run` for each module (or `java -jar <module>/target/*.jar`). Ports: bff 8080, registry 8081, authz 8082, telemetry 8083.
-3. Demo application back end: `cd frontend && npm run demo-api` (port 8084). It serves the data of the demo screens (the same logic as the in-browser demo, `projects/runtime/src/demo/demo-backend.ts`) and accepts only access tokens signed by the local Keycloak realm (RS256, issuer, expiry); `--senza-auth` switches the check off. Like a Spring Boot service with springdoc, it publishes its OpenAPI description at `/v3/api-docs` (description only, no token, CORS open) and, behind the BFF, at `/api/v3/api-docs`: the editor can import data sources from it.
-4. Publish the examples into the registry with a real token: `npm run publish:examples -- --user amministratore --password amministratore` (the script gets the token from the development client `lowcode-strumenti`, local realm only).
+3. Demo application back end: `cd frontend && npm run demo-api` (port 8084). It serves the data of the demo screens (the same logic as the in-browser demo, `projects/runtime/src/demo/demo-backend.ts`) and accepts only access tokens signed by the local Keycloak realm (RS256, issuer, expiry); `--no-auth` switches the check off. Like a Spring Boot service with springdoc, it publishes its OpenAPI description at `/v3/api-docs` (description only, no token, CORS open) and, behind the BFF, at `/api/v3/api-docs`: the editor can import data sources from it.
+4. Publish the examples into the registry with a real token: `npm run publish:examples -- --user administrator --password administrator` (the script gets the token from the development client `lowcode-tools`, local realm only).
 5. Front end through the BFF: `npm run start:runtime:bff` (port 4200) and `npm run start:editor:bff` (port 4201). The dev servers proxy `/registry`, `/api`, `/authz`, `/telemetry`, `/bff`, `/oauth2` and `/logout` to the BFF, which keeps the session, adds the user's access token and `traceparent` to the forwarded calls and protects writes with CSRF (`XSRF-TOKEN` cookie, `X-XSRF-TOKEN` header). BFF routes (`lowcode.bff.routes`): `/registry` → registry, `/authz` → authorization, `/telemetry` → telemetry, `/api` → the application back end.
-   * **Runtime** (`projects/runtime/config/bff/runtime-config.json`): without a session it goes straight to the Keycloak login and comes back; then it loads navigation, theme and screens published in the registry (application `demo`, environment `sviluppo`), the user's permissions from the authorization service, the data from `/api`, and sends diagnostics to the telemetry service. The header shows the user name, the number of permissions and an *Esci* button: logout closes the BFF session and the Keycloak session (OIDC end-session), so the next login asks for the password again.
-   * **KinetiX Studio**: the *Registro* panel offers *Accedi* when there is no session; versions are recorded with the user name as author.
+   * **Runtime** (`projects/runtime/config/bff/runtime-config.json`): without a session it goes straight to the Keycloak login and comes back; then it loads navigation, theme and screens published in the registry (application `demo`, environment `development`), the user's permissions from the authorization service, the data from `/api`, and sends diagnostics to the telemetry service. The header shows the user name, the number of permissions and an *Esci* button: logout closes the BFF session and the Keycloak session (OIDC end-session), so the next login asks for the password again.
+   * **KinetiX Studio**: the *Registry* panel offers *Sign in* when there is no session; versions are recorded with the user name as author.
    * After login the BFF returns only to the origins listed in `lowcode.bff.frontend-origins`; a visit to the BFF root goes to `lowcode.bff.home` (the runtime).
 6. Validate the examples against the schemas: `cd frontend && npm run validate:examples`.
 
@@ -341,15 +341,15 @@ cd frontend && npm run stack
 
 ```bash
 cd reference && mvn -q -pl registry -am package -DskipTests
-java -jar registry/target/lowcode-registry-0.1.0-SNAPSHOT.jar --spring.profiles.active=senza-auth
-cd frontend && npm run publish:examples      # every screen, the navigation, every theme and catalogue, published in "sviluppo"
-npm run start:runtime:registro               # port 4200: definitions from the registry
-npm run start:editor:registro                # port 4201: Registro panel → save, publish → reload the runtime
+java -jar registry/target/lowcode-registry-0.1.0-SNAPSHOT.jar --spring.profiles.active=no-auth
+cd frontend && npm run publish:examples      # every screen, the navigation, every theme and catalogue, published in "development"
+npm run start:runtime:registry               # port 4200: definitions from the registry
+npm run start:editor:registry                # port 4201: Registry panel → save, publish → reload the runtime
 ```
 
-The `senza-auth` profile logs a warning at start-up and must never be used outside a developer's machine. Add `--lowcode.registry.storage-dir=<folder>` to keep the registry data across restarts.
+The `no-auth` profile logs a warning at start-up and must never be used outside a developer's machine. Add `--lowcode.registry.storage-dir=<folder>` to keep the registry data across restarts.
 
-Development users in Keycloak: `operatore`, `responsabile`, `amministratore` (password equal to the user name). For local development only.
+Development users in Keycloak: `operator`, `manager`, `administrator` (password equal to the user name). For local development only.
 
 ## Testing
 
@@ -363,9 +363,9 @@ npm run schema:docs:check             # docs/schema-reference.md is in sync (npm
 npm run validate:examples             # examples are valid
 npx playwright install chromium       # once: the browser used by the end-to-end tests
 npm run e2e                           # Playwright end-to-end tests in a real browser (needs `npm run demo:prepare`)
-npm run conformance:registry -- --user operatore --password operatore --reviewer-user responsabile --reviewer-password responsabile
-npm run conformance:authz -- --user operatore --password operatore --other-user responsabile --other-password responsabile
-npm run conformance:telemetry -- --user operatore --password operatore
+npm run conformance:registry -- --user operator --password operator --reviewer-user manager --reviewer-password manager
+npm run conformance:authz -- --user operator --password operator --other-user manager --other-password manager
+npm run conformance:telemetry -- --user operator --password operator
                                       # conformance kits: check a service (reference or customer) against its contract
 ```
 
@@ -409,7 +409,7 @@ Recommended Content-Security-Policy for the runtime and KinetiX Studio served be
 * data, writes with CSRF and menu counters through the BFF, logout that ends the Keycloak session;
 * in KinetiX Studio behind the BFF: saving, review (request, approval, protected environment), comparison, publishing and the live-data preview (writes blocked).
 
-Also without Keycloak, with the registry's `senza-auth` profile and file storage.
+Also without Keycloak, with the registry's `no-auth` profile and file storage.
 
 **Not verified / known limits:**
 

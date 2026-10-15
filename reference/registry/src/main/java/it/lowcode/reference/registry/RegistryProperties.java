@@ -14,7 +14,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record RegistryProperties(String storageDir, List<String> protectedEnvironments, List<String> approverRoles) {
 
     public RegistryProperties {
-        protectedEnvironments = protectedEnvironments == null ? List.of("collaudo", "produzione") : List.copyOf(protectedEnvironments);
-        approverRoles = approverRoles == null ? List.of("responsabile", "amministratore") : List.copyOf(approverRoles);
+        protectedEnvironments = protectedEnvironments == null ? List.of("testing", "production") : List.copyOf(protectedEnvironments);
+        approverRoles = approverRoles == null ? List.of("manager", "administrator") : List.copyOf(approverRoles);
     }
 }

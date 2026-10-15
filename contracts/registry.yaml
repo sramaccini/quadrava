@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: KinetiX - Contratto del registry
-  version: 0.4.0
+  version: 0.5.0
   description: >
     Registro delle definizioni delle applicazioni. Un'applicazione è fatta di documenti separati: ogni schermata,
     la navigazione e ogni tema sono un documento a sé, con le proprie versioni e le proprie pubblicazioni.
@@ -18,6 +18,9 @@ info:
     mancano in un ambiente; negli ambienti protetti una navigazione si pubblica solo se tutte le sue schermate sono
     pubblicate lì (altrimenti 409 con `missingReferences`). Per le schermate è solo un avviso, perché i collegamenti
     tra schermate formano spesso cicli (elenco e dettaglio).
+
+    0.5 (non compatibile con 0.4): valori in inglese. Stati di revisione draft, in-review, approved, rejected; azioni
+    request, approve, reject; ambienti di esempio development, testing, production.
   license:
     name: Proprietaria
     identifier: LicenseRef-Proprietary
@@ -135,8 +138,8 @@ paths:
       operationId: reviewVersion
       summary: Cambia lo stato di revisione di una versione
       description: >
-        `richiedi`: da bozza o respinta a in-revisione (chiunque possa scrivere). `approva` e `respingi`: da
-        in-revisione ad approvata o respinta; solo chi ha un ruolo di revisore e non è l'autore della versione.
+        `request`: da draft o rejected a in-review (chiunque possa scrivere). `approve` e `reject`: da
+        in-review ad approved o rejected; solo chi ha un ruolo di revisore e non è l'autore della versione.
         Il contenuto della versione non cambia mai.
       requestBody:
         required: true
@@ -173,7 +176,7 @@ paths:
         description: >
           Ambiente in cui controllare i riferimenti: mancano le schermate senza una versione pubblicata lì. Senza
           ambiente mancano le schermate che nel registro dell'applicazione non esistono.
-        schema: { type: string, examples: [sviluppo] }
+        schema: { type: string, examples: [development] }
     get:
       tags: [registry]
       operationId: getReferences
@@ -220,7 +223,7 @@ paths:
       - name: env
         in: query
         required: true
-        schema: { type: string, examples: [produzione] }
+        schema: { type: string, examples: [production] }
     get:
       tags: [registry]
       operationId: getPublished
@@ -332,7 +335,7 @@ components:
         author: { type: string }
         state:
           type: string
-          enum: [bozza, in-revisione, approvata, respinta]
+          enum: [draft, in-review, approved, rejected]
           description: Stato di revisione. Dove è pubblicata lo dice `publishedEnvironments` del documento.
         reviewedBy: { type: string, description: Chi ha approvato o respinto. }
         reviewedAt: { type: string, format: date-time }
@@ -341,7 +344,7 @@ components:
       type: object
       required: [action]
       properties:
-        action: { type: string, enum: [richiedi, approva, respingi] }
+        action: { type: string, enum: [request, approve, reject] }
         note: { type: string, maxLength: 500 }
     ScreenReference:
       type: object

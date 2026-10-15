@@ -2,7 +2,7 @@
   "definitions": {
     "source": "registry",
     "app": "demo",
-    "env": "sviluppo",
+    "env": "development",
     "navigation": "fatturazione",
     "themes": [
       "chiaro",

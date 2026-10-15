@@ -2,17 +2,17 @@
 //   Keycloak (Docker) → registro, autorizzazioni, telemetria, BFF (jar Java) → backend della demo → esempi pubblicati
 //   → runtime (4200) ed editor (4201) dietro il BFF.
 //
-//   npm run stack [-- --solo-servizi] [-- --ricompila]
+//   npm run stack [-- --services-only] [-- --rebuild]
 //
-// --solo-servizi  non avvia runtime ed editor (per avviarli a parte, per esempio dall'IDE)
-// --ricompila     ricompila i jar anche se ci sono già
+// --services-only  does not start runtime and editor (to start them separately, for example from the IDE)
+// --rebuild        rebuilds the jars even if they already exist
 //
 // Il registro tiene i dati in ../data/registry (sopravvivono al riavvio). I log di ogni processo sono in
 // ../.stack/logs. Ctrl+C ferma tutto tranne Keycloak, che resta acceso per ripartire in fretta
 // (per fermarlo: cd idp && docker compose down). Solo per lo sviluppo locale.
 import { spawn, spawnSync } from 'node:child_process';
 import { createWriteStream, existsSync, mkdirSync, readdirSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, isAbsolute, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -68,7 +68,9 @@ async function ready(name, url, seconds = 120) {
 }
 
 function run(command, args, cwd) {
-  const result = spawnSync(command, args, { cwd, stdio: 'inherit', shell: windows });
+  // Su Windows npm, mvn e docker sono .cmd e chiedono la shell; un eseguibile con percorso assoluto (node) no: con la
+  // shell un percorso con spazi («C:\Program Files\…») si spezzerebbe.
+  const result = spawnSync(command, args, { cwd, stdio: 'inherit', shell: windows && !isAbsolute(command) });
   if (result.status !== 0) fail(`comando non riuscito: ${command} ${args.join(' ')}`);
 }
 
@@ -89,7 +91,7 @@ await ready('Keycloak', 'http://localhost:8180/realms/lowcode/.well-known/openid
 
 // 2. Servizi Java
 const modules = ['registry', 'authz', 'telemetry', 'bff'];
-if (flags.has('--ricompila') || modules.some((m) => !jar(m))) {
+if (flags.has('--rebuild') || modules.some((m) => !jar(m))) {
   say('compilo i servizi Java (mvn package)…');
   run('mvn', ['-q', 'package', '-DskipTests'], reference);
 }
@@ -108,10 +110,10 @@ await Promise.all([
 
 // 3. Esempi nel registro (stesso contenuto = stessa versione: ripubblicare non crea duplicati)
 say('pubblico gli esempi nel registro…');
-run(process.execPath, [join(here, 'publish-examples.mjs'), '--user', 'amministratore', '--password', 'amministratore'], frontend);
+run(process.execPath, [join(here, 'publish-examples.mjs'), '--user', 'administrator', '--password', 'administrator'], frontend);
 
 // 4. Runtime ed editor dietro il BFF
-if (!flags.has('--solo-servizi')) {
+if (!flags.has('--services-only')) {
   if (!existsSync(join(frontend, 'dist', 'components'))) {
     say('compilo le librerie (build:libs)…');
     run('npm', ['run', 'build:libs'], frontend);
@@ -125,7 +127,7 @@ if (!flags.has('--solo-servizi')) {
 
 say('tutto pronto:');
 console.log(`
-  Runtime   http://localhost:4200   (login: operatore, responsabile o amministratore; password = nome utente)
+  Runtime   http://localhost:4200   (login: operator, manager o administrator; password = nome utente)
   Editor    http://localhost:4201   (pannello Registro, applicazione «demo»)
   Keycloak  http://localhost:8180   (console: admin / admin)
   Log       .stack/logs/

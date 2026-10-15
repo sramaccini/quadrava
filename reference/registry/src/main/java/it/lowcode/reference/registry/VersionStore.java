@@ -83,7 +83,7 @@ public class VersionStore {
         if (existing.isPresent()) {
             return existing.get();
         }
-        DocumentVersion version = new DocumentVersion(hash, Instant.now(), author, State.BOZZA.value());
+        DocumentVersion version = new DocumentVersion(hash, Instant.now(), author, State.DRAFT.value());
         entry.versions().add(version);
         entry.contents().put(hash, content);
         persist(key, entry, hash);
@@ -128,9 +128,9 @@ public class VersionStore {
             }
             String state = version.state();
             State next = switch (action) {
-                case "richiedi" -> state.equals(State.BOZZA.value()) || state.equals(State.RESPINTA.value()) ? State.IN_REVISIONE : null;
-                case "approva" -> state.equals(State.IN_REVISIONE.value()) ? State.APPROVATA : null;
-                case "respingi" -> state.equals(State.IN_REVISIONE.value()) ? State.RESPINTA : null;
+                case "request" -> state.equals(State.DRAFT.value()) || state.equals(State.REJECTED.value()) ? State.IN_REVIEW : null;
+                case "approve" -> state.equals(State.IN_REVIEW.value()) ? State.APPROVED : null;
+                case "reject" -> state.equals(State.IN_REVIEW.value()) ? State.REJECTED : null;
                 default -> null;
             };
             if (next == null) {

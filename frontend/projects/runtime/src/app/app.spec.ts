@@ -63,13 +63,13 @@ describe('App (demo)', () => {
     throw new Error(`timeout: ${label}\nURL: ${TestBed.inject(Location).path()}\n${(fixture.nativeElement as HTMLElement).innerHTML.slice(0, 1800)}`);
   }
 
-  async function start(user = 'operatore'): Promise<{ fixture: ComponentFixture<App>; el: HTMLElement; url: () => string }> {
+  async function start(user = 'operator'): Promise<{ fixture: ComponentFixture<App>; el: HTMLElement; url: () => string }> {
     const fixture = TestBed.createComponent(App);
     const el = fixture.nativeElement as HTMLElement;
     const url = (): string => TestBed.inject(Location).path();
     fixture.detectChanges();
     await TestBed.inject(Router).navigateByUrl('/');
-    if (user !== 'operatore') {
+    if (user !== 'operator') {
       await until(fixture, () => !!headerSelect(el, 0), 'barra superiore');
       await choose(fixture, headerSelect(el, 0), user);
     }
@@ -158,7 +158,7 @@ describe('App (demo)', () => {
   it('il menu utente mostra il nome e termina la sessione con l’ultima voce, poi si può accedere di nuovo', async () => {
     const { fixture, el } = await start();
     await until(fixture, () => rows(el) > 0, 'elenco fatture');
-    expect(el.querySelector('lc-user-menu .name')?.textContent?.trim()).toBe('operatore');
+    expect(el.querySelector('lc-user-menu .name')?.textContent?.trim()).toBe('operator');
     (el.querySelector('lc-user-menu button.trigger') as HTMLButtonElement).click();
     await until(fixture, () => document.querySelectorAll('.ant-dropdown li[nz-menu-item]').length > 0, 'menu utente');
     const items = [...document.querySelectorAll<HTMLElement>('.ant-dropdown li[nz-menu-item]')];
@@ -174,7 +174,7 @@ describe('App (demo)', () => {
     const { fixture, el } = await start();
     await until(fixture, () => useCases().length > 0, 'selettore');
     expect(useCases()).toEqual(['Inserimento Fattura', 'Consultazione Fatture', 'Vetrina componenti']);
-    await choose(fixture, headerSelect(el, 0), 'responsabile');
+    await choose(fixture, headerSelect(el, 0), 'manager');
     await until(fixture, () => useCases().length === 5, 'quattro casi d’uso');
     expect(useCases()).toEqual(['Inserimento Fattura', 'Consultazione Fatture', 'Creazione pacchetto', 'Revisione Spese', 'Vetrina componenti']);
   });
@@ -218,7 +218,7 @@ describe('App (demo)', () => {
   });
 
   it('la revisione spese: voce con parametri, approvazione e messaggio', async () => {
-    const { fixture, el, url } = await start('responsabile');
+    const { fixture, el, url } = await start('manager');
     await until(fixture, () => useCases().length === 5, 'quattro casi d’uso');
     await choose(fixture, useCaseSelect(el)!, 'Revisione Spese');
     await until(fixture, () => rows(el) > 0, 'elenco spese');

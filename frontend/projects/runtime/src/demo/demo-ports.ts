@@ -5,10 +5,10 @@ import { DemoBackend } from './demo-backend';
 /** Profili della demo: i permessi sono quelli che in produzione darebbe il servizio di autorizzazione. */
 export const DEMO_PROFILES: Record<string, string[]> = {
   // Inserisce e consulta fatture e vede gli ordini: due casi d'uso.
-  operatore: ['vetrina.componenti.leggi', 'fatture.fattura.leggi', 'fatture.fattura.crea', 'ordini.ordine.leggi'],
+  operator: ['vetrina.componenti.leggi', 'fatture.fattura.leggi', 'fatture.fattura.crea', 'ordini.ordine.leggi'],
   // Aggiunge pacchetti, revisione spese e approvazione ordini: tutti e quattro i casi d'uso.
-  responsabile: ['vetrina.componenti.leggi', 'fatture.fattura.leggi', 'fatture.fattura.crea', 'ordini.ordine.leggi', 'ordini.ordine.approva', 'ordini.ordine.scrivi', 'pacchetti.pacchetto.leggi', 'pacchetti.pacchetto.crea', 'spese.spesa.leggi', 'spese.spesa.revisiona'],
-  amministratore: [
+  manager: ['vetrina.componenti.leggi', 'fatture.fattura.leggi', 'fatture.fattura.crea', 'ordini.ordine.leggi', 'ordini.ordine.approva', 'ordini.ordine.scrivi', 'pacchetti.pacchetto.leggi', 'pacchetti.pacchetto.crea', 'spese.spesa.leggi', 'spese.spesa.revisiona'],
+  administrator: [
     'vetrina.componenti.leggi', 'fatture.fattura.leggi', 'fatture.fattura.crea', 'ordini.ordine.leggi', 'ordini.ordine.approva', 'ordini.ordine.scrivi', 'ordini.iban.leggi', 'ordini.iban.scrivi',
     'pacchetti.pacchetto.leggi', 'pacchetti.pacchetto.crea', 'spese.spesa.leggi', 'spese.spesa.revisiona',
   ],
@@ -17,7 +17,7 @@ export const DEMO_PROFILES: Record<string, string[]> = {
 /** Autorizzazione finta, basata su signal: cambiando profilo la schermata si ridisegna. */
 @Injectable({ providedIn: 'root' })
 export class DemoSession extends Authorization implements UserProvider {
-  readonly username = signal('operatore');
+  readonly username = signal('operator');
   /** Falso dopo l'uscita: nessun permesso finché non si accede di nuovo. */
   readonly loggedIn = signal(true);
 

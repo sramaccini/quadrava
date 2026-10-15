@@ -1,11 +1,11 @@
 // Pubblica gli esempi (../examples) in un registro: ogni schermata, la navigazione, ogni tema e ogni catalogo delle
-// traduzioni come documenti separati (contracts/registry.yaml 0.3). Serve a provare il runtime che carica dal registro.
+// traduzioni come documenti separati (contracts/registry.yaml 0.5). Serve a provare il runtime che carica dal registro.
 //
-//   node tools/publish-examples.mjs [--registry http://localhost:8081] [--app demo] [--env sviluppo]
+//   node tools/publish-examples.mjs [--registry http://localhost:8081] [--app demo] [--env development]
 //                                   [--token <JWT> | --user <utente> --password <password> [--issuer <realm>]]
 //
-// Con il registro di riferimento avviato con il profilo senza-auth il token non serve. Con --user e --password lo
-// script chiede il token a Keycloak con il client di sviluppo lowcode-strumenti (solo per il realm locale).
+// Con il registro di riferimento avviato con il profilo no-auth il token non serve. Con --user e --password lo
+// script chiede il token a Keycloak con il client di sviluppo lowcode-tools (solo per il realm locale).
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -17,14 +17,14 @@ const args = Object.fromEntries(
 );
 const registry = (args.registry ?? 'http://localhost:8081').replace(/\/+$/, '');
 const app = args.app ?? 'demo';
-const env = args.env ?? 'sviluppo';
+const env = args.env ?? 'development';
 let token = args.token;
 if (!token && args.user) {
   const issuer = (args.issuer ?? 'http://localhost:8180/realms/lowcode').replace(/\/+$/, '');
   const response = await fetch(`${issuer}/protocol/openid-connect/token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ grant_type: 'password', client_id: 'lowcode-strumenti', username: args.user, password: args.password ?? '' }),
+    body: new URLSearchParams({ grant_type: 'password', client_id: 'lowcode-tools', username: args.user, password: args.password ?? '' }),
   });
   if (!response.ok) {
     console.error(`Token non ottenuto da ${issuer}: HTTP ${response.status}`);

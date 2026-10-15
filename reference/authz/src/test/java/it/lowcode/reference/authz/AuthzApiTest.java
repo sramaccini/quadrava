@@ -39,13 +39,13 @@ class AuthzApiTest {
         mvc = MockMvcBuilders.webAppContextSetup(context).addFilters(security).build();
     }
 
-    private static RequestPostProcessor operatore() {
-        return jwt().jwt(j -> j.subject("operatore").claim("realm_access", Map.of("roles", List.of("operatore"))));
+    private static RequestPostProcessor operator() {
+        return jwt().jwt(j -> j.subject("operator").claim("realm_access", Map.of("roles", List.of("operator"))));
     }
 
     @Test
     void capacitaConVersioneNellIntestazione() throws Exception {
-        mvc.perform(get("/authz/capabilities").param("app", "demo").with(operatore()))
+        mvc.perform(get("/authz/capabilities").param("app", "demo").with(operator()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.permissions[0]").exists())
                 .andExpect(header().exists("X-Permissions-Version"));
@@ -54,7 +54,7 @@ class AuthzApiTest {
 
     @Test
     void parametroAppMancanteInFormatoProblem() throws Exception {
-        mvc.perform(get("/authz/capabilities").with(operatore()))
+        mvc.perform(get("/authz/capabilities").with(operator()))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.title").exists());
@@ -63,15 +63,15 @@ class AuthzApiTest {
     @Test
     void verificheNonValideRifiutate() throws Exception {
         String formatoSbagliato = "{\"checks\":[{\"permission\":\"Ordini.Approva\"}]}";
-        mvc.perform(post("/authz/check").with(operatore()).contentType(MediaType.APPLICATION_JSON).content(formatoSbagliato))
+        mvc.perform(post("/authz/check").with(operator()).contentType(MediaType.APPLICATION_JSON).content(formatoSbagliato))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.title").exists());
-        mvc.perform(post("/authz/check").with(operatore()).contentType(MediaType.APPLICATION_JSON).content("{}"))
+        mvc.perform(post("/authz/check").with(operator()).contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isBadRequest());
         String troppe = "{\"checks\":[" + String.join(",", java.util.Collections.nCopies(AuthzController.MAX_CHECKS + 1, "{\"permission\":\"a.b.c\"}")) + "]}";
-        mvc.perform(post("/authz/check").with(operatore()).contentType(MediaType.APPLICATION_JSON).content(troppe))
+        mvc.perform(post("/authz/check").with(operator()).contentType(MediaType.APPLICATION_JSON).content(troppe))
                 .andExpect(status().isBadRequest());
-        mvc.perform(post("/authz/check").with(operatore()).contentType(MediaType.APPLICATION_JSON).content("{\"checks\":[{\"permission\":\"fatture.fattura.leggi\"},{\"permission\":\"x.y.z\"}]}"))
+        mvc.perform(post("/authz/check").with(operator()).contentType(MediaType.APPLICATION_JSON).content("{\"checks\":[{\"permission\":\"fatture.fattura.leggi\"},{\"permission\":\"x.y.z\"}]}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.results[0].allowed").value(true))
                 .andExpect(jsonPath("$.results[1].allowed").value(false));

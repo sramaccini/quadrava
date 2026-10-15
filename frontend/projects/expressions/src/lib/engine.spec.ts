@@ -8,7 +8,7 @@ const errors: { source: string; error: string }[] = [];
 const engine = new ExpressionEngine({ can: (p) => granted.has(p) }, { onError: (e) => errors.push(e) });
 
 const ctx: EvalContext = {
-  user: { username: 'responsabile' },
+  user: { username: 'manager' },
   row: { id: 7, stato: 'inviato', _perm: { update: true, delete: false } },
   form: { tipo: 'business' },
   value: 15,

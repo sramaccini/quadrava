@@ -6,12 +6,12 @@ export function parseArgs(argv = process.argv.slice(2)) {
   return Object.fromEntries(argv.reduce((pairs, value, i, all) => (value.startsWith('--') ? [...pairs, [value.slice(2), all[i + 1]]] : pairs), []));
 }
 
-/** Token di Keycloak con il client di sviluppo lowcode-strumenti (password grant: solo realm locale). */
+/** Token di Keycloak con il client di sviluppo lowcode-tools (password grant: solo realm locale). */
 export async function tokenFor(issuer, user, password) {
   const response = await fetch(`${issuer.replace(/\/+$/, '')}/protocol/openid-connect/token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ grant_type: 'password', client_id: 'lowcode-strumenti', username: user, password: password ?? '' }),
+    body: new URLSearchParams({ grant_type: 'password', client_id: 'lowcode-tools', username: user, password: password ?? '' }),
   });
   if (!response.ok) throw new Error(`token non ottenuto per ${user}: HTTP ${response.status}`);
   return (await response.json()).access_token;

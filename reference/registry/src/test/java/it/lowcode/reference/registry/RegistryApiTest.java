@@ -25,7 +25,7 @@ import org.springframework.web.context.WebApplicationContext;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * Il contratto registry.yaml 0.4 dal lato HTTP: validazione, modifiche concorrenti, revisione, ambienti protetti,
+ * Il contratto registry.yaml 0.5 dal lato HTTP: validazione, modifiche concorrenti, revisione, ambienti protetti,
  * riferimenti tra documenti.
  */
 @SpringBootTest
@@ -77,15 +77,15 @@ class RegistryApiTest {
     void unDocumentoFuoriSchemaSiRifiutaConLeIndicazioni() throws Exception {
         String invalid = """
                 {"schemaVersion":"1.0","screen":"fatture-elenco","components":[{"type":"tabella"},{"type":"text"}]}""";
-        mvc.perform(post(BASE + "/versions").with(user("mario", "operatore")).contentType(MediaType.APPLICATION_JSON).content(invalid))
+        mvc.perform(post(BASE + "/versions").with(user("mario", "operator")).contentType(MediaType.APPLICATION_JSON).content(invalid))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.title").value("Il documento non rispetta lo schema"))
                 .andExpect(jsonPath("$.errors[0].path").value(org.hamcrest.Matchers.startsWith("/components/")));
         // L'autore è il nome utente del token.
-        mvc.perform(post(BASE + "/versions").with(user("mario", "operatore")).contentType(MediaType.APPLICATION_JSON).content(VALID))
+        mvc.perform(post(BASE + "/versions").with(user("mario", "operator")).contentType(MediaType.APPLICATION_JSON).content(VALID))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.author").value("mario"))
-                .andExpect(jsonPath("$.state").value("bozza"));
+                .andExpect(jsonPath("$.state").value("draft"));
     }
 
     @Test
@@ -96,14 +96,14 @@ class RegistryApiTest {
 
     @Test
     void conIfMatchIlSalvataggioRiesceSoloSullUltimaVersione() throws Exception {
-        String first = save(VALID, user("mario", "operatore"));
+        String first = save(VALID, user("mario", "operator"));
         String second = VALID.replace("Fatture", "Fatture emesse");
         // Luisa salva partendo dalla prima versione: va bene.
-        mvc.perform(post(BASE + "/versions").with(user("luisa", "operatore")).header("If-Match", "\"" + first + "\"")
+        mvc.perform(post(BASE + "/versions").with(user("luisa", "operator")).header("If-Match", "\"" + first + "\"")
                         .contentType(MediaType.APPLICATION_JSON).content(second))
                 .andExpect(status().isCreated());
         // Mario salva ancora partendo dalla prima: qualcuno ha salvato nel frattempo.
-        mvc.perform(post(BASE + "/versions").with(user("mario", "operatore")).header("If-Match", "\"" + first + "\"")
+        mvc.perform(post(BASE + "/versions").with(user("mario", "operator")).header("If-Match", "\"" + first + "\"")
                         .contentType(MediaType.APPLICATION_JSON).content(VALID.replace("Fatture", "Fatture ricevute")))
                 .andExpect(status().isPreconditionFailed())
                 .andExpect(jsonPath("$.latestAuthor").value("luisa"));
@@ -111,25 +111,25 @@ class RegistryApiTest {
 
     @Test
     void revisioneConQuattroOcchiEAmbientiProtetti() throws Exception {
-        String hash = save(VALID, user("mario", "operatore"));
+        String hash = save(VALID, user("mario", "operator"));
         String publish = "{\"hash\":\"" + hash + "\"}";
         // In sviluppo si pubblica sempre; in produzione solo una versione approvata.
-        mvc.perform(put(BASE + "/published").param("env", "sviluppo").with(user("mario", "operatore")).contentType(MediaType.APPLICATION_JSON).content(publish))
+        mvc.perform(put(BASE + "/published").param("env", "development").with(user("mario", "operator")).contentType(MediaType.APPLICATION_JSON).content(publish))
                 .andExpect(status().isNoContent());
-        mvc.perform(put(BASE + "/published").param("env", "produzione").with(user("mario", "operatore")).contentType(MediaType.APPLICATION_JSON).content(publish))
+        mvc.perform(put(BASE + "/published").param("env", "production").with(user("mario", "operator")).contentType(MediaType.APPLICATION_JSON).content(publish))
                 .andExpect(status().isConflict());
 
-        review(hash, "richiedi", user("mario", "operatore"), 200);
+        review(hash, "request", user("mario", "operator"), 200);
         // Un operatore non approva; l'autore nemmeno se è responsabile.
-        review(hash, "approva", user("anna", "operatore"), 403);
-        review(hash, "approva", user("mario", "responsabile"), 403);
-        review(hash, "approva", user("luisa", "responsabile"), 200);
-        review(hash, "approva", user("luisa", "responsabile"), 409);
+        review(hash, "approve", user("anna", "operator"), 403);
+        review(hash, "approve", user("mario", "manager"), 403);
+        review(hash, "approve", user("luisa", "manager"), 200);
+        review(hash, "approve", user("luisa", "manager"), 409);
 
-        mvc.perform(put(BASE + "/published").param("env", "produzione").with(user("mario", "operatore")).contentType(MediaType.APPLICATION_JSON).content(publish))
+        mvc.perform(put(BASE + "/published").param("env", "production").with(user("mario", "operator")).contentType(MediaType.APPLICATION_JSON).content(publish))
                 .andExpect(status().isNoContent());
         String versions = mvc.perform(get(BASE + "/versions").with(user("mario")))
-                .andExpect(jsonPath("$[0].state").value("approvata"))
+                .andExpect(jsonPath("$[0].state").value("approved"))
                 .andExpect(jsonPath("$[0].reviewedBy").value("luisa"))
                 .andReturn().getResponse().getContentAsString();
         assertThat(versions).contains("reviewedAt");
@@ -141,10 +141,10 @@ class RegistryApiTest {
         String navigation = """
                 {"schemaVersion":"1.0","navigation":"principale","useCases":[{"id":"fatture","label":"Fatture","items":[
                   {"id":"elenco","label":"Elenco","screen":"fatture-elenco"},{"id":"nuova","label":"Nuova","screen":"fattura-nuova"}]}]}""";
-        String navHash = (String) json.readValue(mvc.perform(post(nav + "/versions").with(user("mario", "operatore"))
+        String navHash = (String) json.readValue(mvc.perform(post(nav + "/versions").with(user("mario", "operator"))
                         .contentType(MediaType.APPLICATION_JSON).content(navigation))
                 .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString(), Map.class).get("hash");
-        String screenHash = save(VALID, user("mario", "operatore"));
+        String screenHash = save(VALID, user("mario", "operator"));
 
         // Senza ambiente: manca la schermata che nel registro non esiste.
         mvc.perform(get(nav + "/versions/" + navHash + "/references").with(user("mario")))
@@ -155,24 +155,24 @@ class RegistryApiTest {
                 .andExpect(jsonPath("$.missing[0].screen").value("fattura-nuova"))
                 .andExpect(jsonPath("$.missing[0].path").value("/useCases/0/items/1/screen"));
         // In sviluppo nessuna delle due è pubblicata, ma la navigazione si pubblica lo stesso.
-        mvc.perform(get(nav + "/versions/" + navHash + "/references").param("env", "sviluppo").with(user("mario")))
-                .andExpect(jsonPath("$.env").value("sviluppo"))
+        mvc.perform(get(nav + "/versions/" + navHash + "/references").param("env", "development").with(user("mario")))
+                .andExpect(jsonPath("$.env").value("development"))
                 .andExpect(jsonPath("$.missing.length()").value(2));
-        mvc.perform(put(nav + "/published").param("env", "sviluppo").with(user("mario", "operatore"))
+        mvc.perform(put(nav + "/published").param("env", "development").with(user("mario", "operator"))
                         .contentType(MediaType.APPLICATION_JSON).content("{\"hash\":\"" + navHash + "\"}"))
                 .andExpect(status().isNoContent());
 
         // In produzione, approvata, si rifiuta finché le schermate non ci sono.
-        mvc.perform(post(nav + "/versions/" + navHash + "/review").with(user("mario", "operatore")).contentType(MediaType.APPLICATION_JSON)
-                .content("{\"action\":\"richiedi\"}")).andExpect(status().isOk());
-        mvc.perform(post(nav + "/versions/" + navHash + "/review").with(user("luisa", "responsabile")).contentType(MediaType.APPLICATION_JSON)
-                .content("{\"action\":\"approva\"}")).andExpect(status().isOk());
-        review(screenHash, "richiedi", user("mario", "operatore"), 200);
-        review(screenHash, "approva", user("luisa", "responsabile"), 200);
-        mvc.perform(put(BASE + "/published").param("env", "produzione").with(user("mario", "operatore"))
+        mvc.perform(post(nav + "/versions/" + navHash + "/review").with(user("mario", "operator")).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"action\":\"request\"}")).andExpect(status().isOk());
+        mvc.perform(post(nav + "/versions/" + navHash + "/review").with(user("luisa", "manager")).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"action\":\"approve\"}")).andExpect(status().isOk());
+        review(screenHash, "request", user("mario", "operator"), 200);
+        review(screenHash, "approve", user("luisa", "manager"), 200);
+        mvc.perform(put(BASE + "/published").param("env", "production").with(user("mario", "operator"))
                         .contentType(MediaType.APPLICATION_JSON).content("{\"hash\":\"" + screenHash + "\"}"))
                 .andExpect(status().isNoContent());
-        mvc.perform(put(nav + "/published").param("env", "produzione").with(user("mario", "operatore"))
+        mvc.perform(put(nav + "/published").param("env", "production").with(user("mario", "operator"))
                         .contentType(MediaType.APPLICATION_JSON).content("{\"hash\":\"" + navHash + "\"}"))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.missingReferences.length()").value(1))

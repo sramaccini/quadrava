@@ -3,7 +3,7 @@ import type { RegistryDefinitionsConfig } from 'services';
 /**
  * Configurazione letta all'avvio da `runtime-config.json` (cartella pubblica): da dove vengono schermate,
  * navigazione e temi (esempi o versioni pubblicate nel registro) e quali porte usare (demo o servizi veri attraverso il
- * BFF). Le configurazioni `registro` e `bff` di angular.json usano i file di `projects/runtime/config/`.
+ * BFF). Le configurazioni `registry` e `bff` di angular.json usano i file di `projects/runtime/config/`.
  */
 export interface RuntimeConfig {
   definitions: { source: 'examples' } | ({ source: 'registry' } & RegistryDefinitionsConfig);

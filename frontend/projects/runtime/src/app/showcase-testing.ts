@@ -64,7 +64,7 @@ export interface Showcase {
 }
 
 /** Apre una schermata della demo (con il profilo indicato) e aspetta che il contenuto sia disegnato. */
-export async function openShowcase(path: string, user = 'operatore'): Promise<Showcase> {
+export async function openShowcase(path: string, user = 'operator'): Promise<Showcase> {
   const fixture = TestBed.createComponent(App);
   const el = fixture.nativeElement as HTMLElement;
   const settle = async (): Promise<void> => {
@@ -82,7 +82,7 @@ export async function openShowcase(path: string, user = 'operatore'): Promise<Sh
   fixture.detectChanges();
   await TestBed.inject(Router).navigateByUrl('/');
   await until(() => !!el.querySelector('nz-header nz-select'), 'barra superiore');
-  if (user !== 'operatore') {
+  if (user !== 'operator') {
     const options = await openSelect(el.querySelector('nz-header nz-select') as HTMLElement, settle);
     (options.find((o) => (o.textContent ?? '').trim() === user) as HTMLElement).click();
   }

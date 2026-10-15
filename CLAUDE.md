@@ -15,21 +15,25 @@ This file collects the rules to follow at all times. Where the development guide
 
 ## 2. Languages
 
+The project is published as open source: **everything is in English**. Italian survives only as one of the translations the user can choose.
+
 | What | Language |
 | --- | --- |
-| Code, identifiers | English |
-| Comments in code | as in the rest of the file (today mostly Italian) |
+| Code, identifiers, configuration values, CLI flags, npm scripts, profiles, environments, roles | English |
+| Comments in code, test names | English |
 | All documentation: `README.md`, `DEVELOPMENT-GUIDE.md`, `HANDOFF.md`, `CLAUDE.md`, `docs/`, package READMEs | English |
-| Descriptions in the JSON schemas (shown in the editor and in the showcase's «Aiuto») | Italian |
-| Demo and example texts | Italian and English (`examples/i18n/it.json`, `en.json`) |
-| Developer diagnostics (schema, expressions, `services`) | Italian, not translated |
-| Commit messages | Italian |
+| Descriptions in the JSON schemas and in the OpenAPI contracts | English |
+| Developer diagnostics (schema, expressions, `services`), Problem titles, logs | English, not translated |
+| User-facing texts (platform, editor, demo) | English and Italian catalogues (`messages.ts`, `examples/i18n/en.json`, `it.json`) |
+| Commit messages | English |
+
+The move from Italian is in progress (October 2026): code that still has Italian comments or names is translated when it is touched, and new code is written in English only.
 
 Documents explain things simply, with figures and practical examples. New content goes into the relevant sections, not into isolated comparison paragraphs. File names in `docs/` are in English.
 
 ## 3. Commits and history
 
-- Conventional Commits in Italian, with a scope when it helps: `feat(editor): …`, `fix(tabelle): …`, `docs(schema): …`. The body explains what changes and why.
+- Conventional Commits in English, with a scope when it helps: `feat(editor): …`, `fix(tables): …`, `docs(schema): …`. The body explains what changes and why.
 - Commits are in the repository author's name only: **no trailers** (`Co-Authored-By`, automatic `Signed-off-by`, session identifiers), and no references to tools used to write code or text in commits, comments, documents or pull requests.
 - Generated files are committed together with their source (`*.schema.json` with `*.schema.ts`, `validators.generated.ts` and `docs/schema-reference.md`).
 - Tests and documentation updated in the same commit as the change.
@@ -70,7 +74,7 @@ CI (`.github/workflows/ci.yml`) repeats the same checks: it must stay green.
 ## 6. JSON schemas
 
 - The `*.schema.json` schemas are the only source. After every change: `npm run schema:sync`, the types in `schema/src/lib/types.ts`, `npm run schema:docs`. `*.schema.ts` and `validators.generated.ts` are never edited by hand.
-- **Every property has a `description`**, short, accurate and in Italian: it appears in the editor's property panel, in the showcase's «Aiuto» and in the generated reference. Next to a `$ref` the description goes in the same object. State the default value when there is one («(3 se assente)»).
+- **Every property has a `description`**, short, accurate and in English: it appears in the editor's property panel, in the showcase's «Aiuto» and in the generated reference. Next to a `$ref` the description goes in the same object. State the default value when there is one («(3 se assente)»).
 - No literal `<…>` in descriptions: they become HTML in the Markdown reference.
 - Ajv in strict mode: `type: object` next to `properties`; a property in a `required` inside `if/then` or `anyOf` must be declared there too. Closed nodes with `additionalProperties: false` or `unevaluatedProperties: false`.
 - Regular expressions are written from a script file, not from a shell heredoc (double backslashes get lost).

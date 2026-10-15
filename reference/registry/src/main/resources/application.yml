@@ -23,6 +23,6 @@ lowcode:
     # Cartella dell'archivio su file (vuota = in memoria, si perde al riavvio). Per esempio data/registry.
     storage-dir: ${LOWCODE_REGISTRY_DIR:}
     # Qui si pubblicano solo versioni approvate.
-    protected-environments: [collaudo, produzione]
+    protected-environments: [testing, production]
     # Ruoli del realm che possono approvare o respingere (mai l'autore della versione).
-    approver-roles: [responsabile, amministratore]
+    approver-roles: [manager, administrator]
