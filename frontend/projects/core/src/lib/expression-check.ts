@@ -1,22 +1,22 @@
 import type { ExpressionEngine } from 'expressions';
 
 export interface ExpressionIssue {
-  /** Percorso JSON Pointer dentro la schermata, per esempio `/components/1/rowActions/0/visibleIf`. */
+  /** JSON Pointer path inside the screen, for example `/components/1/rowActions/0/visibleIf`. */
   path: string;
   expression: string;
   message: string;
 }
 
 /**
- * Controllo statico di tutte le espressioni `{{ }}` di una schermata: sintassi, funzioni e tipi noti.
- * Si usa alla pubblicazione e nell'editor; non esegue nulla.
+ * Static check of every `{{ }}` expression of a screen: syntax, known functions and types.
+ * Used on publication and in the editor; it runs nothing.
  */
 export function checkScreenExpressions(document: unknown, engine: ExpressionEngine): ExpressionIssue[] {
   const issues: ExpressionIssue[] = [];
   walk(document, '', (value, path) => {
     if (!value.includes('{{')) return;
     const result = engine.checkTemplate(value);
-    if (!result.valid) issues.push({ path: path || '/', expression: value, message: result.error ?? 'espressione non valida' });
+    if (!result.valid) issues.push({ path: path || '/', expression: value, message: result.error ?? 'invalid expression' });
   });
   return issues;
 }

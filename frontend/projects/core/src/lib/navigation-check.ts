@@ -8,9 +8,9 @@ export interface NavigationIssue {
 }
 
 /**
- * Controlli di coerenza che lo schema non può fare: identificativi univoci, `default` esistente,
- * schermate esistenti (se si passa l'elenco di quelle pubblicate) ed espressioni `visibleIf` valide.
- * Si usa all'avvio e nell'editor; non esegue nulla.
+ * Consistency checks the schema cannot do: unique identifiers, existing `default`,
+ * existing screens (if the list of the published ones is passed) and valid `visibleIf` expressions.
+ * Used at start-up and in the editor; it runs nothing.
  */
 export function checkNavigation(definition: NavigationDefinition, engine: ExpressionEngine, knownScreens?: ReadonlySet<string>): NavigationIssue[] {
   const issues: NavigationIssue[] = [];
@@ -18,7 +18,7 @@ export function checkNavigation(definition: NavigationDefinition, engine: Expres
 
   const claim = (id: string, path: string): void => {
     const previous = seen.get(id);
-    if (previous) issues.push({ path, message: `identificativo duplicato "${id}" (già usato in ${previous})` });
+    if (previous) issues.push({ path, message: `duplicate identifier "${id}" (already used in ${previous})` });
     else seen.set(id, path);
   };
 
@@ -29,7 +29,7 @@ export function checkNavigation(definition: NavigationDefinition, engine: Expres
       if ('children' in item) {
         walk(item.children, `${here}/children`);
       } else if (knownScreens && !knownScreens.has(item.screen)) {
-        issues.push({ path: `${here}/screen`, message: `schermata inesistente "${item.screen}"` });
+        issues.push({ path: `${here}/screen`, message: `unknown screen "${item.screen}"` });
       }
     });
   };
@@ -41,11 +41,11 @@ export function checkNavigation(definition: NavigationDefinition, engine: Expres
   });
 
   if (definition.default && !definition.areas.some((u) => u.id === definition.default)) {
-    issues.push({ path: '/default', message: `area predefinita inesistente "${definition.default}"` });
+    issues.push({ path: '/default', message: `unknown default area "${definition.default}"` });
   }
 
   for (const issue of checkScreenExpressions(definition, engine)) {
-    issues.push({ path: issue.path, message: `espressione non valida: ${issue.message}` });
+    issues.push({ path: issue.path, message: `invalid expression: ${issue.message}` });
   }
   return issues;
 }

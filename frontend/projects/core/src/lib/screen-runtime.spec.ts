@@ -32,7 +32,7 @@ describe('ScreenRuntime', () => {
     TestBed.tick();
   }
 
-  it('carica da solo i data source GET, omettendo i parametri nulli', async () => {
+  it('loads GET data sources by itself, leaving out null parameters', async () => {
     const rt = fakes.runtime({ ...screen }, injector);
     rt.setState('filtri', { stato: null });
     await settle();
@@ -41,7 +41,7 @@ describe('ScreenRuntime', () => {
     rt.destroy();
   });
 
-  it('ricarica quando cambia un valore da cui dipende', async () => {
+  it('reloads when a value it depends on changes', async () => {
     const rt = fakes.runtime(screen, injector);
     rt.setState('filtri', { stato: null });
     await settle();
@@ -51,7 +51,7 @@ describe('ScreenRuntime', () => {
     rt.destroy();
   });
 
-  it('non ricarica se cambia una parte dello stato che non tocca la richiesta', async () => {
+  it('does not reload if a part of the state that does not touch the request changes', async () => {
     const rt = fakes.runtime(screen, injector);
     rt.setState('filtri', { stato: null });
     await settle();
@@ -60,13 +60,13 @@ describe('ScreenRuntime', () => {
     rt.setState('passo', 2);
     await settle();
     expect(fakes.requests).toHaveLength(before);
-    // Il passo refresh ricarica comunque.
+    // The refresh step reloads anyway.
     await rt.refresh('ordini');
     expect(fakes.requests).toHaveLength(before + 1);
     rt.destroy();
   });
 
-  it('refresh su un data source non GET non dà errore: avvisa i componenti che lo interrogano da sé', async () => {
+  it('refresh on a non-GET data source gives no error: it notifies the components that query it themselves', async () => {
     const rt = fakes.runtime(screen, injector);
     await settle();
     const before = fakes.requests.length;
@@ -77,7 +77,7 @@ describe('ScreenRuntime', () => {
     rt.destroy();
   });
 
-  it('non carica nulla se manca il permesso richiesto dalla schermata', async () => {
+  it('loads nothing if the permission required by the screen is missing', async () => {
     fakes.permissions.clear();
     const rt = fakes.runtime(screen, injector);
     await settle();
@@ -86,17 +86,17 @@ describe('ScreenRuntime', () => {
     rt.destroy();
   });
 
-  it('segnala un errore di caricamento senza mostrare il messaggio del server', async () => {
+  it('reports a loading error without showing the server message', async () => {
     fakes.respond = () => { throw new Error('stack interno 500'); };
     const rt = fakes.runtime(screen, injector);
     rt.setState('filtri', { stato: null });
     await settle();
-    expect(rt.source('ordini')).toEqual({ status: 'error', data: null, error: 'Caricamento non riuscito' });
+    expect(rt.source('ordini')).toEqual({ status: 'error', data: null, error: 'Loading failed' });
     expect(fakes.reports.some((r) => r.error.includes('stack interno'))).toBe(true);
     rt.destroy();
   });
 
-  it('codifica i valori inseriti nell’URL', async () => {
+  it('encodes the values inserted in the URL', async () => {
     const rt = fakes.runtime(screen, injector);
     const result = await rt.execute('approva', { id: 'a/b ?x' });
     expect(result.ok).toBe(true);
@@ -104,7 +104,7 @@ describe('ScreenRuntime', () => {
     rt.destroy();
   });
 
-  it('rifiuta URL assoluti o con percorsi relativi', async () => {
+  it('rejects absolute URLs or URLs with relative segments', async () => {
     for (const url of ['https://evil.example/x', '//evil.example/x', '/api/../admin']) {
       const rt = fakes.runtime({ ...screen, dataSources: { d: { type: 'rest', method: 'POST', url } } }, injector);
       const result = await rt.execute('d');
@@ -114,7 +114,7 @@ describe('ScreenRuntime', () => {
     expect(fakes.requests).toHaveLength(0);
   });
 
-  it('non permette di scrivere in __proto__ tramite lo stato', () => {
+  it('does not allow writing into __proto__ through the state', () => {
     const rt = fakes.runtime(screen, injector);
     rt.setState('__proto__.polluted', true);
     rt.setState('filtri.constructor', 1);
@@ -123,7 +123,7 @@ describe('ScreenRuntime', () => {
     rt.destroy();
   });
 
-  it('visibilità fail-closed: errore in hiddenIf nasconde, errore in visibleIf nasconde', () => {
+  it('fail-closed visibility: an error in hiddenIf hides, an error in visibleIf hides', () => {
     const rt = fakes.runtime(screen, injector);
     expect(rt.isVisible({})).toBe(true);
     expect(rt.isVisible({ visibleIf: "{{can('ordini.ordine.approva')}}" })).toBe(false);
@@ -135,7 +135,7 @@ describe('ScreenRuntime', () => {
     rt.destroy();
   });
 
-  it('usa i permessi per riga nello scope', () => {
+  it('uses the per-row permissions in the scope', () => {
     const rt = fakes.runtime(screen, injector);
     expect(rt.isVisible({ visibleIf: '{{row._perm.update}}' }, { row: { _perm: { update: true } } })).toBe(true);
     expect(rt.isVisible({ visibleIf: '{{row._perm.update}}' }, { row: { _perm: { update: false } } })).toBe(false);
@@ -155,7 +155,7 @@ describe('ScreenRuntime: lingua e traduzioni', () => {
     fakes.i18n.addMessages('en', { 'p.ciao': 'Hello {nome}' });
   });
 
-  it('text() traduce con la lingua attiva e segue il cambio di lingua', () => {
+  it('text() translates with the active language and follows the language change', () => {
     const rt = fakes.runtime(screenWith([]), injector);
     const template = "{{ t('p.ciao', 'Ciao {nome}', {'nome': user.username}) }}";
     expect(rt.text(template)).toBe('Ciao test');
@@ -163,13 +163,13 @@ describe('ScreenRuntime: lingua e traduzioni', () => {
     expect(rt.text(template)).toBe('Hello test');
   });
 
-  it('espone la lingua come user.locale', () => {
+  it('exposes the language as user.locale', () => {
     const rt = fakes.runtime(screenWith([]), injector);
     fakes.i18n.setLocale('en');
     expect(rt.text('{{ user.locale }}')).toBe('en');
   });
 
-  it('una chiave senza traduzione e senza ripiego mostra la chiave e viene segnalata una sola volta', async () => {
+  it('a key without translation and without fallback shows the key and is reported only once', async () => {
     const rt = fakes.runtime(screenWith([]), injector);
     expect(rt.text("{{ t('p.manca') }}")).toBe('p.manca');
     expect(rt.text("{{ t('p.manca') }}")).toBe('p.manca');
@@ -177,7 +177,7 @@ describe('ScreenRuntime: lingua e traduzioni', () => {
     expect(fakes.reports.filter((r) => r.error.includes('p.manca'))).toHaveLength(1);
   });
 
-  it('i messaggi generici del runtime seguono la lingua', () => {
+  it('the generic messages of the runtime follow the language', () => {
     const rt = fakes.runtime(screenWith([]), injector);
     fakes.i18n.addMessages('en', { 'lc.operationFailed': 'Operation failed' }, 'builtin');
     expect(rt.systemText('lc.operationFailed', 'Operazione non riuscita')).toBe('Operazione non riuscita');
@@ -202,7 +202,7 @@ describe('runSteps', () => {
     { toast: 'Ordine {{row.numero}} approvato' },
   ];
 
-  it('esegue i passi in ordine usando la riga come scope', async () => {
+  it('runs the steps in order using the row as scope', async () => {
     const rt = fakes.runtime(screen, injector);
     rt.setState('filtri', { stato: null });
     const ok = await runSteps(rt, approvaSteps, { row: { id: 7, numero: 'A-7' } });
@@ -213,7 +213,7 @@ describe('runSteps', () => {
     rt.destroy();
   });
 
-  it('si ferma al primo errore ed esegue onError', async () => {
+  it('stops at the first error and runs onError', async () => {
     fakes.respond = (r) => { if (r.method === 'POST') throw new Error('409'); return {}; };
     const rt = fakes.runtime(screen, injector);
     const ok = await runSteps(rt, approvaSteps, { row: { id: 7, numero: 'A-7' } });
@@ -223,15 +223,15 @@ describe('runSteps', () => {
     rt.destroy();
   });
 
-  it('mostra un messaggio generico se manca onError', async () => {
+  it('shows a generic message if onError is missing', async () => {
     fakes.respond = () => { throw new Error('dettaglio interno'); };
     const rt = fakes.runtime(screen, injector);
     await runSteps(rt, [{ call: 'approva', args: { id: 1 } }], {});
-    expect(fakes.toasts).toEqual([{ message: 'Operazione non riuscita', kind: 'info' }]);
+    expect(fakes.toasts).toEqual([{ message: 'Operation failed', kind: 'info' }]);
     rt.destroy();
   });
 
-  it('naviga e imposta lo stato', async () => {
+  it('navigates and sets the state', async () => {
     const rt = fakes.runtime(screen, injector);
     await runSteps(rt, [{ set: { path: 'state.selezione', value: '{{row.id}}' } }, { navigate: 'ordine-dettaglio', params: { id: '{{row.id}}' } }], { row: { id: 9 } });
     expect(rt.getState('selezione')).toBe(9);
@@ -239,15 +239,15 @@ describe('runSteps', () => {
     rt.destroy();
   });
 
-  it('non lancia se il data source non esiste', async () => {
+  it('does not throw if the data source does not exist', async () => {
     const rt = fakes.runtime(screen, injector);
     expect(await runSteps(rt, [{ call: 'inesistente' }])).toBe(false);
     rt.destroy();
   });
 });
 
-describe('ScreenRuntime: corpo delle richieste', () => {
-  it('usa body con l’intero form e passa lo scope della chiamata', async () => {
+describe('ScreenRuntime: request bodies', () => {
+  it('uses body with the whole form and passes the scope of the call', async () => {
     const fakes = new Fakes();
     fakes.permissions.add('ordini.ordine.leggi');
     const injector = TestBed.inject(Injector);
@@ -277,7 +277,7 @@ describe('ScreenRuntime: corpo delle richieste', () => {
       TestBed.tick();
     }
 
-    /** Un client che lascia le risposte in sospeso e registra gli annullamenti. */
+    /** A client that leaves the responses pending and records the cancellations. */
     function pending() {
       const calls: { request: { method: string; query?: unknown }; signal?: AbortSignal; resolve: (v: unknown) => void }[] = [];
       fakes.deps.data = {
@@ -290,7 +290,7 @@ describe('ScreenRuntime: corpo delle richieste', () => {
       return calls;
     }
 
-    it('una lettura nuova annulla quella in corso, senza segnalare errori né cambiare i dati', async () => {
+    it('a new read cancels the one in progress, without reporting errors or changing the data', async () => {
       const calls = pending();
       const rt = fakes.runtime(screen, injector);
       rt.setState('filtri', { stato: null });
@@ -308,7 +308,7 @@ describe('ScreenRuntime: corpo delle richieste', () => {
       expect(calls[1].signal?.aborted).toBe(false);
     });
 
-    it('le scritture non si annullano; uscendo dalla schermata si annullano le letture in corso', async () => {
+    it('writes are not cancelled; leaving the screen cancels the reads in progress', async () => {
       const calls = pending();
       const rt = fakes.runtime(screen, injector);
       rt.setState('filtri', { stato: null });
@@ -320,10 +320,10 @@ describe('ScreenRuntime: corpo delle richieste', () => {
       expect(calls[0].signal?.aborted).toBe(true);
     });
 
-    it('letture di servizio identiche e contemporanee fanno una sola chiamata', async () => {
+    it('identical concurrent service reads make a single call', async () => {
       const calls = pending();
       const rt = fakes.runtime({ ...screen, dataSources: { clienti: { type: 'rest', method: 'POST', url: '/api/x' }, cerca: { type: 'rest', method: 'GET', url: '/api/clienti', params: { q: '{{ search }}' } } } }, injector);
-      // Solo le ricerche (il caricamento automatico senza testo non ha q).
+      // Only the searches (the automatic load without text has no q).
       const searches = () => calls.filter((c) => (c.request.query as { q?: string } | undefined)?.q);
       const a = rt.query('cerca', {}, { search: 'ro' });
       const b = rt.query('cerca', {}, { search: 'ro' });
@@ -334,7 +334,7 @@ describe('ScreenRuntime: corpo delle richieste', () => {
       expect(await a).toEqual({ ok: true, data: ['Rossi'] });
       expect(await b).toEqual({ ok: true, data: ['Rossi'] });
       expect(await c).toEqual({ ok: true, data: ['Bianchi'] });
-      // Finita, la stessa lettura si rifà.
+      // Once finished, the same read is made again.
       void rt.query('cerca', {}, { search: 'ro' });
       expect(searches().length).toBe(3);
       rt.destroy();
@@ -358,7 +358,7 @@ describe('tracce', () => {
     TestBed.tick();
   }
 
-  it("l'apertura della schermata è uno span che si chiude dopo le prime letture, di cui è il padre", async () => {
+  it('opening the screen is a span that closes after the first reads, of which it is the parent', async () => {
     const rt = fakes.runtime(screen, injector);
     const open = fakes.spans[0];
     expect(open).toMatchObject({ name: 'screen.open', attributes: { 'lowcode.screen': 'ordini-elenco', 'lowcode.datasources': 1 } });
@@ -366,14 +366,14 @@ describe('tracce', () => {
     await settle();
     expect(fakes.requestOptions[0]).toMatchObject({ source: 'ordini', trace: open.context });
     expect(open.ok).toBe(true);
-    // Le letture successive non appartengono più all'apertura.
+    // The later reads no longer belong to the opening.
     rt.setState('filtri.stato', 'inviato');
     await settle();
     expect(fakes.requestOptions.at(-1)?.trace).toBeUndefined();
     rt.destroy();
   });
 
-  it("una prima lettura fallita chiude l'apertura con esito negativo", async () => {
+  it('a failed first read closes the opening with a negative outcome', async () => {
     fakes.respond = () => {
       throw new Error('500');
     };
@@ -383,13 +383,13 @@ describe('tracce', () => {
     rt.destroy();
   });
 
-  it('senza data source GET lo span di apertura si chiude subito', () => {
+  it('without GET data sources the opening span closes immediately', () => {
     const rt = fakes.runtime({ ...screen, dataSources: { approva: { type: 'rest', method: 'POST', url: '/api/x' } } }, injector);
     expect(fakes.spans[0]).toMatchObject({ name: 'screen.open', ok: true });
     rt.destroy();
   });
 
-  it("un'azione è uno span con i nomi dei passi, padre delle sue chiamate (anche dentro run e onError)", async () => {
+  it('an action is a span with the names of the steps, parent of its calls (also inside run and onError)', async () => {
     const rt = fakes.runtime({ ...screen, actions: { salva: [{ call: 'approva', args: { id: 1 } }] } }, injector);
     rt.setState('filtri', { stato: null });
     const ok = await runSteps(rt, [{ run: 'salva' }, { refresh: 'ordini' }, { toast: 'fatto' }]);
@@ -401,7 +401,7 @@ describe('tracce', () => {
     rt.destroy();
   });
 
-  it("un'azione non riuscita chiude lo span con esito negativo, e gli attributi non contengono valori", async () => {
+  it('a failed action closes the span with a negative outcome, and the attributes contain no values', async () => {
     fakes.respond = (r) => {
       if (r.method === 'POST') throw new Error('409');
       return {};
@@ -414,7 +414,7 @@ describe('tracce', () => {
     rt.destroy();
   });
 
-  it('un tracciatore che lancia errori non ferma la schermata né le azioni', async () => {
+  it('a tracer that throws errors stops neither the screen nor the actions', async () => {
     fakes.deps.tracer = {
       start: () => {
         throw new Error('rotto');

@@ -3,7 +3,7 @@ import type { DataSourceDefinition } from 'schema';
 
 export type HttpMethod = DataSourceDefinition['method'];
 
-/** Variabili aggiuntive di un punto della schermata (per esempio `row` nella riga di una tabella). */
+/** Additional variables of a point of the screen (for example `row` in a table row). */
 export type Scope = EvalContext & Record<string, unknown>;
 
 export type DataSourceStatus = 'idle' | 'loading' | 'ready' | 'error';
@@ -14,5 +14,5 @@ export interface DataSourceState {
   error?: string;
 }
 
-/** Esito di una chiamata. In errore `status` è il codice HTTP (0 se il servizio non risponde o la richiesta non parte). */
+/** Outcome of a call. On error `status` is the HTTP code (0 if the service does not answer or the request does not start). */
 export type CallResult = { ok: true; data: unknown } | { ok: false; error: string; status?: number };

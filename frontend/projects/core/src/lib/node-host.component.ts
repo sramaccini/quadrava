@@ -7,9 +7,9 @@ import type { ScreenRuntime } from './screen-runtime';
 import type { Scope } from './types';
 
 /**
- * Disegna un nodo scegliendo il componente dal catalogo. Qui si applica in modo centralizzato
- * `visibleIf`/`hiddenIf`: un componente non può dimenticarsi di rispettarli. Gli attributi `data-node-id` e
- * `data-node-type` servono all'anteprima dell'editor (selezione dal disegno) e ai test; non contengono dati.
+ * Draws a node choosing the component from the catalogue. `visibleIf`/`hiddenIf` are applied here, centrally:
+ * a component cannot forget to honour them. The `data-node-id` and `data-node-type` attributes
+ * serve the editor preview (selection from the drawing) and the tests; they contain no data.
  */
 @Component({
   selector: 'lc-node',
@@ -41,11 +41,11 @@ export class NodeHostComponent {
   protected readonly component = computed(() => {
     const type = this.node().type;
     const found = this.catalog[type] ?? null;
-    if (!found) this.runtime().report(`nodo ${type}`, 'tipo di componente non presente nel catalogo');
+    if (!found) this.runtime().report(`node ${type}`, 'component type not in the catalogue');
     return found;
   });
   protected readonly visible = computed(() => this.runtime().isVisible(this.node(), this.scope()));
-  /** Testo del tooltip già risolto (`{{ }}`), mostrato come testo semplice mai come HTML. */
+  /** Tooltip text already resolved (`{{ }}`), shown as plain text, never as HTML. */
   protected readonly tooltip = computed(() => {
     const raw = this.node().tooltip;
     return raw ? this.runtime().text(raw, this.scope()) || null : null;

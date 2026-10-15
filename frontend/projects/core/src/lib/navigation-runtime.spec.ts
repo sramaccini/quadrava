@@ -50,19 +50,19 @@ function setup(initial: string[], roles: string[] = []) {
 }
 
 describe('NavigationRuntime', () => {
-  it('mostra solo le aree consentiti', () => {
+  it('shows only the allowed areas', () => {
     const { nav } = setup(['fatture.fattura.leggi']);
     expect(nav.areas().map((u) => u.id)).toEqual(['consultazione']);
   });
 
-  it('nasconde un’area se nessuna voce è visibile', () => {
+  it('hides an area if no item is visible', () => {
     const { nav } = setup(['fatture.fattura.crea']);
-    // Le voci "Attiva" e "Passiva" non richiedono permessi propri: l’area resta.
+    // The "Attiva" and "Passiva" items require no permissions of their own: the area stays.
     expect(nav.areas().map((u) => u.id)).toEqual(['inserimento']);
     expect(nav.area('inserimento')?.items).toHaveLength(1);
   });
 
-  it('elimina i gruppi vuoti e tiene i tre livelli quando consentiti', () => {
+  it('drops empty groups and keeps the three levels when allowed', () => {
     const { nav } = setup(['fatture.fattura.crea']);
     const nuova = nav.area('inserimento')?.items[0];
     expect(nuova?.kind === 'group' && nuova.children.map((c) => c.id)).toEqual(['attiva', 'passiva']);
@@ -70,14 +70,14 @@ describe('NavigationRuntime', () => {
     expect(withOrders?.kind === 'group' && withOrders.children.map((c) => c.id)).toEqual(['attiva', 'passiva', 'da-ordine']);
   });
 
-  it('si aggiorna quando cambiano i permessi', () => {
+  it('updates when the permissions change', () => {
     const { nav, permissions } = setup([]);
     expect(nav.areas()).toEqual([]);
     permissions.set(new Set(['fatture.fattura.leggi']));
     expect(nav.areas().map((u) => u.id)).toEqual(['consultazione']);
   });
 
-  it('visibleIf: vero mostra, errore nasconde e segnala', async () => {
+  it('visibleIf: true shows, an error hides and reports', async () => {
     const { nav, reports } = setup(['fatture.fattura.leggi'], ['administrator']);
     const ids = nav.area('consultazione')?.items.map((i) => i.id);
     expect(ids).toEqual(['elenco', 'solo-admin']);
@@ -86,26 +86,26 @@ describe('NavigationRuntime', () => {
     expect(setup(['fatture.fattura.leggi'], ['operator']).nav.area('consultazione')?.items.map((i) => i.id)).toEqual(['elenco']);
   });
 
-  it('sceglie la destinazione iniziale: default se visibile, altrimenti la prima area', () => {
+  it('chooses the initial destination: default if visible, otherwise the first area', () => {
     expect(setup(['fatture.fattura.leggi', 'fatture.fattura.crea']).nav.defaultTarget()).toMatchObject({ area: 'consultazione', leaf: { id: 'elenco' } });
     expect(setup(['fatture.fattura.crea']).nav.defaultTarget()).toMatchObject({ area: 'inserimento', leaf: { id: 'attiva' } });
     expect(setup([]).nav.defaultTarget()).toBeNull();
   });
 
-  it('costruisce il percorso di etichette per le briciole di pane', () => {
+  it('builds the path of labels for the breadcrumb', () => {
     const { nav } = setup(['fatture.fattura.crea']);
     expect(nav.trail('inserimento', 'fattura-nuova', { tipo: 'passiva' })).toEqual(['Inserimento', 'Nuova', 'Passiva']);
     expect(nav.trail('inserimento', 'fattura-nuova', { tipo: 'altro' })).toBeNull();
   });
 
-  it('individua la voce attiva usando schermata e parametri', () => {
+  it('finds the active item using screen and parameters', () => {
     const { nav } = setup(['fatture.fattura.crea']);
     expect(nav.locate('inserimento', 'fattura-nuova', { tipo: 'passiva' })).toEqual(['nuova', 'passiva']);
     expect(nav.locate('inserimento', 'fattura-nuova', { tipo: 'altro' })).toBeNull();
     expect(nav.locate('consultazione', 'fatture-elenco')).toBeNull();
   });
 
-  it('trova l’area di una schermata preferendo quella corrente', () => {
+  it('finds the area of a screen preferring the current one', () => {
     const { nav } = setup(['fatture.fattura.crea', 'fatture.fattura.leggi', 'ordini.ordine.leggi']);
     expect(nav.areaOf('ordini-elenco', {}, 'inserimento')).toBe('inserimento');
     expect(nav.areaOf('fatture-elenco', {}, 'inserimento')).toBe('consultazione');
@@ -116,12 +116,12 @@ describe('NavigationRuntime', () => {
 describe('checkNavigation', () => {
   const engine = new ExpressionEngine({ can: () => false });
 
-  it('non segnala nulla per un documento coerente', () => {
+  it('reports nothing for a consistent document', () => {
     const screens = new Set(['fattura-nuova', 'ordini-elenco', 'fatture-elenco', 'x', 'y']);
     expect(checkNavigation({ ...definition, areas: definition.areas.map((u) => ({ ...u, items: u.items.filter((i) => i.id !== 'rotta') })) }, engine, screens)).toEqual([]);
   });
 
-  it('segnala id duplicati, default e schermate inesistenti, espressioni errate', () => {
+  it('reports duplicate ids, missing default and screens, wrong expressions', () => {
     const broken: NavigationDefinition = {
       schemaVersion: '1.0',
       navigation: 'app',
@@ -139,15 +139,15 @@ describe('checkNavigation', () => {
       ],
     };
     const messages = checkNavigation(broken, engine, new Set(['esiste'])).map((i) => i.message);
-    expect(messages.some((m) => m.includes('duplicato'))).toBe(true);
-    expect(messages.some((m) => m.includes('schermata inesistente'))).toBe(true);
-    expect(messages.some((m) => m.includes('predefinita inesistente'))).toBe(true);
-    expect(messages.some((m) => m.includes('espressione non valida'))).toBe(true);
+    expect(messages.some((m) => m.includes('duplicate'))).toBe(true);
+    expect(messages.some((m) => m.includes('unknown screen'))).toBe(true);
+    expect(messages.some((m) => m.includes('unknown default area'))).toBe(true);
+    expect(messages.some((m) => m.includes('invalid expression'))).toBe(true);
   });
 });
 
 describe('NavigationRuntime: etichette tradotte', () => {
-  it('valuta t() nelle etichette e segue il cambio di lingua', () => {
+  it('evaluates t() in the labels and follows the language change', () => {
     const i18n = new I18n();
     i18n.addMessages('it', { 'nav.a': 'Alfa' });
     i18n.addMessages('en', { 'nav.a': 'Alpha' });

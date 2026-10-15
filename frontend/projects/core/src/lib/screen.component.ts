@@ -8,7 +8,7 @@ import { I18n } from './i18n';
 import { NodeHostComponent } from './node-host.component';
 import { ScreenRuntime } from './screen-runtime';
 
-/** Mostra una schermata già validata: crea il runtime, controlla `requires` e disegna i componenti di primo livello. */
+/** Shows an already validated screen: creates the runtime, checks `requires` and draws the top-level components. */
 @Component({
   selector: 'lc-screen',
   imports: [NodeHostComponent, NzAlertModule, NzBreadCrumbModule, NzTypographyModule],
@@ -58,7 +58,7 @@ import { ScreenRuntime } from './screen-runtime';
 export class ScreenComponent {
   readonly definition = input.required<ScreenDefinition>();
   readonly params = input<Record<string, unknown>>({});
-  /** Percorso mostrato sopra il titolo (per esempio area, gruppo, voce). Lo fornisce l'applicazione ospite. */
+  /** Path shown above the title (for example area, group, item). Provided by the host application. */
   readonly breadcrumb = input<readonly string[]>([]);
 
   readonly runtime = signal<ScreenRuntime | null>(null);
@@ -79,7 +79,7 @@ export class ScreenComponent {
     effect(() => {
       const definition = this.definition();
       const params = this.params();
-      // La creazione del runtime registra effect propri: va fatta fuori dal contesto reattivo di questo effect.
+      // Creating the runtime registers its own effects: it must happen outside the reactive context of this effect.
       untracked(() => {
         this.runtime()?.destroy();
         this.runtime.set(

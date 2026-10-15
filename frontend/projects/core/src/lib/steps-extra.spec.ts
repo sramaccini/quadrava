@@ -14,7 +14,7 @@ const screen: ScreenDefinition = {
 };
 
 describe('CSV', () => {
-  it('punto e virgola, BOM, virgolette quando servono e formule neutralizzate', () => {
+  it('semicolons, BOM, quotes when needed and neutralised formulas', () => {
     const csv = toCsv(['Numero', 'Nota'], [
       ['FT-1', 'semplice'],
       ['FT-2', 'con; punto e virgola'],
@@ -36,7 +36,7 @@ describe('CSV', () => {
     ]);
   });
 
-  it('nomi di file sicuri e righe da elenchi o pagine', () => {
+  it('safe file names and rows from lists or pages', () => {
     expect(csvFileName(undefined)).toBe('export.csv');
     expect(csvFileName('fatture 2026')).toBe('fatture 2026.csv');
     expect(csvFileName('../../x<y>.CSV')).toBe('....xy.CSV');
@@ -46,7 +46,7 @@ describe('CSV', () => {
   });
 });
 
-describe('passi validate, print ed export', () => {
+describe('validate, print and export steps', () => {
   let fakes: Fakes;
   let injector: Injector;
   beforeEach(() => {
@@ -55,7 +55,7 @@ describe('passi validate, print ed export', () => {
   });
   afterEach(() => vi.restoreAllMocks());
 
-  it('validate controlla tutti i campi del gruppo (senza fermarsi al primo) e ferma la sequenza se uno non è valido', async () => {
+  it('validate checks all the fields of the group (without stopping at the first) and stops the sequence if one is not valid', async () => {
     const rt = fakes.runtime(screen, injector);
     const checked: string[] = [];
     let nomeOk = false;
@@ -64,19 +64,19 @@ describe('passi validate, print ed export', () => {
     const off = rt.registerValidator('altro', () => (checked.push('altro'), false));
     expect(await runSteps(rt, [{ validate: 'ordine' }, { toast: 'inviato' }])).toBe(false);
     expect(checked).toEqual(['nome', 'email']);
-    expect(fakes.toasts).toEqual([{ message: 'Controlla i campi evidenziati', kind: 'error' }]);
+    expect(fakes.toasts).toEqual([{ message: 'Check the highlighted fields', kind: 'error' }]);
     nomeOk = true;
     expect(await runSteps(rt, [{ validate: 'ordine' }, { toast: 'inviato' }])).toBe(true);
-    // * = tutti i gruppi; un campo tolto non conta più.
+    // * = all the groups; a removed field no longer counts.
     expect(await runSteps(rt, [{ validate: '*' }])).toBe(false);
     off();
     expect(await runSteps(rt, [{ validate: '*' }])).toBe(true);
-    // Un gruppo senza campi è valido.
+    // A group without fields is valid.
     expect(await runSteps(rt, [{ validate: 'vuoto' }])).toBe(true);
     rt.destroy();
   });
 
-  it('print apre la stampa del browser', async () => {
+  it('print opens the browser print dialog', async () => {
     const print = vi.fn();
     vi.stubGlobal('print', print);
     const rt = fakes.runtime(screen, injector);
@@ -86,7 +86,7 @@ describe('passi validate, print ed export', () => {
     rt.destroy();
   });
 
-  it('export scarica il CSV delle righe del data source con le intestazioni tradotte', async () => {
+  it('export downloads the CSV of the data source rows with translated headers', async () => {
     const saved: Blob[] = [];
     vi.spyOn(URL, 'createObjectURL').mockImplementation((blob) => (saved.push(blob as Blob), 'blob:x'));
     vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
@@ -100,19 +100,19 @@ describe('passi validate, print ed export', () => {
     expect(ok).toBe(true);
     expect(fakes.requests.at(-1)).toEqual({ method: 'GET', url: '/api/fatture', query: { stato: 'bozza' } });
     expect(clicks).toEqual(['fatture.csv']);
-    // Il BOM c'è nei byte (text() lo toglie decodificando).
+    // The BOM is in the bytes (text() removes it while decoding).
     expect([...new Uint8Array(await saved[0].arrayBuffer()).slice(0, 3)]).toEqual([0xef, 0xbb, 0xbf]);
     expect(await saved[0].text()).toBe('Numero;importo\r\nFT-1;10.5\r\n');
     rt.destroy();
   });
 
-  it('export: se il data source fallisce la sequenza si ferma con un messaggio generico', async () => {
+  it('export: if the data source fails the sequence stops with a generic message', async () => {
     fakes.respond = () => {
       throw new Error('500');
     };
     const rt = fakes.runtime(screen, injector);
     expect(await runSteps(rt, [{ export: { source: 'fatture', columns: [{ field: 'numero' }] } }, { toast: 'dopo' }])).toBe(false);
-    expect(fakes.toasts.map((t) => t.message)).toEqual(['Operazione non riuscita']);
+    expect(fakes.toasts.map((t) => t.message)).toEqual(['Operation failed']);
     rt.destroy();
   });
 });

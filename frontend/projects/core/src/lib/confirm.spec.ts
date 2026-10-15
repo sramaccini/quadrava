@@ -15,7 +15,7 @@ const screen: ScreenDefinition = {
   ],
 };
 
-describe('passo confirm', () => {
+describe('confirm step', () => {
   let fakes: Fakes;
   let rt: ScreenRuntime;
 
@@ -28,7 +28,7 @@ describe('passo confirm', () => {
   const steps = [{ confirm: "Approvare l'ordine {{row.numero}}?" }, { call: 'approva', args: { id: '{{row.id}}' } }, { toast: 'Fatto' }] as const;
   const scope = { row: { id: 7, numero: 'ORD-0007' } };
 
-  it('se l’utente conferma, mostra il testo con i valori e prosegue', async () => {
+  it('if the user confirms, it shows the text with the values and goes on', async () => {
     fakes.confirmAnswers.push(true);
     expect(await runSteps(rt, [...steps], scope)).toBe(true);
     expect(fakes.confirmations).toEqual(["Approvare l'ordine ORD-0007?"]);
@@ -36,7 +36,7 @@ describe('passo confirm', () => {
     expect(fakes.toasts.map((t) => t.message)).toEqual(['Fatto']);
   });
 
-  it('se l’utente rinuncia, ferma la sequenza senza chiamate e senza messaggi di errore', async () => {
+  it('if the user gives up, it stops the sequence without calls and without error messages', async () => {
     fakes.confirmAnswers.push(false);
     expect(await runSteps(rt, [...steps], scope)).toBe(false);
     expect(fakes.requests).toEqual([]);
@@ -44,7 +44,7 @@ describe('passo confirm', () => {
     expect(fakes.reports).toEqual([]);
   });
 
-  it('senza servizio di conferma non procede e lo segnala (fail-closed)', async () => {
+  it('without a confirmation service it does not go on and reports it (fail-closed)', async () => {
     const bare = new ScreenRuntime(screen, { ...fakes.deps, confirmation: null }, TestBed.inject(Injector));
     expect(await runSteps(bare, [...steps], scope)).toBe(false);
     expect(fakes.requests).toEqual([]);
@@ -53,7 +53,7 @@ describe('passo confirm', () => {
     bare.destroy();
   });
 
-  it('una conferma è richiesta ogni volta che il passo viene eseguito', async () => {
+  it('a confirmation is requested every time the step runs', async () => {
     fakes.confirmAnswers.push(true, true);
     await runSteps(rt, [{ confirm: 'Sicuro?' }], {});
     await runSteps(rt, [{ confirm: 'Sicuro?' }], {});
@@ -61,8 +61,8 @@ describe('passo confirm', () => {
   });
 });
 
-describe('stato iniziale dei filtri', () => {
-  it('i filtri dentro le schede esistono nello stato fin dall’inizio', () => {
+describe('initial state of the filters', () => {
+  it('filters inside tabs exist in the state from the start', () => {
     const fakes = new Fakes();
     const rt = fakes.runtime(screen, TestBed.inject(Injector));
     expect(rt.getState('state.filtri.stato')).toBeNull();

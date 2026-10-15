@@ -1,8 +1,8 @@
 import { InjectionToken, type Provider, type Type } from '@angular/core';
 
 /**
- * Catalogo dei componenti: associa il `type` di un nodo al componente Angular che lo disegna.
- * Ogni componente del catalogo deve avere tre input: `node`, `runtime` e `scope`.
+ * Component catalogue: maps the `type` of a node to the Angular component that draws it.
+ * Every component of the catalogue must have three inputs: `node`, `runtime` and `scope`.
  */
 export type ComponentCatalog = Record<string, Type<unknown>>;
 

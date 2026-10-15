@@ -1,33 +1,33 @@
 /**
- * Variabili disponibili alle espressioni. Tutte opzionali: dipendono da dove l'espressione compare
- * (per esempio `row` esiste solo nelle azioni di riga, `value` solo nelle validazioni).
+ * Variables available to expressions. All optional: they depend on where the expression appears
+ * (for example `row` exists only in row actions, `value` only in validations).
  */
 export interface EvalContext {
   /** Utente corrente. */
   user?: Record<string, unknown>;
-  /** Stato della schermata (filtri, selezione). */
+  /** State of the screen (filters, selection). */
   state?: Record<string, unknown>;
-  /** Parametri di navigazione. */
+  /** Navigation parameters. */
   params?: Record<string, unknown>;
-  /** Riga corrente (tabelle). Può contenere `_perm` con i permessi per riga. */
+  /** Current row (tables). It can contain `_perm` with the per-row permissions. */
   row?: Record<string, unknown>;
-  /** Valori correnti del form. */
+  /** Current values of the form. */
   form?: Record<string, unknown>;
-  /** Valore del campo in validazione. */
+  /** Value of the field being validated. */
   value?: unknown;
-  /** Testo cercato in un campo lookup (nei parametri del suo data source). */
+  /** Text searched in a lookup field (in the parameters of its data source). */
   search?: string | null;
-  /** Valore di un campo lookup di cui serve il testo (nei parametri del suo data source). */
+  /** Value of a lookup field whose text is needed (in the parameters of its data source). */
   lookupKey?: unknown;
-  /** Richiesta di una serverDataTable (pagina, ordinamento, filtri, gruppi), da passare al servizio. */
+  /** Request of a serverDataTable (page, sorting, filters, groups), to pass to the service. */
   request?: Record<string, unknown> | null;
-  /** Riga corrente di un campo a righe ripetibili (nelle sue regole di validazione). */
+  /** Current row of a repeatable-rows field (in its validation rules). */
   item?: Record<string, unknown>;
-  /** Righe selezionate di una tabella (nelle azioni multiple). */
+  /** Selected rows of a table (in bulk actions). */
   selection?: Record<string, unknown>[];
 }
 
-/** Fonte dei permessi dell'utente: nel runtime è il servizio di autorizzazione. */
+/** Source of the user's permissions: in the runtime it is the authorization service. */
 export interface PermissionChecker {
   can(permission: string): boolean;
 }
@@ -39,19 +39,19 @@ export interface ExpressionCheck {
   error?: string;
 }
 
-/** Notificata a ogni errore di valutazione: nel runtime alimenta la telemetria. Non riceve mai i valori dei dati. */
+/** Notified on every evaluation error: in the runtime it feeds telemetry. It never receives data values. */
 export type ExpressionErrorHandler = (info: { source: string; error: string }) => void;
 
 export interface ExpressionEngineOptions {
   onError?: ExpressionErrorHandler;
-  /** Se assente, `t()` restituisce il testo di ripiego (o la chiave) e i formati usano `it-IT`. */
+  /** If absent, `t()` returns the fallback text (or the key) and formats use `it-IT`. */
   i18n?: ExpressionI18n;
 }
 
-/** Aggancio dell'internazionalizzazione: la lingua attiva e la ricerca delle traduzioni. Nel runtime lo fornisce il servizio `I18n` del core. */
+/** Internationalisation hook: the active language and the lookup of translations. In the runtime it is the core `I18n` service. */
 export interface ExpressionI18n {
-  /** Lingua attiva come tag BCP 47 (per `Intl`), per esempio `it-IT`. */
+  /** Active language as a BCP 47 tag (for `Intl`), for example `it-IT`. */
   locale(): string;
-  /** Testo tradotto di una chiave; se manca ovunque `fallback`, e in sua assenza la chiave stessa. */
+  /** Translated text of a key; if missing everywhere `fallback`, and without it the key itself. */
   translate(key: string, fallback: string | undefined, params: Record<string, unknown>): string;
 }

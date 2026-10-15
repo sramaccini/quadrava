@@ -3,21 +3,21 @@ import type { ColumnDefinition, Tone } from 'schema';
 
 export interface FormattedValue {
   text: string;
-  /** Presente solo per il formato `badge`. */
+  /** Present only for the `badge` format. */
   tone?: Tone;
 }
 
 type FormatSpec = Pick<ColumnDefinition, 'format' | 'currency' | 'badges' | 'valueKey' | 'decimals'>;
 
-/** Scritte che dipendono dalla lingua: sì/no e la traduzione dei valori (`valueKey`). */
+/** Language-dependent words: yes/no and the translation of values (`valueKey`). */
 export interface FormatLabels {
   yes: string;
   no: string;
-  /** Traduce una chiave (con il valore come ripiego). Se manca, i valori restano com'è. */
+  /** Translates a key (with the value as a fallback). If missing, values stay as they are. */
   translate?: (key: string, fallback: string) => string;
 }
 
-// Creare un formattatore costa: se ne tiene uno per ogni combinazione di lingua e opzioni.
+// Creating a formatter is expensive: one is kept for every combination of language and options.
 const numberFormats = new Map<string, Intl.NumberFormat>();
 const dateFormats = new Map<string, Intl.DateTimeFormat>();
 
@@ -38,8 +38,8 @@ function dateTime(locale: string, options: Intl.DateTimeFormatOptions): Intl.Dat
 const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
- * Trasforma un valore della riga nel testo da mostrare. Non lancia mai eccezioni: un valore che non si può
- * formattare (data non valida, importo non numerico) viene mostrato com'è, e `null` o `undefined` diventano testo vuoto.
+ * Turns a value of the row into the text to show. It never throws: a value that cannot be
+ * formatted (invalid date, non-numeric amount) is shown as it is, and `null` or `undefined` become empty text.
  */
 export function formatValue(value: unknown, spec: FormatSpec, locale = 'it-IT', labels: FormatLabels = { yes: 'Sì', no: 'No' }): FormattedValue {
   if (value === null || value === undefined) return { text: '' };
@@ -56,7 +56,7 @@ export function formatValue(value: unknown, spec: FormatSpec, locale = 'it-IT', 
         return { text: n === null ? String(value) : number(locale, { style: 'currency', currency: spec.currency ?? 'EUR' }).format(n) };
       }
       case 'percent': {
-        // Il valore è già in punti percentuali: 10 significa 10 %.
+        // The value is already in percentage points: 10 means 10 %.
         const n = toNumber(value);
         return { text: n === null ? String(value) : `${number(locale, { maximumFractionDigits: 2 }).format(n)} %` };
       }
@@ -64,7 +64,7 @@ export function formatValue(value: unknown, spec: FormatSpec, locale = 'it-IT', 
       case 'datetime': {
         const date = toDate(value);
         if (!date) return { text: String(value) };
-        // Una data senza ora si legge in UTC, altrimenti nei fusi a ovest di Greenwich scivola al giorno prima.
+        // A date without time is read in UTC, otherwise west of Greenwich it slips to the day before.
         const dateOnly = typeof value === 'string' && DATE_ONLY.test(value);
         const options: Intl.DateTimeFormatOptions =
           spec.format === 'date' || dateOnly ? { dateStyle: 'short', ...(dateOnly ? { timeZone: 'UTC' } : {}) } : { dateStyle: 'short', timeStyle: 'short' };
@@ -73,7 +73,7 @@ export function formatValue(value: unknown, spec: FormatSpec, locale = 'it-IT', 
       case 'boolean':
         return { text: value === true ? labels.yes : value === false ? labels.no : String(value) };
       case 'markdown':
-        // Nelle tabelle il testo formattato si mostra come testo semplice (il dettaglio lo disegna formattato).
+        // In tables formatted text is shown as plain text (the detail draws it formatted).
         return { text: markdownToPlain(typeof value === 'string' ? value : String(value)).replace(/\n+/g, ' ') };
       case 'badge': {
         const raw = String(value);

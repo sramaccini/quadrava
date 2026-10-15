@@ -20,25 +20,25 @@ beforeEach(() => {
 });
 
 describe('ExpressionEngine.evaluate', () => {
-  it('combina permessi e dati della riga', () => {
+  it('combines permissions and row data', () => {
     expect(engine.evaluate("can('ordini.ordine.approva') && row.stato == 'inviato'", ctx)).toEqual({ ok: true, value: true });
   });
 
-  it('nega un permesso mancante', () => {
+  it('denies a missing permission', () => {
     expect(engine.evaluate("can('ordini.iban.leggi')", ctx)).toEqual({ ok: true, value: false });
   });
 
-  it('legge i permessi per riga', () => {
+  it('reads per-row permissions', () => {
     expect(engine.evaluate('row._perm.update', ctx)).toEqual({ ok: true, value: true });
     expect(engine.evaluate('row._perm.delete', ctx)).toEqual({ ok: true, value: false });
   });
 
-  it('confronta numeri JSON con letterali interi', () => {
+  it('compares JSON numbers with integer literals', () => {
     expect(engine.evaluate('value <= 20', ctx)).toEqual({ ok: true, value: true });
     expect(engine.evaluate('row.id == 7', ctx)).toEqual({ ok: true, value: true });
   });
 
-  it('somma, sottrae, moltiplica e divide numeri JSON con letterali interi', () => {
+  it('adds, subtracts, multiplies and divides JSON numbers with integer literals', () => {
     const c = { state: { n: 3, prezzo: 2.5 } };
     expect(engine.evaluate('state.n + 1', c)).toEqual({ ok: true, value: 4 });
     expect(engine.evaluate('1 + state.n', c)).toEqual({ ok: true, value: 4 });
@@ -47,7 +47,7 @@ describe('ExpressionEngine.evaluate', () => {
     expect(engine.evaluate('state.n / 2', c)).toEqual({ ok: true, value: 1.5 });
   });
 
-  it('converte gli interi CEL in numeri', () => {
+  it('converts CEL integers into numbers', () => {
     expect(engine.evaluate('1 + 2', ctx)).toEqual({ ok: true, value: 3 });
   });
 
@@ -57,13 +57,13 @@ describe('ExpressionEngine.evaluate', () => {
     expect(engine.evaluate("has(row.inesistente) && row.inesistente == 'x'", ctx)).toEqual({ ok: true, value: false });
   });
 
-  it('segnala una chiave mancante senza lanciare', () => {
+  it('reports a missing key without throwing', () => {
     const result = engine.evaluate("row.inesistente == 'x'", ctx);
     expect(result.ok).toBe(false);
     expect(errors).toHaveLength(1);
   });
 
-  it('segnala una variabile non disponibile nel contesto', () => {
+  it('reports a variable not available in the context', () => {
     expect(engine.evaluate('form.tipo == 1', { row: {} }).ok).toBe(false);
   });
 
@@ -71,62 +71,62 @@ describe('ExpressionEngine.evaluate', () => {
     expect(engine.evaluate("evil('x')", ctx).ok).toBe(false);
   });
 
-  it('rifiuta la sintassi con $ (non è un identificatore CEL)', () => {
+  it('rejects the $ syntax (not a CEL identifier)', () => {
     expect(engine.evaluate("$can('ordini.ordine.approva')", ctx).ok).toBe(false);
   });
 
-  it('applica i limiti di profondità', () => {
+  it('applies the depth limits', () => {
     const deep = '('.repeat(60) + '1' + ')'.repeat(60);
     expect(engine.evaluate(deep, ctx).ok).toBe(false);
   });
 
-  it('non espone proprietà ereditate degli oggetti', () => {
+  it('does not expose inherited object properties', () => {
     const result = engine.evaluate('row.constructor', ctx);
     expect(result.ok).toBe(false);
   });
 });
 
 describe('ExpressionEngine.interpolate', () => {
-  it('restituisce il valore tipizzato se il modello è una sola espressione', () => {
+  it('returns the typed value if the template is a single expression', () => {
     expect(engine.interpolate('{{row.id}}', ctx)).toEqual({ ok: true, value: 7 });
     expect(engine.interpolate("{{can('ordini.ordine.leggi')}}", ctx)).toEqual({ ok: true, value: true });
   });
 
-  it('compone testo e valori', () => {
+  it('combines text and values', () => {
     expect(engine.interpolate("Ordine {{row.id}} ({{row.stato}})", ctx)).toEqual({ ok: true, value: 'Ordine 7 (inviato)' });
   });
 
-  it('lascia invariato il testo senza espressioni', () => {
+  it('leaves text without expressions unchanged', () => {
     expect(engine.interpolate('Nessuna espressione', ctx)).toEqual({ ok: true, value: 'Nessuna espressione' });
   });
 
-  it('non chiude l’espressione su }} dentro una stringa', () => {
+  it('does not close the expression on }} inside a string', () => {
     expect(engine.interpolate("{{'a}}b'}}", ctx)).toEqual({ ok: true, value: 'a}}b' });
   });
 
-  it('segnala un’espressione non chiusa', () => {
+  it('reports an unclosed expression', () => {
     expect(engine.interpolate('{{row.id', ctx).ok).toBe(false);
   });
 });
 
 describe('ExpressionEngine.evaluateCondition', () => {
-  it('usa whenMissing se la condizione non c’è', () => {
+  it('uses whenMissing if there is no condition', () => {
     expect(engine.evaluateCondition(undefined, ctx, { whenMissing: true })).toBe(true);
     expect(engine.evaluateCondition(undefined, ctx, { whenMissing: false })).toBe(false);
   });
 
-  it('valuta una condizione', () => {
+  it('evaluates a condition', () => {
     expect(engine.evaluateCondition("{{can('ordini.ordine.approva')}}", ctx, { whenMissing: true })).toBe(true);
   });
 
-  it('fallisce chiusa se la valutazione dà errore', () => {
+  it('fails closed if the evaluation gives an error', () => {
     expect(engine.evaluateCondition("{{row.inesistente == 'x'}}", ctx, { whenMissing: true })).toBe(false);
     expect(errors).toHaveLength(1);
   });
 
-  it('fallisce chiusa se il risultato non è un booleano', () => {
+  it('fails closed if the result is not a boolean', () => {
     expect(engine.evaluateCondition('{{row.stato}}', ctx, { whenMissing: true })).toBe(false);
-    expect(errors[0]?.error).toContain('booleano');
+    expect(errors[0]?.error).toContain('boolean');
   });
 });
 
@@ -135,18 +135,18 @@ describe('ExpressionEngine.check', () => {
     expect(engine.check("can('a.b') && row.stato == 'x'")).toEqual({ valid: true });
   });
 
-  it('segnala errori di sintassi', () => {
+  it('reports syntax errors', () => {
     const result = engine.check("can('x' &&");
     expect(result.valid).toBe(false);
     expect(result.error).toBeTruthy();
   });
 
-  it('segnala funzioni sconosciute e argomenti di tipo errato', () => {
+  it('reports unknown functions and arguments of the wrong type', () => {
     expect(engine.check("evil('x')").valid).toBe(false);
     expect(engine.check('can(1)').valid).toBe(false);
   });
 
-  it('controlla ogni espressione di un modello', () => {
+  it('checks every expression of a template', () => {
     expect(engine.checkTemplate("Totale {{row.id}} - {{can('a.b')}}").valid).toBe(true);
     expect(engine.checkTemplate('{{can(1)}}').valid).toBe(false);
     expect(engine.checkTemplate('{{non chiusa').valid).toBe(false);
@@ -154,7 +154,7 @@ describe('ExpressionEngine.check', () => {
 });
 
 describe('parseTemplate', () => {
-  it('divide testo ed espressioni', () => {
+  it('splits text and expressions', () => {
     expect(parseTemplate('a {{x}} b')).toEqual([
       { kind: 'text', text: 'a ' },
       { kind: 'expr', source: 'x' },
@@ -163,25 +163,25 @@ describe('parseTemplate', () => {
   });
 });
 
-describe('funzioni di presentazione', () => {
+describe('presentation functions', () => {
   const none = { can: () => false };
   const withI18n = (locale: string, catalog: Record<string, string> = {}) =>
     new ExpressionEngine(none, {
       i18n: { locale: () => locale, translate: (key, fallback, params) => formatMessage(catalog[key] ?? fallback ?? key, params, locale) },
     });
 
-  it('t() senza servizio usa il ripiego, altrimenti la chiave', () => {
+  it('t() without a service uses the fallback, otherwise the key', () => {
     const engine = new ExpressionEngine(none);
     expect(engine.evaluate("t('a.b', 'Ciao {n}', {'n': 2})")).toEqual({ ok: true, value: 'Ciao 2' });
     expect(engine.evaluate("t('a.b')")).toEqual({ ok: true, value: 'a.b' });
   });
 
-  it('t() usa il catalogo della lingua attiva', () => {
+  it('t() uses the catalogue of the active language', () => {
     const engine = withI18n('en-GB', { 'a.b': 'Hello {nome}' });
     expect(engine.interpolate("{{ t('a.b', 'Ciao {nome}', {'nome': state.n}) }}!", { state: { n: 'Ann' } })).toEqual({ ok: true, value: 'Hello Ann!' });
   });
 
-  it('formatta importi, numeri e date secondo la lingua', () => {
+  it('formats amounts, numbers and dates according to the language', () => {
     const it = withI18n('it-IT');
     const en = withI18n('en-GB');
     expect(it.evaluate("fmtNumber(1234.5)")).toEqual({ ok: true, value: '1234,5' });
@@ -191,36 +191,36 @@ describe('funzioni di presentazione', () => {
     expect(it.evaluate("fmtDate('2026-10-09')")).toEqual({ ok: true, value: '09/10/26' });
   });
 
-  it('un valore non formattabile diventa testo vuoto', () => {
+  it('a value that cannot be formatted becomes empty text', () => {
     const engine = withI18n('it-IT');
     expect(engine.evaluate('fmtCurrency(state.x, "EUR")', { state: { x: null } })).toEqual({ ok: true, value: '' });
     expect(engine.evaluate('fmtDate("non è una data")')).toEqual({ ok: true, value: '' });
   });
 
-  it('plural() sceglie la forma e sostituisce {n}', () => {
+  it('plural() chooses the form and replaces {n}', () => {
     const engine = withI18n('it-IT');
     expect(engine.evaluate("plural(1, 'una riga', '{n} righe')")).toEqual({ ok: true, value: 'una riga' });
     expect(engine.evaluate("plural(state.n, 'una riga', '{n} righe')", { state: { n: 3 } })).toEqual({ ok: true, value: '3 righe' });
   });
 
-  it('check() conosce le funzioni di presentazione', () => {
+  it('check() knows the presentation functions', () => {
     expect(new ExpressionEngine(none).check("t('a', 'b')").valid).toBe(true);
     expect(new ExpressionEngine(none).check("t(1)").valid).toBe(false);
   });
 });
 
-describe('cache delle espressioni', () => {
+describe('expression cache', () => {
   const engine = new ExpressionEngine({ can: (p) => p === 'a.b.c' });
   const value = (r: ReturnType<ExpressionEngine['evaluate']>): unknown => (r.ok ? r.value : r.error);
 
-  it('la stessa espressione compilata vale con contesti diversi', () => {
+  it('the same compiled expression works with different contexts', () => {
     expect(value(engine.interpolate('{{ state.n * 2 }}', { state: { n: 2 } }))).toBe(4);
     expect(value(engine.interpolate('{{ state.n * 2 }}', { state: { n: 5 } }))).toBe(10);
     expect(value(engine.interpolate('Totale {{ state.n }}', { state: { n: 7 } }))).toBe('Totale 7');
     expect(value(engine.evaluate("can('a.b.c')"))).toBe(true);
   });
 
-  it('un errore di sintassi resta un errore anche dalla cache', () => {
+  it('a syntax error stays an error from the cache too', () => {
     const errors: string[] = [];
     const reporting = new ExpressionEngine({ can: () => false }, { onError: (e) => errors.push(e.source) });
     expect(reporting.evaluate('1 +').ok).toBe(false);
@@ -228,7 +228,7 @@ describe('cache delle espressioni', () => {
     expect(errors).toEqual(['1 +', '1 +']);
   });
 
-  it('la cache tiene al massimo il numero di voci indicato, togliendo la meno usata', () => {
+  it('the cache keeps at most the given number of entries, dropping the least used', () => {
     const cache = new BoundedCache<string, number>(2);
     cache.set('a', 1);
     cache.set('b', 2);

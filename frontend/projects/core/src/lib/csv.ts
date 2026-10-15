@@ -1,10 +1,10 @@
-/** Segno iniziale UTF-8 (BOM): senza, Excel apre il file con la codifica sbagliata. */
+/** UTF-8 byte order mark (BOM): without it, Excel opens the file with the wrong encoding. */
 const BOM = String.fromCharCode(0xfeff);
 
 /**
- * CSV per Excel in italiano: separatore punto e virgola, righe CRLF, BOM UTF-8. Ogni cella è testo tra virgolette
- * quando serve. Le celle che cominciano con = + - @ (o tabulazione e ritorno a capo) si fanno precedere da un apice:
- * un foglio di calcolo non le esegue come formule (CSV injection).
+ * CSV for Excel in European locales: semicolon separator, CRLF lines, UTF-8 BOM. Every cell is quoted text
+ * when needed. Cells starting with = + - @ (or tab and carriage return) get a leading apostrophe:
+ * a spreadsheet does not run them as formulas (CSV injection).
  */
 export function toCsv(header: string[], rows: unknown[][]): string {
   const line = (cells: unknown[]) => cells.map(cell).join(';');
@@ -17,19 +17,19 @@ function cell(value: unknown): string {
   return /[";\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
 }
 
-/** Nome di file sicuro con estensione .csv. */
+/** Safe file name with the .csv extension. */
 export function csvFileName(name: string | undefined): string {
   const base = (name ?? 'export').replace(/[^A-Za-z0-9 _.-]/g, '').trim() || 'export';
   return base.toLowerCase().endsWith('.csv') ? base : `${base}.csv`;
 }
 
-/** Le righe di una risposta: un elenco, oppure `items` di una risposta a pagine. */
+/** The rows of a response: a list, or the `items` of a paged response. */
 export function rowsOf(data: unknown): Record<string, unknown>[] {
   const list = Array.isArray(data) ? data : data && typeof data === 'object' && Array.isArray((data as { items?: unknown }).items) ? (data as { items: unknown[] }).items : [];
   return list.filter((r): r is Record<string, unknown> => r !== null && typeof r === 'object' && !Array.isArray(r));
 }
 
-/** Fa scaricare un file al browser. */
+/** Makes the browser download a file. */
 export function downloadText(fileName: string, mime: string, content: string): void {
   const url = URL.createObjectURL(new Blob([content], { type: mime }));
   const link = document.createElement('a');

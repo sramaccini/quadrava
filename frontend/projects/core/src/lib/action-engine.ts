@@ -4,13 +4,13 @@ import type { SpanContext } from './ports';
 import type { ScreenRuntime } from './screen-runtime';
 import type { Scope } from './types';
 
-const GENERIC_ERROR = 'Operazione non riuscita';
+const GENERIC_ERROR = 'Operation failed';
 const genericError = (runtime: ScreenRuntime): string => runtime.systemText('lc.operationFailed', GENERIC_ERROR);
 
-/** Quante sequenze con nome (`run`) possono richiamarsi una dentro l'altra: oltre è quasi certamente un ciclo. */
+/** How many named sequences (`run`) can call one another: beyond that it is almost certainly a cycle. */
 const MAX_RUN_DEPTH = 8;
 
-/** Esito di un passo; `scope` è quello che vedono i passi seguenti (con la risposta di una `call` con `as`). */
+/** Outcome of a step; `scope` is what the following steps see (with the response of a `call` with `as`). */
 interface Outcome {
   ok: boolean;
   scope?: Scope;
@@ -18,7 +18,7 @@ interface Outcome {
 
 const asList = (steps: Step | Step[]): Step[] => (Array.isArray(steps) ? steps : [steps]);
 
-/** Dove si trova una sequenza: profondità dei `run` annidati e span dell'azione che la contiene. */
+/** Where a sequence runs: depth of the nested `run`s and span of the action that contains it. */
 interface Run {
   depth: number;
   trace?: SpanContext;
@@ -26,7 +26,7 @@ interface Run {
 
 const SIMPLE_KINDS = ['if', 'set', 'toast', 'confirm', 'dialog', 'validate', 'print'] as const;
 
-/** Passi di una sequenza per le tracce: tipo e nome dalla definizione (`call salva, refresh elenco`), mai valori. */
+/** Steps of a sequence for traces: kind and name from the definition (`call save, refresh list`), never values. */
 export function describeSteps(steps: Step[]): string {
   const named = (kind: string, name: string) => `${kind} ${name}`;
   return steps
@@ -43,13 +43,13 @@ export function describeSteps(steps: Step[]): string {
 }
 
 /**
- * Esegue una sequenza di passi in ordine. Si ferma al primo passo che fallisce
- * (dopo aver eseguito il suo `onError`, se c'è). Non lancia mai eccezioni.
- * Restituisce true se tutti i passi sono riusciti. Le variabili aggiunte da un passo (`as` di una `call`) le vedono
- * i passi seguenti della stessa sequenza.
+ * Runs a sequence of steps in order. It stops at the first step that fails
+ * (after running its `onError`, if any). It never throws.
+ * Returns true if every step succeeded. The variables added by a step (`as` of a `call`) are seen by
+ * the following steps of the same sequence.
  */
 export async function runSteps(runtime: ScreenRuntime, steps: Step[], scope: Scope = {}): Promise<boolean> {
-  // Ogni sequenza avviata da un componente è un'azione: uno span, di cui le chiamate HTTP dei passi sono figlie.
+  // Every sequence started by a component is an action: a span, whose children are the HTTP calls of the steps.
   const span = runtime.startSpan('action.run', { 'lowcode.action': describeSteps(steps) });
   const ok = await runSequence(runtime, steps, scope, { depth: 0, trace: span?.context });
   span?.end(ok);
@@ -76,16 +76,16 @@ async function runStep(runtime: ScreenRuntime, step: Step, scope: Scope, run: Ru
   if ('call' in step) {
     const args = (runtime.resolveValue(step.args ?? {}, scope) ?? {}) as Record<string, unknown>;
     const result = await runtime.execute(step.call, args, scope, undefined, run.trace);
-    // Con `as` i passi seguenti vedono la risposta con quel nome.
+    // With `as` the following steps see the response under that name.
     if (result.ok) return { ok: true, scope: step.as ? { ...scope, [step.as]: result.data } : scope };
-    // Il messaggio del server non viene mostrato all'utente: potrebbe contenere dettagli interni. I passi di onError
-    // vedono solo il codice (error.status).
+    // The server message is not shown to the user: it could contain internal details. The onError steps
+    // see only the code (error.status).
     const handler = step.onError === undefined ? [{ toast: genericError(runtime) }] : asList(step.onError);
     await runSequence(runtime, handler, { ...scope, error: { status: result.status ?? 0 } }, run);
     return { ok: false };
   }
   if ('if' in step) {
-    // Fail-closed: una condizione che non si può valutare non esegue nessuno dei due rami e ferma la sequenza.
+    // Fail-closed: a condition that cannot be evaluated runs neither branch and stops the sequence.
     const value = runtime.condition(step.if, scope);
     if (value === null) {
       runtime.toast(genericError(runtime), 'error');
@@ -97,7 +97,7 @@ async function runStep(runtime: ScreenRuntime, step: Step, scope: Scope, run: Ru
   if ('run' in step) {
     const steps = runtime.action(step.run);
     if (!steps || run.depth >= MAX_RUN_DEPTH) {
-      runtime.report(`run ${step.run}`, steps ? 'sequenze richiamate una dentro l\'altra troppe volte' : 'sequenza sconosciuta');
+      runtime.report(`run ${step.run}`, steps ? 'sequences called one inside the other too many times' : 'unknown sequence');
       runtime.toast(genericError(runtime), 'error');
       return { ok: false };
     }
@@ -106,7 +106,7 @@ async function runStep(runtime: ScreenRuntime, step: Step, scope: Scope, run: Ru
   return { ok: await runSimpleStep(runtime, step, scope, run.trace) };
 }
 
-/** I passi che non cambiano le variabili né richiamano altri passi. */
+/** The steps that neither change variables nor call other steps. */
 async function runSimpleStep(
   runtime: ScreenRuntime,
   step: Exclude<Step, { call: string } | { if: string } | { run: string }>,
@@ -124,11 +124,11 @@ async function runSimpleStep(
     return true;
   }
   if ('confirm' in step) {
-    // Se l'utente rinuncia la sequenza si ferma in silenzio: non è un errore.
+    // If the user gives up the sequence stops silently: it is not an error.
     return runtime.confirm(step.confirm, scope);
   }
   if ('dialog' in step) {
-    // Come confirm: se l'utente annulla la sequenza si ferma in silenzio.
+    // Like confirm: if the user cancels the sequence stops silently.
     return runtime.openDialog(step.dialog, scope);
   }
   if ('toast' in step) {
@@ -136,9 +136,9 @@ async function runSimpleStep(
     return true;
   }
   if ('validate' in step) {
-    // I campi mostrano i propri errori; un avviso dice perché non si procede.
+    // The fields show their own errors; a notice says why it does not go on.
     if (runtime.validate(step.validate)) return true;
-    runtime.toast(runtime.systemText('lc.checkFields', 'Controlla i campi evidenziati'), 'error');
+    runtime.toast(runtime.systemText('lc.checkFields', 'Check the highlighted fields'), 'error');
     return false;
   }
   if ('print' in step) {

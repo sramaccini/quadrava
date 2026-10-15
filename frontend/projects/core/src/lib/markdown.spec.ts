@@ -1,14 +1,14 @@
 import { markdownToPlain, parseInline, parseMarkdown, safeHref } from './markdown';
 
 describe('Markdown ristretto', () => {
-  it('paragrafi separati da righe vuote; un a capo dentro un paragrafo resta un a capo', () => {
+  it('paragraphs separated by empty lines; a line break inside a paragraph stays a line break', () => {
     expect(parseMarkdown('Prima riga\nseconda riga\n\nAltro paragrafo')).toEqual([
       { kind: 'paragraph', content: [{ kind: 'text', text: 'Prima riga' }, { kind: 'break' }, { kind: 'text', text: 'seconda riga' }] },
       { kind: 'paragraph', content: [{ kind: 'text', text: 'Altro paragrafo' }] },
     ]);
   });
 
-  it('titoli, citazioni ed elenchi puntati e numerati, anche annidati', () => {
+  it('headings, quotes, bulleted and numbered lists, also nested', () => {
     const blocks = parseMarkdown('# Titolo\n- uno\n- due\n  1. a\n  2. b\n- tre\n\n3. terzo\n4. quarto\n\n> citato\n> ancora');
     expect(blocks[0]).toEqual({ kind: 'heading', level: 1, content: [{ kind: 'text', text: 'Titolo' }] });
     expect(blocks[1]).toMatchObject({
@@ -37,12 +37,12 @@ describe('Markdown ristretto', () => {
       { kind: 'code', text: 'x*y' },
       { kind: 'text', text: ' *no*' },
     ]);
-    // Simboli isolati e parole con trattino basso restano testo.
+    // Isolated symbols and words with underscores stay text.
     expect(parseInline('3 * 4 = 12 e nome_file_lungo')).toEqual([{ kind: 'text', text: '3 * 4 = 12 e nome_file_lungo' }]);
     expect(parseInline('***entrambi***')).toEqual([{ kind: 'strong', children: [{ kind: 'em', children: [{ kind: 'text', text: 'entrambi' }] }] }]);
   });
 
-  it('collegamenti solo verso https, mailto e percorsi relativi: gli altri restano testo', () => {
+  it('links only to https, mailto and relative paths: the others stay text', () => {
     expect(parseInline('[Sito](https://example.com/a?b=1)')).toEqual([{ kind: 'link', href: 'https://example.com/a?b=1', external: true, children: [{ kind: 'text', text: 'Sito' }] }]);
     expect(parseInline('[Ordine](/ordini/7)')).toEqual([{ kind: 'link', href: '/ordini/7', external: false, children: [{ kind: 'text', text: 'Ordine' }] }]);
     for (const bad of ['javascript:alert(1)', 'http://x.test', '//evil.test', 'data:text/html,x', '/../segreto', 'JaVaScRiPt:alert(1)']) {
@@ -52,7 +52,7 @@ describe('Markdown ristretto', () => {
     expect(safeHref('mailto:ufficio@example.com')).toBe('mailto:ufficio@example.com');
   });
 
-  it('l’HTML nel testo resta testo; testi enormi si troncano; il testo semplice per i riassunti', () => {
+  it('HTML in the text stays text; huge texts are truncated; plain text for summaries', () => {
     expect(parseMarkdown('<script>alert(1)</script> <b>no</b>')).toEqual([{ kind: 'paragraph', content: [{ kind: 'text', text: '<script>alert(1)</script> <b>no</b>' }] }]);
     expect(markdownToPlain('x'.repeat(30_000)).length).toBe(20_000);
     expect(markdownToPlain('# Titolo\n- **uno**\n- [due](https://x.it)')).toBe('Titolo\nuno\ndue');

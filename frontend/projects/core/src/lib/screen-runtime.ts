@@ -27,13 +27,13 @@ export interface RuntimeDeps {
   navigator: ScreenNavigator;
   notifier: Notifier;
   diagnostics?: RuntimeDiagnostics | null;
-  /** Se manca, non si traccia nulla. */
+  /** If missing, nothing is traced. */
   tracer?: RuntimeTracer | null;
-  /** Se manca, i passi `confirm` non procedono (fail-closed). */
+  /** If missing, `confirm` steps do not go on (fail-closed). */
   confirmation?: Confirmation | null;
-  /** Se manca, i passi `dialog` non procedono (fail-closed). */
+  /** If missing, `dialog` steps do not go on (fail-closed). */
   formDialog?: FormDialog | null;
-  /** Lingua e traduzioni. Se manca, i testi restano in italiano e `t()` usa il ripiego. */
+  /** Language and translations. If missing, the runtime's own texts use their English fallbacks and `t()` uses the fallback. */
   i18n?: I18n | null;
 }
 
@@ -43,33 +43,33 @@ const FORBIDDEN_PATH_SEGMENTS = new Set(['__proto__', 'constructor', 'prototype'
 const IDLE: DataSourceState = { status: 'idle', data: null };
 
 /**
- * Stato e comportamento di UNA schermata in esecuzione: stato (`state`), data source, valutazione delle espressioni.
- * Non conosce Angular a livello di template: i componenti lo ricevono come input.
+ * State and behaviour of ONE running screen: state (`state`), data sources, evaluation of expressions.
+ * It knows nothing of Angular templates: components receive it as an input.
  */
 export class ScreenRuntime {
   readonly engine: ExpressionEngine;
-  /** Stato della schermata: filtri, pagina, selezione. Si legge nelle espressioni come `state`. */
+  /** State of the screen: filters, page, selection. Read in expressions as `state`. */
   readonly state = signal<Record<string, unknown>>({ page: 0 });
   readonly dataSources = signal<Record<string, DataSourceState>>({});
-  /** Quante volte è stato chiesto di ricaricare ogni data source (passo refresh): i componenti che lo interrogano da sé lo seguono. */
+  /** How many times each data source was asked to reload (refresh step): components that query it themselves follow it. */
   readonly refreshCount = signal<Record<string, number>>({});
-  /** Vero se l'utente ha il permesso richiesto dalla schermata (`requires`). */
+  /** True if the user has the permission required by the screen (`requires`). */
   readonly allowed = computed(() => !this.definition.requires || this.deps.authorization.can(this.definition.requires));
 
   private readonly effects: EffectRef[] = [];
   private readonly sequence = new Map<string, number>();
-  /** Letture in corso di ogni data source, da annullare quando ne parte una più recente. */
+  /** Reads in progress of every data source, to cancel when a newer one starts. */
   private readonly inflight = new Map<string, AbortController>();
-  /** Letture di servizio (`query`) identiche in corso: chi arriva dopo aspetta la stessa risposta. */
+  /** Identical service reads (`query`) in progress: whoever arrives later waits for the same response. */
   private readonly sharedQueries = new Map<string, Promise<unknown>>();
   private readonly missingKeys = new Set<string>();
-  /** Controlli dei campi a sé, per gruppo di validazione. */
+  /** Checks of the standalone fields, by validation group. */
   private readonly validators = new Map<string, Set<() => boolean>>();
-  /** Ultima richiesta del caricamento automatico di ogni data source GET (per non ripeterla se non cambia). */
+  /** Last request of the automatic load of every GET data source (so as not to repeat it if it does not change). */
   private readonly lastAutoRequest = new Map<string, string>();
-  /** Span dell'apertura: si chiude quando ogni data source GET ha finito la sua prima lettura. */
+  /** Span of the opening: it closes when every GET data source has finished its first read. */
   private readonly openSpan: TraceSpan | null;
-  /** Data source GET che non hanno ancora finito la prima lettura, e se qualcuna non è riuscita. */
+  /** GET data sources that have not finished their first read yet, and whether any of them failed. */
   private readonly pendingFirstLoad = new Set<string>();
   private firstLoadFailed = false;
 
@@ -95,15 +95,15 @@ export class ScreenRuntime {
           : undefined,
       },
     );
-    // I filtri dichiarati esistono nello stato fin dall'inizio (nulli): i data source che li usano non vanno in errore al primo caricamento.
+    // The declared filters exist in the state from the start (null): the data sources that use them do not fail on the first load.
     this.seedFilters(definition.components);
     const reads = Object.entries(definition.dataSources ?? {}).filter(([, source]) => source.method === 'GET');
     for (const [name] of reads) this.pendingFirstLoad.add(name);
     this.openSpan = this.startSpan('screen.open', { 'lowcode.datasources': reads.length });
     if (reads.length === 0) this.openSpan?.end(true);
-    // Ogni data source GET si carica da solo e si ricarica quando cambia la richiesta risolta (URL e parametri: filtri,
-    // pagina, ordinamento…). Un cambiamento dello stato che non tocca la richiesta (una selezione, un passo, un nodo
-    // scelto) non provoca una nuova chiamata: per ricaricare comunque c'è il passo refresh.
+    // Every GET data source loads by itself and reloads when the resolved request changes (URL and parameters: filters,
+    // page, sorting…). A state change that does not touch the request (a selection, a step, a chosen node) does not
+    // cause a new call: to reload anyway there is the refresh step.
     for (const [name] of reads) {
       this.effects.push(
         effect(
@@ -115,13 +115,13 @@ export class ScreenRuntime {
             }
             const built = this.build(name, {});
             untracked(() => {
-              const key = built.ok ? JSON.stringify(built.request) : `errore: ${built.error}`;
+              const key = built.ok ? JSON.stringify(built.request) : `error: ${built.error}`;
               if (this.lastAutoRequest.get(name) === key) return;
               this.lastAutoRequest.set(name, key);
               const first = this.pendingFirstLoad.has(name);
               if (built.ok) {
                 void this.run(name, built.request, first ? this.openSpan?.context : undefined).then((result) => {
-                  // Una lettura annullata perché superata lascia l'esito a quella che l'ha sostituita.
+                  // A read cancelled because outdated leaves the outcome to the one that replaced it.
                   if (first && (result.ok || result.error !== 'annullata')) this.firstLoadDone(name, result.ok);
                 });
               } else {
@@ -136,7 +136,7 @@ export class ScreenRuntime {
     }
   }
 
-  /** Filtri dichiarati (nulli), ordinamenti predefiniti e selezioni (vuote) esistono nello stato prima del primo caricamento. */
+  /** Declared filters (null), default sorting and selections (empty) exist in the state before the first load. */
   private seedFilters(nodes: readonly NodeDefinition[]): void {
     for (const node of nodes) {
       if (node.type === 'filterBar') {
@@ -154,14 +154,14 @@ export class ScreenRuntime {
       } else if (node.type === 'tabs') {
         for (const tab of node.tabs) this.seedFilters(tab.components);
       } else if (node.type === 'calendar') {
-        // Il calendario parte dal mese corrente.
+        // The calendar starts from the current month.
         if (node.bind && this.getState(node.bind) === undefined) {
           const now = new Date();
           this.setState(node.bind, `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`);
         }
       } else if (node.type === 'input') {
         const path = inputPath(node);
-        // Il valore iniziale può contenere {{ }} (per esempio un testo tradotto).
+        // The initial value can contain {{ }} (for example a translated text).
         if (this.getState(path) === undefined) this.setState(path, this.resolveValue(initialInputValue(node)));
       } else if (node.type === 'tree') {
         if (node.bind && this.getState(node.bind) === undefined) this.setState(node.bind, null);
@@ -176,14 +176,14 @@ export class ScreenRuntime {
     this.openSpan?.end(!this.firstLoadFailed, { 'lowcode.interrupted': this.pendingFirstLoad.size > 0 });
     for (const e of this.effects) e.destroy();
     this.effects.length = 0;
-    // Lasciata la schermata, le letture in corso non servono più.
+    // Once the screen is left, the reads in progress are no longer needed.
     for (const controller of this.inflight.values()) controller.abort();
     this.inflight.clear();
   }
 
   /**
-   * Apre uno span con il nome della schermata tra gli attributi; null se non c'è un destinatario delle tracce. Una
-   * tracciatura che non riesce non disturba la schermata.
+   * Opens a span with the screen name among its attributes; null if there is no trace receiver. A trace that fails
+   * does not disturb the screen.
    */
   startSpan(name: string, attributes: SpanAttributes = {}, parent?: SpanContext): TraceSpan | null {
     const tracer = this.deps.tracer;
@@ -201,7 +201,7 @@ export class ScreenRuntime {
     if (this.pendingFirstLoad.size === 0) this.openSpan?.end(!this.firstLoadFailed);
   }
 
-  /** Contesto di valutazione: utente, stato, parametri e variabili del punto corrente. */
+  /** Evaluation context: user, state, parameters and variables of the current point. */
   context(scope: Scope = {}): Scope {
     const user = this.deps.userProvider.user();
     return { user: this.deps.i18n ? { ...user, locale: this.deps.i18n.locale() } : user, state: this.state(), params: this.params, ...scope };
@@ -211,7 +211,7 @@ export class ScreenRuntime {
     const ctx = this.context(scope);
     return (
       this.engine.evaluateCondition(node.visibleIf, ctx, { whenMissing: true }) &&
-      // hiddenIf in errore => nascosto (fail-closed)
+      // hiddenIf in error => hidden (fail-closed)
       !this.engine.evaluateCondition(node.hiddenIf, ctx, { whenMissing: false, fallback: true })
     );
   }
@@ -220,41 +220,41 @@ export class ScreenRuntime {
     return this.engine.evaluateCondition(node.enabledIf, this.context(scope), { whenMissing: true });
   }
 
-  /** readOnlyIf in errore => sola lettura (fail-closed). */
+  /** readOnlyIf in error => read-only (fail-closed). */
   isReadOnly(node: { readOnlyIf?: string }, scope: Scope = {}): boolean {
     return this.engine.evaluateCondition(node.readOnlyIf, this.context(scope), { whenMissing: false, fallback: true });
   }
 
-  /** Scritta di sistema (messaggi generici del runtime): dal catalogo `lc.*` nella lingua attiva, oppure il ripiego italiano. */
+  /** System text (generic messages of the runtime): from the `lc.*` catalogue in the active language, or the English fallback. */
   systemText(key: string, fallback: string): string {
     return this.deps.i18n ? this.deps.i18n.t(key, {}, fallback) : fallback;
   }
 
-  /** Segnala una sola volta per schermata una chiave di traduzione che non esiste in nessuna lingua. */
+  /** Reports, once per screen, a translation key that exists in no language. */
   private reportMissingKey(key: string): void {
     if (this.missingKeys.has(key)) return;
     this.missingKeys.add(key);
-    this.report('t()', `chiave di traduzione mancante: ${key}`);
+    this.report('t()', `missing translation key: ${key}`);
   }
 
   /**
-   * Condizione di un passo `if`: true o false; null se non si può valutare o non è un valore vero/falso (segnalato, senza
-   * il testo dell'errore, che potrebbe contenere dati).
+   * Condition of an `if` step: true or false; null if it cannot be evaluated or is not a true/false value (reported, without
+   * the text of the error, which could contain data).
    */
   condition(template: string, scope: Scope = {}): boolean | null {
     const result = this.engine.interpolate(template, this.context(scope));
     if (result.ok && typeof result.value === 'boolean') return result.value;
-    this.report('if', result.ok ? 'la condizione non è vera né falsa' : 'condizione non valutabile');
+    this.report('if', result.ok ? 'the condition is neither true nor false' : 'condition cannot be evaluated');
     return null;
   }
 
-  /** Sequenza con nome della schermata (`actions`), oppure null se non c'è. */
+  /** Named sequence of the screen (`actions`), or null if missing. */
   action(name: string): Step[] | null {
     const steps = this.definition.actions?.[name];
     return steps === undefined ? null : Array.isArray(steps) ? steps : [steps];
   }
 
-  /** Valuta un testo con `{{ }}`; in caso di errore restituisce il testo originale. */
+  /** Evaluates a text with `{{ }}`; on error it returns the original text. */
   text(template: string | undefined, scope: Scope = {}): string {
     if (template === undefined) return '';
     const result = this.engine.interpolate(template, this.context(scope));
@@ -262,15 +262,15 @@ export class ScreenRuntime {
     return result.value === null || result.value === undefined ? '' : String(result.value);
   }
 
-  /** Risolve ricorsivamente le espressioni nelle stringhe di un valore (args, params). Le espressioni in errore diventano `undefined`. */
+  /** Resolves recursively the expressions in the strings of a value (args, params). Expressions in error become `undefined`. */
   resolveValue(value: unknown, scope: Scope = {}): unknown {
     const ctx = this.context(scope);
     return this.resolveIn(value, ctx);
   }
 
   /**
-   * Registra il controllo di un campo nel suo gruppo di validazione; restituisce la funzione che lo toglie (quando il
-   * campo sparisce). Il controllo mostra gli errori del campo e dice se è valido.
+   * Registers the check of a field in its validation group; returns the function that removes it (when the field
+   * disappears). The check shows the errors of the field and tells whether it is valid.
    */
   registerValidator(group: string, check: () => boolean): () => void {
     const set = this.validators.get(group) ?? new Set();
@@ -279,13 +279,13 @@ export class ScreenRuntime {
     return () => set.delete(check);
   }
 
-  /** Controlla tutti i campi del gruppo (`*` = tutti), senza fermarsi al primo: ognuno mostra i propri errori. */
+  /** Checks all the fields of the group (`*` = all), without stopping at the first one: each one shows its own errors. */
   validate(group: string): boolean {
     const checks = group === '*' ? [...this.validators.values()].flatMap((s) => [...s]) : [...(this.validators.get(group) ?? [])];
     return checks.map((check) => check()).every(Boolean);
   }
 
-  /** Stampa del browser (il foglio di stile di stampa nasconde il guscio dell'applicazione). */
+  /** Browser print (the print style sheet hides the application shell). */
   print(): void {
     globalThis.print?.();
   }
@@ -293,7 +293,7 @@ export class ScreenRuntime {
   setState(path: string, value: unknown): void {
     const keys = path.replace(/^state\./, '').split('.');
     if (keys.some((k) => !k || FORBIDDEN_PATH_SEGMENTS.has(k))) {
-      this.report(`set ${path}`, 'percorso di stato non valido');
+      this.report(`set ${path}`, 'invalid state path');
       return;
     }
     this.state.update((current) => assign(current, keys, value));
@@ -308,14 +308,14 @@ export class ScreenRuntime {
     return current;
   }
 
-  /** Stato corrente di un data source. */
+  /** Current state of a data source. */
   source(name: string): DataSourceState {
     return this.dataSources()[name] ?? IDLE;
   }
 
   /**
-   * Esegue un data source con gli argomenti dati (variabili disponibili a `url` e `params`). Con `file` la richiesta
-   * diventa multipart: il file viaggia come file e non nel corpo JSON. `trace`: lo span dell'azione da cui parte.
+   * Runs a data source with the given arguments (variables available to `url` and `params`). With `file` the request
+   * becomes multipart: the file travels as a file and not in the JSON body. `trace`: the span of the action it starts from.
    */
   async execute(name: string, args: Record<string, unknown> = {}, scope: Scope = {}, file?: DataRequest['file'], trace?: SpanContext): Promise<CallResult> {
     const built = this.build(name, args, scope);
@@ -327,8 +327,8 @@ export class ScreenRuntime {
   }
 
   /**
-   * Esegue un data source e restituisce la risposta senza toccare il suo stato condiviso (le righe mostrate dagli altri
-   * componenti restano quelle di prima). Serve per richieste di servizio, come risolvere il testo di un valore.
+   * Runs a data source and returns the response without touching its shared state (the rows shown by the other
+   * components stay the previous ones). Used for service requests, such as resolving the text of a value.
    */
   async query(name: string, args: Record<string, unknown> = {}, scope: Scope = {}, trace?: SpanContext): Promise<CallResult> {
     const built = this.build(name, args, scope);
@@ -356,9 +356,9 @@ export class ScreenRuntime {
   }
 
   /**
-   * Ricarica un data source. Un GET si riesegue qui; un data source interrogato direttamente da un componente (per
-   * esempio la ricerca di una serverDataTable, di solito POST) viene solo segnalato con `refreshCount`, e il
-   * componente ripete le sue richieste.
+   * Reloads a data source. A GET is run again here; a data source queried directly by a component (for
+   * example the search of a serverDataTable, usually POST) is only signalled through `refreshCount`, and the
+   * component repeats its requests.
    */
   async refresh(name: string, trace?: SpanContext): Promise<CallResult> {
     const source = this.definition.dataSources?.[name];
@@ -375,21 +375,21 @@ export class ScreenRuntime {
     this.deps.navigator.navigate(screen, params);
   }
 
-  /** Chiede conferma con un testo che può contenere espressioni. Senza servizio di conferma non si procede. */
+  /** Asks for confirmation with a text that can contain expressions. Without a confirmation service it does not go on. */
   async confirm(message: string, scope: Scope = {}): Promise<boolean> {
     const confirmation = this.deps.confirmation;
     if (!confirmation) {
-      this.report('confirm', 'nessun servizio di conferma disponibile: azione non eseguita');
+      this.report('confirm', 'no confirmation service available: action not run');
       return false;
     }
     return confirmation.confirm(this.text(message, scope));
   }
 
-  /** Apre una finestra con un form. Senza servizio non si procede; se l'utente annulla restituisce false. */
+  /** Opens a window with a form. Without a service it does not go on; if the user cancels it returns false. */
   async openDialog(spec: DialogStep['dialog'], scope: Scope = {}): Promise<boolean> {
     const dialog = this.deps.formDialog;
     if (!dialog) {
-      this.report('dialog', 'nessun servizio per le finestre con form: azione non eseguita');
+      this.report('dialog', 'no service for form windows: action not run');
       return false;
     }
     return dialog.open({
@@ -399,7 +399,7 @@ export class ScreenRuntime {
         fields: spec.fields,
         initial: spec.initial,
         columns: spec.columns,
-        actions: [{ label: spec.submitLabel ?? this.systemText('lc.confirm', 'Conferma'), onClick: spec.onSubmit }],
+        actions: [{ label: spec.submitLabel ?? this.systemText('lc.confirm', 'Confirm'), onClick: spec.onSubmit }],
       },
       runtime: this,
       scope,
@@ -411,8 +411,8 @@ export class ScreenRuntime {
   }
 
   /**
-   * Segnala un problema tecnico. L'invio è differito: gli errori delle espressioni nascono durante il rendering
-   * dei template, dove scrivere in un signal è vietato, e le implementazioni della porta potrebbero farlo.
+   * Reports a technical problem. Sending is deferred: expression errors arise while templates render,
+   * where writing to a signal is forbidden, and the port implementations might do it.
    */
   report(source: string, error: string): void {
     const diagnostics = this.deps.diagnostics;
@@ -426,8 +426,8 @@ export class ScreenRuntime {
     this.sequence.set(name, seq);
     const previous = this.source(name);
     this.setSource(name, { status: 'loading', data: previous.data });
-    // Una lettura nuova annulla quella ancora in corso dello stesso data source. Le scritture non si annullano mai:
-    // il servizio potrebbe averle già eseguite.
+    // A new read cancels the one of the same data source still in progress. Writes are never cancelled:
+    // the service may have run them already.
     const controller = request.method === 'GET' ? new AbortController() : null;
     if (controller) {
       this.inflight.get(name)?.abort();
@@ -435,15 +435,15 @@ export class ScreenRuntime {
     }
     try {
       const data = await this.deps.data.request(request, { signal: controller?.signal, source: name, trace });
-      // Una risposta più vecchia non deve sovrascrivere una più recente.
+      // An older response must not overwrite a newer one.
       if (this.sequence.get(name) === seq) this.setSource(name, { status: 'ready', data });
       return { ok: true, data };
     } catch (e) {
-      // Annullata perché superata: non è un errore da segnalare né da mostrare.
+      // Cancelled because outdated: not an error to report or to show.
       if (controller?.signal.aborted) return { ok: false, error: 'annullata' };
       const error = e instanceof Error ? e.message : String(e);
       this.report(`data source ${name}`, error);
-      if (this.sequence.get(name) === seq) this.setSource(name, { status: 'error', data: null, error: this.systemText('lc.loadFailed', 'Caricamento non riuscito') });
+      if (this.sequence.get(name) === seq) this.setSource(name, { status: 'error', data: null, error: this.systemText('lc.loadFailed', 'Loading failed') });
       return { ok: false, error, status: statusOf(e) };
     } finally {
       if (controller && this.inflight.get(name) === controller) this.inflight.delete(name);
@@ -457,14 +457,14 @@ export class ScreenRuntime {
   private build(name: string, args: Record<string, unknown>, scope: Scope = {}): Built {
     const source = this.definition.dataSources?.[name];
     if (!source) return { ok: false, error: `data source sconosciuto: ${name}` };
-    // Gli argomenti hanno la precedenza sulle variabili del punto da cui parte la chiamata (row, form).
-    // Variabili dei componenti che interrogano un data source, sempre presenti e nulle finché non servono: `search` e
-    // `lookupKey` (campi lookup), `request` (pagina, ordinamento, filtri e gruppi di una serverDataTable).
+    // Arguments take precedence over the variables of the point the call starts from (row, form).
+    // Variables of the components that query a data source, always present and null until needed: `search` and
+    // `lookupKey` (lookup fields), `request` (page, sorting, filters and groups of a serverDataTable).
     const ctx = this.context({ search: null, lookupKey: null, request: null, ...scope, ...args });
     const url = this.resolveUrl(source.url, ctx);
     if (!url.ok) return url;
     const resolved = (this.resolveIn(source.params ?? {}, ctx) ?? {}) as Record<string, unknown>;
-    // I valori vuoti (anche gli elenchi vuoti di una selezione multipla) non diventano parametri.
+    // Empty values (also the empty lists of a multiple selection) do not become parameters.
     const params = Object.fromEntries(Object.entries(resolved).filter(([, v]) => v !== undefined && v !== null && v !== '' && !(Array.isArray(v) && v.length === 0)));
     if (source.method === 'GET' || source.method === 'DELETE') {
       return { ok: true, request: { method: source.method, url: url.value, query: params } };
@@ -474,7 +474,7 @@ export class ScreenRuntime {
     return { ok: true, request };
   }
 
-  /** Sostituisce le espressioni dell'URL con valori codificati e accetta solo percorsi relativi alla stessa origine. */
+  /** Replaces the expressions of the URL with encoded values and accepts only paths relative to the same origin. */
   private resolveUrl(template: string, ctx: Scope): { ok: true; value: string } | { ok: false; error: string } {
     let url = '';
     try {
@@ -484,7 +484,7 @@ export class ScreenRuntime {
         } else {
           const result = this.engine.evaluate(segment.source, ctx);
           if (!result.ok || result.value === null || result.value === undefined) {
-            return { ok: false, error: `valore mancante nell'URL: ${segment.source}` };
+            return { ok: false, error: `missing value in the URL: ${segment.source}` };
           }
           url += encodeURIComponent(String(result.value));
         }
@@ -493,7 +493,7 @@ export class ScreenRuntime {
       return { ok: false, error: e instanceof Error ? e.message : String(e) };
     }
     if (!/^\/(?!\/)/.test(url) || url.includes('\\') || /(^|\/)\.\.(\/|$)/.test(url)) {
-      return { ok: false, error: 'URL non ammesso: deve essere un percorso relativo' };
+      return { ok: false, error: 'URL not allowed: it must be a relative path' };
     }
     return { ok: true, value: url };
   }
@@ -520,20 +520,20 @@ function assign(target: Record<string, unknown>, keys: string[], value: unknown)
   return { ...target, [head]: assign(base, rest, value) };
 }
 
-/** Stato di un campo `input`: `bind`, oppure `state.<nome del campo>`. */
+/** State of an `input` field: `bind`, or `state.<field name>`. */
 export function inputPath(node: InputNode): string {
   return node.bind ?? `state.${node.field.name}`;
 }
 
-/** Valore iniziale di un campo `input`: `default`, altrimenti falso per checkbox e switch e nullo per gli altri. */
+/** Initial value of an `input` field: `default`, otherwise false for checkbox and switch and null for the others. */
 export function initialInputValue(node: InputNode): unknown {
   if (node.default !== undefined) return node.default;
   return node.field.type === 'checkbox' || node.field.type === 'switch' ? false : null;
 }
 
 /**
- * Codice HTTP di un errore di chiamata: quello dell'errore del client dati (`status`) oppure quello in testa al
- * messaggio («409», come nei client della demo e dell'anteprima); 0 se non c'è (servizio non raggiungibile).
+ * HTTP code of a call error: the one of the data client error (`status`) or the one at the start of the
+ * message («409», as in the clients of the demo and of the preview); 0 if missing (service unreachable).
  */
 function statusOf(e: unknown): number {
   const status = (e as { status?: unknown } | null)?.status;

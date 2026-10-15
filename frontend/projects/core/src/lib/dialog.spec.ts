@@ -12,7 +12,7 @@ const screen: ScreenDefinition = {
   components: [],
 };
 
-describe('passo dialog', () => {
+describe('dialog step', () => {
   let fakes: Fakes;
   let rt: ScreenRuntime;
 
@@ -35,26 +35,26 @@ describe('passo dialog', () => {
   ];
   const scope = { row: { id: 7, numero: 'ORD-0007', nota: 'vecchia' } };
 
-  it('apre la finestra con titolo risolto, form e azione di invio; se l’invio riesce la sequenza prosegue', async () => {
+  it('opens the window with resolved title, form and submit action; if the submit succeeds the sequence goes on', async () => {
     fakes.dialogValues.push({ testo: 'nuova' });
     expect(await runSteps(rt, steps, scope)).toBe(true);
     const request = fakes.dialogs[0];
     expect(request.title).toBe('Nota per ORD-0007');
     expect(request.form.fields.map((f) => f.name)).toEqual(['testo']);
     expect(request.form.initial).toEqual({ testo: '{{ row.nota }}' });
-    expect(request.form.actions?.[0].label).toBe('Conferma');
+    expect(request.form.actions?.[0].label).toBe('Confirm');
     expect(request.scope).toEqual(scope);
     expect(fakes.requests).toEqual([{ method: 'POST', url: '/api/ordini/7/nota', body: { testo: 'nuova' } }]);
     expect(fakes.toasts.map((t) => t.message)).toEqual(['Nota salvata']);
   });
 
-  it('se l’utente annulla la sequenza si ferma in silenzio', async () => {
+  it('if the user cancels the sequence stops silently', async () => {
     expect(await runSteps(rt, steps, scope)).toBe(false);
     expect(fakes.requests).toEqual([]);
     expect(fakes.toasts).toEqual([]);
   });
 
-  it('senza servizio per le finestre non procede e lo segnala', async () => {
+  it('without a window service it does not go on and reports it', async () => {
     const plain = new ScreenRuntime(screen, { ...fakes.deps, formDialog: null }, TestBed.inject(Injector));
     expect(await runSteps(plain, steps, scope)).toBe(false);
     await Promise.resolve();

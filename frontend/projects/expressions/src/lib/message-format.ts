@@ -1,11 +1,11 @@
 /**
- * Formattatore di messaggi, un sottoinsieme di ICU MessageFormat:
+ * Message formatter, a subset of ICU MessageFormat:
  * - segnaposto semplice: `Ciao {nome}`;
- * - plurali: `{n, plural, =0 {nessuna fattura} one {# fattura} other {# fatture}}` (`#` è il numero formattato);
+ * - plurals: `{n, plural, =0 {no invoices} one {# invoice} other {# invoices}}` (`#` is the formatted number);
  * - scelta: `{genere, select, f {Gentile} other {Gentile}}`;
  * - numero: `{importo, number}`.
- * Le parentesi graffe letterali si scrivono `\{` e `\}`. Non lancia mai eccezioni: se il messaggio è malformato restituisce il testo originale.
- * Il risultato è sempre testo semplice (mai HTML): i valori dei segnaposto non vengono interpretati.
+ * Literal braces are written `\{` and `\}`. It never throws: if the message is malformed it returns the original text.
+ * The result is always plain text (never HTML): the values of the placeholders are not interpreted.
  */
 export function formatMessage(pattern: string, params: Record<string, unknown> = {}, locale = 'it'): string {
   if (!pattern.includes('{') && !pattern.includes('\\')) return pattern;
@@ -42,7 +42,7 @@ function findClose(src: string, open: number): number {
     else if (src[i] === '{') depth++;
     else if (src[i] === '}' && --depth === 0) return i;
   }
-  throw new Error('parentesi non chiusa');
+  throw new Error('unclosed brace');
 }
 
 function renderArgument(inner: string, params: Record<string, unknown>, locale: string): string {
@@ -63,7 +63,7 @@ function renderArgument(inner: string, params: Record<string, unknown>, locale: 
     const body = table.get(`=${n}`) ?? table.get(new Intl.PluralRules(locale).select(n)) ?? table.get('other') ?? '';
     return render(body, params, locale, new Intl.NumberFormat(locale).format(n));
   }
-  throw new Error(`tipo di segnaposto sconosciuto: ${kind}`);
+  throw new Error(`unknown placeholder type: ${kind}`);
 }
 
 function parseOptions(src: string): Map<string, string> {

@@ -20,7 +20,7 @@ import {
 import { I18n } from './i18n';
 import { ScreenRuntime } from './screen-runtime';
 
-/** Span registrato dal tracciatore finto: `ok` resta indefinito finché lo span è aperto. */
+/** Span recorded by the fake tracer: `ok` stays undefined while the span is open. */
 export interface RecordedSpan {
   name: string;
   attributes: SpanAttributes;
@@ -30,20 +30,20 @@ export interface RecordedSpan {
   endAttributes?: SpanAttributes;
 }
 
-/** Doppioni di test per le porte: registrano le chiamate e permettono di scegliere le risposte. */
+/** Test doubles for the ports: they record the calls and let tests choose the responses. */
 export class Fakes {
   permissions = new Set<string>();
   requests: DataRequest[] = [];
-  /** Opzioni di ogni richiesta, nello stesso ordine di `requests`. */
+  /** Options of every request, in the same order as `requests`. */
   requestOptions: (DataRequestOptions | undefined)[] = [];
   spans: RecordedSpan[] = [];
   toasts: { message: string; kind?: string }[] = [];
   navigations: { screen: string; params: Record<string, unknown> }[] = [];
   reports: { screen: string; source: string; error: string }[] = [];
-  /** Messaggi di conferma richiesti e risposte da dare in ordine (se finiscono, l'utente rinuncia). */
+  /** Confirmation messages requested and answers to give in order (when they run out, the user gives up). */
   confirmations: string[] = [];
   confirmAnswers: boolean[] = [];
-  /** Finestre con form aperte e valori da «inserire» in ordine (se finiscono, l'utente annulla). */
+  /** Form windows opened and values to «enter» in order (when they run out, the user cancels). */
   dialogs: FormDialogRequest[] = [];
   dialogValues: Record<string, unknown>[] = [];
   i18n = new I18n();

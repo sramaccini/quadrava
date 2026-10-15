@@ -1,10 +1,10 @@
-/** Segmento di un modello di testo: testo fisso oppure espressione tra doppie graffe. */
+/** Segment of a text template: fixed text or an expression in double braces. */
 export type TemplateSegment = { kind: 'text'; text: string } | { kind: 'expr'; source: string };
 
 /**
- * Divide un modello come `Ordine {{row.numero}} di {{row.cliente}}` in segmenti.
- * Le doppie graffe dentro una stringa tra apici dell'espressione non chiudono l'espressione.
- * Lancia un errore se un'espressione non è chiusa.
+ * Splits a template such as `Order {{row.number}} of {{row.customer}}` into segments.
+ * Double braces inside a quoted string of the expression do not close the expression.
+ * Throws an error if an expression is not closed.
  */
 export function parseTemplate(template: string): TemplateSegment[] {
   const segments: TemplateSegment[] = [];
@@ -14,7 +14,7 @@ export function parseTemplate(template: string): TemplateSegment[] {
     if (template.startsWith('{{', i)) {
       const end = findClosing(template, i + 2);
       if (end < 0) {
-        throw new Error('espressione non chiusa: manca }}');
+        throw new Error('unclosed expression: }} is missing');
       }
       if (text) {
         segments.push({ kind: 'text', text });

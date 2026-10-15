@@ -23,14 +23,14 @@ describe('themeToCssVars', () => {
     expect(vars['--lc-control-height']).toBe('30px');
   });
 
-  it('usa valori di ripiego per i token facoltativi', () => {
+  it('uses fallback values for the optional tokens', () => {
     const vars = themeToCssVars({ ...theme, tokens: { colors: theme.tokens.colors } });
     expect(vars['--lc-font-size']).toBe('15px');
     expect(vars['--lc-gap']).toBe('12px');
     expect(vars['--lc-color-muted']).toBe('#eee');
   });
 
-  it('ricava il guscio dai colori base se il tema non dichiara il layout', () => {
+  it('derives the shell from the base colours if the theme does not declare the layout', () => {
     const vars = themeToCssVars({ ...theme, tokens: { colors: theme.tokens.colors } });
     expect(vars['--lc-sider-bg']).toBe('#222');
     expect(vars['--lc-sider-text']).toBe('#eee');
@@ -40,7 +40,7 @@ describe('themeToCssVars', () => {
     expect(vars['--lc-content-padding']).toBe('24px');
   });
 
-  it('applica i token di layout dichiarati dal tema', () => {
+  it('applies the layout tokens declared by the theme', () => {
     const vars = themeToCssVars({
       ...theme,
       tokens: {

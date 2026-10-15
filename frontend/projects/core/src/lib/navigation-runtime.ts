@@ -4,7 +4,7 @@ import type { NavigationDefinition, NavigationItem, NavigationLeaf, NavigationAr
 import type { I18n } from './i18n';
 import type { Authorization, RuntimeDiagnostics, UserProvider } from './ports';
 
-/** Voce visibile che apre una schermata. I parametri sono già testi, pronti per la query string. */
+/** Visible item that opens a screen. The parameters are already texts, ready for the query string. */
 export interface VisibleLeaf {
   kind: 'leaf';
   id: string;
@@ -35,22 +35,22 @@ export interface NavigationDeps {
   authorization: Authorization;
   userProvider: UserProvider;
   diagnostics?: RuntimeDiagnostics | null;
-  /** Lingua e traduzioni: abilita `{{ t('chiave', 'ripiego') }}` nelle etichette del menu. */
+  /** Language and translations: enables `{{ t('key', 'fallback') }}` in the menu labels. */
   i18n?: I18n | null;
 }
 
-/** Posizione corrente nella navigazione: area e percorso di id dal gruppo alla voce. */
+/** Current position in the navigation: area and path of ids from the group to the item. */
 export interface NavigationLocation {
   area: string;
   path: string[];
 }
 
 /**
- * Menu filtrato per l'utente corrente. Regole (tutte fail-closed):
- * - una voce è visibile se l'utente ha `requires` e `visibleIf` vale vero (errore => nascosta);
- * - un gruppo senza voci visibili sparisce, e un’area senza voci visibili non compare.
- * `areas` è un computed: si aggiorna da solo se cambiano i permessi (Authorization basata su signal).
- * Il menu è solo comodità: l'enforcement resta nella schermata (`requires`) e nel backend.
+ * Menu filtered for the current user. Rules (all fail-closed):
+ * - an item is visible if the user has `requires` and `visibleIf` is true (error => hidden);
+ * - a group without visible items disappears, and an area without visible items does not appear.
+ * `areas` is a computed: it updates itself if the permissions change (signal-based Authorization).
+ * The menu is only a convenience: enforcement stays in the screen (`requires`) and in the back end.
  */
 export class NavigationRuntime {
   private readonly engine: ExpressionEngine;
@@ -74,7 +74,7 @@ export class NavigationRuntime {
     );
   }
 
-  /** Etichetta del menu: se contiene `{{ }}` (per esempio `t('chiave')`) la valuta; in caso di errore resta il testo scritto. */
+  /** Menu label: if it contains `{{ }}` (for example `t('key')`) it is evaluated; on error the written text stays. */
   private text(label: string): string {
     if (!label.includes('{{')) return label;
     const result = this.engine.interpolate(label, { user: this.deps.userProvider.user() });
@@ -85,13 +85,13 @@ export class NavigationRuntime {
     return this.areas().find((u) => u.id === id) ?? null;
   }
 
-  /** Prima voce visibile (in ordine di documento) di un’area. */
+  /** First visible item (in document order) of an area. */
   firstLeaf(areaId: string): VisibleLeaf | null {
     const area = this.area(areaId);
     return area ? firstLeafOf(area.items) : null;
   }
 
-  /** Dove atterrare all'avvio: l’area `default` se visibile, altrimenti la prima visibile. */
+  /** Where to land at start-up: the `default` area if visible, otherwise the first visible one. */
   defaultTarget(): { area: string; leaf: VisibleLeaf } | null {
     const wanted = this.definition.default;
     const order = [...this.areas()].sort((a, b) => Number(b.id === wanted) - Number(a.id === wanted));
@@ -102,7 +102,7 @@ export class NavigationRuntime {
     return null;
   }
 
-  /** Percorso della voce che corrisponde a una schermata con i parametri dati, nell’area indicata. */
+  /** Path of the item that matches a screen with the given parameters, in the given area. */
   locate(areaId: string, screen: string, params: Record<string, unknown> = {}): string[] | null {
     const area = this.area(areaId);
     if (!area) return null;
@@ -121,7 +121,7 @@ export class NavigationRuntime {
     return (best as { path: string[] } | null)?.path ?? null;
   }
 
-  /** Etichette del percorso (area, gruppi, voce) che porta a una schermata: servono alle briciole di pane. */
+  /** Labels of the path (area, groups, item) that leads to a screen: used by the breadcrumb. */
   trail(areaId: string, screen: string, params: Record<string, unknown> = {}): string[] | null {
     const area = this.area(areaId);
     const path = this.locate(areaId, screen, params);
@@ -137,7 +137,7 @@ export class NavigationRuntime {
     return labels;
   }
 
-  /** Area a cui appartiene una schermata: prima quella preferita (di norma la corrente), poi le altre. */
+  /** Area a screen belongs to: first the preferred one (usually the current one), then the others. */
   areaOf(screen: string, params: Record<string, unknown> = {}, preferred?: string | null): string | null {
     const order = [...this.areas()].sort((a, b) => Number(b.id === preferred) - Number(a.id === preferred));
     return order.find((u) => this.locate(u.id, screen, params) !== null)?.id ?? null;

@@ -9,7 +9,7 @@ describe('I18n', () => {
     return i18n;
   }
 
-  it('cerca nella lingua attiva, poi nella predefinita, poi nel ripiego, poi la chiave', () => {
+  it('looks in the active language, then in the default one, then in the fallback, then the key', () => {
     const i18n = make();
     i18n.setLocale('en');
     expect(i18n.lookup('a.salva')).toEqual({ text: 'Save', found: true });
@@ -22,7 +22,7 @@ describe('I18n', () => {
     expect(make().t('lc.ok')).toBe('OK it');
   });
 
-  it('formatta con i parametri secondo la lingua e la lingua cambia i testi', () => {
+  it('formats with the parameters according to the language, and the language changes the texts', () => {
     const i18n = make();
     i18n.addMessages('it', { 'a.n': '{n, plural, one {# riga} other {# righe}}' });
     expect(i18n.t('a.n', { n: 3 })).toBe('3 righe');
@@ -36,28 +36,28 @@ describe('I18n', () => {
 describe('loadMessages', () => {
   const reply = (body: unknown, ok = true) => async () => ({ ok, status: ok ? 200 : 404, json: async () => body });
 
-  it('carica il catalogo di ogni lingua', async () => {
+  it('loads the catalogue of every language', async () => {
     const i18n = new I18n();
     const problems = await loadMessages(i18n, ['it', 'en'], (l) => `/i18n/${l}.json`, async (url) => reply(url.includes('/it') ? { k: 'ciao' } : { k: 'hello' })());
     expect(problems).toEqual([]);
     expect(i18n.raw('k', 'en')).toBe('hello');
   });
 
-  it('segnala file mancanti e valori non testuali senza lanciare', async () => {
+  it('reports missing files and non-text values without throwing', async () => {
     const i18n = new I18n();
     const problems = await loadMessages(i18n, ['it', 'en'], (l) => `/i18n/${l}.json`, async (url) => (url.includes('/it') ? reply({ ok: 'x', bad: 5 })() : reply({}, false)()));
-    expect(problems.join('|')).toContain('it: la chiave bad non è un testo');
-    expect(problems.join('|')).toContain('en: catalogo non caricato (HTTP 404)');
+    expect(problems.join('|')).toContain('it: the key bad is not a text');
+    expect(problems.join('|')).toContain('en: catalogue not loaded (HTTP 404)');
     expect(i18n.raw('ok', 'it')).toBe('x');
   });
 
-  it('loadCatalogs: cataloghi da una funzione qualsiasi; voci non testuali e cataloghi mancanti segnalati senza bloccare gli altri', async () => {
+  it('loadCatalogs: catalogues from any function; non-text entries and missing catalogues reported without blocking the others', async () => {
     const i18n = new I18n();
     const problems = await loadCatalogs(i18n, ['it', 'en', 'fr'], async (l) => {
       if (l === 'fr') throw new Error('HTTP 404');
       return l === 'it' ? { saluto: 'Ciao', n: 3 } : { saluto: 'Hello' };
     });
-    expect(problems).toEqual(['it: la chiave n non è un testo', 'fr: catalogo non caricato (HTTP 404)']);
+    expect(problems).toEqual(['it: the key n is not a text', 'fr: catalogue not loaded (HTTP 404)']);
     expect(i18n.raw('saluto', 'it')).toBe('Ciao');
     expect(i18n.raw('saluto', 'en')).toBe('Hello');
   });

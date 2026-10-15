@@ -12,16 +12,16 @@ import type {
 } from './types';
 
 /**
- * Valutatore delle espressioni del linguaggio (CEL). Principi:
- * - nessun accesso a rete, DOM o codice arbitrario: le uniche funzioni esposte sono `can(permesso)` e quelle di presentazione (`t`, `fmt*`, `plural`), senza effetti collaterali;
- * - limiti strutturali sull'espressione (profondità, nodi, argomenti);
- * - non lancia mai eccezioni: restituisce un esito, e le condizioni falliscono "chiuse" (valore di ripiego).
+ * Evaluator of the expressions of the language (CEL). Principles:
+ * - no access to network, DOM or arbitrary code: the only exposed functions are `can(permission)` and the presentation ones (`t`, `fmt*`, `plural`), without side effects;
+ * - structural limits on the expression (depth, nodes, arguments);
+ * - it never throws: it returns an outcome, and conditions fail "closed" (fallback value).
  */
 export class ExpressionEngine {
   private readonly env: Environment;
   private readonly onError?: ExpressionErrorHandler;
   private readonly i18n?: ExpressionI18n;
-  /** Espressioni già compilate e modelli già scomposti, per testo: le stesse condizioni si valutano a ogni disegno. */
+  /** Expressions already compiled and templates already split, by text: the same conditions are evaluated at every render. */
   private readonly compiled = new BoundedCache<string, CompiledExpression>(CACHE_SIZE);
   private readonly templates = new BoundedCache<string, Segments>(CACHE_SIZE);
 
@@ -36,8 +36,8 @@ export class ExpressionEngine {
       limits: { maxAstNodes: 1000, maxDepth: 32, maxListElements: 100, maxMapEntries: 100, maxCallArguments: 8 },
     }).registerFunction('can(string): bool', (permission: string) => this.permissions.can(permission));
     this.registerPresentation();
-    // I numeri che arrivano da JSON (stato, righe, form) sono "double" per CEL, mentre i letterali come 1 sono "int":
-    // senza queste regole `state.pagina + 1` darebbe errore. Il risultato è un numero decimale.
+    // Numbers coming from JSON (state, rows, form) are "double" for CEL, while literals such as 1 are "int":
+    // without these rules `state.page + 1` would be an error. The result is a decimal number.
     const arithmetic: Record<string, (a: number, b: number) => number> = {
       '+': (a, b) => a + b,
       '-': (a, b) => a - b,
@@ -52,9 +52,9 @@ export class ExpressionEngine {
   }
 
   /**
-   * Funzioni di presentazione, senza effetti collaterali e che seguono la lingua attiva:
-   * `t(chiave[, ripiego[, parametri]])`, `fmtCurrency(v, 'EUR')`, `fmtNumber(v)`, `fmtDate(v)`, `plural(n, 'una riga', '{n} righe')`.
-   * Un valore non formattabile (null, testo non numerico) diventa testo vuoto: la presentazione non fa fallire la schermata.
+   * Presentation functions, without side effects and following the active language:
+   * `t(key[, fallback[, params]])`, `fmtCurrency(v, 'EUR')`, `fmtNumber(v)`, `fmtDate(v)`, `plural(n, 'one row', '{n} rows')`.
+   * A value that cannot be formatted (null, non-numeric text) becomes empty text: presentation does not make the screen fail.
    */
   private registerPresentation(): void {
     const locale = (): string => this.i18n?.locale() ?? 'it-IT';
@@ -96,7 +96,7 @@ export class ExpressionEngine {
       });
   }
 
-  /** Valuta un'espressione CEL "nuda", senza doppie graffe. */
+  /** Evaluates a "bare" CEL expression, without double braces. */
   evaluate(source: string, context: EvalContext = {}): EvalResult {
     try {
       let compiled = this.compiled.get(source);
@@ -104,7 +104,7 @@ export class ExpressionEngine {
         try {
           compiled = { run: this.env.parse(source) };
         } catch (e) {
-          // Anche un errore di sintassi si ricorda: la stessa espressione rotta non si rianalizza a ogni disegno.
+          // A syntax error is remembered too: the same broken expression is not parsed again at every render.
           compiled = { error: e };
         }
         this.compiled.set(source, compiled);
@@ -118,8 +118,8 @@ export class ExpressionEngine {
   }
 
   /**
-   * Valuta un modello di testo con espressioni tra doppie graffe.
-   * Se il modello è una sola espressione restituisce il valore con il suo tipo; altrimenti una stringa.
+   * Evaluates a text template with expressions in double braces.
+   * If the template is a single expression it returns the value with its type; otherwise a string.
    */
   interpolate(template: string, context: EvalContext = {}): EvalResult {
     let segments = this.templates.get(template);
@@ -150,8 +150,8 @@ export class ExpressionEngine {
   }
 
   /**
-   * Valuta una condizione (visibleIf, enabledIf, ...). Se manca restituisce `whenMissing`;
-   * se la valutazione fallisce o non dà un booleano restituisce `fallback` (di norma `false`: fail-closed).
+   * Evaluates a condition (visibleIf, enabledIf, ...). If missing it returns `whenMissing`;
+   * if the evaluation fails or does not give a boolean it returns `fallback` (usually `false`: fail-closed).
    */
   evaluateCondition(template: string | undefined, context: EvalContext, options: { whenMissing: boolean; fallback?: boolean }): boolean {
     if (template === undefined) {
@@ -162,12 +162,12 @@ export class ExpressionEngine {
       return result.value;
     }
     if (result.ok) {
-      this.onError?.({ source: template, error: 'la condizione non restituisce un booleano' });
+      this.onError?.({ source: template, error: 'the condition does not return a boolean' });
     }
     return options.fallback ?? false;
   }
 
-  /** Controllo statico per editor e pubblicazione: sintassi, funzioni e tipi noti. Non esegue l'espressione. */
+  /** Static check for the editor and publication: syntax, known functions and types. It does not run the expression. */
   check(source: string): ExpressionCheck {
     try {
       const result = this.env.check(source);
@@ -177,7 +177,7 @@ export class ExpressionEngine {
     }
   }
 
-  /** Controllo statico di un modello: verifica ogni espressione tra doppie graffe. */
+  /** Static check of a template: checks every expression in double braces. */
   checkTemplate(template: string): ExpressionCheck {
     let segments;
     try {
@@ -209,10 +209,10 @@ function toParams(value: unknown): Record<string, unknown> {
 }
 
 function firstLine(message: string | undefined): string {
-  return (message ?? 'errore sconosciuto').split('\n')[0];
+  return (message ?? 'unknown error').split('\n')[0];
 }
 
-/** Converte i valori CEL in valori JavaScript semplici: interi grandi (bigint) in numeri, mappe e liste ricorsivamente. */
+/** Converts CEL values into plain JavaScript values: big integers (bigint) into numbers, maps and lists recursively. */
 export function toPlain(value: unknown): unknown {
   if (typeof value === 'bigint') {
     return Number.isSafeInteger(Number(value)) ? Number(value) : value.toString();
@@ -233,7 +233,7 @@ const CACHE_SIZE = 2000;
 type Segments = ReturnType<typeof parseTemplate>;
 type CompiledExpression = { run: (context?: Record<string, unknown>) => unknown } | { error: unknown };
 
-/** Mappa con un numero massimo di voci: oltre il limite toglie la meno usata di recente. */
+/** Map with a maximum number of entries: beyond the limit it drops the least recently used one. */
 export class BoundedCache<K, V> {
   private readonly map = new Map<K, V>();
   constructor(private readonly max: number) {}
@@ -241,7 +241,7 @@ export class BoundedCache<K, V> {
   get(key: K): V | undefined {
     const value = this.map.get(key);
     if (value !== undefined) {
-      // In fondo: è la più recente.
+      // At the end: it is the most recent.
       this.map.delete(key);
       this.map.set(key, value);
     }

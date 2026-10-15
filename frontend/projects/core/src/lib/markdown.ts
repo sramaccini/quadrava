@@ -1,13 +1,13 @@
 /**
- * Markdown ristretto per i testi formattati (componente `text` con `format: markdown`, campi `richtext`, formato
- * `markdown` di colonne e dettaglio). Il testo diventa una **struttura** (blocchi e frammenti), che i componenti
- * disegnano con i loro template: nessun HTML passa mai dal testo alla pagina, quindi anche un testo che arriva dai dati
- * è sicuro.
+ * Restricted Markdown for formatted texts (`text` component with `format: markdown`, `richtext` fields, `markdown`
+ * format of columns and detail). The text becomes a **structure** (blocks and fragments) that the components draw
+ * with their templates: no HTML ever goes from the text to the page, so even a text coming from the data is
+ * safe.
  *
- * Blocchi: paragrafi (righe consecutive; un a capo dentro un paragrafo resta un a capo), titoli `#`, `##`, `###`,
- * elenchi puntati (`-`, `*`, `+`) e numerati (`1.`), annidati con due spazi di rientro (fino a tre livelli),
- * citazioni (`>`). Frammenti: **grassetto**, *corsivo* o _corsivo_, ~~barrato~~, `codice`, [collegamenti](https://…)
- * (solo `https:`, `mailto:` o percorsi relativi `/…`; gli altri restano testo), `\` per scrivere un carattere speciale.
+ * Blocks: paragraphs (consecutive lines; a line break inside a paragraph stays a line break), headings `#`, `##`, `###`,
+ * bulleted (`-`, `*`, `+`) and numbered (`1.`) lists, nested with two spaces of indentation (up to three levels),
+ * quotes (`>`). Fragments: **bold**, *italic* or _italic_, ~~strikethrough~~, `code`, [links](https://…)
+ * (only `https:`, `mailto:` or relative paths `/…`; the others stay text), `\` to write a special character.
  */
 
 export type Inline =
@@ -19,26 +19,26 @@ export type Inline =
 
 export interface ListItem {
   content: Inline[];
-  /** Elenco annidato sotto la voce. */
+  /** List nested under the item. */
   list?: ListBlock;
 }
 
 export interface ListBlock {
   kind: 'list';
   ordered: boolean;
-  /** Numero della prima voce (elenchi numerati). */
+  /** Number of the first item (numbered lists). */
   start: number;
   items: ListItem[];
 }
 
 export type Block = { kind: 'paragraph'; content: Inline[] } | { kind: 'heading'; level: 1 | 2 | 3; content: Inline[] } | ListBlock | { kind: 'quote'; blocks: Block[] };
 
-/** Testo che supera questa lunghezza si tronca: un testo formattato non è un documento. */
+/** Text longer than this is truncated: a formatted text is not a document. */
 const MAX_LENGTH = 20_000;
 const MAX_DEPTH = 3;
 const LIST_ITEM = /^( *)([-*+]|\d{1,9}[.)]) +(.*)$/;
 
-/** Il testo in blocchi. Non lancia mai eccezioni. */
+/** The text as blocks. It never throws. */
 export function parseMarkdown(source: string | null | undefined): Block[] {
   const text = String(source ?? '').slice(0, MAX_LENGTH).replace(/\r\n?/g, '\n');
   return parseBlocks(text.split('\n'), 0);
@@ -71,7 +71,7 @@ function parseBlocks(lines: string[], depth: number): Block[] {
       i = next;
       continue;
     }
-    // Paragrafo: fino a una riga vuota o all'inizio di un altro blocco.
+    // Paragraph: up to an empty line or to the start of another block.
     const paragraph: string[] = [];
     while (i < lines.length && lines[i].trim() && !(paragraph.length && startsBlock(lines[i]))) paragraph.push(lines[i++].trim());
     blocks.push({ kind: 'paragraph', content: joinLines(paragraph) });
@@ -83,7 +83,7 @@ function startsBlock(line: string): boolean {
   return /^#{1,3} /.test(line) || /^ {0,3}> ?/.test(line) || (LIST_ITEM.test(line) && line.search(/\S/) < 2);
 }
 
-/** Righe di un paragrafo: frammenti con un a capo tra una riga e l'altra. */
+/** Lines of a paragraph: fragments with a line break between one line and the next. */
 function joinLines(lines: string[]): Inline[] {
   const out: Inline[] = [];
   lines.forEach((l, n) => {
@@ -93,7 +93,7 @@ function joinLines(lines: string[]): Inline[] {
   return out;
 }
 
-/** Un elenco che comincia alla riga `start` con il rientro `indent`; si ferma quando il rientro diminuisce. */
+/** A list that starts at line `start` with indentation `indent`; it stops when the indentation decreases. */
 function parseList(lines: string[], start: number, indent: number, level: number): { list: ListBlock; next: number } {
   const first = LIST_ITEM.exec(lines[start])!;
   const ordered = /\d/.test(first[2]);
@@ -102,7 +102,7 @@ function parseList(lines: string[], start: number, indent: number, level: number
   while (i < lines.length) {
     const line = lines[i];
     if (!line.trim()) {
-      // Una riga vuota chiude l'elenco se dopo non continua.
+      // An empty line closes the list if it does not go on afterwards.
       const after = lines[i + 1];
       if (after !== undefined && LIST_ITEM.test(after) && after.search(/\S/) >= indent) {
         i++;
@@ -120,7 +120,7 @@ function parseList(lines: string[], start: number, indent: number, level: number
       list.items[list.items.length - 1].list = nested.list;
       i = nested.next;
     } else if (!m && lineIndent > indent && list.items.length) {
-      // Continuazione della voce su una nuova riga rientrata.
+      // Continuation of the item on a new indented line.
       const item = list.items[list.items.length - 1];
       item.content.push({ kind: 'break' }, ...parseInline(line.trim()));
       i++;
@@ -131,7 +131,7 @@ function parseList(lines: string[], start: number, indent: number, level: number
   return { list, next: i };
 }
 
-/** Indirizzo ammesso per un collegamento: https, mailto o percorso relativo della stessa applicazione. */
+/** Address allowed for a link: https, mailto or a relative path of the same application. */
 export function safeHref(href: string): string | null {
   const h = href.trim();
   if (/^https:\/\/[^\s<>"']+$/i.test(h)) return h;
@@ -140,7 +140,7 @@ export function safeHref(href: string): string | null {
   return null;
 }
 
-/** Frammenti di una riga: enfasi, codice, collegamenti; il resto è testo. */
+/** Fragments of a line: emphasis, code, links; the rest is text. */
 export function parseInline(source: string): Inline[] {
   const out: Inline[] = [];
   let buffer = '';
@@ -196,7 +196,7 @@ export function parseInline(source: string): Inline[] {
   return out;
 }
 
-/** Posizione del delimitatore di chiusura (non preceduto da spazio), o -1. Per `_` non dentro una parola. */
+/** Position of the closing delimiter (not preceded by a space), or -1. For `_` not inside a word. */
 function closing(source: string, delimiter: string, from: number): number {
   if (/\s/.test(source[from] ?? ' ')) return -1;
   if (delimiter === '_' && /\w/.test(source[from - 2] ?? '')) return -1;
@@ -209,12 +209,12 @@ function closing(source: string, delimiter: string, from: number): number {
         i = at + 1;
         continue;
       }
-      // Un * singolo non deve chiudere su un ** (grassetto dentro il corsivo).
+      // A single * must not close on a ** (bold inside italic).
       if (delimiter === '*' && source[at + 1] === '*') {
         i = at + 2;
         continue;
       }
-      // ***testo***: il grassetto chiude sugli ultimi due asterischi, il corsivo dentro su quello prima.
+      // ***text***: bold closes on the last two asterisks, the italic inside on the one before.
       if (delimiter === '**' && source[at + 2] === '*') return at + 1;
       return at;
     }
@@ -223,7 +223,7 @@ function closing(source: string, delimiter: string, from: number): number {
   return -1;
 }
 
-/** Il solo testo (senza formattazione), per riassunti, ricerche e lettori di schermo. */
+/** The text only (without formatting), for summaries, searches and screen readers. */
 export function markdownToPlain(source: string | null | undefined): string {
   const inline = (items: Inline[]): string => items.map((x) => (x.kind === 'text' || x.kind === 'code' ? x.text : x.kind === 'break' ? '\n' : inline(x.children))).join('');
   const block = (b: Block): string =>

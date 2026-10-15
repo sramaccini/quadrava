@@ -2,8 +2,8 @@ import { Injectable, signal } from '@angular/core';
 import type { ThemeDefinition } from 'schema';
 
 /**
- * Traduce un tema in variabili CSS (--lc-*). Funzione pura: i valori sono già vincolati dallo schema dei temi
- * (colori e font con caratteri ammessi), quindi non possono iniettare CSS arbitrario.
+ * Turns a theme into CSS variables (--lc-*). Pure function: the values are already constrained by the theme schema
+ * (colours and fonts with allowed characters), so they cannot inject arbitrary CSS.
  */
 export function themeToCssVars(theme: ThemeDefinition): Record<string, string> {
   const { colors, typography, shape, density, layout } = theme.tokens;
@@ -21,7 +21,7 @@ export function themeToCssVars(theme: ThemeDefinition): Record<string, string> {
     '--lc-font-size': `${typography?.baseSize ?? 15}px`,
     '--lc-radius': `${shape?.radius ?? 6}px`,
   };
-  // Guscio dell'applicazione: ogni valore ha un ripiego ricavato dai colori base, così un tema minimo resta coerente.
+  // Application shell: every value has a fallback derived from the base colours, so a minimal theme stays consistent.
   const sider = layout?.sider ?? {};
   const header = layout?.header ?? {};
   const page = layout?.pageHeader ?? {};
@@ -49,7 +49,7 @@ export function themeToCssVars(theme: ThemeDefinition): Record<string, string> {
   return vars;
 }
 
-/** Applica il tema corrente a un elemento (di norma il root del documento) e permette di cambiarlo a runtime. */
+/** Applies the current theme to an element (usually the document root) and allows changing it at run time. */
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
   readonly current = signal<ThemeDefinition | null>(null);
