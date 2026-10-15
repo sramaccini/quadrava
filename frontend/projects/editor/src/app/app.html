@@ -90,6 +90,13 @@
       </div>
     </ng-container>
   </nz-modal>
+  <nz-modal [nzVisible]="showNewScreen()" [nzTitle]="i18n.t('ed.newScreen.title')" [nzFooter]="null" [nzWidth]="440" (nzOnCancel)="showNewScreen.set(false)">
+    <ng-container *nzModalContent>
+      @if (showNewScreen()) {
+        <ed-new-screen (created)="createScreen($event)" (cancelled)="showNewScreen.set(false)" />
+      }
+    </ng-container>
+  </nz-modal>
   <nz-modal [nzVisible]="showAbout()" [nzTitle]="i18n.t('ed.menu.about')" [nzFooter]="null" [nzWidth]="420" (nzOnCancel)="showAbout.set(false)">
     <ng-container *nzModalContent>
       <div class="about">

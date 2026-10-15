@@ -276,7 +276,21 @@ export function fallbackText(text: string): string {
   return plain.length > 40 ? plain.slice(0, 39) + '…' : plain;
 }
 
-/** Schermata vuota da cui parte un documento nuovo. */
-export function emptyScreen(t: Translate): JsonObject {
-  return { schemaVersion: '1.0', screen: 'nuova-schermata', title: t('ed.tpl.screenTitle'), dataSources: {}, components: [] };
+/** Identificativo di schermata ammesso dallo schema (`$defs/id`): kebab-case di lettere minuscole e cifre. */
+export const SCREEN_ID = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+
+/** Identificativo ricavato dal titolo: kebab-case senza accenti, al massimo 60 caratteri; vuoto se non resta nulla. */
+export function screenIdFrom(title: string): string {
+  return title
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .slice(0, 60)
+    .replace(/^-+|-+$/g, '');
+}
+
+/** Schermata vuota da cui parte un documento nuovo, con il titolo e l'identificativo scelti (o quelli predefiniti). */
+export function emptyScreen(t: Translate, title?: string, screen?: string): JsonObject {
+  return { schemaVersion: '1.0', screen: screen || 'nuova-schermata', title: title || t('ed.tpl.screenTitle'), dataSources: {}, components: [] };
 }

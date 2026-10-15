@@ -26,6 +26,7 @@ import { DockPanelDirective } from './ui/dock-panel.directive';
 import { DockSideComponent } from './ui/dock-side.component';
 import { JsonViewComponent } from './ui/json-view.component';
 import { MenuBarComponent, type Menu, type MenuItem } from './ui/menu-bar.component';
+import { NewScreenComponent, type NewScreen } from './ui/new-screen.component';
 import { NavigationEditorComponent } from './ui/navigation-editor.component';
 import { ThemeEditorComponent } from './ui/theme-editor.component';
 import { OutlineComponent } from './ui/outline.component';
@@ -91,6 +92,7 @@ const SHORTCUTS: { group: string; keys: [string, string][] }[] = [
     JsonViewComponent,
     KinetixWordmarkComponent,
     MenuBarComponent,
+    NewScreenComponent,
     NavigationEditorComponent,
     ThemeEditorComponent,
     OutlineComponent,
@@ -143,6 +145,7 @@ export class App {
   /** Finestre dell'aiuto: scorciatoie da tastiera e informazioni. */
   protected readonly showShortcuts = signal(false);
   protected readonly showAbout = signal(false);
+  protected readonly showNewScreen = signal(false);
   /** Scorciatoie mostrate nell'aiuto, per gruppo (testi nei messaggi `ed.keys.*`). */
   protected readonly shortcutGroups = SHORTCUTS;
   protected readonly dock = inject(Dock);
@@ -272,11 +275,19 @@ export class App {
   }
 
   protected async newDocument(): Promise<void> {
+    // Una schermata nuova chiede titolo e identificativo; la finestra avvisa anche che sostituisce quella aperta.
+    if (this.mode() === 'screen') {
+      this.showNewScreen.set(true);
+      return;
+    }
     if (!(await this.confirmation.confirm(this.i18n.t('ed.confirmReplace')))) return;
-    const mode = this.mode();
-    if (mode === 'screen') this.store.newScreen();
-    else if (mode === 'navigation') this.nav.newNavigation();
+    if (this.mode() === 'navigation') this.nav.newNavigation();
     else this.theme.newTheme();
+  }
+
+  protected createScreen(screen: NewScreen): void {
+    this.showNewScreen.set(false);
+    this.store.newScreen(screen.title, screen.screen);
   }
 
   /** Esempi apribili nella modalità corrente: le schermate, oppure la navigazione della demo. */

@@ -28,7 +28,7 @@ The editor's interface is available in Italian and English; the labels below are
 
 At the top left is the **KinetiX Studio** logotype (icon and name; the Studio icon in the browser tab), then a **menu bar** as in desktop applications:
 
-- **File**: New, Open example ▸ (submenu with the examples of the current mode), Import…, Export, Registry…;
+- **File**: New, Open example ▸ (submenu with the examples of the current mode), Import…, Export, Registry…. For screens, «New» opens a window that asks for the **title** and the **identifier** (`screen`): the identifier is derived from the title (kebab-case, without accents, up to 60 characters) until you edit it, and «Create» stays disabled while the title is missing or the identifier is not valid; the window also warns that the open screen will be replaced. For navigation and theme «New» only asks for confirmation;
 - **Edit**: Undo, Redo; for screens Cut, Copy, Paste; Duplicate, Delete, Move up, Move down (in navigation too). Every item shows its shortcut; those that cannot be used (nothing to undo, no node selected, empty clipboard) are disabled.
 - **View**: the pinned state of «Components», «Structure» and «Properties» (the panels of the mode) and «Problems panel» (items with a check mark); for screens, the central view (Preview, JSON, Data sources, Texts), as single-choice items.
 - **Help**: «Keyboard shortcuts» (also **F1**), a window with all the shortcuts by group, and «About KinetiX Studio».

@@ -516,8 +516,8 @@ export class EditorStore extends DocumentState {
     this.translations.set({});
   }
 
-  newScreen(): void {
-    this.load(emptyScreen((k) => this.t(k)));
+  newScreen(title?: string, screen?: string): void {
+    this.load(emptyScreen((k) => this.t(k), title, screen));
   }
 
   protected check(doc: Json): EditorIssue[] {
