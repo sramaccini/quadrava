@@ -949,8 +949,8 @@ describe('editor delle schermate', () => {
     const button = (label: string): HTMLButtonElement => [...panel.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.includes(label))!;
     button('Salva versione').click();
     await until(() => !!panel.querySelector('ol li .hash'), 'storico');
-    // La verifica del registro (GET /registry/apps) parte aprendo il menu File; qui conta il salvataggio.
-    expect(calls.filter((c) => c.url !== '/registry/apps').slice(0, 1)).toEqual([{ url: '/registry/apps/ordini/documents/screen/nuova-schermata/versions', method: 'POST' }]);
+    // Le letture (verifica del registro, schermate dell'applicazione) partono prima; qui conta il salvataggio.
+    expect(calls.filter((c) => c.method === 'POST').slice(0, 1)).toEqual([{ url: '/registry/apps/ordini/documents/screen/nuova-schermata/versions', method: 'POST' }]);
     expect(panel.querySelector('ol li')?.textContent).toContain('a1b2c3d4e5');
     expect(panel.querySelector('ol li nz-tag')?.textContent?.trim()).toBe('sviluppo');
     // Pubblicare chiede conferma.
@@ -1043,6 +1043,43 @@ describe('editor delle schermate', () => {
     button('Salva versione').click();
     await until(() => !!panel.querySelector('.issues li'), 'errori del registro');
     expect(panel.querySelector('.issues li')?.textContent).toContain('/components/0/type');
+  });
+
+  it('registro: la pubblicazione avvisa delle schermate citate e non pubblicate; il rifiuto le elenca; le schermate del registro sono note', async () => {
+    const calls: { url: string; method: string }[] = [];
+    vi.stubGlobal('fetch', async (url: string, init: RequestInit = {}) => {
+      const method = init.method ?? 'GET';
+      if (url.startsWith('/registry')) calls.push({ url, method });
+      const json = (body: unknown, status = 200) => ({ ok: status < 400, status, json: async () => body });
+      const missing = [{ screen: 'ordini-elenco', path: '/actions/indietro/0/navigate' }];
+      if (url.endsWith('/references?env=produzione')) return json({ env: 'produzione', references: missing, missing });
+      if (url.includes('/published')) return json({ title: 'Schermate non pubblicate', missingReferences: missing }, 409);
+      if (url.endsWith('/versions')) return json([{ hash: 'a1b2c3d4e5f6', createdAt: '2026-10-13T08:00:00Z', author: 'mario', state: 'approvata' }]);
+      if (url.endsWith('/documents')) return json([{ kind: 'screen', id: 'nuova-schermata' }, { kind: 'screen', id: 'solo-nel-registro' }]);
+      if (url === '/registry/apps') return json([]);
+      const body = FILES[url];
+      return body ? json(body) : { ok: false, status: 404, json: async () => ({}) };
+    });
+    await menuCommand('file', 'registry');
+    await until(() => !!document.querySelector('ed-registry-panel'), 'pannello del registro');
+    const panel = document.querySelector('ed-registry-panel') as HTMLElement;
+    type(panel.querySelector('#registry-app') as HTMLInputElement, 'ordini');
+    type(panel.querySelector('#registry-env') as HTMLInputElement, 'produzione');
+    await settle();
+    // Le schermate dell'applicazione nel registro si aggiungono agli esempi tra quelle note.
+    await until(() => store.knownScreens().includes('solo-nel-registro'), 'schermate del registro');
+    const button = (label: string): HTMLButtonElement => [...panel.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.trim().startsWith(label))!;
+    button('Storico').click();
+    await until(() => !!panel.querySelector('ol li .hash'), 'storico');
+    button('Pubblica in produzione').click();
+    const last = () => [...document.querySelectorAll<HTMLElement>('.ant-modal')].at(-1);
+    await until(() => !!last()?.textContent?.includes('Pubblicare comunque'), 'conferma con le schermate mancanti');
+    expect(last()?.textContent).toContain('ordini-elenco');
+    ([...last()!.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.includes('Conferma')) as HTMLButtonElement).click();
+    await until(() => !!panel.querySelector('.issues li'), 'schermate mancanti nel pannello');
+    expect(panel.querySelector('.issues li')?.textContent).toContain('/actions/indietro/0/navigate');
+    expect(panel.querySelector('.issues li')?.textContent).toContain('ordini-elenco');
+    expect(calls.filter((c) => c.url.includes('/references')).map((c) => c.url)).toEqual(['/registry/apps/ordini/documents/screen/nuova-schermata/versions/a1b2c3d4e5f6/references?env=produzione']);
   });
 
   it('registro senza sessione: il pannello propone l’accesso attraverso il BFF e poi si torna all’editor', async () => {

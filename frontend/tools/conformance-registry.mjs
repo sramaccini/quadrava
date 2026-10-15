@@ -1,4 +1,4 @@
-// Kit di conformità al contratto del registro (contracts/registry.yaml 0.3): verifica dall'esterno, via HTTP, che un
+// Kit di conformità al contratto del registro (contracts/registry.yaml 0.4): verifica dall'esterno, via HTTP, che un
 // registro (quello di riferimento o quello di un cliente) si comporti come descrive il contratto.
 //
 //   node tools/conformance-registry.mjs --registry http://localhost:8081
@@ -124,6 +124,39 @@ await check('il revisore approva; poi la versione si pubblica nell’ambiente pr
   expect(r.status === 200 && r.json?.state === 'approvata' && typeof r.json?.reviewedBy === 'string', `atteso 200 approvata, ricevuto ${r.status}`);
   const p = await call('PUT', `${base}/published?env=${protectedEnv}`, { body: { hash: second } });
   expect(p.status === 204, `atteso 204, ricevuto ${p.status}`);
+}, { skip: !reviewer });
+
+const menu = {
+  schemaVersion: '1.0',
+  navigation: 'menu',
+  useCases: [{ id: 'prove', label: 'Prove', items: [{ id: 'prova', label: 'Prova', screen: 'prova' }, { id: 'assente', label: 'Assente', screen: 'assente' }] }],
+};
+const nav = `/registry/apps/${app}/documents/navigation/menu`;
+let menuHash = null;
+
+await check('riferimenti: la navigazione cita le schermate; manca quella non pubblicata nell’ambiente', async () => {
+  const s = await call('POST', `${nav}/versions`, { body: menu });
+  expect(s.status === 201, `salvataggio: atteso 201, ricevuto ${s.status}`);
+  menuHash = s.json?.hash;
+  const r = await call('GET', `${nav}/versions/${menuHash}/references?env=sviluppo`);
+  expect(r.status === 200 && Array.isArray(r.json?.references) && Array.isArray(r.json?.missing), `atteso 200 con references e missing, ricevuto ${r.status}`);
+  expect(r.json.references.length === 2, `attesi 2 riferimenti, ricevuti ${r.json.references.length}`);
+  const missing = r.json.missing.map((m) => `${m.screen} ${m.path}`);
+  expect(missing.length === 1 && missing[0] === 'assente /useCases/0/items/1/screen', `mancante atteso «assente», ricevuto ${JSON.stringify(missing)}`);
+});
+
+await check('navigazione con schermate mancanti: in sviluppo si pubblica comunque', async () => {
+  const r = await call('PUT', `${nav}/published?env=sviluppo`, { body: { hash: menuHash } });
+  expect(r.status === 204, `atteso 204, ricevuto ${r.status}`);
+});
+
+await check(`navigazione approvata con schermate mancanti: in ${protectedEnv} 409 con missingReferences`, async () => {
+  await call('POST', `${nav}/versions/${menuHash}/review`, { body: { action: 'richiedi' } });
+  const a = await call('POST', `${nav}/versions/${menuHash}/review`, { body: { action: 'approva' }, token: reviewer });
+  expect(a.status === 200, `approvazione: atteso 200, ricevuto ${a.status}`);
+  const r = await call('PUT', `${nav}/published?env=${protectedEnv}`, { body: { hash: menuHash } });
+  expect(r.status === 409 && isProblem(r), `atteso 409 in formato Problem, ricevuto ${r.status}`);
+  expect(Array.isArray(r.json?.missingReferences) && r.json.missingReferences.some((m) => m.screen === 'assente'), 'il Problem deve elencare missingReferences');
 }, { skip: !reviewer });
 
 report(`Conformità al contratto del registro (${registry}, applicazione ${app})`);

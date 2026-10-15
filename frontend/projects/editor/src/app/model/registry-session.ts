@@ -27,7 +27,8 @@ export interface RegistryRef {
 
 /**
  * Stato del registro condiviso dal menu File e dal pannello Registro: applicazione e ambiente scelti (ricordati nel
- * browser), disponibilità del registro, versione da cui parte il documento aperto, salvataggio di una versione.
+ * browser), disponibilità del registro, schermate dell'applicazione, versione da cui parte il documento aperto,
+ * salvataggio di una versione.
  *
  * La disponibilità si ricava da `GET /registry/apps`: 200 = raggiungibile, 401 = serve l'accesso attraverso il BFF,
  * qualunque altra risposta (o nessuna, come nell'editor della demo) = assente.
@@ -49,6 +50,8 @@ export class RegistrySession {
   /** Problemi di validazione segnalati dal registro all'ultimo salvataggio. */
   readonly issues = signal<RegistryIssue[]>([]);
   readonly busy = signal(false);
+  /** Schermate dell'applicazione scelta nel registro (vuoto senza registro o senza applicazione). */
+  readonly screens = signal<string[]>([]);
   /** Versione da cui parte il documento aperto (aperta o appena salvata): il registro la usa per le modifiche concorrenti. */
   private readonly origin = signal<(RegistryRef & { hash: string }) | null>(null);
 
@@ -61,7 +64,25 @@ export class RegistrySession {
         // vedi la bozza
       }
     });
+    // Con il registro raggiungibile e un'applicazione scelta, se ne leggono le schermate (le «schermate note»).
+    effect(() => {
+      const appId = this.appId();
+      if (this.status() === 'available' && appId) void this.loadScreens(appId);
+      else this.screens.set([]);
+    });
     void this.check();
+  }
+
+  private async loadScreens(appId: string): Promise<void> {
+    let screens: string[] = [];
+    try {
+      const documents = await this.client.documents(appId);
+      screens = Array.isArray(documents) ? documents.filter((d) => d?.kind === 'screen' && typeof d.id === 'string').map((d) => d.id) : [];
+    } catch {
+      // Applicazione nuova o registro non più raggiungibile: nessuna schermata nota dal registro.
+    }
+    // Una risposta arrivata dopo un cambio di applicazione non vale più.
+    if (appId === this.appId()) this.screens.set(screens);
   }
 
   /** Verifica se il registro c'è (e se chiede l'accesso); aggiorna l'elenco delle applicazioni. */
@@ -110,6 +131,7 @@ export class RegistrySession {
       const version = await this.client.save(appId, ref.kind, ref.id, doc, this.basedOn(ref));
       this.setOrigin(ref, version.hash);
       this.status.set('available');
+      if (ref.kind === 'screen' && !this.screens().includes(ref.id)) this.screens.update((s) => [...s, ref.id]);
       this.notifier.toast(this.i18n.t('ed.registry.saved', { hash: version.hash.slice(0, 10) }));
       return version;
     } catch (e) {

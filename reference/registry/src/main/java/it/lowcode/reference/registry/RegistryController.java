@@ -4,6 +4,8 @@ import it.lowcode.reference.registry.Model.DocumentKey;
 import it.lowcode.reference.registry.Model.DocumentVersion;
 import it.lowcode.reference.registry.Model.Issue;
 import it.lowcode.reference.registry.Model.Kind;
+import it.lowcode.reference.registry.Model.ReferenceReport;
+import it.lowcode.reference.registry.Model.ScreenReference;
 import it.lowcode.reference.registry.Model.State;
 import it.lowcode.reference.registry.VersionStore.ReviewOutcome;
 import java.security.Principal;
@@ -28,7 +30,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Registry secondo contracts/registry.yaml (0.3): documenti separati per schermate, navigazione e temi, ognuno con le
+ * Registry secondo contracts/registry.yaml (0.4): documenti separati per schermate, navigazione e temi, ognuno con le
  * proprie versioni e pubblicazioni.
  *
  * <ul>
@@ -37,7 +39,9 @@ import org.springframework.web.bind.annotation.RestController;
  *   <li>Revisione: chi scrive chiede la revisione; approva o respinge solo chi ha un ruolo di
  *       {@code lowcode.registry.approver-roles}, e mai l'autore della versione (quattro occhi).</li>
  *   <li>Negli ambienti protetti ({@code lowcode.registry.protected-environments}) si pubblicano solo versioni
- *       approvate.</li>
+ *       approvate, e una navigazione solo se le schermate che cita sono pubblicate nello stesso ambiente.</li>
+ *   <li>Riferimenti tra documenti ({@link References}): {@code …/versions/{hash}/references} dice quali schermate
+ *       cita una versione e quali mancano in un ambiente.</li>
  * </ul>
  */
 @RestController
@@ -193,11 +197,47 @@ public class RegistryController {
         if (version.isEmpty()) {
             return problem(HttpStatus.BAD_REQUEST, "Versione inesistente");
         }
-        if (properties.protectedEnvironments().contains(env) && !version.get().state().equals(State.APPROVATA.value())) {
-            return problem(HttpStatus.CONFLICT, "Nell'ambiente «" + env + "» si pubblicano solo versioni approvate");
+        if (properties.protectedEnvironments().contains(env)) {
+            if (!version.get().state().equals(State.APPROVATA.value())) {
+                return problem(HttpStatus.CONFLICT, "Nell'ambiente «" + env + "» si pubblicano solo versioni approvate");
+            }
+            // Una navigazione con voci verso schermate assenti nell'ambiente non si pubblica; per le schermate i
+            // riferimenti mancanti restano un avviso (getReferences), perché i collegamenti tra schermate fanno cicli.
+            if (key.get().kind() == Kind.NAVIGATION) {
+                List<ScreenReference> missing = references(key.get(), request.hash(), env).missing();
+                if (!missing.isEmpty()) {
+                    ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+                    problem.setTitle("La navigazione cita schermate non pubblicate nell'ambiente «" + env + "»");
+                    problem.setProperty("missingReferences", missing);
+                    return ResponseEntity.status(HttpStatus.CONFLICT).body(problem);
+                }
+            }
         }
         store.publish(key.get(), env, request.hash());
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/registry/apps/{appId}/documents/{kind}/{documentId}/versions/{hash}/references")
+    public ResponseEntity<?> references(@PathVariable String appId, @PathVariable String kind, @PathVariable String documentId,
+                                        @PathVariable String hash, @RequestParam(value = "env", required = false) String env) {
+        Optional<DocumentKey> key = key(appId, kind, documentId);
+        if (key.isEmpty() || store.version(key.get(), hash).isEmpty()) {
+            return problem(HttpStatus.NOT_FOUND, "Versione inesistente");
+        }
+        if (env != null && !Model.IDENTIFIER.matcher(env).matches()) {
+            return problem(HttpStatus.BAD_REQUEST, "Ambiente non valido");
+        }
+        return ResponseEntity.ok(references(key.get(), hash, env));
+    }
+
+    /** Schermate citate dalla versione; mancano quelle senza pubblicazione nell'ambiente (o senza versioni, se env è null). */
+    private ReferenceReport references(DocumentKey key, String hash, String env) {
+        List<ScreenReference> all = References.of(key.kind(), key.documentId(), store.content(key, hash).orElseThrow());
+        List<ScreenReference> missing = all.stream().filter(r -> {
+            DocumentKey target = new DocumentKey(key.appId(), Kind.SCREEN, r.screen());
+            return env == null ? store.latest(target).isEmpty() : store.publishedHash(target, env).isEmpty();
+        }).toList();
+        return new ReferenceReport(env, all, missing);
     }
 
     private static Optional<DocumentKey> key(String appId, String kind, String documentId) {

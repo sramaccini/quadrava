@@ -24,7 +24,10 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 import tools.jackson.databind.json.JsonMapper;
 
-/** Il contratto registry.yaml 0.3 dal lato HTTP: validazione, modifiche concorrenti, revisione, ambienti protetti. */
+/**
+ * Il contratto registry.yaml 0.4 dal lato HTTP: validazione, modifiche concorrenti, revisione, ambienti protetti,
+ * riferimenti tra documenti.
+ */
 @SpringBootTest
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class RegistryApiTest {
@@ -130,5 +133,53 @@ class RegistryApiTest {
                 .andExpect(jsonPath("$[0].reviewedBy").value("luisa"))
                 .andReturn().getResponse().getContentAsString();
         assertThat(versions).contains("reviewedAt");
+    }
+
+    @Test
+    void unaNavigazioneSiPubblicaInProduzioneSoloConLeSueSchermate() throws Exception {
+        String nav = "/registry/apps/demo/documents/navigation/principale";
+        String navigation = """
+                {"schemaVersion":"1.0","navigation":"principale","useCases":[{"id":"fatture","label":"Fatture","items":[
+                  {"id":"elenco","label":"Elenco","screen":"fatture-elenco"},{"id":"nuova","label":"Nuova","screen":"fattura-nuova"}]}]}""";
+        String navHash = (String) json.readValue(mvc.perform(post(nav + "/versions").with(user("mario", "operatore"))
+                        .contentType(MediaType.APPLICATION_JSON).content(navigation))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString(), Map.class).get("hash");
+        String screenHash = save(VALID, user("mario", "operatore"));
+
+        // Senza ambiente: manca la schermata che nel registro non esiste.
+        mvc.perform(get(nav + "/versions/" + navHash + "/references").with(user("mario")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.env").doesNotExist())
+                .andExpect(jsonPath("$.references.length()").value(2))
+                .andExpect(jsonPath("$.missing.length()").value(1))
+                .andExpect(jsonPath("$.missing[0].screen").value("fattura-nuova"))
+                .andExpect(jsonPath("$.missing[0].path").value("/useCases/0/items/1/screen"));
+        // In sviluppo nessuna delle due è pubblicata, ma la navigazione si pubblica lo stesso.
+        mvc.perform(get(nav + "/versions/" + navHash + "/references").param("env", "sviluppo").with(user("mario")))
+                .andExpect(jsonPath("$.env").value("sviluppo"))
+                .andExpect(jsonPath("$.missing.length()").value(2));
+        mvc.perform(put(nav + "/published").param("env", "sviluppo").with(user("mario", "operatore"))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"hash\":\"" + navHash + "\"}"))
+                .andExpect(status().isNoContent());
+
+        // In produzione, approvata, si rifiuta finché le schermate non ci sono.
+        mvc.perform(post(nav + "/versions/" + navHash + "/review").with(user("mario", "operatore")).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"action\":\"richiedi\"}")).andExpect(status().isOk());
+        mvc.perform(post(nav + "/versions/" + navHash + "/review").with(user("luisa", "responsabile")).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"action\":\"approva\"}")).andExpect(status().isOk());
+        review(screenHash, "richiedi", user("mario", "operatore"), 200);
+        review(screenHash, "approva", user("luisa", "responsabile"), 200);
+        mvc.perform(put(BASE + "/published").param("env", "produzione").with(user("mario", "operatore"))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"hash\":\"" + screenHash + "\"}"))
+                .andExpect(status().isNoContent());
+        mvc.perform(put(nav + "/published").param("env", "produzione").with(user("mario", "operatore"))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"hash\":\"" + navHash + "\"}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.missingReferences.length()").value(1))
+                .andExpect(jsonPath("$.missingReferences[0].screen").value("fattura-nuova"));
+
+        // Versione inesistente o ambiente non valido.
+        mvc.perform(get(nav + "/versions/inesistente/references").with(user("mario"))).andExpect(status().isNotFound());
+        mvc.perform(get(nav + "/versions/" + navHash + "/references").param("env", "Prod!").with(user("mario"))).andExpect(status().isBadRequest());
     }
 }

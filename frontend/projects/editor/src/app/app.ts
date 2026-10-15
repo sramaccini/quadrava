@@ -258,10 +258,7 @@ export class App {
   protected readonly examples = resource({
     loader: async (): Promise<string[]> => {
       const response = await fetch('examples/index.json');
-      const names = response.ok ? ((await response.json()) as string[]) : [];
-      this.store.knownScreens.set(names);
-      this.nav.knownScreens.set(names);
-      return names;
+      return response.ok ? ((await response.json()) as string[]) : [];
     },
   });
 
@@ -286,6 +283,13 @@ export class App {
     this.saved.ensureBaseline('screen', this.store.doc());
     this.saved.ensureBaseline('navigation', this.nav.doc());
     this.saved.ensureBaseline('theme', this.theme.doc());
+    // Schermate note (suggerimenti e avvisi «schermata non nota»): gli esempi e quelle dell'applicazione nel registro.
+    effect(() => {
+      const examples = this.examples.hasValue() ? this.examples.value() : [];
+      const names = [...new Set([...examples, ...this.registry.screens()])];
+      this.store.knownScreens.set(names);
+      this.nav.knownScreens.set(names);
+    });
     effect(() => (document.documentElement.lang = this.i18n.locale()));
     effect(() => {
       try {

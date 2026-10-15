@@ -232,6 +232,22 @@ The registry is a REST service that stores application definitions. Every versio
 
 **Environments.** Development, testing and production point to different versions of the same application; promotion from one environment to the next is an explicit, tracked operation.
 
+**Cross-document references.** Screens and navigation are separate documents, linked only by identifier: a navigation item opens a screen (`"screen": "fatture-elenco"`), a step `{ "navigate": "ordine-dettaglio" }` or a `link` node with `screen` leads from one screen to another. The registry reads these references from each version (`GET …/versions/{hash}/references?env=…`, contract 0.4) and says which screens are missing in an environment, that is, have no version published there (without `env`: do not exist in the application at all). References to the screen itself and values with an expression (`{{ }}`) are not checked. What happens at publication:
+
+| Publishing… | in a non-protected environment (sviluppo) | in a protected environment (collaudo, produzione) |
+| --- | --- | --- |
+| a navigation citing unpublished screens | published; the editor warns before confirming | rejected with 409 and `missingReferences` (screen and JSON Pointer of each item) |
+| a screen leading to unpublished screens | published; the editor warns before confirming | published; the editor warns before confirming |
+
+Screens are only warned about because links between screens often form cycles (a list opens the detail, the detail goes back to the list): rejecting them would make it impossible to publish either one first. The practical order in a protected environment is therefore: screens first, then the navigation. Example of a rejection:
+
+```json
+{ "title": "La navigazione cita schermate non pubblicate nell'ambiente «produzione»", "status": 409,
+  "missingReferences": [{ "screen": "fattura-nuova", "path": "/useCases/0/items/1/screen" }] }
+```
+
+Themes and translation catalogues are not referenced by identifier, so they have no references to check.
+
 **Rollback.** Going back to a previous version means republishing it: nothing needs to be rebuilt.
 
 **Delivery to the runtime.** The runtime requests the published version per application and environment, with HTTP caching based on ETag. The content hash allows verifying its integrity.

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: KinetiX - Contratto del registry
-  version: 0.3.0
+  version: 0.4.0
   description: >
     Registro delle definizioni delle applicazioni. Un'applicazione è fatta di documenti separati: ogni schermata,
     la navigazione e ogni tema sono un documento a sé, con le proprie versioni e le proprie pubblicazioni.
@@ -12,6 +12,12 @@ info:
     0.3: cataloghi delle traduzioni come documenti (kind messages, un documento per lingua); revisione delle versioni (bozza → in-revisione → approvata o respinta, con il principio dei quattro occhi),
     ambienti protetti in cui si pubblicano solo versioni approvate, salvataggio condizionato da If-Match per non
     sovrascrivere le modifiche di altri, errori di validazione dettagliati (`errors` nel Problem).
+
+    0.4: controllo dei riferimenti tra documenti. La navigazione (`screen` delle voci) e le schermate (passi `navigate`,
+    nodi `link` con `screen`) citano altre schermate per identificativo: `getReferences` dice quali sono e quali
+    mancano in un ambiente; negli ambienti protetti una navigazione si pubblica solo se tutte le sue schermate sono
+    pubblicate lì (altrimenti 409 con `missingReferences`). Per le schermate è solo un avviso, perché i collegamenti
+    tra schermate formano spesso cicli (elenco e dettaglio).
   license:
     name: Proprietaria
     identifier: LicenseRef-Proprietary
@@ -152,6 +158,39 @@ paths:
           content:
             application/problem+json:
               schema: { $ref: '#/components/schemas/Problem' }
+  /registry/apps/{appId}/documents/{kind}/{documentId}/versions/{hash}/references:
+    parameters:
+      - $ref: '#/components/parameters/AppId'
+      - $ref: '#/components/parameters/Kind'
+      - $ref: '#/components/parameters/DocumentId'
+      - name: hash
+        in: path
+        required: true
+        schema: { type: string }
+      - name: env
+        in: query
+        required: false
+        description: >
+          Ambiente in cui controllare i riferimenti: mancano le schermate senza una versione pubblicata lì. Senza
+          ambiente mancano le schermate che nel registro dell'applicazione non esistono.
+        schema: { type: string, examples: [sviluppo] }
+    get:
+      tags: [registry]
+      operationId: getReferences
+      summary: Schermate citate da una versione e quelle che mancano
+      description: >
+        Riferimenti per identificativo verso altre schermate: `screen` delle voci della navigazione, passi `navigate`
+        e nodi `link` con `screen` delle schermate. Un riferimento della schermata a se stessa non conta, né un valore
+        con un'espressione ({{ }}). Temi e cataloghi non hanno riferimenti.
+      responses:
+        '200':
+          description: Riferimenti della versione.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReferenceReport' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
   /registry/apps/{appId}/documents/{kind}/{documentId}/versions/{hash}:
     parameters:
       - $ref: '#/components/parameters/AppId'
@@ -202,7 +241,11 @@ paths:
       tags: [registry]
       operationId: publish
       summary: Pubblica una versione del documento in un ambiente
-      description: Negli ambienti protetti (di norma collaudo e produzione) si pubblicano solo versioni approvate (altrimenti 409).
+      description: >
+        Negli ambienti protetti (di norma collaudo e produzione) si pubblicano solo versioni approvate (altrimenti 409)
+        e una navigazione si pubblica solo se le schermate che cita sono già pubblicate nello stesso ambiente
+        (altrimenti 409 con `missingReferences`). Negli altri ambienti la pubblicazione riesce comunque: i riferimenti
+        mancanti si leggono prima con `getReferences`.
       requestBody:
         required: true
         content:
@@ -214,7 +257,9 @@ paths:
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '409':
-          description: Ambiente protetto e versione non approvata.
+          description: >
+            Ambiente protetto e versione non approvata, oppure navigazione con schermate non pubblicate
+            nell'ambiente (`missingReferences`).
           content:
             application/problem+json:
               schema: { $ref: '#/components/schemas/Problem' }
@@ -298,6 +343,25 @@ components:
       properties:
         action: { type: string, enum: [richiedi, approva, respingi] }
         note: { type: string, maxLength: 500 }
+    ScreenReference:
+      type: object
+      required: [screen, path]
+      properties:
+        screen: { type: string, description: Identificativo della schermata citata. }
+        path: { type: string, description: Posizione del riferimento nel documento (JSON Pointer). }
+    ReferenceReport:
+      type: object
+      required: [references, missing]
+      properties:
+        env: { type: string, description: Ambiente controllato; assente se il controllo è sull'esistenza. }
+        references:
+          type: array
+          description: Tutti i riferimenti della versione, nell'ordine del documento.
+          items: { $ref: '#/components/schemas/ScreenReference' }
+        missing:
+          type: array
+          description: I riferimenti a schermate non pubblicate nell'ambiente (o inesistenti, senza ambiente).
+          items: { $ref: '#/components/schemas/ScreenReference' }
     PublishRequest:
       type: object
       required: [hash]
@@ -323,3 +387,7 @@ components:
               message: { type: string }
         latest: { type: string, description: Con 412, hash dell'ultima versione. }
         latestAuthor: { type: string, description: Con 412, autore dell'ultima versione. }
+        missingReferences:
+          type: array
+          description: Con 409 alla pubblicazione, le schermate citate e non pubblicate nell'ambiente.
+          items: { $ref: '#/components/schemas/ScreenReference' }

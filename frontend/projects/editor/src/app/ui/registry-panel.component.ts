@@ -8,7 +8,15 @@ import { NzTagModule } from 'ng-zorro-antd/tag';
 import type { Json } from '../model/doc-ops';
 import type { DocumentState } from '../model/document-state';
 import { jsonDiff, type JsonChange } from '../model/json-diff';
-import { RegistryClient, RegistryError, documentRef, type DocumentKind, type DocumentVersion, type ReviewAction } from '../model/registry-client';
+import {
+  RegistryClient,
+  RegistryError,
+  documentRef,
+  type DocumentKind,
+  type DocumentVersion,
+  type ReviewAction,
+  type ScreenReference,
+} from '../model/registry-client';
 import { RegistrySession } from '../model/registry-session';
 import { SavedDocuments } from '../model/saved-documents';
 
@@ -20,6 +28,9 @@ const STATE_COLORS: Record<string, string> = { bozza: 'default', 'in-revisione':
  * documento non ha errori), mostra lo storico con lo stato di revisione e gli ambienti in cui è pubblicata ogni
  * versione, riapre una versione, la confronta con il documento aperto, chiede la revisione, la approva o la respinge,
  * e la pubblica in un ambiente. Applicazione e ambiente si ricordano nel browser.
+ *
+ * Prima di pubblicare chiede al registro le schermate citate dalla versione e non pubblicate nell'ambiente: la conferma
+ * le elenca. Negli ambienti protetti il registro rifiuta una navigazione con schermate mancanti: il pannello le elenca.
  *
  * Il salvataggio indica al registro la versione da cui si è partiti (aperta o appena salvata): se nel frattempo un
  * altro autore ha salvato, il pannello lo dice e chiede se salvare comunque. Applicazione, ambiente, accesso e versione
@@ -91,6 +102,16 @@ const STATE_COLORS: Record<string, string> = { bozza: 'default', 'in-revisione':
         <ul class="issues">
           @for (issue of issues(); track $index) {
             <li><code>{{ issue.path }}</code> {{ issue.message }}</li>
+          }
+        </ul>
+      </div>
+    }
+    @if (missing(); as m) {
+      <div role="alert">
+        <p class="warn">{{ i18n.t('ed.registry.missingTitle', { env: m.env }) }}</p>
+        <ul class="issues">
+          @for (r of m.references; track $index) {
+            <li><code>{{ r.path }}</code> {{ r.screen }}</li>
           }
         </ul>
       </div>
@@ -191,6 +212,8 @@ export class RegistryPanelComponent {
   private readonly published = signal<Record<string, string>>({});
   /** Problemi di validazione segnalati dal registro all'ultimo salvataggio (anche da «Salva in registro»). */
   protected readonly issues = this.session.issues;
+  /** Schermate citate e non pubblicate nell'ambiente, dall'ultima pubblicazione rifiutata. */
+  protected readonly missing = signal<{ env: string; references: ScreenReference[] } | null>(null);
   /** Nota per la prossima azione di revisione. */
   protected readonly note = signal('');
   /** Confronto aperto: la versione e le differenze verso il documento aperto. */
@@ -209,6 +232,7 @@ export class RegistryPanelComponent {
       this.kind();
       this.loaded.set(false);
       this.diff.set(null);
+      this.missing.set(null);
     });
   }
 
@@ -286,12 +310,37 @@ export class RegistryPanelComponent {
   protected async publish(version: DocumentVersion): Promise<void> {
     const ref = this.ref();
     const env = this.env();
-    if (!ref || !env || !(await this.confirmation.confirm(this.i18n.t('ed.registry.confirmPublish', { id: ref.id, env })))) return;
+    if (!ref || !env) return;
+    this.missing.set(null);
+    const screens = await this.missingScreens(ref.kind, ref.id, version.hash, env);
+    const question = screens.length
+      ? this.i18n.t('ed.registry.confirmPublishMissing', { id: ref.id, env, screens: screens.join(', ') })
+      : this.i18n.t('ed.registry.confirmPublish', { id: ref.id, env });
+    if (!(await this.confirmation.confirm(question))) return;
     await this.run(async () => {
-      await this.client.publish(this.appId(), ref.kind, ref.id, env, version.hash);
+      try {
+        await this.client.publish(this.appId(), ref.kind, ref.id, env, version.hash);
+      } catch (e) {
+        if (e instanceof RegistryError && e.missingReferences.length) this.missing.set({ env, references: e.missingReferences });
+        throw e;
+      }
       this.notifier.toast(this.i18n.t('ed.registry.published', { env }));
     });
     await this.refresh();
+  }
+
+  /**
+   * Schermate citate dalla versione e non pubblicate nell'ambiente, senza ripetizioni. Solo schermate e navigazione
+   * hanno riferimenti; se il controllo non riesce (per esempio un registro 0.3) la pubblicazione decide da sola.
+   */
+  private async missingScreens(kind: DocumentKind, id: string, hash: string, env: string): Promise<string[]> {
+    if (kind !== 'screen' && kind !== 'navigation') return [];
+    try {
+      const report = await this.client.references(this.appId(), kind, id, hash, env);
+      return [...new Set(report.missing.map((r) => r.screen))];
+    } catch {
+      return [];
+    }
   }
 
   /** Il documento salvato o aperto dal registro non ha modifiche da salvare (solo i tipi con una modalità dell'editor). */

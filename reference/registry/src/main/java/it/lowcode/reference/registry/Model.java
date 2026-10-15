@@ -2,6 +2,7 @@ package it.lowcode.reference.registry;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.time.Instant;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -98,4 +99,11 @@ public final class Model {
 
     /** Un problema di validazione: posizione nel documento (JSON Pointer) e messaggio. */
     public record Issue(String path, String message) {}
+
+    /** Un riferimento a un'altra schermata: identificativo e posizione nel documento (JSON Pointer). */
+    public record ScreenReference(String screen, String path) {}
+
+    /** Riferimenti di una versione e quelli che mancano nell'ambiente ({@code env} null = controllo di esistenza). */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record ReferenceReport(String env, List<ScreenReference> references, List<ScreenReference> missing) {}
 }

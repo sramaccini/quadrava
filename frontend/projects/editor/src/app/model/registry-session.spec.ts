@@ -64,6 +64,27 @@ describe('RegistrySession', () => {
     expect(toasts.at(-1)).toContain('bbbbbbbbbb');
   });
 
+  it('le schermate dell’applicazione scelta si leggono dal registro raggiungibile; salvarne una la aggiunge', async () => {
+    vi.stubGlobal('fetch', async (url: string, init: RequestInit = {}) => {
+      if (url === '/registry/apps') return respond(200, []);
+      if (url === '/registry/apps/ordini/documents') return respond(200, [{ kind: 'screen', id: 'ordini-elenco' }, { kind: 'navigation', id: 'menu' }]);
+      if (init.method === 'POST') return respond(201, { hash: 'cccccccccccc', createdAt: '', author: 'mario' });
+      return respond(200, []);
+    });
+    const session = TestBed.inject(RegistrySession);
+    session.appId.set('ordini');
+    TestBed.tick();
+    expect(session.screens()).toEqual([]);
+    await session.check();
+    TestBed.tick();
+    await vi.waitFor(() => expect(session.screens()).toEqual(['ordini-elenco']));
+    await session.save('screen', { schemaVersion: '1.0', screen: 'ordine-dettaglio', components: [] });
+    expect(session.screens()).toEqual(['ordini-elenco', 'ordine-dettaglio']);
+    session.appId.set('');
+    TestBed.tick();
+    expect(session.screens()).toEqual([]);
+  });
+
   it('i problemi di validazione del registro restano in issues; un 401 chiede l’accesso', async () => {
     let answer = respond(400, { title: 'Non valido', errors: [{ path: '/title', message: 'manca' }] });
     vi.stubGlobal('fetch', async (url: string) => (url.endsWith('/apps') ? respond(200, []) : answer));

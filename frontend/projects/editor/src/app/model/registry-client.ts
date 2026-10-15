@@ -2,7 +2,7 @@ import { Injectable, InjectionToken } from '@angular/core';
 import type { Json } from './doc-ops';
 
 /**
- * Client del registro (contracts/registry.yaml 0.3): ogni schermata, la navigazione e ogni tema sono documenti
+ * Client del registro (contracts/registry.yaml 0.4): ogni schermata, la navigazione e ogni tema sono documenti
  * separati, con versioni immutabili e pubblicazioni per ambiente. Le chiamate sono relative all'origine dell'editor,
  * che in produzione è servito dal BFF (sessione nel cookie, niente token nel browser).
  *
@@ -70,6 +70,19 @@ export interface RegistryIssue {
   message: string;
 }
 
+/** Un riferimento a un'altra schermata: identificativo e posizione nel documento (JSON Pointer). */
+export interface ScreenReference {
+  screen: string;
+  path: string;
+}
+
+/** Schermate citate da una versione e quelle non pubblicate nell'ambiente (o inesistenti, senza ambiente). */
+export interface ReferenceReport {
+  env?: string;
+  references: ScreenReference[];
+  missing: ScreenReference[];
+}
+
 /** Un'applicazione del registro visibile all'utente. */
 export interface AppSummary {
   id: string;
@@ -94,6 +107,8 @@ export class RegistryError extends Error {
     readonly issues: RegistryIssue[] = [],
     /** Con 412: chi ha salvato l'ultima versione. */
     readonly latestAuthor: string | null = null,
+    /** Con 409 alla pubblicazione: le schermate citate e non pubblicate nell'ambiente. */
+    readonly missingReferences: ScreenReference[] = [],
   ) {
     super(message);
   }
@@ -141,6 +156,12 @@ export class RegistryClient {
     return this.call<Json>('GET', this.path(appId, kind, id, `/versions/${enc(hash)}`));
   }
 
+  /** Schermate citate dalla versione; con `env` mancano quelle non pubblicate lì, senza quelle che non esistono. */
+  async references(appId: string, kind: DocumentKind, id: string, hash: string, env?: string): Promise<ReferenceReport> {
+    const query = env ? `?env=${enc(env)}` : '';
+    return this.call<ReferenceReport>('GET', this.path(appId, kind, id, `/versions/${enc(hash)}/references${query}`));
+  }
+
   async publish(appId: string, kind: DocumentKind, id: string, env: string, hash: string): Promise<void> {
     await this.call<void>('PUT', this.path(appId, kind, id, `/published?env=${enc(env)}`), { hash });
   }
@@ -172,8 +193,9 @@ export class RegistryClient {
       let title = '';
       let issues: RegistryIssue[] = [];
       let latestAuthor: string | null = null;
+      let missingReferences: ScreenReference[] = [];
       try {
-        const problem = (await response.json()) as { title?: unknown; errors?: unknown; latestAuthor?: unknown };
+        const problem = (await response.json()) as { title?: unknown; errors?: unknown; latestAuthor?: unknown; missingReferences?: unknown };
         // Solo testi pensati per l'autore (titolo, problemi di validazione, autore): mai HTML, mai il dettaglio tecnico.
         if (typeof problem.title === 'string') title = problem.title;
         if (Array.isArray(problem.errors)) {
@@ -183,10 +205,16 @@ export class RegistryClient {
             .map((e) => ({ path: e.path, message: e.message }));
         }
         if (typeof problem.latestAuthor === 'string') latestAuthor = problem.latestAuthor;
+        if (Array.isArray(problem.missingReferences)) {
+          missingReferences = problem.missingReferences
+            .filter((r): r is ScreenReference => typeof r?.screen === 'string' && typeof r?.path === 'string')
+            .slice(0, 20)
+            .map((r) => ({ screen: r.screen, path: r.path }));
+        }
       } catch {
         // Corpo assente o non JSON.
       }
-      throw new RegistryError(response.status, title, issues, latestAuthor);
+      throw new RegistryError(response.status, title, issues, latestAuthor, missingReferences);
     }
     if (response.status === 204) return undefined as T;
     return (await response.json()) as T;

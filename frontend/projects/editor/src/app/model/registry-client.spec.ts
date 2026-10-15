@@ -66,6 +66,20 @@ describe('client del registro', () => {
     expect([conflict.status, conflict.latestAuthor]).toEqual([412, 'luisa']);
   });
 
+  it('0.4: riferimenti di una versione (con e senza ambiente) e schermate mancanti nel rifiuto della pubblicazione', async () => {
+    reply = () => ({ status: 200, body: { env: 'produzione', references: [], missing: [] } });
+    await client.references('ordini', 'navigation', 'menu', 'abc', 'produzione');
+    await client.references('ordini', 'screen', 'x', 'abc');
+    expect(calls.map((c) => c.url)).toEqual([
+      '/registry/apps/ordini/documents/navigation/menu/versions/abc/references?env=produzione',
+      '/registry/apps/ordini/documents/screen/x/versions/abc/references',
+    ]);
+    const missingReferences = [{ screen: 'ordini-elenco', path: '/useCases/0/items/0/screen' }, { screen: 3 }, 'x'];
+    reply = () => ({ status: 409, body: { title: 'La navigazione cita schermate non pubblicate', missingReferences } });
+    const rejected = (await client.publish('ordini', 'navigation', 'menu', 'produzione', 'abc').catch((e: unknown) => e)) as RegistryError;
+    expect([rejected.status, rejected.missingReferences]).toEqual([409, [{ screen: 'ordini-elenco', path: '/useCases/0/items/0/screen' }]]);
+  });
+
   it('CSRF del BFF: le scritture mandano il token del cookie; senza cookie, al 403 si riprova una volta con il token', async () => {
     const sent: (string | null)[] = [];
     let status = 403;
