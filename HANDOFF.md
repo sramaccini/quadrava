@@ -1,6 +1,6 @@
 # HANDOFF — Quadrava
 
-Project status, conventions and next steps, for picking the work up locally. Last updated: evening of 2026-10-13, after completing the list in § 8b (registry 0.3, editor, components, menu, translations from the registry, optimisations, accessibility, one-command stack).
+Project status, conventions and next steps, for picking the work up locally. Last updated: 16 October 2026, after the move of the whole project to English, the rename to Quadrava and the MPL-2.0 licence.
 
 ## 1. What it is
 
@@ -12,7 +12,7 @@ Project status, conventions and next steps, for picking the work up locally. Las
 - **Architectural review** mode: point out inconsistencies, missing pieces and shortcomings against the requirements.
 - Documents explain things simply, with figures and practical examples; new content goes into the relevant sections, not into isolated comparison paragraphs.
 - Latest stack; lightweight, governable DSL/expression solutions (no heavy rule engines).
-- All documentation is in **English** (README, DEVELOPMENT-GUIDE, `docs/`, this file, `CLAUDE.md`). Commit messages, the descriptions in the JSON schemas and the demo's user-facing texts are in Italian (the demo also has an English catalogue).
+- **Everything is in English**: code, identifiers, comments, tests, documentation, schema descriptions, contracts, commit messages, the demo (ids, data, permissions, API paths). Italian survives only as a translation catalogue (`examples/i18n/it.json`, the `it` halves of `messages.ts`) and in the tests that check it. The tests of `components`, `runtime` and `editor` run with the Italian UI, so their assertions on displayed texts are in Italian.
 - In long blocks of work: one commit per component, tests and a visual check before moving on to the next.
 
 ## 3. Stack and commands
@@ -56,7 +56,7 @@ Libraries (`frontend/projects/`): `schema` (JSON Schema + types), `expressions` 
 
 ## 5. Component catalogue
 
-`docs/component-catalogue.md`: specification of every component added (up to § 2.28), common rules and **known limits** (§ 3); `docs/schema-reference.md`: all the properties, generated from the schema. The demo showcase has twelve screens: Componenti base, Form, Attività e avanzamento, Contenitori di layout, Campi a sé, Campi e form, Filtri e tabelle, Tabelle avanzate, Datatable, Schede/dettaglio/messaggi, Cruscotto, Procedure e viste.
+`docs/component-catalogue.md`: specification of every component added (up to § 2.28), common rules and **known limits** (§ 3); `docs/schema-reference.md`: all the properties, generated from the schema. The demo showcase has twelve screens (`examples/showcase-*.json`): basics, form, tasks and progress, layout containers, standalone fields, fields and forms, tables, advanced tables, datatable, layout (tabs, detail, messages), dashboard, views.
 
 ## 5b. Quadrava Studio (visual editor)
 
@@ -96,12 +96,14 @@ The main ones are in the DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In short:
 
 ## 8. Next steps (in the suggested order)
 
-1. Review of the work of 13 October (commits from `0086d31` onwards).
-2. Conformance kits in CI against the reference services (today they are run by hand, for example after `npm run stack`).
-3. Editor: comparison between two registry versions; border side widths from the preview.
-4. e2e in Firefox and WebKit.
-5. CEL in `validate:examples` and, eventually, in the registry.
-6. Bring the project documents (architecture § 9, functional specification, guidelines) up to date with the October status.
+1. Decide the default language: today the platform, the demo and the tests start in Italian (`I18n` default `it`, `formatValue` default `it-IT` and «Sì», runtime fallback `it`), while the texts written in the JSON are now English. For an English-first open-source project the default should probably become English (a behaviour change, many test assertions to rewrite).
+2. Trademark search for «Quadrava» (TMview, WIPO) before the public launch; legal review of `CLA.md` before the first external pull request; a generated third-party notices file (npm and Maven) shipped with the builds.
+3. Local data after the October renames: recreate Keycloak (`cd idp && docker compose down && docker compose up -d`) and delete `data/registry` (old review states, roles, identifiers and permissions).
+4. Conformance kits in CI against the reference services (today they are run by hand, for example after `npm run stack`).
+5. Editor: comparison between two registry versions; border side widths from the preview.
+6. e2e in Firefox and WebKit.
+7. CEL in `validate:examples` and, eventually, in the registry.
+8. Bring the project documents (architecture § 9, functional specification, guidelines) up to date with the October status.
 
 ## 8b. What was missing and proposed optimisations (13 October 2026)
 
@@ -110,7 +112,7 @@ List drawn up on 13 October and **implemented the same day**. For each item, whe
 | Item | Status |
 | --- | --- |
 | CI and first e2e suite | done (dedicated session): `.github/workflows/ci.yml`, `frontend/e2e` |
-| Accessibility check (axe) | done: `e2e/accessibilita.spec.ts` on 12 screens; fixed contrasts, labels, `nz-steps`, `nz-tree`, menu group titles |
+| Accessibility check (axe) | done: `e2e/accessibility.spec.ts` on 12 screens; fixed contrasts, labels, `nz-steps`, `nz-tree`, menu group titles |
 | Conformance kits | done for registry (17/17), authorization (11/11) and telemetry (6/6); they found differences in the reference services, which were fixed |
 | Persistent registry, review, comparison, promotion, validation on save | done: registry 0.3 (file store, four eyes, protected environments, If-Match, server-side JSON Schema); comparison in the editor |
 | Expression completion, direct editing on the preview, live data, concurrent changes | done (on the preview components can be added, moved and resized) |
@@ -127,10 +129,10 @@ List drawn up on 13 October and **implemented the same day**. For each item, whe
 
 ## 9. Working conventions
 
-- Commits in Italian, descriptive, one per component, in the author's name: no co-author trailer (full rules in `CLAUDE.md`).
+- Commits in English (Conventional Commits), one per component, in the author's name: no trailers (full rules in `CLAUDE.md`). Licence MPL-2.0; external contributions under the CLA (`CONTRIBUTING.md`).
 - After every code change: `build:libs`, tests of the projects touched, `validate:examples` if examples or schemas are touched; for the UI a check in the browser (demo on 4300).
 - The JSON schemas are the source: edit `*.schema.json`, then `schema:sync`, then the types in `schema/src/lib/types.ts`.
-- Every new component: schema, type, component registered in `STANDARD_COMPONENTS`, tests (schema in `schema/new-components.spec.ts`, component in `components/*.spec.ts` with `renderScreen`, showcase in `runtime/vetrina-avanzata.spec.ts` with `openShowcase`), example in `examples/vetrina-*.json` with texts in `examples/i18n/it.json` and `en.json`.
+- Every new component: schema, type, component registered in `STANDARD_COMPONENTS`, tests (schema in `schema/new-components.spec.ts`, component in `components/*.spec.ts` with `renderScreen`, showcase in `runtime/showcase-advanced.spec.ts` with `openShowcase`), example in `examples/showcase-*.json` with texts in `examples/i18n/it.json` and `en.json`.
 - Never hard-coded colours in components: `var(--lc-*)` or NG-ZORRO tokens. Never user-facing text in components: `runtime().text(...)` or `lc.*` keys in `messages.ts` (it and en).
 - Security (non-negotiable): no HTML from data or translations, fail-closed expressions, no data values in diagnostics, real enforcement lives in the back end.
 
@@ -138,4 +140,4 @@ List drawn up on 13 October and **implemented the same day**. For each item, whe
 
 - `README.md`, `DEVELOPMENT-GUIDE.md`, `docs/README.md` (index of the documentation).
 - Project documents: `docs/functional-spec.md`, `docs/architecture.md`, `docs/implementation-guidelines.md`, `docs/dynamic-texts-and-i18n.md`; `docs/component-catalogue.md`, `docs/editor.md`, `docs/schema-reference.md`.
-- Recent history: `0a81b58` editor: drag and drop, `5e45e21` suggestions, `01a3233` linked preview, `7ba8c36` field-by-field lists, `ac3988f` first version of the editor; `417c426` serverDataTable; `3347671` stacked charts and dual axis, `3115710` data table for large volumes, `35b0faf` keyboard tree, `d57f0c8` lookup and file in rows, `59c2971` multipart files, `7c621e5` text of values in the lookup; `01c6367` data table … `72af122` sorting, `659c4f3` catalogue; `bc1424d` data source reload fix; `90224d7` responsive shell; `e67dfbe` full i18n.
+- Recent history (October 2026): `965d633` MPL-2.0 licence, `b25b72a`/`084e5d9`/`01002b8`/`365396e`/`caac5ff` English everywhere (libraries, editor, demo, services, components), `3e3ea53`/`803a734` Quadrava brand, `0c6c9f1` cross-document references in the registry. Earlier: `0a81b58` editor: drag and drop, `5e45e21` suggestions, `01a3233` linked preview, `7ba8c36` field-by-field lists, `ac3988f` first version of the editor; `417c426` serverDataTable; `3347671` stacked charts and dual axis, `3115710` data table for large volumes, `35b0faf` keyboard tree, `d57f0c8` lookup and file in rows, `59c2971` multipart files, `7c621e5` text of values in the lookup; `01c6367` data table … `72af122` sorting, `659c4f3` catalogue; `bc1424d` data source reload fix; `90224d7` responsive shell; `e67dfbe` full i18n.
