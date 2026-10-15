@@ -9,12 +9,12 @@
           [collapsed]="inDrawer ? false : collapsed()"
           (collapsedChange)="collapsed.set($event)"
           [showToggle]="!inDrawer"
-          [useCaseId]="navigation.current().useCase"
+          [areaId]="navigation.current().area"
           [active]="active()"
           [hrefFor]="hrefFor"
           [badges]="navigation.badges()"
-          (navigate)="open($event.useCase, $event.leaf)"
-          (useCaseChange)="navigation.switchUseCase($event)"
+          (navigate)="open($event.area, $event.leaf)"
+          (areaChange)="navigation.switchArea($event)"
         >
           <lc-kinetix-wordmark lcBrand icon="brand/kinetix-icon-small.svg" [tone]="siderTone()" [compact]="inDrawer ? false : collapsed()" />
         </lc-sidebar>

@@ -44,7 +44,7 @@ const sameJson = (a: unknown, b: unknown): boolean => a === b || JSON.stringify(
   `,
   template: `
     @if (navigation(); as nav) {
-      <lc-sidebar [navigation]="nav" brand="KinetiX" [tone]="tone()" [useCaseId]="useCaseId()" (useCaseChange)="useCaseId.set($event)" (navigate)="navigated($event)">
+      <lc-sidebar [navigation]="nav" brand="KinetiX" [tone]="tone()" [areaId]="areaId()" (areaChange)="areaId.set($event)" (navigate)="navigated($event)">
         <lc-kinetix-wordmark lcBrand icon="brand/kinetix-icon-small.svg" [tone]="tone()" />
       </lc-sidebar>
     }
@@ -115,10 +115,10 @@ export class PreviewApp {
     const definition = this.navigationDefinition();
     return definition ? new NavigationRuntime(definition, { authorization: this.session, userProvider: this.session, i18n: this.i18n }) : null;
   });
-  protected readonly useCaseId = linkedSignal<NavigationRuntime | null, string | null>({
+  protected readonly areaId = linkedSignal<NavigationRuntime | null, string | null>({
     source: () => this.navigation(),
     computation: (nav, previous) => {
-      const visible = nav?.useCases() ?? [];
+      const visible = nav?.areas() ?? [];
       return previous?.value && visible.some((u) => u.id === previous.value) ? previous.value : (visible[0]?.id ?? null);
     },
   });

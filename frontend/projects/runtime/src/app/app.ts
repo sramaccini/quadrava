@@ -96,7 +96,7 @@ export class App {
     const here = this.navigation.current();
     return here.screen ? { screen: here.screen, params: here.params } : null;
   });
-  protected readonly hrefFor = (useCase: string, leaf: VisibleLeaf): string => this.navigation.href(useCase, leaf);
+  protected readonly hrefFor = (area: string, leaf: VisibleLeaf): string => this.navigation.href(area, leaf);
 
   constructor() {
     // I cataloghi vengono dalla stessa fonte delle definizioni: i file della demo oppure le versioni pubblicate nel registro.
@@ -132,9 +132,9 @@ export class App {
     });
   }
 
-  /** Apre una voce del menu; nel cassetto lo chiude (il cambio di caso d'uso invece lo lascia aperto per scegliere la voce). */
-  protected open(useCase: string, leaf: VisibleLeaf): void {
+  /** Apre una voce del menu; nel cassetto lo chiude (il cambio di area invece lo lascia aperto per scegliere la voce). */
+  protected open(area: string, leaf: VisibleLeaf): void {
     this.drawerOpen.set(false);
-    this.navigation.open(useCase, leaf.screen, leaf.params);
+    this.navigation.open(area, leaf.screen, leaf.params);
   }
 }

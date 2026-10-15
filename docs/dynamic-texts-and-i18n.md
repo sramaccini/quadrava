@@ -29,7 +29,7 @@ Texts are not all alike: they differ in who writes them, where they live and whe
 | --- | --- | --- | --- | --- |
 | Screen texts | `label` of buttons, columns, fields; `title`; `text`; `tooltip`; `toast` and `confirm` messages | The screen designer (editor) | Language and sometimes data | String with `{{ }}`, in one language only |
 | Validation messages | `validate.message` | The screen designer | Language and entered values | Fixed string |
-| Navigation and theme | `label` of menu items and use cases, `brand` | The application designer | Language | Fixed string |
+| Navigation and theme | `label` of menu items and areas, `brand` | The application designer | Language | Fixed string |
 | Runtime strings | "Tutti", "Conferma", "Annulla", "Caricamento…", "Nessun risultato." | Us (the platform) | Language | Written in the code, in Italian |
 | Texts from the back end | Errors and messages returned by the APIs, status values (e.g. `inviato`) | The external service | Language of the request | Shown as they arrive |
 | Formats | Currencies, dates, numbers, percentages | The runtime with `Intl` | Language and region | Fixed locale |

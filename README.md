@@ -43,7 +43,7 @@ Contributor documentation: [DEVELOPMENT-GUIDE.md](DEVELOPMENT-GUIDE.md). Design 
 | --- | --- | --- |
 | **Runtime** (`frontend/projects/runtime`) | Angular application that loads screens, theme and navigation, validates them, and renders them | Working demo, fake back end |
 | **Libraries** (`schema`, `expressions`, `core`, `components`, `services`) | JSON Schema and types, expression evaluator, interpreter, NG-ZORRO component catalogue, HTTP/session/authorization/telemetry services | Working, tested |
-| **KinetiX Studio**, the visual editor (`frontend/projects/editor`) | Builds screens and the navigation (use cases and menus) with property panels generated from the JSON Schemas and live previews rendered by the real runtime | Screens, navigation and themes |
+| **KinetiX Studio**, the visual editor (`frontend/projects/editor`) | Builds screens and the navigation (areas and menus) with property panels generated from the JSON Schemas and live previews rendered by the real runtime | Screens, navigation and themes |
 | **Contracts** (`contracts/`) | OpenAPI 3.1: authorization, telemetry ingestion, registry | Defined and validated |
 | **Reference implementation** (`reference/`) | Spring Boot BFF, registry, authorization and telemetry services that implement the contracts | Compiles and its unit tests pass (JDK 21, Maven 3.9), in CI too |
 | **Identity provider** (`idp/`) | Keycloak with a sample realm for local development | Ready |
@@ -175,7 +175,7 @@ A theme is a document of **design tokens only** (colours, typography, radius, de
 
 ### Navigation
 
-A navigation document lists **use cases** (functional areas), each with a menu of up to three levels (group → subgroup → item). Items point to a screen with optional parameters and may carry `requires` (a permission) and `visibleIf`. Groups and use cases with no visible items disappear. KinetiX has no built-in use cases; those in the examples are only examples.
+A navigation document lists **areas** (the functional parts of the application), each with a menu of up to three levels (group → subgroup → item). Items point to a screen with optional parameters and may carry `requires` (a permission) and `visibleIf`. Groups and areas with no visible items disappear. KinetiX has no built-in areas; those in the examples are only examples.
 
 An optional `badges.url` (a relative GET returning `{ "<item id>": number }`) shows counters next to the items, refreshed periodically and when the page becomes visible again; a closed group shows the sum of its items.
 
@@ -245,10 +245,10 @@ npm ci
 npm run start:runtime        # builds the libraries, copies the examples, serves on http://localhost:4200
 ```
 
-In the top bar choose the **user** (`operator`, `manager`, `administrator`) and the **theme** (light, dark). The side menu is defined by `examples/navigation.json`; a selector at its top switches the use case. Things to try:
+In the top bar choose the **user** (`operator`, `manager`, `administrator`) and the **theme** (light, dark). The side menu is defined by `examples/navigation.json`; a selector at its top switches the area. Things to try:
 
 * Switch the simulated **network** (normal, slow, very slow) in the top bar to see the activity indicators.
-* Switch users: the available use cases and menu entries follow the permissions of the profile. The URL of a screen you may not open shows a denial even if typed by hand.
+* Switch users: the available areas and menu entries follow the permissions of the profile. The URL of a screen you may not open shows a denial even if typed by hand.
 * *Inserimento Fattura*: a form with validation that saves a draft and navigates to the drafts list.
 * *Revisione Spese*: two menu entries open the same screen with different parameters; Approve and Reject only appear with the review permission.
 * **Component showcase** (visible to every profile): eleven screens, `examples/vetrina-*.json`, exercising every component: basics and actions; forms; layout containers (box, grid, border layout); standalone fields; fields and forms (new field types, lookup, file upload, grid, repeatable rows, form dialogs); filters and tables; advanced tables (sorting, selection, action menus, expandable rows, totals); the data table; tabs, detail view and in-page messages; a dashboard (KPI tiles and charts); procedures and views (wizard, tree, calendar).
@@ -300,7 +300,7 @@ Open an example (*File → Apri esempio*) or start a new screen. Details, shortc
 
 ### Navigation and theme
 
-* The *Navigazione* mode edits `navigation.json` the same way (outline of use cases, groups and items; schema-driven fields) and previews the real side menu with a simulated profile: switch permissions off to see what a user without them gets.
+* The *Navigazione* mode edits `navigation.json` the same way (outline of areas, groups and items; schema-driven fields) and previews the real side menu with a simulated profile: switch permissions off to see what a user without them gets.
 * The *Tema* mode edits a theme's tokens (with colour pickers) and previews the screen and menu being edited with that theme, applied to the preview only.
 
 ### Registry

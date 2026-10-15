@@ -121,7 +121,7 @@ describe('editor delle schermate', () => {
     expect(el.querySelector('ed-inspector .kind')?.textContent).toBe('Sezione');
     type(el.querySelector('#prop-title') as HTMLTextAreaElement, 'Riepilogo');
     await untilState('ed-preview', (st) => getAt(screenOf(st), ['components', 0, 'title']) === 'Riepilogo', 'titolo nell’anteprima');
-    // Il testo della proprietà ha la sintassi colorata dietro l'area di testo (anche con un'espressione).
+    // Il testo della proprietà ha la sintassi colorata dietro l’area di testo (anche con un'espressione).
     const title = el.querySelector('#prop-title') as HTMLTextAreaElement;
     type(title, "Riepilogo {{ state.n }}");
     await settle();
@@ -567,7 +567,7 @@ describe('editor delle schermate', () => {
     splitter.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
     await settle();
     expect(splitter.getAttribute('aria-valuenow')).toBe('640');
-    // A destra le frecce sono invertite: verso l'area centrale (sinistra) il lato cresce.
+    // A destra le frecce sono invertite: verso l’area centrale (sinistra) il lato cresce.
     const right = el.querySelector('ed-dock-side.right .splitter') as HTMLElement;
     right.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
     await settle();
@@ -872,7 +872,7 @@ describe('editor delle schermate', () => {
     const menu = (st: PreviewState): string => JSON.stringify(st.navigation);
     await untilState('ed-navigation-editor', (st) => menu(st).includes('Nuova voce') && !st.screen, 'menu nell’anteprima');
     // Una voce che richiede un permesso.
-    nav.select(['useCases', 0, 'items', 0]);
+    nav.select(['areas', 0, 'items', 0]);
     await settle();
     expect(el.querySelector('ed-navigation-editor .kind')?.textContent).toBe('Voce');
     type(el.querySelector('ed-navigation-editor #prop-label') as HTMLInputElement, 'Ordini');
@@ -889,7 +889,7 @@ describe('editor delle schermate', () => {
     expect(nav.target()).toEqual({ kind: 'group', level: 1 });
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true }));
     await settle();
-    expect(getAt(nav.doc(), ['useCases', 0, 'items'])).toHaveLength(1);
+    expect(getAt(nav.doc(), ['areas', 0, 'items'])).toHaveLength(1);
     // Problemi della navigazione in basso: la voce iniziale apre una schermata che non è tra quelle note.
     expect(el.querySelector('.bottom')?.textContent).toContain('Schermata «nuova-schermata» non trovata tra quelle note');
   });

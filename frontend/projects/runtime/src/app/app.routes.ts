@@ -4,6 +4,6 @@ import { ScreenPage } from './pages/screen-page.component';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', component: HomePage },
-  { path: ':useCase/:screen', component: ScreenPage },
+  { path: ':area/:screen', component: ScreenPage },
   { path: '**', redirectTo: '' },
 ];

@@ -8,15 +8,15 @@ import { DocumentState, type EditorIssue } from './document-state';
 import { SchemaReader, type PropertyInfo, type Schema } from './schema-info';
 
 /**
- * La navigazione dell'applicazione (casi d'uso e menu a tre livelli) come documento dell'editor. Livelli fissati dallo
- * schema: caso d'uso → gruppo → sottogruppo → voce; una voce apre una schermata.
+ * La navigazione dell'applicazione (aree e menu a tre livelli) come documento dell'editor. Livelli fissati dallo
+ * schema: area → gruppo → sottogruppo → voce; una voce apre una schermata.
  */
 
 export const NAVIGATION = new SchemaReader(NAVIGATION_SCHEMA as unknown as Schema);
 
-export type NavTarget = { kind: 'root' } | { kind: 'useCase' } | { kind: 'group'; level: 1 | 2 } | { kind: 'leaf' };
+export type NavTarget = { kind: 'root' } | { kind: 'area' } | { kind: 'group'; level: 1 | 2 } | { kind: 'leaf' };
 
-/** Profondità di un percorso nel menu: 1 dentro un caso d'uso, 2 dentro un gruppo, 3 dentro un sottogruppo. */
+/** Profondità di un percorso nel menu: 1 dentro un’area, 2 dentro un gruppo, 3 dentro un sottogruppo. */
 function depthOf(path: Path): number {
   return path.filter((k) => k === 'items' || k === 'children').length;
 }
@@ -26,7 +26,7 @@ export function navTargetAt(doc: Json, path: Path): NavTarget | null {
   const value = getIn(doc, path);
   if (!isObject(value) || typeof path.at(-1) !== 'number') return null;
   const list = path.at(-2);
-  if (list === 'useCases' && path.length === 2) return { kind: 'useCase' };
+  if (list === 'areas' && path.length === 2) return { kind: 'area' };
   if (list !== 'items' && list !== 'children') return null;
   const depth = depthOf(path);
   if (Array.isArray(value['children']) && depth < 3) return { kind: 'group', level: depth as 1 | 2 };
@@ -41,20 +41,20 @@ export function navOwnerOf(doc: Json, path: Path): Path {
   return [];
 }
 
-/** L'elenco dei figli di un elemento (casi d'uso della radice, voci di un caso d'uso o di un gruppo). */
+/** L'elenco dei figli di un elemento (aree della radice, voci di un’area o di un gruppo). */
 export function navChildList(doc: Json, path: Path): Path | null {
   const target = navTargetAt(doc, path);
   if (!target) return null;
-  if (target.kind === 'root') return ['useCases'];
-  if (target.kind === 'useCase') return [...path, 'items'];
+  if (target.kind === 'root') return ['areas'];
+  if (target.kind === 'area') return [...path, 'items'];
   if (target.kind === 'group') return [...path, 'children'];
   return null;
 }
 
-/** Nell'elemento si può aggiungere un gruppo? (Al massimo due livelli di gruppi sotto un caso d'uso.) */
+/** Nell'elemento si può aggiungere un gruppo? (Al massimo due livelli di gruppi sotto un’area.) */
 export function canAddGroup(doc: Json, path: Path): boolean {
   const target = navTargetAt(doc, path);
-  return target?.kind === 'useCase' || (target?.kind === 'group' && target.level === 1);
+  return target?.kind === 'area' || (target?.kind === 'group' && target.level === 1);
 }
 
 /** Proprietà mostrate nel pannello per un elemento (i figli si gestiscono nella struttura). */
@@ -62,18 +62,18 @@ export function navProperties(target: NavTarget): PropertyInfo[] {
   const props =
     target.kind === 'root'
       ? NAVIGATION.rootProperties()
-      : NAVIGATION.definitionProperties(target.kind === 'useCase' ? 'useCase' : target.kind === 'leaf' ? 'leaf' : target.level === 1 ? 'group1' : 'group2');
-  return props.filter((p) => !['useCases', 'items', 'children'].includes(p.name));
+      : NAVIGATION.definitionProperties(target.kind === 'area' ? 'area' : target.kind === 'leaf' ? 'leaf' : target.level === 1 ? 'group1' : 'group2');
+  return props.filter((p) => !['areas', 'items', 'children'].includes(p.name));
 }
 
 type Translate = (key: string) => string;
 
 export function emptyNavigation(t: Translate): JsonObject {
-  return { schemaVersion: '1.0', navigation: 'applicazione', useCases: [useCaseTemplate('caso-1', 'voce-1', t)] };
+  return { schemaVersion: '1.0', navigation: 'applicazione', areas: [areaTemplate('area-1', 'voce-1', t)] };
 }
 
-function useCaseTemplate(id: string, leafId: string, t: Translate): JsonObject {
-  return { id, label: t('ed.nav.newUseCase'), items: [leafTemplate(leafId, t)] };
+function areaTemplate(id: string, leafId: string, t: Translate): JsonObject {
+  return { id, label: t('ed.nav.newArea'), items: [leafTemplate(leafId, t)] };
 }
 
 function leafTemplate(id: string, t: Translate, screen = 'nuova-schermata'): JsonObject {
@@ -132,8 +132,8 @@ export class NavigationStore extends DocumentState {
     if (property === 'icon') return Object.keys(ICON_TYPES).sort();
     if (property === 'requires') return this.permissions();
     if (property === 'default') {
-      const useCases = getIn(this.doc(), ['useCases']);
-      return Array.isArray(useCases) ? useCases.map((u) => (isObject(u) ? String(u['id'] ?? '') : '')).filter(Boolean) : [];
+      const areas = getIn(this.doc(), ['areas']);
+      return Array.isArray(areas) ? areas.map((u) => (isObject(u) ? String(u['id'] ?? '') : '')).filter(Boolean) : [];
     }
     return [];
   }
@@ -146,23 +146,23 @@ export class NavigationStore extends DocumentState {
     this.reset(emptyNavigation((k) => this.t(k)));
   }
 
-  /** Aggiunge un caso d'uso in fondo, con una voce. */
-  addUseCase(): void {
+  /** Aggiunge un’area in fondo, con una voce. */
+  addArea(): void {
     const doc = this.doc();
-    const list = getIn(doc, ['useCases']);
+    const list = getIn(doc, ['areas']);
     const index = Array.isArray(list) ? list.length : 0;
-    const node = useCaseTemplate(this.freshId('caso'), this.freshId('voce'), (k) => this.t(k));
-    this.apply(insertAt(doc, ['useCases'], index, node), { select: ['useCases', index] });
+    const node = areaTemplate(this.freshId('area'), this.freshId('voce'), (k) => this.t(k));
+    this.apply(insertAt(doc, ['areas'], index, node), { select: ['areas', index] });
   }
 
   /**
-   * Dove va una voce (o un gruppo) nuova: dentro il caso d'uso o il gruppo selezionato, altrimenti accanto all'elemento
+   * Dove va una voce (o un gruppo) nuova: dentro l’area o il gruppo selezionato, altrimenti accanto all'elemento
    * selezionato. Null se lì non può stare (un gruppo oltre il secondo livello, niente selezionato).
    */
   itemPoint(kind: 'leaf' | 'group', doc = this.doc(), selection = this.selection()): { list: Path; index: number } | null {
     const target = navTargetAt(doc, selection);
     if (!target || target.kind === 'root') return null;
-    const inside = target.kind === 'useCase' || (target.kind === 'group' && (kind === 'leaf' || canAddGroup(doc, selection)));
+    const inside = target.kind === 'area' || (target.kind === 'group' && (kind === 'leaf' || canAddGroup(doc, selection)));
     if (inside) {
       const list = navChildList(doc, selection)!;
       const items = getIn(doc, list);
@@ -265,10 +265,10 @@ export class NavigationStore extends DocumentState {
         }
       });
     };
-    visitList(getIn(doc, ['useCases']) ?? null, ['useCases']);
+    visitList(getIn(doc, ['areas']) ?? null, ['areas']);
     const fallback = getIn(doc, ['default']);
     if (typeof fallback === 'string' && !this.suggestions('default').includes(fallback)) {
-      add('/default', this.t('ed.issue.unknownUseCase', { id: fallback }), 'warning');
+      add('/default', this.t('ed.issue.unknownArea', { id: fallback }), 'warning');
     }
     return issues;
   }

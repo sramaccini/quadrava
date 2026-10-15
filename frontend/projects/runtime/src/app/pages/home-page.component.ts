@@ -35,8 +35,8 @@ export class HomePage {
     effect(() => {
       const runtime = this.navigation.runtime();
       if (!runtime) return;
-      // Legge i casi d'uso nell'effect: se cambiano i permessi riprova.
-      runtime.useCases();
+      // Legge le aree nell'effect: se cambiano i permessi riprova.
+      runtime.areas();
       untracked(() => this.empty.set(!this.navigation.openDefault()));
     });
   }

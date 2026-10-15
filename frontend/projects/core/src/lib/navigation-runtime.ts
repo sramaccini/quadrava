@@ -1,6 +1,6 @@
 import { computed } from '@angular/core';
 import { ExpressionEngine } from 'expressions';
-import type { NavigationDefinition, NavigationItem, NavigationLeaf, NavigationUseCase } from 'schema';
+import type { NavigationDefinition, NavigationItem, NavigationLeaf, NavigationArea } from 'schema';
 import type { I18n } from './i18n';
 import type { Authorization, RuntimeDiagnostics, UserProvider } from './ports';
 
@@ -24,7 +24,7 @@ export interface VisibleGroup {
 
 export type VisibleItem = VisibleLeaf | VisibleGroup;
 
-export interface VisibleUseCase {
+export interface VisibleArea {
   id: string;
   label: string;
   icon?: string;
@@ -39,24 +39,24 @@ export interface NavigationDeps {
   i18n?: I18n | null;
 }
 
-/** Posizione corrente nella navigazione: caso d'uso e percorso di id dal gruppo alla voce. */
+/** Posizione corrente nella navigazione: area e percorso di id dal gruppo alla voce. */
 export interface NavigationLocation {
-  useCase: string;
+  area: string;
   path: string[];
 }
 
 /**
  * Menu filtrato per l'utente corrente. Regole (tutte fail-closed):
  * - una voce è visibile se l'utente ha `requires` e `visibleIf` vale vero (errore => nascosta);
- * - un gruppo senza voci visibili sparisce, e un caso d'uso senza voci visibili non compare.
- * `useCases` è un computed: si aggiorna da solo se cambiano i permessi (Authorization basata su signal).
+ * - un gruppo senza voci visibili sparisce, e un’area senza voci visibili non compare.
+ * `areas` è un computed: si aggiorna da solo se cambiano i permessi (Authorization basata su signal).
  * Il menu è solo comodità: l'enforcement resta nella schermata (`requires`) e nel backend.
  */
 export class NavigationRuntime {
   private readonly engine: ExpressionEngine;
 
-  readonly useCases = computed<VisibleUseCase[]>(() =>
-    this.definition.useCases.map((u) => this.filterUseCase(u)).filter((u): u is VisibleUseCase => u !== null),
+  readonly areas = computed<VisibleArea[]>(() =>
+    this.definition.areas.map((u) => this.filterArea(u)).filter((u): u is VisibleArea => u !== null),
   );
 
   constructor(
@@ -81,31 +81,31 @@ export class NavigationRuntime {
     return result.ok && result.value !== null && result.value !== undefined ? String(result.value) : label;
   }
 
-  useCase(id: string): VisibleUseCase | null {
-    return this.useCases().find((u) => u.id === id) ?? null;
+  area(id: string): VisibleArea | null {
+    return this.areas().find((u) => u.id === id) ?? null;
   }
 
-  /** Prima voce visibile (in ordine di documento) di un caso d'uso. */
-  firstLeaf(useCaseId: string): VisibleLeaf | null {
-    const useCase = this.useCase(useCaseId);
-    return useCase ? firstLeafOf(useCase.items) : null;
+  /** Prima voce visibile (in ordine di documento) di un’area. */
+  firstLeaf(areaId: string): VisibleLeaf | null {
+    const area = this.area(areaId);
+    return area ? firstLeafOf(area.items) : null;
   }
 
-  /** Dove atterrare all'avvio: il caso d'uso `default` se visibile, altrimenti il primo visibile. */
-  defaultTarget(): { useCase: string; leaf: VisibleLeaf } | null {
+  /** Dove atterrare all'avvio: l’area `default` se visibile, altrimenti la prima visibile. */
+  defaultTarget(): { area: string; leaf: VisibleLeaf } | null {
     const wanted = this.definition.default;
-    const order = [...this.useCases()].sort((a, b) => Number(b.id === wanted) - Number(a.id === wanted));
-    for (const useCase of order) {
-      const leaf = firstLeafOf(useCase.items);
-      if (leaf) return { useCase: useCase.id, leaf };
+    const order = [...this.areas()].sort((a, b) => Number(b.id === wanted) - Number(a.id === wanted));
+    for (const area of order) {
+      const leaf = firstLeafOf(area.items);
+      if (leaf) return { area: area.id, leaf };
     }
     return null;
   }
 
-  /** Percorso della voce che corrisponde a una schermata con i parametri dati, nel caso d'uso indicato. */
-  locate(useCaseId: string, screen: string, params: Record<string, unknown> = {}): string[] | null {
-    const useCase = this.useCase(useCaseId);
-    if (!useCase) return null;
+  /** Percorso della voce che corrisponde a una schermata con i parametri dati, nell’area indicata. */
+  locate(areaId: string, screen: string, params: Record<string, unknown> = {}): string[] | null {
+    const area = this.area(areaId);
+    if (!area) return null;
     let best: { path: string[]; specificity: number } | null = null;
     const walk = (items: VisibleItem[], trail: string[]): void => {
       for (const item of items) {
@@ -117,17 +117,17 @@ export class NavigationRuntime {
         }
       }
     };
-    walk(useCase.items, []);
+    walk(area.items, []);
     return (best as { path: string[] } | null)?.path ?? null;
   }
 
-  /** Etichette del percorso (caso d'uso, gruppi, voce) che porta a una schermata: servono alle briciole di pane. */
-  trail(useCaseId: string, screen: string, params: Record<string, unknown> = {}): string[] | null {
-    const useCase = this.useCase(useCaseId);
-    const path = this.locate(useCaseId, screen, params);
-    if (!useCase || !path) return null;
-    const labels = [useCase.label];
-    let items: VisibleItem[] = useCase.items;
+  /** Etichette del percorso (area, gruppi, voce) che porta a una schermata: servono alle briciole di pane. */
+  trail(areaId: string, screen: string, params: Record<string, unknown> = {}): string[] | null {
+    const area = this.area(areaId);
+    const path = this.locate(areaId, screen, params);
+    if (!area || !path) return null;
+    const labels = [area.label];
+    let items: VisibleItem[] = area.items;
     for (const id of path) {
       const item = items.find((i) => i.id === id);
       if (!item) break;
@@ -137,16 +137,16 @@ export class NavigationRuntime {
     return labels;
   }
 
-  /** Caso d'uso a cui appartiene una schermata: prima quello preferito (di norma il corrente), poi gli altri. */
-  useCaseOf(screen: string, params: Record<string, unknown> = {}, preferred?: string | null): string | null {
-    const order = [...this.useCases()].sort((a, b) => Number(b.id === preferred) - Number(a.id === preferred));
+  /** Area a cui appartiene una schermata: prima quella preferita (di norma la corrente), poi le altre. */
+  areaOf(screen: string, params: Record<string, unknown> = {}, preferred?: string | null): string | null {
+    const order = [...this.areas()].sort((a, b) => Number(b.id === preferred) - Number(a.id === preferred));
     return order.find((u) => this.locate(u.id, screen, params) !== null)?.id ?? null;
   }
 
-  private filterUseCase(useCase: NavigationUseCase): VisibleUseCase | null {
-    if (!this.allowed(useCase)) return null;
-    const items = this.filterItems(useCase.items);
-    return items.length > 0 ? { id: useCase.id, label: this.text(useCase.label), icon: useCase.icon, items } : null;
+  private filterArea(area: NavigationArea): VisibleArea | null {
+    if (!this.allowed(area)) return null;
+    const items = this.filterItems(area.items);
+    return items.length > 0 ? { id: area.id, label: this.text(area.label), icon: area.icon, items } : null;
   }
 
   private filterItems(items: NavigationItem[]): VisibleItem[] {

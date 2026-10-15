@@ -74,10 +74,10 @@ describe('client del registro', () => {
       '/registry/apps/ordini/documents/navigation/menu/versions/abc/references?env=production',
       '/registry/apps/ordini/documents/screen/x/versions/abc/references',
     ]);
-    const missingReferences = [{ screen: 'ordini-elenco', path: '/useCases/0/items/0/screen' }, { screen: 3 }, 'x'];
+    const missingReferences = [{ screen: 'ordini-elenco', path: '/areas/0/items/0/screen' }, { screen: 3 }, 'x'];
     reply = () => ({ status: 409, body: { title: 'La navigazione cita schermate non pubblicate', missingReferences } });
     const rejected = (await client.publish('ordini', 'navigation', 'menu', 'production', 'abc').catch((e: unknown) => e)) as RegistryError;
-    expect([rejected.status, rejected.missingReferences]).toEqual([409, [{ screen: 'ordini-elenco', path: '/useCases/0/items/0/screen' }]]);
+    expect([rejected.status, rejected.missingReferences]).toEqual([409, [{ screen: 'ordini-elenco', path: '/areas/0/items/0/screen' }]]);
   });
 
   it('CSRF del BFF: le scritture mandano il token del cookie; senza cookie, al 403 si riprova una volta con il token', async () => {

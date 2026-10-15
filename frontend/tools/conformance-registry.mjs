@@ -129,7 +129,7 @@ await check('il revisore approva; poi la versione si pubblica nell’ambiente pr
 const menu = {
   schemaVersion: '1.0',
   navigation: 'menu',
-  useCases: [{ id: 'prove', label: 'Prove', items: [{ id: 'prova', label: 'Prova', screen: 'prova' }, { id: 'assente', label: 'Assente', screen: 'assente' }] }],
+  areas: [{ id: 'prove', label: 'Prove', items: [{ id: 'prova', label: 'Prova', screen: 'prova' }, { id: 'assente', label: 'Assente', screen: 'assente' }] }],
 };
 const nav = `/registry/apps/${app}/documents/navigation/menu`;
 let menuHash = null;
@@ -142,7 +142,7 @@ await check('riferimenti: la navigazione cita le schermate; manca quella non pub
   expect(r.status === 200 && Array.isArray(r.json?.references) && Array.isArray(r.json?.missing), `atteso 200 con references e missing, ricevuto ${r.status}`);
   expect(r.json.references.length === 2, `attesi 2 riferimenti, ricevuti ${r.json.references.length}`);
   const missing = r.json.missing.map((m) => `${m.screen} ${m.path}`);
-  expect(missing.length === 1 && missing[0] === 'assente /useCases/0/items/1/screen', `mancante atteso «assente», ricevuto ${JSON.stringify(missing)}`);
+  expect(missing.length === 1 && missing[0] === 'assente /areas/0/items/1/screen', `mancante atteso «assente», ricevuto ${JSON.stringify(missing)}`);
 });
 
 await check('navigazione con schermate mancanti: in sviluppo si pubblica comunque', async () => {

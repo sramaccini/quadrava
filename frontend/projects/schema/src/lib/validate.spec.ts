@@ -134,7 +134,7 @@ describe('validateNavigation', () => {
   const doc = (items: unknown[]) => ({
     schemaVersion: '1.0',
     navigation: 'app',
-    useCases: [{ id: 'uc', label: 'Caso', items }],
+    areas: [{ id: 'uc', label: 'Caso', items }],
   });
 
   it('accetta una voce, un gruppo e tre livelli', () => {
@@ -161,7 +161,7 @@ describe('validateNavigation', () => {
 describe('formato dei permessi dominio.risorsa.azione', () => {
   it('accetta tre parti e rifiuta due o quattro, in schermate e navigazione', () => {
     const screen = (requires: string) => ({ schemaVersion: '1.0', screen: 'x', requires, components: [{ type: 'text', text: 'a' }] });
-    const nav = (requires: string) => ({ schemaVersion: '1.0', navigation: 'n', useCases: [{ id: 'u', label: 'U', items: [{ id: 'a', label: 'A', screen: 's', requires }] }] });
+    const nav = (requires: string) => ({ schemaVersion: '1.0', navigation: 'n', areas: [{ id: 'u', label: 'U', items: [{ id: 'a', label: 'A', screen: 's', requires }] }] });
     for (const make of [screen, nav]) {
       expect(JSON.stringify(validateAny(make, 'ordini.ordine.approva'))).toContain('true');
       expect(JSON.stringify(validateAny(make, 'ordini.approva'))).toContain('false');

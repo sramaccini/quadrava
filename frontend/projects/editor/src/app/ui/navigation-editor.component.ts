@@ -36,7 +36,7 @@ interface NavItem {
 }
 
 /**
- * Editor della navigazione: casi d'uso e menu a tre livelli. A sinistra la struttura con i comandi per aggiungere,
+ * Editor della navigazione: aree e menu a tre livelli. A sinistra la struttura con i comandi per aggiungere,
  * a destra i campi dell'elemento (generati dallo schema della navigazione), al centro il menu vero (`lc-sidebar`)
  * con un profilo simulato: si scelgono i permessi e si vede che cosa compare.
  */
@@ -79,7 +79,7 @@ export class NavigationEditorComponent {
 
   // Struttura
 
-  protected readonly items = computed<NavItem[]>(() => this.list(this.store.doc(), ['useCases']));
+  protected readonly items = computed<NavItem[]>(() => this.list(this.store.doc(), ['areas']));
 
   private list(doc: Json, listPath: Path): NavItem[] {
     const list = getIn(doc, listPath);
@@ -89,7 +89,7 @@ export class NavigationEditorComponent {
         const path = [...listPath, i];
         const target = navTargetAt(doc, path);
         if (!target || !isObject(value)) return null;
-        const childKey = target.kind === 'useCase' ? 'items' : target.kind === 'group' ? 'children' : null;
+        const childKey = target.kind === 'area' ? 'items' : target.kind === 'group' ? 'children' : null;
         return {
           path,
           target,

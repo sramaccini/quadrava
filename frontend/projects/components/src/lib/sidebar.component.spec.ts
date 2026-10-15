@@ -9,7 +9,7 @@ import { SidebarComponent, type NavigateEvent } from './sidebar.component';
 const definition: NavigationDefinition = {
   schemaVersion: '1.0',
   navigation: 'app',
-  useCases: [
+  areas: [
     {
       id: 'inserimento',
       label: 'Inserimento',
@@ -58,7 +58,7 @@ describe('SidebarComponent', () => {
     const events: NavigateEvent[] = [];
     const changes: string[] = [];
     fixture.componentInstance.navigate.subscribe((e) => events.push(e));
-    fixture.componentInstance.useCaseChange.subscribe((id) => changes.push(id));
+    fixture.componentInstance.areaChange.subscribe((id) => changes.push(id));
     await flush(fixture);
     return { fixture, el: fixture.nativeElement as HTMLElement, events, changes };
   }
@@ -82,24 +82,24 @@ describe('SidebarComponent', () => {
     expect(el.querySelector('.logo img')?.getAttribute('src')).toBe('acme.svg');
   });
 
-  it('con un solo caso d’uso non mostra il selettore', async () => {
+  it('con una sola area non mostra il selettore', async () => {
     const { el } = await render(['fatture.fattura.crea']);
     expect(el.querySelector('nz-select')).toBeNull();
     expect(top(el)).toEqual(['Nuova fattura', 'Bozze']);
   });
 
-  it('con più casi d’uso mostra il selettore e segnala il cambio', async () => {
+  it('con più aree mostra il selettore e segnala il cambio', async () => {
     const { fixture, el, changes } = await render(['fatture.fattura.crea', 'fatture.fattura.leggi']);
     // Accanto al selettore c'è la stessa icona della barra compressa; l'etichetta resta solo per gli screen reader.
-    expect(el.querySelector('.usecase .usecase-mark [nztype="appstore"], .usecase .usecase-mark .anticon-appstore')).not.toBeNull();
-    expect(el.querySelector('.usecase label')?.classList.contains('visually-hidden')).toBe(true);
-    expect(text(el.querySelector('.usecase label'))).toBe('Caso d’uso');
+    expect(el.querySelector('.area .area-mark [nztype="appstore"], .area .area-mark .anticon-appstore')).not.toBeNull();
+    expect(el.querySelector('.area label')?.classList.contains('visually-hidden')).toBe(true);
+    expect(text(el.querySelector('.area label'))).toBe('Area');
     const options = await openSelect(el.querySelector('nz-select') as Element, () => flush(fixture));
     expect(options.map((o) => text(o))).toEqual(['Inserimento', 'Consultazione']);
     options[1].click();
     await flush(fixture);
     expect(changes).toEqual(['consultazione']);
-    fixture.componentRef.setInput('useCaseId', 'consultazione');
+    fixture.componentRef.setInput('areaId', 'consultazione');
     await flush(fixture);
     expect(top(el)).toEqual(['Elenco']);
   });
@@ -137,7 +137,7 @@ describe('SidebarComponent', () => {
     const click = new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 });
     bozze.dispatchEvent(click);
     expect(click.defaultPrevented).toBe(true);
-    expect(events).toEqual([{ useCase: 'inserimento', leaf: expect.objectContaining({ id: 'bozze', screen: 'fatture-elenco', params: { stato: 'bozza' } }) }]);
+    expect(events).toEqual([{ area: 'inserimento', leaf: expect.objectContaining({ id: 'bozze', screen: 'fatture-elenco', params: { stato: 'bozza' } }) }]);
     // Ctrl+clic: lo gestisce il browser
     const ctrl = new MouseEvent('click', { bubbles: true, cancelable: true, button: 0, ctrlKey: true });
     bozze.dispatchEvent(ctrl);
@@ -196,15 +196,15 @@ describe('SidebarComponent', () => {
     expect(el.querySelector('.side')?.classList.contains('collapsed')).toBe(true);
   });
 
-  it('da compressa il selettore dei casi d’uso diventa un’icona con un menu a tendina', async () => {
+  it('da compressa il selettore delle aree diventa un’icona con un menu a tendina', async () => {
     const { fixture, el, changes } = await render(['fatture.fattura.crea', 'fatture.fattura.leggi']);
     expect(el.querySelector('nz-select')).not.toBeNull();
     fixture.componentRef.setInput('collapsed', true);
     await flush(fixture);
     expect(el.querySelector('nz-select')).toBeNull();
-    const trigger = el.querySelector('button.usecase-trigger') as HTMLButtonElement;
+    const trigger = el.querySelector('button.area-trigger') as HTMLButtonElement;
     expect(trigger.querySelector('[nztype="appstore"], .anticon-appstore')).not.toBeNull();
-    expect(trigger.getAttribute('aria-label')).toBe('Caso d’uso: Inserimento');
+    expect(trigger.getAttribute('aria-label')).toBe('Area: Inserimento');
     trigger.click();
     for (let i = 0; i < 40 && document.querySelectorAll('.ant-dropdown li[nz-menu-item]').length === 0; i++) await flush(fixture);
     const items = [...document.querySelectorAll<HTMLElement>('.ant-dropdown li[nz-menu-item]')];

@@ -1,6 +1,6 @@
 # KinetiX component catalogue
 
-List of the components of the KinetiX JSON language, with the specification of those added in October 2026. Every new component has unit tests in the `components` library and an example in the demo **showcase** (use case «Vetrina componenti»).
+List of the components of the KinetiX JSON language, with the specification of those added in October 2026. Every new component has unit tests in the `components` library and an example in the demo **showcase** (area «Vetrina componenti»).
 
 Rules common to all components, new ones included:
 
@@ -424,7 +424,7 @@ What **must** happen regardless (checks, rules, audit, several calls to keep con
 
 ### 2.25 Menu: search, counters, keyboard
 
-- **Search**: a box at the top of the menu (expanded bar). It finds the use case's items whose name, or whose group's name, contains the text, ignoring case and accents; every result shows its path. Enter opens the first one, Down arrow moves into the results, Esc clears.
+- **Search**: a box at the top of the menu (expanded bar). It finds the area's items whose name, or whose group's name, contains the text, ignoring case and accents; every result shows its path. Enter opens the first one, Down arrow moves into the results, Esc clears.
 - **Counters**: in the navigation, `"badges": { "url": "/api/menu/contatori", "refreshSeconds": 60 }`. The service (relative GET, through the BFF) responds `{ "<item id>": number }`; positive integers are kept, above 99 «99+», a dot when the bar is collapsed. A closed group shows the sum of its items' counters (subgroups included); when open, the numbers move to the items. They are re-read periodically (only while the page is visible) and when returning to the page. Screen readers read «Bozze, 3 da gestire» (Drafts, 3 to handle).
 - **Keyboard**: up and down arrows between visible items and groups, Home and End, right opens a group (or enters the first item), left closes it (or goes back to the group), Enter and Space on groups. Group titles are reachable with Tab and say whether they are open (`aria-expanded`).
 

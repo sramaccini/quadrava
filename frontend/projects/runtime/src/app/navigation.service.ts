@@ -6,7 +6,7 @@ import { Authorization, DataClient, DefinitionSource, I18n, NavigationRuntime, R
 import { validateNavigation, type NavigationDefinition } from 'schema';
 
 export interface RouteLocation {
-  useCase: string | null;
+  area: string | null;
   screen: string | null;
   params: Record<string, string>;
 }
@@ -34,7 +34,7 @@ export class NavigationService {
   readonly loadFailed = signal(false);
   /** Contatori delle voci del menu (id della voce → numero), se la navigazione li prevede. */
   readonly badges = signal<Record<string, number>>({});
-  readonly current = signal<RouteLocation>({ useCase: null, screen: null, params: {} });
+  readonly current = signal<RouteLocation>({ area: null, screen: null, params: {} });
   private readonly lastScreen = new Map<string, { screen: string; params: Record<string, string> }>();
 
   constructor() {
@@ -101,44 +101,44 @@ export class NavigationService {
     const segments = tree.root.children['primary']?.segments.map((s) => s.path) ?? [];
     const params: Record<string, string> = {};
     for (const [key, value] of Object.entries(tree.queryParams)) params[key] = String(Array.isArray(value) ? value[0] : value);
-    const here: RouteLocation = { useCase: segments[0] ?? null, screen: segments[1] ?? null, params };
+    const here: RouteLocation = { area: segments[0] ?? null, screen: segments[1] ?? null, params };
     this.current.set(here);
-    if (here.useCase && here.screen) this.lastScreen.set(here.useCase, { screen: here.screen, params });
+    if (here.area && here.screen) this.lastScreen.set(here.area, { screen: here.screen, params });
   }
 
   /** Indirizzo di una voce, per i link (apribili in una nuova scheda). */
-  href(useCase: string, leaf: VisibleLeaf): string {
-    return this.location.prepareExternalUrl(this.router.serializeUrl(this.router.createUrlTree([useCase, leaf.screen], { queryParams: leaf.params })));
+  href(area: string, leaf: VisibleLeaf): string {
+    return this.location.prepareExternalUrl(this.router.serializeUrl(this.router.createUrlTree([area, leaf.screen], { queryParams: leaf.params })));
   }
 
-  open(useCase: string, screen: string, params: Record<string, unknown> = {}): void {
-    void this.router.navigate([useCase, screen], { queryParams: params });
+  open(area: string, screen: string, params: Record<string, unknown> = {}): void {
+    void this.router.navigate([area, screen], { queryParams: params });
   }
 
-  /** Cambio schermata richiesto da un'azione (`navigate`): resta nel caso d'uso corrente se la schermata gli appartiene. */
+  /** Cambio schermata richiesto da un'azione (`navigate`): resta nell’area corrente se la schermata le appartiene. */
   openScreen(screen: string, params: Record<string, unknown>): void {
     const runtime = this.runtime();
-    const here = this.current().useCase;
-    const useCase = runtime?.useCaseOf(screen, params, here) ?? here ?? runtime?.defaultTarget()?.useCase;
-    if (useCase) this.open(useCase, screen, params);
+    const here = this.current().area;
+    const area = runtime?.areaOf(screen, params, here) ?? here ?? runtime?.defaultTarget()?.area;
+    if (area) this.open(area, screen, params);
   }
 
-  /** Selettore dei casi d'uso: torna all'ultima schermata visitata, altrimenti alla prima voce. */
-  switchUseCase(useCase: string): void {
-    const last = this.lastScreen.get(useCase);
-    if (last && this.runtime()?.locate(useCase, last.screen, last.params)) {
-      this.open(useCase, last.screen, last.params);
+  /** Selettore delle aree: torna all'ultima schermata visitata, altrimenti alla prima voce. */
+  switchArea(area: string): void {
+    const last = this.lastScreen.get(area);
+    if (last && this.runtime()?.locate(area, last.screen, last.params)) {
+      this.open(area, last.screen, last.params);
       return;
     }
-    const leaf = this.runtime()?.firstLeaf(useCase);
-    if (leaf) this.open(useCase, leaf.screen, leaf.params);
+    const leaf = this.runtime()?.firstLeaf(area);
+    if (leaf) this.open(area, leaf.screen, leaf.params);
   }
 
   /** Destinazione iniziale per l'utente corrente. */
   openDefault(): boolean {
     const target = this.runtime()?.defaultTarget();
     if (!target) return false;
-    void this.router.navigate([target.useCase, target.leaf.screen], { queryParams: target.leaf.params, replaceUrl: true });
+    void this.router.navigate([target.area, target.leaf.screen], { queryParams: target.leaf.params, replaceUrl: true });
     return true;
   }
 }

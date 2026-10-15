@@ -6,7 +6,7 @@
     "refreshSeconds": 30
   },
   "default": "consultazione-fatture",
-  "useCases": [
+  "areas": [
     {
       "id": "inserimento-fattura",
       "label": "{{ t('nav.inserimento_fattura', 'Inserimento Fattura') }}",

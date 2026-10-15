@@ -12,13 +12,13 @@ class ReferencesTest {
     @Test
     void laNavigazioneCitaLeSchermateDelleVociAncheAnnidate() {
         String navigation = """
-                {"schemaVersion":"1.0","navigation":"principale","default":"fatture","useCases":[
+                {"schemaVersion":"1.0","navigation":"principale","default":"fatture","areas":[
                   {"id":"fatture","label":"Fatture","items":[
                     {"id":"elenco","label":"Elenco","screen":"fatture-elenco"},
                     {"id":"nuova","label":"Nuova","children":[{"id":"attiva","label":"Attiva","screen":"fattura-nuova"}]}]}]}""";
         assertThat(References.of(Kind.NAVIGATION, "principale", navigation)).containsExactly(
-                new ScreenReference("fatture-elenco", "/useCases/0/items/0/screen"),
-                new ScreenReference("fattura-nuova", "/useCases/0/items/1/children/0/screen"));
+                new ScreenReference("fatture-elenco", "/areas/0/items/0/screen"),
+                new ScreenReference("fattura-nuova", "/areas/0/items/1/children/0/screen"));
     }
 
     @Test

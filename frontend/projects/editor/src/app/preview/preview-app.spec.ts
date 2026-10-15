@@ -157,7 +157,7 @@ describe('anteprima (dentro l’iframe)', () => {
     const navigation = {
       schemaVersion: '1.0',
       navigation: 'prova',
-      useCases: [
+      areas: [
         {
           id: 'caso',
           label: 'Caso',

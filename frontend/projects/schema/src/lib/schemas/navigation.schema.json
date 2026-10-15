@@ -2,12 +2,12 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://lowcode.example/schemas/navigation.schema.json",
   "title": "Navigazione dell'applicazione KinetiX",
-  "description": "Menu laterale organizzato per casi d'uso, fino a tre livelli (gruppo, sottogruppo, voce). Il menu ragiona in permessi: i ruoli restano nel provider di identità. È solo una comodità di navigazione: l'enforcement resta in `requires` della schermata e nel backend.",
+  "description": "Menu laterale organizzato per aree, fino a tre livelli (gruppo, sottogruppo, voce). Il menu ragiona in permessi: i ruoli restano nel provider di identità. È solo una comodità di navigazione: l'enforcement resta in `requires` della schermata e nel backend.",
   "type": "object",
   "required": [
     "schemaVersion",
     "navigation",
-    "useCases"
+    "areas"
   ],
   "additionalProperties": false,
   "properties": {
@@ -20,13 +20,13 @@
     },
     "default": {
       "$ref": "#/$defs/id",
-      "description": "Caso d'uso aperto all'avvio, se l'utente lo può vedere."
+      "description": "Area aperta all'avvio, se l'utente la può vedere."
     },
-    "useCases": {
+    "areas": {
       "type": "array",
       "minItems": 1,
       "items": {
-        "$ref": "#/$defs/useCase"
+        "$ref": "#/$defs/area"
       }
     },
     "badges": {
@@ -74,7 +74,7 @@
       "minLength": 1,
       "maxLength": 200
     },
-    "useCase": {
+    "area": {
       "type": "object",
       "required": [
         "id",

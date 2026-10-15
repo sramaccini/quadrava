@@ -48,12 +48,12 @@ export class ScreenPage {
   private readonly definitions = inject(DefinitionSource);
   private readonly diagnostics = inject(RuntimeDiagnostics, { optional: true });
 
-  /** Percorso nel menu (caso d'uso, gruppi, voce) mostrato come briciole di pane sopra il titolo. */
+  /** Percorso nel menu (area, gruppi, voce) mostrato come briciole di pane sopra il titolo. */
   protected readonly breadcrumb = computed<string[]>(() => {
     const here = this.navigation.current();
     const runtime = this.navigation.runtime();
-    if (!runtime || !here.useCase || !here.screen) return [];
-    return runtime.trail(here.useCase, here.screen, here.params) ?? [];
+    if (!runtime || !here.area || !here.screen) return [];
+    return runtime.trail(here.area, here.screen, here.params) ?? [];
   });
 
   protected readonly name = computed(() => this.pathParams().get('screen') ?? '');

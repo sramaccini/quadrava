@@ -4,9 +4,9 @@ import { DemoBackend } from './demo-backend';
 
 /** Profili della demo: i permessi sono quelli che in produzione darebbe il servizio di autorizzazione. */
 export const DEMO_PROFILES: Record<string, string[]> = {
-  // Inserisce e consulta fatture e vede gli ordini: due casi d'uso.
+  // Inserisce e consulta fatture e vede gli ordini: due aree.
   operator: ['vetrina.componenti.leggi', 'fatture.fattura.leggi', 'fatture.fattura.crea', 'ordini.ordine.leggi'],
-  // Aggiunge pacchetti, revisione spese e approvazione ordini: tutti e quattro i casi d'uso.
+  // Aggiunge pacchetti, revisione spese e approvazione ordini: tutte e quattro le aree.
   manager: ['vetrina.componenti.leggi', 'fatture.fattura.leggi', 'fatture.fattura.crea', 'ordini.ordine.leggi', 'ordini.ordine.approva', 'ordini.ordine.scrivi', 'pacchetti.pacchetto.leggi', 'pacchetti.pacchetto.crea', 'spese.spesa.leggi', 'spese.spesa.revisiona'],
   administrator: [
     'vetrina.componenti.leggi', 'fatture.fattura.leggi', 'fatture.fattura.crea', 'ordini.ordine.leggi', 'ordini.ordine.approva', 'ordini.ordine.scrivi', 'ordini.iban.leggi', 'ordini.iban.scrivi',

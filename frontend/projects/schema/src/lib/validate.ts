@@ -30,7 +30,7 @@ export function validateTheme(document: unknown): ValidationResult<ThemeDefiniti
   return run<ThemeDefinition>(themeValidator, document);
 }
 
-/** Valida un documento di navigazione (casi d'uso e menu a tre livelli). Non lancia eccezioni. */
+/** Valida un documento di navigazione (aree e menu a tre livelli). Non lancia eccezioni. */
 export function validateNavigation(document: unknown): ValidationResult<NavigationDefinition> {
   return run<NavigationDefinition>(navigationValidator, document);
 }

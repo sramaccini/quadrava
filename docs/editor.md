@@ -1,6 +1,6 @@
 # KinetiX Studio (visual editor)
 
-KinetiX Studio, the visual editor of KinetiX (`frontend/projects/editor`), edits **screens**, **navigation** (use cases and menus) and the **theme**; a selector in the toolbar switches between them. For screens it produces the same JSON the runtime reads: its users compose the screen with palette, structure and property panel, and immediately see the result drawn by the real runtime. There is no intermediate format: what is exported goes into `examples/` (or is published in the registry) as it is.
+KinetiX Studio, the visual editor of KinetiX (`frontend/projects/editor`), edits **screens**, **navigation** (areas and menus) and the **theme**; a selector in the toolbar switches between them. For screens it produces the same JSON the runtime reads: its users compose the screen with palette, structure and property panel, and immediately see the result drawn by the real runtime. There is no intermediate format: what is exported goes into `examples/` (or is published in the registry) as it is.
 
 Start it with `cd frontend && npm run start:editor` (port 4201; it builds the libraries and copies the examples).
 
@@ -126,12 +126,12 @@ To link drawing and structure, `lc-node` exposes `data-node-id` and `data-node-t
 
 ## 3b. Navigation
 
-«Navigation» mode: the `navigation.json` document (use cases, groups, subgroups, items).
+«Navigation» mode: the `navigation.json` document (areas, groups, subgroups, items).
 
-- **Structure** on the left, with «+ Use case», «+ Group», «+ Item»: a new element goes inside the selected use case or group, or next to the selected item; groups stop at the second level, as the schema requires. Move, duplicate (new ids), delete as for screens.
-- **Properties** on the right, generated from `navigation.schema.json` with the same panel as screens: `screen` suggests the known screens, `icon` the icons of the built-in set, `requires` the permissions already used, `default` the use cases.
+- **Structure** on the left, with «+ Area», «+ Group», «+ Item»: a new element goes inside the selected area or group, or next to the selected item; groups stop at the second level, as the schema requires. Move, duplicate (new ids), delete as for screens.
+- **Properties** on the right, generated from `navigation.schema.json` with the same panel as screens: `screen` suggests the known screens, `icon` the icons of the built-in set, `requires` the permissions already used, `default` the areas.
 - **Menu preview** in the centre: the real menu (`lc-sidebar` with `NavigationRuntime`) and a **simulated profile**. With «All permissions» off you choose which permissions the user has (those mentioned by the menu's `requires`) and see what appears for them. A click on an item does not navigate: it shows which screen it would open.
-- **Problems**: schema, expressions, ids repeated among siblings (errors), unknown screens and a default use case that does not exist (warnings).
+- **Problems**: schema, expressions, ids repeated among siblings (errors), unknown screens and a default area that does not exist (warnings).
 
 The navigation draft is saved in the browser like the screen's; «Open example» opens the demo's navigation, «Save» writes `<navigation>.json`.
 

@@ -107,7 +107,7 @@ describe('Vetrina dei componenti', () => {
     f.dispatchEvent(new Event('input'));
   };
 
-  it('il caso d’uso compare nel menu e le tre schermate si aprono senza errori', async () => {
+  it('l’area compare nel menu e le tre schermate si aprono senza errori', async () => {
     const diagnostics = TestBed.inject(DemoDiagnostics);
     for (const [path, titolo] of [
       ['/vetrina/vetrina-base', 'Componenti base'],

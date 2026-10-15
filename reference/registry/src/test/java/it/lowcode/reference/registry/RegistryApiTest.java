@@ -139,7 +139,7 @@ class RegistryApiTest {
     void unaNavigazioneSiPubblicaInProduzioneSoloConLeSueSchermate() throws Exception {
         String nav = "/registry/apps/demo/documents/navigation/principale";
         String navigation = """
-                {"schemaVersion":"1.0","navigation":"principale","useCases":[{"id":"fatture","label":"Fatture","items":[
+                {"schemaVersion":"1.0","navigation":"principale","areas":[{"id":"fatture","label":"Fatture","items":[
                   {"id":"elenco","label":"Elenco","screen":"fatture-elenco"},{"id":"nuova","label":"Nuova","screen":"fattura-nuova"}]}]}""";
         String navHash = (String) json.readValue(mvc.perform(post(nav + "/versions").with(user("mario", "operator"))
                         .contentType(MediaType.APPLICATION_JSON).content(navigation))
@@ -153,7 +153,7 @@ class RegistryApiTest {
                 .andExpect(jsonPath("$.references.length()").value(2))
                 .andExpect(jsonPath("$.missing.length()").value(1))
                 .andExpect(jsonPath("$.missing[0].screen").value("fattura-nuova"))
-                .andExpect(jsonPath("$.missing[0].path").value("/useCases/0/items/1/screen"));
+                .andExpect(jsonPath("$.missing[0].path").value("/areas/0/items/1/screen"));
         // In sviluppo nessuna delle due è pubblicata, ma la navigazione si pubblica lo stesso.
         mvc.perform(get(nav + "/versions/" + navHash + "/references").param("env", "development").with(user("mario")))
                 .andExpect(jsonPath("$.env").value("development"))

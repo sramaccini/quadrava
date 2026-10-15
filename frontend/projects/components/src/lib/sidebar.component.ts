@@ -12,7 +12,7 @@ import { IconComponent, iconType } from './icon.component';
 import { nextId } from './shared';
 
 export interface NavigateEvent {
-  useCase: string;
+  area: string;
   leaf: VisibleLeaf;
 }
 
@@ -36,15 +36,15 @@ export interface NavigateEvent {
     .logo .mark { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; flex: none; border-radius: var(--lc-radius, 6px); background: var(--lc-color-primary, #1f5fbf); color: var(--lc-color-on-primary, #fff); font-size: 16px; }
     .collapsed .logo { padding: 0; justify-content: center; }
     .collapsed .logo .name { display: none; }
-    .usecase { display: flex; align-items: center; gap: 8px; padding: 4px 16px 12px; }
-    .usecase-mark { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 32px; height: 32px; font-size: 16px; color: var(--lc-sider-muted, #5d6b7a); cursor: default; }
+    .area { display: flex; align-items: center; gap: 8px; padding: 4px 16px 12px; }
+    .area-mark { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 32px; height: 32px; font-size: 16px; color: var(--lc-sider-muted, #5d6b7a); cursor: default; }
     .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
     nz-select { flex: 1; min-width: 0; }
-    .usecase-icon { display: flex; justify-content: center; padding: 4px 0 12px; }
-    .usecase-trigger { color: var(--lc-sider-text); border: 1px solid var(--lc-sider-border); font-size: 16px; }
+    .area-icon { display: flex; justify-content: center; padding: 4px 0 12px; }
+    .area-trigger { color: var(--lc-sider-text); border: 1px solid var(--lc-sider-border); font-size: 16px; }
     .uc-row { display: flex; align-items: center; gap: 8px; }
-    :host ::ng-deep .usecase .ant-select-selector { background: transparent !important; border-color: var(--lc-sider-border, #d5dbe3) !important; color: var(--lc-sider-text) !important; }
-    :host ::ng-deep .usecase .ant-select-arrow { color: var(--lc-sider-muted); }
+    :host ::ng-deep .area .ant-select-selector { background: transparent !important; border-color: var(--lc-sider-border, #d5dbe3) !important; color: var(--lc-sider-text) !important; }
+    :host ::ng-deep .area .ant-select-arrow { color: var(--lc-sider-muted); }
     nav { flex: 1; }
     /* Colori del menu: tutti dal tema (--lc-sider-*), non dal tema chiaro o scuro della libreria. */
     :host ::ng-deep ul.ant-menu { background: transparent !important; color: var(--lc-sider-text); border-inline-end: 0; }
@@ -82,7 +82,7 @@ export interface NavigateEvent {
       right: auto; left: 44px; top: 10px; transform: none; min-width: 8px; width: 8px; height: 8px; padding: 0; font-size: 0;
     }
     :host ::ng-deep .ant-menu-submenu-title:focus-visible, a.leaf:focus-visible { outline: 2px solid var(--lc-sider-active-text, #1f5fbf); outline-offset: -2px; }
-    /* Pulsante tondo sul bordo della barra, all'altezza del logo, come in Ant Design Pro. Sta fuori dall'area che scorre.
+    /* Pulsante tondo sul bordo della barra, all'altezza del logo, come in Ant Design Pro. Sta fuori dall’area che scorre.
        Sporge di 13px nella barra superiore: chi ospita la barra lascia quel margine prima del titolo. */
     .toggle { position: absolute; z-index: 3; top: calc(var(--lc-header-height, 56px) / 2 - 13px); right: -13px; width: 26px; height: 26px; min-width: 26px; padding: 0;
       display: inline-flex; align-items: center; justify-content: center; font-size: 12px; color: var(--lc-color-on-surface, #1b2430); background: var(--lc-color-surface, #fff);
@@ -101,30 +101,30 @@ export interface NavigateEvent {
           <span class="name">{{ brand() }}</span>
         </ng-content>
       </div>
-      @if (useCases().length > 1) {
+      @if (areas().length > 1) {
         @if (!collapsed()) {
-          <!-- La stessa icona a griglia della barra compressa; l'etichetta «Caso d'uso» diventa il suo tooltip (e resta per gli screen reader). -->
-          <div class="usecase">
-            <span class="usecase-mark" aria-hidden="true" nz-tooltip [nzTooltipTitle]="i18n.t('lc.useCase')" nzTooltipPlacement="right"><lc-icon name="sections" /></span>
-            <label class="visually-hidden" [for]="selectId">{{ i18n.t('lc.useCase') }}</label>
-            <nz-select [nzId]="selectId" [ngModel]="current()?.id" (ngModelChange)="useCaseChange.emit($event)">
-              @for (u of useCases(); track u.id) {
+          <!-- La stessa icona a griglia della barra compressa; l'etichetta «Area» diventa il suo tooltip (e resta per gli screen reader). -->
+          <div class="area">
+            <span class="area-mark" aria-hidden="true" nz-tooltip [nzTooltipTitle]="i18n.t('lc.area')" nzTooltipPlacement="right"><lc-icon name="sections" /></span>
+            <label class="visually-hidden" [for]="selectId">{{ i18n.t('lc.area') }}</label>
+            <nz-select [nzId]="selectId" [ngModel]="current()?.id" (ngModelChange)="areaChange.emit($event)">
+              @for (u of areas(); track u.id) {
                 <nz-option [nzValue]="u.id" [nzLabel]="u.label" />
               }
             </nz-select>
           </div>
         } @else {
           <!-- Da compressa il selettore diventa un'icona (sempre la stessa, a griglia: rappresenta le sezioni) con un menu a tendina. -->
-          <div class="usecase-icon">
-            <button nz-button nzType="text" class="usecase-trigger" type="button" nz-dropdown nzTrigger="click" nzPlacement="bottomLeft" [nzDropdownMenu]="useCaseMenu"
-              [attr.aria-label]="i18n.t('lc.useCase') + ': ' + (current()?.label ?? '')" aria-haspopup="menu"
-              nz-tooltip [nzTooltipTitle]="i18n.t('lc.useCase') + ': ' + (current()?.label ?? '')" nzTooltipPlacement="right">
+          <div class="area-icon">
+            <button nz-button nzType="text" class="area-trigger" type="button" nz-dropdown nzTrigger="click" nzPlacement="bottomLeft" [nzDropdownMenu]="areaMenu"
+              [attr.aria-label]="i18n.t('lc.area') + ': ' + (current()?.label ?? '')" aria-haspopup="menu"
+              nz-tooltip [nzTooltipTitle]="i18n.t('lc.area') + ': ' + (current()?.label ?? '')" nzTooltipPlacement="right">
               <lc-icon name="sections" />
             </button>
-            <nz-dropdown-menu #useCaseMenu="nzDropdownMenu">
+            <nz-dropdown-menu #areaMenu="nzDropdownMenu">
               <ul nz-menu nzSelectable>
-                @for (u of useCases(); track u.id) {
-                  <li nz-menu-item [nzSelected]="u.id === current()?.id" (click)="useCaseChange.emit(u.id)">
+                @for (u of areas(); track u.id) {
+                  <li nz-menu-item [nzSelected]="u.id === current()?.id" (click)="areaChange.emit(u.id)">
                     <span class="uc-row"><lc-icon [name]="u.icon ?? 'list'" />{{ u.label }}</span>
                   </li>
                 }
@@ -236,19 +236,19 @@ export class SidebarComponent {
   readonly brand = input('KinetiX');
   /** Indirizzo (relativo) dell'immagine del logo; se manca si mostra un'icona. */
   readonly logo = input<string | null>(null);
-  /** Caso d'uso mostrato; se manca o non è visibile si mostra il primo disponibile. */
-  readonly useCaseId = input<string | null>(null);
+  /** Area mostrata; se manca o non è visibile si mostra la prima disponibile. */
+  readonly areaId = input<string | null>(null);
   /** Schermata corrente, per evidenziare la voce attiva e aprire i suoi gruppi. */
   readonly active = input<{ screen: string; params: Record<string, unknown> } | null>(null);
   /** Costruisce l'indirizzo di una voce (per i link). */
-  readonly hrefFor = input<(useCase: string, leaf: VisibleLeaf) => string>(() => '#');
+  readonly hrefFor = input<(area: string, leaf: VisibleLeaf) => string>(() => '#');
   /** Contatori delle voci (id della voce → numero), mostrati accanto al testo. */
   readonly badges = input<Record<string, number>>({});
 
   readonly navigate = output<NavigateEvent>();
-  readonly useCaseChange = output<string>();
+  readonly areaChange = output<string>();
 
-  protected readonly selectId = nextId('lc-usecase');
+  protected readonly selectId = nextId('lc-area');
   protected readonly searchId = nextId('lc-menu-search');
   /** Testo cercato nel menu. */
   protected readonly query = signal('');
@@ -261,10 +261,10 @@ export class SidebarComponent {
   readonly tone = input<'light' | 'dark'>('light');
   private readonly expanded = signal<ReadonlySet<string>>(new Set());
 
-  protected readonly useCases = computed(() => this.navigation().useCases());
+  protected readonly areas = computed(() => this.navigation().areas());
   protected readonly current = computed(() => {
-    const all = this.useCases();
-    return all.find((u) => u.id === this.useCaseId()) ?? all[0] ?? null;
+    const all = this.areas();
+    return all.find((u) => u.id === this.areaId()) ?? all[0] ?? null;
   });
   protected readonly path = computed(() => {
     const uc = this.current();
@@ -272,7 +272,7 @@ export class SidebarComponent {
     return uc && active ? (this.navigation().locate(uc.id, active.screen, active.params) ?? []) : [];
   });
 
-  /** Per ogni gruppo del caso d'uso corrente: il nome e la somma dei contatori delle sue voci (anche nei sottogruppi). */
+  /** Per ogni gruppo dell’area corrente: il nome e la somma dei contatori delle sue voci (anche nei sottogruppi). */
   private readonly groupBadges = computed(() => {
     const badges = this.badges();
     const out: Record<string, { label: string; count: number }> = {};
@@ -287,7 +287,7 @@ export class SidebarComponent {
     return out;
   });
 
-  /** Voci del caso d'uso corrente che contengono il testo cercato (senza badare a maiuscole e accenti), con il loro percorso. */
+  /** Voci dell’area corrente che contengono il testo cercato (senza badare a maiuscole e accenti), con il loro percorso. */
   protected readonly results = computed(() => {
     const q = plainText(this.query());
     const uc = this.current();
@@ -377,7 +377,7 @@ export class SidebarComponent {
       const first = this.results()[0];
       const uc = this.current();
       if (first && uc) {
-        this.navigate.emit({ useCase: uc.id, leaf: first.leaf });
+        this.navigate.emit({ area: uc.id, leaf: first.leaf });
         this.query.set('');
       }
     } else {
@@ -450,7 +450,7 @@ export class SidebarComponent {
     if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
     const uc = this.current();
-    if (uc) this.navigate.emit({ useCase: uc.id, leaf });
+    if (uc) this.navigate.emit({ area: uc.id, leaf });
   }
 }
 

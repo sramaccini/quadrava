@@ -86,7 +86,7 @@ const SHORTCUTS: { group: string; keys: [string, string][] }[] = [
 
 /**
  * KinetiX Studio, l'editor visuale: schermate (tavolozza e struttura a sinistra, anteprima / JSON / data source / testi al centro,
- * proprietà a destra) e navigazione (casi d'uso e menu, con l'anteprima del menu), problemi in basso. I documenti
+ * proprietà a destra) e navigazione (aree e menu, con l'anteprima del menu), problemi in basso. I documenti
  * prodotti sono gli stessi JSON che il runtime legge.
  */
 @Component({

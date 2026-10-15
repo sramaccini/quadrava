@@ -34,14 +34,14 @@ export function checkNavigation(definition: NavigationDefinition, engine: Expres
     });
   };
 
-  definition.useCases.forEach((useCase, i) => {
-    const here = `/useCases/${i}`;
-    claim(useCase.id, here);
-    walk(useCase.items, `${here}/items`);
+  definition.areas.forEach((area, i) => {
+    const here = `/areas/${i}`;
+    claim(area.id, here);
+    walk(area.items, `${here}/items`);
   });
 
-  if (definition.default && !definition.useCases.some((u) => u.id === definition.default)) {
-    issues.push({ path: '/default', message: `caso d'uso predefinito inesistente "${definition.default}"` });
+  if (definition.default && !definition.areas.some((u) => u.id === definition.default)) {
+    issues.push({ path: '/default', message: `area predefinita inesistente "${definition.default}"` });
   }
 
   for (const issue of checkScreenExpressions(definition, engine)) {

@@ -58,7 +58,7 @@ import { ScreenRuntime } from './screen-runtime';
 export class ScreenComponent {
   readonly definition = input.required<ScreenDefinition>();
   readonly params = input<Record<string, unknown>>({});
-  /** Percorso mostrato sopra il titolo (per esempio caso d'uso, gruppo, voce). Lo fornisce l'applicazione ospite. */
+  /** Percorso mostrato sopra il titolo (per esempio area, gruppo, voce). Lo fornisce l'applicazione ospite. */
   readonly breadcrumb = input<readonly string[]>([]);
 
   readonly runtime = signal<ScreenRuntime | null>(null);

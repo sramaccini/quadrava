@@ -66,7 +66,7 @@ CI (`.github/workflows/ci.yml`) repeats the same checks: it must stay green.
 - Dependencies only downwards, never cycles: `runtime → components → core → expressions / schema`, `runtime → services → core`, `editor → components → core`.
 - `core` contains no NG-ZORRO code (except the screen shell's alert and typography); everything that uses NG-ZORRO lives in `components`.
 - Everything external to the interpreter is a **port** (an abstract class used as a DI token). Components depend on the abstraction; the demo has fake implementations, `services` the real ones.
-- Libraries know nothing about applications: no built-in use cases or domains.
+- Libraries know nothing about applications: no built-in areas or domains.
 - **Contract first.** Change `contracts/*.yaml`, validate it, then the code. Breaking changes need a new version path.
 - The reference implementation (`reference/`) is not for production: it stays simple and labelled as such.
 - Architectural decisions are recorded as ADRs.

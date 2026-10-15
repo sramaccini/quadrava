@@ -559,7 +559,7 @@ export interface ThemeDefinition {
   tokens: ThemeTokens;
 }
 
-/** Navigazione: casi d'uso con un menu a tre livelli. Allineata a schemas/navigation.schema.json. */
+/** Navigazione: aree con un menu a tre livelli. Allineata a schemas/navigation.schema.json. */
 export interface NavigationBase {
   id: string;
   label: string;
@@ -593,7 +593,7 @@ export interface NavigationGroup extends NavigationBase {
 
 export type NavigationItem = NavigationLeaf | NavigationGroup;
 
-export interface NavigationUseCase {
+export interface NavigationArea {
   id: string;
   label: string;
   icon?: string;
@@ -608,7 +608,7 @@ export interface NavigationDefinition {
   default?: string;
   /** Contatori accanto alle voci: GET che restituisce { id della voce: numero }. */
   badges?: { url: string; refreshSeconds?: number };
-  useCases: NavigationUseCase[];
+  areas: NavigationArea[];
 }
 
 /** Catalogo delle traduzioni di una lingua (documento `messages` del registro). */

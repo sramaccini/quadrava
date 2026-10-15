@@ -3,7 +3,7 @@
     <h2 class="ed-panel-title"><span nz-icon nzType="apartment" aria-hidden="true"></span>{{ i18n.t('ed.outline') }}<ed-dock-pin panel="outline" /></h2>
     <div class="ed-panel-body">
     <div class="add" role="toolbar" [attr.aria-label]="i18n.t('ed.nav.add')">
-      <button nz-button nzSize="small" type="button" (click)="store.addUseCase()"><span nz-icon nzType="plus"></span>{{ i18n.t('ed.nav.kind.useCase') }}</button>
+      <button nz-button nzSize="small" type="button" (click)="store.addArea()"><span nz-icon nzType="plus"></span>{{ i18n.t('ed.nav.kind.area') }}</button>
       <button nz-button nzSize="small" type="button" [disabled]="!canAddGroup()" (click)="store.addItem('group')"><span nz-icon nzType="plus"></span>{{ i18n.t('ed.nav.kind.group') }}</button>
       <button nz-button nzSize="small" type="button" [disabled]="!canAddLeaf()" (click)="store.addItem('leaf')"><span nz-icon nzType="plus"></span>{{ i18n.t('ed.nav.kind.leaf') }}</button>
     </div>

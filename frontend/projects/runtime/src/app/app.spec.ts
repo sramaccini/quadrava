@@ -78,9 +78,9 @@ describe('App (demo)', () => {
 
   const buttonsOf = (el: HTMLElement): string[] => [...el.querySelectorAll('button')].map((b) => b.textContent?.trim() ?? '');
   const headerSelect = (el: HTMLElement, index: number): HTMLElement => el.querySelectorAll('nz-header nz-select')[index] as HTMLElement;
-  const useCaseSelect = (el: HTMLElement): HTMLElement | null => el.querySelector('lc-sidebar nz-select');
-  /** Casi d'uso offerti all'utente (letti dallo stato del menu, non dal menu a tendina). */
-  const useCases = (): string[] => TestBed.inject(NavigationService).runtime()?.useCases().map((u) => u.label) ?? [];
+  const areaSelect = (el: HTMLElement): HTMLElement | null => el.querySelector('lc-sidebar nz-select');
+  /** Aree offerte all'utente (lette dallo stato del menu, non dal menu a tendina). */
+  const areas = (): string[] => TestBed.inject(NavigationService).runtime()?.areas().map((u) => u.label) ?? [];
   const sideLabels = (el: HTMLElement): string[] =>
     [...el.querySelectorAll('lc-sidebar a.leaf .label, lc-sidebar .ant-menu-submenu-title')].map((n) => (n.textContent ?? '').replace(/\s+/g, ' ').trim());
   /** Sceglie una voce di un menu a tendina di NG-ZORRO dal suo testo. */
@@ -99,7 +99,7 @@ describe('App (demo)', () => {
   const heading = (el: HTMLElement): string | undefined => el.querySelector('h1')?.textContent?.trim();
   const rows = (el: HTMLElement): number => el.querySelectorAll('main tbody tr:not(.ant-table-placeholder)').length;
 
-  it('all’avvio apre il caso d’uso predefinito e applica il tema', async () => {
+  it('all’avvio apre l’area predefinita e applica il tema', async () => {
     const { fixture, el, url } = await start();
     await until(fixture, () => rows(el) > 0, 'elenco fatture');
     expect(url()).toBe('/consultazione-fatture/fatture-elenco');
@@ -170,19 +170,19 @@ describe('App (demo)', () => {
     await until(fixture, () => !el.querySelector('.signed-out'), 'di nuovo collegato');
   });
 
-  it('i casi d’uso dipendono dai permessi del profilo', async () => {
+  it('le aree dipendono dai permessi del profilo', async () => {
     const { fixture, el } = await start();
-    await until(fixture, () => useCases().length > 0, 'selettore');
-    expect(useCases()).toEqual(['Inserimento Fattura', 'Consultazione Fatture', 'Vetrina componenti']);
+    await until(fixture, () => areas().length > 0, 'selettore');
+    expect(areas()).toEqual(['Inserimento Fattura', 'Consultazione Fatture', 'Vetrina componenti']);
     await choose(fixture, headerSelect(el, 0), 'manager');
-    await until(fixture, () => useCases().length === 5, 'quattro casi d’uso');
-    expect(useCases()).toEqual(['Inserimento Fattura', 'Consultazione Fatture', 'Creazione pacchetto', 'Revisione Spese', 'Vetrina componenti']);
+    await until(fixture, () => areas().length === 5, 'quattro aree');
+    expect(areas()).toEqual(['Inserimento Fattura', 'Consultazione Fatture', 'Creazione pacchetto', 'Revisione Spese', 'Vetrina componenti']);
   });
 
-  it('cambiare caso d’uso porta alla sua prima voce e aggiorna l’URL', async () => {
+  it('cambiare area porta alla sua prima voce e aggiorna l’URL', async () => {
     const { fixture, el, url } = await start();
-    await until(fixture, () => useCases().length > 0, 'selettore');
-    await choose(fixture, useCaseSelect(el)!, 'Inserimento Fattura');
+    await until(fixture, () => areas().length > 0, 'selettore');
+    await choose(fixture, areaSelect(el)!, 'Inserimento Fattura');
     await until(fixture, () => heading(el) === 'Nuova fattura', 'form nuova fattura');
     expect(url()).toBe('/inserimento-fattura/fattura-nuova?tipo=attiva');
     // il tipo arriva dai parametri della voce di menu
@@ -195,8 +195,8 @@ describe('App (demo)', () => {
 
   it('inserire una fattura la salva in bozza e porta all’elenco delle bozze', async () => {
     const { fixture, el, url } = await start();
-    await until(fixture, () => useCases().length > 0, 'selettore');
-    await choose(fixture, useCaseSelect(el)!, 'Inserimento Fattura');
+    await until(fixture, () => areas().length > 0, 'selettore');
+    await choose(fixture, areaSelect(el)!, 'Inserimento Fattura');
     await until(fixture, () => heading(el) === 'Nuova fattura', 'form nuova fattura');
     const input = (name: string): HTMLInputElement => [...el.querySelectorAll('main input')].find((i) => i.id.endsWith(`-${name}`)) as HTMLInputElement;
     const type = (name: string, value: string): void => {
@@ -219,8 +219,8 @@ describe('App (demo)', () => {
 
   it('la revisione spese: voce con parametri, approvazione e messaggio', async () => {
     const { fixture, el, url } = await start('manager');
-    await until(fixture, () => useCases().length === 5, 'quattro casi d’uso');
-    await choose(fixture, useCaseSelect(el)!, 'Revisione Spese');
+    await until(fixture, () => areas().length === 5, 'quattro aree');
+    await choose(fixture, areaSelect(el)!, 'Revisione Spese');
     await until(fixture, () => rows(el) > 0, 'elenco spese');
     expect(url()).toBe('/revisione-spese/spese-elenco?stato=da-revisionare');
     const before = rows(el);

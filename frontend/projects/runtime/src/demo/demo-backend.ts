@@ -153,7 +153,7 @@ export class DemoBackend {
     return { items: rows.slice(page * size, page * size + size), total: rows.length, size };
   }
 
-  /** Fatture, pacchetti e spese: i dati dei casi d'uso di esempio. */
+  /** Fatture, pacchetti e spese: i dati delle aree di esempio. */
   private handleBilling(req: DataRequest, path: string): unknown {
     if (path === '/api/fatture' && req.method === 'GET') {
       // stato: un valore o un elenco (selezione multipla); tipo: attiva o passiva.

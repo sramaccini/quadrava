@@ -164,7 +164,7 @@ export class SchemaReader {
     return Object.entries(properties).map(([name, schema]) => ({ name, required: required.includes(name), ...this.kindOf(schema) }));
   }
 
-  /** Proprietà di una definizione dello schema (`tab`, `wizardStep`, `useCase`…), seguendo `$ref`. */
+  /** Proprietà di una definizione dello schema (`tab`, `wizardStep`, `area`…), seguendo `$ref`. */
   definitionProperties(name: string): PropertyInfo[] {
     const shape = this.shapeOf(this.defs[name]);
     return shape ? this.describe(shape.properties, shape.required) : [];
