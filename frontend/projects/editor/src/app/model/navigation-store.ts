@@ -8,15 +8,15 @@ import { DocumentState, type EditorIssue } from './document-state';
 import { SchemaReader, type PropertyInfo, type Schema } from './schema-info';
 
 /**
- * La navigazione dell'applicazione (aree e menu a tre livelli) come documento dell'editor. Livelli fissati dallo
- * schema: area → gruppo → sottogruppo → voce; una voce apre una schermata.
+ * The navigation of the application (areas and three-level menus) as an editor document. Levels fixed by the
+ * schema: area → group → subgroup → item; an item opens a screen.
  */
 
 export const NAVIGATION = new SchemaReader(NAVIGATION_SCHEMA as unknown as Schema);
 
 export type NavTarget = { kind: 'root' } | { kind: 'area' } | { kind: 'group'; level: 1 | 2 } | { kind: 'leaf' };
 
-/** Profondità di un percorso nel menu: 1 dentro un’area, 2 dentro un gruppo, 3 dentro un sottogruppo. */
+/** Depth of a path in the menu: 1 inside an area, 2 inside a group, 3 inside a subgroup. */
 function depthOf(path: Path): number {
   return path.filter((k) => k === 'items' || k === 'children').length;
 }
@@ -41,7 +41,7 @@ export function navOwnerOf(doc: Json, path: Path): Path {
   return [];
 }
 
-/** L'elenco dei figli di un elemento (aree della radice, voci di un’area o di un gruppo). */
+/** The list of children of an element (areas of the root, items of an area or of a group). */
 export function navChildList(doc: Json, path: Path): Path | null {
   const target = navTargetAt(doc, path);
   if (!target) return null;
@@ -51,13 +51,13 @@ export function navChildList(doc: Json, path: Path): Path | null {
   return null;
 }
 
-/** Nell'elemento si può aggiungere un gruppo? (Al massimo due livelli di gruppi sotto un’area.) */
+/** Can a group be added in the element? (At most two levels of groups under an area.) */
 export function canAddGroup(doc: Json, path: Path): boolean {
   const target = navTargetAt(doc, path);
   return target?.kind === 'area' || (target?.kind === 'group' && target.level === 1);
 }
 
-/** Proprietà mostrate nel pannello per un elemento (i figli si gestiscono nella struttura). */
+/** Properties shown in the panel for an element (the children are managed in the outline). */
 export function navProperties(target: NavTarget): PropertyInfo[] {
   const props =
     target.kind === 'root'
@@ -69,14 +69,14 @@ export function navProperties(target: NavTarget): PropertyInfo[] {
 type Translate = (key: string) => string;
 
 export function emptyNavigation(t: Translate): JsonObject {
-  return { schemaVersion: '1.0', navigation: 'applicazione', areas: [areaTemplate('area-1', 'voce-1', t)] };
+  return { schemaVersion: '1.0', navigation: 'app', areas: [areaTemplate('area-1', 'item-1', t)] };
 }
 
 function areaTemplate(id: string, leafId: string, t: Translate): JsonObject {
   return { id, label: t('ed.nav.newArea'), items: [leafTemplate(leafId, t)] };
 }
 
-function leafTemplate(id: string, t: Translate, screen = 'nuova-schermata'): JsonObject {
+function leafTemplate(id: string, t: Translate, screen = 'new-screen'): JsonObject {
   return { id, label: t('ed.nav.newLeaf'), screen };
 }
 
@@ -88,12 +88,12 @@ export class NavigationStore extends DocumentState {
   private readonly engine = new ExpressionEngine({ can: () => true });
   private readonly t = (key: string, params: Record<string, unknown> = {}): string => this.i18n.t(key, params);
 
-  /** Schermate note (gli esempi): suggerite per le voci e controllate. */
+  /** Known screens (the examples): suggested for the items and checked. */
   readonly knownScreens = signal<string[]>([]);
   readonly target = computed(() => navTargetAt(this.doc(), this.selection()));
-  /** La navigazione come definizione valida, oppure null se ha errori. */
+  /** The navigation as a valid definition, or null if it has errors. */
   readonly definition = computed<NavigationDefinition | null>(() => (this.errorCount() === 0 ? (this.doc() as unknown as NavigationDefinition) : null));
-  /** Permessi citati dal menu (`requires`), per simulare i profili nell'anteprima. */
+  /** Permissions referenced by the menu (`requires`), to simulate the profiles in the preview. */
   readonly permissions = computed(() => {
     const found = new Set<string>();
     const visit = (value: Json): void => {
@@ -114,7 +114,7 @@ export class NavigationStore extends DocumentState {
       try {
         localStorage.setItem(DRAFT_KEY, JSON.stringify(this.doc()));
       } catch {
-        // Archiviazione non disponibile: la bozza resta in memoria.
+        // Storage not available: the draft stays in memory.
       }
     });
   }
@@ -146,18 +146,18 @@ export class NavigationStore extends DocumentState {
     this.reset(emptyNavigation((k) => this.t(k)));
   }
 
-  /** Aggiunge un’area in fondo, con una voce. */
+  /** Adds an area at the end, with an item. */
   addArea(): void {
     const doc = this.doc();
     const list = getIn(doc, ['areas']);
     const index = Array.isArray(list) ? list.length : 0;
-    const node = areaTemplate(this.freshId('area'), this.freshId('voce'), (k) => this.t(k));
+    const node = areaTemplate(this.freshId('area'), this.freshId('item'), (k) => this.t(k));
     this.apply(insertAt(doc, ['areas'], index, node), { select: ['areas', index] });
   }
 
   /**
-   * Dove va una voce (o un gruppo) nuova: dentro l’area o il gruppo selezionato, altrimenti accanto all'elemento
-   * selezionato. Null se lì non può stare (un gruppo oltre il secondo livello, niente selezionato).
+   * Where a new item (or group) goes: inside the selected area or group, otherwise next to the selected
+   * element. Null if it cannot stay there (a group beyond the second level, nothing selected).
    */
   itemPoint(kind: 'leaf' | 'group', doc = this.doc(), selection = this.selection()): { list: Path; index: number } | null {
     const target = navTargetAt(doc, selection);
@@ -173,12 +173,12 @@ export class NavigationStore extends DocumentState {
     return { list: selection.slice(0, -1), index: (selection.at(-1) as number) + 1 };
   }
 
-  /** Aggiunge una voce, o un gruppo con una voce, nel punto indicato da `itemPoint`, e la seleziona. */
+  /** Adds an item, or a group with an item, at the point given by `itemPoint`, and selects it. */
   addItem(kind: 'leaf' | 'group'): void {
     const doc = this.doc();
     const point = this.itemPoint(kind, doc);
     if (!point) return;
-    const leaf = leafTemplate(this.freshId('voce'), (k) => this.t(k), this.knownScreens()[0] ?? 'nuova-schermata');
+    const leaf = leafTemplate(this.freshId('item'), (k) => this.t(k), this.knownScreens()[0] ?? 'new-screen');
     const node = kind === 'leaf' ? leaf : { id: this.freshId('gruppo'), label: this.t('ed.nav.newGroup'), children: [leaf] };
     this.apply(insertAt(doc, point.list, point.index, node), { select: [...point.list, point.index] });
   }
@@ -246,7 +246,7 @@ export class NavigationStore extends DocumentState {
     const result = validateNavigation(doc);
     if (!result.valid) result.issues.forEach((i) => add(i.path, i.message, 'error'));
     checkScreenExpressions(doc, this.engine).forEach((p) => add(p.path, p.message, 'error'));
-    // Identificativi ripetuti tra elementi dello stesso elenco: l'indirizzo di una voce è la sequenza degli id.
+    // Repeated identifiers between elements of the same list: the address of an item is the sequence of the ids.
     const visitList = (list: Json, path: Path): void => {
       if (!Array.isArray(list)) return;
       const seen = new Set<string>();

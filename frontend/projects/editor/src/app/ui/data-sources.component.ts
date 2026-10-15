@@ -21,8 +21,8 @@ interface SourceView {
 }
 
 /**
- * Data source della schermata: metodo, URL, parametri, corpo, paginazione. Accanto a ognuno, i dati di esempio che
- * l'anteprima restituisce al posto del servizio (restano nella bozza dell'editor, non nella schermata).
+ * Data sources of the screen: method, URL, parameters, body, paging. Next to each one, the sample data that
+ * the preview returns instead of the service (they stay in the editor's draft, not in the screen).
  */
 @Component({
   selector: 'ed-data-sources',
@@ -34,10 +34,10 @@ interface SourceView {
 export class DataSourcesComponent {
   protected readonly store = inject(EditorStore);
   protected readonly i18n = inject(I18n);
-  /** Finestra «Importa da OpenAPI» aperta. */
+  /** «Import from OpenAPI» dialog open. */
   protected readonly importing = signal(false);
   protected readonly methods = METHODS;
-  /** Nome che non si è potuto applicare (non valido o già usato). */
+  /** Name that could not be applied (not valid or already used). */
   protected readonly renameError = signal<string | null>(null);
 
   protected readonly sources = computed<SourceView[]>(() => {

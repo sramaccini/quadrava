@@ -1,8 +1,8 @@
 import { LANGUAGE_CODE } from './editor-store';
 
 /**
- * Lingue proposte quando se ne aggiunge una alle traduzioni: quelle dell'Unione europea, le più usate nel mondo e
- * alcune varianti di paese. Si può comunque scrivere qualsiasi codice valido.
+ * Languages offered when one is added to the translations: those of the European Union, the most used in the world and
+ * some country variants. Any valid code can be typed anyway.
  */
 export const SUGGESTED_LANGUAGES = [
   'it', 'en', 'fr', 'de', 'es', 'pt', 'pt-BR', 'nl', 'pl', 'ro', 'cs', 'sk', 'sl', 'hr', 'hu', 'el', 'bg', 'sv', 'da', 'fi',
@@ -10,7 +10,7 @@ export const SUGGESTED_LANGUAGES = [
   'hi', 'bn', 'ur', 'zh', 'ja', 'ko', 'vi', 'th', 'id', 'ms', 'sw', 'en-US', 'en-GB', 'es-MX', 'fr-CA', 'de-CH',
 ];
 
-/** Nome di una lingua nella lingua indicata (`fr` → «Francese»), dal browser; il codice se il browser non lo conosce. */
+/** Name of a language in the given language (`fr` → «French»), from the browser; the code if the browser does not know it. */
 export function languageName(code: string, displayLocale: string): string {
   try {
     const name = new Intl.DisplayNames([displayLocale], { type: 'language' }).of(code);
@@ -21,9 +21,9 @@ export function languageName(code: string, displayLocale: string): string {
 }
 
 /**
- * La lingua scritta nella casella «Aggiungi lingua»: un codice valido così com'è, oppure il nome di una lingua
- * proposta (nella lingua dell'editor o in inglese, senza badare ad accenti e maiuscole), anche nella forma
- * «Francese (fr)» che mostra l'elenco dei suggerimenti. Null se non si riconosce.
+ * The language typed in the «Add language» box: a valid code as it is, or the name of an offered
+ * language (in the editor's language or in English, ignoring accents and case), also in the form
+ * «French (fr)» shown by the list of suggestions. Null if it is not recognised.
  */
 export function languageFromInput(text: string, displayLocale: string): string | null {
   const value = text.trim();

@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import type { Json } from './doc-ops';
 import type { EditorKind } from './saved-documents';
 
-/** Le parti dell'API File System Access usate qui (Chrome ed Edge; Firefox e Safari non la offrono). */
+/** The parts of the File System Access API used here (Chrome and Edge; Firefox and Safari do not offer it). */
 interface WritableFile {
   write(data: Blob): Promise<void>;
   close(): Promise<void>;
@@ -24,38 +24,38 @@ interface FilePickers {
 
 const JSON_TYPES = [{ description: 'JSON', accept: { 'application/json': ['.json'] } }];
 
-/** Un file aperto: il nome, il contenuto già letto come JSON. */
+/** An open file: the name, the content already read as JSON. */
 export interface OpenedFile {
   name: string;
   doc: Json;
 }
 
 /**
- * File JSON dei documenti. Dove il browser lo permette, «Apri…» e il primo «Salva» tengono il riferimento al file, e i
- * salvataggi successivi riscrivono quel file senza chiedere; altrimenti «Apri…» usa il selettore dei file e «Salva»
- * scarica il file ogni volta. Un riferimento per tipo di documento; si perde ricaricando la pagina.
+ * JSON files of the documents. Where the browser allows it, «Open…» and the first «Save» keep the reference to the file, and
+ * the following saves rewrite that file without asking; otherwise «Open…» uses the file picker and «Save»
+ * downloads the file every time. One reference per kind of document; it is lost when reloading the page.
  */
 @Injectable({ providedIn: 'root' })
 export class FileAccess {
   private readonly document = inject(DOCUMENT);
   private readonly handles: Partial<Record<EditorKind, FileHandle>> = {};
 
-  /** Il browser può riscrivere un file scelto dall'utente. */
+  /** The browser can rewrite a file chosen by the user. */
   canWriteFiles(): boolean {
     return typeof this.pickers().showSaveFilePicker === 'function';
   }
 
-  /** Il file a cui va il prossimo «Salva» di quel tipo, se c'è. */
+  /** The file the next «Save» of that kind goes to, if there is one. */
   fileName(kind: EditorKind): string | null {
     return this.handles[kind]?.name ?? null;
   }
 
-  /** Dimentica il file (documento nuovo, esempio, versione del registro): il prossimo «Salva» chiede dove salvare. */
+  /** Forgets the file (new document, example, registry version): the next «Save» asks where to save. */
   forget(kind: EditorKind): void {
     delete this.handles[kind];
   }
 
-  /** Chiede un file JSON e lo legge; null se l'utente annulla. Lancia un errore se il file non è JSON. */
+  /** Asks for a JSON file and reads it; null if the user cancels. Throws an error if the file is not JSON. */
   async open(kind: EditorKind): Promise<OpenedFile | null> {
     const picker = this.pickers().showOpenFilePicker;
     if (picker) {
@@ -80,8 +80,8 @@ export class FileAccess {
   }
 
   /**
-   * Salva il documento in JSON: nel file già scelto, oppure in uno nuovo da scegliere (proponendo `suggestedName`), o
-   * scaricandolo dove il browser non permette di scrivere file. Restituisce il nome del file, null se l'utente annulla.
+   * Saves the document as JSON: in the file already chosen, or in a new one to choose (proposing `suggestedName`), or
+   * downloading it where the browser does not allow writing files. Returns the name of the file, null if the user cancels.
    */
   async save(kind: EditorKind, doc: Json, suggestedName: string): Promise<string | null> {
     const blob = new Blob([JSON.stringify(doc, null, 2) + '\n'], { type: 'application/json' });
@@ -119,7 +119,7 @@ export class FileAccess {
     URL.revokeObjectURL(url);
   }
 
-  /** Selettore dei file classico: risolve con il file scelto, o null se l'utente chiude il selettore. */
+  /** Classic file picker: resolves with the chosen file, or null if the user closes the picker. */
   private chooseFile(): Promise<File | null> {
     return new Promise((resolve) => {
       const input = this.document.createElement('input');

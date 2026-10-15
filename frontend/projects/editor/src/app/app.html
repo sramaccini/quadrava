@@ -1,7 +1,7 @@
 <div class="editor" [style.--ed-left.px]="dock.columnWidth('left', leftPanels, 280)" [style.--ed-right.px]="dock.columnWidth('right', rightPanels, 320)">
   <header class="toolbar">
     <h1 class="brand"><lc-quadrava-wordmark icon="brand/quadrava-studio-icon-small.svg" product="Studio" /></h1>
-    <!-- Menu come nelle applicazioni desktop: File (nuova, apri, salva, su file e nel registro), Modifica, Visualizza, Aiuto. -->
+    <!-- Menu as in desktop applications: File (new, open, save, to a file and to the registry), Edit, View, Help. -->
     <ed-menu-bar [menus]="menus()" [label]="i18n.t('ed.menu.bar')" (opened)="$event === 'file' && registry.check()" />
     <div class="group">
       <button nz-button nzType="text" nzSize="small" type="button" [disabled]="!active().canUndo()" (click)="active().undo()" [attr.aria-label]="i18n.t('ed.undo')" [nz-tooltip]="i18n.t('ed.undo')">
@@ -11,7 +11,7 @@
         <span nz-icon nzType="redo"></span>
       </button>
     </div>
-    <!-- A destra, insieme anche quando la barra va a capo: stato, che cosa si modifica, lingua. -->
+    <!-- On the right, together even when the bar wraps: status, what is being edited, language. -->
     <div class="end">
       <div class="status" role="status">
         @if (active().errorCount()) {
@@ -54,7 +54,7 @@
       <nz-tab [nzTitle]="store.textsToFix() ? i18n.t('ed.tabs.textsTodo', { n: store.textsToFix() }) : i18n.t('ed.tabs.texts')"></nz-tab>
     </nz-tabs>
     <div class="view">
-      <!-- L'anteprima resta viva (nascosta) nelle altre viste: il suo iframe non si ricarica a ogni cambio. -->
+      <!-- The preview stays alive (hidden) in the other views: its iframe does not reload at every change. -->
       <div class="pane" [class.off]="store.view() !== 'preview'"><ed-preview /></div>
       @switch (store.view()) {
         @case ('json') {
@@ -76,7 +76,7 @@
   </ed-dock-side>
   }
 
-  <!-- Aiuto: scorciatoie da tastiera (anche F1) e informazioni. -->
+  <!-- Help: keyboard shortcuts (also F1) and information. -->
   <nz-modal [nzVisible]="showShortcuts()" [nzTitle]="i18n.t('ed.menu.shortcuts')" [nzFooter]="null" [nzWidth]="560" (nzOnCancel)="showShortcuts.set(false)">
     <ng-container *nzModalContent>
       <div class="shortcuts">

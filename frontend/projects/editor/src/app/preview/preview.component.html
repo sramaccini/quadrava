@@ -1,5 +1,5 @@
 <div class="bar" role="toolbar" [attr.aria-label]="i18n.t('ed.tabs.preview')">
-  <!-- Larghezze come nella barra dei dispositivi di Chrome: solo icone, il nome (con i pixel) nel suggerimento. -->
+  <!-- Widths as in the device toolbar of Chrome: icons only, the name (with the pixels) in the tooltip. -->
   <div class="widths" role="group" [attr.aria-label]="i18n.t('ed.preview.width')">
     @for (option of widthOptions(); track option.value) {
       <button
@@ -36,7 +36,7 @@
     <nz-switch nzSize="small" [ngModel]="liveData()" (ngModelChange)="setLiveData($event)" />
     {{ i18n.t('ed.preview.liveData') }}
   </label>
-  <!-- A destra: comandi a sola icona, il nome nel suggerimento e per i lettori di schermo. -->
+  <!-- On the right: icon-only commands, the name in the tooltip and for screen readers. -->
   <div class="actions">
   @let logLabel = i18n.t('ed.preview.log') + ' (' + log.events().length + ')';
   <button

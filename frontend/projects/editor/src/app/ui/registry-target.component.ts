@@ -6,8 +6,8 @@ import { NzInputModule } from 'ng-zorro-antd/input';
 import { RegistrySession } from '../model/registry-session';
 
 /**
- * Contenuto della finestra che chiede l'applicazione del registro prima di «Salva in registro», quando non è ancora
- * stata scelta: l'elenco viene dal registro, ma si può scrivere anche un'applicazione nuova.
+ * Content of the dialog asking for the registry application before «Save to registry», when it has not been
+ * chosen yet: the list comes from the registry, but a new application can also be typed.
  */
 @Component({
   selector: 'ed-registry-target',

@@ -3,7 +3,7 @@ import { I18n } from 'core';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { DOCK_MAX_WIDTH, DOCK_MIN_WIDTH, DOCK_STRIP, Dock, PANEL_SIDE, type DockPanel, type DockSide } from './dock';
 
-/** Un riquadro del lato: la sua linguetta quando è nascosto. */
+/** A panel of the side: its tab when it is hidden. */
 export interface DockTab {
   id: DockPanel;
   label: string;
@@ -11,11 +11,11 @@ export interface DockTab {
 }
 
 /**
- * Un lato dell'editor (schermata, navigazione, tema) con i suoi riquadri, come negli IDE (vedi \`Dock\`). I riquadri
- * fissati stanno nella colonna; quelli sganciati hanno una linguetta sulla striscia del bordo e, aperti, galleggiano
- * sopra l'area centrale (gli elementi dei riquadri hanno \`edDockPanel\`). Chiusi restano nel documento (trasparenti e
- * senza eventi): un trascinamento partito dalla tavolozza continua anche se il riquadro si chiude. La larghezza della
- * colonna la decide il contenitore con \`Dock.columnWidth\`.
+ * A side of the editor (screen, navigation, theme) with its panels, as in IDEs (see \`Dock\`). The pinned panels
+ * sit in the column; the unpinned ones have a tab on the strip at the edge and, when open, float
+ * over the central area (the elements of the panels have \`edDockPanel\`). Closed they stay in the document (transparent and
+ * without events): a drag started from the palette goes on even if the panel closes. The width of the
+ * column is decided by the container with \`Dock.columnWidth\`.
  */
 @Component({
   selector: 'ed-dock-side',
@@ -50,14 +50,14 @@ export interface DockTab {
     }
     .tab:hover, .tab[aria-expanded='true'] { color: var(--lc-color-primary); background: color-mix(in srgb, var(--lc-color-primary) 10%, transparent); }
     .tab:focus-visible { outline: 2px solid var(--lc-color-primary); outline-offset: -2px; }
-    /* Bordo interno da trascinare per cambiare la larghezza (doppio clic: larghezza prevista). */
+    /* Inner edge to drag to change the width (double click: foreseen width). */
     .splitter { position: absolute; top: 0; bottom: 0; z-index: 5; width: 7px; cursor: col-resize; touch-action: none; }
     :host(.left) .splitter { right: -4px; }
     :host(.right) .splitter { left: -4px; }
     .splitter::after { content: ''; position: absolute; top: 0; bottom: 0; left: 3px; width: 1px; background: transparent; transition: background 0.1s; }
     .splitter:hover::after, .splitter.dragging::after, .splitter:focus-visible::after { background: var(--lc-color-primary); width: 2px; left: 2px; }
     .splitter:focus-visible { outline: none; }
-    /* Finestre strette: niente riquadri nascosti, si vedono sempre (vedi anche styles.scss). */
+    /* Narrow windows: no hidden panels, they are always visible (see also styles.scss). */
     @media (max-width: 1100px) {
       :host(.has-hidden) { overflow: hidden; }
       .strip, .splitter { display: none; }
@@ -66,7 +66,7 @@ export interface DockTab {
   `,
   template: `
     @if (hidden().length) {
-      <!-- Riquadri nascosti automaticamente: una linguetta ciascuno, che apre il suo riquadro sopra l'area centrale. -->
+      <!-- Panels hidden automatically: one tab each, which opens its panel over the central area. -->
       <div class="strip" role="group" [attr.aria-label]="i18n.t('ed.dock.hidden')">
         @for (tab of hidden(); track tab.id) {
           <button
@@ -107,22 +107,22 @@ export interface DockTab {
 })
 export class DockSideComponent {
   readonly side = input.required<DockSide>();
-  /** I riquadri del lato, nell'ordine in cui stanno (le linguette di quelli nascosti seguono lo stesso ordine). */
+  /** The panels of the side, in the order they are in (the tabs of the hidden ones follow the same order). */
   readonly panels = input.required<DockTab[]>();
-  /** Larghezza prevista dei riquadri (fissati, e aperti sopra l'area centrale). */
+  /** Foreseen width of the panels (pinned, and open over the central area). */
   readonly width = input(300);
   protected readonly dock = inject(Dock);
   protected readonly i18n = inject(I18n);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   protected readonly strip = DOCK_STRIP;
-  /** I riquadri nascosti (con la linguetta). */
+  /** The hidden panels (with the tab). */
   protected readonly hidden = computed(() => this.panels().filter((p) => !this.dock.pinned[p.id]()));
 
   protected readonly min = DOCK_MIN_WIDTH;
   protected readonly max = DOCK_MAX_WIDTH;
   protected dragging = false;
 
-  /** Trascinamento del bordo: la larghezza segue il puntatore (a destra il lato cresce verso sinistra). */
+  /** Dragging the edge: the width follows the pointer (on the right the side grows towards the left). */
   protected dragStartResize(event: PointerEvent): void {
     if (event.button !== 0) return;
     event.preventDefault();
@@ -144,7 +144,7 @@ export class DockSideComponent {
     handle.addEventListener('pointercancel', end);
   }
 
-  /** Da tastiera: frecce di 16 px (verso l'area centrale allargano), Home e Fine ai limiti, Invio alla larghezza prevista. */
+  /** From the keyboard: arrows by 16 px (towards the central area they widen), Home and End to the limits, Enter to the foreseen width. */
   protected resizeKey(event: KeyboardEvent): void {
     const side = this.side();
     const width = this.dock.width(side, this.width());
@@ -158,20 +158,20 @@ export class DockSideComponent {
   }
 
   /**
-   * Il fuoco entra in un campo del lato (si sta scrivendo): il riquadro aperto resta aperto anche se il mouse esce.
-   * Un pulsante (la puntina, un componente della tavolozza, un nodo della struttura) non lo trattiene.
+   * The focus enters a field of the side (one is typing): the open panel stays open even if the mouse leaves.
+   * A button (the pin, a palette component, an outline node) does not keep it.
    */
   protected focusIn(event: FocusEvent): void {
     this.dock.focus(this.side(), isEditable(event.target));
   }
 
-  /** Il fuoco esce dal lato: il riquadro aperto si chiude, se anche il mouse è fuori. */
+  /** The focus leaves the side: the open panel closes, if the mouse is outside too. */
   protected focusOut(event: FocusEvent): void {
     const area = event.currentTarget as HTMLElement;
     if (!(event.relatedTarget instanceof Node && area.contains(event.relatedTarget))) this.dock.blur(this.side());
   }
 
-  /** Esc chiude il riquadro aperto e riporta il fuoco alla sua linguetta. */
+  /** Esc closes the open panel and brings the focus back to its tab. */
   protected escape(): void {
     const open = this.dock.open();
     if (!open || PANEL_SIDE[open] !== this.side()) return;
@@ -179,7 +179,7 @@ export class DockSideComponent {
     this.host.nativeElement.querySelector<HTMLElement>(`.tab[data-dock-tab="${open}"]`)?.focus();
   }
 
-  /** Un componente trascinato dalla tavolozza aperta sopra l'anteprima: il riquadro si chiude per lasciare libero il disegno. */
+  /** A component dragged from the open palette over the preview: the panel closes to leave the drawing free. */
   protected dragStart(event: DragEvent): void {
     if (this.dock.open() !== 'palette' || !(event.target instanceof Element) || !event.target.closest('ed-palette')) return;
     const side = this.side();

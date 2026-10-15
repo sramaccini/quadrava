@@ -21,7 +21,7 @@ input.missing { border-color: var(--lc-color-warning, #d48806); }
   flex-wrap: wrap;
 }
 
-/* Lingue delle traduzioni. */
+/* Languages of the translations. */
 .languages { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 12px; font-size: 13px; }
 .languages-label { color: var(--lc-color-muted); font-size: 12px; font-weight: 600; }
 .language {

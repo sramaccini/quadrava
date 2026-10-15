@@ -1,6 +1,6 @@
 import type { Json } from './doc-ops';
 
-/** Una differenza tra due documenti: dove (JSON Pointer) e i due valori, come testo breve. */
+/** A difference between two documents: where (JSON Pointer) and the two values, as short text. */
 export interface JsonChange {
   path: string;
   kind: 'added' | 'removed' | 'changed';
@@ -8,13 +8,13 @@ export interface JsonChange {
   after?: string;
 }
 
-/** Differenze mostrate al massimo: oltre, il confronto si ferma e lo dice. */
+/** Differences shown at most: beyond that, the comparison stops and says so. */
 export const MAX_CHANGES = 100;
 
 /**
- * Differenze tra due documenti JSON, in ordine di documento. Gli oggetti si confrontano chiave per chiave e gli elenchi
- * posizione per posizione (un elemento inserito in mezzo risulta come più modifiche: va bene per vedere cosa cambia,
- * non pretende di essere un diff minimo). I valori si riportano come JSON accorciato, sempre e solo come testo.
+ * Differences between two JSON documents, in document order. Objects are compared key by key and lists
+ * position by position (an element inserted in the middle shows as several changes: fine to see what changes,
+ * it does not claim to be a minimal diff). Values are reported as shortened JSON, always and only as text.
  */
 export function jsonDiff(before: Json | undefined, after: Json | undefined, limit = MAX_CHANGES): { changes: JsonChange[]; truncated: boolean } {
   const changes: JsonChange[] = [];
@@ -50,7 +50,7 @@ function isObject(value: Json | undefined): value is { [key: string]: Json } {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-/** Chiave in un JSON Pointer (RFC 6901). */
+/** Key in a JSON Pointer (RFC 6901). */
 function escape(key: string): string {
   return key.replaceAll('~', '~0').replaceAll('/', '~1');
 }

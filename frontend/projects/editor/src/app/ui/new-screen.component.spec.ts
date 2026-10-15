@@ -5,22 +5,22 @@ import { EditorStore } from '../model/editor-store';
 import { screenIdFrom } from '../model/templates';
 import { NewScreenComponent, type NewScreen } from './new-screen.component';
 
-describe('identificativo dal titolo', () => {
-  it('kebab-case senza accenti né simboli', () => {
-    expect(screenIdFrom('Elenco ordini')).toBe('elenco-ordini');
-    expect(screenIdFrom('  Città & Società: già 2026!  ')).toBe('citta-societa-gia-2026');
-    expect(screenIdFrom('Ordini — Dettaglio')).toBe('ordini-dettaglio');
+describe('identifier from the title', () => {
+  it('kebab-case without accents or symbols', () => {
+    expect(screenIdFrom('Order list')).toBe('order-list');
+    expect(screenIdFrom('  Café & Société: déjà 2026!  ')).toBe('cafe-societe-deja-2026');
+    expect(screenIdFrom('Orders — Detail')).toBe('orders-detail');
   });
 
-  it('vuoto se non resta nulla, al massimo 60 caratteri senza trattino finale', () => {
+  it('empty if nothing is left, at most 60 characters without a trailing hyphen', () => {
     expect(screenIdFrom('¿¡ !?')).toBe('');
-    const long = screenIdFrom('parola '.repeat(20));
+    const long = screenIdFrom('word '.repeat(20));
     expect(long.length).toBeLessThanOrEqual(60);
     expect(long.endsWith('-')).toBe(false);
   });
 });
 
-describe('finestra «Nuova schermata»', () => {
+describe('«New screen» dialog', () => {
   let fixture: ComponentFixture<NewScreenComponent>;
   let el: HTMLElement;
   let created: NewScreen[];
@@ -44,35 +44,35 @@ describe('finestra «Nuova schermata»', () => {
   };
   const create = (): HTMLButtonElement => el.querySelector('button[type="submit"]') as HTMLButtonElement;
 
-  it('mette il fuoco sul titolo e tiene «Crea» spento finché il titolo manca', () => {
+  it('puts the focus on the title and keeps «Create» off while the title is missing', () => {
     expect(document.activeElement).toBe(input('new-screen-title'));
     expect(create().disabled).toBe(true);
   });
 
-  it('propone l’identificativo dal titolo e crea con Invio', async () => {
-    await type('new-screen-title', 'Elenco ordini');
-    expect(input('new-screen-id').value).toBe('elenco-ordini');
+  it('proposes the identifier from the title and creates with Enter', async () => {
+    await type('new-screen-title', 'Order list');
+    expect(input('new-screen-id').value).toBe('order-list');
     el.querySelector('form')!.dispatchEvent(new Event('submit', { cancelable: true }));
-    expect(created).toEqual([{ title: 'Elenco ordini', screen: 'elenco-ordini' }]);
+    expect(created).toEqual([{ title: 'Order list', screen: 'order-list' }]);
   });
 
-  it('un identificativo scritto a mano resta, uno non valido spegne «Crea» e lo dice', async () => {
-    await type('new-screen-title', 'Elenco ordini');
-    await type('new-screen-id', 'ordini');
-    await type('new-screen-title', 'Elenco degli ordini');
-    expect(input('new-screen-id').value).toBe('ordini');
-    await type('new-screen-id', 'Ordini Elenco');
+  it('an identifier typed by hand stays, an invalid one turns «Create» off and says so', async () => {
+    await type('new-screen-title', 'Order list');
+    await type('new-screen-id', 'orders');
+    await type('new-screen-title', 'List of the orders');
+    expect(input('new-screen-id').value).toBe('orders');
+    await type('new-screen-id', 'Orders List');
     expect(create().disabled).toBe(true);
     expect(input('new-screen-id').getAttribute('aria-invalid')).toBe('true');
     expect(el.textContent).toContain(EDITOR_MESSAGES['it']['ed.newScreen.idInvalid']);
     await type('new-screen-id', '');
-    expect(input('new-screen-id').value).toBe('elenco-degli-ordini');
+    expect(input('new-screen-id').value).toBe('list-of-the-orders');
   });
 
-  it('la schermata nuova ha titolo e identificativo scelti ed è valida', () => {
+  it('the new screen has the chosen title and identifier and is valid', () => {
     const store = TestBed.inject(EditorStore);
-    store.newScreen('Elenco ordini', 'elenco-ordini');
-    expect(store.doc()).toMatchObject({ screen: 'elenco-ordini', title: 'Elenco ordini', components: [] });
+    store.newScreen('Order list', 'order-list');
+    expect(store.doc()).toMatchObject({ screen: 'order-list', title: 'Order list', components: [] });
     expect(store.issues()).toEqual([]);
   });
 });

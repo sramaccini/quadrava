@@ -20,21 +20,21 @@ import {
 import { RegistrySession } from '../model/registry-session';
 import { SavedDocuments } from '../model/saved-documents';
 
-/** Colore dell'etichetta di ogni stato di revisione. */
+/** Colour of the label of every review state. */
 const STATE_COLORS: Record<string, string> = { draft: 'default', 'in-review': 'orange', approved: 'cyan', rejected: 'red' };
 
 /**
- * Pannello del registro per il documento aperto (schermata, navigazione o tema): salva una versione (solo se il
- * documento non ha errori), mostra lo storico con lo stato di revisione e gli ambienti in cui è pubblicata ogni
- * versione, riapre una versione, la confronta con il documento aperto, chiede la revisione, la approva o la respinge,
- * e la pubblica in un ambiente. Applicazione e ambiente si ricordano nel browser.
+ * Registry panel for the open document (screen, navigation or theme): saves a version (only if the
+ * document has no errors), shows the history with the review state and the environments where every
+ * version is published, reopens a version, compares it with the open document, requests review, approves or rejects it,
+ * and publishes it in an environment. Application and environment are remembered in the browser.
  *
- * Prima di pubblicare chiede al registro le schermate citate dalla versione e non pubblicate nell'ambiente: la conferma
- * le elenca. Negli ambienti protetti il registro rifiuta una navigazione con schermate mancanti: il pannello le elenca.
+ * Before publishing it asks the registry for the screens referenced by the version and not published in the environment: the confirmation
+ * lists them. In protected environments the registry rejects a navigation with missing screens: the panel lists them.
  *
- * Il salvataggio indica al registro la versione da cui si è partiti (aperta o appena salvata): se nel frattempo un
- * altro autore ha salvato, il pannello lo dice e chiede se salvare comunque. Applicazione, ambiente, accesso e versione
- * di partenza stanno in RegistrySession, condivisa con «Salva in registro» e «Apri da registro…» del menu File.
+ * Saving tells the registry the version one started from (opened or just saved): if in the meantime another
+ * author saved, the panel says so and asks whether to save anyway. Application, environment, sign-in and starting
+ * version live in RegistrySession, shared with «Save to registry» and «Open from registry…» of the File menu.
  */
 @Component({
   selector: 'ed-registry-panel',
@@ -196,7 +196,7 @@ export class RegistryPanelComponent {
   private readonly saved = inject(SavedDocuments);
   protected readonly i18n = inject(I18n);
 
-  /** Il documento aperto e il suo tipo. */
+  /** The open document and its type. */
   readonly state = input.required<DocumentState & { load(doc: Json): void }>();
   readonly kind = input.required<DocumentKind>();
 
@@ -205,28 +205,28 @@ export class RegistryPanelComponent {
   private readonly working = signal(false);
   protected readonly busy = computed(() => this.working() || this.session.busy());
   protected readonly loaded = signal(false);
-  /** Il registro ha risposto 401: serve il login (attraverso il BFF), poi si torna qui. */
+  /** The registry answered 401: sign-in is needed (through the BFF), then one comes back here. */
   protected readonly needsLogin = computed(() => this.session.status() === 'login');
   protected readonly versions = signal<DocumentVersion[]>([]);
-  /** Ambiente → hash pubblicato, per il documento aperto. */
+  /** Environment → published hash, for the open document. */
   private readonly published = signal<Record<string, string>>({});
-  /** Problemi di validazione segnalati dal registro all'ultimo salvataggio (anche da «Salva in registro»). */
+  /** Validation problems reported by the registry at the last save (also from «Save to registry»). */
   protected readonly issues = this.session.issues;
-  /** Schermate citate e non pubblicate nell'ambiente, dall'ultima pubblicazione rifiutata. */
+  /** Screens referenced and not published in the environment, from the last rejected publication. */
   protected readonly missing = signal<{ env: string; references: ScreenReference[] } | null>(null);
-  /** Nota per la prossima azione di revisione. */
+  /** Note for the next review action. */
   protected readonly note = signal('');
-  /** Confronto aperto: la versione e le differenze verso il documento aperto. */
+  /** Open comparison: the version and the differences from the open document. */
   protected readonly diff = signal<{ hash: string; changes: JsonChange[]; truncated: boolean } | null>(null);
 
-  /** Il documento aperto; cambia solo se cambiano tipo o identificativo, non a ogni modifica del contenuto. */
+  /** The open document; it changes only if type or identifier change, not at every change of the content. */
   protected readonly ref = computed(() => documentRef(this.kind(), this.state().doc()), { equal: (a, b) => a?.kind === b?.kind && a?.id === b?.id });
-  /** Versione da cui parte il documento aperto (aperta o appena salvata): il registro la usa per le modifiche concorrenti. */
+  /** Version the open document starts from (opened or just saved): the registry uses it for concurrent changes. */
   protected readonly basedOn = computed(() => this.session.basedOn(this.ref()));
   protected readonly canSave = computed(() => !!this.ref() && !!this.appId() && this.state().errorCount() === 0 && !this.busy());
 
   constructor() {
-    // Cambiando documento lo storico mostrato non vale più.
+    // Changing document, the history shown no longer applies.
     effect(() => {
       this.ref();
       this.kind();
@@ -236,7 +236,7 @@ export class RegistryPanelComponent {
     });
   }
 
-  /** Data e ora della versione nella lingua dell'editor. */
+  /** Date and time of the version in the editor's language. */
   protected when(iso: string): string {
     const date = new Date(iso);
     return Number.isNaN(date.getTime()) ? iso : new Intl.DateTimeFormat(this.i18n.intlLocale(), { dateStyle: 'short', timeStyle: 'short' }).format(date);
@@ -330,8 +330,8 @@ export class RegistryPanelComponent {
   }
 
   /**
-   * Schermate citate dalla versione e non pubblicate nell'ambiente, senza ripetizioni. Solo schermate e navigazione
-   * hanno riferimenti; se il controllo non riesce (per esempio un registro 0.3) la pubblicazione decide da sola.
+   * Screens referenced by the version and not published in the environment, without repetitions. Only screens and navigation
+   * have references; if the check fails (for example a 0.3 registry) the publication decides by itself.
    */
   private async missingScreens(kind: DocumentKind, id: string, hash: string, env: string): Promise<string[]> {
     if (kind !== 'screen' && kind !== 'navigation') return [];
@@ -343,20 +343,20 @@ export class RegistryPanelComponent {
     }
   }
 
-  /** Il documento salvato o aperto dal registro non ha modifiche da salvare (solo i tipi con una modalità dell'editor). */
+  /** The document saved or opened from the registry has no changes to save (only the kinds with an editor mode). */
   private markSaved(doc: Json): void {
     const kind = this.kind();
     if (kind !== 'messages') this.saved.markSaved(kind, doc);
   }
 
-  /** Esegue un'operazione segnalando gli errori in modo comprensibile, senza dettagli tecnici del servizio. */
+  /** Runs an operation reporting errors in an understandable way, without technical details of the service. */
   private async run(action: () => Promise<void>): Promise<void> {
     this.working.set(true);
     try {
       await action();
       this.session.status.set('available');
     } catch (e) {
-      // Senza sessione il pannello mostra «Accedi» invece di un messaggio.
+      // Without a session the panel shows «Sign in» instead of a message.
       if (e instanceof RegistryError && e.status === 401) this.session.status.set('login');
       else this.session.report(e);
     } finally {

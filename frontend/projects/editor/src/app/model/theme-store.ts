@@ -5,13 +5,13 @@ import { DocumentState, type EditorIssue } from './document-state';
 import { SchemaReader, type Schema } from './schema-info';
 
 /**
- * Il tema (design token) come documento dell'editor. È un solo oggetto con gruppi annidati (colori, tipografia,
- * forma, layout): si seleziona sempre la radice e il pannello mostra tutto, gruppo per gruppo.
+ * The theme (design tokens) as an editor document. It is a single object with nested groups (colours, typography,
+ * shape, layout): the root is always selected and the panel shows everything, group by group.
  */
 
 export const THEME = new SchemaReader(THEME_SCHEMA as unknown as Schema);
 
-/** Tema di partenza: i colori del tema chiaro della demo (sono dati del documento, non stili dell'editor). */
+/** Starting theme: the colours of the light theme of the demo (they are data of the document, not styles of the editor). */
 export function emptyTheme(): JsonObject {
   return {
     schemaVersion: '1.0',
@@ -28,7 +28,7 @@ const DRAFT_KEY = 'lc.editor.theme';
 
 @Injectable({ providedIn: 'root' })
 export class ThemeStore extends DocumentState {
-  /** Il tema come definizione valida, oppure null se ha errori (l'anteprima resta all'ultima versione valida). */
+  /** The theme as a valid definition, or null if it has errors (the preview stays at the last valid version). */
   readonly definition = computed<ThemeDefinition | null>(() => (this.errorCount() === 0 ? (this.doc() as unknown as ThemeDefinition) : null));
 
   constructor() {
@@ -38,7 +38,7 @@ export class ThemeStore extends DocumentState {
       try {
         localStorage.setItem(DRAFT_KEY, JSON.stringify(this.doc()));
       } catch {
-        // Archiviazione non disponibile: la bozza resta in memoria.
+        // Storage not available: the draft stays in memory.
       }
     });
   }

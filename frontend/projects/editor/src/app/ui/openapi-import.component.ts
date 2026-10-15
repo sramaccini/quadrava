@@ -11,17 +11,17 @@ import { EditorStore } from '../model/editor-store';
 import { OpenApiError, dataSourceOf, readOpenApi, sourceNameOf, type ApiDescription, type ApiOperation } from '../model/openapi';
 
 const URL_KEY = 'lc.editor.openapi.url';
-/** Indirizzo predefinito: quello di springdoc in Spring Boot. */
+/** Default address: that of springdoc in Spring Boot. */
 const DEFAULT_URL = '/v3/api-docs';
-/** Documento troppo grande per un editor nel browser. */
+/** Document too large for an editor in the browser. */
 const MAX_SIZE = 5_000_000;
 const TIMEOUT_MS = 15_000;
 
 /**
- * Importazione di data source da un documento OpenAPI 3.x o Swagger 2.0: lo si legge da un indirizzo (springdoc in
- * Spring Boot lo espone su `/v3/api-docs`) o da un file, si scelgono le operazioni e ognuna diventa un data source,
- * con i dati di esempio presi dalla risposta. Un indirizzo relativo passa per la stessa origine dell'editor (dietro il
- * BFF arriva ai servizi); uno assoluto di un'altra origine funziona solo se il servizio permette CORS.
+ * Import of data sources from an OpenAPI 3.x or Swagger 2.0 document: it is read from an address (springdoc in
+ * Spring Boot exposes it at `/v3/api-docs`) or from a file, the operations are chosen and each one becomes a data source,
+ * with the sample data taken from the response. A relative address goes through the same origin as the editor (behind the
+ * BFF it reaches the services); an absolute one of another origin works only if the service allows CORS.
  */
 @Component({
   selector: 'ed-openapi-import',
@@ -107,7 +107,7 @@ export class OpenApiImportComponent {
   protected readonly i18n = inject(I18n);
   private readonly store = inject(EditorStore);
   private readonly notifier = inject(Notifier);
-  /** Chiusura del dialogo (dopo l'importazione o con Annulla). */
+  /** Closing of the dialog (after the import or with Cancel). */
   readonly closed = output<void>();
 
   protected readonly defaultUrl = DEFAULT_URL;
@@ -119,14 +119,14 @@ export class OpenApiImportComponent {
   protected readonly selected = signal<ReadonlySet<string>>(new Set());
   protected readonly colors: Record<string, string> = { GET: 'blue', POST: 'green', PUT: 'orange', PATCH: 'gold', DELETE: 'red' };
 
-  /** Operazioni per tag, nell'ordine del documento. */
+  /** Operations by tag, in document order. */
   protected readonly groups = computed(() => {
     const groups = new Map<string, ApiOperation[]>();
     for (const op of this.api()?.operations ?? []) groups.set(op.tag, [...(groups.get(op.tag) ?? []), op]);
     return [...groups].map(([tag, operations]) => ({ tag, operations }));
   });
 
-  /** Operazioni che hanno già un data source uguale (stesso metodo e indirizzo). */
+  /** Operations that already have an equal data source (same method and address). */
   protected readonly existing = computed(() => {
     const sources = getIn(this.store.doc(), ['dataSources']);
     const present = new Set(isObject(sources) ? Object.values(sources).filter(isObject).map((s) => `${s['method']} ${s['url']}`) : []);
@@ -134,7 +134,7 @@ export class OpenApiImportComponent {
     return new Set((this.api()?.operations ?? []).filter((op) => present.has(`${op.method} ${dataSourceOf(op, base)['url']}`)).map((op) => op.key));
   });
 
-  /** Nome che avrà il data source di ogni operazione (unico tra quelli già presenti e quelli scelti prima). */
+  /** Name the data source of every operation will have (unique among those already present and those chosen before). */
   protected readonly names = computed(() => {
     const used = new Set(this.store.sourceNames());
     const names = new Map<string, string>();
@@ -153,7 +153,7 @@ export class OpenApiImportComponent {
       .join(', ');
   }
 
-  /** Legge il documento dall'indirizzo: relativo (stessa origine) oppure http(s). */
+  /** Reads the document from the address: relative (same origin) or http(s). */
   protected async load(): Promise<void> {
     const url = this.url().trim() || DEFAULT_URL;
     if (!/^(\/(?!\/)|https?:\/\/)/i.test(url)) return this.error.set(this.i18n.t('ed.openapi.error.url'));
@@ -168,10 +168,10 @@ export class OpenApiImportComponent {
       try {
         localStorage.setItem(URL_KEY, url);
       } catch {
-        // Senza memoria del browser si riparte dall'indirizzo predefinito.
+        // Without browser storage it starts again from the default address.
       }
     } catch (e) {
-      // Un errore di rete (anche CORS) non dice di più al browser: si spiega cosa controllare.
+      // A network error (CORS too) tells the browser nothing more: explain what to check.
       this.error.set(e instanceof TypeError || (e instanceof DOMException && e.name === 'AbortError') ? this.i18n.t('ed.openapi.error.network') : e instanceof Error ? e.message : String(e));
     } finally {
       clearTimeout(timer);

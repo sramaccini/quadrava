@@ -1,56 +1,56 @@
 import type { NavigationDefinition, ScreenDefinition, ThemeDefinition } from 'schema';
 
 /**
- * Protocollo tra l'editor e l'anteprima, che gira in un iframe isolato (ADR-08): stessa applicazione, avviata con
- * `?anteprima`. L'editor manda lo stato da disegnare; l'anteprima risponde con la propria disponibilità, le selezioni
- * fatte nel disegno e gli eventi del registro. Solo dati JSON, solo tra finestre della stessa origine.
+ * Protocol between the editor and the preview, which runs in an isolated iframe (ADR-08): same application, started with
+ * `?preview`. The editor sends the state to draw; the preview answers with its readiness, the selections
+ * made in the drawing and the log events. JSON data only, only between windows of the same origin.
  */
 
-/** Parametro dell'URL con cui l'applicazione parte come anteprima. */
-export const PREVIEW_QUERY = 'anteprima';
+/** URL parameter with which the application starts as the preview. */
+export const PREVIEW_QUERY = 'preview';
 
-/** Tipo dei dati trascinati dalla tavolozza: un tipo di componente (anche `input.<tipo>`). Lo riconoscono struttura e anteprima. */
+/** Type of the data dragged from the palette: a component type (also `input.<type>`). Outline and preview recognise it. */
 export const PALETTE_DRAG_TYPE = 'application/x-lc-node-type';
 
-/** Tipo dei dati trascinati dentro l'anteprima: l'id di un componente già presente (spostamento). */
+/** Type of the data dragged inside the preview: the id of a component already there (move). */
 export const NODE_DRAG_TYPE = 'application/x-lc-preview-node';
 
-/** Proprietà che la maniglia di ridimensionamento cambia: colonne in una griglia, quota in un box. */
+/** Property the resize handle changes: columns in a grid, share in a box. */
 export type ResizeProperty = 'span' | 'grow';
 
-/** Dove cade un componente rilasciato rispetto a quello sotto il puntatore. */
+/** Where a dropped component falls relative to the one under the pointer. */
 export type DropZone = 'before' | 'after' | 'inside';
 
-/** Tutto quello che l'anteprima deve sapere per disegnare. */
+/** Everything the preview must know to draw. */
 export interface PreviewState {
-  /** Schermata da disegnare (null = nessuna). */
+  /** Screen to draw (null = none). */
   screen: ScreenDefinition | null;
-  /** Menu da disegnare a sinistra (null = nessuno). */
+  /** Menu to draw on the left (null = none). */
   navigation: NavigationDefinition | null;
-  /** Tema (null = quello predefinito della demo). */
+  /** Theme (null = the default one of the demo). */
   theme: ThemeDefinition | null;
-  /** Permessi del profilo simulato; null = tutti. */
+  /** Permissions of the simulated profile; null = all. */
   granted: string[] | null;
-  /** Risposte finte per data source della schermata. */
+  /** Fake responses per data source of the screen. */
   samples: Record<string, unknown>;
-  /** Parametri della schermata (`params`). */
+  /** Parameters of the screen (`params`). */
   params: Record<string, unknown>;
   locale: string;
-  /** Lingua predefinita: quella dei testi di ripiego, usata quando manca una traduzione. */
+  /** Default language: the one of the fallback texts, used when a translation is missing. */
   defaultLocale: string;
-  /** Traduzioni scritte nell'editor e non ancora nei cataloghi. */
+  /** Translations written in the editor and not yet in the catalogues. */
   translations: Record<string, Record<string, string>>;
-  /** Nodo da evidenziare. */
+  /** Node to highlight. */
   selectedId: string | null;
-  /** Ogni clic seleziona invece di attivare. */
+  /** Every click selects instead of activating. */
   selectMode: boolean;
-  /** Cambia per ricreare la schermata da capo (Ricarica). */
+  /** Changes to recreate the screen from scratch (Reload). */
   version: number;
-  /** Letture dai servizi veri (stessa origine) invece dei dati di esempio; le scritture restano bloccate. */
+  /** Reads from the real services (same origin) instead of the sample data; writes stay blocked. */
   liveData: boolean;
 }
 
-/** Riga del registro dell'anteprima. */
+/** Row of the preview log. */
 export interface PreviewEvent {
   kind: 'request' | 'navigate' | 'diagnostic';
   text: string;
@@ -62,11 +62,11 @@ export type FromPreview =
   | { type: 'lc-preview:ready' }
   | { type: 'lc-preview:select'; id: string }
   | { type: 'lc-preview:event'; event: PreviewEvent }
-  /** Un componente della tavolozza rilasciato sul disegno: prima, dopo o dentro il nodo `targetId` (null = in fondo alla schermata). */
+  /** A palette component dropped on the drawing: before, after or inside node `targetId` (null = at the end of the screen). */
   | { type: 'lc-preview:drop'; kind: string; targetId: string | null; zone: DropZone }
-  /** Un componente già presente trascinato sul disegno (modalità selezione): spostarlo rispetto a `targetId`. */
+  /** A component already there dragged on the drawing (selection mode): move it relative to `targetId`. */
   | { type: 'lc-preview:move'; id: string; targetId: string | null; zone: DropZone }
-  /** Maniglia del componente selezionato: nuovo valore di `span` (griglia) o `grow` (box). */
+  /** Handle of the selected component: new value of `span` (grid) or `grow` (box). */
   | { type: 'lc-preview:resize'; id: string; property: ResizeProperty; value: number };
 
 export function isToPreview(data: unknown): data is ToPreview {
@@ -96,7 +96,7 @@ export function isFromPreview(data: unknown): data is FromPreview {
   return false;
 }
 
-/** Stato vuoto, completato da chi lo usa. */
+/** Empty state, completed by whoever uses it. */
 export function previewState(partial: Partial<PreviewState>): PreviewState {
   return {
     screen: null,

@@ -4,7 +4,7 @@ import { NzIconModule } from 'ng-zorro-antd/icon';
 import type { DocumentState, EditorIssue } from '../model/document-state';
 import { EditorStore } from '../model/editor-store';
 
-/** Elenco dei problemi del documento aperto (schermata o navigazione): un clic seleziona l'elemento a cui appartiene. */
+/** List of the problems of the open document (screen or navigation): a click selects the element it belongs to. */
 @Component({
   selector: 'ed-issues',
   imports: [NzIconModule],
@@ -45,7 +45,7 @@ export class IssuesComponent {
 
   protected open(issue: EditorIssue): void {
     const state = this.state();
-    // I data source della schermata non sono nella struttura: si apre il loro pannello.
+    // The data sources of the screen are not in the outline: their panel opens.
     if (state instanceof EditorStore && issue.pointer.startsWith('/dataSources')) state.view.set('sources');
     else state.select(issue.owner);
   }

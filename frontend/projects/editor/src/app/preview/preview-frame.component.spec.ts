@@ -5,7 +5,7 @@ import { EDITOR_MESSAGES } from '../messages';
 import { PreviewFrameComponent } from './preview-frame.component';
 import { previewState } from './protocol';
 
-/** Osservatore di dimensioni finto: jsdom non ne ha; il test decide la larghezza disponibile. */
+/** Fake resize observer: jsdom has none; the test decides the available width. */
 class FakeResizeObserver {
   static last: FakeResizeObserver | null = null;
   constructor(private readonly callback: ResizeObserverCallback) {
@@ -18,11 +18,11 @@ class FakeResizeObserver {
   }
 }
 
-describe('cornice dell’anteprima', () => {
+describe('preview frame', () => {
   beforeEach(() => vi.stubGlobal('ResizeObserver', FakeResizeObserver));
   afterEach(() => vi.unstubAllGlobals());
 
-  it('una larghezza fissa più grande dello spazio si riduce per starci, con la percentuale; se ci sta resta al 100%', async () => {
+  it('a fixed width larger than the space shrinks to fit, with the percentage; if it fits it stays at 100%', async () => {
     TestBed.inject(I18n).addMessages('it', EDITOR_MESSAGES['it']);
     const fixture = TestBed.createComponent(PreviewFrameComponent);
     fixture.componentRef.setInput('state', previewState({}));
@@ -39,12 +39,12 @@ describe('cornice dell’anteprima', () => {
     expect(iframe.style.transform).toBe('scale(0.8997395833333334)');
     expect(iframe.style.height).toMatch(/^calc\(111\.14\d*%\)$/);
     expect(el.querySelector('.zoom')?.textContent).toBe('Ridotta al 90% per starci');
-    // Spazio sufficiente: nessuna riduzione.
+    // Enough space: no reduction.
     FakeResizeObserver.last!.resize(900);
     await settle();
     expect(iframe.style.transform).toBe('');
     expect(el.querySelector('.zoom')).toBeNull();
-    // Senza larghezza fissa (desktop) occupa tutto lo spazio.
+    // Without a fixed width (desktop) it takes all the space.
     fixture.componentRef.setInput('width', null);
     FakeResizeObserver.last!.resize(300);
     await settle();

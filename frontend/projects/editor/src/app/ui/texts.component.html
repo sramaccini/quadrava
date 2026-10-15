@@ -18,7 +18,7 @@
       </button>
     </div>
   </div>
-  <!-- Lingue delle traduzioni: la predefinita resta; le altre si tolgono, se ne aggiungono di nuove. -->
+  <!-- Languages of the translations: the default one stays; the others can be removed, new ones added. -->
   <div class="languages" role="group" [attr.aria-label]="i18n.t('ed.texts.languages')">
     <span class="languages-label">{{ i18n.t('ed.texts.languages') }}</span>
     @for (locale of locales(); track locale) {
@@ -58,7 +58,7 @@
         [attr.aria-invalid]="languageError() ? true : null"
         (input)="languageError.set('')"
       />
-      <!-- Suggerimenti: nome nella lingua dell'editor e codice; si può scrivere il nome, il codice, o sceglierne uno. -->
+      <!-- Suggestions: name in the editor's language and code; one can type the name, the code, or choose one. -->
       <nz-autocomplete #languageList [nzDefaultActiveFirstOption]="false">
         @for (s of filteredLanguages(); track s.code) {
           <nz-auto-option [nzValue]="s.label" [nzLabel]="s.label" [attr.data-language-option]="s.code">{{ s.label }}</nz-auto-option>

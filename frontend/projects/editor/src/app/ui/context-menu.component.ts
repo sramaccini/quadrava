@@ -2,10 +2,10 @@ import { ChangeDetectionStrategy, Component, ElementRef, Injector, afterNextRend
 import type { MenuItem } from './menu-bar.component';
 
 /**
- * Menu contestuale (tasto destro, Maiusc+F10 o il tasto menu): voci con scorciatoie e separatori, come nella barra
- * dei menu. Si apre nel punto indicato (spostato per restare nella finestra) con il fuoco sulla prima voce attiva;
- * frecce, Home e Fine scorrono le voci saltando quelle spente, Invio e Spazio eseguono, Esc, Tab o un clic fuori
- * chiudono. Chi lo apre riprende il fuoco alla chiusura (`closed`).
+ * Context menu (right click, Shift+F10 or the menu key): items with shortcuts and separators, as in the menu
+ * bar. It opens at the given point (moved to stay in the window) with the focus on the first enabled item;
+ * arrows, Home and End move through the items skipping the disabled ones, Enter and Space run, Esc, Tab or a click outside
+ * close. Whoever opens it takes the focus back when it closes (`closed`).
  */
 @Component({
   selector: 'ed-context-menu',
@@ -56,11 +56,11 @@ import type { MenuItem } from './menu-bar.component';
 })
 export class ContextMenuComponent {
   readonly items = input.required<MenuItem[]>();
-  /** Punto in cui aprire (coordinate della finestra). */
+  /** Point where to open (window coordinates). */
   readonly x = input(0);
   readonly y = input(0);
   readonly label = input('');
-  /** Il menu si è chiuso (con o senza una voce eseguita): chi l'ha aperto lo toglie e riprende il fuoco. */
+  /** The menu closed (with or without an item run): whoever opened it removes it and takes the focus back. */
   readonly closed = output<void>();
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
@@ -69,7 +69,7 @@ export class ContextMenuComponent {
       () => {
         const menu = this.host.nativeElement.querySelector<HTMLElement>('.menu');
         if (!menu) return;
-        // Resta nella finestra: se non c'è spazio a destra o in basso si apre dall'altra parte.
+        // It stays in the window: if there is no room on the right or below it opens on the other side.
         const box = menu.getBoundingClientRect();
         if (box.right > innerWidth) menu.style.left = `${Math.max(0, innerWidth - box.width - 4)}px`;
         if (box.bottom > innerHeight) menu.style.top = `${Math.max(0, innerHeight - box.height - 4)}px`;

@@ -11,8 +11,8 @@ export interface NewScreen {
 }
 
 /**
- * Contenuto della finestra «Nuova schermata»: titolo e identificativo. L'identificativo segue il titolo finché non
- * lo si modifica a mano; vuoto torna a seguirlo. «Crea» resta spento finché il titolo manca o l'identificativo non è
+ * Content of the «New screen» dialog: title and identifier. The identifier follows the title until it
+ * is changed by hand; emptied, it follows it again. «Create» stays off while the title is missing or the identifier is not
  * in kebab-case.
  */
 @Component({

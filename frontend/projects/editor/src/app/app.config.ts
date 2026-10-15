@@ -44,7 +44,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideLowcodeComponents(),
-    // provideNzIcons non si somma: sostituisce l'elenco registrato da provideLowcodeComponents, che va quindi ripetuto.
+    // provideNzIcons does not add up: it replaces the list registered by provideLowcodeComponents, which must therefore be repeated.
     provideNzIcons([
       ...Object.values(ICON_TYPES).map((i) => i.icon),
       ApartmentOutline,
@@ -84,9 +84,9 @@ export const appConfig: ApplicationConfig = {
       const i18n = inject(I18n);
       for (const [locale, messages] of Object.entries(EDITOR_MESSAGES)) i18n.addMessages(locale, messages);
     }),
-    // I campi generati dallo schema lavorano sulla schermata; l'editor della navigazione li ridirige sul proprio documento.
+    // The fields generated from the schema work on the screen; the navigation editor redirects them to its own document.
     { provide: DocumentState, useExisting: EditorStore },
-    // Le porte del runtime servono solo all'anteprima, che gira nel suo iframe (preview-config.ts).
+    // The runtime ports serve only the preview, which runs in its iframe (preview-config.ts).
     { provide: Notifier, useExisting: NzNotifier },
   ],
 };

@@ -4,7 +4,7 @@ import { Authorization, DataClient, I18n, Notifier, RuntimeDiagnostics, ScreenNa
 import { EDITOR_MESSAGES } from '../messages';
 import { PreviewDataClient, PreviewDiagnostics, PreviewNavigator, PreviewSession } from './preview-ports';
 
-/** Configurazione dell'applicazione quando parte come anteprima (dentro l'iframe dell'editor). */
+/** Configuration of the application when it starts as the preview (inside the editor's iframe). */
 export const previewConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
@@ -13,7 +13,7 @@ export const previewConfig: ApplicationConfig = {
       const i18n = inject(I18n);
       for (const [locale, messages] of Object.entries(EDITOR_MESSAGES)) i18n.addMessages(locale, messages);
     }),
-    // Nessuna chiamata esce dal browser: tutto passa dalle porte dell'anteprima.
+    // No call leaves the browser: everything goes through the ports of the preview.
     { provide: Authorization, useExisting: PreviewSession },
     { provide: UserProvider, useExisting: PreviewSession },
     { provide: DataClient, useExisting: PreviewDataClient },

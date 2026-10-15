@@ -5,24 +5,24 @@ import { PreviewApp } from './preview-app';
 import { previewConfig } from './preview-config';
 import { previewState, type FromPreview, type PreviewState } from './protocol';
 
-describe('anteprima (dentro l’iframe)', () => {
+describe('preview (inside the iframe)', () => {
   let fixture: ComponentFixture<PreviewApp>;
   let el: HTMLElement;
   let sent: FromPreview[];
 
   const screen: ScreenDefinition = {
     schemaVersion: '1.0',
-    screen: 'prova',
-    dataSources: { elenco: { type: 'rest', method: 'GET', url: '/api/elenco' } },
+    screen: 'test',
+    dataSources: { list: { type: 'rest', method: 'GET', url: '/api/list' } },
     components: [
-      { id: 'pulsante', type: 'button', label: 'Avvisa', onClick: [{ toast: 'Fatto' }] },
-      { id: 'tabella', type: 'table', source: 'elenco', columns: [{ field: 'nome', label: 'Nome' }] },
+      { id: 'button-1', type: 'button', label: 'Notify', onClick: [{ toast: 'Done' }] },
+      { id: 'table-1', type: 'table', source: 'list', columns: [{ field: 'name', label: 'Name' }] },
       {
-        id: 'schede',
+        id: 'tabs-1',
         type: 'tabs',
         tabs: [
-          { label: 'Prima', components: [{ id: 'testo-1', type: 'text', text: 'Uno' }] },
-          { label: 'Seconda', components: [{ id: 'testo-2', type: 'text', text: 'Due' }] },
+          { label: 'First', components: [{ id: 'text-1', type: 'text', text: 'One' }] },
+          { label: 'Second', components: [{ id: 'text-2', type: 'text', text: 'Two' }] },
         ],
       },
     ],
@@ -32,7 +32,7 @@ describe('anteprima (dentro l’iframe)', () => {
     sent = [];
     if (typeof Element.prototype.scrollTo !== 'function') Element.prototype.scrollTo = () => undefined;
     vi.stubGlobal('fetch', async () => ({ ok: false, status: 404, json: async () => ({}) }));
-    // In jsdom la finestra «padre» è la stessa: si registra quello che l'anteprima manda all'editor.
+    // In jsdom the «parent» window is the same: what the preview sends to the editor is recorded.
     vi.spyOn(window, 'postMessage').mockImplementation((message: unknown) => void sent.push(message as FromPreview));
     TestBed.configureTestingModule({ providers: previewConfig.providers });
     fixture = TestBed.createComponent(PreviewApp);
@@ -69,34 +69,34 @@ describe('anteprima (dentro l’iframe)', () => {
     await settle();
   }
 
-  it('si dichiara pronta, disegna lo stato ricevuto e risponde con i dati di esempio', async () => {
+  it('declares itself ready, draws the received state and answers with the sample data', async () => {
     expect(sent).toContainEqual({ type: 'lc-preview:ready' });
-    await deliver({ screen, samples: { elenco: [{ nome: 'Mario' }] } });
-    await until(() => !!el.querySelector('lc-table tbody')?.textContent?.includes('Mario'), 'riga di esempio');
-    expect(sent).toContainEqual({ type: 'lc-preview:event', event: { kind: 'request', text: 'GET /api/elenco → elenco' } });
+    await deliver({ screen, samples: { list: [{ name: 'Mario' }] } });
+    await until(() => !!el.querySelector('lc-table tbody')?.textContent?.includes('Mario'), 'sample row');
+    expect(sent).toContainEqual({ type: 'lc-preview:event', event: { kind: 'request', text: 'GET /api/list → list' } });
   });
 
-  it('ignora i messaggi che non vengono dall’editor della stessa origine', async () => {
-    await deliver({ screen }, 'https://altro.example');
+  it('ignores messages that do not come from the editor of the same origin', async () => {
+    await deliver({ screen }, 'https://other.example');
     expect(el.querySelector('lc-screen')).toBeNull();
   });
 
-  it('Alt+clic, o un clic in modalità selezione, manda all’editor l’id del componente senza attivarlo', async () => {
+  it('Alt+click, or a click in selection mode, sends the editor the id of the component without activating it', async () => {
     await deliver({ screen });
-    await until(() => !!el.querySelector('lc-node[data-node-id="pulsante"] button'), 'pulsante');
-    (el.querySelector('lc-node[data-node-id="pulsante"] button') as HTMLButtonElement).dispatchEvent(new MouseEvent('click', { bubbles: true, altKey: true }));
+    await until(() => !!el.querySelector('lc-node[data-node-id="button-1"] button'), 'button-1');
+    (el.querySelector('lc-node[data-node-id="button-1"] button') as HTMLButtonElement).dispatchEvent(new MouseEvent('click', { bubbles: true, altKey: true }));
     await settle();
-    expect(sent).toContainEqual({ type: 'lc-preview:select', id: 'pulsante' });
+    expect(sent).toContainEqual({ type: 'lc-preview:select', id: 'button-1' });
     expect(document.querySelector('.ant-message-notice')).toBeNull();
     await deliver({ screen, selectMode: true });
-    (el.querySelector('lc-node[data-node-id="testo-1"] lc-text') as HTMLElement).dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    expect(sent).toContainEqual({ type: 'lc-preview:select', id: 'testo-1' });
+    (el.querySelector('lc-node[data-node-id="text-1"] lc-text') as HTMLElement).dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(sent).toContainEqual({ type: 'lc-preview:select', id: 'text-1' });
   });
 
-  it('un componente trascinato dalla tavolozza sul disegno: indicatore e messaggio di rilascio all’editor', async () => {
+  it('a component dragged from the palette onto the drawing: indicator and drop message to the editor', async () => {
     await deliver({ screen });
-    await until(() => !!el.querySelector('lc-node[data-node-id="pulsante"]'), 'pulsante');
-    const node = el.querySelector('lc-node[data-node-id="pulsante"]') as HTMLElement;
+    await until(() => !!el.querySelector('lc-node[data-node-id="button-1"]'), 'button-1');
+    const node = el.querySelector('lc-node[data-node-id="button-1"]') as HTMLElement;
     const drag = (type: string, target: Element, clientY = 0) => {
       const data = { types: ['application/x-lc-node-type'], getData: (t: string) => (t === 'application/x-lc-node-type' ? 'input.select' : ''), dropEffect: '' };
       const event = new MouseEvent(type, { bubbles: true, cancelable: true, clientY }) as DragEvent;
@@ -104,28 +104,28 @@ describe('anteprima (dentro l’iframe)', () => {
       target.dispatchEvent(event);
       return event;
     };
-    // In jsdom i nodi non hanno dimensioni: il puntatore cade a metà, quindi «dopo».
+    // In jsdom nodes have no size: the pointer falls in the middle, hence «after».
     expect(drag('dragover', node).defaultPrevented).toBe(true);
     await settle();
     expect(el.querySelector('.drop')).not.toBeNull();
     drag('drop', node);
     await settle();
-    expect(sent).toContainEqual({ type: 'lc-preview:drop', kind: 'input.select', targetId: 'pulsante', zone: 'after' });
+    expect(sent).toContainEqual({ type: 'lc-preview:drop', kind: 'input.select', targetId: 'button-1', zone: 'after' });
     expect(el.querySelector('.drop')).toBeNull();
   });
 
-  it('in modalità selezione i componenti si trascinano per spostarli; dentro una griglia c’è la maniglia', async () => {
-    const withGrid: ScreenDefinition = { ...screen, components: [...screen.components, { id: 'griglia', type: 'grid', columns: 3, components: [{ id: 'cella', type: 'text', text: 'In griglia' }] }] };
+  it('in selection mode components are dragged to move them; inside a grid there is the handle', async () => {
+    const withGrid: ScreenDefinition = { ...screen, components: [...screen.components, { id: 'grid-1', type: 'grid', columns: 3, components: [{ id: 'cell', type: 'text', text: 'In the grid' }] }] };
     await deliver({ screen: withGrid });
-    await until(() => !!el.querySelector('lc-node[data-node-id="cella"]'), 'griglia');
-    expect(el.querySelector('lc-node[data-node-id="pulsante"]')?.getAttribute('draggable')).toBeNull();
-    // In jsdom gli elementi non hanno dimensioni: senza misure non c'è riquadro né maniglia.
+    await until(() => !!el.querySelector('lc-node[data-node-id="cell"]'), 'grid-1');
+    expect(el.querySelector('lc-node[data-node-id="button-1"]')?.getAttribute('draggable')).toBeNull();
+    // In jsdom elements have no size: without measures there is no frame nor handle.
     const rect = vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({ x: 0, y: 0, top: 0, left: 0, right: 100, bottom: 40, width: 100, height: 40, toJSON: () => ({}) } as DOMRect);
-    await deliver({ screen: withGrid, selectMode: true, selectedId: 'cella' });
-    expect(el.querySelector('lc-node[data-node-id="pulsante"]')?.getAttribute('draggable')).toBe('true');
+    await deliver({ screen: withGrid, selectMode: true, selectedId: 'cell' });
+    expect(el.querySelector('lc-node[data-node-id="button-1"]')?.getAttribute('draggable')).toBe('true');
     expect(el.querySelector('.resize')).not.toBeNull();
-    // Il pulsante (fuori da griglie e box) non ha maniglia.
-    await deliver({ screen: withGrid, selectMode: true, selectedId: 'pulsante' });
+    // The button (outside grids and boxes) has no handle.
+    await deliver({ screen: withGrid, selectMode: true, selectedId: 'button-1' });
     expect(el.querySelector('.resize')).toBeNull();
     const store = new Map<string, string>();
     const data = { types: [] as string[], setData: (t: string, v: string) => (store.set(t, v), data.types.push(t)), getData: (t: string) => store.get(t) ?? '', dropEffect: '', effectAllowed: '' };
@@ -134,54 +134,54 @@ describe('anteprima (dentro l’iframe)', () => {
       Object.defineProperty(event, 'dataTransfer', { value: data });
       target.dispatchEvent(event);
     };
-    drag('dragstart', el.querySelector('lc-node[data-node-id="pulsante"] button')!);
-    drag('dragover', el.querySelector('lc-node[data-node-id="tabella"]')!);
+    drag('dragstart', el.querySelector('lc-node[data-node-id="button-1"] button')!);
+    drag('dragover', el.querySelector('lc-node[data-node-id="table-1"]')!);
     await settle();
-    drag('drop', el.querySelector('lc-node[data-node-id="tabella"]')!);
-    expect(sent).toContainEqual({ type: 'lc-preview:move', id: 'pulsante', targetId: 'tabella', zone: 'before' });
+    drag('drop', el.querySelector('lc-node[data-node-id="table-1"]')!);
+    expect(sent).toContainEqual({ type: 'lc-preview:move', id: 'button-1', targetId: 'table-1', zone: 'before' });
     rect.mockRestore();
   });
 
-  it('il nodo selezionato in una scheda nascosta fa aprire quella scheda', async () => {
+  it('the node selected in a hidden tab makes that tab open', async () => {
     await deliver({ screen });
-    await until(() => el.querySelector('.ant-tabs-tab-active')?.textContent?.trim() === 'Prima', 'prima scheda');
-    await deliver({ screen, selectedId: 'testo-2' });
-    await until(() => el.querySelector('.ant-tabs-tab-active')?.textContent?.trim() === 'Seconda', 'seconda scheda');
-    // Ogni messaggio arriva clonato: una schermata uguale non si ridisegna, quindi la scheda resta quella aperta.
+    await until(() => el.querySelector('.ant-tabs-tab-active')?.textContent?.trim() === 'First', 'first tab');
+    await deliver({ screen, selectedId: 'text-2' });
+    await until(() => el.querySelector('.ant-tabs-tab-active')?.textContent?.trim() === 'Second', 'second tab');
+    // Every message arrives cloned: an equal screen is not redrawn, so the tab stays the open one.
     await deliver({ screen: structuredClone(screen), selectedId: null });
     await settle();
-    expect(el.querySelector('.ant-tabs-tab-active')?.textContent?.trim()).toBe('Seconda');
+    expect(el.querySelector('.ant-tabs-tab-active')?.textContent?.trim()).toBe('Second');
   });
 
-  it('menu con il profilo simulato, traduzioni dell’editor, tema scuro con il suo foglio di stile', async () => {
+  it('menu with the simulated profile, translations of the editor, dark theme with its stylesheet', async () => {
     const navigation = {
       schemaVersion: '1.0',
-      navigation: 'prova',
+      navigation: 'test',
       areas: [
         {
-          id: 'caso',
-          label: 'Caso',
+          id: 'area',
+          label: 'Area',
           items: [
-            { id: 'ordini', label: "{{ t('p.ordini', 'Ordini') }}", screen: 'ordini', requires: 'ordini.ordine.leggi' },
-            { id: 'altro', label: 'Altro', screen: 'altro' },
+            { id: 'orders', label: "{{ t('p.orders', 'Orders') }}", screen: 'orders', requires: 'orders.order.read' },
+            { id: 'other', label: 'Other', screen: 'other' },
           ],
         },
       ],
     } as NavigationDefinition;
     const theme = {
       schemaVersion: '1.0',
-      theme: 'notte',
+      theme: 'night',
       mode: 'dark',
       tokens: { colors: { primary: '#6aa6ff', onPrimary: '#0b1220', background: '#0f141b', surface: '#1a222d', onSurface: '#e6ebf2', border: '#2a3442' } },
     } as ThemeDefinition;
     const menu = (): string => el.querySelector('lc-sidebar')?.textContent?.replace(/\s+/g, ' ') ?? '';
-    await deliver({ navigation, theme, locale: 'en', translations: { en: { 'p.ordini': 'Orders' } } });
-    await until(() => menu().includes('Orders'), 'voce tradotta');
-    // Il menu da solo: nessuna schermata accanto.
+    await deliver({ navigation, theme, locale: 'en', translations: { en: { 'p.orders': 'Orders' } } });
+    await until(() => menu().includes('Orders'), 'item translated');
+    // The menu alone: no screen next to it.
     expect(el.querySelector('lc-screen')).toBeNull();
     expect(document.documentElement.style.getPropertyValue('--lc-color-background')).toBe('#0f141b');
     expect(document.getElementById('lc-nz-dark-theme')).not.toBeNull();
     await deliver({ navigation, theme, locale: 'en', granted: [] });
-    await until(() => !menu().includes('Orders') && menu().includes('Altro'), 'voce senza permesso nascosta');
+    await until(() => !menu().includes('Orders') && menu().includes('Other'), 'item without permission hidden');
   });
 });

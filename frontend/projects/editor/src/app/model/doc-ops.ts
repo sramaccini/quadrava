@@ -1,12 +1,12 @@
 /**
- * Operazioni pure sul documento della schermata. Il documento non si modifica mai sul posto: ogni operazione
- * restituisce una copia in cui sono cambiati solo gli oggetti sul percorso toccato (la cronologia degli annullamenti
- * conserva così le versioni precedenti senza copiarle per intero).
+ * Pure operations on the screen document. The document is never changed in place: every operation
+ * returns a copy in which only the objects on the touched path changed (the undo history
+ * thus keeps the previous versions without copying them whole).
  */
 
 export type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
 export type JsonObject = { [key: string]: Json };
-/** Percorso dalla radice del documento, per esempio `['components', 0, 'tabs', 1, 'components', 2]`. */
+/** Path from the root of the document, for example `['components', 0, 'tabs', 1, 'components', 2]`. */
 export type Path = (string | number)[];
 
 export function isObject(value: unknown): value is JsonObject {
@@ -23,7 +23,7 @@ export function getIn(doc: Json, path: Path): Json | undefined {
   return current;
 }
 
-/** Imposta un valore; `undefined` toglie la proprietà (negli oggetti). Gli oggetti mancanti sul percorso vengono creati. */
+/** Sets a value; `undefined` removes the property (in objects). Missing objects on the path are created. */
 export function setIn(doc: Json, path: Path, value: Json | undefined): Json {
   if (path.length === 0) return value ?? null;
   const [key, ...rest] = path;
@@ -42,7 +42,7 @@ export function setIn(doc: Json, path: Path, value: Json | undefined): Json {
   return object;
 }
 
-/** Inserisce `item` nell'elenco in `listPath` alla posizione `index` (in fondo se fuori dai limiti). */
+/** Inserts `item` into the list at `listPath` at position `index` (at the end if out of bounds). */
 export function insertAt(doc: Json, listPath: Path, index: number, item: Json): Json {
   const list = getIn(doc, listPath);
   const items = Array.isArray(list) ? [...list] : [];
@@ -50,7 +50,7 @@ export function insertAt(doc: Json, listPath: Path, index: number, item: Json): 
   return setIn(doc, listPath, items);
 }
 
-/** Toglie l'elemento in `path` (l'ultimo passo deve essere un indice). */
+/** Removes the element at `path` (the last step must be an index). */
 export function removeAt(doc: Json, path: Path): Json {
   const index = path.at(-1);
   if (typeof index !== 'number') return doc;
@@ -60,7 +60,7 @@ export function removeAt(doc: Json, path: Path): Json {
   return setIn(doc, listPath, list.filter((_, i) => i !== index));
 }
 
-/** Sposta l'elemento in `path` di `delta` posizioni nello stesso elenco. Restituisce il documento e il nuovo percorso. */
+/** Moves the element at `path` by `delta` positions in the same list. Returns the document and the new path. */
 export function moveBy(doc: Json, path: Path, delta: number): { doc: Json; path: Path } {
   const index = path.at(-1);
   const listPath = path.slice(0, -1);
@@ -75,8 +75,8 @@ export function moveBy(doc: Json, path: Path, delta: number): { doc: Json; path:
 }
 
 /**
- * Sposta l'elemento in `from` dentro l'elenco `toList` alla posizione `index` (anche in un altro contenitore).
- * Rifiuta lo spostamento di un nodo dentro sé stesso. Restituisce il nuovo percorso dell'elemento.
+ * Moves the element at `from` into the list `toList` at position `index` (also in another container).
+ * Refuses to move a node into itself. Returns the new path of the element.
  */
 export function moveTo(doc: Json, from: Path, toList: Path, index: number): { doc: Json; path: Path } | null {
   if (startsWith(toList, from)) return null;
@@ -85,9 +85,9 @@ export function moveTo(doc: Json, from: Path, toList: Path, index: number): { do
   const fromList = from.slice(0, -1);
   const fromIndex = from.at(-1) as number;
   let target = index;
-  // Stesso elenco: dopo la rimozione le posizioni successive scalano di uno.
+  // Same list: after the removal the following positions shift by one.
   if (samePath(fromList, toList) && fromIndex < index) target -= 1;
-  // Elenco annidato più avanti nello stesso elenco di partenza: il suo indice scala se il nodo tolto lo precedeva.
+  // Nested list further on in the same starting list: its index shifts if the removed node preceded it.
   const adjusted = [...toList];
   if (startsWith(toList, fromList) && toList.length > fromList.length) {
     const position = adjusted[fromList.length];
@@ -108,7 +108,7 @@ export function startsWith(path: Path, prefix: Path): boolean {
   return prefix.length <= path.length && prefix.every((key, i) => path[i] === key);
 }
 
-/** Percorso in forma di JSON Pointer (`/components/0/text`), come nei messaggi di validazione. */
+/** Path in JSON Pointer form (`/components/0/text`), as in the validation messages. */
 export function toPointer(path: Path): string {
   return path.length ? '/' + path.map((k) => String(k).replace(/~/g, '~0').replace(/\//g, '~1')).join('/') : '/';
 }

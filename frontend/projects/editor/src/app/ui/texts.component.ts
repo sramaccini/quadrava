@@ -16,19 +16,19 @@ import { RegistryClient, RegistryError, readRegistrySettings } from '../model/re
 
 interface TextRow {
   entry: TextEntry;
-  /** Dove sta il testo: tipo dell'elemento e proprietà. */
+  /** Where the text is: type of the element and property. */
   where: string;
   owner: Path;
-  /** Testo per lingua (per le chiavi), e quali lingue mancano. */
+  /** Text per language (for keys), and which languages are missing. */
   values: Record<string, string>;
   missing: string[];
   convertible: boolean;
 }
 
 /**
- * Testi della schermata e traduzioni. I testi semplici si rendono traducibili con un clic (chiave generata dal testo);
- * per ogni chiave si scrivono le traduzioni nelle lingue dell'editor, che valgono subito nell'anteprima e si esportano
- * in un file da unire ai cataloghi (`examples/i18n/<lingua>.json`).
+ * Texts of the screen and translations. Plain texts are made translatable with a click (key generated from the text);
+ * for every key the translations are written in the editor's languages, which apply at once in the preview and are exported
+ * to a file to merge into the catalogues (`examples/i18n/<language>.json`).
  */
 @Component({
   selector: 'ed-texts',
@@ -40,19 +40,19 @@ interface TextRow {
 export class TextsComponent {
   protected readonly store = inject(EditorStore);
   protected readonly i18n = inject(I18n);
-  /** Lingue delle traduzioni (una colonna ciascuna). */
+  /** Languages of the translations (one column each). */
   protected readonly locales = computed(() => this.store.languages());
   protected readonly defaultLocale = computed(() => this.store.defaultLanguage());
-  /** Lingue proposte (quelle non ancora presenti), con il nome nella lingua dell'editor. */
+  /** Languages offered (those not yet present), with the name in the editor's language. */
   protected readonly suggestions = computed(() => {
     const ui = this.i18n.locale();
     const present = new Set(this.locales());
     return SUGGESTED_LANGUAGES.filter((code) => !present.has(code)).map((code) => ({ code, label: `${languageName(code, ui)} (${code})` }));
   });
 
-  /** Testo scritto nella casella «Aggiungi lingua». */
+  /** Text typed in the «Add language» box. */
   protected readonly languageText = signal('');
-  /** Suggerimenti che contengono il testo scritto (nome o codice). */
+  /** Suggestions containing the typed text (name or code). */
   protected readonly filteredLanguages = computed(() => {
     const query = this.languageText().trim().toLowerCase();
     return query ? this.suggestions().filter((s) => s.label.toLowerCase().includes(query)) : this.suggestions();
@@ -65,12 +65,12 @@ export class TextsComponent {
   protected setDefault(locale: string): void {
     if (this.store.setDefaultLanguage(locale)) this.notifier.toast(this.i18n.t('ed.texts.defaultChanged', { name: this.nameOf(locale) }));
   }
-  /** Perché la lingua scritta non si può aggiungere. */
+  /** Why the typed language cannot be added. */
   protected readonly languageError = signal('');
   private readonly confirmation = inject(Confirmation);
   private readonly client = inject(RegistryClient);
   private readonly notifier = inject(Notifier);
-  /** Applicazione e ambiente scelti nel pannello del registro. */
+  /** Application and environment chosen in the registry panel. */
   protected registry = readRegistrySettings();
   protected readonly saving = signal(false);
 
@@ -97,7 +97,7 @@ export class TextsComponent {
   });
 
   private describePath(path: Path, owner: Path): string {
-    // La proprietà, preceduta dall'elemento dell'elenco se il testo sta in una colonna, un campo, un passo…
+    // The property, preceded by the element of the list if the text is in a column, a field, a step…
     const rest = path.slice(owner.length);
     const parent = rest.length > 1 ? getIn(this.store.doc(), [...owner, ...rest.slice(0, -1)]) : null;
     const item = isObject(parent) ? (parent['field'] ?? parent['name'] ?? parent['id']) : null;
@@ -122,10 +122,10 @@ export class TextsComponent {
   }
 
   /**
-   * Salva nel registro le traduzioni scritte nell'editor e le pubblica nell'ambiente scelto: per ogni lingua si parte
-   * dall'ultima versione del catalogo (documento `messages`), si aggiungono o sostituiscono le chiavi modificate e si
-   * salva una versione nuova, indicando quella di partenza (se qualcuno ha salvato nel frattempo il registro rifiuta e
-   * si riprova). Le altre chiavi del catalogo restano com'erano.
+   * Saves in the registry the translations written in the editor and publishes them in the chosen environment: for every language it starts
+   * from the last version of the catalogue (`messages` document), adds or replaces the changed keys and
+   * saves a new version, giving the starting one (if someone saved in the meantime the registry refuses and
+   * it tries again). The other keys of the catalogue stay as they were.
    */
   protected async saveToRegistry(): Promise<void> {
     this.registry = readRegistrySettings();
@@ -159,10 +159,10 @@ export class TextsComponent {
     }
   }
 
-  /** Aggiunge la lingua scritta (codice come `fr` o `pt-BR`): una colonna nuova da compilare. */
+  /** Adds the typed language (code such as `fr` or `pt-BR`): a new column to fill in. */
   protected addLanguage(input: HTMLInputElement): void {
     if (!input.value.trim()) return;
-    // Il codice, il nome di una lingua proposta o la voce scelta tra i suggerimenti («Francese (fr)»).
+    // The code, the name of an offered language or the item chosen among the suggestions («French (fr)»).
     const code = languageFromInput(input.value, this.i18n.locale());
     if (!code || !LANGUAGE_CODE.test(code)) return this.languageError.set(this.i18n.t('ed.texts.languageInvalid'));
     if (this.locales().includes(code)) return this.languageError.set(this.i18n.t('ed.texts.languageExists', { locale: this.nameOf(code) }));
@@ -172,7 +172,7 @@ export class TextsComponent {
     this.notifier.toast(this.i18n.t('ed.texts.languageAdded', { locale: this.nameOf(code) }));
   }
 
-  /** Toglie una lingua; se ha traduzioni scritte nell'editor chiede conferma (si perdono). */
+  /** Removes a language; if it has translations written in the editor it asks for confirmation (they are lost). */
   protected async removeLanguage(locale: string): Promise<void> {
     const written = Object.keys(this.store.translations()[locale] ?? {}).length;
     if (written && !(await this.confirmation.confirm(this.i18n.t('ed.texts.removeLanguageConfirm', { locale, n: written })))) return;
@@ -180,8 +180,8 @@ export class TextsComponent {
   }
 
   /**
-   * Importa un file di traduzioni: quello di «Esporta traduzioni» (`{ "<lingua>": { … } }`) oppure il catalogo di una
-   * lingua (`{ "<chiave>": "testo" }`) con la lingua nel nome del file (`fr.json`, `demo.fr.json`).
+   * Imports a file of translations: the one of «Export translations» (`{ "<language>": { … } }`) or the catalogue of one
+   * language (`{ "<key>": "text" }`) with the language in the file name (`fr.json`, `demo.fr.json`).
    */
   protected async importTranslations(input: HTMLInputElement): Promise<void> {
     const file = input.files?.[0];
@@ -199,7 +199,7 @@ export class TextsComponent {
     }
   }
 
-  /** Scarica le traduzioni delle chiavi usate dalla schermata, per lingua, da unire ai cataloghi. */
+  /** Downloads the translations of the keys used by the screen, by language, to merge into the catalogues. */
   protected exportTranslations(): void {
     const keys = [...usedKeys(collectTexts(this.store.doc()))].sort();
     const out: Record<string, Record<string, string>> = {};
@@ -211,7 +211,7 @@ export class TextsComponent {
       }
     }
     const doc = this.store.doc();
-    const name = isObject(doc) && typeof doc['screen'] === 'string' && doc['screen'] ? doc['screen'] : 'schermata';
+    const name = isObject(doc) && typeof doc['screen'] === 'string' && doc['screen'] ? doc['screen'] : 'screen';
     const url = URL.createObjectURL(new Blob([JSON.stringify(out, null, 2) + '\n'], { type: 'application/json' }));
     const link = document.createElement('a');
     link.href = url;

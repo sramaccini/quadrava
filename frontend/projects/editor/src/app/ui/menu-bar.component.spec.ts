@@ -4,7 +4,7 @@ import { MenuBarComponent, type Menu } from './menu-bar.component';
 
 @Component({
   imports: [MenuBarComponent],
-  template: `<button id="prima" type="button">prima</button><ed-menu-bar [menus]="menus()" label="Menu" />`,
+  template: `<button id="before" type="button">before</button><ed-menu-bar [menus]="menus()" label="Menu" />`,
 })
 class Host {
   readonly log: string[] = [];
@@ -13,25 +13,25 @@ class Host {
       id: 'file',
       label: 'File',
       items: [
-        { id: 'new', label: 'Nuova', run: () => this.log.push('new') },
+        { id: 'new', label: 'New', run: () => this.log.push('new') },
         {
           id: 'open',
-          label: 'Apri esempio',
+          label: 'Open example',
           children: [
-            { id: 'a', label: 'uno', run: () => this.log.push('a') },
-            { id: 'b', label: 'due', run: () => this.log.push('b') },
+            { id: 'a', label: 'one', run: () => this.log.push('a') },
+            { id: 'b', label: 'two', run: () => this.log.push('b') },
           ],
         },
-        { id: 'empty', label: 'Vuoto', emptyLabel: 'Nessun esempio', children: [] },
-        { id: 'off', label: 'Spento', disabled: true, run: () => this.log.push('off') },
-        { id: 'save', label: 'Salva', separator: true, shortcut: 'Ctrl+S', run: () => this.log.push('save') },
+        { id: 'empty', label: 'Empty', emptyLabel: 'No example', children: [] },
+        { id: 'off', label: 'Off', disabled: true, run: () => this.log.push('off') },
+        { id: 'save', label: 'Save', separator: true, shortcut: 'Ctrl+S', run: () => this.log.push('save') },
       ],
     },
-    { id: 'edit', label: 'Modifica', items: [{ id: 'undo', label: 'Annulla', shortcut: 'Ctrl+Z', run: () => this.log.push('undo') }] },
+    { id: 'edit', label: 'Edit', items: [{ id: 'undo', label: 'Undo', shortcut: 'Ctrl+Z', run: () => this.log.push('undo') }] },
   ]);
 }
 
-describe('barra dei menu', () => {
+describe('menu bar', () => {
   let fixture: ComponentFixture<Host>;
   let el: HTMLElement;
 
@@ -57,7 +57,7 @@ describe('barra dei menu', () => {
     await settle();
   };
 
-  it('ruoli ARIA, un solo titolo raggiungibile con Tab, separatori e scorciatoie', async () => {
+  it('ARIA roles, a single title reachable with Tab, separators and shortcuts', async () => {
     expect(el.querySelector('[role="menubar"]')?.getAttribute('aria-label')).toBe('Menu');
     expect([title('file').tabIndex, title('edit').tabIndex]).toEqual([0, -1]);
     expect(title('file').getAttribute('aria-haspopup')).toBe('menu');
@@ -68,14 +68,14 @@ describe('barra dei menu', () => {
     expect(el.querySelectorAll('[role="separator"]').length).toBe(1);
     expect(item('save')?.querySelector('.shortcut')?.textContent).toBe('Ctrl+S');
     expect(item('open')?.getAttribute('aria-haspopup')).toBe('menu');
-    // Un clic sul titolo aperto chiude.
+    // A click on the open title closes.
     title('file').click();
     await settle();
     expect(item('new')).toBeNull();
   });
 
-  it('da tastiera: apre, scorre saltando le voci spente, entra nel sottomenu, esegue e torna al punto di prima', async () => {
-    (el.querySelector('#prima') as HTMLButtonElement).focus();
+  it('from the keyboard: opens, moves skipping the disabled items, enters the submenu, runs and goes back to the previous point', async () => {
+    (el.querySelector('#before') as HTMLButtonElement).focus();
     title('file').focus();
     await key('ArrowRight');
     expect(focused()).toBe('edit');
@@ -105,7 +105,7 @@ describe('barra dei menu', () => {
     expect(focused()).toBe('file');
   });
 
-  it('Esc chiude e riporta il fuoco al titolo; a menu aperto le frecce passano al menu accanto', async () => {
+  it('Esc closes and brings the focus back to the title; with a menu open the arrows move to the next menu', async () => {
     title('file').focus();
     await key('Enter');
     expect(focused()).toBe('new');
@@ -118,8 +118,8 @@ describe('barra dei menu', () => {
     expect(focused()).toBe('edit');
   });
 
-  it('con il mouse: passando su un altro titolo il menu cambia; voci spente e sottomenu vuoto non eseguono nulla', async () => {
-    const outsideButton = el.querySelector('#prima') as HTMLButtonElement;
+  it('with the mouse: hovering another title changes the menu; disabled items and an empty submenu run nothing', async () => {
+    const outsideButton = el.querySelector('#before') as HTMLButtonElement;
     outsideButton.focus();
     title('file').click();
     await settle();
@@ -131,12 +131,12 @@ describe('barra dei menu', () => {
     item('off')!.click();
     item('empty')!.dispatchEvent(new Event('pointerenter'));
     await settle();
-    expect(el.querySelector('.empty')?.textContent).toBe('Nessun esempio');
+    expect(el.querySelector('.empty')?.textContent).toBe('No example');
     expect(fixture.componentInstance.log).toEqual([]);
     item('save')!.click();
     await settle();
     expect(fixture.componentInstance.log).toEqual(['save']);
-    // Aperto con il mouse, dopo il comando il fuoco torna dov'era.
+    // Opened with the mouse, after the command the focus goes back where it was.
     expect(document.activeElement).toBe(outsideButton);
   });
 });

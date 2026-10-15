@@ -4,9 +4,9 @@ import { JsonHighlightDirective } from './code-highlight';
 import type { Json } from '../model/doc-ops';
 
 /**
- * Area di testo per un valore JSON (elenchi di colonne, campi, passi…). Il valore si applica quando si esce dal campo
- * (o con Ctrl+Invio), così la riformattazione non disturba mentre si scrive; se il testo non è JSON valido resta com'è
- * con il messaggio d'errore. Con `allowExpression` accetta anche una sola espressione `{{ }}` come testo.
+ * Text area for a JSON value (lists of columns, fields, steps…). The value applies when leaving the field
+ * (or with Ctrl+Enter), so reformatting does not disturb while typing; if the text is not valid JSON it stays as it is
+ * with the error message. With `allowExpression` it also accepts a single `{{ }}` expression as text.
  */
 @Component({
   selector: 'ed-json-field',
@@ -71,7 +71,7 @@ export class JsonFieldComponent {
     this.dirty.set(false);
     this.error.set(null);
     this.valueChange.emit(value);
-    // Riformatta anche se il valore non cambia (per esempio dopo aver solo aggiunto spazi).
+    // Reformat even if the value does not change (for example after only adding spaces).
     this.text.set(format(value));
   }
 }

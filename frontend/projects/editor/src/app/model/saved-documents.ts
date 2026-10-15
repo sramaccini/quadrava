@@ -3,12 +3,12 @@ import type { Json } from './doc-ops';
 
 export const SAVED_KEY = 'lc.editor.saved';
 
-/** Tipo di documento dell'editor: uno per modalità. */
+/** Kind of editor document: one per mode. */
 export type EditorKind = 'screen' | 'navigation' | 'theme';
 
 /**
- * L'ultimo contenuto salvato di ogni tipo di documento (su file o nel registro, oppure appena aperto o creato), per
- * sapere se ci sono modifiche non salvate. Si ricorda nel browser come la bozza, così vale anche dopo una ricarica.
+ * The last saved content of every kind of document (to a file or in the registry, or just opened or created), to
+ * know whether there are unsaved changes. It is remembered in the browser like the draft, so it holds after a reload too.
  */
 @Injectable({ providedIn: 'root' })
 export class SavedDocuments {
@@ -19,11 +19,11 @@ export class SavedDocuments {
     try {
       localStorage.setItem(SAVED_KEY, JSON.stringify(this.saved()));
     } catch {
-      // Storage pieno o non disponibile: l'indicatore vale fino alla ricarica.
+      // Storage full or not available: the indicator holds until the reload.
     }
   }
 
-  /** Al primo avvio non c'è un salvataggio di riferimento: vale il documento che c'è (non ci sono modifiche da perdere). */
+  /** At the first start there is no reference save: the document there is counts (there are no changes to lose). */
   ensureBaseline(kind: EditorKind, doc: Json): void {
     if (this.saved()[kind] === undefined) this.markSaved(kind, doc);
   }

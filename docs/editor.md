@@ -102,7 +102,7 @@ An empty text removes an optional property; a required one stays empty and valid
 
 ## 3. Preview
 
-The previews (screen, menu, theme) run in an **isolated iframe** (ADR-08): the editor's own application, started with `?anteprima`, with its own root (`PreviewApp`) and the real runtime. Being a page of its own, theme, styles and NG-ZORRO's dark stylesheet apply only there, as in production. Editor and preview talk through messages with a defined format (`preview/protocol.ts`), only between windows of the same origin and only with their own iframe:
+The previews (screen, menu, theme) run in an **isolated iframe** (ADR-08): the editor's own application, started with `?preview`, with its own root (`PreviewApp`) and the real runtime. Being a page of its own, theme, styles and NG-ZORRO's dark stylesheet apply only there, as in production. Editor and preview talk through messages with a defined format (`preview/protocol.ts`), only between windows of the same origin and only with their own iframe:
 
 | From → to | Message | Content |
 | --- | --- | --- |
@@ -116,7 +116,7 @@ Every message arrives cloned: the preview compares screen, parameters, menu and 
 No call leaves the browser. The preview's ports (`preview/preview-ports.ts`, inside the iframe):
 
 - **DataClient**: recognises the data source from the request (method and URL, with the `{{ }}` parts free) and responds with its sample data; without data, `[]` for reads and `{}` for writes. Every request goes into the log.
-- **Authorization / UserProvider**: the permissions of the simulated profile sent by the editor (all of them, or none with the «All permissions» switch off; in navigation those chosen one by one); user `anteprima` in the editor's language.
+- **Authorization / UserProvider**: the permissions of the simulated profile sent by the editor (all of them, or none with the «All permissions» switch off; in navigation those chosen one by one); user `preview` in the editor's language.
 - **ScreenNavigator**: does not change page; it sends the navigation to the editor's log and shows a message.
 - **RuntimeDiagnostics**: technical diagnostics go into the editor's log.
 

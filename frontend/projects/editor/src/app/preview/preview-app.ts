@@ -6,23 +6,23 @@ import { PreviewChannel, PreviewSession } from './preview-ports';
 import { NODE_DRAG_TYPE, PALETTE_DRAG_TYPE, type DropZone, type ResizeProperty } from './protocol';
 import { resizeValue } from './resize';
 
-/** Componenti che ne contengono altri: un rilascio al centro li mette dentro. */
+/** Components containing others: a drop in the centre puts it inside. */
 const CONTAINERS = new Set(['section', 'box', 'grid', 'border', 'tabs', 'wizard']);
 
 const LANGUAGES = ['it', 'en'];
 
-/** Uguaglianza per contenuto: ogni messaggio arriva clonato, quindi con oggetti nuovi anche quando nulla è cambiato. */
+/** Equality by content: every message arrives cloned, hence with new objects even when nothing changed. */
 const sameJson = (a: unknown, b: unknown): boolean => a === b || JSON.stringify(a) === JSON.stringify(b);
 
 /**
- * Radice dell'anteprima, dentro l'iframe: disegna con il runtime vero lo stato che manda l'editor (schermata, menu,
- * tema, profilo, dati di esempio, traduzioni). Essendo una pagina a sé, tema e stili (compreso il foglio scuro di
- * NG-ZORRO) valgono solo qui.
+ * Root of the preview, inside the iframe: draws with the real runtime the state the editor sends (screen, menu,
+ * theme, profile, sample data, translations). Being a page of its own, theme and styles (including the dark sheet of
+ * NG-ZORRO) apply only here.
  *
- * Collegamento con l'editor: il nodo selezionato è evidenziato da un riquadro (e la sua scheda, se nascosta, viene
- * aperta); Alt+clic su un componente, o un clic in modalità selezione, lo seleziona invece di attivarlo. In modalità
- * selezione i componenti si trascinano per spostarli, e quello selezionato dentro una griglia o un box ha una maniglia
- * per cambiarne la larghezza (`span` o `grow`). Le modifiche le fa l'editor: l'anteprima manda solo messaggi.
+ * Link with the editor: the selected node is highlighted by a frame (and its tab, if hidden, is
+ * opened); Alt+click on a component, or a click in selection mode, selects it instead of activating it. In selection
+ * mode components are dragged to move them, and the selected one inside a grid or a box has a handle
+ * to change its width (`span` or `grow`). The editor makes the changes: the preview only sends messages.
  */
 @Component({
   selector: 'lc-root',
@@ -33,7 +33,7 @@ const sameJson = (a: unknown, b: unknown): boolean => a === b || JSON.stringify(
     .frame { position: relative; flex: 1; min-width: 0; }
     .frame.selecting ::ng-deep lc-node[data-node-id] { cursor: crosshair; }
     .highlight { position: absolute; pointer-events: none; border: 2px dashed var(--lc-color-primary); border-radius: var(--lc-radius); z-index: 10; }
-    /* Dove andrebbe il componente trascinato dalla tavolozza: una linea prima o dopo, un riquadro pieno dentro. */
+    /* Where the component dragged from the palette would go: a line before or after, a full frame inside. */
     .drop { position: absolute; pointer-events: none; z-index: 11; background: var(--lc-color-primary); border-radius: 2px; }
     .drop.inside { background: color-mix(in srgb, var(--lc-color-primary) 12%, transparent); outline: 2px solid var(--lc-color-primary); }
     .empty { padding: 24px; color: var(--lc-color-muted); }
@@ -98,8 +98,8 @@ export class PreviewApp {
   protected readonly i18n = inject(I18n);
 
   protected readonly state = this.channel.state;
-  // Le parti dello stato tengono lo stesso riferimento finché il contenuto non cambia: altrimenti un messaggio che
-  // cambia solo la selezione ricreerebbe la schermata (schede alla prima, form svuotati).
+  // The parts of the state keep the same reference until the content changes: otherwise a message that
+  // changes only the selection would recreate the screen (tabs back to the first, forms emptied).
   protected readonly screen = computed(() => this.state()?.screen ?? null, { equal: sameJson });
   protected readonly params = computed(() => this.state()?.params ?? {}, { equal: sameJson });
   private readonly navigationDefinition = computed(() => this.state()?.navigation ?? null, { equal: sameJson });
@@ -107,10 +107,10 @@ export class PreviewApp {
   protected readonly version = computed(() => this.state()?.version ?? 0);
   private readonly frame = viewChild<ElementRef<HTMLElement>>('frame');
   protected readonly highlight = signal<Box | null>(null);
-  /** Tema predefinito (quello chiaro della demo), usato quando l'editor non ne manda uno. */
+  /** Default theme (the light one of the demo), used when the editor does not send one. */
   private readonly fallbackTheme = signal<ThemeDefinition | null>(null);
 
-  /** Il menu: si ricrea solo quando cambia la navigazione; i permessi li legge dal profilo, che segue lo stato. */
+  /** The menu: recreated only when the navigation changes; it reads the permissions from the profile, which follows the state. */
   protected readonly navigation = computed(() => {
     const definition = this.navigationDefinition();
     return definition ? new NavigationRuntime(definition, { authorization: this.session, userProvider: this.session, i18n: this.i18n }) : null;
@@ -152,17 +152,17 @@ export class PreviewApp {
     });
     effect(() => (document.documentElement.lang = this.i18n.locale()));
 
-    // Clic in fase di cattura: quello che seleziona non arriva al pulsante o al collegamento del componente.
+    // Click in the capture phase: the one selecting does not reach the button or link of the component.
     const listener = (event: MouseEvent): void => this.pick(event);
     document.addEventListener('click', listener, true);
     inject(DestroyRef).onDestroy(() => document.removeEventListener('click', listener, true));
 
     this.channel.send({ type: 'lc-preview:ready' });
 
-    // Riquadro sul nodo selezionato, ricalcolato dopo ogni disegno: i componenti cambiano dimensione quando arrivano
-    // i dati. Un riquadro sopra il disegno, invece di un bordo sul componente, non sposta nulla.
+    // Frame on the selected node, recomputed after every drawing: components change size when the data
+    // arrive. A frame above the drawing, instead of a border on the component, moves nothing.
     let scrolledTo: string | null = null;
-    // Una sola apertura delle schede per selezione (e di nuovo dopo un ridisegno, che riparte dalla prima scheda).
+    // A single opening of the tabs per selection (and again after a redraw, which starts again from the first tab).
     let revealedFor: string | null = null;
     let lastDrawn: unknown[] = [];
     afterEveryRender(() => {
@@ -181,7 +181,7 @@ export class PreviewApp {
       }
       const box = frame && node ? boxOf(node, frame) : null;
       if (!sameBox(box, this.highlight())) this.highlight.set(box);
-      // In modalità selezione i componenti si trascinano; quello selezionato si ridimensiona se sta in una griglia o un box.
+      // In selection mode components are dragged; the selected one is resized if it is in a grid or a box.
       const selecting = !!state?.selectMode;
       for (const el of frame?.querySelectorAll<HTMLElement>('lc-node[data-node-id]') ?? []) {
         if (selecting && el.getAttribute('draggable') !== 'true') el.setAttribute('draggable', 'true');
@@ -195,9 +195,9 @@ export class PreviewApp {
     });
   }
 
-  /** Proprietà che la maniglia del nodo selezionato cambia (null = nessuna maniglia). */
+  /** Property the handle of the selected node changes (null = no handle). */
   protected readonly resizable = signal<ResizeProperty | null>(null);
-  /** Ridimensionamento in corso: larghezza mostrata e misure di partenza. */
+  /** Resizing in progress: width shown and starting measures. */
   protected readonly resizing = signal<{ width: number; startX: number; startWidth: number } | null>(null);
 
   private selectedNode(): HTMLElement | null {
@@ -242,7 +242,7 @@ export class PreviewApp {
     this.channel.send({ type: 'lc-preview:resize', id, property, value });
   }
 
-  /** In modalità selezione un componente trascinato porta il suo id: al rilascio diventa uno spostamento. */
+  /** In selection mode a dragged component carries its id: when dropped it becomes a move. */
   protected dragStart(event: DragEvent): void {
     if (!this.state()?.selectMode) return;
     const node = (event.target as Element | null)?.closest?.('lc-node[data-node-id]');
@@ -251,12 +251,12 @@ export class PreviewApp {
     event.dataTransfer.effectAllowed = 'move';
   }
 
-  /** Dove andrebbe rilasciato il componente che si sta trascinando dalla tavolozza. */
+  /** Where the component being dragged from the palette would be dropped. */
   protected readonly dropAt = signal<{ box: Box; zone: DropZone; targetId: string | null } | null>(null);
 
   /**
-   * Trascinamento dalla tavolozza dell'editor sul disegno: il nodo più interno sotto il puntatore decide dove (bordo
-   * alto prima, bordo basso dopo, centro dentro se è un contenitore); fuori dai nodi, in fondo alla schermata.
+   * Dragging from the palette of the editor onto the drawing: the innermost node under the pointer decides where (top
+   * edge before, bottom edge after, centre inside if it is a container); outside the nodes, at the end of the screen.
    */
   protected dragOver(event: DragEvent): void {
     const types = event.dataTransfer?.types ?? [];
@@ -276,7 +276,7 @@ export class PreviewApp {
     const ratio = rect.height > 0 ? (event.clientY - rect.top) / rect.height : 0.5;
     const container = CONTAINERS.has(node.getAttribute('data-node-type') ?? '');
     const zone: DropZone = container ? (ratio < 0.25 ? 'before' : ratio > 0.75 ? 'after' : 'inside') : ratio < 0.5 ? 'before' : 'after';
-    // Un nodo senza dimensioni (non ancora disegnato) vale comunque come punto di rilascio.
+    // A node without size (not drawn yet) still counts as a drop point.
     const box = boxOf(node, frame) ?? { top: 0, left: 0, width: 0, height: 0 };
     this.dropAt.set({ box, zone, targetId: node.getAttribute('data-node-id') });
   }
@@ -302,7 +302,7 @@ export class PreviewApp {
     this.channel.send({ type: 'lc-preview:drop', kind, targetId: at.targetId, zone: at.zone });
   }
 
-  /** Con Alt o in modalità selezione un clic sceglie il componente (ne manda l'id all'editor) e non lo attiva. */
+  /** With Alt or in selection mode a click chooses the component (sends its id to the editor) and does not activate it. */
   private pick(event: MouseEvent): void {
     if (!event.altKey && !this.state()?.selectMode) return;
     const target = event.target as Element | null;
@@ -319,7 +319,7 @@ export class PreviewApp {
   }
 }
 
-/** La proprietà che si ridimensiona: `span` per un figlio diretto di una griglia, `grow` di un box; altrimenti null. */
+/** The property that is resized: `span` for a direct child of a grid, `grow` of a box; otherwise null. */
 function resizeTarget(node: Element): ResizeProperty | null {
   const parent = node.parentElement;
   if (parent?.classList.contains('grid') && parent.parentElement?.tagName === 'LC-GRID') return 'span';
@@ -347,8 +347,8 @@ function sameBox(a: Box | null, b: Box | null): boolean {
 }
 
 /**
- * Apre le schede (anche annidate) che contengono il nodo, cliccandone il titolo come farebbe l'utente. Le schede
- * restano tutte nella pagina, quindi il nodo esiste anche in una scheda nascosta. Restituisce true se ha aperto qualcosa.
+ * Opens the tabs (nested ones too) containing the node, clicking their title as the user would. The tabs
+ * all stay in the page, so the node exists in a hidden tab too. Returns true if it opened something.
  */
 export function revealTabs(node: Element): boolean {
   let opened = false;

@@ -7,14 +7,14 @@ import { EditorStore } from '../model/editor-store';
 import { definitionProperties, nodeProperties, ownerOf, screenProperties, targetAt, type PropertyInfo } from '../model/schema-info';
 import { FieldsComponent } from './fields.component';
 
-/** Proprietà raccolte nel gruppo «Condizioni e aiuto», chiuso se nessuna è impostata. */
+/** Properties gathered in the «Conditions and help» group, closed if none is set. */
 const CONDITIONS = new Set(['visibleIf', 'hiddenIf', 'enabledIf', 'readOnlyIf', 'nextIf', 'tooltip']);
 
 /**
- * Pannello delle proprietà dell'elemento selezionato (schermata, nodo, scheda o passo). I campi vengono dallo schema
- * (vedi `ed-fields`); le condizioni stanno in un gruppo a parte, aperto solo se ne è impostata una. In cima il
- * percorso dell'elemento (un clic risale a un contenitore) e un filtro per nome delle proprietà, che riparte vuoto a
- * ogni cambio di selezione.
+ * Panel of the properties of the selected element (screen, node, tab or step). The fields come from the schema
+ * (see `ed-fields`); the conditions are in a separate group, open only if one of them is set. At the top the
+ * path of the element (a click goes up to a container) and a filter by property name, which starts empty again at
+ * every change of selection.
  */
 @Component({
   selector: 'ed-inspector',
@@ -26,7 +26,7 @@ const CONDITIONS = new Set(['visibleIf', 'hiddenIf', 'enabledIf', 'readOnlyIf', 
 export class InspectorComponent {
   protected readonly store = inject(EditorStore);
   protected readonly i18n = inject(I18n);
-  /** Filtro delle proprietà per nome. */
+  /** Filter of the properties by name. */
   protected readonly filter = signal('');
 
   constructor() {
@@ -36,7 +36,7 @@ export class InspectorComponent {
     });
   }
 
-  /** Percorso dalla schermata all'elemento selezionato, attraverso i contenitori (nodi, schede, passi). */
+  /** Path from the screen to the selected element, through the containers (nodes, tabs, steps). */
   protected readonly crumbs = computed(() => {
     const doc = this.store.doc();
     const paths: Path[] = [];
@@ -68,7 +68,7 @@ export class InspectorComponent {
     return all.filter((info) => info.kind !== 'children');
   });
 
-  /** Proprietà che passano il filtro (nome della proprietà, senza badare a maiuscole). */
+  /** Properties passing the filter (property name, regardless of case). */
   private readonly filtered = computed(() => {
     const query = this.filter().trim().toLowerCase();
     return query ? this.properties().filter((p) => p.name.toLowerCase().includes(query)) : this.properties();
@@ -76,7 +76,7 @@ export class InspectorComponent {
   protected readonly main = computed(() => this.filtered().filter((p) => !CONDITIONS.has(p.name)));
   protected readonly conditions = computed(() => this.filtered().filter((p) => CONDITIONS.has(p.name)));
 
-  /** Il gruppo delle condizioni si apre da solo se una condizione è impostata o ha problemi. */
+  /** The conditions group opens by itself if a condition is set or has problems. */
   protected readonly conditionsOpen = computed(() => {
     const path = this.store.selection();
     const value = getIn(this.store.doc(), path);
@@ -85,10 +85,10 @@ export class InspectorComponent {
     return (isObject(value) && names.some((n) => value[n] !== undefined)) || this.store.issues().some((i) => pointers.includes(i.pointer));
   });
 
-  /** Spiegazione comune delle espressioni, mostrata una volta in cima al gruppo invece che sotto ogni campo. */
+  /** Common explanation of expressions, shown once at the top of the group instead of under every field. */
   protected readonly expressionHelp = computed(() => this.conditions().find((p) => p.kind === 'expression')?.description ?? '');
 
-  /** Problemi dell'elemento che non riguardano una proprietà mostrata (proprietà obbligatorie mancanti, sconosciute). */
+  /** Problems of the element not concerning a shown property (required properties missing, unknown ones). */
   protected readonly generalIssues = computed(() => {
     const selection = this.store.selection();
     const names = new Set(this.properties().map((p) => p.name));

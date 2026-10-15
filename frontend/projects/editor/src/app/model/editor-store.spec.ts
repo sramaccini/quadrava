@@ -18,18 +18,18 @@ describe('EditorStore', () => {
 
   const components = (): Json[] => getIn(store.doc(), ['components']) as Json[];
 
-  it('parte da una schermata vuota e valida', () => {
+  it('starts from an empty, valid screen', () => {
     expect(store.issues()).toEqual([]);
     expect(store.definition()).not.toBeNull();
     expect(store.target()).toEqual({ kind: 'screen' });
   });
 
-  it('aggiunge dentro il contenitore selezionato o dopo il nodo, e crea il data source che serve', () => {
+  it('adds inside the selected container or after the node, and creates the data source it needs', () => {
     store.addNode('section');
     expect(store.selection()).toEqual(['components', 0]);
     store.addNode('table');
     expect(store.selection()).toEqual(['components', 0, 'components', 0]);
-    expect(getIn(store.doc(), ['dataSources', 'elenco'])).toEqual({ type: 'rest', method: 'GET', url: '/api/elenco' });
+    expect(getIn(store.doc(), ['dataSources', 'list'])).toEqual({ type: 'rest', method: 'GET', url: '/api/list' });
     store.addNode('text');
     expect(store.selection()).toEqual(['components', 0, 'components', 1]);
     store.select([]);
@@ -38,7 +38,7 @@ describe('EditorStore', () => {
     expect(store.issues()).toEqual([]);
   });
 
-  it('annulla e ripete; le modifiche ravvicinate alla stessa proprietà sono un solo passo', () => {
+  it('undo and redo; close changes to the same property are a single step', () => {
     store.addNode('text');
     store.setValue(['components', 0, 'text'], 'C');
     store.setValue(['components', 0, 'text'], 'Ci');
@@ -55,7 +55,7 @@ describe('EditorStore', () => {
     expect(store.canRedo()).toBe(false);
   });
 
-  it('duplica con identificativi nuovi, sposta, taglia e incolla in un altro contenitore', () => {
+  it('duplicates with new identifiers, moves, cuts and pastes into another container', () => {
     store.addNode('text');
     store.duplicate(['components', 0]);
     expect(components().map((c) => (c as { id: string }).id)).toEqual(['text-1', 'text-2']);
@@ -69,13 +69,13 @@ describe('EditorStore', () => {
     store.select(['components', 1]);
     store.paste();
     expect(getIn(store.doc(), ['components', 1, 'components', 0, 'id'])).toBe('text-2');
-    // Incollare di nuovo lo stesso nodo dà identificativi nuovi.
+    // Pasting the same node again gives new identifiers.
     store.paste();
     expect(getIn(store.doc(), ['components', 1, 'components', 1, 'id'])).toBe('text-3');
     expect(store.issues()).toEqual([]);
   });
 
-  it('elimina e sceglie l’elemento vicino; schede e passi si aggiungono dal loro nodo', () => {
+  it('deletes and selects the nearby element; tabs and steps are added from their node', () => {
     store.addNode('tabs');
     store.addContainerItem(['components', 0]);
     expect(store.selection()).toEqual(['components', 0, 'tabs', 2]);
@@ -88,7 +88,7 @@ describe('EditorStore', () => {
     expect(store.selection()).toEqual([]);
   });
 
-  it('segnala errori di schema, espressioni, identificativi ripetuti e data source mancanti', () => {
+  it('reports schema errors, expressions, repeated identifiers and missing data sources', () => {
     store.addNode('text');
     store.setValue(['components', 0, 'text'], undefined);
     expect(store.issues()).toContainEqual(expect.objectContaining({ owner: ['components', 0], severity: 'error' }));
@@ -101,48 +101,48 @@ describe('EditorStore', () => {
     expect(store.issues()).toContainEqual(expect.objectContaining({ pointer: '/components/1/id', message: 'Identificativo «text-1» ripetuto', severity: 'error' }));
     store.setValue(['components', 1, 'id'], undefined);
     store.addNode('table');
-    store.removeSource('elenco');
-    expect(store.issues()).toEqual([expect.objectContaining({ pointer: '/components/2/source', severity: 'warning', message: 'Data source «elenco» non definito' })]);
-    // Gli avvisi non impediscono l'anteprima.
+    store.removeSource('list');
+    expect(store.issues()).toEqual([expect.objectContaining({ pointer: '/components/2/source', severity: 'warning', message: 'Data source «list» non definito' })]);
+    // Warnings do not prevent the preview.
     expect(store.definition()).not.toBeNull();
   });
 
-  it('rinomina un data source aggiornando nodi, passi e dati di esempio', () => {
+  it('renames a data source updating nodes, steps and sample data', () => {
     store.addNode('table');
     store.addNode('button');
-    store.setValue(['components', 1, 'onClick'], [{ refresh: 'elenco' }]);
-    store.setSample('elenco', [{ id: 1 }]);
-    expect(store.renameSource('elenco', 'ordini')).toBe(true);
-    expect(getIn(store.doc(), ['components', 0, 'source'])).toBe('ordini');
-    expect(getIn(store.doc(), ['components', 1, 'onClick'])).toEqual([{ refresh: 'ordini' }]);
-    expect(store.sourceNames()).toEqual(['ordini']);
-    expect(store.samples()).toEqual({ ordini: [{ id: 1 }] });
-    expect(store.renameSource('ordini', '1x')).toBe(false);
-    expect(store.addSource()).toBe('dati');
-    expect(store.renameSource('dati', 'ordini')).toBe(false);
+    store.setValue(['components', 1, 'onClick'], [{ refresh: 'list' }]);
+    store.setSample('list', [{ id: 1 }]);
+    expect(store.renameSource('list', 'orders')).toBe(true);
+    expect(getIn(store.doc(), ['components', 0, 'source'])).toBe('orders');
+    expect(getIn(store.doc(), ['components', 1, 'onClick'])).toEqual([{ refresh: 'orders' }]);
+    expect(store.sourceNames()).toEqual(['orders']);
+    expect(store.samples()).toEqual({ orders: [{ id: 1 }] });
+    expect(store.renameSource('orders', '1x')).toBe(false);
+    expect(store.addSource()).toBe('data');
+    expect(store.renameSource('data', 'orders')).toBe(false);
   });
 
-  it('rende traducibile un testo e tiene il conto delle traduzioni mancanti', () => {
+  it('makes a text translatable and keeps count of the missing translations', () => {
     store.addNode('text');
-    // Il titolo della schermata e il testo nuovo sono testi semplici.
+    // The screen title and the new text are plain texts.
     expect(store.textsToFix()).toBe(2);
     const key = store.makeTranslatable(['components', 0, 'text']);
-    expect(key).toBe('nuova_schermata.nuovo_testo');
-    expect(getIn(store.doc(), ['components', 0, 'text'])).toBe("{{ t('nuova_schermata.nuovo_testo', 'Nuovo testo') }}");
-    expect(store.translations()).toEqual({ it: { 'nuova_schermata.nuovo_testo': 'Nuovo testo' } });
-    // Manca l'inglese.
+    expect(key).toBe('new_screen.nuovo_testo');
+    expect(getIn(store.doc(), ['components', 0, 'text'])).toBe("{{ t('new_screen.nuovo_testo', 'Nuovo testo') }}");
+    expect(store.translations()).toEqual({ it: { 'new_screen.nuovo_testo': 'Nuovo testo' } });
+    // English is missing.
     expect(store.textsToFix()).toBe(2);
     store.setTranslation('en', key!, 'New text');
     expect(store.textsToFix()).toBe(1);
     expect(TestBed.inject(I18n).raw(key!, 'en')).toBe('New text');
-    // Un secondo testo uguale riceve una chiave diversa.
+    // A second equal text gets a different key.
     store.duplicate(['components', 0]);
     store.setValue(['components', 1, 'text'], 'Nuovo testo');
-    expect(store.makeTranslatable(['components', 1, 'text'])).toBe('nuova_schermata.nuovo_testo_2');
+    expect(store.makeTranslatable(['components', 1, 'text'])).toBe('new_screen.nuovo_testo_2');
     expect(store.issues()).toEqual([]);
   });
 
-  it('lingue delle traduzioni: si aggiungono (codici validi), contano nelle mancanti, si importano e si tolgono', () => {
+  it('translation languages: they are added (valid codes), count among the missing ones, are imported and removed', () => {
     expect(store.languages()).toEqual(['it', 'en']);
     expect(store.addLanguage('FR')).toBe(false);
     expect(store.addLanguage('francese')).toBe(false);
@@ -154,7 +154,7 @@ describe('EditorStore', () => {
     const entry = { path: ['components', 0, 'text'], property: 'text', value: '', kind: 'key' as const, key, fallback: 'Nuovo testo' };
     expect(store.missingLocales(entry)).toEqual(['en', 'fr', 'pt-BR']);
 
-    // Import: il formato di «Esporta traduzioni»; una lingua nuova si aggiunge.
+    // Import: the format of «Export translations»; a new language is added.
     expect(store.importTranslations({ fr: { [key]: 'Nouveau texte' }, de: { [key]: 'Neuer Text' } })).toBe(2);
     expect(store.languages()).toEqual(['it', 'en', 'fr', 'pt-BR', 'de']);
     expect(store.missingLocales(entry)).toEqual(['en', 'pt-BR']);
@@ -163,7 +163,7 @@ describe('EditorStore', () => {
     expect(store.importTranslations({ fr: { a: 1 } })).toBeNull();
     expect(store.importTranslations(['x'])).toBeNull();
 
-    // La predefinita non si toglie; togliendo una lingua si perdono le sue traduzioni scritte qui.
+    // The default one cannot be removed; removing a language loses its translations written here.
     expect(store.removeLanguage('it')).toBe(false);
     expect(store.removeLanguage('de')).toBe(true);
     expect(store.languages()).not.toContain('de');
@@ -172,7 +172,7 @@ describe('EditorStore', () => {
     expect(JSON.parse(localStorage.getItem('lc.editor.draft')!).languages).toEqual(['it', 'en', 'fr', 'pt-BR']);
   });
 
-  it('lingua predefinita: si cambia tra le lingue presenti; vale per i ripieghi, «Rendi traducibile» e le lingue da togliere', () => {
+  it('default language: it is changed among the present languages; it applies to fallbacks, «Make translatable» and the languages to remove', () => {
     expect(store.defaultLanguage()).toBe('it');
     expect(store.setDefaultLanguage('fr')).toBe(false);
     expect(store.setDefaultLanguage('en')).toBe(true);
@@ -188,7 +188,7 @@ describe('EditorStore', () => {
     expect(JSON.parse(localStorage.getItem('lc.editor.draft')!).defaultLanguage).toBe('en');
   });
 
-  it('selezione di più nodi fratelli: Ctrl aggiunge e toglie, Maiusc un intervallo; si avvolgono o si eliminano insieme', () => {
+  it('selection of several sibling nodes: Ctrl adds and removes, Shift a range; they are wrapped or deleted together', () => {
     for (const kind of ['text', 'alert', 'button', 'text']) {
       store.select([]);
       store.addNode(kind);
@@ -200,13 +200,13 @@ describe('EditorStore', () => {
     store.toggleSelect(['components', 0]);
     expect(store.multi()).toEqual([]);
     expect(store.selection()).toEqual(['components', 2]);
-    // Intervallo dal punto fermo (l'ultimo scelto senza Maiusc), anche all'indietro.
+    // Range from the anchor (the last one chosen without Shift), backwards too.
     store.select(['components', 1]);
     store.selectRange(['components', 3]);
     expect(store.multi()).toEqual([['components', 1], ['components', 2], ['components', 3]]);
     store.selectRange(['components', 0]);
     expect(store.multi()).toEqual([['components', 0], ['components', 1]]);
-    // Fuori dall'elenco si riparte da una selezione semplice.
+    // Outside the list it starts again from a simple selection.
     store.select([]);
     store.addNode('section');
     store.select(['components', 0]);
@@ -214,7 +214,7 @@ describe('EditorStore', () => {
     store.toggleSelect(['components', 4, 'components', 0]);
     expect(store.multi()).toEqual([]);
 
-    // Avvolgere in una griglia: al posto del primo, nell'ordine; un solo passo da annullare.
+    // Wrapping in a grid: in place of the first, in order; a single step to undo.
     store.select(['components', 1]);
     store.selectRange(['components', 2]);
     store.wrapMany(store.multi(), 'grid');
@@ -225,7 +225,7 @@ describe('EditorStore', () => {
     expect(store.issues()).toEqual([]);
     store.undo();
     expect(components().map((c) => (c as { type: string }).type)).toEqual(['text', 'alert', 'button', 'text', 'section']);
-    // Eliminare insieme.
+    // Deleting together.
     store.select(['components', 0]);
     store.toggleSelect(['components', 3]);
     store.removeMany(store.multi());
@@ -234,7 +234,7 @@ describe('EditorStore', () => {
     expect(components()).toHaveLength(5);
   });
 
-  it('avvolge un nodo in un contenitore nuovo, che ne prende la posizione nel contenitore di prima', () => {
+  it('wraps a node in a new container, which takes its position in the previous container', () => {
     store.addNode('grid');
     store.addNode('text');
     store.setValue(['components', 0, 'components', 0, 'span'], 2);
@@ -246,20 +246,20 @@ describe('EditorStore', () => {
     expect(store.issues()).toEqual([]);
     store.undo();
     expect(getIn(store.doc(), ['components', 0, 'components', 0, 'type'])).toBe('text');
-    // Le schede e i passi non si avvolgono.
+    // Tabs and steps are not wrapped.
     store.addNode('tabs');
     const before = store.doc();
     store.wrap(['components', 1, 'tabs', 0], 'box');
     expect(store.doc()).toBe(before);
   });
 
-  it('passi prima e dopo le chiamate: run suggerisce le sequenze e segnala quelle che mancano; if e run nascono validi', () => {
+  it('steps before and after calls: run suggests the sequences and reports the missing ones; if and run start valid', () => {
     store.addNode('button');
-    store.setValue(['actions'], { salva: [{ toast: 'ok' }] });
-    expect(store.suggestions('run')).toEqual(['salva']);
-    store.setValue(['components', 0, 'onClick'], [{ run: 'salva' }, { run: 'manca' }]);
+    store.setValue(['actions'], { save: [{ toast: 'ok' }] });
+    expect(store.suggestions('run')).toEqual(['save']);
+    store.setValue(['components', 0, 'onClick'], [{ run: 'save' }, { run: 'missing' }]);
     expect(store.issues().map((i) => [i.pointer, i.severity])).toEqual([['/components/0/onClick/1/run', 'warning']]);
-    // I modelli dei passi nuovi (come li crea «Aggiungi» scegliendo la variante) sono validi per lo schema.
+    // The templates of new steps (as «Add» creates them choosing the variant) are valid for the schema.
     const steps = listItem(nodeProperties('button').find((p) => p.name === 'onClick')!);
     const variant = (key: string) => (steps && 'variants' in steps ? steps.variants.find((v) => v.key === key)! : null)!;
     const t = (k: string) => k;
@@ -270,7 +270,7 @@ describe('EditorStore', () => {
     expect(store.issues().map((i) => i.severity)).toEqual(['warning']);
   });
 
-    it('salva la bozza nel browser e la riprende', () => {
+    it('saves the draft in the browser and takes it back', () => {
     store.addNode('alert');
     TestBed.tick();
     const saved = JSON.parse(localStorage.getItem('lc.editor.draft')!);

@@ -1,6 +1,6 @@
 import type { Messages } from 'core';
 
-/** Scritte dell'editor (chiavi `ed.*`). Le scritte della piattaforma (`lc.*`) vengono da `components`. */
+/** Texts of the editor (`ed.*` keys). The texts of the platform (`lc.*`) come from `components`. */
 export const EDITOR_MESSAGES: Record<string, Messages> = {
   it: {
     'ed.mode.label': 'Che cosa modificare',
@@ -222,7 +222,7 @@ export const EDITOR_MESSAGES: Record<string, Messages> = {
     'ed.newScreen.name': 'Titolo',
     'ed.newScreen.id': 'Identificativo',
     'ed.newScreen.idHint': 'Ricavato dal titolo, si può cambiare. Compare nell’indirizzo, nel menu e nel registro: dopo la pubblicazione non cambia.',
-    'ed.newScreen.idInvalid': 'Solo lettere minuscole, cifre e trattini tra le parole (per esempio ordini-elenco).',
+    'ed.newScreen.idInvalid': 'Solo lettere minuscole, cifre e trattini tra le parole (per esempio order-list).',
     'ed.newScreen.create': 'Crea',
     'ed.loadFailed': 'Apertura non riuscita: {e}',
     'ed.opened': 'Aperto: {name}',
@@ -609,7 +609,7 @@ export const EDITOR_MESSAGES: Record<string, Messages> = {
     'ed.newScreen.name': 'Title',
     'ed.newScreen.id': 'Identifier',
     'ed.newScreen.idHint': 'Derived from the title, can be changed. It appears in the address, in the menu and in the registry: it does not change after publication.',
-    'ed.newScreen.idInvalid': 'Only lower-case letters, digits and hyphens between words (for example ordini-elenco).',
+    'ed.newScreen.idInvalid': 'Only lower-case letters, digits and hyphens between words (for example order-list).',
     'ed.newScreen.create': 'Create',
     'ed.loadFailed': 'Could not open: {e}',
     'ed.opened': 'Opened: {name}',

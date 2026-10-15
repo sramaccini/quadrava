@@ -2,45 +2,45 @@ import { getIn, isObject, type Json, type JsonObject } from './doc-ops';
 import { listItem, type PropertyInfo } from './schema-info';
 
 /**
- * Modelli iniziali dei nodi aggiunti dalla tavolozza: il minimo valido per lo schema, con testi segnaposto nella
- * lingua dell'editor (`text` traduce la chiave). Un test verifica che ogni tipo dello schema abbia un modello valido.
+ * Initial templates of the nodes added from the palette: the minimum valid for the schema, with placeholder texts in
+ * the language of the editor (`text` translates the key). A test checks that every type of the schema has a valid template.
  */
 
 type Translate = (key: string) => string;
 
-/** Nome del data source che il modello si aspetta (creato se manca, vedi `ensureSource`). */
+/** Name of the data source the template expects (created if missing, see `ensureSource`). */
 export const TEMPLATE_SOURCES: Record<string, { name: string; method: 'GET' | 'POST' }> = {
-  table: { name: 'elenco', method: 'GET' },
-  dataTable: { name: 'elenco', method: 'GET' },
-  serverDataTable: { name: 'ricerca', method: 'POST' },
-  detail: { name: 'dettaglio', method: 'GET' },
-  tree: { name: 'albero', method: 'GET' },
-  calendar: { name: 'eventi', method: 'GET' },
-  chart: { name: 'serie', method: 'GET' },
-  timeline: { name: 'eventi', method: 'GET' },
-  kanban: { name: 'attivita', method: 'GET' },
+  table: { name: 'list', method: 'GET' },
+  dataTable: { name: 'list', method: 'GET' },
+  serverDataTable: { name: 'search', method: 'POST' },
+  detail: { name: 'detail', method: 'GET' },
+  tree: { name: 'tree', method: 'GET' },
+  calendar: { name: 'events', method: 'GET' },
+  chart: { name: 'series', method: 'GET' },
+  timeline: { name: 'events', method: 'GET' },
+  kanban: { name: 'tasks', method: 'GET' },
 };
 
-/** Tipi di campo che la tavolozza offre come componenti `input` a sé (voce `input.<tipo>`). */
+/** Field types the palette offers as standalone `input` components (item `input.<type>`). */
 export const INPUT_KINDS = ['text', 'textarea', 'richtext', 'number', 'select', 'multiselect', 'radio', 'checkbox', 'switch', 'date', 'datetime', 'lookup', 'file'] as const;
 
-/** Nome iniziale del campo di un `input`, per tipo (reso unico nella schermata da `uniqueInputName`). */
+/** Initial name of the field of an `input`, by type (made unique in the screen by `uniqueInputName`). */
 const INPUT_NAMES: Record<string, string> = {
-  text: 'testo', textarea: 'note', number: 'numero', select: 'scelta', multiselect: 'scelte', radio: 'opzione',
-  checkbox: 'conferma', switch: 'attivo', date: 'data', datetime: 'momento', lookup: 'cliente', file: 'allegato', richtext: 'descrizione',
+  text: 'text', textarea: 'notes', number: 'number', select: 'choice', multiselect: 'choices', radio: 'option',
+  checkbox: 'confirmed', switch: 'active', date: 'date', datetime: 'moment', lookup: 'customer', file: 'attachment', richtext: 'description',
 };
 
-/** Il campo di partenza di un `input` del tipo dato. */
+/** The starting field of an `input` of the given type. */
 function inputField(kind: string, label: string): JsonObject {
-  const field: JsonObject = { name: INPUT_NAMES[kind] ?? 'valore', type: kind, label };
-  if (kind === 'select' || kind === 'multiselect' || kind === 'radio') field['options'] = ['opzione1', 'opzione2', 'opzione3'];
-  if (kind === 'lookup') field['lookup'] = { source: 'clienti', labelField: 'nome' };
+  const field: JsonObject = { name: INPUT_NAMES[kind] ?? 'value', type: kind, label };
+  if (kind === 'select' || kind === 'multiselect' || kind === 'radio') field['options'] = ['option1', 'option2', 'option3'];
+  if (kind === 'lookup') field['lookup'] = { source: 'customers', labelField: 'name' };
   return field;
 }
 
 /**
- * Modello di un nodo. `kind` è un tipo dello schema oppure `input.<tipo di campo>` per le voci della tavolozza che
- * aggiungono un campo a sé (casella di testo, elenco a discesa…).
+ * Template of a node. `kind` is a type of the schema or `input.<field type>` for the palette items that
+ * add a standalone field (text box, drop-down list…).
  */
 export function nodeTemplate(kind: string, t: Translate): JsonObject {
   const [type, variant] = kind.split('.');
@@ -54,7 +54,7 @@ export function nodeTemplate(kind: string, t: Translate): JsonObject {
     case 'grid':
       return { type, columns: 2, components: [] };
     case 'border':
-      // Con tre aree già indicate, così si vede subito come funziona; le altre si ottengono cambiando `region`.
+      // With three regions already filled in, so one sees at once how it works; the others come by changing `region`.
       return {
         type,
         components: [
@@ -64,35 +64,35 @@ export function nodeTemplate(kind: string, t: Translate): JsonObject {
         ],
       };
     case 'text':
-      // `text.markdown`: testo formattato, con un esempio di elenco e grassetto da modificare.
+      // `text.markdown`: formatted text, with an example of a list and bold to edit.
       return variant === 'markdown' ? { type, format: 'markdown', text: t('ed.tpl.markdown') } : { type, text: t('ed.tpl.text') };
     case 'button':
       return { type, label: t('ed.tpl.button'), onClick: [{ toast: t('ed.tpl.clicked') }] };
     case 'alert':
       return { type, kind: 'info', text: t('ed.tpl.alert') };
     case 'filterBar':
-      return { type, bind: 'state.filtri', fields: [{ name: 'testo', type: 'text', label: t('ed.tpl.search') }] };
+      return { type, bind: 'state.filters', fields: [{ name: 'text', type: 'text', label: t('ed.tpl.search') }] };
     case 'table':
-      return { type, source, columns: [{ field: 'id', label: 'Id' }, { field: 'descrizione', label }] };
+      return { type, source, columns: [{ field: 'id', label: 'Id' }, { field: 'description', label }] };
     case 'dataTable':
     case 'serverDataTable':
-      return { type, source, columns: [{ field: 'descrizione', label, filter: 'text', sortable: true }] };
+      return { type, source, columns: [{ field: 'description', label, filter: 'text', sortable: true }] };
     case 'form':
-      return { type, fields: [{ name: 'nome', type: 'text', label, required: true }] };
+      return { type, fields: [{ name: 'name', type: 'text', label, required: true }] };
     case 'tabs':
       return { type, tabs: [{ label: t('ed.tpl.tab') + ' 1', components: [] }, { label: t('ed.tpl.tab') + ' 2', components: [] }] };
     case 'detail':
-      return { type, source, fields: [{ field: 'id', label: 'Id' }, { field: 'descrizione', label }] };
+      return { type, source, fields: [{ field: 'id', label: 'Id' }, { field: 'description', label }] };
     case 'stats':
       return { type, items: [{ label: t('ed.tpl.stat'), value: '{{ 0 }}', format: 'number' }] };
     case 'wizard':
       return { type, steps: [{ label: t('ed.tpl.step') + ' 1', components: [] }, { label: t('ed.tpl.step') + ' 2', components: [] }] };
     case 'tree':
-      return { type, source, labelField: 'nome' };
+      return { type, source, labelField: 'name' };
     case 'calendar':
-      return { type, source, dateField: 'data', labelField: 'titolo' };
+      return { type, source, dateField: 'date', labelField: 'title' };
     case 'chart':
-      return { type, kind: 'bar', source, categoryField: 'categoria', series: [{ field: 'valore', label }] };
+      return { type, kind: 'bar', source, categoryField: 'category', series: [{ field: 'value', label }] };
     case 'image':
       return { type, src: 'logo.svg', alt: t('ed.tpl.image') };
     case 'link':
@@ -100,16 +100,16 @@ export function nodeTemplate(kind: string, t: Translate): JsonObject {
     case 'progress':
       return { type, value: 50, label: t('ed.tpl.progress') };
     case 'timeline':
-      return { type, source, dateField: 'data', labelField: 'titolo' };
+      return { type, source, dateField: 'date', labelField: 'title' };
     case 'kanban':
       return {
         type,
         source,
-        columnField: 'stato',
-        titleField: 'titolo',
+        columnField: 'status',
+        titleField: 'title',
         columns: [
-          { value: 'da-fare', label: t('ed.tpl.todo') },
-          { value: 'fatto', label: t('ed.tpl.done') },
+          { value: 'to-do', label: t('ed.tpl.todo') },
+          { value: 'done', label: t('ed.tpl.done') },
         ],
       };
     case 'input':
@@ -119,14 +119,14 @@ export function nodeTemplate(kind: string, t: Translate): JsonObject {
   }
 }
 
-/** Data source di partenza per un modello (`{{ request }}` per la datatable lato server). */
+/** Starting data source for a template (`{{ request }}` for the server-side datatable). */
 export function sourceTemplate(name: string, method: 'GET' | 'POST'): JsonObject {
   return method === 'POST' ? { type: 'rest', method, url: `/api/${name}`, body: '{{ request }}' } : { type: 'rest', method, url: `/api/${name}` };
 }
 
-/** Aggiunge al documento il data source che il nodo usa, se non esiste ancora. */
+/** Adds to the document the data source the node uses, if it does not exist yet. */
 export function ensureSource(doc: Json, node: JsonObject): Json {
-  // Il lookup di un campo a sé cerca in un data source GET.
+  // The lookup of a standalone field searches a GET data source.
   const lookup = getIn(node, ['field', 'lookup', 'source']);
   const name = node['source'] ?? lookup;
   if (typeof name !== 'string' || !isObject(doc)) return doc;
@@ -136,7 +136,7 @@ export function ensureSource(doc: Json, node: JsonObject): Json {
   return { ...doc, dataSources: { ...sources, [name]: sourceTemplate(name, method) } };
 }
 
-/** Un `input` nuovo con un nome di campo che nessun altro `input` della schermata usa già (`testo`, `testo2`…). */
+/** A new `input` with a field name no other `input` of the screen already uses (`text`, `text2`…). */
 export function uniqueInputName(doc: Json, node: JsonObject): JsonObject {
   const field = node['field'];
   if (node['type'] !== 'input' || !isObject(field) || typeof field['name'] !== 'string' || node['bind'] !== undefined) return node;
@@ -155,7 +155,7 @@ export function uniqueInputName(doc: Json, node: JsonObject): JsonObject {
   return name === base ? node : { ...node, field: { ...field, name } };
 }
 
-/** Identificativo libero per un nuovo nodo: `tipo-n` in kebab-case, unico nel documento. */
+/** Free identifier for a new node: `type-n` in kebab-case, unique in the document. */
 export function freshId(doc: Json, type: string): string {
   return nextId(usedIds(doc), type);
 }
@@ -180,7 +180,7 @@ export function usedIds(value: Json, into = new Set<string>()): Set<string> {
   return into;
 }
 
-/** Una copia del nodo con identificativi nuovi (per «Duplica»), così la copia non va in conflitto con l'originale. */
+/** A copy of the node with new identifiers (for «Duplicate»), so the copy does not clash with the original. */
 export function withFreshIds(doc: Json, node: Json): Json {
   const used = usedIds(doc);
   const visit = (value: Json): Json => {
@@ -193,22 +193,22 @@ export function withFreshIds(doc: Json, node: Json): Json {
   return visit(node);
 }
 
-/** Valori iniziali per alcune proprietà obbligatorie ricorrenti degli elementi di un elenco. */
+/** Initial values for some recurring required properties of the elements of a list. */
 const ITEM_DEFAULTS: Record<string, (index: number, t: Translate) => Json> = {
-  name: (i) => `campo${i + 1}`,
-  field: (i) => `campo${i + 1}`,
+  name: (i) => `field${i + 1}`,
+  field: (i) => `field${i + 1}`,
   label: (_, t) => t('ed.tpl.label'),
   title: (_, t) => t('ed.tpl.label'),
-  // Passo if: una condizione valida e un passo nel ramo then, da cambiare.
+  // if step: a valid condition and a step in the then branch, to change.
   if: () => '{{ true }}',
   then: (_, t) => ({ toast: t('ed.tpl.clicked') }),
-  // Passo run: un nome da sostituire con una sequenza di actions (finché non esiste è segnalato).
-  run: () => 'sequenza',
+  // run step: a name to replace with a sequence of actions (reported until it exists).
+  run: () => 'sequence',
 };
 
 /**
- * Un elemento nuovo di un elenco (colonna, campo, azione, passo…): le proprietà obbligatorie con un valore iniziale
- * plausibile. Quello che resta da completare lo segnala la validazione.
+ * A new element of a list (column, field, action, step…): the required properties with a plausible initial
+ * value. Validation reports what is left to complete.
  */
 export function defaultItem(fields: PropertyInfo[], index: number, t: Translate): JsonObject {
   const item: JsonObject = {};
@@ -232,7 +232,7 @@ function defaultValue(info: PropertyInfo, index: number, t: Translate): Json {
     case 'number':
       return info.minimum ?? 0;
     case 'list': {
-      // Un elenco che deve avere almeno un elemento nasce con uno (per i passi: un messaggio).
+      // A list that must have at least one element starts with one (for steps: a message).
       if (!info.minimum) return [];
       const shape = listItem(info);
       if (!shape) return [];
@@ -250,7 +250,7 @@ function defaultValue(info: PropertyInfo, index: number, t: Translate): Json {
   }
 }
 
-/** Testo breve che riassume un elemento di un elenco quando è chiuso: la sua etichetta o il campo, oppure il passo. */
+/** Short text summing up an element of a list when it is closed: its label or field, or the step. */
 export function summaryOf(item: Json, variantKey?: string): string {
   if (!isObject(item)) return typeof item === 'string' ? item : JSON.stringify(item);
   if (variantKey) {
@@ -268,7 +268,7 @@ export function summaryOf(item: Json, variantKey?: string): string {
   return '';
 }
 
-/** Le espressioni `t('chiave', 'Ripiego')` si riassumono con il ripiego; i testi lunghi si accorciano. */
+/** `t('key', 'Fallback')` expressions are summed up by the fallback; long texts are shortened. */
 export function fallbackText(text: string): string {
   const quoted = /t\(\s*(['"])(?:\\.|(?!\1).)*\1\s*,\s*(['"])((?:\\.|(?!\2).)*)\2/.exec(text);
   const fallback = quoted ? quoted[3].replace(/\\(.)/g, '$1') : null;
@@ -276,10 +276,10 @@ export function fallbackText(text: string): string {
   return plain.length > 40 ? plain.slice(0, 39) + '…' : plain;
 }
 
-/** Identificativo di schermata ammesso dallo schema (`$defs/id`): kebab-case di lettere minuscole e cifre. */
+/** Screen identifier allowed by the schema (`$defs/id`): kebab-case of lower-case letters and digits. */
 export const SCREEN_ID = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
-/** Identificativo ricavato dal titolo: kebab-case senza accenti, al massimo 60 caratteri; vuoto se non resta nulla. */
+/** Identifier derived from the title: kebab-case without accents, at most 60 characters; empty if nothing is left. */
 export function screenIdFrom(title: string): string {
   return title
     .normalize('NFD')
@@ -290,7 +290,7 @@ export function screenIdFrom(title: string): string {
     .replace(/^-+|-+$/g, '');
 }
 
-/** Schermata vuota da cui parte un documento nuovo, con il titolo e l'identificativo scelti (o quelli predefiniti). */
+/** Empty screen a new document starts from, with the chosen title and identifier (or the default ones). */
 export function emptyScreen(t: Translate, title?: string, screen?: string): JsonObject {
-  return { schemaVersion: '1.0', screen: screen || 'nuova-schermata', title: title || t('ed.tpl.screenTitle'), dataSources: {}, components: [] };
+  return { schemaVersion: '1.0', screen: screen || 'new-screen', title: title || t('ed.tpl.screenTitle'), dataSources: {}, components: [] };
 }

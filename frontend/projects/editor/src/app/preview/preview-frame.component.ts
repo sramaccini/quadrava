@@ -3,12 +3,12 @@ import { I18n } from 'core';
 import { isFromPreview, type DropZone, type PreviewEvent, type PreviewState, type ResizeProperty, type ToPreview } from './protocol';
 
 /**
- * L'anteprima vista dall'editor: un iframe isolato con l'applicazione avviata come anteprima. Gli manda lo stato
- * da disegnare (a ogni cambio, e di nuovo quando l'iframe si dichiara pronto) e riceve selezioni ed eventi. L'indirizzo
- * è l'editor stesso con `?anteprima` (PREVIEW_QUERY). Accetta messaggi solo dal proprio iframe e dalla stessa origine.
- * Con una larghezza fissa (tablet, telefono) più grande dello spazio disponibile la pagina si riduce per starci, come
- * nella barra dei dispositivi di Chrome: resta larga quanto il dispositivo (stessi punti di rottura), solo più piccola,
- * e la percentuale si vede in un angolo. Prima usciva dal riquadro, tagliata a destra.
+ * The preview as seen from the editor: an isolated iframe with the application started as the preview. It sends it the state
+ * to draw (at every change, and again when the iframe declares itself ready) and receives selections and events. The address
+ * is the editor itself with `?preview` (PREVIEW_QUERY). It accepts messages only from its own iframe and the same origin.
+ * With a fixed width (tablet, phone) larger than the available space the page shrinks to fit, as
+ * in the device toolbar of Chrome: it stays as wide as the device (same breakpoints), only smaller,
+ * and the percentage shows in a corner. Before, it overflowed the frame, cut on the right.
  */
 @Component({
   selector: 'ed-preview-frame',
@@ -26,7 +26,7 @@ import { isFromPreview, type DropZone, type PreviewEvent, type PreviewState, typ
   template: `
     <iframe
       #frame
-      src="./?anteprima"
+      src="./?preview"
       [title]="i18n.t('ed.tabs.preview')"
       [style.width.px]="width()"
       [style.height]="scale() < 1 ? 'calc(100% / ' + scale() + ')' : null"
@@ -42,23 +42,23 @@ import { isFromPreview, type DropZone, type PreviewEvent, type PreviewState, typ
 export class PreviewFrameComponent {
   protected readonly i18n = inject(I18n);
   readonly state = input.required<PreviewState>();
-  /** Larghezza in pixel; null = tutto lo spazio. */
+  /** Width in pixels; null = all the space. */
   readonly width = input<number | null>(null);
-  /** Un componente scelto nell'anteprima (Alt+clic o modalità selezione): il suo id. */
+  /** A component chosen in the preview (Alt+click or selection mode): its id. */
   readonly selected = output<string>();
   readonly logged = output<PreviewEvent>();
-  /** Un componente della tavolozza rilasciato sul disegno. */
+  /** A palette component dropped on the drawing. */
   readonly dropped = output<{ kind: string; targetId: string | null; zone: DropZone }>();
-  /** Un componente già presente spostato sul disegno. */
+  /** A component already there moved on the drawing. */
   readonly moved = output<{ id: string; targetId: string | null; zone: DropZone }>();
-  /** Un componente ridimensionato con la maniglia. */
+  /** A component resized with the handle. */
   readonly resized = output<{ id: string; property: ResizeProperty; value: number }>();
 
   private readonly frame = viewChild.required<ElementRef<HTMLIFrameElement>>('frame');
   private readonly ready = signal(false);
-  /** Larghezza disponibile per l'anteprima (si aggiorna quando cambiano finestra o lati). */
+  /** Width available for the preview (updated when window or sides change). */
   private readonly available = signal<number | null>(null);
-  /** Riduzione per far stare una larghezza fissa nello spazio disponibile (1 = nessuna). */
+  /** Reduction to fit a fixed width in the available space (1 = none). */
   protected readonly scale = computed(() => {
     const width = this.width();
     const available = this.available();
@@ -72,7 +72,7 @@ export class PreviewFrameComponent {
       if (event.origin !== location.origin || !target || event.source !== target || !isFromPreview(event.data)) return;
       const message = event.data;
       if (message.type === 'lc-preview:ready') {
-        // Anche un iframe ricaricato riparte da zero: gli si rimanda lo stato.
+        // A reloaded iframe also starts from zero: the state is sent to it again.
         this.ready.set(true);
         this.post();
       } else if (message.type === 'lc-preview:select') this.selected.emit(message.id);

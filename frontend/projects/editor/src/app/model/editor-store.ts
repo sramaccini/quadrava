@@ -10,35 +10,35 @@ import { collectTexts, makeKey, translatable, usedKeys, type TextEntry } from '.
 
 export type { EditorIssue } from './document-state';
 
-/** Bozza salvata nel browser: il documento e i dati di esempio dell'anteprima. */
+/** Draft saved in the browser: the document and the sample data of the preview. */
 interface Draft {
   doc: Json;
   samples: Record<string, Json>;
   translations: Translations;
-  /** Lingue delle traduzioni (oltre a quelle con testi già scritti). */
+  /** Languages of the translations (besides those with texts already written). */
   languages?: string[];
-  /** Lingua predefinita: quella dei testi di ripiego scritti nelle schermate. */
+  /** Default language: the one of the fallback texts written in the screens. */
   defaultLanguage?: string;
 }
 
-/** Traduzioni scritte nell'editor: lingua → chiave → testo. */
+/** Translations written in the editor: language → key → text. */
 export type Translations = Record<string, Record<string, string>>;
 
-/** Lingue di partenza delle traduzioni (quelle della demo); se ne possono aggiungere altre nel pannello «Testi». */
+/** Starting languages of the translations (those of the demo); others can be added in the «Texts» panel. */
 export const EDITOR_LOCALES = ['it', 'en'];
-/** Codice di una lingua: due o tre lettere minuscole, con la variante del paese facoltativa (`pt-BR`). */
+/** Code of a language: two or three lower-case letters, with an optional country variant (`pt-BR`). */
 export const LANGUAGE_CODE = /^[a-z]{2,3}(-[A-Z]{2})?$/;
 
 const DRAFT_KEY = 'lc.editor.draft';
-/** Proprietà che collocano un nodo nel suo contenitore: avvolgendolo passano al contenitore nuovo. */
+/** Properties placing a node in its container: when it is wrapped they move to the new container. */
 const WRAP_PLACEMENT = ['region', 'span', 'grow'];
-/** Nome di un data source: lo si scrive nelle espressioni e nei passi, quindi un identificativo semplice. */
+/** Name of a data source: it is written in expressions and steps, so a simple identifier. */
 export const SOURCE_NAME = /^[A-Za-z][A-Za-z0-9_]*$/;
 
 /**
- * Stato dell'editor: il documento della schermata, l'elemento selezionato, la cronologia per annullare e ripetere,
- * i problemi trovati (schema, espressioni, riferimenti) e i dati di esempio dell'anteprima. La bozza si salva da sola
- * nel browser a ogni modifica.
+ * State of the editor: the screen document, the selected element, the history for undo and redo,
+ * the problems found (schema, expressions, references) and the sample data of the preview. The draft saves itself
+ * in the browser at every change.
  */
 @Injectable({ providedIn: 'root' })
 export class EditorStore extends DocumentState {
@@ -47,33 +47,33 @@ export class EditorStore extends DocumentState {
   private readonly t = (key: string, params: Record<string, unknown> = {}): string => this.i18n.t(key, params);
 
   private readonly draft = readDraft();
-  /** Vista centrale dell'editor: anteprima, JSON o data source. */
+  /** Central view of the editor: preview, JSON or data sources. */
   readonly view = signal<'preview' | 'json' | 'sources' | 'texts'>('preview');
-  /** Risposte finte per data source, usate solo dall'anteprima. */
+  /** Fake responses for data sources, used only by the preview. */
   readonly samples = signal<Record<string, Json>>(this.draft?.samples ?? {});
   /**
-   * Traduzioni scritte nell'editor e non ancora nei cataloghi dell'applicazione: si esportano con «Esporta traduzioni»
-   * e intanto valgono già nell'anteprima.
+   * Translations written in the editor and not yet in the application's catalogues: they are exported with «Export translations»
+   * and meanwhile they already apply in the preview.
    */
   readonly translations = signal<Translations>(this.draft?.translations ?? {});
   /**
-   * Lingue in cui si scrivono le traduzioni: quelle della demo, quelle aggiunte e quelle che hanno già testi. La prima
-   * resta la predefinita (il ripiego scritto nel testo vale per lei).
+   * Languages in which translations are written: those of the demo, those added and those that already have texts. The first
+   * stays the default one (the fallback written in the text is for it).
    */
   readonly languages = signal<string[]>(mergeLanguages(this.draft?.languages ?? EDITOR_LOCALES, Object.keys(this.draft?.translations ?? {})));
   /**
-   * Lingua predefinita del progetto: quella dei testi di ripiego scritti in `t('chiave', 'Testo')`. Per lei il ripiego
-   * basta (non manca nessuna traduzione), «Rendi traducibile» le assegna il testo, non si può togliere; l'anteprima la
-   * usa quando manca una traduzione.
+   * Default language of the project: the one of the fallback texts written in `t('key', 'Text')`. For it the fallback
+   * is enough (no translation is missing), «Make translatable» gives it the text, it cannot be removed; the preview
+   * uses it when a translation is missing.
    */
   readonly defaultLanguage = signal<string>(this.draft?.defaultLanguage && LANGUAGE_CODE.test(this.draft.defaultLanguage) ? this.draft.defaultLanguage : EDITOR_LOCALES[0]);
 
-  /** Il documento come schermata valida, oppure null se ha errori (l'anteprima mostra allora l'ultima versione valida). */
+  /** The document as a valid screen, or null if it has errors (the preview then shows the last valid version). */
   readonly definition = computed<ScreenDefinition | null>(() => (this.errorCount() === 0 ? (this.doc() as unknown as ScreenDefinition) : null));
   readonly target = computed(() => targetAt(this.doc(), this.selection()));
-  /** Schermate note (gli esempi), suggerite nei passi `navigate`. */
+  /** Known screens (the examples), suggested in the `navigate` steps. */
   readonly knownScreens = signal<string[]>([]);
-  /** Nomi dei data source della schermata. */
+  /** Names of the data sources of the screen. */
   readonly sourceNames = computed(() => {
     const sources = getIn(this.doc(), ['dataSources']);
     return isObject(sources) ? Object.keys(sources) : [];
@@ -82,14 +82,14 @@ export class EditorStore extends DocumentState {
   constructor() {
     super();
     this.doc.set(this.draft?.doc ?? emptyScreen((k) => this.t(k)));
-    // Le traduzioni della bozza valgono subito nell'anteprima.
+    // The translations of the draft apply at once in the preview.
     for (const [locale, messages] of Object.entries(this.translations())) this.i18n.addMessages(locale, messages);
     effect(() => {
       const draft: Draft = { doc: this.doc(), samples: this.samples(), translations: this.translations(), languages: this.languages(), defaultLanguage: this.defaultLanguage() };
       try {
         localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
       } catch {
-        // Archiviazione piena o non disponibile: la bozza resta solo in memoria.
+        // Storage full or not available: the draft stays only in memory.
       }
     });
   }
@@ -102,15 +102,15 @@ export class EditorStore extends DocumentState {
     return ownerOf(doc, path);
   }
 
-  /** Nomi delle sequenze della schermata (`actions`). */
+  /** Names of the sequences of the screen (`actions`). */
   readonly actionNames = computed(() => {
     const actions = getIn(this.doc(), ['actions']);
     return isObject(actions) ? Object.keys(actions) : [];
   });
 
   /**
-   * `source`, `call`, `refresh` suggeriscono i data source della schermata, `navigate` le schermate note, `run` le
-   * sequenze con nome.
+   * `source`, `call`, `refresh` suggest the data sources of the screen, `navigate` the known screens, `run` the
+   * named sequences.
    */
   override suggestions(property: string): string[] {
     if (['source', 'call', 'refresh'].includes(property)) return this.sourceNames();
@@ -119,7 +119,7 @@ export class EditorStore extends DocumentState {
     return [];
   }
 
-  /** Percorso dell'elemento (nodo, scheda, passo) con questo identificativo, o null. */
+  /** Path of the element (node, tab, step) with this identifier, or null. */
   pathOfId(id: string): Path | null {
     const doc = this.doc();
     const visit = (value: Json, path: Path): Path | null => {
@@ -142,7 +142,7 @@ export class EditorStore extends DocumentState {
     return visit(doc, []);
   }
 
-  /** Dove va un nodo nuovo: dentro l'elemento selezionato se è un contenitore, altrimenti subito dopo. */
+  /** Where a new node goes: inside the selected element if it is a container, otherwise right after it. */
   insertionPoint(): { list: Path; index: number } {
     const doc = this.doc();
     const selection = this.selection();
@@ -153,12 +153,12 @@ export class EditorStore extends DocumentState {
     }
     const target = targetAt(doc, selection);
     if (target?.kind === 'node') return { list: selection.slice(0, -1), index: (selection.at(-1) as number) + 1 };
-    // Un nodo con schede o passi: il nodo nuovo va dopo di lui.
+    // A node with tabs or steps: the new node goes after it.
     const components = getIn(doc, ['components']);
     return { list: ['components'], index: Array.isArray(components) ? components.length : 0 };
   }
 
-  /** Aggiunge un nodo del tipo indicato (dal suo modello) e lo seleziona; crea il data source che usa, se manca. */
+  /** Adds a node of the given type (from its template) and selects it; creates the data source it uses, if missing. */
   addNode(kind: string, at = this.insertionPoint()): void {
     const doc = this.doc();
     const template = uniqueInputName(doc, nodeTemplate(kind, (k) => this.t(k)));
@@ -168,7 +168,7 @@ export class EditorStore extends DocumentState {
     this.apply(next, { select: [...at.list, Math.min(at.index, list.length - 1)] });
   }
 
-  /** Aggiunge una scheda (tabs) o un passo (wizard) al nodo indicato. */
+  /** Adds a tab (tabs) or a step (wizard) to the given node. */
   addContainerItem(path: Path): void {
     const node = getIn(this.doc(), path);
     if (!isObject(node)) return;
@@ -203,7 +203,7 @@ export class EditorStore extends DocumentState {
     this.apply(result.doc, { select: result.path });
   }
 
-  /** Sposta un nodo in un altro elenco di nodi (trascinamento nella struttura). */
+  /** Moves a node to another list of nodes (dragging in the outline). */
   moveNode(from: Path, toList: Path, index: number): boolean {
     if (startsWith(toList, from)) return false;
     const result = moveTo(this.doc(), from, toList, index);
@@ -213,14 +213,14 @@ export class EditorStore extends DocumentState {
   }
 
   /**
-   * Nodi selezionati insieme (Ctrl+clic, Maiusc+clic nella struttura): fratelli dello stesso elenco, in ordine. Vuoto =
-   * selezione semplice (`selection`). L'elemento principale resta `selection` (proprietà, anteprima).
+   * Nodes selected together (Ctrl+click, Shift+click in the outline): siblings of the same list, in order. Empty =
+   * simple selection (`selection`). The main element stays `selection` (properties, preview).
    */
   readonly multi = signal<Path[]>([]);
-  /** I nodi su cui agiscono i comandi: quelli selezionati insieme, altrimenti l'elemento selezionato. */
+  /** The nodes the commands act on: those selected together, otherwise the selected element. */
   readonly selectedPaths = computed<Path[]>(() => (this.multi().length > 1 ? this.multi() : [this.selection()]));
 
-  /** Punto fermo degli intervalli (Maiusc+clic, Maiusc+frecce): l'ultimo nodo scelto senza Maiusc. */
+  /** Anchor of ranges (Shift+click, Shift+arrows): the last node chosen without Shift. */
   private anchor: Path | null = null;
 
   override select(path: Path): void {
@@ -245,8 +245,8 @@ export class EditorStore extends DocumentState {
   }
 
   /**
-   * Ctrl+clic: aggiunge o toglie un nodo dalla selezione. Vale tra fratelli dello stesso elenco; un nodo di un altro
-   * elenco riparte da una selezione semplice.
+   * Ctrl+click: adds or removes a node from the selection. It works between siblings of the same list; a node of another
+   * list starts again from a simple selection.
    */
   toggleSelect(path: Path): void {
     const doc = this.doc();
@@ -261,7 +261,7 @@ export class EditorStore extends DocumentState {
     super.select(this.anchor);
   }
 
-  /** Maiusc+clic: seleziona i fratelli dal nodo selezionato a quello indicato (stesso elenco). */
+  /** Shift+click: selects the siblings from the selected node to the given one (same list). */
   selectRange(path: Path): void {
     const doc = this.doc();
     const anchor = this.anchor && targetAt(doc, this.anchor) ? this.anchor : this.selection();
@@ -274,7 +274,7 @@ export class EditorStore extends DocumentState {
     super.select(path);
   }
 
-  /** Avvolge più nodi fratelli in un contenitore nuovo, al posto del primo e nell'ordine in cui stavano. */
+  /** Wraps several sibling nodes in a new container, in place of the first and in the order they were in. */
   wrapMany(paths: Path[], kind: 'section' | 'box' | 'grid'): void {
     const doc = this.doc();
     const nodes = sortSiblings(paths.filter((p) => targetAt(doc, p)?.kind === 'node'));
@@ -284,7 +284,7 @@ export class EditorStore extends DocumentState {
     const indexes = new Set(nodes.map((p) => p.at(-1) as number));
     const first = Math.min(...indexes);
     const inner = nodes.map((p) => ({ ...(getIn(doc, p) as JsonObject) }));
-    // La collocazione nel contenitore di prima passa al contenitore nuovo (quella del primo nodo).
+    // The placement in the previous container moves to the new container (that of the first node).
     const placement: JsonObject = {};
     for (const key of WRAP_PLACEMENT) {
       if (key in inner[0]) placement[key] = inner[0][key];
@@ -295,7 +295,7 @@ export class EditorStore extends DocumentState {
     this.apply(setIn(doc, list, rest), { select: [...list, first] });
   }
 
-  /** Elimina più nodi fratelli insieme (un solo passo da annullare). */
+  /** Deletes several sibling nodes together (a single step to undo). */
   removeMany(paths: Path[]): void {
     const doc = this.doc();
     const nodes = sortSiblings(paths.filter((p) => targetAt(doc, p)?.kind === 'node'));
@@ -309,8 +309,8 @@ export class EditorStore extends DocumentState {
   }
 
   /**
-   * Avvolge un nodo in un contenitore nuovo (sezione, box, griglia) che prende il suo posto. Le proprietà che dicono
-   * dove sta il nodo nel contenitore di prima (`region`, `span`, `grow`) passano al contenitore nuovo.
+   * Wraps a node in a new container (section, box, grid) that takes its place. The properties saying
+   * where the node sits in the previous container (`region`, `span`, `grow`) move to the new container.
    */
   wrap(path: Path, kind: 'section' | 'box' | 'grid'): void {
     const doc = this.doc();
@@ -329,7 +329,7 @@ export class EditorStore extends DocumentState {
     this.apply(setIn(doc, path, wrapper), { select: path });
   }
 
-  /** Nodo copiato o tagliato, da incollare nel punto di inserimento (anche in un altro contenitore). */
+  /** Node copied or cut, to paste at the insertion point (also in another container). */
   readonly clipboard = signal<Json | null>(null);
 
   copy(path: Path): void {
@@ -343,7 +343,7 @@ export class EditorStore extends DocumentState {
     this.remove(path);
   }
 
-  /** Incolla il nodo copiato nel punto di inserimento, con identificativi nuovi se quelli copiati sono già usati. */
+  /** Pastes the copied node at the insertion point, with new identifiers if the copied ones are already in use. */
   paste(): void {
     const node = this.clipboard();
     if (!isObject(node)) return;
@@ -355,25 +355,25 @@ export class EditorStore extends DocumentState {
     this.apply(next, { select: [...at.list, at.index] });
   }
 
-  /** Aggiunge un data source GET con un nome libero e lo restituisce. */
+  /** Adds a GET data source with a free name and returns it. */
   addSource(): string {
     const names = new Set(this.sourceNames());
-    let name = 'dati';
-    for (let n = 2; names.has(name); n++) name = `dati${n}`;
+    let name = 'data';
+    for (let n = 2; names.has(name); n++) name = `data${n}`;
     this.apply(setIn(this.doc(), ['dataSources', name], { type: 'rest', method: 'GET', url: `/api/${name}` }));
     return name;
   }
 
   /**
-   * Rinomina un data source, aggiornando i nodi che lo usano (`source`), i passi che lo chiamano (`call`, `refresh`)
-   * e i dati di esempio. Restituisce false se il nome non è valido o è già usato.
+   * Renames a data source, updating the nodes using it (`source`), the steps calling it (`call`, `refresh`)
+   * and the sample data. Returns false if the name is not valid or already in use.
    */
   renameSource(from: string, to: string): boolean {
     if (from === to) return true;
     if (!SOURCE_NAME.test(to) || this.sourceNames().includes(to)) return false;
     const doc = this.doc();
     const sources = getIn(doc, ['dataSources']) as JsonObject;
-    // Stesso ordine di prima, con il nome nuovo al posto del vecchio.
+    // Same order as before, with the new name in place of the old one.
     const renamed = Object.fromEntries(Object.entries(sources).map(([k, v]) => [k === from ? to : k, v]));
     const replace = (value: Json, path: Path): Json => {
       if (Array.isArray(value)) return value.map((v, i) => replace(v, [...path, i]));
@@ -396,13 +396,13 @@ export class EditorStore extends DocumentState {
     this.setSample(name, undefined);
   }
 
-  /** Lingue in cui manca la traduzione di un testo con chiave (nella predefinita basta il ripiego scritto nel testo). */
+  /** Languages missing the translation of a keyed text (in the default one the fallback written in the text is enough). */
   missingLocales(entry: TextEntry): string[] {
     if (!entry.key) return [];
     return this.languages().filter((locale) => !this.translation(locale, entry.key!) && !(locale === this.defaultLanguage() && entry.fallback));
   }
 
-  /** Aggiunge una lingua per le traduzioni. Restituisce false se il codice non è valido o la lingua c'è già. */
+  /** Adds a language for the translations. Returns false if the code is not valid or the language is already there. */
   addLanguage(code: string): boolean {
     const locale = code.trim();
     if (!LANGUAGE_CODE.test(locale) || this.languages().includes(locale)) return false;
@@ -410,7 +410,7 @@ export class EditorStore extends DocumentState {
     return true;
   }
 
-  /** Rende predefinita una delle lingue (va in testa all'elenco). */
+  /** Makes one of the languages the default (it goes to the top of the list). */
   setDefaultLanguage(locale: string): boolean {
     if (!this.languages().includes(locale)) return false;
     this.defaultLanguage.set(locale);
@@ -418,7 +418,7 @@ export class EditorStore extends DocumentState {
     return true;
   }
 
-  /** Toglie una lingua e le traduzioni scritte nell'editor per lei (la predefinita resta). */
+  /** Removes a language and the translations written in the editor for it (the default one stays). */
   removeLanguage(locale: string): boolean {
     if (locale === this.defaultLanguage() || !this.languages().includes(locale)) return false;
     this.languages.update((all) => all.filter((l) => l !== locale));
@@ -427,9 +427,9 @@ export class EditorStore extends DocumentState {
   }
 
   /**
-   * Importa traduzioni: `{ "<lingua>": { "<chiave>": "testo" } }` (il formato di «Esporta traduzioni»). Le lingue nuove
-   * si aggiungono; i testi sostituiscono quelli scritti nell'editor. Restituisce quanti testi sono stati letti, o null
-   * se il contenuto non ha questa forma (lingue con codici non validi o testi non di tipo stringa).
+   * Imports translations: `{ "<language>": { "<key>": "text" } }` (the format of «Export translations»). New languages
+   * are added; the texts replace those written in the editor. Returns how many texts were read, or null
+   * if the content does not have this shape (languages with invalid codes or texts that are not strings).
    */
   importTranslations(data: unknown): number | null {
     if (!isObject(data as Json)) return null;
@@ -449,26 +449,26 @@ export class EditorStore extends DocumentState {
     return count;
   }
 
-  /** Testi da sistemare: semplici (non traducibili) o con traduzioni mancanti. */
+  /** Texts to fix: plain (not translatable) or with missing translations. */
   readonly textsToFix = computed(() => {
     this.translations();
     return collectTexts(this.doc()).filter((e) => e.kind === 'plain' || this.missingLocales(e).length).length;
   });
 
-  /** Il testo di una chiave in una lingua: quello scritto nell'editor, altrimenti quello del catalogo. */
+  /** The text of a key in a language: the one written in the editor, otherwise the catalogue's. */
   translation(locale: string, key: string): string | undefined {
     return this.translations()[locale]?.[key] ?? this.i18n.raw(key, locale);
   }
 
   setTranslation(locale: string, key: string, text: string): void {
     this.translations.update((all) => ({ ...all, [locale]: { ...all[locale], [key]: text } }));
-    // Un testo vuoto resta nella bozza (da completare) ma non sostituisce quello del catalogo nell'anteprima.
+    // An empty text stays in the draft (to be completed) but does not replace the catalogue's in the preview.
     if (text) this.i18n.addMessages(locale, { [key]: text });
   }
 
   /**
-   * Rende traducibile un testo semplice: lo sostituisce con `{{ t('chiave', 'Testo') }}` (chiave nuova dal testo) e
-   * scrive il testo come traduzione nella lingua predefinita. Restituisce la chiave, o null se il testo non si converte.
+   * Makes a plain text translatable: replaces it with `{{ t('key', 'Text') }}` (a new key from the text) and
+   * writes the text as the translation in the default language. Returns the key, or null if the text does not convert.
    */
   makeTranslatable(path: Path): string | null {
     const doc = this.doc();
@@ -495,8 +495,8 @@ export class EditorStore extends DocumentState {
   }
 
   /**
-   * Aggiunge più data source in un solo passo da annullare (importazione da OpenAPI). I nomi già usati non si
-   * sovrascrivono; i dati di esempio si impostano solo per i data source nuovi. Restituisce i nomi aggiunti.
+   * Adds several data sources in a single step to undo (import from OpenAPI). Names already in use are not
+   * overwritten; sample data are set only for the new data sources. Returns the names added.
    */
   importSources(entries: { name: string; source: JsonObject; sample?: Json }[]): string[] {
     const existing = new Set(this.sourceNames());
@@ -509,7 +509,7 @@ export class EditorStore extends DocumentState {
     return fresh.map((e) => e.name);
   }
 
-  /** Apre un documento (file, esempio, nuova schermata): azzera cronologia e selezione. */
+  /** Opens a document (file, example, new screen): clears history and selection. */
   load(doc: Json, samples: Record<string, Json> = {}): void {
     this.reset(doc);
     this.samples.set(samples);
@@ -532,7 +532,7 @@ export class EditorStore extends DocumentState {
     return issues;
   }
 
-  /** Controlli che lo schema non fa: data source inesistenti e identificativi ripetuti. */
+  /** Checks the schema does not do: data sources that do not exist and repeated identifiers. */
   private checkReferences(doc: Json, add: (pointer: string, message: string, severity: EditorIssue['severity']) => void): void {
     const sources = getIn(doc, ['dataSources']);
     const names = new Set(isObject(sources) ? Object.keys(sources) : []);
@@ -576,17 +576,17 @@ function readDraft(): Draft | null {
   }
 }
 
-/** Lingue senza ripetizioni, nell'ordine: prima quelle indicate, poi le altre. */
+/** Languages without repetitions, in order: first the given ones, then the others. */
 function mergeLanguages(first: readonly string[], more: readonly string[]): string[] {
   return [...new Set([...first, ...more].filter((l) => LANGUAGE_CODE.test(l)))];
 }
 
-/** Due percorsi nello stesso elenco (fratelli). */
+/** Two paths in the same list (siblings). */
 function sameList(a: Path, b: Path): boolean {
   return a.length === b.length && typeof a.at(-1) === 'number' && typeof b.at(-1) === 'number' && samePath(a.slice(0, -1), b.slice(0, -1));
 }
 
-/** Percorsi di fratelli in ordine di posizione, senza ripetizioni. */
+/** Paths of siblings in position order, without repetitions. */
 function sortSiblings(paths: Path[]): Path[] {
   const seen = new Set<string>();
   return paths

@@ -1,91 +1,91 @@
 import type { Json } from './doc-ops';
 import { applyCompletion, completionAt, expressionHints, insertHint, type Hint } from './expression-help';
 
-describe('aiuto alle espressioni', () => {
+describe('expression help', () => {
   const doc: Json = {
-    dataSources: { elenco: { type: 'rest', method: 'GET', url: '/api/x', params: { stato: '{{ state.filtri.stato }}', id: '{{ params.id }}' } } },
+    dataSources: { list: { type: 'rest', method: 'GET', url: '/api/x', params: { status: '{{ state.filters.status }}', id: '{{ params.id }}' } } },
     components: [
-      { type: 'filterBar', bind: 'state.filtri', fields: [{ name: 'stato', type: 'text' }] },
-      { type: 'table', source: 'elenco', columns: [{ field: 'numero' }, { field: 'importo' }], rowActions: [{ label: 'X', onClick: [{ toast: 'x' }] }] },
-      { type: 'form', fields: [{ name: 'cliente', type: 'text', validate: { rule: '{{ true }}', message: 'm' } }], actions: [{ label: 'Salva', onClick: [{ toast: 'x' }] }] },
+      { type: 'filterBar', bind: 'state.filters', fields: [{ name: 'status', type: 'text' }] },
+      { type: 'table', source: 'list', columns: [{ field: 'number' }, { field: 'amount' }], rowActions: [{ label: 'X', onClick: [{ toast: 'x' }] }] },
+      { type: 'form', fields: [{ name: 'customer', type: 'text', validate: { rule: '{{ true }}', message: 'm' } }], actions: [{ label: 'Save', onClick: [{ toast: 'x' }] }] },
     ],
   };
   const names = (path: (string | number)[]): string[] => expressionHints(doc, path).filter((h) => h.kind === 'variable').map((h) => h.label);
 
-  it('variabili del contesto prima, poi stato e parametri usati, poi l’utente', () => {
+  it('context variables first, then the state and parameters used, then the user', () => {
     expect(names(['components', 1, 'rowActions', 0, 'visibleIf'])).toEqual([
-      'row.importo',
-      'row.numero',
+      'row.amount',
+      'row.number',
       'params.id',
-      'state.filtri',
-      'state.filtri.stato',
+      'state.filters',
+      'state.filters.status',
       'user.displayName',
       'user.locale',
       'user.username',
     ]);
-    expect(names(['components', 2, 'actions', 0, 'enabledIf'])).toContain('form.cliente');
-    expect(names(['components', 2, 'fields', 0, 'validate', 'rule'])).toEqual(expect.arrayContaining(['value', 'form.cliente']));
-    expect(names(['dataSources', 'elenco', 'params', 'stato'])).toEqual(expect.arrayContaining(['search', 'lookupKey', 'request']));
-    // Fuori da tabelle e form niente row né form.
+    expect(names(['components', 2, 'actions', 0, 'enabledIf'])).toContain('form.customer');
+    expect(names(['components', 2, 'fields', 0, 'validate', 'rule'])).toEqual(expect.arrayContaining(['value', 'form.customer']));
+    expect(names(['dataSources', 'list', 'params', 'status'])).toEqual(expect.arrayContaining(['search', 'lookupKey', 'request']));
+    // Outside tables and forms no row or form.
     expect(names(['components', 0, 'visibleIf']).some((n) => n.startsWith('row.') || n.startsWith('form.'))).toBe(false);
     expect(expressionHints(doc, []).some((h) => h.insert === "can('')")).toBe(true);
   });
 
-  it('nei passi: le risposte delle chiamate precedenti con as; in onError il codice dell’errore', () => {
+  it('in steps: the responses of the previous calls with as; in onError the error code', () => {
     const doc: Json = {
       components: [
         {
           type: 'button',
           onClick: [
-            { call: 'crea', as: 'creato' },
-            { call: 'altro' },
+            { call: 'create', as: 'created' },
+            { call: 'other' },
             { toast: '…' },
-            { call: 'invia', as: 'inviato', onError: [{ toast: '…' }] },
+            { call: 'send', as: 'sent', onError: [{ toast: '…' }] },
           ],
         },
       ],
     };
     const names = (path: (string | number)[]) => expressionHints(doc, path).filter((h) => h.kind === 'variable').map((h) => h.label);
-    expect(names(['components', 0, 'onClick', 2, 'toast'])).toContain('creato');
-    expect(names(['components', 0, 'onClick', 2, 'toast'])).not.toContain('inviato');
-    expect(names(['components', 0, 'onClick', 0, 'call'])).not.toContain('creato');
+    expect(names(['components', 0, 'onClick', 2, 'toast'])).toContain('created');
+    expect(names(['components', 0, 'onClick', 2, 'toast'])).not.toContain('sent');
+    expect(names(['components', 0, 'onClick', 0, 'call'])).not.toContain('created');
     const inError = names(['components', 0, 'onClick', 3, 'onError', 0, 'toast']);
     expect(inError).toContain('error.status');
-    expect(inError).toContain('creato');
+    expect(inError).toContain('created');
     expect(names(['components', 0, 'onClick', 2, 'toast'])).not.toContain('error.status');
   });
 
-    it('inserisce al cursore; un campo vuoto diventa {{ }}', () => {
-    expect(insertHint('', 0, 0, 'row.numero')).toEqual({ value: '{{ row.numero }}', caret: 13 });
-    expect(insertHint('{{  > 0 }}', 3, 3, 'row.importo')).toEqual({ value: '{{ row.importo > 0 }}', caret: 14 });
+    it('inserts at the cursor; an empty field becomes {{ }}', () => {
+    expect(insertHint('', 0, 0, 'row.number')).toEqual({ value: '{{ row.number }}', caret: 13 });
+    expect(insertHint('{{  > 0 }}', 3, 3, 'row.amount')).toEqual({ value: '{{ row.amount > 0 }}', caret: 13 });
   });
 
-  describe('completamento mentre si scrive', () => {
+  describe('completion while typing', () => {
     const hints: Hint[] = [
-      { label: 'row.cliente', insert: 'row.cliente', kind: 'variable' },
-      { label: 'row.importo', insert: 'row.importo', kind: 'variable' },
-      { label: 'state.filtri.stato', insert: 'state.filtri.stato', kind: 'variable' },
+      { label: 'row.customer', insert: 'row.customer', kind: 'variable' },
+      { label: 'row.amount', insert: 'row.amount', kind: 'variable' },
+      { label: 'state.filters.status', insert: 'state.filters.status', kind: 'variable' },
       { label: "can('…')", insert: "can('')", kind: 'function' },
       { label: 'fmtNumber(…)', insert: 'fmtNumber()', kind: 'function' },
       { label: "fmtCurrency(…, 'EUR')", insert: "fmtCurrency(, 'EUR')", kind: 'function' },
     ];
 
-    it('propone solo dentro le graffe e dopo l’inizio di un nome', () => {
-      expect(completionAt('Totale row', 10, hints)).toBeNull();
+    it('offers only inside the braces and after the start of a name', () => {
+      expect(completionAt('Total row', 9, hints)).toBeNull();
       expect(completionAt('{{ }} row', 9, hints)).toBeNull();
       expect(completionAt('{{ ', 3, hints)).toBeNull();
       expect(completionAt('{{ row.', 7, hints)).toEqual({ from: 3, items: hints.slice(0, 2) });
-      expect(completionAt('{{ row.cl', 9, hints)?.items.map((h) => h.insert)).toEqual(['row.cliente']);
-      expect(completionAt('Ciao {{ fmt', 11, hints)?.items.map((h) => h.insert)).toEqual(['fmtNumber()', "fmtCurrency(, 'EUR')"]);
-      // Parola già completa o sconosciuta: niente.
-      expect(completionAt('{{ row.cliente', 14, hints)).toBeNull();
+      expect(completionAt('{{ row.cu', 9, hints)?.items.map((h) => h.insert)).toEqual(['row.customer']);
+      expect(completionAt('Hello {{ fmt', 12, hints)?.items.map((h) => h.insert)).toEqual(['fmtNumber()', "fmtCurrency(, 'EUR')"]);
+      // Word already complete or unknown: nothing.
+      expect(completionAt('{{ row.customer', 15, hints)).toBeNull();
       expect(completionAt('{{ zzz', 6, hints)).toBeNull();
-      // Il cursore a metà: conta quello che c'è prima.
+      // The cursor in the middle: what is before it counts.
       expect(completionAt('{{ sta > 0 }}', 6, hints)?.from).toBe(3);
     });
 
-    it('la voce scelta sostituisce la parola; nelle funzioni il cursore va dentro', () => {
-      expect(applyCompletion('{{ row.cl }}', 3, 9, hints[0])).toEqual({ value: '{{ row.cliente }}', caret: 14 });
+    it('the chosen item replaces the word; in functions the cursor goes inside', () => {
+      expect(applyCompletion('{{ row.cu }}', 3, 9, hints[0])).toEqual({ value: '{{ row.customer }}', caret: 15 });
       expect(applyCompletion('{{ ca', 3, 5, hints[3])).toEqual({ value: "{{ can('')", caret: 8 });
       expect(applyCompletion('{{ fmtN', 3, 7, hints[4])).toEqual({ value: '{{ fmtNumber()', caret: 13 });
       expect(applyCompletion('{{ fmtC', 3, 7, hints[5])).toEqual({ value: "{{ fmtCurrency(, 'EUR')", caret: 15 });

@@ -6,8 +6,8 @@ import { JsonHighlightDirective } from './code-highlight';
 import { DocumentState } from '../model/document-state';
 
 /**
- * Il documento intero come JSON, modificabile a mano. Le modifiche si applicano con «Applica» (un solo passo di
- * annullamento); finché il testo non è JSON valido il documento non cambia.
+ * The whole document as JSON, editable by hand. Changes apply with «Apply» (a single undo
+ * step); until the text is valid JSON the document does not change.
  */
 @Component({
   selector: 'ed-json-view',

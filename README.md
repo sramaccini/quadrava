@@ -287,7 +287,7 @@ Open an example (*File → Apri esempio*) or start a new screen. Details, shortc
 
 ### Preview
 
-* The preview is the real `lc-screen` in an isolated iframe (the same app started with `?anteprima`, talking to the editor through a small postMessage protocol) with fake ports: nothing leaves the browser, permissions can be switched off, and Alt+click on a component selects it.
+* The preview is the real `lc-screen` in an isolated iframe (the same app started with `?preview`, talking to the editor through a small postMessage protocol) with fake ports: nothing leaves the browser, permissions can be switched off, and Alt+click on a component selects it.
 * In *Seleziona* mode the components already there can be dragged to move them, and the selected one inside a grid or a box has a handle to change its `span` or `grow`.
 * Fixed preview widths that do not fit the pane are scaled down to fit, as in Chrome's device toolbar.
 * With *Dati veri* the preview reads from the real services (editor behind the BFF); writes stay blocked.

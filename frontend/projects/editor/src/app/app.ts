@@ -43,16 +43,16 @@ import { TextsComponent } from './ui/texts.component';
 const LANGUAGES = ['it', 'en'];
 const MODE_KEY = 'lc.editor.mode';
 
-/** Che cosa si modifica: una schermata, la navigazione o il tema dell'applicazione. */
+/** What is being edited: a screen, the navigation or the theme of the application. */
 type Mode = 'screen' | 'navigation' | 'theme';
 const MODES: Mode[] = ['screen', 'navigation', 'theme'];
 const VIEWS = ['preview', 'json', 'sources', 'texts'] as const;
-/** Riquadri di ogni modalità (le voci «… fissato» del menu Visualizza). */
+/** Panels of every mode (the «… pinned» items of the View menu). */
 const MODE_PANELS: Record<Mode, DockPanel[]> = { screen: ['palette', 'outline', 'inspector'], navigation: ['outline', 'inspector'], theme: ['inspector'] };
 const PANEL_LABELS: Record<DockPanel, string> = { palette: 'ed.palette', outline: 'ed.outline', inspector: 'ed.inspector' };
 const VIEW_LABELS: Record<(typeof VIEWS)[number], string> = { preview: 'ed.tabs.preview', json: 'ed.tabs.json', sources: 'ed.tabs.sources', texts: 'ed.tabs.texts' };
 
-/** Scorciatoie dell'aiuto: gruppo → [tasti, descrizione]. I tasti con nomi da tradurre sono chiavi dei messaggi (`ed.`). */
+/** Shortcuts of the help: group → [keys, description]. Keys with names to translate are message keys (`ed.`). */
 const SHORTCUTS: { group: string; keys: [string, string][] }[] = [
   {
     group: 'ed.keys.general',
@@ -85,9 +85,9 @@ const SHORTCUTS: { group: string; keys: [string, string][] }[] = [
 ];
 
 /**
- * Quadrava Studio, l'editor visuale: schermate (tavolozza e struttura a sinistra, anteprima / JSON / data source / testi al centro,
- * proprietà a destra) e navigazione (aree e menu, con l'anteprima del menu), problemi in basso. I documenti
- * prodotti sono gli stessi JSON che il runtime legge.
+ * Quadrava Studio, the visual editor: screens (palette and outline on the left, preview / JSON / data sources / texts in the centre,
+ * properties on the right) and navigation (areas and menus, with the menu preview), problems at the bottom. The documents
+ * produced are the same JSON the runtime reads.
  */
 @Component({
   selector: 'lc-root',
@@ -136,7 +136,7 @@ export class App {
     { value: 'navigation', label: this.i18n.t('ed.mode.navigation') },
     { value: 'theme', label: this.i18n.t('ed.mode.theme') },
   ]);
-  /** Il documento aperto nella modalità corrente: lo usano barra degli strumenti, scorciatoie e problemi. */
+  /** The document open in the current mode: toolbar, shortcuts and problems use it. */
   protected readonly active = computed<DocumentState>(() => {
     const mode = this.mode();
     return mode === 'screen' ? this.store : mode === 'navigation' ? this.nav : this.theme;
@@ -149,35 +149,35 @@ export class App {
   private readonly saved = inject(SavedDocuments);
   protected readonly registry = inject(RegistrySession);
   protected readonly languages = LANGUAGES;
-  /** Il documento aperto è diverso dall'ultimo salvato (su file o nel registro) o aperto. */
+  /** The open document differs from the last one saved (to a file or in the registry) or opened. */
   protected readonly unsaved = computed(() => !this.saved.isSaved(this.mode(), this.active().doc()));
 
   protected readonly viewIndex = computed(() => VIEWS.indexOf(this.store.view()));
-  /** Il documento aperto con la sua apertura (per riaprire una versione dal registro). */
+  /** The open document with where it was opened from (to reopen a version from the registry). */
   protected readonly loadable = computed(() => this.active() as DocumentState & { load(doc: Json): void });
   protected readonly showRegistry = signal(false);
   protected readonly warningCount = computed(() => this.active().issues().length - this.active().errorCount());
   protected readonly showIssues = signal(true);
-  /** Finestre dell'aiuto: scorciatoie da tastiera e informazioni. */
+  /** Help dialogs: keyboard shortcuts and information. */
   protected readonly showShortcuts = signal(false);
   protected readonly showAbout = signal(false);
   protected readonly showNewScreen = signal(false);
   protected readonly showRegistryOpen = signal(false);
-  /** Finestra che chiede l'applicazione prima di «Salva in registro». */
+  /** Dialog asking for the application before «Save to registry». */
   protected readonly showRegistryTarget = signal(false);
-  /** Scorciatoie mostrate nell'aiuto, per gruppo (testi nei messaggi `ed.keys.*`). */
+  /** Shortcuts shown in the help, by group (texts in the `ed.keys.*` messages). */
   protected readonly shortcutGroups = SHORTCUTS;
   protected readonly dock = inject(Dock);
-  /** Riquadri dei due lati della schermata (per la larghezza delle colonne). */
+  /** Panels of the two sides of the screen (for the width of the columns). */
   protected readonly leftPanels: DockPanel[] = ['palette', 'outline'];
   protected readonly rightPanels: DockPanel[] = ['inspector'];
 
-  /** Barra dei menu: File (documento) e Modifica (comandi del documento e della selezione, con le scorciatoie). */
+  /** Menu bar: File (document) and Edit (commands of the document and of the selection, with the shortcuts). */
   protected readonly menus = computed<Menu[]>(() => {
     const t = (key: string) => this.i18n.t(key);
     const active = this.active();
     const mode = this.mode();
-    // Le voci del registro sono spente se il registro non c'è (come nell'editor della demo), con il motivo nel suggerimento.
+    // The registry items are off when the registry is not there (as in the demo editor), with the reason in the tooltip.
     const noRegistry = !this.registry.usable();
     const registryHint = this.registry.status() === 'checking' ? t('ed.menu.registryChecking') : noRegistry ? t('ed.menu.registryUnavailable') : undefined;
     const file: MenuItem[] = [
@@ -222,7 +222,7 @@ export class App {
         { id: 'move-down', label: t('ed.menu.moveDown'), shortcut: 'Alt+↓', disabled: none, run: () => doc.move(selection, 1) },
       );
     }
-    // Visualizza: i lati (fissati o nascosti), i problemi e, nella schermata, la vista centrale.
+    // View: the sides (pinned or hidden), the problems and, in the screen, the central view.
     const view: MenuItem[] = [
       ...(MODE_PANELS[mode].map((panel) => ({
         id: 'pin-' + panel,
@@ -254,7 +254,7 @@ export class App {
     ];
   });
 
-  /** Schermate di esempio (`examples/index.json`, scritto da tools/copy-examples.mjs). */
+  /** Sample screens (`examples/index.json`, written by tools/copy-examples.mjs). */
   protected readonly examples = resource({
     loader: async (): Promise<string[]> => {
       const response = await fetch('examples/index.json');
@@ -262,7 +262,7 @@ export class App {
     },
   });
 
-  /** Temi della demo (`examples/themes/index.json`, scritto da tools/copy-examples.mjs). */
+  /** Themes of the demo (`examples/themes/index.json`, written by tools/copy-examples.mjs). */
   protected readonly themeNames = resource({
     loader: async (): Promise<string[]> => {
       const response = await fetch('examples/themes/index.json');
@@ -271,7 +271,7 @@ export class App {
   });
 
   constructor() {
-    // Traduzioni e tema degli esempi, così l'anteprima appare come nel runtime.
+    // Translations and theme of the examples, so the preview looks as in the runtime.
     void loadMessages(this.i18n, LANGUAGES, (l) => `examples/i18n/${l}.json`).then((problems) => problems.forEach((p) => console.warn('[i18n]', p)));
     void fetch('examples/themes/light.json')
       .then((r) => (r.ok ? r.json() : null))
@@ -283,7 +283,7 @@ export class App {
     this.saved.ensureBaseline('screen', this.store.doc());
     this.saved.ensureBaseline('navigation', this.nav.doc());
     this.saved.ensureBaseline('theme', this.theme.doc());
-    // Schermate note (suggerimenti e avvisi «schermata non nota»): gli esempi e quelle dell'applicazione nel registro.
+    // Known screens (suggestions and «unknown screen» warnings): the examples and those of the application in the registry.
     effect(() => {
       const examples = this.examples.hasValue() ? this.examples.value() : [];
       const names = [...new Set([...examples, ...this.registry.screens()])];
@@ -295,7 +295,7 @@ export class App {
       try {
         localStorage.setItem(MODE_KEY, this.mode());
       } catch {
-        // vedi la bozza
+        // see the draft
       }
     });
   }
@@ -305,7 +305,7 @@ export class App {
   }
 
   protected async newDocument(): Promise<void> {
-    // Una schermata nuova chiede titolo e identificativo; la finestra avvisa anche che sostituisce quella aperta.
+    // A new screen asks for title and identifier; the dialog also warns that it replaces the open one.
     if (this.mode() === 'screen') {
       this.showNewScreen.set(true);
       return;
@@ -322,7 +322,7 @@ export class App {
     this.replaced(null, null);
   }
 
-  /** Esempi apribili nella modalità corrente: le schermate, oppure la navigazione della demo. */
+  /** Examples that can be opened in the current mode: the screens, or the navigation of the demo. */
   protected readonly exampleNames = computed(() => {
     const mode = this.mode();
     if (mode === 'screen') return this.examples.value() ?? [];
@@ -342,7 +342,7 @@ export class App {
     }
   }
 
-  /** «Apri…»: un file JSON dal computer, nella modalità corrente; dove si può, il prossimo «Salva» riscrive quel file. */
+  /** «Open…»: a JSON file from the computer, in the current mode; where possible, the next «Save» rewrites that file. */
   protected async openFile(): Promise<void> {
     if (!(await this.confirmReplace())) return;
     const kind = this.mode();
@@ -358,7 +358,7 @@ export class App {
     }
   }
 
-  /** «Salva»: il documento in JSON, nel file aperto o già scelto, altrimenti in uno nuovo (o scaricato). */
+  /** «Save»: the document as JSON, in the file opened or already chosen, otherwise in a new one (or downloaded). */
   protected async saveFile(): Promise<void> {
     const kind = this.mode();
     const doc = this.active().doc();
@@ -374,7 +374,7 @@ export class App {
     }
   }
 
-  /** «Apri da registro…»: la finestra con applicazione, documento e versione (o il login, se il registro lo chiede). */
+  /** «Open from registry…»: the dialog with application, document and version (or the sign-in, if the registry asks for it). */
   protected async openFromRegistry(): Promise<void> {
     if ((await this.registry.check()) === 'login') return this.registry.login();
     if (this.registry.status() !== 'available' || !(await this.confirmReplace())) return;
@@ -388,7 +388,7 @@ export class App {
     this.notifier.toast(this.i18n.t('ed.opened', { name: `${opened.ref.id} @ ${opened.hash.slice(0, 10)}` }));
   }
 
-  /** «Salva in registro»: una nuova versione nell'applicazione scelta (chiesta prima, se manca). */
+  /** «Save to registry»: a new version in the chosen application (asked first, if missing). */
   protected async saveToRegistry(): Promise<void> {
     if ((await this.registry.check()) === 'login') return this.registry.login();
     if (this.registry.status() !== 'available') return;
@@ -399,7 +399,7 @@ export class App {
     if (!this.registry.appId()) return this.showRegistryTarget.set(true);
     const doc = active.doc();
     if (await this.registry.save(kind, doc)) this.saved.markSaved(kind, doc);
-    // I problemi di validazione del registro si leggono, punto per punto, nel pannello Registro.
+    // The validation problems of the registry are read, point by point, in the Registry panel.
     else if (this.registry.issues().length) this.showRegistry.set(true);
   }
 
@@ -409,14 +409,14 @@ export class App {
     await this.saveToRegistry();
   }
 
-  /** Con modifiche non salvate, chiede conferma prima di sostituire il documento aperto. */
+  /** With unsaved changes, asks for confirmation before replacing the open document. */
   private async confirmReplace(): Promise<boolean> {
     return !this.unsaved() || this.confirmation.confirm(this.i18n.t('ed.confirmReplace'));
   }
 
   /**
-   * Il documento aperto è stato sostituito: nuovo o esempio (nessuna origine), oppure una versione del registro. Non ha
-   * modifiche da salvare e il prossimo «Salva» chiede di nuovo dove salvare.
+   * The open document was replaced: new or example (no origin), or a version of the registry. It has no
+   * changes to save and the next «Save» asks again where to save.
    */
   private replaced(ref: RegistryRef | null, hash: string | null): void {
     const kind = this.mode();
@@ -432,7 +432,7 @@ export class App {
     else this.theme.load(doc);
   }
 
-  /** Scorciatoie: annulla e ripeti sempre; le altre solo fuori dai campi di testo (dove valgono quelle del campo). */
+  /** Shortcuts: undo and redo always; the others only outside text fields (where those of the field apply). */
   protected onKey(event: KeyboardEvent): void {
     const ctrl = event.ctrlKey || event.metaKey;
     const key = event.key.toLowerCase();
@@ -440,7 +440,7 @@ export class App {
     const active = this.active();
     if (ctrl && key === 'z' && !event.shiftKey) return this.handled(event, () => active.undo());
     if (ctrl && (key === 'y' || (key === 'z' && event.shiftKey))) return this.handled(event, () => active.redo());
-    // Salva e Apri valgono anche dentro i campi (come nelle applicazioni desktop), non con una finestra aperta.
+    // Save and Open apply inside fields too (as in desktop applications), not with a dialog open.
     if (ctrl && (key === 's' || key === 'o') && !event.shiftKey && !event.altKey) {
       if (document.querySelector('.cdk-overlay-container .ant-modal-wrap')) return;
       return this.handled(event, () => void (key === 's' ? this.saveFile() : this.openFile()));
@@ -462,7 +462,7 @@ export class App {
     else if (event.altKey && key === 'arrowdown') this.handled(event, () => this.store.move(selection, 1));
   }
 
-  /** Nella navigazione: elimina, duplica, sposta (copia e incolla valgono solo per i nodi delle schermate). */
+  /** In the navigation: delete, duplicate, move (copy and paste apply only to the nodes of screens). */
   private navigationKey(event: KeyboardEvent, ctrl: boolean, key: string): void {
     const selection = this.nav.selection();
     if (!selection.length) return;

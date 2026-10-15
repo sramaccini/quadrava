@@ -13,7 +13,7 @@ export interface RegistryDocument {
   doc: Json;
 }
 
-/** Versione da aprire: l'ultima salvata o quella pubblicata in un ambiente. */
+/** Version to open: the last one saved or the one published in an environment. */
 interface VersionOption {
   value: string;
   hash: string;
@@ -21,8 +21,8 @@ interface VersionOption {
 }
 
 /**
- * Contenuto della finestra «Apri da registro…»: si sceglie l'applicazione (dall'elenco del registro o scritta), uno
- * dei suoi documenti del tipo della modalità corrente e la versione (l'ultima o quella pubblicata in un ambiente).
+ * Content of the «Open from registry…» dialog: one chooses the application (from the registry's list or typed), one
+ * of its documents of the kind of the current mode and the version (the last one or the one published in an environment).
  */
 @Component({
   selector: 'ed-registry-open',

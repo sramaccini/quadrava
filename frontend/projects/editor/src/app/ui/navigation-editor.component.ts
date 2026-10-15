@@ -36,9 +36,9 @@ interface NavItem {
 }
 
 /**
- * Editor della navigazione: aree e menu a tre livelli. A sinistra la struttura con i comandi per aggiungere,
- * a destra i campi dell'elemento (generati dallo schema della navigazione), al centro il menu vero (`lc-sidebar`)
- * con un profilo simulato: si scelgono i permessi e si vede che cosa compare.
+ * Navigation editor: areas and three-level menus. On the left the outline with the commands to add,
+ * on the right the fields of the element (generated from the navigation schema), in the centre the real menu (`lc-sidebar`)
+ * with a simulated profile: one chooses the permissions and sees what appears.
  */
 @Component({
   selector: 'ed-navigation-editor',
@@ -58,7 +58,7 @@ interface NavItem {
     NzTabsModule,
     NzTooltipModule,
   ],
-  // I campi e la vista JSON lavorano sulla navigazione invece che sulla schermata.
+  // The fields and the JSON view work on the navigation instead of the screen.
   providers: [{ provide: DocumentState, useExisting: NavigationStore }],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './navigation-editor.component.scss',
@@ -77,7 +77,7 @@ export class NavigationEditorComponent {
 
   protected readonly view = signal<'preview' | 'json'>('preview');
 
-  // Struttura
+  // Outline
 
   protected readonly items = computed<NavItem[]>(() => this.list(this.store.doc(), ['areas']));
 
@@ -128,7 +128,7 @@ export class NavigationEditorComponent {
   protected readonly canAddLeaf = computed(() => this.store.itemPoint('leaf') !== null);
   protected readonly canAddGroup = computed(() => this.store.itemPoint('group') !== null);
 
-  // Proprietà
+  // Properties
 
   protected readonly heading = computed(() => {
     const target = this.store.target();
@@ -153,16 +153,16 @@ export class NavigationEditorComponent {
       .map((i) => i.message);
   });
 
-  // Anteprima del menu
+  // Menu preview
 
-  /** Permessi del profilo simulato; null = tutti. */
+  /** Permissions of the simulated profile; null = all. */
   protected readonly granted = signal<Set<string> | null>(null);
-  /** Il menu disegnato: l'ultima navigazione valida (con errori resta la precedente). */
+  /** The drawn menu: the last valid navigation (with errors the previous one stays). */
   private readonly shown = linkedSignal<NavigationDefinition | null, NavigationDefinition | null>({
     source: () => this.store.definition(),
     computation: (next, previous) => next ?? previous?.value ?? null,
   });
-  /** Quello che l'iframe disegna: il menu vero (`lc-sidebar`) con il profilo simulato e il tema in modifica. */
+  /** What the iframe draws: the real menu (`lc-sidebar`) with the simulated profile and the theme being edited. */
   protected readonly previewState = computed<PreviewState>(() => {
     const granted = this.granted();
     return previewState({

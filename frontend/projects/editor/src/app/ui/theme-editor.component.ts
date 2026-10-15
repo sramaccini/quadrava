@@ -17,9 +17,9 @@ import { FieldsComponent } from './fields.component';
 import { JsonViewComponent } from './json-view.component';
 
 /**
- * Editor del tema: a destra i token (colori, tipografia, forma, densità, layout) generati dallo schema dei temi, al
- * centro la schermata e il menu che si stanno modificando, disegnati con il tema nell'iframe dell'anteprima. Essendo
- * una pagina a sé, il tema (compreso il foglio scuro di NG-ZORRO) vale solo lì: l'editor resta com'è.
+ * Theme editor: on the right the tokens (colours, typography, shape, density, layout) generated from the theme schema, in the
+ * centre the screen and the menu being edited, drawn with the theme in the preview iframe. Being
+ * a page of its own, the theme (including the dark sheet of NG-ZORRO) applies only there: the editor stays as it is.
  */
 @Component({
   selector: 'ed-theme-editor',
@@ -73,13 +73,13 @@ export class ThemeEditorComponent {
   protected readonly fields = THEME.rootProperties();
   protected readonly view = signal<'preview' | 'json'>('preview');
 
-  /** L'ultimo tema valido: con errori l'anteprima non cambia. */
+  /** The last valid theme: with errors the preview does not change. */
   private readonly theme = linkedSignal<ThemeDefinition | null, ThemeDefinition | null>({
     source: () => this.store.definition(),
     computation: (next, previous) => next ?? previous?.value ?? null,
   });
 
-  /** La schermata e il menu aperti nelle altre modalità, con il tema in modifica. */
+  /** The screen and the menu open in the other modes, with the theme being edited. */
   protected readonly state = computed<PreviewState>(() =>
     previewState({
       screen: this.screens.definition(),

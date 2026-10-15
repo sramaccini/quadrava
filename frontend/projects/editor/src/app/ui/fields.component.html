@@ -113,7 +113,7 @@
       }
       @default {
         @if (isLong(row)) {
-          <!-- Sintassi colorata: il testo fisso normale, le espressioni {{ }} con le loro parti (vedi code-highlight). -->
+          <!-- Coloured syntax: the normal fixed text, the {{ }} expressions with their parts (see code-highlight). -->
           <div class="ed-code">
           <textarea
             #area
@@ -166,7 +166,7 @@
           }
         } @else {
           @if (suggestions(row).length) {
-            <!-- Suggerimenti (data source, schermate…): l'elenco si apre sotto la casella e si filtra mentre si scrive. -->
+            <!-- Suggestions (data sources, screens…): the list opens under the box and is filtered while typing. -->
             <nz-input-wrapper class="suggest" nzAutocompleteOrigin #origin="nzAutocompleteOrigin">
               <input
                 #suggest

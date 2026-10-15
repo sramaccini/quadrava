@@ -18,18 +18,18 @@ import { PreviewFrameComponent } from './preview-frame.component';
 import { PreviewLog } from './preview-log';
 import { previewState, type PreviewState } from './protocol';
 
-/** Pausa dopo l'ultima modifica prima di ridisegnare l'anteprima (ricrearla a ogni lettera sarebbe inutile e lento). */
+/** Pause after the last change before redrawing the preview (recreating it at every letter would be useless and slow). */
 const DEBOUNCE_MS = 250;
 
-/** Larghezze dell'anteprima, per provare le fasce del guscio. */
+/** Widths of the preview, to try the bands of the shell. */
 const WIDTHS: Record<string, number | null> = { desktop: null, tablet: 768, mobile: 375 };
 const WIDTH_ICONS: Record<string, string> = { desktop: 'desktop', tablet: 'tablet', mobile: 'mobile' };
 
 /**
- * Anteprima dal vivo della schermata: la barra (larghezza, permessi, parametri, registro, selezione, ricarica) sta
- * nell'editor, il disegno nell'iframe isolato (vedi `ed-preview-frame`), con il tema in modifica. Se il documento ha
- * errori resta l'ultima versione valida, con un avviso. Un componente scelto nell'anteprima si seleziona nella
- * struttura; il nodo selezionato nella struttura è evidenziato nell'anteprima.
+ * Live preview of the screen: the bar (width, permissions, parameters, log, selection, reload) is
+ * in the editor, the drawing in the isolated iframe (see `ed-preview-frame`), with the theme being edited. If the document has
+ * errors the last valid version stays, with a warning. A component chosen in the preview is selected in the
+ * outline; the node selected in the outline is highlighted in the preview.
  */
 @Component({
   selector: 'ed-preview',
@@ -44,15 +44,15 @@ export class PreviewComponent {
   protected readonly log = inject(PreviewLog);
   protected readonly i18n = inject(I18n);
 
-  /** Definizione disegnata: l'ultima valida, aggiornata dopo una breve pausa. */
+  /** Drawn definition: the last valid one, updated after a short pause. */
   protected readonly shown = signal<ScreenDefinition | null>(this.store.definition());
-  /** Cambia per ricreare la schermata da capo (pulsante Ricarica, permessi). */
+  /** Changes to recreate the screen from scratch (Reload button, permissions). */
   protected readonly version = signal(0);
   protected readonly grantAll = signal(true);
-  /** Letture dai servizi veri invece dei dati di esempio (le scritture restano bloccate). */
+  /** Reads from the real services instead of the sample data (writes stay blocked). */
   protected readonly liveData = signal(false);
   protected readonly width = signal('desktop');
-  /** Una voce per larghezza: icona, e nome con i pixel per suggerimento e lettori di schermo. */
+  /** One item per width: icon, and name with the pixels for tooltip and screen readers. */
   protected readonly widthOptions = computed(() =>
     Object.entries(WIDTHS).map(([value, px]) => ({
       value,
@@ -62,22 +62,22 @@ export class PreviewComponent {
   );
   protected readonly frameWidth = computed(() => WIDTHS[this.width()]);
   protected readonly params = signal<Record<string, unknown>>({});
-  /** Lingua scelta per l'anteprima: segue quella dell'editor finché non se ne sceglie un'altra (anche una aggiunta nei testi). */
+  /** Language chosen for the preview: it follows the editor's until another one is chosen (also one added in the texts). */
   private readonly chosenLocale = linkedSignal(() => this.i18n.locale());
-  /** Lingua dell'anteprima: quella scelta, se esiste ancora (una lingua tolta nei testi fa tornare a quella dell'editor). */
+  /** Language of the preview: the chosen one, if it still exists (a language removed in the texts goes back to the editor's). */
   protected readonly locale = computed(() => (this.store.languages().includes(this.chosenLocale()) ? this.chosenLocale() : this.i18n.locale()));
   protected readonly showLog = signal(false);
   protected readonly showParams = signal(false);
   protected readonly stale = computed(() => this.store.definition() === null && this.shown() !== null);
-  /** In modalità selezione ogni clic seleziona il componente invece di attivarlo. */
+  /** In selection mode every click selects the component instead of activating it. */
   protected readonly selectMode = signal(false);
-  /** Identificativo del nodo selezionato, da evidenziare nel disegno. */
+  /** Identifier of the selected node, to highlight in the drawing. */
   private readonly selectedId = computed(() => {
     const value = getIn(this.store.doc(), this.store.selection());
     return isObject(value) && typeof value['id'] === 'string' ? value['id'] : null;
   });
 
-  /** Quello che l'iframe disegna. */
+  /** What the iframe draws. */
   protected readonly state = computed<PreviewState>(() =>
     previewState({
       screen: this.shown(),
@@ -106,8 +106,8 @@ export class PreviewComponent {
   }
 
   /**
-   * Un componente della tavolozza rilasciato sul disegno: si inserisce prima, dopo o dentro il nodo indicato, con le
-   * stesse regole della struttura (in fondo alla schermata se il rilascio non è su un nodo).
+   * A palette component dropped on the drawing: it is inserted before, after or inside the given node, with the
+   * same rules as the outline (at the end of the screen if the drop is not on a node).
    */
   protected dropped(event: { kind: string; targetId: string | null; zone: DropZone }): void {
     const doc = this.store.doc();
@@ -117,7 +117,7 @@ export class PreviewComponent {
     if (point) this.store.addNode(event.kind, point);
   }
 
-  /** Un componente già presente spostato sul disegno: stesse regole della struttura (mai dentro sé stesso). */
+  /** A component already there moved on the drawing: same rules as the outline (never inside itself). */
   protected moved(event: { id: string; targetId: string | null; zone: DropZone }): void {
     const doc = this.store.doc();
     const from = this.store.pathOfId(event.id);
@@ -128,13 +128,13 @@ export class PreviewComponent {
     if (point) this.store.moveNode(from, point.list, point.index);
   }
 
-  /** La maniglia dell'anteprima: nuovo `span` (griglia) o `grow` (box) del componente. */
+  /** The handle of the preview: new `span` (grid) or `grow` (box) of the component. */
   protected resized(event: { id: string; property: ResizeProperty; value: number }): void {
     const path = this.store.pathOfId(event.id);
     if (path) this.store.setValue([...path, event.property], event.value);
   }
 
-  /** Un componente scelto nell'anteprima: si seleziona nella struttura. */
+  /** A component chosen in the preview: it is selected in the outline. */
   protected picked(id: string): void {
     const path = this.store.pathOfId(id);
     if (path) this.store.select(path);

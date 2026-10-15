@@ -1,7 +1,7 @@
 import type { Json } from './doc-ops';
 import { dropPoint, zoneAt } from './drop';
 
-describe('trascinamento nella struttura', () => {
+describe('dragging in the outline', () => {
   const doc: Json = {
     components: [
       { type: 'text', text: 'a' },
@@ -10,25 +10,25 @@ describe('trascinamento nella struttura', () => {
     ],
   };
 
-  it('prima, dopo e dentro una riga', () => {
+  it('before, after and inside a row', () => {
     expect(dropPoint(doc, ['components', 0], 'before')).toEqual({ list: ['components'], index: 0 });
     expect(dropPoint(doc, ['components', 0], 'after')).toEqual({ list: ['components'], index: 1 });
-    // Dentro un nodo che non contiene nulla vuol dire subito dopo.
+    // Inside a node that contains nothing means right after it.
     expect(dropPoint(doc, ['components', 0], 'inside')).toEqual({ list: ['components'], index: 1 });
     expect(dropPoint(doc, ['components', 1], 'inside')).toEqual({ list: ['components', 1, 'components'], index: 1 });
     expect(dropPoint(doc, ['components', 1, 'components', 0], 'before')).toEqual({ list: ['components', 1, 'components'], index: 0 });
-    // Schermata, schede e passi: sempre dentro.
+    // Screen, tabs and steps: always inside.
     expect(dropPoint(doc, [], 'before')).toEqual({ list: ['components'], index: 3 });
     expect(dropPoint(doc, ['components', 2, 'tabs', 0], 'after')).toEqual({ list: ['components', 2, 'tabs', 0, 'components'], index: 0 });
   });
 
-  it('un nodo non finisce dentro sé stesso', () => {
+  it('a node does not end up inside itself', () => {
     expect(dropPoint(doc, ['components', 1], 'inside', ['components', 1])).toBeNull();
     expect(dropPoint(doc, ['components', 1, 'components', 0], 'after', ['components', 1])).toBeNull();
     expect(dropPoint(doc, ['components', 1], 'after', ['components', 1])).toEqual({ list: ['components'], index: 2 });
   });
 
-  it('zona dalla posizione del puntatore', () => {
+  it('zone from the position of the pointer', () => {
     expect(zoneAt(2, 20, true)).toBe('before');
     expect(zoneAt(10, 20, true)).toBe('inside');
     expect(zoneAt(18, 20, true)).toBe('after');

@@ -1,22 +1,22 @@
 import type { ResizeProperty } from './protocol';
 
-/** Misure lette all'inizio e alla fine del trascinamento della maniglia. */
+/** Measures read at the start and at the end of the drag of the handle. */
 export interface ResizeMeasure {
   property: ResizeProperty;
-  /** Larghezza del componente all'inizio. */
+  /** Width of the component at the start. */
   startWidth: number;
-  /** Larghezza che avrebbe alla posizione del puntatore. */
+  /** Width it would have at the pointer position. */
   width: number;
-  /** Griglia: colonne e larghezza della griglia. */
+  /** Grid: columns and width of the grid. */
   columns?: number;
   gridWidth?: number;
-  /** Box: quota attuale (`grow`; 0 o assente vale 1). */
+  /** Box: current share (`grow`; 0 or absent counts as 1). */
   current?: number;
 }
 
 /**
- * Nuovo valore dopo il ridimensionamento: nella griglia le colonne intere più vicine alla larghezza (da 1 a quelle della
- * griglia); nel box la quota attuale in proporzione al cambio di larghezza (da 1 a 12).
+ * New value after resizing: in the grid the whole columns closest to the width (from 1 to those of the
+ * grid); in the box the current share in proportion to the change of width (from 1 to 12).
  */
 export function resizeValue(m: ResizeMeasure): number {
   const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, Math.round(n)));

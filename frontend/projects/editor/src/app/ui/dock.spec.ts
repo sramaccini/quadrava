@@ -1,10 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { Dock } from './dock';
 
-describe('Dock: riquadri fissati o nascosti', () => {
+describe('Dock: pinned or hidden panels', () => {
   beforeEach(() => localStorage.clear());
 
-  it('le scelte salvate per lato intero (versione precedente) valgono per tutti i riquadri del lato', () => {
+  it('the choices saved per whole side (previous version) apply to all the panels of the side', () => {
     localStorage.setItem('lc.editor.dock', JSON.stringify({ left: false, right: true, leftWidth: 330 }));
     const dock = TestBed.inject(Dock);
     expect([dock.pinned.palette(), dock.pinned.outline(), dock.pinned.inspector()]).toEqual([false, false, true]);
@@ -13,7 +13,7 @@ describe('Dock: riquadri fissati o nascosti', () => {
     expect(JSON.parse(localStorage.getItem('lc.editor.dock')!)).toEqual({ pins: { palette: false, outline: false, inspector: true }, leftWidth: 330 });
   });
 
-  it('larghezza della colonna: i riquadri fissati, più la striscia se qualcuno è nascosto; la scelta per riquadro vince', () => {
+  it('width of the column: the pinned panels, plus the strip if one is hidden; the per-panel choice wins', () => {
     localStorage.setItem('lc.editor.dock', JSON.stringify({ pins: { outline: false }, left: true }));
     const dock = TestBed.inject(Dock);
     expect(dock.columnWidth('left', ['palette', 'outline'], 280)).toBe(310);
@@ -21,7 +21,7 @@ describe('Dock: riquadri fissati o nascosti', () => {
     expect(dock.columnWidth('right', ['inspector'], 320)).toBe(320);
     dock.togglePin('palette');
     expect(dock.columnWidth('left', ['palette', 'outline'], 280)).toBe(30);
-    // Appena sganciato il riquadro è aperto; rifissato si chiude.
+    // Just unpinned the panel is open; pinned again it closes.
     expect(dock.open()).toBe('palette');
     dock.togglePin('palette');
     expect(dock.open()).toBeNull();

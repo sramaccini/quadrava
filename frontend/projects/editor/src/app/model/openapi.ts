@@ -1,54 +1,54 @@
 import { isObject, type Json, type JsonObject } from './doc-ops';
 import { SOURCE_NAME } from './editor-store';
 
-/** Metodi che diventano data source. */
+/** Methods that become data sources. */
 const METHODS = ['get', 'post', 'put', 'patch', 'delete'] as const;
 export type ApiMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
-/** Un'operazione del documento OpenAPI, quanto basta per farne un data source. */
+/** An operation of the OpenAPI document, enough to make a data source of it. */
 export interface ApiOperation {
-  /** «GET /api/ordini/{id}»: identifica l'operazione nel documento. */
+  /** «GET /api/orders/{id}»: identifies the operation in the document. */
   key: string;
   method: ApiMethod;
   path: string;
   operationId: string | null;
   summary: string;
-  /** Primo tag (gruppo), vuoto se non ne ha. */
+  /** First tag (group), empty if it has none. */
   tag: string;
   pathParams: string[];
   queryParams: { name: string; required: boolean }[];
-  /** Ha un corpo JSON (POST, PUT, PATCH). */
+  /** It has a JSON body (POST, PUT, PATCH). */
   body: boolean;
-  /** Dati di esempio della risposta (solo per le letture): l'esempio del documento o uno costruito dallo schema. */
+  /** Sample data of the response (only for reads): the example of the document or one built from the schema. */
   sample: Json | undefined;
 }
 
 export interface ApiDescription {
   title: string;
   version: string;
-  /** Prefisso degli indirizzi, dal primo server (OpenAPI 3) o da basePath (Swagger 2): «/api», oppure vuoto. */
+  /** Prefix of the addresses, from the first server (OpenAPI 3) or from basePath (Swagger 2): «/api», or empty. */
   basePath: string;
   operations: ApiOperation[];
 }
 
-/** Il documento non si può leggere: `reason` è la chiave del messaggio (`ed.openapi.error.*`). */
+/** The document cannot be read: `reason` is the key of the message (`ed.openapi.error.*`). */
 export class OpenApiError extends Error {
   constructor(readonly reason: 'notJson' | 'notOpenApi' | 'noOperations') {
     super(reason);
   }
 }
 
-/** Percorso accettato: lettere, cifre, `-._~/` e i segnaposto `{nome}`; mai `{{`. */
+/** Accepted path: letters, digits, `-._~/` and the `{name}` placeholders; never `{{`. */
 const SAFE_PATH = /^\/[A-Za-z0-9._~\-/{}]*$/;
 const PATH_PARAM = /\{([A-Za-z_][A-Za-z0-9_]*)\}/g;
-/** Limiti per documenti enormi o ricorsivi. */
+/** Limits for huge or recursive documents. */
 const MAX_OPERATIONS = 500;
 const MAX_DEPTH = 6;
 
 /**
- * Legge un documento OpenAPI 3.x o Swagger 2.0 (per esempio quello che springdoc espone in Spring Boot su
- * `/v3/api-docs`) e ne ricava le operazioni. Il documento è un dato: se ne leggono solo stringhe e schemi, i percorsi
- * con caratteri inattesi si scartano, i testi si mostrano come testo.
+ * Reads an OpenAPI 3.x or Swagger 2.0 document (for example the one springdoc exposes in Spring Boot at
+ * `/v3/api-docs`) and derives its operations. The document is data: only strings and schemas are read, paths
+ * with unexpected characters are discarded, texts are shown as text.
  */
 export function readOpenApi(doc: unknown): ApiDescription {
   if (!isObject(doc as Json)) throw new OpenApiError('notOpenApi');
@@ -99,7 +99,7 @@ function readOperation(root: JsonObject, v3: boolean, method: ApiMethod, path: s
   };
 }
 
-/** Dati di esempio della prima risposta di successo: l'esempio del documento, altrimenti costruiti dallo schema. */
+/** Sample data of the first successful response: the example of the document, otherwise built from the schema. */
 function responseSample(root: JsonObject, v3: boolean, op: JsonObject): Json | undefined {
   const responses = isObject(op['responses']) ? op['responses'] : {};
   const code = ['200', '201', '2XX', 'default'].find((c) => isObject(responses[c])) ?? Object.keys(responses).find((c) => c.startsWith('2'));
@@ -107,7 +107,7 @@ function responseSample(root: JsonObject, v3: boolean, op: JsonObject): Json | u
   if (!isObject(response)) return undefined;
   if (v3) {
     const content = isObject(response['content']) ? response['content'] : {};
-    // springdoc usa spesso «*/*»; altrimenti il primo tipo JSON.
+    // springdoc often uses «*/*»; otherwise the first JSON type.
     const media = Object.entries(content).find(([type]) => type.includes('json') || type === '*/*')?.[1];
     if (!isObject(media)) return undefined;
     if (media['example'] !== undefined) return media['example'];
@@ -122,13 +122,13 @@ function responseSample(root: JsonObject, v3: boolean, op: JsonObject): Json | u
 }
 
 /**
- * Un valore d'esempio per uno schema: l'esempio dello schema, il primo valore ammesso, oppure uno plausibile per tipo e
- * formato (con il nome della proprietà per i testi). Gli elenchi hanno due elementi, diversi tra loro (`index`).
+ * A sample value for a schema: the example of the schema, the first allowed value, or a plausible one by type and
+ * format (with the name of the property for texts). Lists have two elements, different from each other (`index`).
  */
 export function sampleOf(root: JsonObject, raw: Json, name: string, index: number, depth: number): Json {
   const schema = resolve(root, raw);
   if (!isObject(schema) || depth > MAX_DEPTH) return null;
-  // L'esempio dello schema; negli elenchi i numeri cambiano da un elemento all'altro (identificativi distinti).
+  // The example of the schema; in lists the numbers change from one element to the next (distinct identifiers).
   if (schema['example'] !== undefined) return typeof schema['example'] === 'number' ? schema['example'] + index : schema['example'];
   if (Array.isArray(schema['enum']) && schema['enum'].length) return schema['enum'][index % schema['enum'].length];
   const parts = ['allOf', 'oneOf', 'anyOf'].map((k) => schema[k]).find(Array.isArray) as Json[] | undefined;
@@ -159,15 +159,15 @@ export function sampleOf(root: JsonObject, raw: Json, name: string, index: numbe
     if (format === 'date-time') return `2026-01-${String(15 + index).padStart(2, '0')}T10:00:00Z`;
     if (format === 'email') return `nome${index + 1}@example.com`;
     if (format === 'uuid') return `00000000-0000-0000-0000-${String(index + 1).padStart(12, '0')}`;
-    return `${name || 'testo'} ${index + 1}`;
+    return `${name || 'text'} ${index + 1}`;
   }
   return null;
 }
 
 /**
- * Il data source di un'operazione. Indirizzo: prefisso più percorso, con i parametri di percorso dai parametri della
- * schermata (`{{ params.id }}`); i parametri di query obbligatori allo stesso modo (quelli facoltativi no: una
- * variabile assente farebbe fallire l'espressione); il corpo dal form (`{{ form }}`).
+ * The data source of an operation. Address: prefix plus path, with the path parameters from the parameters of the
+ * screen (`{{ params.id }}`); the required query parameters in the same way (the optional ones not: a
+ * missing variable would make the expression fail); the body from the form (`{{ form }}`).
  */
 export function dataSourceOf(op: ApiOperation, basePath: string): JsonObject {
   const url = cleanBase(basePath) + op.path.replace(PATH_PARAM, (_, name: string) => `{{ params.${name} }}`);
@@ -179,8 +179,8 @@ export function dataSourceOf(op: ApiOperation, basePath: string): JsonObject {
 }
 
 /**
- * Nome del data source: dall'`operationId` (in camelCase), altrimenti da metodo e percorso («getOrdiniById»); valido
- * come identificativo e diverso da quelli già usati.
+ * Name of the data source: from the `operationId` (in camelCase), otherwise from method and path («getOrdersById»); valid
+ * as an identifier and different from those already used.
  */
 export function sourceNameOf(op: ApiOperation, used: ReadonlySet<string>): string {
   const words = (op.operationId ?? `${op.method.toLowerCase()} ${op.path.replace(PATH_PARAM, 'by $1')}`)
@@ -195,7 +195,7 @@ export function sourceNameOf(op: ApiOperation, used: ReadonlySet<string>): strin
   return name;
 }
 
-/** Riferimento interno (`#/components/...`, `#/definitions/...`) risolto; i riferimenti esterni non si seguono. */
+/** Internal reference (`#/components/...`, `#/definitions/...`) resolved; external references are not followed. */
 function resolve(root: JsonObject, value: Json | undefined, seen = 0): Json | undefined {
   if (!isObject(value) || typeof value['$ref'] !== 'string') return value;
   if (seen > 20 || !value['$ref'].startsWith('#/')) return undefined;
@@ -217,7 +217,7 @@ function serverPath(servers: Json | undefined): string {
   }
 }
 
-/** Prefisso senza barra finale e con quella iniziale; vuoto se è solo «/» o contiene caratteri inattesi. */
+/** Prefix without trailing slash and with the leading one; empty if it is only «/» or contains unexpected characters. */
 function cleanBase(path: string): string {
   const trimmed = path.trim().replace(/\/+$/, '');
   if (!trimmed) return '';

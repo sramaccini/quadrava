@@ -2,26 +2,26 @@ import { Injectable, InjectionToken } from '@angular/core';
 import type { Json } from './doc-ops';
 
 /**
- * Client del registro (contracts/registry.yaml 0.5): ogni schermata, la navigazione e ogni tema sono documenti
- * separati, con versioni immutabili e pubblicazioni per ambiente. Le chiamate sono relative all'origine dell'editor,
- * che in produzione è servito dal BFF (sessione nel cookie, niente token nel browser).
+ * Registry client (contracts/registry.yaml 0.5): every screen, the navigation and every theme are separate documents,
+ * with immutable versions and publications per environment. Calls are relative to the origin of the editor,
+ * which in production is served by the BFF (session in the cookie, no token in the browser).
  *
- * Protezione CSRF del BFF: le scritture rimandano il token del cookie `XSRF-TOKEN` nell'intestazione `X-XSRF-TOKEN`.
- * Se il cookie non c'era ancora, il BFF risponde 403 e lo crea: la scrittura si ripete una volta.
+ * CSRF protection of the BFF: writes send back the token of the `XSRF-TOKEN` cookie in the `X-XSRF-TOKEN` header.
+ * If the cookie was not there yet, the BFF answers 403 and creates it: the write is repeated once.
  */
 
-/** Cambio di pagina (verso il login del BFF). Sostituibile nei test. */
+/** Page change (towards the BFF login). Replaceable in tests. */
 export const EDITOR_REDIRECT = new InjectionToken<(url: string) => void>('EDITOR_REDIRECT', {
   providedIn: 'root',
   factory: () => (url: string) => globalThis.location.assign(url),
 });
 
-/** Pagina del BFF che avvia il login e poi riporta l'utente all'indirizzo indicato. */
+/** BFF page that starts the login and then takes the user back to the given address. */
 export function loginUrl(returnTo: string): string {
   return `/bff/login?return=${encodeURIComponent(returnTo)}`;
 }
 
-/** Il token CSRF dal cookie del BFF, se c'è. */
+/** The CSRF token from the BFF cookie, if there is one. */
 export function csrfToken(cookies: string): string | null {
   for (const part of cookies.split(';')) {
     const [name, ...value] = part.trim().split('=');
@@ -32,7 +32,7 @@ export function csrfToken(cookies: string): string | null {
 
 export type DocumentKind = 'screen' | 'navigation' | 'theme' | 'messages';
 
-/** Applicazione e ambiente del registro scelti nell'editor (ricordati nel browser), condivisi dai pannelli. */
+/** Application and environment of the registry chosen in the editor (remembered in the browser), shared by the panels. */
 export interface RegistrySettings {
   appId: string;
   env: string;
@@ -40,7 +40,7 @@ export interface RegistrySettings {
 
 export const REGISTRY_SETTINGS_KEY = 'lc.editor.registry';
 
-/** Impostazioni del registro salvate; ambiente iniziale sviluppo (collaudo e produzione chiedono versioni approvate). */
+/** Saved registry settings; initial environment development (testing and production ask for approved versions). */
 export function readRegistrySettings(): RegistrySettings {
   try {
     const parsed = JSON.parse(localStorage.getItem(REGISTRY_SETTINGS_KEY) ?? '{}') as Partial<RegistrySettings>;
@@ -50,7 +50,7 @@ export function readRegistrySettings(): RegistrySettings {
   }
 }
 
-/** Stato di revisione di una versione. */
+/** Review state of a version. */
 export type ReviewState = 'draft' | 'in-review' | 'approved' | 'rejected';
 export type ReviewAction = 'request' | 'approve' | 'reject';
 
@@ -64,26 +64,26 @@ export interface DocumentVersion {
   reviewNote?: string;
 }
 
-/** Un problema di validazione segnalato dal registro. */
+/** A validation problem reported by the registry. */
 export interface RegistryIssue {
   path: string;
   message: string;
 }
 
-/** Un riferimento a un'altra schermata: identificativo e posizione nel documento (JSON Pointer). */
+/** A reference to another screen: identifier and position in the document (JSON Pointer). */
 export interface ScreenReference {
   screen: string;
   path: string;
 }
 
-/** Schermate citate da una versione e quelle non pubblicate nell'ambiente (o inesistenti, senza ambiente). */
+/** Screens referenced by a version and those not published in the environment (or not existing, without environment). */
 export interface ReferenceReport {
   env?: string;
   references: ScreenReference[];
   missing: ScreenReference[];
 }
 
-/** Un'applicazione del registro visibile all'utente. */
+/** An application of the registry visible to the user. */
 export interface AppSummary {
   id: string;
   name: string;
@@ -94,27 +94,27 @@ export interface DocumentSummary {
   kind: DocumentKind;
   id: string;
   latest?: DocumentVersion;
-  /** Ambiente → hash pubblicato. */
+  /** Environment → published hash. */
   publishedEnvironments?: Record<string, string>;
 }
 
-/** Errore del registro: il titolo del Problem (RFC 9457) se c'è, altrimenti lo stato HTTP. */
+/** Registry error: the title of the Problem (RFC 9457) if there is one, otherwise the HTTP status. */
 export class RegistryError extends Error {
   constructor(
     readonly status: number,
     message: string,
-    /** Con 400: i problemi di validazione del documento. */
+    /** With 400: the validation problems of the document. */
     readonly issues: RegistryIssue[] = [],
-    /** Con 412: chi ha salvato l'ultima versione. */
+    /** With 412: who saved the last version. */
     readonly latestAuthor: string | null = null,
-    /** Con 409 alla pubblicazione: le schermate citate e non pubblicate nell'ambiente. */
+    /** With 409 on publication: the screens referenced and not published in the environment. */
     readonly missingReferences: ScreenReference[] = [],
   ) {
     super(message);
   }
 }
 
-/** Il documento: tipo e identificativo, presi dalla proprietà del contenuto (`screen`, `navigation`, `theme`). */
+/** The document: type and identifier, taken from the property of the content (`screen`, `navigation`, `theme`). */
 export function documentRef(kind: DocumentKind, doc: Json): { kind: DocumentKind; id: string } | null {
   if (typeof doc !== 'object' || doc === null || Array.isArray(doc)) return null;
   const id = doc[kind];
@@ -123,10 +123,10 @@ export function documentRef(kind: DocumentKind, doc: Json): { kind: DocumentKind
 
 @Injectable({ providedIn: 'root' })
 export class RegistryClient {
-  /** Radice delle API del registro (stessa origine). */
+  /** Root of the registry APIs (same origin). */
   base = '/registry';
 
-  /** Applicazioni visibili all'utente: serve anche a sapere se il registro c'è e se chiede l'accesso (401). */
+  /** Applications visible to the user: it also tells whether the registry is there and whether it asks for sign-in (401). */
   async apps(): Promise<AppSummary[]> {
     return this.call<AppSummary[]>('GET', '/apps');
   }
@@ -140,14 +140,14 @@ export class RegistryClient {
   }
 
   /**
-   * Salva una versione. Con `basedOn` (l'hash della versione da cui si è partiti) il registro accetta il salvataggio
-   * solo se nessuno ha salvato nel frattempo; altrimenti RegistryError 412 con l'autore dell'ultima versione.
+   * Saves a version. With `basedOn` (the hash of the version one started from) the registry accepts the save
+   * only if nobody saved in the meantime; otherwise RegistryError 412 with the author of the last version.
    */
   async save(appId: string, kind: DocumentKind, id: string, content: Json, basedOn?: string | null): Promise<DocumentVersion> {
     return this.call<DocumentVersion>('POST', this.path(appId, kind, id, '/versions'), content, basedOn ? { 'If-Match': `"${basedOn}"` } : {});
   }
 
-  /** Revisione: chiedila (bozza o respinta), approva o respingi (solo i revisori, mai l'autore). */
+  /** Review: request it (draft or rejected), approve or reject (reviewers only, never the author). */
   async review(appId: string, kind: DocumentKind, id: string, hash: string, action: ReviewAction, note?: string): Promise<DocumentVersion> {
     return this.call<DocumentVersion>('POST', this.path(appId, kind, id, `/versions/${enc(hash)}/review`), note ? { action, note } : { action });
   }
@@ -156,7 +156,7 @@ export class RegistryClient {
     return this.call<Json>('GET', this.path(appId, kind, id, `/versions/${enc(hash)}`));
   }
 
-  /** Schermate citate dalla versione; con `env` mancano quelle non pubblicate lì, senza quelle che non esistono. */
+  /** Screens referenced by the version; with `env` those not published there are missing, without it those that do not exist. */
   async references(appId: string, kind: DocumentKind, id: string, hash: string, env?: string): Promise<ReferenceReport> {
     const query = env ? `?env=${enc(env)}` : '';
     return this.call<ReferenceReport>('GET', this.path(appId, kind, id, `/versions/${enc(hash)}/references${query}`));
@@ -185,7 +185,7 @@ export class RegistryClient {
   private async call<T>(method: string, path: string, body?: unknown, headers: Record<string, string> = {}): Promise<T> {
     const hadToken = csrfToken(document.cookie) !== null;
     let response = await this.send(method, path, body, headers);
-    // Prima scrittura senza cookie CSRF: il BFF risponde 403 e intanto lo crea. Si riprova una volta, con il token.
+    // First write without CSRF cookie: the BFF answers 403 and meanwhile creates it. Try again once, with the token.
     if (response.status === 403 && method !== 'GET' && !hadToken && csrfToken(document.cookie)) {
       response = await this.send(method, path, body, headers);
     }
@@ -196,7 +196,7 @@ export class RegistryClient {
       let missingReferences: ScreenReference[] = [];
       try {
         const problem = (await response.json()) as { title?: unknown; errors?: unknown; latestAuthor?: unknown; missingReferences?: unknown };
-        // Solo testi pensati per l'autore (titolo, problemi di validazione, autore): mai HTML, mai il dettaglio tecnico.
+        // Only texts meant for the author (title, validation problems, author): never HTML, never the technical detail.
         if (typeof problem.title === 'string') title = problem.title;
         if (Array.isArray(problem.errors)) {
           issues = problem.errors
@@ -212,7 +212,7 @@ export class RegistryClient {
             .map((r) => ({ screen: r.screen, path: r.path }));
         }
       } catch {
-        // Corpo assente o non JSON.
+        // Body missing or not JSON.
       }
       throw new RegistryError(response.status, title, issues, latestAuthor, missingReferences);
     }

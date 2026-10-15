@@ -1,4 +1,4 @@
-/* Variabili di ripiego: il tema scelto le sovrascrive sul root (ThemeService). */
+/* Fallback variables: the chosen theme overrides them on the root (ThemeService). */
 :root {
   --lc-color-primary: #1f5fbf; --lc-color-on-primary: #fff; --lc-color-background: #f4f6f9; --lc-color-surface: #fff;
   --lc-color-on-surface: #1b2430; --lc-color-muted: #5d6b7a; --lc-color-border: #d5dbe3; --lc-color-danger: #c62828;
@@ -8,13 +8,13 @@
 html, body { margin: 0; }
 body { background: var(--lc-color-background); color: var(--lc-color-on-surface); font-family: var(--lc-font-family); font-size: var(--lc-font-size); }
 
-/* Anteprima dell'editor: in modalità selezione i componenti si scelgono con un clic. */
+/* Editor preview: in selection mode components are chosen with a click. */
 .frame.selecting lc-node[data-node-id] { cursor: crosshair; }
 
 /*
- * Riquadri dell'editor (componenti, struttura, proprietà…): ognuno separato, con il titolo su una barra scura fissa e il
- * contenuto che scorre sotto. I colori della barra sono dell'editor, non del tema in modifica: il contrasto resta
- * garantito (bianco su #2b333d, circa 12,6:1).
+ * Panels of the editor (components, outline, properties…): each one separate, with the title on a fixed dark bar and the
+ * content scrolling below. The colours of the bar belong to the editor, not to the theme being edited: the contrast stays
+ * guaranteed (white on #2b333d, about 12.6:1).
  */
 :root { --ed-panel-title-bg: #2b333d; --ed-panel-title-fg: #fff; }
 .ed-panels { display: flex; flex-direction: column; gap: 8px; min-height: 0; padding: 8px; background: var(--lc-color-background); }
@@ -30,9 +30,9 @@ body { background: var(--lc-color-background); color: var(--lc-color-on-surface)
 .ed-panel-title .anticon { font-size: 14px; }
 .ed-panel-body { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 10px 12px; }
 /*
- * Area centrale: le schede (Anteprima, JSON, Data source, Testi…) stanno sotto il contenuto come linguette di
- * cartella; il contenuto è un riquadro con il suo bordo, e la scheda attiva si unisce a lui (niente riga in mezzo).
- * Nel documento le schede restano prima del contenuto (l'ordine solito per i lettori di schermo): le sposta `order`.
+ * Central area: the tabs (Preview, JSON, Data sources, Texts…) sit below the content like folder
+ * tabs; the content is a panel with its border, and the active tab joins it (no line in between).
+ * In the document the tabs stay before the content (the usual order for screen readers): `order` moves them.
  */
 .ed-tabs-box { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 .ed-tabs-box > nz-tabs { order: 2; }
@@ -48,8 +48,8 @@ body { background: var(--lc-color-background); color: var(--lc-color-on-surface)
 }
 
 /*
- * Riquadri sganciati (edDockPanel, vedi Dock): fuori dalla colonna, galleggiano sopra l'area centrale accanto alla
- * striscia delle linguette, visibili solo quando sono aperti. Chiusi restano nel documento ma trasparenti e senza eventi.
+ * Unpinned panels (edDockPanel, see Dock): outside the column, they float over the central area next to the
+ * strip of tabs, visible only when open. Closed they stay in the document but transparent and without events.
  */
 .ed-floating {
   position: absolute !important; top: 8px; bottom: 8px; z-index: 31; width: var(--ed-dock-width); max-height: none !important;
@@ -60,16 +60,16 @@ ed-dock-side.left .ed-floating { left: calc(var(--ed-dock-strip) + 6px); transfo
 ed-dock-side.right .ed-floating { right: calc(var(--ed-dock-strip) + 6px); transform: translateX(8px); }
 ed-dock-side .ed-floating.ed-open { opacity: 1; visibility: visible; pointer-events: auto; transform: none; transition: opacity 0.12s ease, transform 0.12s ease; }
 
-/* Con i pannelli impilati (finestre strette) i riquadri non si nascondono: niente puntine, tutti al loro posto. */
+/* With stacked panels (narrow windows) panels are not hidden: no pins, all in their place. */
 @media (max-width: 1100px) {
   ed-dock-pin { display: none !important; }
   .ed-floating { position: static !important; width: auto; box-shadow: none; opacity: 1; visibility: visible; pointer-events: auto; transform: none !important; }
 }
 
 /*
- * Aree di testo JSON con la sintassi colorata (JsonHighlightDirective): la textarea, trasparente, sta sopra un <pre>
- * con lo stesso testo colorato. Carattere, spaziature, a capo e barra di scorrimento devono essere identici nei due,
- * altrimenti i colori si sfasano dal testo. Colori su bianco con contrasto almeno 4,5:1.
+ * JSON text areas with coloured syntax (JsonHighlightDirective): the textarea, transparent, sits over a <pre>
+ * with the same coloured text. Font, spacing, wrapping and scroll bar must be identical in the two,
+ * otherwise the colours drift from the text. Colours on white with a contrast of at least 4.5:1.
  */
 :root {
   --ed-code-key: #0b5cad; --ed-code-string: #1a7f37; --ed-code-number: #b35900; --ed-code-literal: #8250df;
@@ -99,7 +99,7 @@ ed-dock-side .ed-floating.ed-open { opacity: 1; visibility: visible; pointer-eve
 .ed-code-literal { color: var(--ed-code-literal); font-weight: 600; }
 .ed-code-punctuation { color: var(--ed-code-punctuation); }
 .ed-code-expression { color: var(--ed-code-expression); background: var(--ed-code-expression-bg); border-radius: 3px; }
-/* Testi delle proprietà con espressioni: le graffe evidenziate, le parti di CEL con i loro colori. */
+/* Texts of properties with expressions: the braces highlighted, the CEL parts with their colours. */
 .ed-code-delimiter { color: var(--ed-code-expression); background: var(--ed-code-expression-bg); font-weight: 600; border-radius: 3px; }
 .ed-code-function { color: var(--ed-code-function); }
 .ed-code-variable { color: var(--ed-code-variable); }

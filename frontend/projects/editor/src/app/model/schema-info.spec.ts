@@ -7,8 +7,8 @@ import { defaultItem, emptyScreen, ensureSource, freshId, INPUT_KINDS, nodeTempl
 
 const t = (key: string): string => EDITOR_MESSAGES['it'][key] ?? key;
 
-describe('lettura dello schema', () => {
-  it('descrive le proprietà di un nodo con il modo di modificarle', () => {
+describe('reading the schema', () => {
+  it('describes the properties of a node with the way to edit them', () => {
     const table = nodeProperties('table');
     expect(table[0].name).toBe('id');
     expect(table.find((p) => p.name === 'source')).toMatchObject({ kind: 'text', required: true });
@@ -23,36 +23,36 @@ describe('lettura dello schema', () => {
     expect(screenProperties().map((p) => p.name)).toEqual(['screen', 'title', 'description', 'requires', 'schemaVersion']);
   });
 
-  it('elenchi: le colonne ereditano i campi da più definizioni; i passi sono varianti riconosciute dalla chiave', () => {
+  it('lists: columns inherit the fields from several definitions; steps are variants recognised by their key', () => {
     const columns = listItem(nodeProperties('dataTable').find((p) => p.name === 'columns')!) as { fields: PropertyInfo[] };
     expect(columns.fields.map((f) => f.name)).toEqual(expect.arrayContaining(['field', 'label', 'format', 'sortable', 'aggregate', 'filter', 'groupable']));
     expect(columns.fields.find((f) => f.name === 'field')?.required).toBe(true);
     const steps = listItem(nodeProperties('button').find((p) => p.name === 'onClick')!) as { variants: Variant[] };
     expect(steps.variants.map((v) => v.key)).toEqual(['call', 'refresh', 'navigate', 'toast', 'set', 'confirm', 'dialog', 'validate', 'print', 'export', 'if', 'run']);
-    // Ogni variante nasce valida: un booleano fisso (print) prende il suo valore.
+    // Every variant starts valid: a fixed boolean (print) takes its value.
     const print = steps.variants.find((v) => v.key === 'print')!;
     expect(defaultItem(print.fields, 0, t)).toEqual({ print: true });
     const dialog = steps.variants.find((v) => v.key === 'dialog')!.fields[0];
     expect(dialog.kind).toBe('object');
     expect(objectFields(dialog).find((f) => f.name === 'fields')?.kind).toBe('list');
-    // Le mappe libere restano JSON.
+    // Free maps stay JSON.
     expect(nodeProperties('form').find((p) => p.name === 'initial')?.kind).toBe('json');
   });
 
-  it('elementi nuovi e riassunti', () => {
+  it('new elements and summaries', () => {
     const fields = (listItem(nodeProperties('form').find((p) => p.name === 'fields')!) as { fields: PropertyInfo[] }).fields;
-    expect(defaultItem(fields, 1, t)).toEqual({ name: 'campo2', type: 'text' });
+    expect(defaultItem(fields, 1, t)).toEqual({ name: 'field2', type: 'text' });
     const columns = (listItem(nodeProperties('table').find((p) => p.name === 'columns')!) as { fields: PropertyInfo[] }).fields;
-    expect(defaultItem(columns, 0, t)).toEqual({ field: 'campo1', label: 'Descrizione' });
-    // Un elenco obbligatorio con un minimo nasce con un elemento: un'azione ha già un passo (un messaggio).
+    expect(defaultItem(columns, 0, t)).toEqual({ field: 'field1', label: 'Descrizione' });
+    // A required list with a minimum starts with one element: an action already has a step (a message).
     const actions = (listItem(nodeProperties('table').find((p) => p.name === 'rowActions')!) as { fields: PropertyInfo[] }).fields;
     expect(defaultItem(actions, 0, t)).toEqual({ label: 'Descrizione', onClick: [{ toast: '' }] });
-    expect(summaryOf({ field: 'importo', label: "{{ t('x.importo', 'Importo') }}" })).toBe('Importo (importo)');
-    expect(summaryOf({ name: 'cliente', type: 'lookup' })).toBe('cliente · lookup');
-    expect(summaryOf({ toast: "{{ t('x.ok', 'Fatto') }}" }, 'toast')).toBe('toast: Fatto');
+    expect(summaryOf({ field: 'amount', label: "{{ t('x.amount', 'Amount') }}" })).toBe('Amount (amount)');
+    expect(summaryOf({ name: 'customer', type: 'lookup' })).toBe('customer · lookup');
+    expect(summaryOf({ toast: "{{ t('x.ok', 'Done') }}" }, 'toast')).toBe('toast: Done');
   });
 
-  it('riconosce nodi, schede e passi e trova l’elemento che contiene un percorso', () => {
+  it('recognises nodes, tabs and steps and finds the element containing a path', () => {
     const doc: Json = {
       components: [{ type: 'tabs', tabs: [{ label: 'A', components: [{ type: 'text', text: 'x' }] }] }, { type: 'wizard', steps: [{ label: 'P', components: [] }] }],
     };
@@ -67,7 +67,7 @@ describe('lettura dello schema', () => {
     expect(childSlots(doc, ['components', 0])).toEqual([]);
   });
 
-  it('ogni tipo dello schema è nella tavolozza e ha un modello valido, con il data source che usa', () => {
+  it('every type of the schema is in the palette and has a valid template, with the data source it uses', () => {
     const kinds = paletteGroups().flatMap((g) => g.types);
     expect([...new Set(kinds.map((k) => k.split('.')[0]))].sort()).toEqual([...NODE_TYPES].sort());
     for (const type of [...NODE_TYPES, ...kinds.filter((k) => k.includes('.'))]) {
@@ -79,18 +79,18 @@ describe('lettura dello schema', () => {
     }
   });
 
-  it('la tavolozza offre ogni tipo di campo a sé; i nomi dei campi nuovi non si ripetono', () => {
+  it('the palette offers every standalone field type; the names of new fields do not repeat', () => {
     expect(paletteGroups().find((g) => g.key === 'fields')?.types).toEqual(INPUT_KINDS.map((k) => 'input.' + k));
-    expect(nodeTemplate('input.select', t)).toMatchObject({ type: 'input', field: { name: 'scelta', type: 'select' } });
+    expect(nodeTemplate('input.select', t)).toMatchObject({ type: 'input', field: { name: 'choice', type: 'select' } });
     expect(nodeTemplate('text.markdown', t)).toMatchObject({ type: 'text', format: 'markdown' });
     const lookup = nodeTemplate('input.lookup', t);
-    expect(Object.keys((ensureSource(emptyScreen(t), lookup) as { dataSources: object }).dataSources)).toEqual(['clienti']);
-    const doc: Json = { components: [{ type: 'input', field: { name: 'testo', type: 'text' } }, { type: 'input', field: { name: 'testo2', type: 'text' } }] };
-    expect(uniqueInputName(doc, nodeTemplate('input.text', t))).toMatchObject({ field: { name: 'testo3' } });
-    expect(uniqueInputName(doc, nodeTemplate('input.date', t))).toMatchObject({ field: { name: 'data' } });
+    expect(Object.keys((ensureSource(emptyScreen(t), lookup) as { dataSources: object }).dataSources)).toEqual(['customers']);
+    const doc: Json = { components: [{ type: 'input', field: { name: 'text', type: 'text' } }, { type: 'input', field: { name: 'text2', type: 'text' } }] };
+    expect(uniqueInputName(doc, nodeTemplate('input.text', t))).toMatchObject({ field: { name: 'text3' } });
+    expect(uniqueInputName(doc, nodeTemplate('input.date', t))).toMatchObject({ field: { name: 'date' } });
   });
 
-  it('i contenitori di layout accolgono figli; il border nasce con tre aree', () => {
+  it('layout containers take children; the border starts with three regions', () => {
     const doc: Json = { components: [{ type: 'box', components: [] }, { type: 'grid', components: [] }, { type: 'border', components: [] }, { type: 'text', text: 'x' }] };
     for (const i of [0, 1, 2]) expect(childSlots(doc, ['components', i])).toEqual([{ path: ['components', i, 'components'] }]);
     expect(childSlots(doc, ['components', 3])).toEqual([]);
@@ -98,12 +98,12 @@ describe('lettura dello schema', () => {
     expect(border.components.map((c) => c.region)).toEqual(['north', 'west', 'center']);
   });
 
-  it('identificativi nuovi in kebab-case e unici, anche per le copie', () => {
+  it('new identifiers in kebab-case and unique, also for copies', () => {
     const doc: Json = { components: [{ id: 'data-table-1', type: 'dataTable' }] };
     expect(freshId(doc, 'dataTable')).toBe('data-table-2');
-    const copy = withFreshIds(doc, { id: 'data-table-1', type: 'dataTable', rowActions: [{ id: 'azione-1', label: 'X' }] }) as { id: string; rowActions: { id: string }[] };
+    const copy = withFreshIds(doc, { id: 'data-table-1', type: 'dataTable', rowActions: [{ id: 'action-1', label: 'X' }] }) as { id: string; rowActions: { id: string }[] };
     expect(copy.id).toBe('data-table-2');
-    expect(copy.rowActions[0].id).toBe('azione-1');
-    expect(withFreshIds({ components: [{ id: 'azione-1' }] }, { id: 'azione-1', label: 'X' })).toEqual({ id: 'azione-2', label: 'X' });
+    expect(copy.rowActions[0].id).toBe('action-1');
+    expect(withFreshIds({ components: [{ id: 'action-1' }] }, { id: 'action-1', label: 'X' })).toEqual({ id: 'action-2', label: 'X' });
   });
 });

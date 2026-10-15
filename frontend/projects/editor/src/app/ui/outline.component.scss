@@ -24,7 +24,7 @@
 .line.drop-inside, .row.screen.drop-inside { background: color-mix(in srgb, var(--lc-color-primary) 22%, transparent); }
 .empty { color: var(--lc-color-muted); font-size: 13px; }
 
-/* Ricerca e comprimi/espandi tutto. */
+/* Search and collapse/expand all. */
 .find { display: flex; align-items: center; gap: 2px; margin-bottom: 6px; }
 .search {
   flex: 1; min-width: 0; height: 26px; padding: 0 8px; border: 1px solid var(--lc-color-border); border-radius: var(--lc-radius);
@@ -32,11 +32,11 @@
 }
 .search:focus-visible { outline: 2px solid var(--lc-color-primary); outline-offset: -1px; }
 .all { flex: none; }
-/* Freccia per chiudere o aprire un ramo. */
+/* Arrow to close or open a branch. */
 .twisty, .twisty-space { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 22px; }
 .twisty { padding: 0; border: 0; border-radius: 3px; background: none; color: var(--lc-color-muted); font-size: 10px; cursor: pointer; }
 .twisty:hover:not(:disabled) { color: var(--lc-color-on-surface); background: color-mix(in srgb, var(--lc-color-on-surface) 8%, transparent); }
 .twisty:disabled { cursor: default; opacity: 0.5; }
-/* Righe trovate dalla ricerca. */
+/* Rows found by the search. */
 .line.match > .row .label { text-decoration: underline; text-decoration-color: var(--lc-color-primary); text-underline-offset: 3px; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

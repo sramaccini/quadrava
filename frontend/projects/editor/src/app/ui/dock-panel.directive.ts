@@ -2,9 +2,9 @@ import { Directive, inject, input } from '@angular/core';
 import { Dock, type DockPanel } from './dock';
 
 /**
- * Segna l'elemento di un riquadro del lato (\`edDockPanel="outline"\`): fissato sta nella colonna (\`ed-docked\`),
- * sganciato galleggia sopra l'area centrale (\`ed-floating\`), visibile solo quando è aperto (\`ed-open\`). Gli stili
- * stanno in styles.scss, perché valgono per elementi di componenti diversi.
+ * Marks the element of a panel of the side (\`edDockPanel="outline"\`): pinned it sits in the column (\`ed-docked\`),
+ * unpinned it floats over the central area (\`ed-floating\`), visible only when open (\`ed-open\`). The styles
+ * are in styles.scss, because they apply to elements of different components.
  */
 @Directive({
   selector: '[edDockPanel]',

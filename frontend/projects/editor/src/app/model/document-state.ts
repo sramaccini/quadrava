@@ -1,29 +1,29 @@
 import { computed, signal } from '@angular/core';
 import { setIn, toPointer, type Json, type Path } from './doc-ops';
 
-/** Un problema del documento, collegato all'elemento selezionabile che lo contiene. */
+/** A problem of the document, linked to the selectable element containing it. */
 export interface EditorIssue {
-  /** Elemento selezionabile a cui appartiene il problema. */
+  /** Selectable element the problem belongs to. */
   owner: Path;
-  /** Posizione precisa (JSON Pointer). */
+  /** Precise position (JSON Pointer). */
   pointer: string;
   message: string;
-  /** Gli errori impediscono l'anteprima e la pubblicazione; gli avvisi no. */
+  /** Errors prevent the preview and the publication; warnings do not. */
   severity: 'error' | 'warning';
 }
 
 const HISTORY_LIMIT = 200;
-/** Modifiche alla stessa proprietà più vicine di così diventano un solo passo di annullamento (si scrive lettera per lettera). */
+/** Changes to the same property closer than this become a single undo step (one types letter by letter). */
 const COALESCE_MS = 1000;
 
 /**
- * Un documento modificato nell'editor (una schermata, la navigazione): il JSON, l'elemento selezionato, la cronologia
- * per annullare e ripetere e i problemi trovati. Ogni tipo di documento dice quali elementi si selezionano e come si
- * controlla. I campi generati dallo schema (`ed-fields`) lavorano su questa classe, qualunque sia il documento.
+ * A document edited in the editor (a screen, the navigation): the JSON, the selected element, the history
+ * for undo and redo and the problems found. Every kind of document says which elements are selected and how it is
+ * checked. The fields generated from the schema (`ed-fields`) work on this class, whatever the document.
  */
 export abstract class DocumentState {
   readonly doc = signal<Json>(null);
-  /** Percorso dell'elemento selezionato; vuoto = la radice del documento. */
+  /** Path of the selected element; empty = the root of the document. */
   readonly selection = signal<Path>([]);
 
   private readonly past = signal<Json[]>([]);
@@ -35,14 +35,14 @@ export abstract class DocumentState {
   readonly issues = computed<EditorIssue[]>(() => this.check(this.doc()));
   readonly errorCount = computed(() => this.issues().filter((i) => i.severity === 'error').length);
 
-  /** Problemi del documento. */
+  /** Problems of the document. */
   protected abstract check(doc: Json): EditorIssue[];
-  /** C'è un elemento selezionabile a questo percorso? */
+  /** Is there a selectable element at this path? */
   protected abstract selectable(doc: Json, path: Path): boolean;
-  /** L'elemento selezionabile più vicino che contiene il percorso. */
+  /** The nearest selectable element containing the path. */
   abstract ownerOf(doc: Json, path: Path): Path;
 
-  /** Valori suggeriti mentre si scrive una proprietà di testo (data source, schermate, icone…). */
+  /** Values suggested while typing a text property (data sources, screens, icons…). */
   suggestions(_property: string): string[] {
     return [];
   }
@@ -51,7 +51,7 @@ export abstract class DocumentState {
     this.selection.set(this.selectable(this.doc(), path) ? path : []);
   }
 
-  /** Sostituisce il documento registrando il passo nella cronologia. `coalesce` unisce le modifiche ravvicinate alla stessa proprietà. */
+  /** Replaces the document recording the step in the history. `coalesce` merges close changes to the same property. */
   apply(next: Json, options: { select?: Path; coalesce?: string } = {}): void {
     const previous = this.doc();
     if (next === previous) return;
@@ -65,7 +65,7 @@ export abstract class DocumentState {
     else this.keepSelection();
   }
 
-  /** Imposta (o con `undefined` toglie) il valore in un percorso. */
+  /** Sets (or with `undefined` removes) the value at a path. */
   setValue(path: Path, value: Json | undefined): void {
     this.apply(setIn(this.doc(), path, value), { coalesce: toPointer(path) });
   }
@@ -90,7 +90,7 @@ export abstract class DocumentState {
     this.keepSelection();
   }
 
-  /** Sostituisce il documento senza cronologia (apertura di un file, documento nuovo). */
+  /** Replaces the document without history (opening a file, new document). */
   protected reset(doc: Json): void {
     this.doc.set(doc);
     this.past.set([]);
@@ -99,7 +99,7 @@ export abstract class DocumentState {
     this.selection.set([]);
   }
 
-  /** Se l'elemento selezionato non c'è più, si seleziona quello che lo conteneva. */
+  /** If the selected element is no longer there, the one that contained it is selected. */
   private keepSelection(): void {
     const doc = this.doc();
     if (!this.selectable(doc, this.selection())) this.selection.set(this.ownerOf(doc, this.selection()));

@@ -1,21 +1,21 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ElementRef, Injector, afterNextRender, inject, input, output, signal } from '@angular/core';
 
-/** Una voce di menu: un comando (`run`) oppure un sottomenu (`children`). */
+/** A menu item: a command (`run`) or a submenu (`children`). */
 export interface MenuItem {
   id: string;
   label: string;
-  /** Scorciatoia mostrata a destra (solo testo: la scorciatoia vera la gestisce chi la offre). */
+  /** Shortcut shown on the right (text only: the real shortcut is handled by whoever offers it). */
   shortcut?: string;
   disabled?: boolean;
-  /** Suggerimento al passaggio del mouse (per esempio perché la voce è spenta); lo leggono anche gli screen reader. */
+  /** Tooltip on hover (for example why the item is off); screen readers read it too. */
   hint?: string;
-  /** Linea di separazione prima della voce. */
+  /** Separator line before the item. */
   separator?: boolean;
   children?: MenuItem[];
-  /** Testo mostrato in un sottomenu vuoto. */
+  /** Text shown in an empty submenu. */
   emptyLabel?: string;
-  /** Voce con segno di spunta (`check`, si accende e si spegne) o scelta tra alternative (`radio`). */
+  /** Item with a check mark (`check`, toggles on and off) or a choice among alternatives (`radio`). */
   toggle?: 'check' | 'radio';
   checked?: boolean;
   run?: () => void;
@@ -28,10 +28,10 @@ export interface Menu {
 }
 
 /**
- * Barra dei menu come nelle applicazioni desktop (File, Modifica…), secondo lo schema «menubar» di WAI-ARIA: un clic
- * apre e chiude, passando con il mouse su un altro titolo si cambia menu; da tastiera frecce, Home e Fine, Invio e
- * Spazio, Esc per chiudere (il fuoco torna al titolo), Tab per uscire. Una voce con sottomenu si apre con freccia
- * destra o passandoci sopra.
+ * Menu bar as in desktop applications (File, Edit…), following the WAI-ARIA «menubar» pattern: a click
+ * opens and closes, hovering another title changes menu; from the keyboard arrows, Home and End, Enter and
+ * Space, Esc to close (the focus goes back to the title), Tab to leave. An item with a submenu opens with the right
+ * arrow or on hover.
  */
 @Component({
   selector: 'ed-menu-bar',
@@ -53,7 +53,7 @@ export interface Menu {
       list-style: none; background: var(--lc-color-surface); border: 1px solid var(--lc-color-border); border-radius: var(--lc-radius);
       box-shadow: 0 6px 18px rgb(0 0 0 / 18%);
     }
-    /* Il sottomenu (gli esempi possono essere molti) scorre; il menu principale no, altrimenti taglierebbe il sottomenu. */
+    /* The submenu (examples can be many) scrolls; the main menu does not, otherwise it would cut the submenu. */
     .menu .menu { top: -5px; left: 100%; max-height: 60vh; overflow: auto; margin: 0 0 0 2px; }
     .entry { position: relative; }
     .check { position: absolute; left: 9px; font-size: 11px; }
@@ -161,19 +161,19 @@ export interface Menu {
 })
 export class MenuBarComponent {
   readonly menus = input.required<Menu[]>();
-  /** Un menu si apre (dalla barra chiusa): chi lo offre può aggiornare le voci, per esempio la disponibilità del registro. */
+  /** A menu opens (from the closed bar): whoever offers it can update the items, for example the availability of the registry. */
   readonly opened = output<string>();
-  /** Nome della barra per i lettori di schermo. */
+  /** Name of the bar for screen readers. */
   readonly label = input('');
 
-  /** Menu aperto (indice) e sottomenu aperto (id della voce). */
+  /** Open menu (index) and open submenu (id of the item). */
   protected readonly open = signal<number | null>(null);
   protected readonly sub = signal<string | null>(null);
-  /** Titolo raggiungibile con Tab (tabindex mobile). */
+  /** Title reachable with Tab (roving tabindex). */
   protected readonly current = signal(0);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
-  /** Elemento che aveva il fuoco prima di aprire con il mouse: ci torna dopo un comando. */
+  /** Element that had the focus before opening with the mouse: it goes back there after a command. */
   private returnFocus: HTMLElement | null = null;
 
   protected roleOf(item: MenuItem): string {
@@ -268,7 +268,7 @@ export class MenuBarComponent {
         break;
       case 'Enter':
       case ' ':
-        // Il pulsante lo trasforma in un clic; per una voce con sottomenu, apre e porta il fuoco dentro.
+        // The button turns it into a click; for an item with a submenu, it opens it and moves the focus inside.
         if (item.children) {
           event.preventDefault();
           if (!item.disabled) this.openSub(item.id);
@@ -288,13 +288,13 @@ export class MenuBarComponent {
     this.open.set(null);
     this.sub.set(null);
     this.returnFocus = null;
-    // Il fuoco torna dov'era; il comando può poi spostarlo (una finestra di conferma, un pannello).
+    // The focus goes back where it was; the command can then move it (a confirmation dialog, a panel).
     if (back?.isConnected) back.focus({ preventScroll: true });
     else this.titleButton(this.current())?.focus({ preventScroll: true });
     item.run?.();
   }
 
-  /** Un clic fuori dalla barra chiude il menu. */
+  /** A click outside the bar closes the menu. */
   protected outside(event: Event): void {
     if (this.open() !== null && !this.host.nativeElement.contains(event.target as Node)) {
       this.open.set(null);

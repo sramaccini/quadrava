@@ -1,11 +1,11 @@
 import { isObject, type Json, type Path } from './doc-ops';
 
 /**
- * Testi per l'utente di una schermata e chiavi di traduzione. Un testo è «semplice» (non traducibile), una sola
- * traduzione `{{ t('chiave', 'Ripiego') }}` (modificabile qui) oppure un'espressione più complessa (solo da leggere).
+ * User-facing texts of a screen and translation keys. A text is «plain» (not translatable), a single
+ * translation `{{ t('key', 'Fallback') }}` (editable here) or a more complex expression (read only).
  */
 
-/** Proprietà che contengono testo letto dall'utente. */
+/** Properties containing text read by the user. */
 export const TEXT_PROPERTIES = new Set([
   'label',
   'title',
@@ -26,17 +26,17 @@ export interface TextEntry {
   property: string;
   value: string;
   kind: 'plain' | 'key' | 'expression';
-  /** Per `kind: 'key'`: la chiave e il testo di ripiego. */
+  /** For `kind: 'key'`: the key and the fallback text. */
   key?: string;
   fallback?: string;
-  /** Chiavi usate da un'espressione più complessa. */
+  /** Keys used by a more complex expression. */
   keys?: string[];
 }
 
 const SINGLE_T = /^\{\{\s*t\(\s*'((?:\\.|[^'\\])*)'\s*(?:,\s*'((?:\\.|[^'\\])*)'\s*)?(?:,\s*\{[\s\S]*\}\s*)?\)\s*\}\}$/;
 const ANY_T = /\bt\(\s*'((?:\\.|[^'\\])*)'/g;
 
-/** Tutti i testi per l'utente della schermata, nell'ordine del documento (i data source esclusi). */
+/** All the user-facing texts of the screen, in document order (data sources excluded). */
 export function collectTexts(doc: Json): TextEntry[] {
   const out: TextEntry[] = [];
   const visit = (value: Json, path: Path): void => {
@@ -67,22 +67,22 @@ function unescape(text: string): string {
 }
 
 /**
- * Il testo dentro una stringa CEL tra apici singoli. Gli a capo diventano `\n`: una stringa tra apici non può
- * contenerne di veri (i testi formattati in Markdown ne hanno).
+ * The text inside a single-quoted CEL string. Line breaks become `\n`: a quoted string cannot
+ * contain real ones (texts formatted in Markdown have them).
  */
 function quote(text: string): string {
   return "'" + text.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\r/g, '\\r').replace(/\n/g, '\\n').replace(/\t/g, '\\t') + "'";
 }
 
 /**
- * Prefisso delle chiavi di una schermata, come negli esempi: l'identificativo con `_` al posto di `-`
- * (`vetrina-layout` → `vetrina_layout`).
+ * Prefix of the keys of a screen, as in the examples: the identifier with `_` instead of `-`
+ * (`showcase-layout` → `showcase_layout`).
  */
 export function keyPrefix(screen: string): string {
-  return (screen || 'schermata').replace(/-/g, '_');
+  return (screen || 'screen').replace(/-/g, '_');
 }
 
-/** Chiave nuova per un testo: prefisso della schermata e le prime parole del testo, unica tra quelle usate. */
+/** New key for a text: prefix of the screen and the first words of the text, unique among those used. */
 export function makeKey(screen: string, text: string, used: Set<string>): string {
   const words = text
     .normalize('NFD')
@@ -97,22 +97,22 @@ export function makeKey(screen: string, text: string, used: Set<string>): string
     if ((slug + '_' + word).length > 32 && slug) break;
     slug = slug ? `${slug}_${word}` : word;
   }
-  const base = `${keyPrefix(screen)}.${slug || 'testo'}`;
+  const base = `${keyPrefix(screen)}.${slug || 'text'}`;
   let key = base;
   for (let n = 2; used.has(key); n++) key = `${base}_${n}`;
   return key;
 }
 
 /**
- * Il testo semplice reso traducibile: `{{ t('chiave', 'Testo') }}`. I testi con graffe non si convertono (nei messaggi
- * le graffe indicano i parametri): restituisce null.
+ * The plain text made translatable: `{{ t('key', 'Text') }}`. Texts with braces are not converted (in messages
+ * braces mark the parameters): returns null.
  */
 export function translatable(key: string, text: string): string | null {
   if (/[{}]/.test(text)) return null;
   return `{{ t(${quote(key)}, ${quote(text)}) }}`;
 }
 
-/** Tutte le chiavi usate dalla schermata. */
+/** All the keys used by the screen. */
 export function usedKeys(entries: TextEntry[]): Set<string> {
   const keys = new Set<string>();
   for (const e of entries) {

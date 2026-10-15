@@ -5,8 +5,8 @@ import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import { Dock, type DockPanel } from './dock';
 
 /**
- * Puntina nella barra del titolo di un riquadro, come negli IDE: fissa il riquadro nel suo lato o lo nasconde
- * automaticamente (linguetta sul bordo). Diritta quando è fissato, coricata quando si nasconde da solo.
+ * Pin in the title bar of a panel, as in IDEs: pins the panel to its side or hides it
+ * automatically (tab on the edge). Upright when pinned, lying down when it hides by itself.
  */
 @Component({
   selector: 'ed-dock-pin',

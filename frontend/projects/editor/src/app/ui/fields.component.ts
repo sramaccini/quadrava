@@ -18,7 +18,7 @@ import { applyCompletion, completionAt, expressionHints, insertHint, type Hint }
 import { TemplateHighlightDirective } from './code-highlight';
 import { JsonFieldComponent } from './json-field.component';
 
-/** Proprietà mostrate come area di testo su più righe anche se sono semplici testi. */
+/** Properties shown as a multi-line text area even if they are simple texts. */
 const LONG_TEXT = new Set(['text', 'description', 'tooltip', 'title', 'confirm', 'toast', 'message']);
 
 export interface FieldRow {
@@ -29,7 +29,7 @@ export interface FieldRow {
   issues: string[];
 }
 
-/** Un elemento di un elenco, con il riassunto mostrato quando è chiuso. */
+/** An element of a list, with the summary shown when it is closed. */
 interface ListEntry {
   index: number;
   path: Path;
@@ -40,9 +40,9 @@ interface ListEntry {
 }
 
 /**
- * Campi di un oggetto del documento, generati dallo schema: testo, espressione, scelta, sì/no, numero, gruppi di campi
- * (oggetti) ed elenchi di elementi (colonne, campi, azioni, passi) modificabili uno per uno. Si usa ricorsivamente per
- * gli elementi degli elenchi e per gli oggetti annidati; ogni elenco si può anche modificare come JSON.
+ * Fields of an object of the document, generated from the schema: text, expression, choice, yes/no, number, groups of fields
+ * (objects) and lists of elements (columns, fields, actions, steps) editable one by one. It is used recursively for
+ * the elements of lists and for nested objects; every list can also be edited as JSON.
  */
 @Component({
   selector: 'ed-fields',
@@ -69,21 +69,21 @@ export class FieldsComponent {
   protected readonly i18n = inject(I18n);
   protected readonly expressionHint = '{{ … }}';
 
-  /** Percorso dell'oggetto di cui si mostrano i campi. */
+  /** Path of the object whose fields are shown. */
   readonly path = input.required<Path>();
   readonly fields = input.required<PropertyInfo[]>();
-  /** Prefisso degli id dei campi (unici anche negli elementi annidati); `prop` per quelli dell'inspector. */
+  /** Prefix of the ids of the fields (unique in nested elements too); `prop` for those of the inspector. */
   readonly idPrefix = input('prop');
-  /** Non ripetere sotto ogni espressione la spiegazione comune (la mostra chi contiene i campi). */
+  /** Do not repeat the common explanation under every expression (whoever contains the fields shows it). */
   readonly hideExpressionHelp = input(false);
 
-  /** Elementi aperti degli elenchi (per percorso). */
+  /** Open elements of the lists (by path). */
   protected readonly open = signal<Set<string>>(new Set());
-  /** Espressioni con l'aiuto (variabili e funzioni) aperto. */
+  /** Expressions with the help (variables and functions) open. */
   protected readonly hintsOpen = signal<Set<string>>(new Set());
-  /** Completamento aperto mentre si scrive un'espressione: in quale campo, da dove, le voci e quella attiva. */
+  /** Completion open while typing an expression: in which field, from where, the items and the active one. */
   protected readonly completion = signal<{ key: string; from: number; items: Hint[]; active: number } | null>(null);
-  /** Elenchi mostrati come JSON invece che elemento per elemento. */
+  /** Lists shown as JSON instead of element by element. */
   protected readonly raw = signal<Set<string>>(new Set());
 
   protected readonly rows = computed<FieldRow[]>(() => {
@@ -109,10 +109,10 @@ export class FieldsComponent {
     return row.info.kind === 'expression' || LONG_TEXT.has(row.info.name) || (typeof row.value === 'string' && row.value.includes('{{'));
   }
 
-  /** Valori suggeriti mentre si scrive (si può comunque scrivere altro): li decide il documento. */
+  /** Values suggested while typing (something else can be typed anyway): the document decides them. */
   /**
-   * Suggerimenti che corrispondono al testo scritto; con un valore già uguale a un suggerimento (o vuoto) tutti, così
-   * la freccia mostra l'elenco intero.
+   * Suggestions matching the typed text; with a value already equal to a suggestion (or empty) all of them, so
+   * the arrow shows the whole list.
    */
   protected filteredSuggestions(row: FieldRow): string[] {
     const all = this.suggestions(row);
@@ -122,7 +122,7 @@ export class FieldsComponent {
     return all.filter((option) => option.toLowerCase().includes(query));
   }
 
-  /** La freccia della casella: porta il fuoco nella casella, che apre l'elenco. */
+  /** The arrow of the box: moves the focus to the box, which opens the list. */
   protected openSuggestions(input: HTMLInputElement): void {
     input.focus();
     input.dispatchEvent(new Event('click', { bubbles: true }));
@@ -142,19 +142,19 @@ export class FieldsComponent {
     });
   }
 
-  /** Variabili e funzioni disponibili per questa espressione (calcolate solo quando l'aiuto è aperto). */
+  /** Variables and functions available for this expression (computed only when the help is open). */
   protected hints(row: FieldRow): Hint[] {
     return expressionHints(this.store.doc(), row.path);
   }
 
-  /** Dopo ogni carattere: propone le variabili e le funzioni che continuano la parola scritta dentro `{{ }}`. */
+  /** After every character: offers the variables and functions continuing the word typed inside `{{ }}`. */
   protected suggest(row: FieldRow, area: HTMLTextAreaElement): void {
     const caret = area.selectionStart ?? area.value.length;
     const found = area.selectionStart === area.selectionEnd ? completionAt(area.value, caret, expressionHints(this.store.doc(), row.path)) : null;
     this.completion.set(found ? { key: this.key(row.path), from: found.from, items: found.items, active: 0 } : null);
   }
 
-  /** Frecce per scegliere, Invio o Tab per inserire, Esc per chiudere. Senza elenco aperto i tasti fanno il solito. */
+  /** Arrows to choose, Enter or Tab to insert, Esc to close. Without an open list the keys do the usual. */
   protected completionKey(row: FieldRow, area: HTMLTextAreaElement, event: KeyboardEvent): void {
     const c = this.completion();
     if (!c || c.key !== this.key(row.path)) return;
@@ -191,7 +191,7 @@ export class FieldsComponent {
     area.setSelectionRange(result.caret, result.caret);
   }
 
-  /** Inserisce una variabile o una funzione alla posizione del cursore e rimette il cursore subito dopo. */
+  /** Inserts a variable or a function at the cursor position and puts the cursor right after it. */
   protected insert(row: FieldRow, area: HTMLTextAreaElement, text: string): void {
     const result = insertHint(area.value, area.selectionStart ?? area.value.length, area.selectionEnd ?? area.value.length, text);
     this.setText(row, result.value);
@@ -201,7 +201,7 @@ export class FieldsComponent {
   }
 
   protected setText(row: FieldRow, text: string): void {
-    // Un testo vuoto toglie la proprietà facoltativa; quella obbligatoria resta (vuota), così lo schema la segnala.
+    // An empty text removes the optional property; a required one stays (empty), so the schema reports it.
     this.store.setValue(row.path, text === '' && !row.info.required ? undefined : text);
   }
 
@@ -210,7 +210,7 @@ export class FieldsComponent {
   }
 
   protected setBoolean(row: FieldRow, checked: boolean): void {
-    // Il valore predefinito delle proprietà sì/no è «no»: deselezionare toglie la proprietà facoltativa.
+    // The default value of yes/no properties is «no»: unchecking removes the optional property.
     this.store.setValue(row.path, checked ? true : row.info.required ? false : undefined);
   }
 
@@ -226,7 +226,7 @@ export class FieldsComponent {
     return typeof value === 'string' ? value : value === undefined || value === null ? '' : JSON.stringify(value);
   }
 
-  /** Il colore per il selettore del browser, che accetta solo #rrggbb (rgb() e hsl() si scrivono nel campo di testo). */
+  /** The colour for the browser picker, which accepts only #rrggbb (rgb() and hsl() are written in the text field). */
   protected hexOf(value: Json | undefined): string {
     if (typeof value !== 'string') return '#000000';
     if (/^#[0-9a-f]{6}$/i.test(value)) return value.toLowerCase();
@@ -238,7 +238,7 @@ export class FieldsComponent {
     return typeof value === 'number' ? value : null;
   }
 
-  // Oggetti annidati
+  // Nested objects
 
   protected objectFields(row: FieldRow): PropertyInfo[] {
     return objectFields(row.info);
@@ -248,7 +248,7 @@ export class FieldsComponent {
     this.store.setValue(row.path, defaultItem(objectFields(row.info), 0, (k) => this.i18n.t(k)));
   }
 
-  // Elenchi
+  // Lists
 
   protected shape(row: FieldRow): ItemShape | null {
     return listItem(row.info);
@@ -311,7 +311,7 @@ export class FieldsComponent {
     });
   }
 
-  /** Aggiunge un elemento in fondo (della variante scelta, per i passi) e lo apre. */
+  /** Adds an element at the end (of the chosen variant, for steps) and opens it. */
   protected addItem(row: FieldRow, variant?: Variant): void {
     const shape = listItem(row.info);
     if (!shape) return;
@@ -326,7 +326,7 @@ export class FieldsComponent {
   protected moveItem(entry: ListEntry, delta: number): void {
     const result = moveBy(this.store.doc(), entry.path, delta);
     this.store.apply(result.doc);
-    // L'elemento aperto resta aperto nella nuova posizione.
+    // The open element stays open in its new position.
     if (this.isOpen(entry.path)) {
       this.toggle(entry.path);
       this.open.update((set) => new Set(set).add(this.key(result.path)));
@@ -335,7 +335,7 @@ export class FieldsComponent {
 
   protected removeItem(row: FieldRow, entry: ListEntry): void {
     const list = (Array.isArray(row.value) ? row.value : []).filter((_, i) => i !== entry.index);
-    // Un elenco facoltativo che resta vuoto sparisce dal documento.
+    // An optional list that stays empty disappears from the document.
     this.store.apply(setIn(this.store.doc(), row.path, list.length || row.info.required ? list : undefined));
     this.open.set(new Set());
   }

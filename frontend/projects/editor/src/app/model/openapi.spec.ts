@@ -1,122 +1,122 @@
 import { OpenApiError, dataSourceOf, readOpenApi, sourceNameOf } from './openapi';
 
-/** Documento OpenAPI 3 come lo produce springdoc: server assoluto, risposte «*\/*», riferimenti agli schemi. */
+/** OpenAPI 3 document as springdoc produces it: absolute server, «*\/*» responses, references to schemas. */
 const springdoc = {
   openapi: '3.0.1',
-  info: { title: 'Ordini', version: '2.1' },
-  servers: [{ url: 'http://localhost:8080/gestionale' }],
+  info: { title: 'Orders', version: '2.1' },
+  servers: [{ url: 'http://localhost:8080/accounting' }],
   paths: {
-    '/api/ordini': {
+    '/api/orders': {
       get: {
-        tags: ['ordini'],
-        summary: 'Elenco',
-        operationId: 'listOrdini',
-        parameters: [{ $ref: '#/components/parameters/Stato' }, { name: 'page', in: 'query', schema: { type: 'integer' } }],
-        responses: { '200': { description: 'OK', content: { '*/*': { schema: { type: 'array', items: { $ref: '#/components/schemas/Ordine' } } } } } },
+        tags: ['orders'],
+        summary: 'List',
+        operationId: 'listOrders',
+        parameters: [{ $ref: '#/components/parameters/Status' }, { name: 'page', in: 'query', schema: { type: 'integer' } }],
+        responses: { '200': { description: 'OK', content: { '*/*': { schema: { type: 'array', items: { $ref: '#/components/schemas/Order' } } } } } },
       },
       post: {
-        tags: ['ordini'],
-        operationId: 'create_ordine',
-        requestBody: { content: { 'application/json': { schema: { $ref: '#/components/schemas/Ordine' } } } },
-        responses: { '201': { description: 'Creato' } },
+        tags: ['orders'],
+        operationId: 'create_order',
+        requestBody: { content: { 'application/json': { schema: { $ref: '#/components/schemas/Order' } } } },
+        responses: { '201': { description: 'Created' } },
       },
     },
-    '/api/ordini/{id}': {
+    '/api/orders/{id}': {
       parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
-      get: { description: 'Dettaglio\nseconda riga', responses: { '200': { description: 'OK', content: { 'application/json': { example: { id: 7 } } } } } },
-      delete: { operationId: 'deleteOrdine', responses: { '204': { description: 'OK' } } },
+      get: { description: 'Detail\nsecond line', responses: { '200': { description: 'OK', content: { 'application/json': { example: { id: 7 } } } } } },
+      delete: { operationId: 'deleteOrder', responses: { '204': { description: 'OK' } } },
       options: { responses: {} },
     },
     '/api/report/{{ evil }}': { get: { responses: {} } },
-    '/api/strano path': { get: { responses: {} } },
+    '/api/odd path': { get: { responses: {} } },
   },
   components: {
-    parameters: { Stato: { name: 'stato', in: 'query', required: true, schema: { type: 'string' } } },
+    parameters: { Status: { name: 'status', in: 'query', required: true, schema: { type: 'string' } } },
     schemas: {
-      Ordine: {
+      Order: {
         type: 'object',
         properties: {
           id: { type: 'integer', example: 100 },
-          cliente: { type: 'string' },
-          stato: { type: 'string', enum: ['bozza', 'inviato'] },
-          data: { type: 'string', format: 'date' },
-          righe: { type: 'array', items: { $ref: '#/components/schemas/Riga' } },
-          padre: { $ref: '#/components/schemas/Ordine' },
+          customer: { type: 'string' },
+          status: { type: 'string', enum: ['draft', 'submitted'] },
+          date: { type: 'string', format: 'date' },
+          lines: { type: 'array', items: { $ref: '#/components/schemas/Line' } },
+          parent: { $ref: '#/components/schemas/Order' },
         },
       },
-      Riga: { allOf: [{ type: 'object', properties: { articolo: { type: 'string' } } }, { type: 'object', properties: { quantita: { type: 'number' } } }] },
+      Line: { allOf: [{ type: 'object', properties: { article: { type: 'string' } } }, { type: 'object', properties: { quantity: { type: 'number' } } }] },
     },
   },
 };
 
-describe('importazione da OpenAPI', () => {
-  it('legge un documento springdoc: prefisso dal server, operazioni con parametri, corpo, tag e descrizione', () => {
+describe('import from OpenAPI', () => {
+  it('reads a springdoc document: prefix from the server, operations with parameters, body, tag and description', () => {
     const api = readOpenApi(springdoc);
-    expect([api.title, api.version, api.basePath]).toEqual(['Ordini', '2.1', '/gestionale']);
-    // OPTIONS non diventa un data source; i percorsi con «{{» o caratteri inattesi si scartano.
-    expect(api.operations.map((o) => o.key)).toEqual(['GET /api/ordini', 'POST /api/ordini', 'GET /api/ordini/{id}', 'DELETE /api/ordini/{id}']);
+    expect([api.title, api.version, api.basePath]).toEqual(['Orders', '2.1', '/accounting']);
+    // OPTIONS does not become a date source; paths with «{{» or unexpected characters are discarded.
+    expect(api.operations.map((o) => o.key)).toEqual(['GET /api/orders', 'POST /api/orders', 'GET /api/orders/{id}', 'DELETE /api/orders/{id}']);
     const [list, create, detail] = api.operations;
-    expect(list).toMatchObject({ tag: 'ordini', summary: 'Elenco', queryParams: [{ name: 'stato', required: true }, { name: 'page', required: false }], body: false });
+    expect(list).toMatchObject({ tag: 'orders', summary: 'List', queryParams: [{ name: 'status', required: true }, { name: 'page', required: false }], body: false });
     expect(create.body).toBe(true);
     expect(create.sample).toBeUndefined();
-    expect(detail).toMatchObject({ summary: 'Dettaglio', pathParams: ['id'], sample: { id: 7 } });
+    expect(detail).toMatchObject({ summary: 'Detail', pathParams: ['id'], sample: { id: 7 } });
   });
 
-  it('dati di esempio dallo schema: elementi distinti negli elenchi, enum, formati, allOf; i riferimenti ricorsivi si fermano', () => {
+  it('sample date from the schema: distinct elements in lists, enum, formats, allOf; recursive references stop', () => {
     const sample = readOpenApi(springdoc).operations[0].sample as Record<string, unknown>[];
     expect(sample).toHaveLength(2);
     expect(sample.map((o) => o['id'])).toEqual([100, 101]);
-    expect(sample.map((o) => o['stato'])).toEqual(['bozza', 'inviato']);
-    expect(sample[0]['cliente']).toBe('cliente 1');
-    expect(sample[0]['data']).toBe('2026-01-15');
-    expect((sample[0]['righe'] as unknown[])[0]).toEqual({ articolo: 'articolo 1', quantita: 1 });
-    // Ordine → padre → padre …: si ferma a una profondità fissa.
+    expect(sample.map((o) => o['status'])).toEqual(['draft', 'submitted']);
+    expect(sample[0]['customer']).toBe('customer 1');
+    expect(sample[0]['date']).toBe('2026-01-15');
+    expect((sample[0]['lines'] as unknown[])[0]).toEqual({ article: 'article 1', quantity: 1 });
+    // Order → parent → parent …: it stops at a fixed depth.
     let depth = 0;
-    for (let node = sample[0] as Record<string, unknown> | null; node; node = node['padre'] as Record<string, unknown> | null) depth++;
+    for (let node = sample[0] as Record<string, unknown> | null; node; node = node['parent'] as Record<string, unknown> | null) depth++;
     expect(depth).toBeLessThan(10);
   });
 
-  it('data source: prefisso e percorso, parametri dai parametri della schermata, corpo dal form', () => {
+  it('date source: prefix and path, parameters from the parameters of the screen, body from the form', () => {
     const [list, create, detail, remove] = readOpenApi(springdoc).operations;
-    expect(dataSourceOf(list, '/gestionale')).toEqual({ type: 'rest', method: 'GET', url: '/gestionale/api/ordini', params: { stato: '{{ params.stato }}' } });
-    expect(dataSourceOf(create, '')).toEqual({ type: 'rest', method: 'POST', url: '/api/ordini', body: '{{ form }}' });
-    expect(dataSourceOf(detail, '/gestionale/')).toEqual({ type: 'rest', method: 'GET', url: '/gestionale/api/ordini/{{ params.id }}' });
-    expect(dataSourceOf(remove, 'non valido {x}')).toEqual({ type: 'rest', method: 'DELETE', url: '/api/ordini/{{ params.id }}' });
+    expect(dataSourceOf(list, '/accounting')).toEqual({ type: 'rest', method: 'GET', url: '/accounting/api/orders', params: { status: '{{ params.status }}' } });
+    expect(dataSourceOf(create, '')).toEqual({ type: 'rest', method: 'POST', url: '/api/orders', body: '{{ form }}' });
+    expect(dataSourceOf(detail, '/accounting/')).toEqual({ type: 'rest', method: 'GET', url: '/accounting/api/orders/{{ params.id }}' });
+    expect(dataSourceOf(remove, 'not valid {x}')).toEqual({ type: 'rest', method: 'DELETE', url: '/api/orders/{{ params.id }}' });
   });
 
-  it('nomi validi e unici: da operationId in camelCase, altrimenti da metodo e percorso', () => {
+  it('valid and unique names: from operationId in camelCase, otherwise from method and path', () => {
     const [list, create, detail] = readOpenApi(springdoc).operations;
-    expect(sourceNameOf(list, new Set())).toBe('listOrdini');
-    expect(sourceNameOf(create, new Set())).toBe('createOrdine');
-    expect(sourceNameOf(detail, new Set())).toBe('getApiOrdiniById');
-    expect(sourceNameOf(list, new Set(['listOrdini', 'listOrdini2']))).toBe('listOrdini3');
+    expect(sourceNameOf(list, new Set())).toBe('listOrders');
+    expect(sourceNameOf(create, new Set())).toBe('createOrder');
+    expect(sourceNameOf(detail, new Set())).toBe('getApiOrdersById');
+    expect(sourceNameOf(list, new Set(['listOrders', 'listOrders2']))).toBe('listOrders3');
   });
 
-  it('Swagger 2.0: basePath, parametri del corpo, esempi e definizioni', () => {
+  it('Swagger 2.0: basePath, body parameters, examples and definitions', () => {
     const api = readOpenApi({
       swagger: '2.0',
-      info: { title: 'Vecchia', version: '1' },
+      info: { title: 'Old', version: '1' },
       basePath: '/v1/',
       paths: {
-        '/clienti': {
-          get: { operationId: 'clienti', responses: { '200': { schema: { type: 'array', items: { $ref: '#/definitions/Cliente' } } } } },
-          post: { parameters: [{ in: 'body', name: 'cliente', schema: { $ref: '#/definitions/Cliente' } }], responses: {} },
+        '/customers': {
+          get: { operationId: 'customers', responses: { '200': { schema: { type: 'array', items: { $ref: '#/definitions/Customer' } } } } },
+          post: { parameters: [{ in: 'body', name: 'customer', schema: { $ref: '#/definitions/Customer' } }], responses: {} },
         },
       },
-      definitions: { Cliente: { type: 'object', properties: { nome: { type: 'string', example: 'Rossi' } } } },
+      definitions: { Customer: { type: 'object', properties: { name: { type: 'string', example: 'Smith' } } } },
     });
     expect(api.basePath).toBe('/v1');
-    expect(api.operations[0].sample).toEqual([{ nome: 'Rossi' }, { nome: 'Rossi' }]);
+    expect(api.operations[0].sample).toEqual([{ name: 'Smith' }, { name: 'Smith' }]);
     expect(api.operations[1].body).toBe(true);
   });
 
-  it('documenti non validi', () => {
+  it('invalid documents', () => {
     const reason = (doc: unknown) => {
       try {
         readOpenApi(doc);
         return null;
       } catch (e) {
-        return e instanceof OpenApiError ? e.reason : 'altro';
+        return e instanceof OpenApiError ? e.reason : 'other';
       }
     };
     expect(reason(null)).toBe('notOpenApi');

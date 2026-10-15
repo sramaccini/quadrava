@@ -2,20 +2,20 @@ import { ExpressionEngine } from 'expressions';
 import type { Json } from './doc-ops';
 import { collectTexts, keyPrefix, makeKey, translatable, usedKeys } from './texts';
 
-describe('testi e chiavi di traduzione', () => {
+describe('texts and translation keys', () => {
   const doc: Json = {
-    screen: 'ordini-elenco',
-    title: "{{ t('ordini_elenco.titolo', 'Ordini') }}",
-    dataSources: { elenco: { type: 'rest', method: 'GET', url: '/api/x', params: { title: 'non è un testo' } } },
+    screen: 'order-list',
+    title: "{{ t('order_list.title', 'Orders') }}",
+    dataSources: { list: { type: 'rest', method: 'GET', url: '/api/x', params: { title: 'not a text' } } },
     components: [
-      { type: 'text', text: 'Benvenuto' },
-      { type: 'button', label: "{{ t('comune.salva') }}", onClick: [{ toast: "{{ t('x.ok', 'L\\'ordine è salvato', {'n': row.numero}) }}" }] },
-      { type: 'text', text: "{{ t('a.uno', 'Uno') + ' ' + t('a.due') }}" },
-      { type: 'table', source: 'elenco', columns: [{ field: 'stato', label: 'Stato' }] },
+      { type: 'text', text: 'Welcome' },
+      { type: 'button', label: "{{ t('common.save') }}", onClick: [{ toast: "{{ t('x.ok', 'The order\\'s saved', {'n': row.number}) }}" }] },
+      { type: 'text', text: "{{ t('a.one', 'One') + ' ' + t('a.two') }}" },
+      { type: 'table', source: 'list', columns: [{ field: 'status', label: 'Status' }] },
     ],
   };
 
-  it('trova i testi per l’utente e li classifica', () => {
+  it('finds the user-facing texts and classifies them', () => {
     const entries = collectTexts(doc);
     expect(entries.map((e) => [e.path.join('/'), e.kind])).toEqual([
       ['title', 'key'],
@@ -25,33 +25,33 @@ describe('testi e chiavi di traduzione', () => {
       ['components/2/text', 'expression'],
       ['components/3/columns/0/label', 'plain'],
     ]);
-    expect(entries[0]).toMatchObject({ key: 'ordini_elenco.titolo', fallback: 'Ordini' });
-    expect(entries[2]).toMatchObject({ key: 'comune.salva', fallback: undefined });
-    expect(entries[3]).toMatchObject({ key: 'x.ok', fallback: "L'ordine è salvato" });
-    expect(entries[4].keys).toEqual(['a.uno', 'a.due']);
-    expect([...usedKeys(entries)]).toEqual(['ordini_elenco.titolo', 'comune.salva', 'x.ok', 'a.uno', 'a.due']);
+    expect(entries[0]).toMatchObject({ key: 'order_list.title', fallback: 'Orders' });
+    expect(entries[2]).toMatchObject({ key: 'common.save', fallback: undefined });
+    expect(entries[3]).toMatchObject({ key: 'x.ok', fallback: "The order's saved" });
+    expect(entries[4].keys).toEqual(['a.one', 'a.two']);
+    expect([...usedKeys(entries)]).toEqual(['order_list.title', 'common.save', 'x.ok', 'a.one', 'a.two']);
   });
 
-  it('chiavi nuove leggibili e uniche', () => {
-    expect(keyPrefix('ordini-elenco')).toBe('ordini_elenco');
-    expect(makeKey('ordini-elenco', 'Città di consegna!', new Set())).toBe('ordini_elenco.citta_di_consegna');
-    expect(makeKey('p', 'Stato', new Set(['p.stato']))).toBe('p.stato_2');
-    expect(makeKey('p', '???', new Set())).toBe('p.testo');
-    expect(makeKey('p', 'Una frase molto lunga che non entra tutta nella chiave', new Set())).toBe('p.una_frase_molto_lunga_che_non');
+  it('new keys are readable and unique', () => {
+    expect(keyPrefix('order-list')).toBe('order_list');
+    expect(makeKey('order-list', 'Café delivery!', new Set())).toBe('order_list.cafe_delivery');
+    expect(makeKey('p', 'Status', new Set(['p.status']))).toBe('p.status_2');
+    expect(makeKey('p', '???', new Set())).toBe('p.text');
+    expect(makeKey('p', 'A very long sentence that does not fit in the key', new Set())).toBe('p.a_very_long_sentence_that_does');
   });
 
-  it('il testo traducibile è un’espressione valida con il testo come ripiego', () => {
-    const value = translatable('p.ordine', "L'ordine \\ è pronto")!;
-    expect(value).toBe("{{ t('p.ordine', 'L\\'ordine \\\\ è pronto') }}");
+  it('the translatable text is a valid expression with the text as fallback', () => {
+    const value = translatable('p.order', "The order's \\ ready")!;
+    expect(value).toBe("{{ t('p.order', 'The order\\'s \\\\ ready') }}");
     const engine = new ExpressionEngine({ can: () => false });
     expect(engine.checkTemplate(value).valid).toBe(true);
-    expect(collectTexts({ text: value } as Json)[0]).toMatchObject({ kind: 'key', key: 'p.ordine', fallback: "L'ordine \\ è pronto" });
-    expect(translatable('p.x', 'Totale {n}')).toBeNull();
+    expect(collectTexts({ text: value } as Json)[0]).toMatchObject({ kind: 'key', key: 'p.order', fallback: "The order's \\ ready" });
+    expect(translatable('p.x', 'Total {n}')).toBeNull();
   });
 
-  it('un testo su più righe (Markdown) diventa un’espressione valida e torna uguale', () => {
-    const text = 'Prima di **inviare**:\n\n- controlla i dati\n- allega la fattura';
-    const value = translatable('p.istruzioni', text)!;
+  it('a multi-line text (Markdown) becomes a valid expression and comes back the same', () => {
+    const text = 'Before **sending**:\n\n- check the data\n- attach the invoice';
+    const value = translatable('p.instructions', text)!;
     expect(value).not.toContain('\n');
     const engine = new ExpressionEngine({ can: () => false });
     expect(engine.checkTemplate(value).valid).toBe(true);

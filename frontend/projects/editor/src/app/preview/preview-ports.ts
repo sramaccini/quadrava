@@ -3,19 +3,19 @@ import { Authorization, DataClient, I18n, Notifier, RuntimeDiagnostics, ScreenNa
 import { isToPreview, type FromPreview, type PreviewEvent, type PreviewState } from './protocol';
 
 /**
- * Lato iframe dell'anteprima: il canale con l'editor e le porte del runtime. Nessuna chiamata esce dal browser: il
- * DataClient risponde con i dati di esempio, permessi e utente sono quelli del profilo simulato, navigazioni e
- * segnalazioni tornano all'editor come eventi del registro.
+ * Iframe side of the preview: the channel with the editor and the ports of the runtime. No call leaves the browser: the
+ * DataClient answers with the sample data, permissions and user are those of the simulated profile, navigations and
+ * reports go back to the editor as log events.
  */
 
-/** Canale con la finestra dell'editor: riceve lo stato da disegnare, manda selezioni ed eventi. */
+/** Channel with the editor window: receives the state to draw, sends selections and events. */
 @Injectable({ providedIn: 'root' })
 export class PreviewChannel {
   readonly state = signal<PreviewState | null>(null);
 
   constructor() {
     const listener = (event: MessageEvent): void => {
-      // Solo l'editor che contiene questo iframe, dalla stessa origine.
+      // Only the editor containing this iframe, from the same origin.
       if (event.origin !== location.origin || event.source !== window.parent) return;
       if (isToPreview(event.data)) this.state.set(event.data.state);
     };
@@ -32,7 +32,7 @@ export class PreviewChannel {
   }
 }
 
-/** Profilo simulato: i permessi concessi dall'editor (tutti, se non indicati). */
+/** Simulated profile: the permissions granted by the editor (all, if not given). */
 @Injectable({ providedIn: 'root' })
 export class PreviewSession implements Authorization, UserProvider {
   private readonly channel = inject(PreviewChannel);
@@ -44,11 +44,11 @@ export class PreviewSession implements Authorization, UserProvider {
   }
 
   user(): Record<string, unknown> {
-    return { username: 'anteprima', displayName: 'Anteprima', locale: this.i18n.locale() };
+    return { username: 'preview', displayName: 'Preview', locale: this.i18n.locale() };
   }
 }
 
-/** Trova il data source a cui corrisponde una richiesta (metodo e URL, con le parti `{{ }}` libere). */
+/** Finds the data source a request corresponds to (method and URL, with the `{{ }}` parts free). */
 export function matchSource(sources: Record<string, unknown>, request: Pick<DataRequest, 'method' | 'url'>): string | null {
   const path = request.url.split('?')[0];
   for (const [name, source] of Object.entries(sources)) {
@@ -73,7 +73,7 @@ export class PreviewDataClient implements DataClient {
     if (state?.liveData) return this.live(request, name);
     this.channel.event({ kind: 'request', text: `${request.method} ${request.url}${name ? ` → ${name}` : ''}` });
     const sample = name ? state?.samples[name] : undefined;
-    // Senza dati di esempio: elenco vuoto per le letture, oggetto vuoto per le scritture.
+    // Without sample data: an empty list for reads, an empty object for writes.
     return structuredClone(sample ?? (request.method === 'GET' ? [] : {}));
   }
 
@@ -85,7 +85,7 @@ export class PreviewDataClient implements DataClient {
     } catch {
       result = { status: 0, body: null };
     }
-    const outcome = result.status === -1 ? 'bloccata (dati veri: solo letture)' : result.status === 0 ? 'servizio non raggiungibile' : `HTTP ${result.status}`;
+    const outcome = result.status === -1 ? 'blocked (real data: reads only)' : result.status === 0 ? 'service unreachable' : `HTTP ${result.status}`;
     this.channel.event({ kind: 'request', text: `${label} · ${outcome}` });
     if (result.status < 200 || result.status >= 300) throw new Error(result.status === -1 ? '403' : String(result.status));
     return result.body;
@@ -93,8 +93,8 @@ export class PreviewDataClient implements DataClient {
 }
 
 /**
- * Lettura dai servizi veri: solo GET, solo percorsi relativi della stessa origine (l'editor dietro il BFF, che aggiunge
- * il token). Le scritture si bloccano: provare una schermata non deve cambiare i dati veri.
+ * Read from the real services: GET only, only relative paths of the same origin (the editor behind the BFF, which adds
+ * the token). Writes are blocked: trying a screen must not change the real data.
  */
 async function liveRequest(request: DataRequest): Promise<{ status: number; body: unknown }> {
   if (request.method !== 'GET') return { status: -1, body: null };

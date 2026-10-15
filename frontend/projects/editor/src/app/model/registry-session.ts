@@ -16,22 +16,22 @@ import {
   type RegistrySettings,
 } from './registry-client';
 
-/** Che cosa si sa del registro: in verifica, raggiungibile, raggiungibile ma serve l'accesso, assente. */
+/** What is known about the registry: being checked, reachable, reachable but sign-in is needed, absent. */
 export type RegistryStatus = 'checking' | 'available' | 'login' | 'unavailable';
 
-/** Documento del registro: tipo e identificativo. */
+/** Registry document: type and identifier. */
 export interface RegistryRef {
   kind: DocumentKind;
   id: string;
 }
 
 /**
- * Stato del registro condiviso dal menu File e dal pannello Registro: applicazione e ambiente scelti (ricordati nel
- * browser), disponibilità del registro, schermate dell'applicazione, versione da cui parte il documento aperto,
- * salvataggio di una versione.
+ * State of the registry shared by the File menu and the Registry panel: application and environment chosen (remembered in the
+ * browser), availability of the registry, screens of the application, version the open document starts from,
+ * saving of a version.
  *
- * La disponibilità si ricava da `GET /registry/apps`: 200 = raggiungibile, 401 = serve l'accesso attraverso il BFF,
- * qualunque altra risposta (o nessuna, come nell'editor della demo) = assente.
+ * Availability comes from `GET /registry/apps`: 200 = reachable, 401 = sign-in through the BFF needed,
+ * any other response (or none, as in the demo editor) = absent.
  */
 @Injectable({ providedIn: 'root' })
 export class RegistrySession {
@@ -45,14 +45,14 @@ export class RegistrySession {
   readonly appId = signal(this.settings.appId);
   readonly env = signal(this.settings.env);
   readonly status = signal<RegistryStatus>('checking');
-  /** Applicazioni visibili all'utente, dall'ultima verifica. */
+  /** Applications visible to the user, from the last check. */
   readonly apps = signal<AppSummary[]>([]);
-  /** Problemi di validazione segnalati dal registro all'ultimo salvataggio. */
+  /** Validation problems reported by the registry at the last save. */
   readonly issues = signal<RegistryIssue[]>([]);
   readonly busy = signal(false);
-  /** Schermate dell'applicazione scelta nel registro (vuoto senza registro o senza applicazione). */
+  /** Screens of the application chosen in the registry (empty without registry or without application). */
   readonly screens = signal<string[]>([]);
-  /** Versione da cui parte il documento aperto (aperta o appena salvata): il registro la usa per le modifiche concorrenti. */
+  /** Version the open document starts from (opened or just saved): the registry uses it for concurrent changes. */
   private readonly origin = signal<(RegistryRef & { hash: string }) | null>(null);
 
   constructor() {
@@ -61,10 +61,10 @@ export class RegistrySession {
       try {
         localStorage.setItem(REGISTRY_SETTINGS_KEY, JSON.stringify(settings));
       } catch {
-        // vedi la bozza
+        // see the draft
       }
     });
-    // Con il registro raggiungibile e un'applicazione scelta, se ne leggono le schermate (le «schermate note»).
+    // With the registry reachable and an application chosen, its screens are read (the «known screens»).
     effect(() => {
       const appId = this.appId();
       if (this.status() === 'available' && appId) void this.loadScreens(appId);
@@ -79,13 +79,13 @@ export class RegistrySession {
       const documents = await this.client.documents(appId);
       screens = Array.isArray(documents) ? documents.filter((d) => d?.kind === 'screen' && typeof d.id === 'string').map((d) => d.id) : [];
     } catch {
-      // Applicazione nuova o registro non più raggiungibile: nessuna schermata nota dal registro.
+      // New application or registry no longer reachable: no known screen from the registry.
     }
-    // Una risposta arrivata dopo un cambio di applicazione non vale più.
+    // A response arriving after a change of application no longer counts.
     if (appId === this.appId()) this.screens.set(screens);
   }
 
-  /** Verifica se il registro c'è (e se chiede l'accesso); aggiorna l'elenco delle applicazioni. */
+  /** Checks whether the registry is there (and whether it asks for sign-in); updates the list of applications. */
   async check(): Promise<RegistryStatus> {
     try {
       const apps = await this.client.apps();
@@ -97,7 +97,7 @@ export class RegistrySession {
     return this.status();
   }
 
-  /** Il registro si può usare dal menu: raggiungibile, oppure raggiungibile dopo l'accesso. */
+  /** The registry can be used from the menu: reachable, or reachable after sign-in. */
   usable(): boolean {
     return this.status() === 'available' || this.status() === 'login';
   }
@@ -106,7 +106,7 @@ export class RegistrySession {
     this.redirect(loginUrl(globalThis.location.href));
   }
 
-  /** Hash della versione da cui parte il documento indicato, se è quello aperto dal registro o salvato per ultimo. */
+  /** Hash of the version the given document starts from, if it is the one opened from the registry or saved last. */
   basedOn(ref: RegistryRef | null): string | null {
     const origin = this.origin();
     return ref && origin && origin.kind === ref.kind && origin.id === ref.id ? origin.hash : null;
@@ -117,9 +117,9 @@ export class RegistrySession {
   }
 
   /**
-   * Salva il documento come nuova versione nell'applicazione scelta. Restituisce la versione salvata, oppure null se non
-   * è stato salvato: errori segnalati qui (con i problemi di validazione in `issues`), modifiche concorrenti non
-   * confermate, documento senza identificativo valido.
+   * Saves the document as a new version in the chosen application. Returns the saved version, or null if it was not
+   * saved: errors reported here (with the validation problems in `issues`), concurrent changes not
+   * confirmed, document without a valid identifier.
    */
   async save(kind: DocumentKind, doc: Json): Promise<DocumentVersion | null> {
     const ref = documentRef(kind, doc);
@@ -137,7 +137,7 @@ export class RegistrySession {
     } catch (e) {
       if (e instanceof RegistryError && e.status === 412) {
         this.busy.set(false);
-        // Qualcuno ha salvato dopo la versione da cui si è partiti: si salva comunque solo se l'autore lo conferma.
+        // Someone saved after the version one started from: save anyway only if the author confirms.
         if (!(await this.confirmation.confirm(this.i18n.t('ed.registry.conflict', { author: e.latestAuthor ?? '?' })))) return null;
         this.setOrigin(null, null);
         return this.save(kind, doc);
@@ -152,7 +152,7 @@ export class RegistrySession {
     }
   }
 
-  /** Segnala un errore del registro in modo comprensibile, senza i dettagli tecnici del servizio. */
+  /** Reports a registry error in an understandable way, without the technical details of the service. */
   report(e: unknown): void {
     const status = e instanceof RegistryError ? e.status : 0;
     if (status === 401) {
@@ -160,11 +160,11 @@ export class RegistrySession {
       this.notifier.toast(this.i18n.t('ed.registry.loginNeeded'), 'error');
       return;
     }
-    // 403 con un titolo (per esempio «L'autore di una versione non può approvarla») lo mostra; senza, il messaggio generico.
+    // 403 with a title (for example «The author of a version cannot approve it») shows it; without one, the generic message.
     const titled = e instanceof RegistryError && e.message !== '';
     const key =
       status === 0 ? 'ed.registry.unreachable' : status === 403 && !titled ? 'ed.registry.forbidden' : status === 404 ? 'ed.registry.notFound' : 'ed.registry.rejected';
-    // Il titolo del Problem è un testo pensato per l'autore (per esempio «identificativo diverso dal percorso»).
+    // The title of the Problem is a text meant for the author (for example «identifier different from the path»).
     this.notifier.toast(this.i18n.t(key, { reason: e instanceof RegistryError ? e.message : '' }), 'error');
   }
 }

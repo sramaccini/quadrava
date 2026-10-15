@@ -14,12 +14,12 @@ import type { MenuItem } from './menu-bar.component';
 import { DRAG_NODE, DRAG_TYPE } from './palette.component';
 import { fallbackText } from '../model/templates';
 
-/** Una riga della struttura: un nodo, una scheda o un passo, con i propri figli. */
+/** A row of the outline: a node, a tab or a step, with its own children. */
 export interface OutlineItem {
   path: Path;
-  /** Chiave stabile per ricordare i rami chiusi: l'identificativo del nodo, o il percorso. */
+  /** Stable key to remember the closed branches: the identifier of the node, or the path. */
   key: string;
-  /** Testo in cui cercare: tipo, etichetta, dettaglio, identificativo. */
+  /** Text to search in: type, label, detail, identifier. */
   search: string;
   kind: 'node' | 'tab' | 'step';
   type?: string;
@@ -27,19 +27,19 @@ export interface OutlineItem {
   detail: string;
   severity: 'error' | 'warning' | null;
   children: OutlineItem[];
-  /** Nodo con schede o passi: si possono aggiungere. */
+  /** Node with tabs or steps: they can be added. */
   canAddItem: boolean;
   first: boolean;
   last: boolean;
 }
 
-/** Proprietà che descrivono meglio un nodo nella struttura, in ordine di preferenza. */
+/** Properties that best describe a node in the outline, in order of preference. */
 const DETAIL_KEYS = ['title', 'label', 'text', 'source', 'bind'];
 
 /**
- * Struttura della schermata: l'albero dei nodi (con schede e passi), selezionabile. L'elemento selezionato mostra
- * i comandi per spostarlo, duplicarlo, tagliarlo ed eliminarlo; i nodi con problemi hanno un segno accanto.
- * Si può trascinare un componente dalla tavolozza o un nodo della struttura prima, dopo o dentro un'altra riga.
+ * Outline of the screen: the tree of the nodes (with tabs and steps), selectable. The selected element shows
+ * the commands to move, duplicate, cut and delete it; nodes with problems have a mark next to them.
+ * A component can be dragged from the palette, or a node of the outline, before, after or inside another row.
  */
 @Component({
   selector: 'ed-outline',
@@ -52,15 +52,15 @@ export class OutlineComponent {
   protected readonly store = inject(EditorStore);
   protected readonly i18n = inject(I18n);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
-  /** Rami chiusi (chiavi delle righe). */
+  /** Closed branches (keys of the rows). */
   protected readonly collapsed = signal<ReadonlySet<string>>(new Set());
-  /** Testo cercato nella struttura. */
+  /** Text searched in the outline. */
   protected readonly query = signal('');
-  /** Menu contestuale aperto: su quale riga e dove. */
+  /** Open context menu: on which row and where. */
   protected readonly menu = signal<{ item: OutlineItem; x: number; y: number } | null>(null);
 
   constructor() {
-    // Selezionando un nodo (anche dall'anteprima) i rami che lo contengono si aprono.
+    // Selecting a node (also from the preview) opens the branches containing it.
     effect(() => {
       const selection = this.store.selection();
       const closed = this.collapsed();
@@ -82,7 +82,7 @@ export class OutlineComponent {
     return this.list(doc, ['components']);
   });
 
-  /** Le righe da mostrare: tutte, oppure quelle che corrispondono alla ricerca con i rami che le contengono. */
+  /** The rows to show: all, or those matching the search with the branches containing them. */
   protected readonly shown = computed<OutlineItem[]>(() => {
     const query = normalize(this.query().trim());
     if (!query) return this.items();
@@ -96,13 +96,13 @@ export class OutlineComponent {
 
   protected readonly searching = computed(() => this.query().trim() !== '');
 
-  /** Le righe che corrispondono alla ricerca (per evidenziarle). */
+  /** The rows matching the search (to highlight them). */
   protected matches(item: OutlineItem): boolean {
     const query = normalize(this.query().trim());
     return query !== '' && item.search.includes(query);
   }
 
-  /** Un ramo è aperto se non è stato chiuso; durante una ricerca sono tutti aperti. */
+  /** A branch is open if it was not closed; during a search they are all open. */
   protected isOpen(item: OutlineItem): boolean {
     return this.searching() || !this.collapsed().has(item.key);
   }
@@ -122,7 +122,7 @@ export class OutlineComponent {
         visit(item.children);
       });
     visit(this.items());
-    // Il ramo con l'elemento selezionato resta aperto.
+    // The branch with the selected element stays open.
     const keep = this.ancestors(this.items(), this.store.selection());
     this.collapsed.set(new Set(keys.filter((key) => !keep.includes(key))));
   }
@@ -131,7 +131,7 @@ export class OutlineComponent {
     this.collapsed.set(new Set());
   }
 
-  /** Frecce sulla riga: destra apre il ramo, sinistra lo chiude; il tasto menu o Maiusc+F10 aprono il menu. */
+  /** Arrows on the row: right opens the branch, left closes it; the menu key or Shift+F10 open the menu. */
   protected rowKey(event: KeyboardEvent, item: OutlineItem): void {
     if (event.altKey || event.ctrlKey || event.metaKey) return;
     if (event.shiftKey && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) {
@@ -150,20 +150,20 @@ export class OutlineComponent {
     }
   }
 
-  /** Clic su una riga: Ctrl (o Cmd) aggiunge o toglie dalla selezione, Maiusc seleziona l'intervallo, altrimenti seleziona. */
+  /** Click on a row: Ctrl (or Cmd) adds or removes it from the selection, Shift selects the range, otherwise it selects. */
   protected rowClick(event: MouseEvent, item: OutlineItem): void {
     if (event.ctrlKey || event.metaKey) this.store.toggleSelect(item.path);
     else if (event.shiftKey) this.store.selectRange(item.path);
     else this.store.select(item.path);
   }
 
-  /** La riga fa parte di una selezione di più nodi. */
+  /** The row is part of a selection of several nodes. */
   protected inMulti(path: Path): boolean {
     const multi = this.store.multi();
     return multi.length > 1 && multi.some((p) => samePath(p, path));
   }
 
-  /** Maiusc+freccia su o giù: allarga la selezione al fratello precedente o successivo e ci porta il fuoco. */
+  /** Shift+arrow up or down: extends the selection to the previous or next sibling and moves the focus there. */
   private extend(item: OutlineItem, delta: number): void {
     const index = item.path.at(-1);
     if (item.kind !== 'node' || typeof index !== 'number') return;
@@ -179,12 +179,12 @@ export class OutlineComponent {
   }
 
   private openMenu(item: OutlineItem, x: number, y: number): void {
-    // Su un nodo della selezione multipla il menu vale per tutti; altrove si seleziona la riga.
+    // On a node of the multiple selection the menu applies to all; elsewhere the row is selected.
     if (!this.inMulti(item.path)) this.store.select(item.path);
     this.menu.set({ item, x, y });
   }
 
-  /** Il menu si è chiuso: il fuoco torna alla riga (il comando può averlo spostato altrove). */
+  /** The menu closed: the focus goes back to the row (the command may have moved it elsewhere). */
   protected menuClosed(): void {
     const item = this.menu()?.item;
     this.menu.set(null);
@@ -197,7 +197,7 @@ export class OutlineComponent {
     });
   }
 
-  /** Voci del menu contestuale per una riga: i comandi della struttura, «Avvolgi in…» e il contenitore. */
+  /** Context menu items for a row: the outline commands, «Wrap in…» and the container. */
   protected menuItems(item: OutlineItem): MenuItem[] {
     const t = (key: string) => this.i18n.t(key);
     if (this.inMulti(item.path)) {
@@ -241,7 +241,7 @@ export class OutlineComponent {
     return items;
   }
 
-  /** Chiavi dei rami che contengono il percorso. */
+  /** Keys of the branches containing the path. */
   private ancestors(items: OutlineItem[], path: Path): string[] {
     for (const item of items) {
       if (path.length > item.path.length && startsWith(path, item.path)) return [item.key, ...this.ancestors(item.children, path)];
@@ -288,16 +288,16 @@ export class OutlineComponent {
     };
   }
 
-  /** Il problema più grave dell'elemento (non dei figli, che hanno il proprio segno). */
+  /** The most serious problem of the element (not of the children, which have their own mark). */
   private severityOf(path: Path): 'error' | 'warning' | null {
     const own = this.store.issues().filter((i) => samePath(i.owner, path));
     if (own.some((i) => i.severity === 'error')) return 'error';
     return own.length ? 'warning' : null;
   }
 
-  /** Riga sotto il puntatore durante un trascinamento, con la zona (prima, dopo, dentro). */
+  /** Row under the pointer during a drag, with the zone (before, after, inside). */
   protected readonly dropHint = signal<{ key: string; zone: DropZone } | null>(null);
-  /** Nodo trascinato dalla struttura (per non farlo cadere dentro sé stesso). */
+  /** Node dragged from the outline (so as not to drop it inside itself). */
   private dragged: Path | null = null;
 
   protected dragStart(event: DragEvent, item: OutlineItem): void {
@@ -317,7 +317,7 @@ export class OutlineComponent {
     if (!types.includes(DRAG_TYPE) && !types.includes(DRAG_NODE)) return;
     const zone = this.zone(event, path);
     if (!dropPoint(this.store.doc(), path, zone, this.dragged ?? undefined)) return;
-    // Rilascio permesso qui.
+    // Drop allowed here.
     event.preventDefault();
     if (event.dataTransfer) event.dataTransfer.dropEffect = types.includes(DRAG_NODE) ? 'move' : 'copy';
     const key = path.join('/');
@@ -364,7 +364,7 @@ export class OutlineComponent {
     return samePath(this.store.selection(), path);
   }
 
-  /** L'elemento selezionato è dentro questo (per evidenziare il ramo). */
+  /** The selected element is inside this one (to highlight the branch). */
   protected containsSelection(path: Path): boolean {
     const selection = this.store.selection();
     return selection.length > path.length && startsWith(selection, path);
@@ -372,7 +372,7 @@ export class OutlineComponent {
 }
 
 function detailOf(value: Record<string, Json>): string {
-  // Un campo a sé: etichetta (o nome) e tipo del campo.
+  // A standalone field: label (or name) and field type.
   const field = value['field'];
   if (value['type'] === 'input' && field !== null && typeof field === 'object' && !Array.isArray(field)) {
     const text = typeof field['label'] === 'string' && field['label'].trim() ? field['label'] : field['name'];
@@ -385,7 +385,7 @@ function detailOf(value: Record<string, Json>): string {
   return typeof value['id'] === 'string' ? value['id'] : '';
 }
 
-/** Testo per la ricerca: minuscolo e senza accenti. */
+/** Text for the search: lower-case and without accents. */
 function normalize(text: string): string {
   return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 }

@@ -8,13 +8,13 @@ import { NODE_TYPES } from '../model/schema-info';
 import { INPUT_KINDS } from '../model/templates';
 import { PALETTE_DRAG_TYPE } from '../preview/protocol';
 
-/** Tipi di dati trascinati: un tipo di componente dalla tavolozza, il percorso di un nodo dalla struttura. */
+/** Kinds of dragged data: a component type from the palette, the path of a node from the outline. */
 export const DRAG_TYPE = PALETTE_DRAG_TYPE;
 export const DRAG_NODE = 'application/x-lc-node-path';
 
 /**
- * Gruppi della tavolozza. Un tipo dello schema non elencato qui finisce in «Altro», così nessun componente manca. Le voci
- * `input.<tipo>` aggiungono un campo a sé del tipo indicato.
+ * Groups of the palette. A type of the schema not listed here ends up in «Other», so no component is missing. The
+ * `input.<type>` items add a standalone field of the given type.
  */
 const GROUPS: { key: string; types: string[] }[] = [
   { key: 'layout', types: ['section', 'box', 'grid', 'border', 'tabs', 'wizard', 'text', 'text.markdown', 'alert', 'image', 'link'] },
@@ -25,9 +25,9 @@ const GROUPS: { key: string; types: string[] }[] = [
 ];
 
 /**
- * Tavolozza dei componenti: un clic aggiunge il nodo nel punto di inserimento (dentro il contenitore selezionato o dopo
- * il nodo); in alternativa lo si trascina nella struttura. La casella in cima filtra mentre si scrive (nome o tipo,
- * senza badare ad accenti e maiuscole): Invio aggiunge il primo trovato, Esc svuota.
+ * Palette of the components: a click adds the node at the insertion point (inside the selected container or after
+ * the node); alternatively it is dragged into the outline. The box at the top filters while typing (name or type,
+ * regardless of accents and case): Enter adds the first one found, Esc clears.
  */
 @Component({
   selector: 'ed-palette',
@@ -97,7 +97,7 @@ export class PaletteComponent {
   protected readonly i18n = inject(I18n);
   protected readonly groups = paletteGroups();
   protected readonly query = signal('');
-  /** Gruppi con i soli componenti che corrispondono alla ricerca (nome nella lingua dell'editor, o tipo). */
+  /** Groups with only the components matching the search (name in the editor's language, or type). */
   protected readonly shown = computed(() => {
     const query = normalize(this.query().trim());
     this.i18n.locale();
@@ -108,7 +108,7 @@ export class PaletteComponent {
   });
   protected readonly firstMatch = computed(() => this.shown()[0]?.types[0] ?? null);
 
-  /** Invio nella ricerca: aggiunge il primo componente trovato. */
+  /** Enter in the search: adds the first component found. */
   protected addFirst(): void {
     const type = this.query().trim() ? this.firstMatch() : null;
     if (type) this.store.addNode(type);

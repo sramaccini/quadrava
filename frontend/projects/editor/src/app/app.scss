@@ -14,12 +14,12 @@
 .end { margin-left: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .status { display: flex; gap: 4px; }
 .language { width: 72px; }
-/* Colonne laterali (ed-dock-side): riquadri separati, ognuno con il proprio scorrimento; sganciate, solo la striscia. */
+/* Side columns (ed-dock-side): separate panels, each with its own scrolling; unpinned, only the strip. */
 .left { grid-area: left; border-right: 1px solid var(--lc-color-border); }
 .right { grid-area: right; border-left: 1px solid var(--lc-color-border); }
 .left ed-palette { flex: 0 1 auto; max-height: 50%; }
 .left ed-outline { flex: 1 1 0; min-height: 160px; }
-/* Con la struttura nascosta, i componenti prendono tutta la colonna. */
+/* With the outline hidden, the components take the whole column. */
 .left:not(:has(ed-outline.ed-docked)) ed-palette { flex: 1 1 0; max-height: none; }
 .right ed-inspector { flex: 1 1 0; }
 .center { grid-area: center; display: flex; flex-direction: column; min-height: 0; padding: 8px; background: var(--lc-color-background); }
@@ -36,7 +36,7 @@
 .issues-toggle:focus-visible { outline: 2px solid var(--lc-color-primary); outline-offset: -2px; }
 .nav-workspace { grid-row: 2; grid-column: 1 / -1; }
 
-/* Finestre strette: la struttura sopra, le proprietà sotto l'anteprima. */
+/* Narrow windows: the outline above, the properties below the preview. */
 @media (max-width: 1100px) {
   :host { height: auto; }
   .editor { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto 70vh auto auto; grid-template-areas: 'top' 'left' 'center' 'right' 'bottom'; }
@@ -48,7 +48,7 @@
   .right ed-inspector { flex: none; }
 }
 
-/* Aiuto: scorciatoie da tastiera e informazioni (le finestre stanno fuori dall'editor, quindi ::ng-deep). */
+/* Help: keyboard shortcuts and information (the dialogs sit outside the editor, hence ::ng-deep). */
 ::ng-deep .shortcuts h3 { margin: 14px 0 6px; font-size: 13px; font-weight: 600; }
 ::ng-deep .shortcuts h3:first-child { margin-top: 0; }
 ::ng-deep .shortcuts dl { display: grid; grid-template-columns: 210px 1fr; gap: 4px 16px; margin: 0; font-size: 13px; }
