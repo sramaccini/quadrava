@@ -3,8 +3,8 @@
 export const THEME_SCHEMA: Record<string, unknown> = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://lowcode.example/schemas/theme.schema.json",
-  "title": "Tema dell'applicazione KinetiX",
-  "description": "Design token di un tema. Il runtime li applica come CSS custom properties (--lc-*). I valori ammessi sono volutamente ristretti: un tema non può iniettare CSS arbitrario.",
+  "title": "Theme of a KinetiX application",
+  "description": "Design tokens of a theme. The runtime applies them as CSS custom properties (--lc-*). The allowed values are deliberately restricted: a theme cannot inject arbitrary CSS.",
   "type": "object",
   "required": [
     "schemaVersion",
@@ -18,7 +18,7 @@ export const THEME_SCHEMA: Record<string, unknown> = {
     "theme": {
       "type": "string",
       "pattern": "^[a-z][a-z0-9-]{1,63}$",
-      "description": "Identificativo del tema."
+      "description": "Identifier of the theme."
     },
     "label": {
       "type": "string",
@@ -29,7 +29,7 @@ export const THEME_SCHEMA: Record<string, unknown> = {
         "light",
         "dark"
       ],
-      "description": "Aiuta il runtime a impostare color-scheme."
+      "description": "Helps the runtime set color-scheme."
     },
     "tokens": {
       "$ref": "#/$defs/tokens"
@@ -99,7 +99,7 @@ export const THEME_SCHEMA: Record<string, unknown> = {
               "type": "number",
               "minimum": 12,
               "maximum": 20,
-              "description": "Dimensione base in px."
+              "description": "Base size in px."
             }
           },
           "additionalProperties": false
@@ -111,7 +111,7 @@ export const THEME_SCHEMA: Record<string, unknown> = {
               "type": "number",
               "minimum": 0,
               "maximum": 24,
-              "description": "Raggio degli angoli in px."
+              "description": "Corner radius in px."
             }
           },
           "additionalProperties": false
@@ -124,7 +124,7 @@ export const THEME_SCHEMA: Record<string, unknown> = {
         },
         "layout": {
           "type": "object",
-          "description": "Aspetto del guscio dell'applicazione: barra laterale, barra superiore, intestazione di pagina, spaziature. Tutto opzionale: se manca, la barra laterale è chiara (colori di superficie) e le misure sono quelle di Ant Design Pro.",
+          "description": "Look of the application shell: side bar, top bar, page header, spacing. All optional: if missing, the side bar is light (surface colours) and the measures are those of Ant Design Pro.",
           "properties": {
             "sider": {
               "type": "object",
@@ -134,7 +134,7 @@ export const THEME_SCHEMA: Record<string, unknown> = {
                     "light",
                     "dark"
                   ],
-                  "description": "Stile del menu: chiaro o scuro."
+                  "description": "Style of the menu: light or dark."
                 },
                 "background": {
                   "$ref": "#/$defs/color"
@@ -158,13 +158,13 @@ export const THEME_SCHEMA: Record<string, unknown> = {
                   "type": "number",
                   "minimum": 180,
                   "maximum": 360,
-                  "description": "Larghezza in px."
+                  "description": "Width in px."
                 },
                 "collapsedWidth": {
                   "type": "number",
                   "minimum": 48,
                   "maximum": 120,
-                  "description": "Larghezza da compressa in px."
+                  "description": "Collapsed width in px."
                 }
               },
               "additionalProperties": false
@@ -185,7 +185,7 @@ export const THEME_SCHEMA: Record<string, unknown> = {
                   "type": "number",
                   "minimum": 40,
                   "maximum": 96,
-                  "description": "Altezza in px."
+                  "description": "Height in px."
                 }
               },
               "additionalProperties": false
@@ -215,7 +215,7 @@ export const THEME_SCHEMA: Record<string, unknown> = {
                   "type": "number",
                   "minimum": 0,
                   "maximum": 64,
-                  "description": "Margine interno in px."
+                  "description": "Inner padding in px."
                 }
               },
               "additionalProperties": false

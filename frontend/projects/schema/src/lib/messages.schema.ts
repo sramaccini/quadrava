@@ -3,8 +3,8 @@
 export const MESSAGES_SCHEMA: Record<string, unknown> = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://lowcode.example/schemas/messages.schema.json",
-  "title": "Catalogo delle traduzioni",
-  "description": "Testi di un'applicazione in una lingua: chiave → testo nel formato dei messaggi ({n, number}, {n, plural, …}, {x, select, …}). Un documento per lingua; i testi sono sempre solo testo, mai HTML.",
+  "title": "Translation catalogue",
+  "description": "Texts of an application in one language: key → text in the message format ({n, number}, {n, plural, …}, {x, select, …}). One document per language; texts are always plain text, never HTML.",
   "type": "object",
   "required": [
     "schemaVersion",
@@ -19,7 +19,7 @@ export const MESSAGES_SCHEMA: Record<string, unknown> = {
     "messages": {
       "type": "string",
       "pattern": "^[a-z]{2,3}(-[a-z0-9]{2,8})?$",
-      "description": "Lingua del catalogo (it, en, pt-br…), che è anche l'identificativo del documento nel registro."
+      "description": "Language of the catalogue (it, en, pt-br…), which is also the identifier of the document in the registry."
     },
     "texts": {
       "type": "object",
@@ -31,7 +31,7 @@ export const MESSAGES_SCHEMA: Record<string, unknown> = {
         "type": "string",
         "maxLength": 5000
       },
-      "description": "Chiave → testo."
+      "description": "Key → text."
     }
   }
 };

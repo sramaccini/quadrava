@@ -12,11 +12,11 @@ function issuesOf(doc: unknown): string[] {
 }
 
 describe('validateScreen', () => {
-  it('accetta una schermata minima', () => {
+  it('accepts a minimal screen', () => {
     expect(validateScreen(minimal()).valid).toBe(true);
   });
 
-  it('accetta una tabella con azione condizionata dai permessi', () => {
+  it('accepts a table with an action conditioned by permissions', () => {
     const doc = {
       ...minimal(),
       requires: 'ordini.ordine.leggi',
@@ -40,55 +40,55 @@ describe('validateScreen', () => {
     expect(issuesOf(doc)).toEqual([]);
   });
 
-  it('rifiuta una schermata senza componenti', () => {
-    expect(issuesOf({ schemaVersion: '1.0', screen: 'a' })).toContain('/ proprietà obbligatoria mancante: components');
+  it('rejects a screen without components', () => {
+    expect(issuesOf({ schemaVersion: '1.0', screen: 'a' })).toContain('/ missing required property: components');
   });
 
-  it('rifiuta un identificativo non in kebab-case', () => {
+  it('rejects an identifier not in kebab-case', () => {
     expect(issuesOf({ ...minimal(), screen: 'OrdiniElenco' }).some((m) => m.startsWith('/screen'))).toBe(true);
   });
 
-  it('rifiuta un tipo di componente sconosciuto', () => {
+  it('rejects an unknown component type', () => {
     const issues = issuesOf({ ...minimal(), components: [{ type: 'carosello' }] });
     expect(issues.some((m) => m.startsWith('/components/0/type'))).toBe(true);
   });
 
-  it('rifiuta proprietà non previste su un componente', () => {
+  it('rejects unexpected properties on a component', () => {
     const issues = issuesOf({ ...minimal(), components: [{ type: 'text', text: 'x', colore: 'rosso' }] });
-    expect(issues).toContain('/components/0 proprietà non prevista: colore');
+    expect(issues).toContain('/components/0 unexpected property: colore');
   });
 
-  it('un errore dentro un componente non fa segnalare come «non previste» le sue proprietà lecite', () => {
+  it('an error inside a component does not get its legal properties reported as «unexpected»', () => {
     const table = { type: 'table', source: 'ordini', columns: [{ field: 'n' }], rowActions: [{ label: 'X', onClick: [] }] };
     const issues = issuesOf({ ...minimal(), components: [table] });
     expect(issues.some((i) => i.startsWith('/components/0/rowActions/0/onClick'))).toBe(true);
     expect(issues.filter((i) => i.includes('non prevista'))).toEqual([]);
-    // Una proprietà davvero sconosciuta, senza altri errori, resta segnalata.
-    expect(issuesOf({ ...minimal(), components: [{ ...table, rowActions: [], colore: 'rosso' }] })).toContain('/components/0 proprietà non prevista: colore');
+    // A really unknown property, without other errors, is still reported.
+    expect(issuesOf({ ...minimal(), components: [{ ...table, rowActions: [], colore: 'rosso' }] })).toContain('/components/0 unexpected property: colore');
   });
 
-  it('richiede le proprietà specifiche del tipo', () => {
+  it('requires the properties specific to the type', () => {
     const issues = issuesOf({ ...minimal(), components: [{ type: 'table', source: 'ordini' }] });
-    expect(issues).toContain('/components/0 proprietà obbligatoria mancante: columns');
+    expect(issues).toContain('/components/0 missing required property: columns');
   });
 
-  it('rifiuta una condizione senza doppie graffe', () => {
+  it('rejects a condition without double braces', () => {
     const doc = { ...minimal(), components: [{ type: 'text', text: 'x', visibleIf: "can('a.b')" }] };
     expect(issuesOf(doc).some((m) => m.startsWith('/components/0/visibleIf'))).toBe(true);
   });
 
-  it('rifiuta un permesso malformato', () => {
+  it('rejects a malformed permission', () => {
     expect(issuesOf({ ...minimal(), requires: 'Ordini' }).some((m) => m.startsWith('/requires'))).toBe(true);
   });
 
-  it('rifiuta un passo di azione sconosciuto', () => {
+  it('rejects an unknown action step', () => {
     const doc = { ...minimal(), components: [{ type: 'button', label: 'Vai', onClick: [{ esegui: 'x' }] }] };
     expect(validateScreen(doc).valid).toBe(false);
   });
 
-  it('valida i componenti annidati nelle sezioni', () => {
+  it('validates the components nested in sections', () => {
     const doc = { ...minimal(), components: [{ type: 'section', components: [{ type: 'text' }] }] };
-    expect(issuesOf(doc)).toContain('/components/0/components/0 proprietà obbligatoria mancante: text');
+    expect(issuesOf(doc)).toContain('/components/0/components/0 missing required property: text');
   });
 });
 
@@ -104,23 +104,23 @@ describe('validateTheme', () => {
     },
   };
 
-  it('accetta un tema valido', () => {
+  it('accepts a valid theme', () => {
     expect(validateTheme(base).valid).toBe(true);
   });
 
-  it('rifiuta colori che potrebbero iniettare CSS', () => {
+  it('rejects colours that could inject CSS', () => {
     const bad = structuredClone(base);
     bad.tokens.colors.primary = 'red; background: url(http://evil)';
     expect(validateTheme(bad).valid).toBe(false);
   });
 
-  it('rifiuta una famiglia di font con caratteri non ammessi', () => {
+  it('rejects a font family with characters that are not allowed', () => {
     const bad = structuredClone(base);
     bad.tokens.typography.fontFamily = 'x}body{display:none';
     expect(validateTheme(bad).valid).toBe(false);
   });
 
-  it('rifiuta token sconosciuti e colori obbligatori mancanti', () => {
+  it('rejects unknown tokens and missing required colours', () => {
     const unknown = { ...base, tokens: { ...base.tokens, extra: 1 } };
     expect(validateTheme(unknown).valid).toBe(false);
     const missing = structuredClone(base) as { tokens: { colors: Record<string, string> } };
@@ -137,29 +137,29 @@ describe('validateNavigation', () => {
     areas: [{ id: 'uc', label: 'Caso', items }],
   });
 
-  it('accetta una voce, un gruppo e tre livelli', () => {
+  it('accepts an item, a group and three levels', () => {
     const items = [leaf('a'), { id: 'g1', label: 'G1', children: [leaf('b'), { id: 'g2', label: 'G2', children: [leaf('c')] }] }];
     expect(validateNavigation(doc(items)).valid).toBe(true);
   });
 
-  it('rifiuta un quarto livello', () => {
+  it('rejects a fourth level', () => {
     const deep = [{ id: 'g1', label: 'G1', children: [{ id: 'g2', label: 'G2', children: [{ id: 'g3', label: 'G3', children: [leaf('x')] }] }] }];
     expect(validateNavigation(doc(deep)).valid).toBe(false);
   });
 
-  it('rifiuta voci senza schermata né figli, e gruppi senza figli', () => {
+  it('rejects items without a screen or children, and groups without children', () => {
     expect(validateNavigation(doc([{ id: 'a', label: 'A' }])).valid).toBe(false);
     expect(validateNavigation(doc([{ id: 'g', label: 'G', children: [] }])).valid).toBe(false);
   });
 
-  it('rifiuta proprietà sconosciute e permessi non validi', () => {
+  it('rejects unknown properties and invalid permissions', () => {
     expect(validateNavigation(doc([{ ...leaf('a'), color: 'red' }])).valid).toBe(false);
     expect(validateNavigation(doc([{ ...leaf('a'), requires: 'Permesso Maiuscolo' }])).valid).toBe(false);
   });
 });
 
-describe('formato dei permessi dominio.risorsa.azione', () => {
-  it('accetta tre parti e rifiuta due o quattro, in schermate e navigazione', () => {
+describe('permission format domain.resource.action', () => {
+  it('accepts three parts and rejects two or four, in screens and navigation', () => {
     const screen = (requires: string) => ({ schemaVersion: '1.0', screen: 'x', requires, components: [{ type: 'text', text: 'a' }] });
     const nav = (requires: string) => ({ schemaVersion: '1.0', navigation: 'n', areas: [{ id: 'u', label: 'U', items: [{ id: 'a', label: 'A', screen: 's', requires }] }] });
     for (const make of [screen, nav]) {
@@ -175,10 +175,10 @@ function validateAny(make: (r: string) => unknown, requires: string): { valid: b
   return doc.navigation ? validateNavigation(doc) : validateScreen(doc);
 }
 
-describe('nuovi componenti: formati di cella, schede, dettaglio, messaggi e conferma', () => {
+describe('new components: cell formats, tabs, detail, messages and confirmation', () => {
   const screen = (components: unknown[]) => ({ schemaVersion: '1.0', screen: 'x', components });
 
-  it('accetta una tabella con formati, tonalità dei badge e colonne condizionate', () => {
+  it('accepts a table with formats, badge tones and conditional columns', () => {
     const doc = screen([
       {
         type: 'table',
@@ -193,14 +193,14 @@ describe('nuovi componenti: formati di cella, schede, dettaglio, messaggi e conf
     expect(issuesOf(doc)).toEqual([]);
   });
 
-  it('rifiuta formati, toni e valute non previsti', () => {
+  it('rejects unexpected formats, tones and currencies', () => {
     const table = (column: object) => screen([{ type: 'table', source: 's', columns: [{ field: 'a', ...column }] }]);
     expect(issuesOf(table({ format: 'euro' })).length).toBeGreaterThan(0);
     expect(issuesOf(table({ format: 'badge', badges: { x: 'rosso' } })).length).toBeGreaterThan(0);
     expect(issuesOf(table({ format: 'currency', currency: 'euro' })).length).toBeGreaterThan(0);
   });
 
-  it('accetta schede annidate con condizioni, schede di dettaglio e messaggi', () => {
+  it('accepts nested tabs with conditions, detail panels and messages', () => {
     const doc = screen([
       { type: 'alert', text: 'Attenzione', kind: 'error', visibleIf: '{{true}}' },
       {
@@ -214,7 +214,7 @@ describe('nuovi componenti: formati di cella, schede, dettaglio, messaggi e conf
     expect(issuesOf(doc)).toEqual([]);
   });
 
-  it('rifiuta schede vuote, dettagli senza campi e messaggi di tipo sconosciuto', () => {
+  it('rejects empty tabs, details without fields and messages of an unknown kind', () => {
     expect(issuesOf(screen([{ type: 'tabs', tabs: [] }])).length).toBeGreaterThan(0);
     expect(issuesOf(screen([{ type: 'tabs', tabs: [{ components: [] }] }])).length).toBeGreaterThan(0);
     expect(issuesOf(screen([{ type: 'detail', source: 's', fields: [] }])).length).toBeGreaterThan(0);
@@ -222,7 +222,7 @@ describe('nuovi componenti: formati di cella, schede, dettaglio, messaggi e conf
     expect(issuesOf(screen([{ type: 'alert', text: 'x', colore: 'rosso' }])).length).toBeGreaterThan(0);
   });
 
-  it('accetta il passo confirm e rifiuta forme sbagliate', () => {
+  it('accepts the confirm step and rejects wrong shapes', () => {
     const button = (onClick: unknown[]) => screen([{ type: 'button', label: 'Vai', onClick }]);
     expect(issuesOf(button([{ confirm: "Approvare l'ordine {{row.numero}}?" }, { toast: 'Fatto' }]))).toEqual([]);
     expect(issuesOf(button([{ confirm: 5 }])).length).toBeGreaterThan(0);

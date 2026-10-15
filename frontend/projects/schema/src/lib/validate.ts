@@ -2,14 +2,14 @@ import { messagesValidator, navigationValidator, screenValidator, themeValidator
 import type { MessagesDefinition, NavigationDefinition, ScreenDefinition, ThemeDefinition } from './types';
 
 export interface ValidationIssue {
-  /** Posizione nel documento, per esempio `/components/0/columns`. */
+  /** Position in the document, for example `/components/0/columns`. */
   path: string;
   message: string;
 }
 
 export type ValidationResult<T = ScreenDefinition> = { valid: true; value: T } | { valid: false; issues: ValidationIssue[] };
 
-/** Errore di un validatore precompilato (stessa forma degli errori di Ajv). */
+/** Error of a precompiled validator (same shape as Ajv errors). */
 interface SchemaError {
   keyword: string;
   instancePath: string;
@@ -17,25 +17,25 @@ interface SchemaError {
   params: Record<string, unknown>;
 }
 
-/** Validatore precompilato da `tools/sync-schema.mjs` (Ajv standalone): nessuna compilazione nel browser. */
+/** Validator precompiled by `tools/sync-schema.mjs` (Ajv standalone): nothing is compiled in the browser. */
 type ValidateFunction = ((data: unknown) => boolean) & { errors?: SchemaError[] | null };
 
-/** Valida una definizione di schermata contro lo schema del nucleo. Non lancia eccezioni. */
+/** Validates a screen definition against the screen schema. Does not throw. */
 export function validateScreen(document: unknown): ValidationResult<ScreenDefinition> {
   return run<ScreenDefinition>(screenValidator, document);
 }
 
-/** Valida un tema (design token) contro lo schema dei temi. Non lancia eccezioni. */
+/** Validates a theme (design tokens) against the theme schema. Does not throw. */
 export function validateTheme(document: unknown): ValidationResult<ThemeDefinition> {
   return run<ThemeDefinition>(themeValidator, document);
 }
 
-/** Valida un documento di navigazione (aree e menu a tre livelli). Non lancia eccezioni. */
+/** Validates a navigation document (areas and three-level menus). Does not throw. */
 export function validateNavigation(document: unknown): ValidationResult<NavigationDefinition> {
   return run<NavigationDefinition>(navigationValidator, document);
 }
 
-/** Valida un catalogo di traduzioni (una lingua) contro lo schema dei cataloghi. Non lancia eccezioni. */
+/** Validates a translation catalogue (one language) against the catalogue schema. Does not throw. */
 export function validateMessages(document: unknown): ValidationResult<MessagesDefinition> {
   return run<MessagesDefinition>(messagesValidator, document);
 }
@@ -45,21 +45,21 @@ function run<T>(validator: ValidateFunction, document: unknown): ValidationResul
     return { valid: true, value: document as T };
   }
   const errors = (validator.errors ?? [])
-    // I messaggi "must match then schema" duplicano l'errore specifico che li segue.
+    // The "must match then schema" messages duplicate the specific error that follows them.
     .filter((e) => e.keyword !== 'if');
-  // Un errore dentro un oggetto fa fallire il ramo `then` che ne valuta le proprietà: Ajv segnala allora come «non
-  // previste» proprietà del tutto lecite. Se c'è un errore più preciso più in profondità, quelle segnalazioni si tolgono.
+  // An error inside an object makes the `then` branch that evaluates its properties fail: Ajv then reports perfectly
+  // legal properties as «unexpected». If there is a more precise error deeper down, those reports are dropped.
   const deeper = (path: string): boolean => errors.some((e) => e.keyword !== 'unevaluatedProperties' && e.instancePath.startsWith(path + '/'));
   const issues = errors
     .filter((e) => e.keyword !== 'unevaluatedProperties' || !deeper(e.instancePath))
-    .map((e) => ({ path: e.instancePath || '/', message: describe(e.keyword, e.message ?? 'non valido', e.params) }));
+    .map((e) => ({ path: e.instancePath || '/', message: describe(e.keyword, e.message ?? 'invalid', e.params) }));
   return { valid: false, issues };
 }
 
 function describe(keyword: string, message: string, params: Record<string, unknown>): string {
   if (keyword === 'unevaluatedProperties' || keyword === 'additionalProperties') {
-    return `proprietà non prevista: ${String(params['unevaluatedProperty'] ?? params['additionalProperty'])}`;
+    return `unexpected property: ${String(params['unevaluatedProperty'] ?? params['additionalProperty'])}`;
   }
-  if (keyword === 'required') return `proprietà obbligatoria mancante: ${String(params['missingProperty'])}`;
+  if (keyword === 'required') return `missing required property: ${String(params['missingProperty'])}`;
   return message;
 }

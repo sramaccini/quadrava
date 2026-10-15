@@ -1,15 +1,15 @@
-/** Tipi del nucleo del linguaggio, allineati a schemas/screen.schema.json. */
+/** Types of the core language, aligned with schemas/screen.schema.json. */
 
-/** Espressione CEL tra doppie graffe, per esempio `{{can('ordini.ordine.approva')}}`. */
+/** CEL expression in double braces, for example `{{can('orders.order.approve')}}`. */
 export type Expression = string;
 
 export interface DataSourceDefinition {
   type: 'rest';
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   url: string;
-  /** Parametri di query (GET, DELETE). */
+  /** Query parameters (GET, DELETE). */
   params?: Record<string, unknown>;
-  /** Corpo (POST, PUT, PATCH): oggetto con espressioni o una sola espressione come `{{form}}`. Se manca si usa `params`. */
+  /** Body (POST, PUT, PATCH): an object with expressions or a single expression such as `{{form}}`. If missing, `params` is used. */
   body?: Record<string, unknown> | Expression;
   paging?: 'server' | 'none';
 }
@@ -17,18 +17,18 @@ export interface DataSourceDefinition {
 export interface CallStep {
   call: string;
   args?: Record<string, unknown>;
-  /** Nome con cui i passi successivi vedono la risposta. */
+  /** Name under which the following steps see the response. */
   as?: string;
-  /** Passi se la chiamata non riesce; vedono `error.status`. */
+  /** Steps if the call fails; they see `error.status`. */
   onError?: Step | Step[];
 }
-/** Passo condizionale. */
+/** Conditional step. */
 export interface IfStep {
   if: string;
   then: Step | Step[];
   else?: Step | Step[];
 }
-/** Esegue una sequenza con nome della schermata (`actions`). */
+/** Runs a named sequence of the screen (`actions`). */
 export interface RunStep {
   run: string;
 }
@@ -46,11 +46,11 @@ export interface SetStep {
   set: { path: string; value: unknown };
 }
 export interface ConfirmStep {
-  /** Domanda all'utente; se rinuncia la sequenza si ferma senza errori. */
+  /** Question to the user; if they give up the sequence stops without errors. */
   confirm: string;
 }
 export interface DialogStep {
-  /** Finestra con un form; i passi di `onSubmit` vedono i valori in `form`. Se l'utente annulla la sequenza si ferma. */
+  /** Window with a form; the `onSubmit` steps see the values in `form`. If the user cancels the sequence stops. */
   dialog: {
     title: string;
     fields: FieldDefinition[];
@@ -60,15 +60,15 @@ export interface DialogStep {
     onSubmit: Step[];
   };
 }
-/** Controlla i campi a sé di un gruppo (`*` = tutti): se uno non è valido mostra gli errori e ferma la sequenza. */
+/** Checks the standalone fields of a group (`*` = all): if one is not valid it shows the errors and stops the sequence. */
 export interface ValidateStep {
   validate: string;
 }
-/** Apre la stampa del browser. */
+/** Opens the browser's print dialog. */
 export interface PrintStep {
   print: true;
 }
-/** Scarica in CSV le righe di un data source. */
+/** Downloads as CSV the rows of a data source. */
 export interface ExportStep {
   export: { source: string; fileName?: string; args?: Record<string, unknown>; columns: { field: string; label?: string }[] };
 }
@@ -94,34 +94,34 @@ export interface ActionDefinition {
 export interface FieldDefinition {
   name: string;
   type: 'text' | 'number' | 'select' | 'checkbox' | 'date' | 'textarea' | 'datetime' | 'radio' | 'switch' | 'multiselect' | 'lookup' | 'file' | 'repeater' | 'richtext';
-  /** Per `repeater`: i campi di ogni riga (solo tipi semplici). */
+  /** For `repeater`: the fields of every row (simple types only). */
   fields?: FieldDefinition[];
-  /** Per `repeater`: righe minime e massime. */
+  /** For `repeater`: minimum and maximum rows. */
   minRows?: number;
   maxRows?: number;
-  /** Per `repeater`: testo del pulsante che aggiunge una riga. */
+  /** For `repeater`: text of the button that adds a row. */
   addLabel?: string;
-  /** Per `file`: estensioni e tipi MIME ammessi, separati da virgole. */
+  /** For `file`: allowed extensions and MIME types, separated by commas. */
   accept?: string;
-  /** Per `file`: dimensione massima in KB (1024 se assente). */
+  /** For `file`: maximum size in KB (1024 if absent). */
   maxSizeKb?: number;
-  /** Per `file`: data source a cui inviare subito il file (variabile `file`). */
+  /** For `file`: data source the file is sent to right away (variable `file`). */
   upload?: string;
-  /** Per `file` con `upload`: multipart (predefinito) o base64 nel corpo JSON. */
+  /** For `file` with `upload`: multipart (default) or base64 in the JSON body. */
   uploadAs?: 'multipart' | 'base64';
-  /** Per `lookup`: data source cercato mentre si scrive (variabile `search`), campo del valore e campo del testo. */
+  /** For `lookup`: data source searched while typing (variable `search`), value field and text field. */
   lookup?: { source: string; valueField?: string; labelField: string; minChars?: number };
-  /** Colonne occupate nella griglia del form (1 se assente). */
+  /** Columns taken in the form grid (1 if absent). */
   span?: number;
-  /** Righe visibili di un campo `textarea` (4 se assente). */
+  /** Visible rows of a `textarea` field (4 if absent). */
   rows?: number;
   label?: string;
   tooltip?: string;
   required?: boolean;
   options?: string[];
-  /** Prefisso delle chiavi di traduzione delle etichette delle opzioni (`<prefisso>.<valore>`). */
+  /** Prefix of the translation keys of the option labels (`<prefix>.<value>`). */
   optionKey?: string;
-  /** Il valore non compare mai in tracce e log. */
+  /** The value never appears in traces and logs. */
   sensitive?: boolean;
   visibleIf?: Expression;
   hiddenIf?: Expression;
@@ -131,40 +131,40 @@ export interface FieldDefinition {
 
 export type Tone = 'neutral' | 'primary' | 'success' | 'danger';
 export type CellFormat = 'text' | 'number' | 'currency' | 'percent' | 'date' | 'datetime' | 'boolean' | 'badge' | 'markdown';
-/** Testo semplice o formattato (Markdown ristretto). */
+/** Plain or formatted text (restricted Markdown). */
 export type TextFormat = 'plain' | 'markdown';
 
-/** Colonna di una tabella o campo di una scheda di dettaglio. */
+/** Column of a table or field of a detail panel. */
 export interface ColumnDefinition {
   field: string;
   label?: string;
   tooltip?: string;
   format?: CellFormat;
-  /** Prefisso delle chiavi di traduzione dei valori mostrati (`<prefisso>.<valore>`); i badge restano legati al valore originale. */
+  /** Prefix of the translation keys of the shown values (`<prefix>.<value>`); badges stay tied to the original value. */
   valueKey?: string;
-  /** Decimali per `number` (fino a 2 se assente). */
+  /** Decimals for `number` (up to 2 if absent). */
   decimals?: number;
-  /** Codice ISO 4217 per `currency` (EUR se assente). */
+  /** ISO 4217 code for `currency` (EUR if absent). */
   currency?: string;
-  /** Per `badge`: tono per ogni valore. */
+  /** For `badge`: tone for every value. */
   badges?: Record<string, Tone>;
   visibleIf?: Expression;
   hiddenIf?: Expression;
 }
 
-/** Colonna di una tabella: in più rispetto a un campo di dettaglio, le proprietà che hanno senso solo in tabella. */
+/** Table column: compared with a detail field, it adds the properties that make sense only in a table. */
 export interface TableColumnDefinition extends ColumnDefinition {
-  /** La colonna si può ordinare. */
+  /** The column can be sorted. */
   sortable?: boolean;
-  /** Il valore diventa un collegamento che esegue i passi con la riga in `row`. */
+  /** The value becomes a link that runs the steps with the row in `row`. */
   onClick?: Step[];
-  /** Valore della colonna nella riga dei totali, calcolato sulle righe caricate. */
+  /** Value of the column in the totals row, computed on the loaded rows. */
   aggregate?: Aggregate;
 }
 
 export type Aggregate = 'sum' | 'avg' | 'min' | 'max' | 'count';
 
-/** Percorso nello stato della schermata, per esempio `state.ordinamento`. */
+/** Path in the screen state, for example `state.sorting`. */
 export type StatePath = string;
 
 export interface SortSpec {
@@ -174,20 +174,20 @@ export interface SortSpec {
 
 interface NodeBase extends ConditionalProps {
   id?: string;
-  /** In un `box`: quota dello spazio libero. */
+  /** In a `box`: share of the free space. */
   grow?: number;
-  /** In una `grid`: colonne occupate. */
+  /** In a `grid`: columns taken. */
   span?: number;
-  /** In un `border`: regione (center se assente). */
+  /** In a `border`: region (center if absent). */
   region?: BorderRegion;
-  /** Testo di aiuto al passaggio del mouse o con il focus (solo testo, può contenere `{{ }}`). */
+  /** Help text on mouse hover or with the focus (text only, it can contain `{{ }}`). */
   tooltip?: string;
 }
 
 export interface SectionNode extends NodeBase {
   type: 'section';
   title?: string;
-  /** Componenti uno sotto l'altro (predefinito) o affiancati (`row`). */
+  /** Components stacked (default) or side by side (`row`). */
   layout?: 'column' | 'row';
   components: NodeDefinition[];
 }
@@ -195,7 +195,7 @@ export interface TextNode extends NodeBase {
   type: 'text';
   text: string;
   style?: 'heading' | 'body';
-  /** markdown: testo formattato (elenchi, grassetto…), sempre disegnato senza HTML. */
+  /** markdown: formatted text (lists, bold…), always drawn without HTML. */
   format?: TextFormat;
 }
 export interface ButtonNode extends NodeBase {
@@ -211,30 +211,30 @@ export interface FilterBarNode extends NodeBase {
 export interface TableNode extends NodeBase {
   type: 'table';
   source: string;
-  /** Pulsante «Aggiorna» nel piede. */
+  /** «Refresh» button in the footer. */
   refreshable?: boolean;
   columns: TableColumnDefinition[];
-  /** Ordinamento: con paging server lo scrive nello stato `bind` per il servizio, altrimenti ordina in pagina. */
+  /** Sorting: with server paging it is written in the `bind` state for the service, otherwise it sorts in the page. */
   sort?: { bind?: StatePath; default?: SortSpec };
-  /** Selezione delle righe: chiavi nello stato `bind` (campo `key`, id se assente). */
+  /** Row selection: keys in the `bind` state (field `key`, id if absent). */
   selection?: { bind: StatePath; key?: string };
-  /** Azioni sulle righe selezionate; le espressioni vedono `selection`. */
+  /** Actions on the selected rows; expressions see `selection`. */
   bulkActions?: ActionDefinition[];
   rowActions?: ActionDefinition[];
-  /** Quante azioni di riga visibili mostrare come pulsanti; le altre vanno nel menu «⋯» (0 = tutte nel menu). */
+  /** How many visible row actions to show as buttons; the others go into the «⋯» menu (0 = all in the menu). */
   rowActionsInline?: number;
-  /** Area che si apre sotto la riga; i nodi vedono la riga come `row`. */
+  /** Area that opens under the row; its nodes see the row as `row`. */
   expand?: { components: NodeDefinition[]; expandIf?: Expression };
 }
 export interface FormNode extends NodeBase {
   type: 'form';
-  /** Data source dei valori iniziali; assente nei form di inserimento. */
+  /** Data source of the initial values; absent in entry forms. */
   source?: string;
-  /** Valori iniziali con espressioni, risolti una sola volta all'apertura. */
+  /** Initial values with expressions, resolved once when the screen opens. */
   initial?: Record<string, unknown>;
   fields: FieldDefinition[];
   actions?: ActionDefinition[];
-  /** Colonne della griglia dei campi (1 se assente). */
+  /** Columns of the field grid (1 if absent). */
   columns?: number;
 }
 
@@ -252,7 +252,7 @@ export interface TabsNode extends NodeBase {
 export interface DetailNode extends NodeBase {
   type: 'detail';
   title?: string;
-  /** Data source che restituisce un solo record. */
+  /** Data source that returns a single record. */
   source: string;
   fields: ColumnDefinition[];
 }
@@ -263,7 +263,7 @@ export interface AlertNode extends NodeBase {
   format?: TextFormat;
 }
 
-/** Un indicatore: valore da un campo del record (`field`) o da un'espressione (`value`, con il record come `row`). */
+/** An indicator: value from a field of the record (`field`) or from an expression (`value`, with the record as `row`). */
 export interface StatItem {
   id?: string;
   label: string;
@@ -281,7 +281,7 @@ export interface StatItem {
 }
 export interface StatsNode extends NodeBase {
   type: 'stats';
-  /** Data source che restituisce un record con i valori. */
+  /** Data source that returns a record with the values. */
   source?: string;
   items: StatItem[];
 }
@@ -291,12 +291,12 @@ export interface WizardStep {
   label: string;
   description?: string;
   components: NodeDefinition[];
-  /** Avanti è abilitato solo se vera. */
+  /** Next is enabled only if true. */
   nextIf?: Expression;
 }
 export interface WizardNode extends NodeBase {
   type: 'wizard';
-  /** Stato con l'indice del passo corrente (da 0). */
+  /** State with the index of the current step (from 0). */
   bind?: StatePath;
   steps: WizardStep[];
   nextLabel?: string;
@@ -305,16 +305,16 @@ export interface WizardNode extends NodeBase {
 
 export interface TreeNode extends NodeBase {
   type: 'tree';
-  /** Data source con i nodi radice e i figli annidati. */
+  /** Data source with the root nodes and their nested children. */
   source: string;
   keyField?: string;
   labelField: string;
   childrenField?: string;
-  /** Stato in cui scrivere la chiave del nodo scelto. */
+  /** State where the key of the chosen node is written. */
   bind?: StatePath;
   searchable?: boolean;
   expandAll?: boolean;
-  /** Passi eseguiti alla scelta di un nodo (il nodo è `row`). */
+  /** Steps run when a node is chosen (the node is `row`). */
   onSelect?: Step[];
 }
 
@@ -325,10 +325,10 @@ export interface CalendarNode extends NodeBase {
   labelField: string;
   badgeField?: string;
   badges?: Record<string, Tone>;
-  /** Stato con il mese visibile (AAAA-MM). */
+  /** State with the visible month (YYYY-MM). */
   bind?: StatePath;
   maxPerDay?: number;
-  /** Passi al clic su un evento (l'evento è `row`). */
+  /** Steps on click on an event (the event is `row`). */
   onSelect?: Step[];
 }
 
@@ -336,9 +336,9 @@ export interface ChartSeries {
   field: string;
   label?: string;
   tone?: Tone;
-  /** Come disegnare la serie (grafici combinati); se assente vale il tipo del grafico. */
+  /** How to draw the series (combined charts); if absent the chart kind applies. */
   kind?: 'bar' | 'line';
-  /** Asse dei valori: a destra per grandezze diverse. */
+  /** Value axis: on the right for different quantities. */
   axis?: 'left' | 'right';
 }
 export interface ChartNode extends NodeBase {
@@ -354,13 +354,13 @@ export interface ChartNode extends NodeBase {
   decimals?: number;
   height?: number;
   caption?: string;
-  /** Barre impilate invece che affiancate. */
+  /** Stacked bars instead of side by side. */
   stacked?: boolean;
-  /** Formato dei valori dell'asse destro (come `format` se assente). */
+  /** Format of the values of the right axis (as `format` if absent). */
   rightFormat?: 'number' | 'currency' | 'percent';
 }
 
-/** Colonna della datatable: in più filtro e raggruppamento. */
+/** Column of the datatable: adds filter and grouping. */
 export interface DataColumnDefinition extends TableColumnDefinition {
   filter?: 'text' | 'select' | 'number' | 'date';
   groupable?: boolean;
@@ -368,10 +368,10 @@ export interface DataColumnDefinition extends TableColumnDefinition {
 export interface DataTableNode extends NodeBase {
   type: 'dataTable';
   source: string;
-  /** Pulsante «Aggiorna» nel piede. */
+  /** «Refresh» button in the footer. */
   refreshable?: boolean;
   columns: DataColumnDefinition[];
-  /** Colonne di raggruppamento iniziali, in ordine. */
+  /** Initial grouping columns, in order. */
   groupBy?: string[];
   defaultSort?: SortSpec;
   pageSize?: number;
@@ -379,18 +379,18 @@ export interface DataTableNode extends NodeBase {
   rowActionsInline?: number;
 }
 
-/** Datatable pilotata dal servizio: filtri, ordinamento, gruppi, totali e pagine li calcola il data source. */
+/** Datatable driven by the service: filters, sorting, groups, totals and pages are computed by the data source. */
 export interface ServerDataTableNode extends NodeBase {
   type: 'serverDataTable';
-  /** Pulsante «Aggiorna» nel piede. */
+  /** «Refresh» button in the footer. */
   refreshable?: boolean;
-  /** Data source di ricerca: riceve `request` e restituisce righe, gruppi o valori distinti. */
+  /** Search data source: it receives `request` and returns rows, groups or distinct values. */
   source: string;
   columns: DataColumnDefinition[];
   groupBy?: string[];
   defaultSort?: SortSpec;
   pageSize?: number;
-  /** Stato in cui scrivere la richiesta corrente (senza pagina). */
+  /** State where the current request (without the page) is written. */
   bind?: StatePath;
   rowActions?: ActionDefinition[];
   rowActionsInline?: number;
@@ -399,7 +399,7 @@ export interface ServerDataTableNode extends NodeBase {
 export type LayoutGap = 'none' | 'small' | 'medium' | 'large';
 export type BorderRegion = 'north' | 'south' | 'west' | 'east' | 'center';
 
-/** Contenitore flessibile: figli in riga o in colonna. */
+/** Flexible container: children in a row or in a column. */
 export interface BoxNode extends NodeBase {
   type: 'box';
   components: NodeDefinition[];
@@ -410,7 +410,7 @@ export interface BoxNode extends NodeBase {
   wrap?: boolean;
 }
 
-/** Griglia a colonne: i figli occupano `span` colonne. */
+/** Grid of columns: children take `span` columns. */
 export interface GridNode extends NodeBase {
   type: 'grid';
   components: NodeDefinition[];
@@ -418,18 +418,18 @@ export interface GridNode extends NodeBase {
   gap?: LayoutGap;
 }
 
-/** Border layout: regioni nord, sud, ovest, est e centro, scelte dai figli con `region`. */
+/** Border layout: north, south, west, east and center regions, chosen by the children with `region`. */
 export interface BorderNode extends NodeBase {
   type: 'border';
   components: NodeDefinition[];
   westWidth?: number;
   eastWidth?: number;
   gap?: LayoutGap;
-  /** Divisori trascinabili tra il centro e i lati. */
+  /** Draggable dividers between the center and the sides. */
   resizable?: boolean;
 }
 
-/** Immagine con testo alternativo; solo indirizzi relativi, https o data:image. */
+/** Image with alternative text; only relative, https or data:image addresses. */
 export interface ImageNode extends NodeBase {
   type: 'image';
   src: string;
@@ -439,7 +439,7 @@ export interface ImageNode extends NodeBase {
   fit?: 'contain' | 'cover';
 }
 
-/** Collegamento a una schermata dell'applicazione o a un indirizzo esterno https. */
+/** Link to a screen of the application or to an external https address. */
 export interface LinkNode extends NodeBase {
   type: 'link';
   label: string;
@@ -448,7 +448,7 @@ export interface LinkNode extends NodeBase {
   href?: string;
 }
 
-/** Barra o cerchio di avanzamento. */
+/** Progress bar or circle. */
 export interface ProgressNode extends NodeBase {
   type: 'progress';
   value: string | number;
@@ -458,7 +458,7 @@ export interface ProgressNode extends NodeBase {
   tone?: Tone;
 }
 
-/** Eventi in ordine di data. */
+/** Events in date order. */
 export interface TimelineNode extends NodeBase {
   type: 'timeline';
   source: string;
@@ -471,7 +471,7 @@ export interface TimelineNode extends NodeBase {
   withTime?: boolean;
 }
 
-/** Schede in colonne secondo un campo (per esempio lo stato), spostabili con `onMove`. */
+/** Cards in columns according to a field (for example the status), movable with `onMove`. */
 export interface KanbanNode extends NodeBase {
   type: 'kanban';
   source: string;
@@ -483,18 +483,18 @@ export interface KanbanNode extends NodeBase {
   onMove?: Step[];
 }
 
-/** Campo a sé (casella di testo, elenco a discesa, data…) legato allo stato della schermata. */
+/** Standalone field (text box, drop-down list, date…) bound to the screen state. */
 export interface InputNode extends NodeBase {
   type: 'input';
-  /** Il campo, con le stesse proprietà dei campi del form. */
+  /** The field, with the same properties as the form fields. */
   field: FieldDefinition;
-  /** Stato del valore (`state.<nome del campo>` se assente). */
+  /** State of the value (`state.<field name>` if absent). */
   bind?: StatePath;
-  /** Valore iniziale, se lo stato non ne ha già uno. */
+  /** Initial value, if the state does not have one already. */
   default?: unknown;
-  /** Passi dopo ogni modifica; vedono il nuovo valore in `value`. */
+  /** Steps after every change; they see the new value in `value`. */
   onChange?: Step[];
-  /** Gruppo di validazione per il passo `validate`. */
+  /** Validation group for the `validate` step. */
   group?: string;
 }
 
@@ -508,12 +508,12 @@ export interface ScreenDefinition {
   description?: string;
   requires?: string;
   dataSources?: Record<string, DataSourceDefinition>;
-  /** Sequenze di passi con nome, richiamate dal passo `run`. */
+  /** Named sequences of steps, called by the `run` step. */
   actions?: Record<string, Step | Step[]>;
   components: NodeDefinition[];
 }
 
-/** Tema: design token applicati dal runtime come variabili CSS. Allineato a schemas/theme.schema.json. */
+/** Theme: design tokens applied by the runtime as CSS variables. Aligned with schemas/theme.schema.json. */
 export interface ThemeColors {
   primary: string;
   onPrimary: string;
@@ -559,12 +559,12 @@ export interface ThemeDefinition {
   tokens: ThemeTokens;
 }
 
-/** Navigazione: aree con un menu a tre livelli. Allineata a schemas/navigation.schema.json. */
+/** Navigation: areas with a three-level menu. Aligned with schemas/navigation.schema.json. */
 export interface NavigationBase {
   id: string;
   label: string;
   icon?: string;
-  /** Permesso necessario per vedere la voce. */
+  /** Permission needed to see the item. */
   requires?: string;
   visibleIf?: Expression;
 }
@@ -586,7 +586,7 @@ export interface NavigationGroup1 extends NavigationBase {
 
 export type NavigationItem1 = NavigationLeaf | NavigationGroup1;
 
-/** Gruppo a un livello qualsiasi: il runtime attraversa l'albero senza distinguere i livelli (li limita lo schema). */
+/** Group at any level: the runtime walks the tree without telling levels apart (the schema limits them). */
 export interface NavigationGroup extends NavigationBase {
   children: NavigationItem[];
 }
@@ -606,16 +606,16 @@ export interface NavigationDefinition {
   schemaVersion: string;
   navigation: string;
   default?: string;
-  /** Contatori accanto alle voci: GET che restituisce { id della voce: numero }. */
+  /** Counters next to the items: GET that returns { item id: number }. */
   badges?: { url: string; refreshSeconds?: number };
   areas: NavigationArea[];
 }
 
-/** Catalogo delle traduzioni di una lingua (documento `messages` del registro). */
+/** Translation catalogue of one language (`messages` document of the registry). */
 export interface MessagesDefinition {
   schemaVersion: string;
-  /** Lingua, che è anche l'identificativo del documento. */
+  /** Language, which is also the identifier of the document. */
   messages: string;
-  /** Chiave → testo. */
+  /** Key → text. */
   texts: Record<string, string>;
 }

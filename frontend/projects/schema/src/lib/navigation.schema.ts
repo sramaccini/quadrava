@@ -3,8 +3,8 @@
 export const NAVIGATION_SCHEMA: Record<string, unknown> = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://lowcode.example/schemas/navigation.schema.json",
-  "title": "Navigazione dell'applicazione KinetiX",
-  "description": "Menu laterale organizzato per aree, fino a tre livelli (gruppo, sottogruppo, voce). Il menu ragiona in permessi: i ruoli restano nel provider di identità. È solo una comodità di navigazione: l'enforcement resta in `requires` della schermata e nel backend.",
+  "title": "Navigation of a KinetiX application",
+  "description": "Side menu organised in areas, up to three levels (group, subgroup, item). The menu works with permissions: roles stay in the identity provider. It is only a navigation convenience: enforcement stays in the screen's `requires` and in the back end.",
   "type": "object",
   "required": [
     "schemaVersion",
@@ -18,11 +18,11 @@ export const NAVIGATION_SCHEMA: Record<string, unknown> = {
     },
     "navigation": {
       "$ref": "#/$defs/id",
-      "description": "Identificativo del documento di navigazione."
+      "description": "Identifier of the navigation document."
     },
     "default": {
       "$ref": "#/$defs/id",
-      "description": "Area aperta all'avvio, se l'utente la può vedere."
+      "description": "Area opened at start-up, if the user can see it."
     },
     "areas": {
       "type": "array",
@@ -37,18 +37,18 @@ export const NAVIGATION_SCHEMA: Record<string, unknown> = {
         "url"
       ],
       "additionalProperties": false,
-      "description": "Contatori accanto alle voci del menu (per esempio «3» fatture da inviare): un GET che restituisce { \"<id della voce>\": numero }. Si rilegge a intervalli e quando si torna sulla pagina.",
+      "description": "Counters next to the menu items (for example «3» invoices to send): a GET that returns { \"<item id>\": number }. It is read again at intervals and when the user comes back to the page.",
       "properties": {
         "url": {
           "type": "string",
           "pattern": "^/[^/\\s][^\\s]*$",
-          "description": "Percorso relativo del servizio (per esempio /api/menu/contatori)."
+          "description": "Relative path of the service (for example /api/menu/counters)."
         },
         "refreshSeconds": {
           "type": "integer",
           "minimum": 15,
           "maximum": 3600,
-          "description": "Ogni quanti secondi rileggere i contatori (60 se assente)."
+          "description": "How often, in seconds, the counters are read again (60 if absent)."
         }
       }
     }
@@ -69,7 +69,7 @@ export const NAVIGATION_SCHEMA: Record<string, unknown> = {
     "icon": {
       "type": "string",
       "pattern": "^[a-z][a-z0-9-]*$",
-      "description": "Nome di un'icona del set integrato (per esempio file-plus, search, package). Un nome sconosciuto non mostra l'icona."
+      "description": "Name of an icon of the built-in set (for example file-plus, search, package). An unknown name shows no icon."
     },
     "label": {
       "type": "string",
@@ -129,7 +129,7 @@ export const NAVIGATION_SCHEMA: Record<string, unknown> = {
         },
         "screen": {
           "$ref": "#/$defs/id",
-          "description": "Schermata aperta dalla voce."
+          "description": "Screen opened by the item."
         },
         "params": {
           "type": "object",
@@ -146,7 +146,7 @@ export const NAVIGATION_SCHEMA: Record<string, unknown> = {
               }
             ]
           },
-          "description": "Parametri statici passati alla schermata (diventano `params` nelle espressioni)."
+          "description": "Static parameters passed to the screen (they become `params` in expressions)."
         },
         "requires": {
           "$ref": "#/$defs/permission"

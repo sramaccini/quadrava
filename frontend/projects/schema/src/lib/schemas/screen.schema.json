@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://lowcode.example/schemas/screen.schema.json",
-  "title": "Schermata",
-  "description": "Nucleo del linguaggio di definizione: una schermata di un'applicazione KinetiX con il catalogo dei componenti di base.",
+  "title": "Screen",
+  "description": "Core of the definition language: a screen of a KinetiX application with the catalogue of base components.",
   "type": "object",
   "required": [
     "schemaVersion",
@@ -17,14 +17,14 @@
     },
     "screen": {
       "$ref": "#/$defs/id",
-      "description": "Identificativo stabile della schermata."
+      "description": "Stable identifier of the screen."
     },
     "title": {
       "type": "string"
     },
     "requires": {
       "$ref": "#/$defs/permission",
-      "description": "Permesso necessario per aprire la schermata."
+      "description": "Permission needed to open the screen."
     },
     "dataSources": {
       "type": "object",
@@ -34,7 +34,7 @@
     },
     "actions": {
       "type": "object",
-      "description": "Sequenze di passi con nome, richiamate con il passo run da pulsanti, azioni di riga, form… Servono per ciò che va fatto sempre prima e dopo una chiamata (validare, confermare, chiamare, avvisare, ricaricare) senza ricopiarlo in ogni pulsante.",
+      "description": "Named sequences of steps, called with the run step from buttons, row actions, forms… They hold what must always happen before and after a call (validate, confirm, call, notify, reload) without copying it into every button.",
       "propertyNames": {
         "pattern": "^[A-Za-z][A-Za-z0-9_]*$"
       },
@@ -51,24 +51,24 @@
     "description": {
       "type": "string",
       "maxLength": 300,
-      "description": "Frase mostrata sotto il titolo, nell'intestazione di pagina."
+      "description": "Sentence shown under the title, in the page header."
     }
   },
   "$defs": {
     "id": {
       "type": "string",
       "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
-      "description": "Identificativo in kebab-case. Una volta pubblicato non cambia."
+      "description": "Identifier in kebab-case. It does not change once published."
     },
     "permission": {
       "type": "string",
       "pattern": "^[a-z0-9]+\\.[a-z0-9]+\\.[a-z0-9]+$",
-      "description": "Permesso nel formato dominio.risorsa.azione (tre parti, per esempio ordini.ordine.approva)."
+      "description": "Permission in the domain.resource.action format (three parts, for example orders.order.approve)."
     },
     "expression": {
       "type": "string",
       "pattern": "^\\{\\{[\\s\\S]+\\}\\}$",
-      "description": "Espressione CEL tra doppie graffe, per esempio {{can('ordini.ordine.approva') && row.stato == 'inviato'}}. Variabili disponibili: user, state, params, row, form, value. Funzione disponibile: can(permesso)."
+      "description": "CEL expression in double braces, for example {{can('orders.order.approve') && row.status == 'sent'}}. Available variables: user, state, params, row, form, value. Available function: can(permission)."
     },
     "dataSource": {
       "type": "object",
@@ -96,10 +96,10 @@
         },
         "params": {
           "type": "object",
-          "description": "Parametri di query (GET, DELETE)."
+          "description": "Query parameters (GET, DELETE)."
         },
         "body": {
-          "description": "Corpo della richiesta (POST, PUT, PATCH): un oggetto con espressioni oppure una sola espressione, per esempio {{form}}. Se manca si usa params.",
+          "description": "Request body (POST, PUT, PATCH): an object with expressions or a single expression, for example {{form}}. If missing, params is used.",
           "oneOf": [
             {
               "type": "object"
@@ -180,14 +180,14 @@
       "properties": {
         "call": {
           "type": "string",
-          "description": "Nome del data source da eseguire."
+          "description": "Name of the data source to run."
         },
         "args": {
           "type": "object"
         },
         "onError": {
           "$ref": "#/$defs/steps",
-          "description": "Passi eseguiti se la chiamata non riesce (al posto del messaggio predefinito). Vedono error.status: il codice HTTP della risposta (0 se il servizio non è raggiungibile), per esempio {{ error.status == 409 }}. Il messaggio del server non c'è: potrebbe contenere dettagli interni."
+          "description": "Steps run if the call fails (instead of the default message). They see error.status: the HTTP code of the response (0 if the service cannot be reached), for example {{ error.status == 409 }}. The server message is not there: it could contain internal details."
         },
         "as": {
           "allOf": [
@@ -236,7 +236,7 @@
               }
             }
           ],
-          "description": "Nome con cui i passi successivi della stessa sequenza vedono la risposta del servizio, per esempio \"creato\" e poi {{ creato.id }}. Non può essere il nome di una variabile già esistente (user, state, params, row, form, error…)."
+          "description": "Name under which the following steps of the same sequence see the service response, for example \"created\" and then {{ created.id }}. It cannot be the name of an existing variable (user, state, params, row, form, error…)."
         }
       }
     },
@@ -249,7 +249,7 @@
       "properties": {
         "refresh": {
           "type": "string",
-          "description": "Nome del data source da ricaricare."
+          "description": "Name of the data source to reload."
         }
       }
     },
@@ -335,7 +335,7 @@
         },
         "tooltip": {
           "type": "string",
-          "description": "Testo di aiuto mostrato al passaggio del mouse o con il focus. Solo testo (mai HTML); può contenere {{ }}."
+          "description": "Help text shown on mouse hover or with the focus. Text only (never HTML); it can contain {{ }}."
         }
       }
     },
@@ -368,7 +368,7 @@
             "repeater",
             "richtext"
           ],
-          "description": "Tipo di campo. textarea: testo su più righe (`rows`); datetime: data e ora AAAA-MM-GGTHH:mm (ora locale); radio: scelta tra `options`; switch: interruttore vero/falso; multiselect: elenco di valori di `options`. lookup: valore scelto tra le righe di un data source cercate mentre si scrive (`lookup`). file: un file scelto dall’utente (`accept`, `maxSizeKb`, `upload`). repeater: elenco di righe, ognuna con i campi di `fields` (`minRows`, `maxRows`, `addLabel`). richtext: testo formattato scritto con una barra degli strumenti (grassetto, corsivo, titoli, elenchi, citazioni, collegamenti); il valore è Markdown ristretto, mai HTML (`rows` per l’altezza)."
+          "description": "Field type. textarea: multi-line text (`rows`); datetime: date and time YYYY-MM-DDTHH:mm (local time); radio: choice among `options`; switch: on/off toggle; multiselect: list of values from `options`. lookup: value chosen among the rows of a data source searched while typing (`lookup`). file: a file chosen by the user (`accept`, `maxSizeKb`, `upload`). repeater: list of rows, each with the fields of `fields` (`minRows`, `maxRows`, `addLabel`). richtext: formatted text written with a toolbar (bold, italic, headings, lists, quotes, links); the value is restricted Markdown, never HTML (`rows` for the height)."
         },
         "label": {
           "type": "string"
@@ -384,7 +384,7 @@
         },
         "sensitive": {
           "type": "boolean",
-          "description": "Il valore non compare mai in tracce e log."
+          "description": "The value never appears in traces and logs."
         },
         "visibleIf": {
           "$ref": "#/$defs/expression"
@@ -413,20 +413,20 @@
         },
         "tooltip": {
           "type": "string",
-          "description": "Testo di aiuto mostrato al passaggio del mouse o con il focus. Solo testo (mai HTML); può contenere {{ }}."
+          "description": "Help text shown on mouse hover or with the focus. Text only (never HTML); it can contain {{ }}."
         },
         "optionKey": {
           "type": "string",
           "pattern": "^[A-Za-z0-9_.-]+$",
           "minLength": 1,
           "maxLength": 100,
-          "description": "Prefisso delle chiavi di traduzione per le etichette delle opzioni: l'etichetta di un'opzione è t('<prefisso>.<valore>'), con il valore come ripiego."
+          "description": "Prefix of the translation keys for the option labels: the label of an option is t('<prefix>.<value>'), with the value as a fallback."
         },
         "rows": {
           "type": "integer",
           "minimum": 2,
           "maximum": 20,
-          "description": "Righe visibili di un campo textarea (4 se assente)."
+          "description": "Visible rows of a textarea field (4 if absent)."
         },
         "lookup": {
           "type": "object",
@@ -435,54 +435,54 @@
             "labelField"
           ],
           "additionalProperties": false,
-          "description": "Per type lookup: data source GET da interrogare con la variabile `search` (per esempio \"params\": { \"q\": \"{{ search }}\" }).",
+          "description": "For type lookup: GET data source queried with the `search` variable (for example \"params\": { \"q\": \"{{ search }}\" }).",
           "properties": {
             "source": {
               "type": "string",
-              "description": "Nome del data source (GET) che restituisce le righe proposte."
+              "description": "Name of the data source (GET) that returns the proposed rows."
             },
             "valueField": {
               "type": "string",
-              "description": "Campo della riga che diventa il valore (id se assente)."
+              "description": "Field of the row that becomes the value (id if absent)."
             },
             "labelField": {
               "type": "string",
-              "description": "Campo della riga mostrato come testo."
+              "description": "Field of the row shown as text."
             },
             "minChars": {
               "type": "integer",
               "minimum": 0,
               "maximum": 5,
-              "description": "Caratteri minimi prima di cercare (1 se assente; 0 = cerca anche a campo vuoto)."
+              "description": "Minimum characters before searching (1 if absent; 0 = search even with an empty field)."
             }
           }
         },
         "accept": {
           "type": "string",
           "pattern": "^\\s*(\\.[A-Za-z0-9]+|[a-z]+/(\\*|[A-Za-z0-9.+-]+))(\\s*,\\s*(\\.[A-Za-z0-9]+|[a-z]+/(\\*|[A-Za-z0-9.+-]+)))*\\s*$",
-          "description": "Per type file: estensioni (.pdf) e tipi MIME (image/*, application/pdf) ammessi, separati da virgole."
+          "description": "For type file: allowed extensions (.pdf) and MIME types (image/*, application/pdf), separated by commas."
         },
         "maxSizeKb": {
           "type": "integer",
           "minimum": 1,
           "maximum": 102400,
-          "description": "Per type file: dimensione massima in KB (1024 se assente). Fino a 102400 con invio multipart; il contenuto in base64 è limitato a 10240."
+          "description": "For type file: maximum size in KB (1024 if absent). Up to 102400 with multipart upload; base64 content is limited to 10240."
         },
         "upload": {
           "type": "string",
-          "description": "Per type file: data source (POST) a cui inviare subito il file. In multipart il file è la parte \"file\" della richiesta e la variabile `file` ha name, type e size; in base64 ha anche content."
+          "description": "For type file: data source (POST) to which the file is sent right away. In multipart the file is the \"file\" part of the request and the `file` variable has name, type and size; in base64 it also has content."
         },
         "span": {
           "type": "integer",
           "minimum": 1,
           "maximum": 4,
-          "description": "Colonne occupate dal campo nella griglia del form (1 se assente)."
+          "description": "Columns taken by the field in the form grid (1 if absent)."
         },
         "fields": {
           "type": "array",
           "minItems": 1,
           "maxItems": 8,
-          "description": "Per type repeater: i campi di ogni riga (text, number, select, checkbox, date, textarea, switch, lookup, file; niente righe annidate). Le regole di validazione vedono la riga in `item`.",
+          "description": "For type repeater: the fields of every row (text, number, select, checkbox, date, textarea, switch, lookup, file; no nested rows). Validation rules see the row in `item`.",
           "items": {
             "allOf": [
               {
@@ -513,24 +513,24 @@
           "type": "integer",
           "minimum": 0,
           "maximum": 50,
-          "description": "Per type repeater: righe minime (0 se assente)."
+          "description": "For type repeater: minimum rows (0 if absent)."
         },
         "maxRows": {
           "type": "integer",
           "minimum": 1,
           "maximum": 200,
-          "description": "Per type repeater: righe massime (50 se assente)."
+          "description": "For type repeater: maximum rows (50 if absent)."
         },
         "addLabel": {
           "type": "string",
-          "description": "Per type repeater: testo del pulsante che aggiunge una riga."
+          "description": "For type repeater: text of the button that adds a row."
         },
         "uploadAs": {
           "enum": [
             "multipart",
             "base64"
           ],
-          "description": "Per type file con upload: multipart (il file viaggia come file, variabile `file` con name, type e size; predefinito) oppure base64 (il contenuto in `file.content` dentro il corpo JSON)."
+          "description": "For type file with upload: multipart (the file travels as a file, `file` variable with name, type and size; default) or base64 (the content in `file.content` inside the JSON body)."
         }
       },
       "allOf": [
@@ -633,19 +633,19 @@
         },
         "tooltip": {
           "type": "string",
-          "description": "Testo di aiuto mostrato al passaggio del mouse o con il focus. Solo testo (mai HTML); può contenere {{ }}."
+          "description": "Help text shown on mouse hover or with the focus. Text only (never HTML); it can contain {{ }}."
         },
         "grow": {
           "type": "integer",
           "minimum": 0,
           "maximum": 12,
-          "description": "Dentro un box: quota dello spazio libero che il componente prende rispetto ai fratelli (0 o assente = solo lo spazio che gli serve)."
+          "description": "Inside a box: share of the free space the component takes compared with its siblings (0 or absent = only the space it needs)."
         },
         "span": {
           "type": "integer",
           "minimum": 1,
           "maximum": 12,
-          "description": "Dentro una griglia: colonne occupate (1 se assente, mai più di quelle della griglia)."
+          "description": "Inside a grid: columns taken (1 if absent, never more than those of the grid)."
         },
         "region": {
           "enum": [
@@ -655,7 +655,7 @@
             "east",
             "center"
           ],
-          "description": "Dentro un border: la regione del componente (center se assente). Più componenti nella stessa regione stanno uno sotto l’altro."
+          "description": "Inside a border: the region of the component (center if absent). Several components in the same region are stacked."
         }
       },
       "allOf": [
@@ -678,21 +678,21 @@
             "properties": {
               "title": {
                 "type": "string",
-                "description": "Titolo della sezione, mostrato in testa; può contenere {{ }}, per esempio un testo tradotto."
+                "description": "Title of the section, shown at the top; it can contain {{ }}, for example a translated text."
               },
               "components": {
                 "type": "array",
                 "items": {
                   "$ref": "#/$defs/node"
                 },
-                "description": "Componenti contenuti nella sezione, disposti secondo layout."
+                "description": "Components contained in the section, arranged according to layout."
               },
               "layout": {
                 "enum": [
                   "column",
                   "row"
                 ],
-                "description": "Disposizione dei componenti: uno sotto l’altro (column, predefinito) o affiancati e a capo quando manca spazio (row), per esempio più campi in una riga."
+                "description": "Arrangement of the components: stacked (column, default) or side by side, wrapping when space runs out (row), for example several fields on one line."
               }
             }
           }
@@ -716,21 +716,21 @@
             "properties": {
               "text": {
                 "type": "string",
-                "description": "Testo da mostrare; può contenere {{ }}. Mai HTML."
+                "description": "Text to show; it can contain {{ }}. Never HTML."
               },
               "style": {
                 "enum": [
                   "heading",
                   "body"
                 ],
-                "description": "heading: titolo; body: testo normale (predefinito)."
+                "description": "heading: title; body: normal text (default)."
               },
               "format": {
                 "enum": [
                   "plain",
                   "markdown"
                 ],
-                "description": "plain (predefinito): testo semplice. markdown: testo formattato con il Markdown ristretto di KinetiX: paragrafi, titoli (#, ##, ###), elenchi puntati (-) e numerati (1.) anche annidati, citazioni (>), **grassetto**, *corsivo*, ~~barrato~~, `codice`, [collegamenti](https://…). Mai HTML: anche un testo che arriva dai dati è sicuro."
+                "description": "plain (default): simple text. markdown: text formatted with the KinetiX restricted Markdown: paragraphs, headings (#, ##, ###), bulleted (-) and numbered (1.) lists, also nested, quotes (>), **bold**, *italic*, ~~strikethrough~~, `code`, [links](https://…). Never HTML: even a text coming from the data is safe."
               }
             }
           }
@@ -755,7 +755,7 @@
             "properties": {
               "label": {
                 "type": "string",
-                "description": "Testo del pulsante; può contenere {{ }}."
+                "description": "Text of the button; it can contain {{ }}."
               },
               "onClick": {
                 "type": "array",
@@ -763,7 +763,7 @@
                 "items": {
                   "$ref": "#/$defs/step"
                 },
-                "description": "Passi eseguiti al clic, in ordine (call, set, navigate, refresh…). Il pulsante resta occupato finché finiscono."
+                "description": "Steps run on click, in order (call, set, navigate, refresh…). The button stays busy until they finish."
               }
             }
           }
@@ -788,7 +788,7 @@
             "properties": {
               "bind": {
                 "type": "string",
-                "description": "Percorso nello stato della schermata, per esempio state.filtri."
+                "description": "Path in the screen state, for example state.filters."
               },
               "fields": {
                 "type": "array",
@@ -796,7 +796,7 @@
                 "items": {
                   "$ref": "#/$defs/field"
                 },
-                "description": "Campi dei filtri: ognuno scrive il valore nello stato `bind`, sotto il proprio nome (per esempio state.filtri.stato). textarea e richtext diventano testo su una riga."
+                "description": "Filter fields: each one writes its value in the `bind` state, under its own name (for example state.filters.status). textarea and richtext become one-line text."
               }
             }
           }
@@ -821,7 +821,7 @@
             "properties": {
               "source": {
                 "type": "string",
-                "description": "Nome del data source che fornisce le righe."
+                "description": "Name of the data source that provides the rows."
               },
               "columns": {
                 "type": "array",
@@ -829,26 +829,26 @@
                 "items": {
                   "$ref": "#/$defs/tableColumn"
                 },
-                "description": "Colonne della tabella, in ordine: campo, intestazione, formato."
+                "description": "Columns of the table, in order: field, header, format."
               },
               "rowActions": {
                 "type": "array",
                 "items": {
                   "$ref": "#/$defs/action"
                 },
-                "description": "Azioni su una riga, nell’ultima colonna: le espressioni vedono la riga come `row`."
+                "description": "Actions on a row, in the last column: expressions see the row as `row`."
               },
               "sort": {
                 "type": "object",
                 "additionalProperties": false,
-                "description": "Ordinamento. Con paging server lo fa il servizio: la tabella scrive { field, direction } nello stato `bind`; altrimenti ordina in pagina le righe caricate.",
+                "description": "Sorting. With server paging the service does it: the table writes { field, direction } in the `bind` state; otherwise it sorts the loaded rows in the page.",
                 "properties": {
                   "bind": {
                     "$ref": "#/$defs/statePath"
                   },
                   "default": {
                     "$ref": "#/$defs/sortSpec",
-                    "description": "Ordinamento all'apertura della schermata."
+                    "description": "Sorting when the screen opens."
                   }
                 }
               },
@@ -858,14 +858,14 @@
                   "bind"
                 ],
                 "additionalProperties": false,
-                "description": "Selezione delle righe: le chiavi delle righe scelte stanno nello stato `bind`; le azioni multiple vedono le righe intere in `selection`.",
+                "description": "Row selection: the keys of the chosen rows are in the `bind` state; bulk actions see the whole rows in `selection`.",
                 "properties": {
                   "bind": {
                     "$ref": "#/$defs/statePath"
                   },
                   "key": {
                     "type": "string",
-                    "description": "Campo che identifica la riga (id se assente)."
+                    "description": "Field that identifies the row (id if absent)."
                   }
                 }
               },
@@ -874,13 +874,13 @@
                 "items": {
                   "$ref": "#/$defs/action"
                 },
-                "description": "Azioni sulle righe selezionate, sopra la tabella. Le espressioni vedono `selection` (elenco delle righe scelte)."
+                "description": "Actions on the selected rows, above the table. Expressions see `selection` (list of the chosen rows)."
               },
               "rowActionsInline": {
                 "type": "integer",
                 "minimum": 0,
                 "maximum": 10,
-                "description": "Quante azioni di riga (visibili) mostrare come pulsanti; le altre finiscono nel menu «⋯». 0 = tutte nel menu; se manca, tutte pulsanti."
+                "description": "How many (visible) row actions to show as buttons; the others go into the «⋯» menu. 0 = all in the menu; if missing, all buttons."
               },
               "expand": {
                 "type": "object",
@@ -888,7 +888,7 @@
                   "components"
                 ],
                 "additionalProperties": false,
-                "description": "Area che si apre sotto la riga: i nodi vedono la riga come `row`. I data source sono della schermata: dentro l'area si usano i valori di `row`.",
+                "description": "Area that opens under the row: its nodes see the row as `row`. Data sources belong to the screen: inside the area the values of `row` are used.",
                 "properties": {
                   "components": {
                     "type": "array",
@@ -899,13 +899,13 @@
                   },
                   "expandIf": {
                     "$ref": "#/$defs/expression",
-                    "description": "Quali righe si possono espandere (espressione con row); tutte se assente."
+                    "description": "Which rows can be expanded (expression with row); all if absent."
                   }
                 }
               },
               "refreshable": {
                 "type": "boolean",
-                "description": "Pulsante «Aggiorna» nel piede della tabella, a sinistra (le pagine sono a destra): ricarica il data source come il passo refresh. Assente se false o non indicato."
+                "description": "«Refresh» button in the table footer, on the left (pages are on the right): it reloads the data source like the refresh step. Absent if false or not given."
               }
             }
           }
@@ -929,11 +929,11 @@
             "properties": {
               "source": {
                 "type": "string",
-                "description": "Nome del data source che fornisce i valori iniziali (assente nei form di inserimento)."
+                "description": "Name of the data source that provides the initial values (absent in entry forms)."
               },
               "initial": {
                 "type": "object",
-                "description": "Valori iniziali con espressioni, risolti una sola volta all'apertura; per esempio {\"tipo\": \"{{params.tipo}}\"}."
+                "description": "Initial values with expressions, resolved once when the screen opens; for example {\"type\": \"{{params.type}}\"}."
               },
               "fields": {
                 "type": "array",
@@ -941,20 +941,20 @@
                 "items": {
                   "$ref": "#/$defs/field"
                 },
-                "description": "Campi del form, in ordine. I valori si leggono come `form` nelle espressioni."
+                "description": "Fields of the form, in order. The values are read as `form` in expressions."
               },
               "actions": {
                 "type": "array",
                 "items": {
                   "$ref": "#/$defs/action"
                 },
-                "description": "Pulsanti sotto i campi: al clic il form controlla i campi visibili e, se sono validi, esegue i passi, che vedono i valori in `form`."
+                "description": "Buttons under the fields: on click the form checks the visible fields and, if they are valid, runs the steps, which see the values in `form`."
               },
               "columns": {
                 "type": "integer",
                 "minimum": 1,
                 "maximum": 4,
-                "description": "Colonne della griglia dei campi (1 se assente). Con poco spazio il form torna a una colonna."
+                "description": "Columns of the field grid (1 if absent). With little space the form goes back to one column."
               }
             }
           }
@@ -982,7 +982,7 @@
                 "items": {
                   "$ref": "#/$defs/tab"
                 },
-                "description": "Schede, in ordine: etichetta e componenti. Una scheda con visibleIf falso non compare; i valori non si perdono cambiando scheda."
+                "description": "Tabs, in order: label and components. A tab with a false visibleIf does not appear; values are not lost when switching tabs."
               }
             }
           }
@@ -1007,11 +1007,11 @@
             "properties": {
               "title": {
                 "type": "string",
-                "description": "Titolo del riquadro; può contenere {{ }}."
+                "description": "Title of the panel; it can contain {{ }}."
               },
               "source": {
                 "type": "string",
-                "description": "Nome del data source che restituisce un solo record (un oggetto)."
+                "description": "Name of the data source that returns a single record (an object)."
               },
               "fields": {
                 "type": "array",
@@ -1019,7 +1019,7 @@
                 "items": {
                   "$ref": "#/$defs/column"
                 },
-                "description": "Campi del record da mostrare, in ordine: campo, etichetta, formato."
+                "description": "Fields of the record to show, in order: field, label, format."
               }
             }
           }
@@ -1043,7 +1043,7 @@
             "properties": {
               "text": {
                 "type": "string",
-                "description": "Testo del messaggio; può contenere {{ }}."
+                "description": "Text of the message; it can contain {{ }}."
               },
               "kind": {
                 "enum": [
@@ -1051,14 +1051,14 @@
                   "success",
                   "error"
                 ],
-                "description": "Aspetto del messaggio; info se assente."
+                "description": "Look of the message; info if absent."
               },
               "format": {
                 "enum": [
                   "plain",
                   "markdown"
                 ],
-                "description": "plain (predefinito): testo semplice. markdown: testo formattato con il Markdown ristretto di KinetiX: paragrafi, titoli (#, ##, ###), elenchi puntati (-) e numerati (1.) anche annidati, citazioni (>), **grassetto**, *corsivo*, ~~barrato~~, `codice`, [collegamenti](https://…). Mai HTML: anche un testo che arriva dai dati è sicuro."
+                "description": "plain (default): simple text. markdown: text formatted with the KinetiX restricted Markdown: paragraphs, headings (#, ##, ###), bulleted (-) and numbered (1.) lists, also nested, quotes (>), **bold**, *italic*, ~~strikethrough~~, `code`, [links](https://…). Never HTML: even a text coming from the data is safe."
               }
             }
           }
@@ -1082,7 +1082,7 @@
             "properties": {
               "source": {
                 "type": "string",
-                "description": "Data source che restituisce un record (oggetto) con i valori; facoltativo se tutti gli indicatori usano value."
+                "description": "Data source that returns a record (object) with the values; optional if every indicator uses value."
               },
               "items": {
                 "type": "array",
@@ -1091,7 +1091,7 @@
                 "items": {
                   "$ref": "#/$defs/statItem"
                 },
-                "description": "Indicatori da mostrare affiancati (da 1 a 8), ognuno con etichetta e valore."
+                "description": "Indicators shown side by side (from 1 to 8), each with label and value."
               }
             }
           }
@@ -1115,7 +1115,7 @@
             "properties": {
               "bind": {
                 "$ref": "#/$defs/statePath",
-                "description": "Stato con l’indice del passo corrente (da 0): anche un pulsante può spostarlo con set."
+                "description": "State with the index of the current step (from 0): a button can move it too, with set."
               },
               "steps": {
                 "type": "array",
@@ -1124,15 +1124,15 @@
                 "items": {
                   "$ref": "#/$defs/wizardStep"
                 },
-                "description": "Passi della procedura guidata (da 2 a 10), ognuno con etichetta e componenti; si mostra un passo alla volta."
+                "description": "Steps of the wizard (from 2 to 10), each with label and components; one step is shown at a time."
               },
               "nextLabel": {
                 "type": "string",
-                "description": "Testo del pulsante per il passo successivo («Avanti» se assente); può contenere {{ }}."
+                "description": "Text of the button for the next step («Next» if absent); it can contain {{ }}."
               },
               "backLabel": {
                 "type": "string",
-                "description": "Testo del pulsante per il passo precedente («Indietro» se assente); può contenere {{ }}."
+                "description": "Text of the button for the previous step («Back» if absent); it can contain {{ }}."
               }
             }
           }
@@ -1157,31 +1157,31 @@
             "properties": {
               "source": {
                 "type": "string",
-                "description": "Data source che restituisce i nodi radice, con i figli annidati."
+                "description": "Data source that returns the root nodes, with their children nested."
               },
               "keyField": {
                 "type": "string",
-                "description": "Campo che identifica il nodo (id se assente)."
+                "description": "Field that identifies the node (id if absent)."
               },
               "labelField": {
                 "type": "string",
-                "description": "Campo mostrato come testo del nodo."
+                "description": "Field shown as the text of the node."
               },
               "childrenField": {
                 "type": "string",
-                "description": "Campo con i figli (children se assente)."
+                "description": "Field with the children (children if absent)."
               },
               "bind": {
                 "$ref": "#/$defs/statePath",
-                "description": "Stato in cui scrivere la chiave del nodo scelto."
+                "description": "State where the key of the chosen node is written."
               },
               "searchable": {
                 "type": "boolean",
-                "description": "Mostra un campo di ricerca che evidenzia i nodi e apre i rami corrispondenti."
+                "description": "Shows a search box that highlights the nodes and opens the matching branches."
               },
               "expandAll": {
                 "type": "boolean",
-                "description": "Tutti i rami aperti all’inizio (solo il primo livello se assente)."
+                "description": "All branches open at the start (only the first level if absent)."
               },
               "onSelect": {
                 "type": "array",
@@ -1189,7 +1189,7 @@
                 "items": {
                   "$ref": "#/$defs/step"
                 },
-                "description": "Passi eseguiti alla scelta di un nodo, che vedono il nodo in `row`."
+                "description": "Steps run when a node is chosen, which see the node in `row`."
               }
             }
           }
@@ -1215,36 +1215,36 @@
             "properties": {
               "source": {
                 "type": "string",
-                "description": "Data source con gli eventi (un elenco di righe)."
+                "description": "Data source with the events (a list of rows)."
               },
               "dateField": {
                 "type": "string",
-                "description": "Campo con la data dell’evento (AAAA-MM-GG, anche con l’ora)."
+                "description": "Field with the date of the event (YYYY-MM-DD, also with the time)."
               },
               "labelField": {
                 "type": "string",
-                "description": "Campo mostrato come testo dell’evento."
+                "description": "Field shown as the text of the event."
               },
               "badgeField": {
                 "type": "string",
-                "description": "Campo che decide il colore dell’evento secondo `badges`."
+                "description": "Field that decides the colour of the event according to `badges`."
               },
               "badges": {
                 "type": "object",
                 "additionalProperties": {
                   "$ref": "#/$defs/tone"
                 },
-                "description": "Colore degli eventi per valore di `badgeField`, per esempio {\"urgente\": \"danger\"}; i valori non elencati sono primary."
+                "description": "Colour of the events by value of `badgeField`, for example {\"urgent\": \"danger\"}; values not listed are primary."
               },
               "bind": {
                 "$ref": "#/$defs/statePath",
-                "description": "Stato con il mese visibile (AAAA-MM), da usare nei parametri del data source."
+                "description": "State with the visible month (YYYY-MM), to use in the parameters of the data source."
               },
               "maxPerDay": {
                 "type": "integer",
                 "minimum": 1,
                 "maximum": 10,
-                "description": "Eventi mostrati per giorno; gli altri diventano «+n» (3 se assente)."
+                "description": "Events shown per day; the others become «+n» (3 if absent)."
               },
               "onSelect": {
                 "type": "array",
@@ -1252,7 +1252,7 @@
                 "items": {
                   "$ref": "#/$defs/step"
                 },
-                "description": "Passi eseguiti al clic su un evento, che vedono l’evento in `row`."
+                "description": "Steps run on click on an event, which see the event in `row`."
               }
             }
           }
@@ -1283,15 +1283,15 @@
                   "line",
                   "pie"
                 ],
-                "description": "Barre, linee o torta (la torta usa la prima serie)."
+                "description": "Bars, lines or pie (the pie uses the first series)."
               },
               "source": {
                 "type": "string",
-                "description": "Data source con le righe (una per categoria)."
+                "description": "Data source with the rows (one per category)."
               },
               "categoryField": {
                 "type": "string",
-                "description": "Campo con la categoria (asse orizzontale o fetta)."
+                "description": "Field with the category (horizontal axis or slice)."
               },
               "categoryFormat": {
                 "enum": [
@@ -1299,14 +1299,14 @@
                   "date",
                   "month"
                 ],
-                "description": "Come mostrare la categoria: testo, data (AAAA-MM-GG) o mese (AAAA-MM)."
+                "description": "How to show the category: text, date (YYYY-MM-DD) or month (YYYY-MM)."
               },
               "categoryKey": {
                 "type": "string",
                 "pattern": "^[A-Za-z0-9_.-]+$",
                 "minLength": 1,
                 "maxLength": 100,
-                "description": "Prefisso delle chiavi di traduzione delle categorie (t('<prefisso>.<valore>'))."
+                "description": "Prefix of the translation keys of the categories (t('<prefix>.<value>'))."
               },
               "series": {
                 "type": "array",
@@ -1315,7 +1315,7 @@
                 "items": {
                   "$ref": "#/$defs/chartSeries"
                 },
-                "description": "Serie di valori da disegnare (da 1 a 6), ognuna da un campo numerico delle righe."
+                "description": "Series of values to draw (from 1 to 6), each from a numeric field of the rows."
               },
               "format": {
                 "enum": [
@@ -1323,32 +1323,32 @@
                   "currency",
                   "percent"
                 ],
-                "description": "Formato dei valori (number se assente)."
+                "description": "Format of the values (number if absent)."
               },
               "currency": {
                 "type": "string",
                 "pattern": "^[A-Z]{3}$",
-                "description": "Codice ISO 4217 per format currency (EUR se assente)."
+                "description": "ISO 4217 code for format currency (EUR if absent)."
               },
               "decimals": {
                 "type": "integer",
                 "minimum": 0,
                 "maximum": 6,
-                "description": "Decimali mostrati con format number (fino a 2 se assente)."
+                "description": "Decimals shown with format number (up to 2 if absent)."
               },
               "height": {
                 "type": "integer",
                 "minimum": 160,
                 "maximum": 600,
-                "description": "Altezza in pixel (280 se assente)."
+                "description": "Height in pixels (280 if absent)."
               },
               "caption": {
                 "type": "string",
-                "description": "Didascalia della tabella equivalente letta dagli screen reader."
+                "description": "Caption of the equivalent table read by screen readers."
               },
               "stacked": {
                 "type": "boolean",
-                "description": "Barre impilate invece che affiancate (i valori negativi si impilano verso il basso)."
+                "description": "Stacked bars instead of side by side (negative values stack downwards)."
               },
               "rightFormat": {
                 "enum": [
@@ -1356,7 +1356,7 @@
                   "currency",
                   "percent"
                 ],
-                "description": "Formato dei valori dell’asse destro (come format se assente)."
+                "description": "Format of the values of the right axis (as format if absent)."
               }
             }
           }
@@ -1381,7 +1381,7 @@
             "properties": {
               "source": {
                 "type": "string",
-                "description": "Data source con le righe da analizzare in pagina (tutte caricate: niente paginazione lato server)."
+                "description": "Data source with the rows to analyse in the page (all loaded: no server-side paging)."
               },
               "columns": {
                 "type": "array",
@@ -1389,7 +1389,7 @@
                 "items": {
                   "$ref": "#/$defs/dataColumn"
                 },
-                "description": "Colonne della tabella, in ordine: campo, intestazione, formato, e se si possono ordinare, filtrare, raggruppare o totalizzare."
+                "description": "Columns of the table, in order: field, header, format, and whether they can be sorted, filtered, grouped or totalled."
               },
               "groupBy": {
                 "type": "array",
@@ -1398,34 +1398,34 @@
                 "items": {
                   "type": "string"
                 },
-                "description": "Colonne di raggruppamento iniziali (groupable), in ordine."
+                "description": "Initial grouping columns (groupable), in order."
               },
               "defaultSort": {
                 "$ref": "#/$defs/sortSpec",
-                "description": "Ordinamento iniziale (campo e direzione); poi lo cambia l’utente dalle intestazioni."
+                "description": "Initial sorting (field and direction); then the user changes it from the headers."
               },
               "pageSize": {
                 "type": "integer",
                 "minimum": 5,
                 "maximum": 100,
-                "description": "Elementi per pagina, intestazioni dei gruppi comprese (10 se assente)."
+                "description": "Items per page, group headers included (10 if absent)."
               },
               "rowActions": {
                 "type": "array",
                 "items": {
                   "$ref": "#/$defs/action"
                 },
-                "description": "Azioni su una riga, nell’ultima colonna: le espressioni vedono la riga come `row`."
+                "description": "Actions on a row, in the last column: expressions see the row as `row`."
               },
               "rowActionsInline": {
                 "type": "integer",
                 "minimum": 0,
                 "maximum": 10,
-                "description": "Quante azioni di riga (visibili) mostrare come pulsanti; le altre finiscono nel menu «⋯». 0 = tutte nel menu; se manca, tutte pulsanti."
+                "description": "How many (visible) row actions to show as buttons; the others go into the «⋯» menu. 0 = all in the menu; if missing, all buttons."
               },
               "refreshable": {
                 "type": "boolean",
-                "description": "Pulsante «Aggiorna» nel piede della tabella, a sinistra (le pagine sono a destra): ricarica il data source come il passo refresh. Assente se false o non indicato."
+                "description": "«Refresh» button in the table footer, on the left (pages are on the right): it reloads the data source like the refresh step. Absent if false or not given."
               }
             }
           }
@@ -1450,7 +1450,7 @@
             "properties": {
               "source": {
                 "type": "string",
-                "description": "Data source di ricerca (di solito POST con \"body\": \"{{ request }}\") che riceve pagina, ordinamento, filtri e gruppi e restituisce solo ciò che serve: { items, total, totals } per le righe, { groups: [{ value, count, aggregates }], total, totals } per i gruppi, { values } per i valori di un filtro a scelta."
+                "description": "Search data source (usually POST with \"body\": \"{{ request }}\") that receives page, sorting, filters and groups and returns only what is needed: { items, total, totals } for rows, { groups: [{ value, count, aggregates }], total, totals } for groups, { values } for the values of a choice filter."
               },
               "columns": {
                 "type": "array",
@@ -1458,7 +1458,7 @@
                 "items": {
                   "$ref": "#/$defs/dataColumn"
                 },
-                "description": "Colonne della tabella, in ordine: campo, intestazione, formato, e se si possono ordinare, filtrare, raggruppare o totalizzare (lo fa il servizio)."
+                "description": "Columns of the table, in order: field, header, format, and whether they can be sorted, filtered, grouped or totalled (the service does it)."
               },
               "groupBy": {
                 "type": "array",
@@ -1467,38 +1467,38 @@
                 "items": {
                   "type": "string"
                 },
-                "description": "Colonne di raggruppamento iniziali (groupable), in ordine."
+                "description": "Initial grouping columns (groupable), in order."
               },
               "defaultSort": {
                 "$ref": "#/$defs/sortSpec",
-                "description": "Ordinamento iniziale (campo e direzione), inviato al servizio; poi lo cambia l’utente dalle intestazioni."
+                "description": "Initial sorting (field and direction), sent to the service; then the user changes it from the headers."
               },
               "pageSize": {
                 "type": "integer",
                 "minimum": 5,
                 "maximum": 200,
-                "description": "Righe (o gruppi) per pagina e righe caricate a ogni «mostra altre» dentro un gruppo (20 se assente)."
+                "description": "Rows (or groups) per page and rows loaded on every «show more» inside a group (20 if absent)."
               },
               "bind": {
                 "$ref": "#/$defs/statePath",
-                "description": "Stato in cui la tabella scrive la richiesta corrente (senza pagina), per altri componenti, per esempio un pulsante di esportazione."
+                "description": "State where the table writes the current request (without the page), for other components, for example an export button."
               },
               "rowActions": {
                 "type": "array",
                 "items": {
                   "$ref": "#/$defs/action"
                 },
-                "description": "Azioni su una riga, nell’ultima colonna: le espressioni vedono la riga come `row`."
+                "description": "Actions on a row, in the last column: expressions see the row as `row`."
               },
               "rowActionsInline": {
                 "type": "integer",
                 "minimum": 0,
                 "maximum": 10,
-                "description": "Quante azioni di riga (visibili) mostrare come pulsanti; le altre finiscono nel menu «⋯». 0 = tutte nel menu; se manca, tutte pulsanti."
+                "description": "How many (visible) row actions to show as buttons; the others go into the «⋯» menu. 0 = all in the menu; if missing, all buttons."
               },
               "refreshable": {
                 "type": "boolean",
-                "description": "Pulsante «Aggiorna» nel piede della tabella, a sinistra (le pagine sono a destra): ricarica il data source come il passo refresh. Assente se false o non indicato."
+                "description": "«Refresh» button in the table footer, on the left (pages are on the right): it reloads the data source like the refresh step. Absent if false or not given."
               }
             }
           }
@@ -1522,14 +1522,14 @@
             "properties": {
               "field": {
                 "$ref": "#/$defs/field",
-                "description": "Il campo da mostrare, con le stesse proprietà dei campi del form (tipo, etichetta, opzioni, obbligatorietà, regola di validazione, lookup, file…). Il nome identifica il campo e, senza `bind`, il valore nello stato."
+                "description": "The field to show, with the same properties as the form fields (type, label, options, required, validation rule, lookup, file…). The name identifies the field and, without `bind`, the value in the state."
               },
               "bind": {
                 "$ref": "#/$defs/statePath",
-                "description": "Stato in cui il campo legge e scrive il valore (state.<nome del campo> se assente). I data source che lo usano si ricaricano quando cambia."
+                "description": "State where the field reads and writes the value (state.<field name> if absent). The data sources that use it reload when it changes."
               },
               "default": {
-                "description": "Valore iniziale, se lo stato non ne ha già uno (nullo se assente; falso per checkbox e switch). I testi possono contenere {{ }}, per esempio un testo tradotto."
+                "description": "Initial value, if the state does not have one already (null if absent; false for checkbox and switch). Texts can contain {{ }}, for example a translated text."
               },
               "onChange": {
                 "type": "array",
@@ -1537,12 +1537,12 @@
                 "items": {
                   "$ref": "#/$defs/step"
                 },
-                "description": "Passi eseguiti dopo ogni modifica del valore, che vedono il nuovo valore in `value`. Il testo libero si scrive nello stato quando si esce dal campo o con Invio."
+                "description": "Steps run after every change of the value, which see the new value in `value`. Free text is written to the state when leaving the field or with Enter."
               },
               "group": {
                 "type": "string",
                 "pattern": "^[A-Za-z][A-Za-z0-9-]*$",
-                "description": "Gruppo di validazione: il passo { \"validate\": \"<gruppo>\" } controlla insieme i campi dello stesso gruppo."
+                "description": "Validation group: the step { \"validate\": \"<group>\" } checks the fields of the same group together."
               }
             }
           }
@@ -1569,18 +1569,18 @@
                 "items": {
                   "$ref": "#/$defs/node"
                 },
-                "description": "Componenti contenuti, disposti secondo direction; ognuno può allargarsi con grow."
+                "description": "Contained components, arranged according to direction; each one can grow with grow."
               },
               "direction": {
                 "enum": [
                   "row",
                   "column"
                 ],
-                "description": "row: affiancati (predefinito); column: uno sotto l’altro."
+                "description": "row: side by side (default); column: stacked."
               },
               "gap": {
                 "$ref": "#/$defs/gap",
-                "description": "Spazio tra i componenti, ricavato dal tema (medium se assente)."
+                "description": "Space between the components, taken from the theme (medium if absent)."
               },
               "align": {
                 "enum": [
@@ -1589,7 +1589,7 @@
                   "end",
                   "stretch"
                 ],
-                "description": "Allineamento sull’asse trasversale: in riga è quello verticale (stretch se assente, end per allineare campi di altezza diversa)."
+                "description": "Alignment on the cross axis: in a row it is the vertical one (stretch if absent, end to align fields of different heights)."
               },
               "justify": {
                 "enum": [
@@ -1598,11 +1598,11 @@
                   "end",
                   "between"
                 ],
-                "description": "Distribuzione sull’asse principale (start se assente; between = primo e ultimo agli estremi)."
+                "description": "Distribution on the main axis (start if absent; between = first and last at the ends)."
               },
               "wrap": {
                 "type": "boolean",
-                "description": "In riga, va a capo quando manca spazio (vero se assente)."
+                "description": "In a row, wraps when space runs out (true if absent)."
               }
             }
           }
@@ -1629,17 +1629,17 @@
                 "items": {
                   "$ref": "#/$defs/node"
                 },
-                "description": "Componenti contenuti, uno per cella e a capo dopo l’ultima colonna; ognuno può occupare più colonne con span."
+                "description": "Contained components, one per cell, wrapping after the last column; each one can take several columns with span."
               },
               "columns": {
                 "type": "integer",
                 "minimum": 1,
                 "maximum": 12,
-                "description": "Colonne della griglia (2 se assente). Sotto i 600px di larghezza diventa una colonna sola."
+                "description": "Columns of the grid (2 if absent). Below 600px of width it becomes a single column."
               },
               "gap": {
                 "$ref": "#/$defs/gap",
-                "description": "Spazio tra i componenti, ricavato dal tema (medium se assente)."
+                "description": "Space between the components, taken from the theme (medium if absent)."
               }
             }
           }
@@ -1666,27 +1666,27 @@
                 "items": {
                   "$ref": "#/$defs/node"
                 },
-                "description": "Componenti contenuti, ognuno nella regione indicata da region (north, west, center, east, south; center se assente)."
+                "description": "Contained components, each in the region given by region (north, west, center, east, south; center if absent)."
               },
               "westWidth": {
                 "type": "integer",
                 "minimum": 120,
                 "maximum": 600,
-                "description": "Larghezza in px della regione west (240 se assente)."
+                "description": "Width in px of the west region (240 if absent)."
               },
               "eastWidth": {
                 "type": "integer",
                 "minimum": 120,
                 "maximum": 600,
-                "description": "Larghezza in px della regione east (240 se assente)."
+                "description": "Width in px of the east region (240 if absent)."
               },
               "gap": {
                 "$ref": "#/$defs/gap",
-                "description": "Spazio tra i componenti, ricavato dal tema (medium se assente)."
+                "description": "Space between the components, taken from the theme (medium if absent)."
               },
               "resizable": {
                 "type": "boolean",
-                "description": "Divisori tra il centro e i lati ovest ed est, da trascinare o da spostare con le frecce (da 120 a 600px)."
+                "description": "Dividers between the center and the west and east sides, to drag or to move with the arrow keys (from 120 to 600px)."
               }
             }
           }
@@ -1711,31 +1711,31 @@
             "properties": {
               "src": {
                 "type": "string",
-                "description": "Indirizzo dell’immagine: relativo (/img/logo.png), https:// oppure data:image/…; può contenere {{ }}. Qualunque altro indirizzo non si mostra."
+                "description": "Address of the image: relative (/img/logo.png), https:// or data:image/…; it can contain {{ }}. Any other address is not shown."
               },
               "alt": {
                 "type": "string",
                 "minLength": 1,
-                "description": "Testo alternativo (obbligatorio per l’accessibilità); si mostra anche se l’immagine non si carica."
+                "description": "Alternative text (required for accessibility); it is shown also if the image does not load."
               },
               "width": {
                 "type": "integer",
                 "minimum": 16,
                 "maximum": 2000,
-                "description": "Larghezza massima in px (si adatta allo spazio disponibile)."
+                "description": "Maximum width in px (it adapts to the available space)."
               },
               "height": {
                 "type": "integer",
                 "minimum": 16,
                 "maximum": 2000,
-                "description": "Altezza in px."
+                "description": "Height in px."
               },
               "fit": {
                 "enum": [
                   "contain",
                   "cover"
                 ],
-                "description": "Con larghezza e altezza: contain mostra tutta l’immagine, cover riempie ritagliando (contain se assente)."
+                "description": "With width and height: contain shows the whole image, cover fills by cropping (contain if absent)."
               }
             }
           }
@@ -1787,20 +1787,20 @@
             "properties": {
               "label": {
                 "type": "string",
-                "description": "Testo del collegamento; può contenere {{ }}."
+                "description": "Text of the link; it can contain {{ }}."
               },
               "screen": {
                 "type": "string",
-                "description": "Schermata da aprire nell’applicazione (con params)."
+                "description": "Screen to open in the application (with params)."
               },
               "params": {
                 "type": "object",
-                "description": "Parametri della schermata; i valori possono contenere {{ }}."
+                "description": "Parameters of the screen; values can contain {{ }}."
               },
               "href": {
                 "type": "string",
                 "pattern": "^(https://[^\\s]+|/[^/\\s][^\\s]*)$",
-                "description": "Indirizzo esterno https:// (si apre in una nuova scheda, senza accesso a questa) o percorso relativo. Mai javascript: o altri protocolli."
+                "description": "External https:// address (it opens in a new tab, without access to this one) or relative path. Never javascript: or other protocols."
               }
             }
           }
@@ -1831,7 +1831,7 @@
                     "type": "number"
                   }
                 ],
-                "description": "Valore raggiunto, un numero o un’espressione (per esempio {{ row.completate }})."
+                "description": "Value reached, a number or an expression (for example {{ row.completed }})."
               },
               "max": {
                 "anyOf": [
@@ -1842,22 +1842,22 @@
                     "type": "number"
                   }
                 ],
-                "description": "Valore che corrisponde al 100% (100 se assente); numero o espressione."
+                "description": "Value that corresponds to 100% (100 if absent); number or expression."
               },
               "label": {
                 "type": "string",
-                "description": "Etichetta mostrata sopra la barra; può contenere {{ }}."
+                "description": "Label shown above the bar; it can contain {{ }}."
               },
               "kind": {
                 "enum": [
                   "line",
                   "circle"
                 ],
-                "description": "Barra (line, predefinita) o cerchio."
+                "description": "Bar (line, default) or circle."
               },
               "tone": {
                 "$ref": "#/$defs/tone",
-                "description": "Colore della barra, preso dal tema (primary se assente)."
+                "description": "Colour of the bar, taken from the theme (primary if absent)."
               }
             }
           }
@@ -1883,41 +1883,41 @@
             "properties": {
               "source": {
                 "type": "string",
-                "description": "Data source con gli eventi (un elenco di righe)."
+                "description": "Data source with the events (a list of rows)."
               },
               "dateField": {
                 "type": "string",
-                "description": "Campo con la data (AAAA-MM-GG, anche con l’ora)."
+                "description": "Field with the date (YYYY-MM-DD, also with the time)."
               },
               "labelField": {
                 "type": "string",
-                "description": "Campo mostrato come titolo dell’evento."
+                "description": "Field shown as the title of the event."
               },
               "descriptionField": {
                 "type": "string",
-                "description": "Campo mostrato sotto il titolo."
+                "description": "Field shown under the title."
               },
               "toneField": {
                 "type": "string",
-                "description": "Campo che decide il colore secondo tones."
+                "description": "Field that decides the colour according to tones."
               },
               "tones": {
                 "type": "object",
                 "additionalProperties": {
                   "$ref": "#/$defs/tone"
                 },
-                "description": "Colore degli eventi per valore di `toneField`, per esempio {\"errore\": \"danger\"}; i valori non elencati sono primary."
+                "description": "Colour of the events by value of `toneField`, for example {\"error\": \"danger\"}; values not listed are primary."
               },
               "order": {
                 "enum": [
                   "desc",
                   "asc"
                 ],
-                "description": "Dal più recente (desc, predefinito) o dal più vecchio."
+                "description": "Newest first (desc, default) or oldest first."
               },
               "withTime": {
                 "type": "boolean",
-                "description": "Mostra anche l’ora."
+                "description": "Shows the time too."
               }
             }
           }
@@ -1944,19 +1944,19 @@
             "properties": {
               "source": {
                 "type": "string",
-                "description": "Data source con le schede (un elenco di righe)."
+                "description": "Data source with the cards (a list of rows)."
               },
               "columnField": {
                 "type": "string",
-                "description": "Campo della riga che decide la colonna (per esempio stato)."
+                "description": "Field of the row that decides the column (for example status)."
               },
               "titleField": {
                 "type": "string",
-                "description": "Campo mostrato come titolo della scheda."
+                "description": "Field shown as the title of the card."
               },
               "descriptionField": {
                 "type": "string",
-                "description": "Campo mostrato sotto il titolo della scheda."
+                "description": "Field shown under the title of the card."
               },
               "columns": {
                 "type": "array",
@@ -1981,11 +1981,11 @@
                     }
                   }
                 },
-                "description": "Colonne della bacheca, in ordine: value è il valore di `columnField`, label l’intestazione (può contenere {{ }}), tone il colore (neutral se assente)."
+                "description": "Columns of the board, in order: value is the value of `columnField`, label the header (it can contain {{ }}), tone the colour (neutral if absent)."
               },
               "moveIf": {
                 "$ref": "#/$defs/expression",
-                "description": "Condizione per spostare una scheda (vede la riga in row), per esempio un permesso."
+                "description": "Condition for moving a card (it sees the row in row), for example a permission."
               },
               "onMove": {
                 "type": "array",
@@ -1993,7 +1993,7 @@
                 "items": {
                   "$ref": "#/$defs/step"
                 },
-                "description": "Passi per spostare una scheda (di solito call e refresh): vedono la riga in row, la colonna di partenza in from e quella di arrivo in to."
+                "description": "Steps that move a card (usually call and refresh): they see the row in row, the starting column in from and the target one in to."
               }
             }
           }
@@ -2010,7 +2010,7 @@
       "properties": {
         "confirm": {
           "type": "string",
-          "description": "Domanda posta all'utente prima di proseguire; può contenere espressioni, per esempio \"Approvare l'ordine {{row.numero}}?\". Se l'utente rinuncia la sequenza si ferma, senza messaggi di errore."
+          "description": "Question asked to the user before going on; it can contain expressions, for example \"Approve order {{row.number}}?\". If the user gives up the sequence stops, without error messages."
         }
       }
     },
@@ -2021,7 +2021,7 @@
         "success",
         "danger"
       ],
-      "description": "Tono di colore, preso dal tema."
+      "description": "Colour tone, taken from the theme."
     },
     "tab": {
       "type": "object",
@@ -2059,7 +2059,7 @@
       "properties": {
         "field": {
           "type": "string",
-          "description": "Nome del campo nella riga restituita dal servizio."
+          "description": "Name of the field in the row returned by the service."
         },
         "label": {
           "type": "string"
@@ -2076,19 +2076,19 @@
             "badge",
             "markdown"
           ],
-          "description": "Come mostrare il valore: number (numero con le cifre separate secondo la lingua, `decimals` decimali), currency (importo con simbolo), percent (il valore è già in punti percentuali, 10 = 10 %), date e datetime (testo ISO 8601), boolean (Sì/No), badge (etichetta colorata secondo `badges`). markdown: testo formattato (Markdown ristretto); nel dettaglio si mostra formattato, nelle tabelle come testo semplice."
+          "description": "How to show the value: number (number with digits grouped according to the language, `decimals` decimals), currency (amount with symbol), percent (the value is already in percentage points, 10 = 10 %), date and datetime (ISO 8601 text), boolean (Yes/No), badge (coloured label according to `badges`). markdown: formatted text (restricted Markdown); in the detail it is shown formatted, in tables as plain text."
         },
         "currency": {
           "type": "string",
           "pattern": "^[A-Z]{3}$",
-          "description": "Codice ISO 4217 per format currency (EUR se assente)."
+          "description": "ISO 4217 code for format currency (EUR if absent)."
         },
         "badges": {
           "type": "object",
           "additionalProperties": {
             "$ref": "#/$defs/tone"
           },
-          "description": "Per format badge: colore per ogni valore; i valori non elencati sono neutri."
+          "description": "For format badge: colour for every value; values not listed are neutral."
         },
         "visibleIf": {
           "$ref": "#/$defs/expression"
@@ -2098,20 +2098,20 @@
         },
         "tooltip": {
           "type": "string",
-          "description": "Testo di aiuto mostrato al passaggio del mouse o con il focus. Solo testo (mai HTML); può contenere {{ }}."
+          "description": "Help text shown on mouse hover or with the focus. Text only (never HTML); it can contain {{ }}."
         },
         "valueKey": {
           "type": "string",
           "pattern": "^[A-Za-z0-9_.-]+$",
           "minLength": 1,
           "maxLength": 100,
-          "description": "Prefisso delle chiavi di traduzione per i valori mostrati: il testo è t('<prefisso>.<valore>'), con il valore come ripiego. I colori dei badge restano legati al valore originale."
+          "description": "Prefix of the translation keys for the shown values: the text is t('<prefix>.<value>'), with the value as a fallback. Badge colours stay tied to the original value."
         },
         "decimals": {
           "type": "integer",
           "minimum": 0,
           "maximum": 6,
-          "description": "Decimali mostrati con format number (fino a 2 se assente)."
+          "description": "Decimals shown with format number (up to 2 if absent)."
         }
       }
     },
@@ -2121,7 +2121,7 @@
       "properties": {
         "sortable": {
           "type": "boolean",
-          "description": "La colonna si può ordinare (frecce nell'intestazione)."
+          "description": "The column can be sorted (arrows in the header)."
         },
         "onClick": {
           "type": "array",
@@ -2129,7 +2129,7 @@
           "items": {
             "$ref": "#/$defs/step"
           },
-          "description": "Il valore diventa un collegamento che esegue questi passi con la riga in `row`."
+          "description": "The value becomes a link that runs these steps with the row in `row`."
         },
         "aggregate": {
           "enum": [
@@ -2139,7 +2139,7 @@
             "max",
             "count"
           ],
-          "description": "Valore della colonna nella riga dei totali (somma, media, minimo, massimo, conteggio), calcolato sulle righe caricate."
+          "description": "Value of the column in the totals row (sum, average, minimum, maximum, count), computed on the loaded rows."
         }
       }
     },
@@ -2151,7 +2151,7 @@
     "statePath": {
       "type": "string",
       "pattern": "^state(\\.[A-Za-z][A-Za-z0-9]*)+$",
-      "description": "Percorso nello stato della schermata, per esempio state.ordinamento."
+      "description": "Path in the screen state, for example state.sorting."
     },
     "sortSpec": {
       "type": "object",
@@ -2187,7 +2187,7 @@
             "onSubmit"
           ],
           "additionalProperties": false,
-          "description": "Finestra con un form: i passi di onSubmit vedono i valori in `form`. Se riescono la finestra si chiude e la sequenza prosegue; se l’utente annulla la sequenza si ferma in silenzio.",
+          "description": "Window with a form: the onSubmit steps see the values in `form`. If they succeed the window closes and the sequence goes on; if the user cancels the sequence stops silently.",
           "properties": {
             "title": {
               "type": "string"
@@ -2201,7 +2201,7 @@
             },
             "initial": {
               "type": "object",
-              "description": "Valori iniziali con espressioni (per esempio {\"nota\": \"{{ row.nota }}\"})."
+              "description": "Initial values with expressions (for example {\"note\": \"{{ row.note }}\"})."
             },
             "columns": {
               "type": "integer",
@@ -2228,7 +2228,7 @@
         "label"
       ],
       "additionalProperties": false,
-      "description": "Un indicatore: etichetta e valore grande. Il valore viene da un campo del record del data source (`field`) o da un'espressione (`value`, che vede il record come `row`).",
+      "description": "An indicator: label and big value. The value comes from a field of the data source record (`field`) or from an expression (`value`, which sees the record as `row`).",
       "properties": {
         "id": {
           "$ref": "#/$defs/id"
@@ -2257,31 +2257,31 @@
         "currency": {
           "type": "string",
           "pattern": "^[A-Z]{3}$",
-          "description": "Codice ISO 4217 per format currency (EUR se assente)."
+          "description": "ISO 4217 code for format currency (EUR if absent)."
         },
         "decimals": {
           "type": "integer",
           "minimum": 0,
           "maximum": 6,
-          "description": "Decimali mostrati con format number (fino a 2 se assente)."
+          "description": "Decimals shown with format number (up to 2 if absent)."
         },
         "valueKey": {
           "type": "string",
           "pattern": "^[A-Za-z0-9_.-]+$",
           "minLength": 1,
           "maxLength": 100,
-          "description": "Prefisso delle chiavi di traduzione per i valori mostrati: il testo è t('<prefisso>.<valore>'), con il valore come ripiego. I colori dei badge restano legati al valore originale."
+          "description": "Prefix of the translation keys for the shown values: the text is t('<prefix>.<value>'), with the value as a fallback. Badge colours stay tied to the original value."
         },
         "tone": {
           "$ref": "#/$defs/tone"
         },
         "caption": {
           "type": "string",
-          "description": "Riga piccola sotto il valore (per esempio un confronto); può contenere {{ }} con il record come row."
+          "description": "Small line under the value (for example a comparison); it can contain {{ }} with the record as row."
         },
         "tooltip": {
           "type": "string",
-          "description": "Testo di aiuto mostrato al passaggio del mouse o con il focus. Solo testo (mai HTML); può contenere {{ }}."
+          "description": "Help text shown on mouse hover or with the focus. Text only (never HTML); it can contain {{ }}."
         },
         "visibleIf": {
           "$ref": "#/$defs/expression"
@@ -2334,7 +2334,7 @@
         },
         "nextIf": {
           "$ref": "#/$defs/expression",
-          "description": "Avanti è abilitato solo se l’espressione è vera (sempre, se assente)."
+          "description": "Next is enabled only if the expression is true (always, if absent)."
         }
       }
     },
@@ -2347,28 +2347,28 @@
       "properties": {
         "field": {
           "type": "string",
-          "description": "Campo numerico delle righe."
+          "description": "Numeric field of the rows."
         },
         "label": {
           "type": "string"
         },
         "tone": {
           "$ref": "#/$defs/tone",
-          "description": "Colore della serie dal tema (altrimenti la tavolozza del grafico)."
+          "description": "Colour of the series from the theme (otherwise the chart palette)."
         },
         "kind": {
           "enum": [
             "bar",
             "line"
           ],
-          "description": "Come disegnare questa serie in un grafico a barre o a linee (grafici combinati); se assente vale il tipo del grafico."
+          "description": "How to draw this series in a bar or line chart (combined charts); if absent the chart kind applies."
         },
         "axis": {
           "enum": [
             "left",
             "right"
           ],
-          "description": "Asse dei valori della serie: a destra per grandezze diverse (per esempio una percentuale accanto a importi)."
+          "description": "Value axis of the series: on the right for different quantities (for example a percentage next to amounts)."
         }
       }
     },
@@ -2383,11 +2383,11 @@
             "number",
             "date"
           ],
-          "description": "Filtro nell’intestazione: testo (contiene), scelta tra i valori presenti, intervallo numerico o di date."
+          "description": "Filter in the header: text (contains), choice among the values present, numeric or date range."
         },
         "groupable": {
           "type": "boolean",
-          "description": "La colonna si può scegliere per raggruppare le righe."
+          "description": "The column can be chosen to group the rows."
         }
       },
       "unevaluatedProperties": false
@@ -2399,7 +2399,7 @@
         "medium",
         "large"
       ],
-      "description": "Spazio tra i componenti, ricavato dal tema (medium se assente)."
+      "description": "Space between the components, taken from the theme (medium if absent)."
     },
     "stepValidate": {
       "type": "object",
@@ -2411,7 +2411,7 @@
         "validate": {
           "type": "string",
           "pattern": "^(\\*|[A-Za-z][A-Za-z0-9-]*)$",
-          "description": "Gruppo di campi a sé (`group` dei nodi input) da controllare, oppure * per tutti quelli visibili. Se un campo non è valido gli errori si mostrano e la sequenza si ferma."
+          "description": "Group of standalone fields (`group` of the input nodes) to check, or * for all the visible ones. If a field is not valid the errors are shown and the sequence stops."
         }
       }
     },
@@ -2424,7 +2424,7 @@
       "properties": {
         "print": {
           "const": true,
-          "description": "Apre la stampa del browser: menu, barre e pulsanti non si stampano."
+          "description": "Opens the browser's print dialog: menus, bars and buttons are not printed."
         }
       }
     },
@@ -2442,20 +2442,20 @@
             "columns"
           ],
           "additionalProperties": false,
-          "description": "Scarica in CSV le righe di un data source GET (un elenco, oppure items di una risposta a pagine): separatore punto e virgola, UTF-8 con BOM per Excel, celle che cominciano con = + - @ neutralizzate.",
+          "description": "Downloads as CSV the rows of a GET data source (a list, or the items of a paged response): semicolon separator, UTF-8 with BOM for Excel, cells starting with = + - @ neutralised.",
           "properties": {
             "source": {
               "type": "string",
-              "description": "Data source GET che restituisce le righe."
+              "description": "GET data source that returns the rows."
             },
             "fileName": {
               "type": "string",
               "pattern": "^[A-Za-z0-9 _.-]{1,80}$",
-              "description": "Nome del file (export.csv se assente; l’estensione .csv si aggiunge se manca)."
+              "description": "Name of the file (export.csv if absent; the .csv extension is added if missing)."
             },
             "args": {
               "type": "object",
-              "description": "Variabili per url e params del data source (come in call)."
+              "description": "Variables for url and params of the data source (as in call)."
             },
             "columns": {
               "type": "array",
@@ -2469,11 +2469,11 @@
                 "properties": {
                   "field": {
                     "type": "string",
-                    "description": "Campo della riga."
+                    "description": "Field of the row."
                   },
                   "label": {
                     "type": "string",
-                    "description": "Intestazione della colonna (il campo se assente); può contenere {{ }}."
+                    "description": "Header of the column (the field if absent); it can contain {{ }}."
                   }
                 }
               }
@@ -2485,7 +2485,7 @@
     "identifier": {
       "type": "string",
       "pattern": "^[A-Za-z][A-Za-z0-9_]*$",
-      "description": "Nome semplice: una lettera, poi lettere, cifre o _."
+      "description": "Simple name: a letter, then letters, digits or _."
     },
     "stepIf": {
       "type": "object",
@@ -2494,19 +2494,19 @@
         "then"
       ],
       "additionalProperties": false,
-      "description": "Passo condizionale: esegue then se la condizione è vera, altrimenti else (se c'è).",
+      "description": "Conditional step: runs then if the condition is true, otherwise else (if present).",
       "properties": {
         "if": {
           "$ref": "#/$defs/expression",
-          "description": "Condizione, per esempio {{ creato.stato == 'bozza' }}. Se non si può valutare la sequenza si ferma (non si esegue nessuno dei due rami)."
+          "description": "Condition, for example {{ created.status == 'draft' }}. If it cannot be evaluated the sequence stops (neither branch is run)."
         },
         "then": {
           "$ref": "#/$defs/steps",
-          "description": "Passi se la condizione è vera."
+          "description": "Steps if the condition is true."
         },
         "else": {
           "$ref": "#/$defs/steps",
-          "description": "Passi se la condizione è falsa."
+          "description": "Steps if the condition is false."
         }
       }
     },
@@ -2516,11 +2516,11 @@
         "run"
       ],
       "additionalProperties": false,
-      "description": "Esegue una sequenza con nome della schermata (actions), con le stesse variabili del punto in cui la si richiama (row, form…).",
+      "description": "Runs a named sequence of the screen (actions), with the same variables as the point where it is called (row, form…).",
       "properties": {
         "run": {
           "$ref": "#/$defs/identifier",
-          "description": "Nome della sequenza in actions."
+          "description": "Name of the sequence in actions."
         }
       }
     }
