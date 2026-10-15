@@ -16,9 +16,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Login avviato dalle applicazioni: {@code /bff/login?return=<pagina>}. La pagina di ritorno è accettata solo se sta
- * in una delle origini consentite ({@link BffProperties#frontendOrigins()}): il BFF non fa da trampolino verso siti
- * qualsiasi (open redirect). Dopo il login con Keycloak l'utente torna lì.
+ * Login started by the applications: {@code /bff/login?return=<page>}. The return page is accepted only if it is in one
+ * of the allowed origins ({@link BffProperties#frontendOrigins()}): the BFF is not a springboard to arbitrary sites
+ * (open redirect). After the Keycloak login the user goes back there.
  */
 @RestController
 public class LoginController {
@@ -37,7 +37,7 @@ public class LoginController {
         if (returnTo != null) {
             Optional<String> allowed = allowedReturn(returnTo, properties);
             if (allowed.isEmpty()) {
-                ApiForwardingFilter.problem(response, HttpStatus.BAD_REQUEST, "Pagina di ritorno non consentita");
+                ApiForwardingFilter.problem(response, HttpStatus.BAD_REQUEST, "Return page not allowed");
                 return;
             }
             request.getSession(true).setAttribute(RETURN_ATTRIBUTE, allowed.get());
@@ -45,7 +45,7 @@ public class LoginController {
         response.sendRedirect(request.getContextPath() + "/oauth2/authorization/" + AccessTokens.FromSession.REGISTRATION);
     }
 
-    /** La pagina di ritorno, se è un URL http(s) assoluto in un'origine consentita. */
+    /** The return page, if it is an absolute http(s) URL in an allowed origin. */
     static Optional<String> allowedReturn(String url, BffProperties properties) {
         try {
             URI uri = new URI(url);
@@ -59,13 +59,13 @@ public class LoginController {
         }
     }
 
-    /** La radice del BFF rimanda alle applicazioni (dopo l'uscita da Keycloak si arriva qui). */
+    /** The BFF root redirects to the applications (after signing out of Keycloak the user lands here). */
     @GetMapping("/")
     public void home(HttpServletResponse response) throws IOException {
         response.sendRedirect(properties.home());
     }
 
-    /** Dopo il login: alla pagina di ritorno salvata, altrimenti alla home delle applicazioni. */
+    /** After the login: to the saved return page, otherwise to the home of the applications. */
     @Component
     static class ReturnToFrontend implements AuthenticationSuccessHandler {
 

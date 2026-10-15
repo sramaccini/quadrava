@@ -1,19 +1,19 @@
 openapi: 3.1.0
 info:
-  title: KinetiX - Contratto di autorizzazione
+  title: KinetiX - Authorization contract
   version: 0.1.0
   description: >
-    Contratto REST che ogni backend applicativo implementa per esporre i permessi dell'utente corrente.
-    Il frontend usa queste informazioni solo per nascondere o disabilitare parti dell'interfaccia:
-    il backend verifica sempre ogni richiesta e filtra i dati in uscita.
+    REST contract that every application back end implements to expose the permissions of the current user.
+    The front end uses this information only to hide or disable parts of the interface:
+    the back end always checks every request and filters the outgoing data.
   license:
-    name: Proprietaria
+    name: Proprietary
     identifier: LicenseRef-Proprietary
 servers:
   - url: /
 tags:
   - name: authz
-    description: Permessi e verifiche di autorizzazione.
+    description: Permissions and authorization checks.
 security:
   - cookieAuth: []
   - bearerAuth: []
@@ -22,16 +22,16 @@ paths:
     get:
       tags: [authz]
       operationId: getCapabilities
-      summary: Permessi dell'utente corrente per un'applicazione
+      summary: Permissions of the current user for an application
       parameters:
         - name: app
           in: query
           required: true
-          description: Identificativo dell'applicazione.
+          description: Identifier of the application.
           schema: { type: string }
       responses:
         '200':
-          description: Elenco dei permessi concessi.
+          description: List of the granted permissions.
           headers:
             X-Permissions-Version:
               $ref: '#/components/headers/PermissionsVersion'
@@ -44,7 +44,7 @@ paths:
     post:
       tags: [authz]
       operationId: checkPermissions
-      summary: Verifica a lotti di coppie permesso/risorsa
+      summary: Batch check of permission/resource pairs
       requestBody:
         required: true
         content:
@@ -52,7 +52,7 @@ paths:
             schema: { $ref: '#/components/schemas/CheckRequest' }
       responses:
         '200':
-          description: Esito per ciascuna verifica richiesta, nello stesso ordine.
+          description: Result of every requested check, in the same order.
           headers:
             X-Permissions-Version:
               $ref: '#/components/headers/PermissionsVersion'
@@ -68,28 +68,28 @@ components:
     bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
   headers:
     PermissionsVersion:
-      description: Versione corrente dei permessi dell'utente. Se cambia, il runtime ricarica le capacità.
+      description: Current version of the user's permissions. When it changes, the runtime reloads the capabilities.
       schema: { type: string }
   responses:
     BadRequest:
-      description: Richiesta non valida.
+      description: Invalid request.
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }
     Unauthorized:
-      description: Sessione assente o scaduta.
+      description: Session missing or expired.
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }
     Forbidden:
-      description: Operazione non consentita.
+      description: Operation not allowed.
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }
   schemas:
     Permission:
       type: string
-      description: Formato dominio.risorsa.azione, minuscolo.
+      description: Format domain.resource.action, lower case.
       pattern: '^[a-z0-9]+\.[a-z0-9]+\.[a-z0-9]+$'
       examples: ['ordini.ordine.approva']
     Capabilities:
@@ -104,7 +104,7 @@ components:
         ttlSeconds:
           type: integer
           minimum: 0
-          description: Durata suggerita della cache.
+          description: Suggested cache duration.
     ResourceRef:
       type: object
       required: [type, id]
@@ -141,7 +141,7 @@ components:
           items: { $ref: '#/components/schemas/CheckResult' }
     Problem:
       type: object
-      description: Errore in formato RFC 9457, con identificativo di correlazione.
+      description: Error in RFC 9457 format, with a correlation identifier.
       required: [title, status]
       properties:
         type: { type: string }

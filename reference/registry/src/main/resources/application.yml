@@ -9,7 +9,7 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/lowcode}
-          # Autore delle versioni: il nome utente, non l'identificativo interno di Keycloak.
+          # Author of the versions: the user name, not Keycloak's internal identifier.
           principal-claim-name: preferred_username
 
 management:
@@ -20,9 +20,9 @@ management:
 
 lowcode:
   registry:
-    # Cartella dell'archivio su file (vuota = in memoria, si perde al riavvio). Per esempio data/registry.
+    # Folder of the file store (empty = in memory, lost on restart). For example data/registry.
     storage-dir: ${LOWCODE_REGISTRY_DIR:}
-    # Qui si pubblicano solo versioni approvate.
+    # Only approved versions are published here.
     protected-environments: [testing, production]
-    # Ruoli del realm che possono approvare o respingere (mai l'autore della versione).
+    # Realm roles that can approve or reject (never the author of the version).
     approver-roles: [manager, administrator]

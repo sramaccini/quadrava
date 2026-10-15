@@ -8,22 +8,22 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
-/** Tipi del contratto contracts/registry.yaml. */
+/** Types of the contract contracts/registry.yaml. */
 public final class Model {
     private Model() {}
 
     /**
-     * Identificativi di applicazioni e documenti: kebab-case. Finiscono anche nei percorsi dell'archivio su file,
-     * quindi nient'altro è ammesso (niente {@code ..}, barre o caratteri speciali).
+     * Identifiers of applications and documents: kebab-case. They also end up in the paths of the file store, so
+     * nothing else is allowed (no {@code ..}, slashes or special characters).
      */
     public static final Pattern IDENTIFIER = Pattern.compile("^[a-z0-9]+(-[a-z0-9]+)*$");
 
-    /** Tipo di documento: decide lo schema di validazione e la proprietà che ne contiene l'identificativo. */
+    /** Document kind: it decides the validation schema and the property that holds the identifier. */
     public enum Kind {
         SCREEN("screen"),
         NAVIGATION("navigation"),
         THEME("theme"),
-        /** Catalogo delle traduzioni di una lingua: l'identificativo è la lingua (it, en, pt-br). */
+        /** Translation catalogue of one language: the identifier is the language (it, en, pt-br). */
         MESSAGES("messages");
 
         private final String idProperty;
@@ -32,7 +32,7 @@ public final class Model {
             this.idProperty = idProperty;
         }
 
-        /** Proprietà del contenuto con l'identificativo del documento (`screen`, `navigation`, `theme`). */
+        /** Property of the content with the identifier of the document (`screen`, `navigation`, `theme`, `messages`). */
         public String idProperty() {
             return idProperty;
         }
@@ -51,7 +51,7 @@ public final class Model {
         }
     }
 
-    /** Stato di revisione di una versione. */
+    /** Review state of a version. */
     public enum State {
         DRAFT("draft"),
         IN_REVIEW("in-review"),
@@ -69,12 +69,12 @@ public final class Model {
         }
     }
 
-    /** Un documento di un'applicazione. */
+    /** A document of an application. */
     public record DocumentKey(String appId, Kind kind, String documentId) {}
 
     public record AppSummary(String id, String name, int documentCount) {}
 
-    /** Una versione: immutabile nel contenuto; cambia solo lo stato di revisione. */
+    /** A version: its content is immutable; only the review state changes. */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record DocumentVersion(String hash, Instant createdAt, String author, String state,
                                   String reviewedBy, Instant reviewedAt, String reviewNote) {
@@ -94,16 +94,16 @@ public final class Model {
 
     public record PublishRequest(String hash) {}
 
-    /** Azione di revisione: {@code richiedi} (bozza o respinta → in revisione), {@code approva}, {@code respingi}. */
+    /** Review action: {@code request} (draft or rejected → in review), {@code approve}, {@code reject}. */
     public record ReviewRequest(String action, String note) {}
 
-    /** Un problema di validazione: posizione nel documento (JSON Pointer) e messaggio. */
+    /** A validation problem: position in the document (JSON Pointer) and message. */
     public record Issue(String path, String message) {}
 
-    /** Un riferimento a un'altra schermata: identificativo e posizione nel documento (JSON Pointer). */
+    /** A reference to another screen: identifier and position in the document (JSON Pointer). */
     public record ScreenReference(String screen, String path) {}
 
-    /** Riferimenti di una versione e quelli che mancano nell'ambiente ({@code env} null = controllo di esistenza). */
+    /** References of a version and those missing in the environment ({@code env} null = existence check). */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record ReferenceReport(String env, List<ScreenReference> references, List<ScreenReference> missing) {}
 }

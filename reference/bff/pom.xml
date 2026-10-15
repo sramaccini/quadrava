@@ -11,7 +11,7 @@
 
   <artifactId>lowcode-bff</artifactId>
   <name>KinetiX reference - bff</name>
-  <description>Backend For Frontend: sessione OIDC con Keycloak, token solo lato server.</description>
+  <description>Backend For Frontend: OIDC session with Keycloak, tokens on the server side only.</description>
 
   <dependencies>
     <dependency>

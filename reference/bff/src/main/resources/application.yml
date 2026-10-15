@@ -14,8 +14,8 @@ spring:
             authorization-grant-type: authorization_code
             redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
             scope: openid,profile,email
-        # Indirizzi espliciti invece della scoperta all'avvio (issuer-uri): il BFF parte anche se Keycloak non è
-        # ancora acceso. Sono quelli standard di Keycloak sotto l'issuer del realm.
+        # Explicit addresses instead of discovery at start-up (issuer-uri): the BFF starts even if Keycloak is not up
+        # yet. They are the standard Keycloak ones under the realm issuer.
         provider:
           keycloak:
             authorization-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/lowcode}/protocol/openid-connect/auth
@@ -26,7 +26,7 @@ spring:
 
 lowcode:
   bff:
-    # API inoltrate dal BFF ai servizi, con il token dell'utente. Solo questi prefissi e questi host.
+    # APIs forwarded by the BFF to the services, with the user's token. Only these prefixes and these hosts.
     routes:
       - prefix: /registry
         target: ${LOWCODE_REGISTRY_URL:http://localhost:8081}
@@ -34,16 +34,16 @@ lowcode:
         target: ${LOWCODE_AUTHZ_URL:http://localhost:8082}
       - prefix: /telemetry
         target: ${LOWCODE_TELEMETRY_URL:http://localhost:8083}
-      # Backend dell'applicazione: nella demo il server di esempio (frontend/tools/demo-api.mjs).
+      # Back end of the application: in the demo the sample server (frontend/tools/demo-api.mjs).
       - prefix: /api
         target: ${LOWCODE_API_URL:http://localhost:8084}
-    # Applicazioni verso cui si torna dopo il login (/bff/login?return=...).
+    # Applications the user may return to after the login (/bff/login?return=...).
     frontend-origins:
       - http://localhost:4200
       - http://localhost:4201
-    # Dopo un login senza pagina di ritorno, e aprendo la radice del BFF.
+    # After a login without a return page, and when opening the BFF root.
     home: ${LOWCODE_HOME:http://localhost:4200/}
-    # Uscendo si chiude anche la sessione in Keycloak.
+    # Signing out also closes the session in Keycloak.
     end-session-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/lowcode}/protocol/openid-connect/logout
 
 management:

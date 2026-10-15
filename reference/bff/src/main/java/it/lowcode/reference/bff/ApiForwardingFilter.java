@@ -23,17 +23,17 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * Inoltra le API configurate ({@link BffProperties#routes()}) ai servizi, con il token d'accesso dell'utente della
- * sessione. Il browser parla solo con il BFF: niente token nel browser, niente host arbitrari.
+ * Forwards the configured APIs ({@link BffProperties#routes()}) to the services, with the access token of the session
+ * user. The browser talks only to the BFF: no tokens in the browser, no arbitrary hosts.
  *
  * <ul>
- *   <li>Arrivano al servizio solo poche intestazioni (formato, cache condizionale, lingua, {@code traceparent}): mai i
- *       cookie della sessione né un'eventuale {@code Authorization} del browser.</li>
- *   <li>Tornano al browser solo stato, corpo e poche intestazioni sicure (tipo, ETag, cache, nome del file).</li>
- *   <li>Il corpo passa in streaming, entro {@link BffProperties#maxBodyBytes()} (i file arrivano fino a 100 MB).</li>
+ *   <li>Only a few headers reach the service (format, conditional cache, language, {@code traceparent}): never the
+ *       session cookies nor any {@code Authorization} from the browser.</li>
+ *   <li>Only status, body and a few safe headers (type, ETag, cache, file name) go back to the browser.</li>
+ *   <li>The body is streamed, within {@link BffProperties#maxBodyBytes()} (files go up to 100 MB).</li>
  * </ul>
  *
- * Gira dopo la catena di sicurezza: l'autenticazione (401 per le API) e la protezione CSRF sono già state applicate.
+ * It runs after the security chain: authentication (401 for APIs) and CSRF protection have already been applied.
  */
 @Component
 public class ApiForwardingFilter extends OncePerRequestFilter {
@@ -66,20 +66,20 @@ public class ApiForwardingFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         BffProperties.Route route = route(request).orElseThrow();
         String rawPath = request.getRequestURI().substring(request.getContextPath().length());
-        // Niente percorsi relativi: il servizio deve ricevere esattamente il prefisso configurato.
+        // No relative paths: the service must receive exactly the configured prefix.
         if (rawPath.contains("..") || rawPath.contains("%2e") || rawPath.contains("%2E") || rawPath.contains("\\")) {
-            problem(response, HttpStatus.BAD_REQUEST, "Percorso non valido");
+            problem(response, HttpStatus.BAD_REQUEST, "Invalid path");
             return;
         }
         long length = request.getContentLengthLong();
         if (length > properties.maxBodyBytes()) {
-            problem(response, HttpStatus.CONTENT_TOO_LARGE, "Corpo troppo grande");
+            problem(response, HttpStatus.CONTENT_TOO_LARGE, "Body too large");
             return;
         }
         Authentication user = SecurityContextHolder.getContext().getAuthentication();
         Optional<String> token = user == null ? Optional.empty() : tokens.forRequest(user, request, response);
         if (token.isEmpty()) {
-            problem(response, HttpStatus.UNAUTHORIZED, "Sessione scaduta");
+            problem(response, HttpStatus.UNAUTHORIZED, "Session expired");
             return;
         }
 
@@ -105,11 +105,11 @@ public class ApiForwardingFilter extends OncePerRequestFilter {
         try {
             reply = http.send(upstream.build(), HttpResponse.BodyHandlers.ofInputStream());
         } catch (IOException e) {
-            problem(response, HttpStatus.BAD_GATEWAY, "Servizio non raggiungibile");
+            problem(response, HttpStatus.BAD_GATEWAY, "Service unreachable");
             return;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            problem(response, HttpStatus.BAD_GATEWAY, "Servizio non raggiungibile");
+            problem(response, HttpStatus.BAD_GATEWAY, "Service unreachable");
             return;
         }
 

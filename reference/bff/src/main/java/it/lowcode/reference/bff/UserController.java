@@ -10,7 +10,7 @@ public class UserController {
 
     public record UserInfo(String name, String username) {}
 
-    /** Dati dell'utente autenticato, per il runtime Angular. Non espone mai i token. */
+    /** Data of the authenticated user, for the Angular runtime. It never exposes the tokens. */
     @GetMapping("/bff/user")
     public UserInfo user(@AuthenticationPrincipal OidcUser user) {
         return new UserInfo(user.getFullName(), user.getPreferredUsername());

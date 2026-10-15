@@ -11,12 +11,12 @@ import org.springframework.security.web.authentication.logout.LogoutSuccessHandl
 import org.springframework.stereotype.Component;
 
 /**
- * Dopo l'uscita dal BFF chiude anche la sessione in Keycloak (logout OIDC avviato dal client): altrimenti un nuovo
- * accesso rientrerebbe senza chiedere la password. Keycloak poi riporta alla radice del BFF, che rimanda alle
- * applicazioni (e quindi al login).
+ * After signing out of the BFF it also closes the session in Keycloak (client-initiated OIDC logout): otherwise a new
+ * sign-in would get back in without asking for the password. Keycloak then returns to the BFF root, which redirects to
+ * the applications (and therefore to the login).
  *
- * Le applicazioni escono con una chiamata ({@code Accept: application/json}, token CSRF nell'intestazione): la risposta
- * è {@code {"redirect": "<indirizzo>"}} e la pagina ci naviga. Una navigazione normale riceve invece il reindirizzamento.
+ * The applications sign out with a call ({@code Accept: application/json}, CSRF token in the header): the response is
+ * {@code {"redirect": "<address>"}} and the page navigates there. A normal navigation gets the redirect instead.
  */
 @Component
 class EndSessionLogout implements LogoutSuccessHandler {

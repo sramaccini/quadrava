@@ -16,7 +16,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
-/** Il contratto telemetry.yaml dal lato HTTP: payload OTLP accettati, errori in formato Problem. */
+/** The telemetry.yaml contract over HTTP: OTLP payloads accepted, errors in Problem format. */
 @SpringBootTest(properties = "lowcode.telemetry.max-bytes=2000")
 class TelemetryApiTest {
 
@@ -39,15 +39,15 @@ class TelemetryApiTest {
     }
 
     @Test
-    void payloadDelSegnaleAccettati() throws Exception {
+    void payloadsOfTheSignalAreAccepted() throws Exception {
         send("/telemetry/v1/traces", "{\"resourceSpans\":[]}", 202);
         send("/telemetry/v1/logs", "{\"resourceLogs\":[]}", 202);
         mvc.perform(post("/telemetry/v1/logs").contentType(MediaType.APPLICATION_JSON).content("{\"resourceLogs\":[]}")).andExpect(status().isUnauthorized());
     }
 
     @Test
-    void corpiNonValidiRifiutati() throws Exception {
-        mvc.perform(post("/telemetry/v1/logs").with(jwt()).contentType(MediaType.APPLICATION_JSON).content("{non json"))
+    void invalidBodiesAreRejected() throws Exception {
+        mvc.perform(post("/telemetry/v1/logs").with(jwt()).contentType(MediaType.APPLICATION_JSON).content("{not json"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.title").exists());
@@ -56,7 +56,7 @@ class TelemetryApiTest {
     }
 
     @Test
-    void corpoOltreIlLimite() throws Exception {
+    void bodyOverTheLimit() throws Exception {
         mvc.perform(post("/telemetry/v1/logs").with(jwt()).contentType(MediaType.APPLICATION_JSON).content("{\"resourceLogs\":[\"" + "x".repeat(3000) + "\"]}"))
                 .andExpect(status().is(413))
                 .andExpect(jsonPath("$.status").value(413));

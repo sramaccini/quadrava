@@ -242,7 +242,7 @@ The registry is a REST service that stores application definitions. Every versio
 Screens are only warned about because links between screens often form cycles (a list opens the detail, the detail goes back to the list): rejecting them would make it impossible to publish either one first. The practical order in a protected environment is therefore: screens first, then the navigation. Example of a rejection:
 
 ```json
-{ "title": "La navigazione cita schermate non pubblicate nell'ambiente «production»", "status": 409,
+{ "title": "The navigation cites screens not published in the «production» environment", "status": 409,
   "missingReferences": [{ "screen": "fattura-nuova", "path": "/areas/0/items/1/screen" }] }
 ```
 

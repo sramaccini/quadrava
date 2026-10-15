@@ -11,7 +11,7 @@
 
   <artifactId>lowcode-authz</artifactId>
   <name>KinetiX reference - autorizzazione</name>
-  <description>Servizio di autorizzazione di esempio (contratto authz.yaml).</description>
+  <description>Sample authorization service (contract authz.yaml).</description>
 
   <dependencies>
     <dependency>

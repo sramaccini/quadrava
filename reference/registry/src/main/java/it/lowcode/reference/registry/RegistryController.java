@@ -30,18 +30,18 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Registry secondo contracts/registry.yaml (0.5): documenti separati per schermate, navigazione e temi, ognuno con le
- * proprie versioni e pubblicazioni.
+ * Registry according to contracts/registry.yaml (0.5): separate documents for screens, navigation and themes, each with
+ * its own versions and publications.
  *
  * <ul>
- *   <li>Al salvataggio il contenuto si valida contro lo schema del tipo di documento; con {@code If-Match} il
- *       salvataggio riesce solo se l'ultima versione è ancora quella indicata (modifiche concorrenti).</li>
- *   <li>Revisione: chi scrive chiede la revisione; approva o respinge solo chi ha un ruolo di
- *       {@code lowcode.registry.approver-roles}, e mai l'autore della versione (quattro occhi).</li>
- *   <li>Negli ambienti protetti ({@code lowcode.registry.protected-environments}) si pubblicano solo versioni
- *       approvate, e una navigazione solo se le schermate che cita sono pubblicate nello stesso ambiente.</li>
- *   <li>Riferimenti tra documenti ({@link References}): {@code …/versions/{hash}/references} dice quali schermate
- *       cita una versione e quali mancano in un ambiente.</li>
+ *   <li>On save the content is validated against the schema of the document kind; with {@code If-Match} the save
+ *       succeeds only if the latest version is still the one given (concurrent changes).</li>
+ *   <li>Review: whoever writes requests the review; only someone with a role in
+ *       {@code lowcode.registry.approver-roles} approves or rejects, and never the author of the version (four eyes).</li>
+ *   <li>In the protected environments ({@code lowcode.registry.protected-environments}) only approved versions are
+ *       published, and a navigation only if the screens it cites are published in the same environment.</li>
+ *   <li>Cross-document references ({@link References}): {@code …/versions/{hash}/references} tells which screens a
+ *       version cites and which are missing in an environment.</li>
  * </ul>
  */
 @RestController
@@ -68,7 +68,7 @@ public class RegistryController {
         if (kind != null) {
             filter = Kind.parse(kind);
             if (filter.isEmpty()) {
-                return problem(HttpStatus.BAD_REQUEST, "Tipo di documento sconosciuto");
+                return problem(HttpStatus.BAD_REQUEST, "Unknown document kind");
             }
         }
         Optional<Kind> only = filter;
@@ -84,7 +84,7 @@ public class RegistryController {
     public ResponseEntity<?> versions(@PathVariable String appId, @PathVariable String kind, @PathVariable String documentId) {
         return key(appId, kind, documentId)
                 .<ResponseEntity<?>>map(k -> ResponseEntity.ok(store.versions(k)))
-                .orElseGet(() -> problem(HttpStatus.NOT_FOUND, "Documento sconosciuto"));
+                .orElseGet(() -> problem(HttpStatus.NOT_FOUND, "Unknown document"));
     }
 
     @PostMapping(path = "/registry/apps/{appId}/documents/{kind}/{documentId}/versions", consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -94,7 +94,7 @@ public class RegistryController {
                                   Principal principal) {
         Optional<DocumentKey> key = key(appId, kind, documentId);
         if (key.isEmpty()) {
-            return problem(HttpStatus.BAD_REQUEST, "Tipo di documento o identificativo non valido");
+            return problem(HttpStatus.BAD_REQUEST, "Invalid document kind or identifier");
         }
         Optional<String> invalid = checkContent(key.get(), content);
         if (invalid.isPresent()) {
@@ -103,17 +103,17 @@ public class RegistryController {
         List<Issue> issues = validation.validate(key.get().kind(), content);
         if (!issues.isEmpty()) {
             ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
-            problem.setTitle("Il documento non rispetta lo schema");
+            problem.setTitle("The document does not match the schema");
             problem.setProperty("errors", issues);
             return ResponseEntity.badRequest().body(problem);
         }
-        // Modifiche concorrenti: chi salva indica l'ultima versione che conosce.
+        // Concurrent changes: whoever saves states the latest version they know.
         if (ifMatch != null && !ifMatch.isBlank() && !ifMatch.trim().equals("*")) {
             String expected = ifMatch.trim().replaceAll("^W/", "").replace("\"", "");
             Optional<DocumentVersion> latest = store.latest(key.get());
             if (latest.isEmpty() || !latest.get().hash().equals(expected)) {
                 ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.PRECONDITION_FAILED);
-                problem.setTitle("Il documento è stato modificato da un altro salvataggio");
+                problem.setTitle("The document was changed by another save");
                 latest.ifPresent(v -> {
                     problem.setProperty("latest", v.hash());
                     problem.setProperty("latestAuthor", v.author());
@@ -138,32 +138,32 @@ public class RegistryController {
                                     @PathVariable String hash, @RequestBody Model.ReviewRequest request, Principal principal) {
         Optional<DocumentKey> key = key(appId, kind, documentId);
         if (key.isEmpty()) {
-            return problem(HttpStatus.NOT_FOUND, "Documento sconosciuto");
+            return problem(HttpStatus.NOT_FOUND, "Unknown document");
         }
         String action = request.action() == null ? "" : request.action();
         if (!List.of("request", "approve", "reject").contains(action)) {
-            return problem(HttpStatus.BAD_REQUEST, "Azione di revisione sconosciuta");
+            return problem(HttpStatus.BAD_REQUEST, "Unknown review action");
         }
         Actor actor = Actor.of(principal);
         if (!action.equals("request")) {
             Optional<DocumentVersion> version = store.version(key.get(), hash);
             if (version.isEmpty()) {
-                return problem(HttpStatus.NOT_FOUND, "Versione inesistente");
+                return problem(HttpStatus.NOT_FOUND, "Version not found");
             }
             if (actor.authenticated() && !actor.hasAnyRole(properties.approverRoles())) {
-                return problem(HttpStatus.FORBIDDEN, "Solo un revisore può approvare o respingere");
+                return problem(HttpStatus.FORBIDDEN, "Only a reviewer can approve or reject");
             }
             if (actor.authenticated() && actor.name().equals(version.get().author())) {
-                return problem(HttpStatus.FORBIDDEN, "L'autore di una versione non può approvarla né respingerla");
+                return problem(HttpStatus.FORBIDDEN, "The author of a version cannot approve or reject it");
             }
         }
         String note = request.note() == null ? null : request.note().strip();
         if (note != null && note.length() > 500) {
-            return problem(HttpStatus.BAD_REQUEST, "Nota troppo lunga (al massimo 500 caratteri)");
+            return problem(HttpStatus.BAD_REQUEST, "Note too long (at most 500 characters)");
         }
         return switch (store.review(key.get(), hash, action, actor.name(), note)) {
             case ReviewOutcome.Done done -> ResponseEntity.ok(done.version());
-            case ReviewOutcome.NotFound ignored -> problem(HttpStatus.NOT_FOUND, "Versione inesistente");
+            case ReviewOutcome.NotFound ignored -> problem(HttpStatus.NOT_FOUND, "Version not found");
             case ReviewOutcome.NotAllowed notAllowed -> problem(HttpStatus.CONFLICT, notAllowed.reason());
         };
     }
@@ -188,26 +188,26 @@ public class RegistryController {
                                      @RequestParam("env") String env, @RequestBody Model.PublishRequest request) {
         Optional<DocumentKey> key = key(appId, kind, documentId);
         if (key.isEmpty()) {
-            return problem(HttpStatus.BAD_REQUEST, "Tipo di documento o identificativo non valido");
+            return problem(HttpStatus.BAD_REQUEST, "Invalid document kind or identifier");
         }
         if (!Model.IDENTIFIER.matcher(env).matches()) {
-            return problem(HttpStatus.BAD_REQUEST, "Ambiente non valido");
+            return problem(HttpStatus.BAD_REQUEST, "Invalid environment");
         }
         Optional<DocumentVersion> version = request.hash() == null ? Optional.empty() : store.version(key.get(), request.hash());
         if (version.isEmpty()) {
-            return problem(HttpStatus.BAD_REQUEST, "Versione inesistente");
+            return problem(HttpStatus.BAD_REQUEST, "Version not found");
         }
         if (properties.protectedEnvironments().contains(env)) {
             if (!version.get().state().equals(State.APPROVED.value())) {
-                return problem(HttpStatus.CONFLICT, "Nell'ambiente «" + env + "» si pubblicano solo versioni approvate");
+                return problem(HttpStatus.CONFLICT, "Only approved versions can be published in the «" + env + "» environment");
             }
-            // Una navigazione con voci verso schermate assenti nell'ambiente non si pubblica; per le schermate i
-            // riferimenti mancanti restano un avviso (getReferences), perché i collegamenti tra schermate fanno cicli.
+            // A navigation with items pointing to screens missing from the environment is not published; for screens
+            // missing references stay a warning (getReferences), because links between screens form cycles.
             if (key.get().kind() == Kind.NAVIGATION) {
                 List<ScreenReference> missing = references(key.get(), request.hash(), env).missing();
                 if (!missing.isEmpty()) {
                     ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
-                    problem.setTitle("La navigazione cita schermate non pubblicate nell'ambiente «" + env + "»");
+                    problem.setTitle("The navigation cites screens not published in the «" + env + "» environment");
                     problem.setProperty("missingReferences", missing);
                     return ResponseEntity.status(HttpStatus.CONFLICT).body(problem);
                 }
@@ -222,15 +222,15 @@ public class RegistryController {
                                         @PathVariable String hash, @RequestParam(value = "env", required = false) String env) {
         Optional<DocumentKey> key = key(appId, kind, documentId);
         if (key.isEmpty() || store.version(key.get(), hash).isEmpty()) {
-            return problem(HttpStatus.NOT_FOUND, "Versione inesistente");
+            return problem(HttpStatus.NOT_FOUND, "Version not found");
         }
         if (env != null && !Model.IDENTIFIER.matcher(env).matches()) {
-            return problem(HttpStatus.BAD_REQUEST, "Ambiente non valido");
+            return problem(HttpStatus.BAD_REQUEST, "Invalid environment");
         }
         return ResponseEntity.ok(references(key.get(), hash, env));
     }
 
-    /** Schermate citate dalla versione; mancano quelle senza pubblicazione nell'ambiente (o senza versioni, se env è null). */
+    /** Screens cited by the version; missing are those not published in the environment (or with no versions, if env is null). */
     private ReferenceReport references(DocumentKey key, String hash, String env) {
         List<ScreenReference> all = References.of(key.kind(), key.documentId(), store.content(key, hash).orElseThrow());
         List<ScreenReference> missing = all.stream().filter(r -> {
@@ -247,21 +247,21 @@ public class RegistryController {
         return Kind.parse(kind).map(k -> new DocumentKey(appId, k, documentId));
     }
 
-    /** Controlli minimi sul contenuto: oggetto JSON con schemaVersion e con l'identificativo del percorso. */
+    /** Minimal checks on the content: a JSON object with schemaVersion and the identifier of the path. */
     static Optional<String> checkContent(DocumentKey key, String content) {
         Map<String, Object> document;
         try {
             document = JsonParserFactory.getJsonParser().parseMap(content);
         } catch (IllegalArgumentException e) {
-            // Comprende JsonParseException.
-            return Optional.of("Il contenuto non è un oggetto JSON");
+            // Includes JsonParseException.
+            return Optional.of("The content is not a JSON object");
         }
         if (!(document.get("schemaVersion") instanceof String)) {
-            return Optional.of("Manca schemaVersion");
+            return Optional.of("schemaVersion is missing");
         }
         Object id = document.get(key.kind().idProperty());
         if (!key.documentId().equals(id)) {
-            return Optional.of("L'identificativo nel contenuto (" + key.kind().idProperty() + ") non coincide con quello del percorso");
+            return Optional.of("The identifier in the content (" + key.kind().idProperty() + ") does not match the one in the path");
         }
         return Optional.empty();
     }
@@ -273,8 +273,8 @@ public class RegistryController {
     }
 
     /**
-     * Chi fa la richiesta: nome utente e ruoli del realm di Keycloak ({@code realm_access.roles}). Senza autenticazione
-     * (profilo no-auth) è «developer», senza ruoli né controlli di revisione.
+     * Who makes the request: user name and roles of the Keycloak realm ({@code realm_access.roles}). Without
+     * authentication (no-auth profile) it is «developer», with no roles and no review checks.
      */
     record Actor(String name, List<String> roles, boolean authenticated) {
 

@@ -25,8 +25,8 @@ import org.springframework.web.context.WebApplicationContext;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * Il contratto registry.yaml 0.5 dal lato HTTP: validazione, modifiche concorrenti, revisione, ambienti protetti,
- * riferimenti tra documenti.
+ * The registry.yaml 0.5 contract over HTTP: validation, concurrent changes, review, protected environments,
+ * cross-document references.
  */
 @SpringBootTest
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
@@ -69,19 +69,19 @@ class RegistryApiTest {
     }
 
     @Test
-    void senzaTokenNonSiEntra() throws Exception {
+    void withoutATokenThereIsNoAccess() throws Exception {
         mvc.perform(get("/registry/apps")).andExpect(status().isUnauthorized());
     }
 
     @Test
-    void unDocumentoFuoriSchemaSiRifiutaConLeIndicazioni() throws Exception {
+    void aDocumentNotMatchingTheSchemaIsRejectedWithDetails() throws Exception {
         String invalid = """
                 {"schemaVersion":"1.0","screen":"fatture-elenco","components":[{"type":"tabella"},{"type":"text"}]}""";
         mvc.perform(post(BASE + "/versions").with(user("mario", "operator")).contentType(MediaType.APPLICATION_JSON).content(invalid))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.title").value("Il documento non rispetta lo schema"))
+                .andExpect(jsonPath("$.title").value("The document does not match the schema"))
                 .andExpect(jsonPath("$.errors[0].path").value(org.hamcrest.Matchers.startsWith("/components/")));
-        // L'autore è il nome utente del token.
+        // The author is the user name of the token.
         mvc.perform(post(BASE + "/versions").with(user("mario", "operator")).contentType(MediaType.APPLICATION_JSON).content(VALID))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.author").value("mario"))
@@ -89,20 +89,20 @@ class RegistryApiTest {
     }
 
     @Test
-    void identificativiNonValidiSiRifiutano() throws Exception {
+    void invalidIdentifiersAreRejected() throws Exception {
         mvc.perform(post("/registry/apps/Demo_1/documents/screen/x/versions").with(user("mario")).contentType(MediaType.APPLICATION_JSON).content(VALID))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
-    void conIfMatchIlSalvataggioRiesceSoloSullUltimaVersione() throws Exception {
+    void withIfMatchTheSaveSucceedsOnlyOnTheLatestVersion() throws Exception {
         String first = save(VALID, user("mario", "operator"));
         String second = VALID.replace("Fatture", "Fatture emesse");
-        // Luisa salva partendo dalla prima versione: va bene.
+        // Luisa saves starting from the first version: fine.
         mvc.perform(post(BASE + "/versions").with(user("luisa", "operator")).header("If-Match", "\"" + first + "\"")
                         .contentType(MediaType.APPLICATION_JSON).content(second))
                 .andExpect(status().isCreated());
-        // Mario salva ancora partendo dalla prima: qualcuno ha salvato nel frattempo.
+        // Mario saves again starting from the first one: someone saved in the meantime.
         mvc.perform(post(BASE + "/versions").with(user("mario", "operator")).header("If-Match", "\"" + first + "\"")
                         .contentType(MediaType.APPLICATION_JSON).content(VALID.replace("Fatture", "Fatture ricevute")))
                 .andExpect(status().isPreconditionFailed())
@@ -110,17 +110,17 @@ class RegistryApiTest {
     }
 
     @Test
-    void revisioneConQuattroOcchiEAmbientiProtetti() throws Exception {
+    void fourEyesReviewAndProtectedEnvironments() throws Exception {
         String hash = save(VALID, user("mario", "operator"));
         String publish = "{\"hash\":\"" + hash + "\"}";
-        // In sviluppo si pubblica sempre; in produzione solo una versione approvata.
+        // In development anything is published; in production only an approved version.
         mvc.perform(put(BASE + "/published").param("env", "development").with(user("mario", "operator")).contentType(MediaType.APPLICATION_JSON).content(publish))
                 .andExpect(status().isNoContent());
         mvc.perform(put(BASE + "/published").param("env", "production").with(user("mario", "operator")).contentType(MediaType.APPLICATION_JSON).content(publish))
                 .andExpect(status().isConflict());
 
         review(hash, "request", user("mario", "operator"), 200);
-        // Un operatore non approva; l'autore nemmeno se è responsabile.
+        // An operator does not approve; nor does the author, even as a manager.
         review(hash, "approve", user("anna", "operator"), 403);
         review(hash, "approve", user("mario", "manager"), 403);
         review(hash, "approve", user("luisa", "manager"), 200);
@@ -136,7 +136,7 @@ class RegistryApiTest {
     }
 
     @Test
-    void unaNavigazioneSiPubblicaInProduzioneSoloConLeSueSchermate() throws Exception {
+    void aNavigationIsPublishedInProductionOnlyWithItsScreens() throws Exception {
         String nav = "/registry/apps/demo/documents/navigation/principale";
         String navigation = """
                 {"schemaVersion":"1.0","navigation":"principale","areas":[{"id":"fatture","label":"Fatture","items":[
@@ -146,7 +146,7 @@ class RegistryApiTest {
                 .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString(), Map.class).get("hash");
         String screenHash = save(VALID, user("mario", "operator"));
 
-        // Senza ambiente: manca la schermata che nel registro non esiste.
+        // Without an environment: the screen that does not exist in the registry is missing.
         mvc.perform(get(nav + "/versions/" + navHash + "/references").with(user("mario")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.env").doesNotExist())
@@ -154,7 +154,7 @@ class RegistryApiTest {
                 .andExpect(jsonPath("$.missing.length()").value(1))
                 .andExpect(jsonPath("$.missing[0].screen").value("fattura-nuova"))
                 .andExpect(jsonPath("$.missing[0].path").value("/areas/0/items/1/screen"));
-        // In sviluppo nessuna delle due è pubblicata, ma la navigazione si pubblica lo stesso.
+        // In development neither is published, but the navigation is published anyway.
         mvc.perform(get(nav + "/versions/" + navHash + "/references").param("env", "development").with(user("mario")))
                 .andExpect(jsonPath("$.env").value("development"))
                 .andExpect(jsonPath("$.missing.length()").value(2));
@@ -162,7 +162,7 @@ class RegistryApiTest {
                         .contentType(MediaType.APPLICATION_JSON).content("{\"hash\":\"" + navHash + "\"}"))
                 .andExpect(status().isNoContent());
 
-        // In produzione, approvata, si rifiuta finché le schermate non ci sono.
+        // In production, approved, it is rejected until the screens are there.
         mvc.perform(post(nav + "/versions/" + navHash + "/review").with(user("mario", "operator")).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"action\":\"request\"}")).andExpect(status().isOk());
         mvc.perform(post(nav + "/versions/" + navHash + "/review").with(user("luisa", "manager")).contentType(MediaType.APPLICATION_JSON)
@@ -178,7 +178,7 @@ class RegistryApiTest {
                 .andExpect(jsonPath("$.missingReferences.length()").value(1))
                 .andExpect(jsonPath("$.missingReferences[0].screen").value("fattura-nuova"));
 
-        // Versione inesistente o ambiente non valido.
+        // Version not found or invalid environment.
         mvc.perform(get(nav + "/versions/inesistente/references").with(user("mario"))).andExpect(status().isNotFound());
         mvc.perform(get(nav + "/versions/" + navHash + "/references").param("env", "Prod!").with(user("mario"))).andExpect(status().isBadRequest());
     }

@@ -1,34 +1,35 @@
 openapi: 3.1.0
 info:
-  title: KinetiX - Contratto del registry
+  title: KinetiX - Registry contract
   version: 0.5.0
   description: >
-    Registro delle definizioni delle applicazioni. Un'applicazione è fatta di documenti separati: ogni schermata,
-    la navigazione e ogni tema sono un documento a sé, con le proprie versioni e le proprie pubblicazioni.
-    Le versioni sono immutabili e identificate dall'hash del contenuto; pubblicare significa far puntare un ambiente
-    a una versione di un documento. Il registry valida il contenuto contro lo schema del tipo di documento
-    (screen.schema.json, navigation.schema.json, theme.schema.json) e rifiuta i documenti non validi.
+    Registry of the application definitions. An application is made of separate documents: every screen, the
+    navigation and every theme are documents of their own, with their own versions and publications.
+    Versions are immutable and identified by the hash of their content; publishing means pointing an environment at a
+    version of a document. The registry validates the content against the schema of the document kind
+    (screen.schema.json, navigation.schema.json, theme.schema.json, messages.schema.json) and rejects invalid documents.
 
-    0.3: cataloghi delle traduzioni come documenti (kind messages, un documento per lingua); revisione delle versioni (bozza → in-revisione → approvata o respinta, con il principio dei quattro occhi),
-    ambienti protetti in cui si pubblicano solo versioni approvate, salvataggio condizionato da If-Match per non
-    sovrascrivere le modifiche di altri, errori di validazione dettagliati (`errors` nel Problem).
+    0.3: translation catalogues as documents (kind messages, one document per language); review of versions (draft →
+    in review → approved or rejected, with the four-eyes principle), protected environments where only approved
+    versions are published, saving conditioned by If-Match so as not to overwrite other people's changes, detailed
+    validation errors (`errors` in the Problem).
 
-    0.4: controllo dei riferimenti tra documenti. La navigazione (`screen` delle voci) e le schermate (passi `navigate`,
-    nodi `link` con `screen`) citano altre schermate per identificativo: `getReferences` dice quali sono e quali
-    mancano in un ambiente; negli ambienti protetti una navigazione si pubblica solo se tutte le sue schermate sono
-    pubblicate lì (altrimenti 409 con `missingReferences`). Per le schermate è solo un avviso, perché i collegamenti
-    tra schermate formano spesso cicli (elenco e dettaglio).
+    0.4: check of cross-document references. The navigation (`screen` of its items) and the screens (`navigate` steps,
+    `link` nodes with `screen`) cite other screens by identifier: `getReferences` tells which ones and which are
+    missing in an environment; in the protected environments a navigation is published only if all its screens are
+    published there (otherwise 409 with `missingReferences`). For screens it is only a warning, because links between
+    screens often form cycles (list and detail).
 
-    0.5 (non compatibile con 0.4): valori in inglese. Stati di revisione draft, in-review, approved, rejected; azioni
-    request, approve, reject; ambienti di esempio development, testing, production.
+    0.5 (not compatible with 0.4): English values. Review states draft, in-review, approved, rejected; actions
+    request, approve, reject; sample environments development, testing, production.
   license:
-    name: Proprietaria
+    name: Proprietary
     identifier: LicenseRef-Proprietary
 servers:
   - url: /
 tags:
   - name: registry
-    description: Documenti delle applicazioni, versioni e pubblicazione.
+    description: Documents of the applications, versions and publication.
 security:
   - cookieAuth: []
   - bearerAuth: []
@@ -37,10 +38,10 @@ paths:
     get:
       tags: [registry]
       operationId: listApps
-      summary: Elenco delle applicazioni visibili all'utente
+      summary: List of the applications visible to the user
       responses:
         '200':
-          description: Applicazioni.
+          description: Applications.
           content:
             application/json:
               schema:
@@ -53,16 +54,16 @@ paths:
     get:
       tags: [registry]
       operationId: listDocuments
-      summary: Documenti dell'applicazione (schermate, navigazione, temi)
+      summary: Documents of the application (screens, navigation, themes, catalogues)
       parameters:
         - name: kind
           in: query
           required: false
-          description: Solo i documenti di questo tipo.
+          description: Only the documents of this kind.
           schema: { $ref: '#/components/schemas/DocumentKind' }
       responses:
         '200':
-          description: Documenti, con l'ultima versione e gli ambienti in cui sono pubblicati.
+          description: Documents, with the latest version and the environments where they are published.
           content:
             application/json:
               schema:
@@ -78,10 +79,10 @@ paths:
     get:
       tags: [registry]
       operationId: listVersions
-      summary: Storico delle versioni di un documento
+      summary: Version history of a document
       responses:
         '200':
-          description: Versioni, dalla più recente.
+          description: Versions, newest first.
           content:
             application/json:
               schema:
@@ -92,19 +93,19 @@ paths:
     post:
       tags: [registry]
       operationId: saveVersion
-      summary: Salva una nuova versione del documento (immutabile)
+      summary: Saves a new (immutable) version of the document
       parameters:
         - name: If-Match
           in: header
           required: false
-          description: Hash (tra virgolette) dell'ultima versione nota al client.
+          description: Hash (in quotes) of the latest version known to the client.
           schema: { type: string }
       description: >
-        Il contenuto si valida contro lo schema del tipo di documento (se non è valido: 400 con `errors`).
-        L'identificativo nel contenuto (`screen`, `navigation` o `theme`) deve coincidere con `documentId`.
-        Salvare due volte lo stesso contenuto restituisce la stessa versione. Con `If-Match` (l'hash dell'ultima
-        versione che il client conosce) il salvataggio riesce solo se nessuno ha salvato nel frattempo; altrimenti 412.
-        La versione nuova è una bozza.
+        The content is validated against the schema of the document kind (if it is not valid: 400 with `errors`).
+        The identifier in the content (`screen`, `navigation`, `theme` or `messages`) must match `documentId`.
+        Saving the same content twice returns the same version. With `If-Match` (the hash of the latest version the
+        client knows) the save succeeds only if nobody saved in the meantime; otherwise 412.
+        The new version is a draft.
       requestBody:
         required: true
         content:
@@ -112,7 +113,7 @@ paths:
             schema: { $ref: '#/components/schemas/DocumentContent' }
       responses:
         '201':
-          description: Versione creata (o già esistente con lo stesso contenuto).
+          description: Version created (or already existing with the same content).
           content:
             application/json:
               schema: { $ref: '#/components/schemas/DocumentVersion' }
@@ -120,7 +121,7 @@ paths:
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '412':
-          description: Un altro salvataggio è arrivato prima; il Problem indica `latest` e `latestAuthor`.
+          description: Another save arrived first; the Problem states `latest` and `latestAuthor`.
           content:
             application/problem+json:
               schema: { $ref: '#/components/schemas/Problem' }
@@ -136,11 +137,11 @@ paths:
     post:
       tags: [registry]
       operationId: reviewVersion
-      summary: Cambia lo stato di revisione di una versione
+      summary: Changes the review state of a version
       description: >
-        `request`: da draft o rejected a in-review (chiunque possa scrivere). `approve` e `reject`: da
-        in-review ad approved o rejected; solo chi ha un ruolo di revisore e non è l'autore della versione.
-        Il contenuto della versione non cambia mai.
+        `request`: from draft or rejected to in-review (anyone who can write). `approve` and `reject`: from in-review to
+        approved or rejected; only someone with a reviewer role who is not the author of the version.
+        The content of the version never changes.
       requestBody:
         required: true
         content:
@@ -148,7 +149,7 @@ paths:
             schema: { $ref: '#/components/schemas/ReviewRequest' }
       responses:
         '200':
-          description: Versione con il nuovo stato.
+          description: Version with the new state.
           content:
             application/json:
               schema: { $ref: '#/components/schemas/DocumentVersion' }
@@ -157,7 +158,7 @@ paths:
         '403': { $ref: '#/components/responses/Problem' }
         '404': { $ref: '#/components/responses/Problem' }
         '409':
-          description: Azione non ammessa nello stato attuale (per esempio approvare una bozza).
+          description: Action not allowed in the current state (for example approving a draft).
           content:
             application/problem+json:
               schema: { $ref: '#/components/schemas/Problem' }
@@ -174,20 +175,20 @@ paths:
         in: query
         required: false
         description: >
-          Ambiente in cui controllare i riferimenti: mancano le schermate senza una versione pubblicata lì. Senza
-          ambiente mancano le schermate che nel registro dell'applicazione non esistono.
+          Environment where the references are checked: missing are the screens without a version published there.
+          Without an environment, missing are the screens that do not exist in the application's registry.
         schema: { type: string, examples: [development] }
     get:
       tags: [registry]
       operationId: getReferences
-      summary: Schermate citate da una versione e quelle che mancano
+      summary: Screens cited by a version and those that are missing
       description: >
-        Riferimenti per identificativo verso altre schermate: `screen` delle voci della navigazione, passi `navigate`
-        e nodi `link` con `screen` delle schermate. Un riferimento della schermata a se stessa non conta, né un valore
-        con un'espressione ({{ }}). Temi e cataloghi non hanno riferimenti.
+        References by identifier to other screens: `screen` of the navigation items, `navigate` steps and `link`
+        nodes with `screen` in screens. A reference of a screen to itself does not count, nor does a value with an
+        expression ({{ }}). Themes and catalogues have no references.
       responses:
         '200':
-          description: Riferimenti della versione.
+          description: References of the version.
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ReferenceReport' }
@@ -206,10 +207,10 @@ paths:
     get:
       tags: [registry]
       operationId: getVersion
-      summary: Contenuto di una versione
+      summary: Content of a version
       responses:
         '200':
-          description: Documento.
+          description: Document.
           content:
             application/json:
               schema: { $ref: '#/components/schemas/DocumentContent' }
@@ -227,42 +228,42 @@ paths:
     get:
       tags: [registry]
       operationId: getPublished
-      summary: Versione pubblicata di un documento in un ambiente (con ETag)
-      description: Il runtime carica così ogni schermata, la navigazione e il tema, ognuno quando serve.
+      summary: Version of a document published in an environment (with ETag)
+      description: This is how the runtime loads every screen, the navigation and the theme, each when needed.
       responses:
         '200':
-          description: Documento pubblicato.
+          description: Published document.
           headers:
             ETag: { schema: { type: string } }
           content:
             application/json:
               schema: { $ref: '#/components/schemas/DocumentContent' }
-        '304': { description: Non modificato. }
+        '304': { description: Not modified. }
         '401': { $ref: '#/components/responses/Problem' }
         '404': { $ref: '#/components/responses/Problem' }
     put:
       tags: [registry]
       operationId: publish
-      summary: Pubblica una versione del documento in un ambiente
+      summary: Publishes a version of the document in an environment
       description: >
-        Negli ambienti protetti (di norma collaudo e produzione) si pubblicano solo versioni approvate (altrimenti 409)
-        e una navigazione si pubblica solo se le schermate che cita sono già pubblicate nello stesso ambiente
-        (altrimenti 409 con `missingReferences`). Negli altri ambienti la pubblicazione riesce comunque: i riferimenti
-        mancanti si leggono prima con `getReferences`.
+        In the protected environments (usually testing and production) only approved versions are published (otherwise
+        409) and a navigation is published only if the screens it cites are already published in the same environment
+        (otherwise 409 with `missingReferences`). In the other environments publishing succeeds anyway: the missing
+        references are read beforehand with `getReferences`.
       requestBody:
         required: true
         content:
           application/json:
             schema: { $ref: '#/components/schemas/PublishRequest' }
       responses:
-        '204': { description: Pubblicato. }
+        '204': { description: Published. }
         '400': { $ref: '#/components/responses/Problem' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Problem' }
         '409':
           description: >
-            Ambiente protetto e versione non approvata, oppure navigazione con schermate non pubblicate
-            nell'ambiente (`missingReferences`).
+            Protected environment and version not approved, or navigation with screens not published in the
+            environment (`missingReferences`).
           content:
             application/problem+json:
               schema: { $ref: '#/components/schemas/Problem' }
@@ -285,11 +286,11 @@ components:
       name: documentId
       in: path
       required: true
-      description: Identificativo del documento (kebab-case), uguale a `screen`, `navigation` o `theme` nel contenuto.
+      description: Identifier of the document (kebab-case), equal to `screen`, `navigation`, `theme` or `messages` in the content.
       schema: { type: string, pattern: '^[a-z0-9]+(-[a-z0-9]+)*$' }
   responses:
     Problem:
-      description: Errore in formato RFC 9457.
+      description: Error in RFC 9457 format.
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }
@@ -297,7 +298,7 @@ components:
     DocumentKind:
       type: string
       enum: [screen, navigation, theme, messages]
-      description: Tipo di documento, che decide lo schema di validazione (messages = catalogo delle traduzioni di una lingua, schema messages.schema.json).
+      description: Document kind, which decides the validation schema (messages = translation catalogue of one language, schema messages.schema.json).
     AppSummary:
       type: object
       required: [id, name]
@@ -312,16 +313,16 @@ components:
         kind: { $ref: '#/components/schemas/DocumentKind' }
         id: { type: string }
         latest:
-          description: Ultima versione salvata.
+          description: Latest saved version.
           $ref: '#/components/schemas/DocumentVersion'
         publishedEnvironments:
           type: object
-          description: Ambiente → hash della versione pubblicata.
+          description: Environment → hash of the published version.
           additionalProperties: { type: string }
     DocumentContent:
       type: object
       description: >
-        Il documento JSON (una schermata, la navigazione o un tema), validato contro lo schema del suo tipo.
+        The JSON document (a screen, the navigation, a theme or a catalogue), validated against the schema of its kind.
       required: [schemaVersion]
       properties:
         schemaVersion: { type: string }
@@ -330,14 +331,14 @@ components:
       type: object
       required: [hash, createdAt, author]
       properties:
-        hash: { type: string, description: Hash del contenuto. }
+        hash: { type: string, description: Hash of the content. }
         createdAt: { type: string, format: date-time }
         author: { type: string }
         state:
           type: string
           enum: [draft, in-review, approved, rejected]
-          description: Stato di revisione. Dove è pubblicata lo dice `publishedEnvironments` del documento.
-        reviewedBy: { type: string, description: Chi ha approvato o respinto. }
+          description: Review state. Where it is published is stated by `publishedEnvironments` of the document.
+        reviewedBy: { type: string, description: Who approved or rejected it. }
         reviewedAt: { type: string, format: date-time }
         reviewNote: { type: string, maxLength: 500 }
     ReviewRequest:
@@ -350,20 +351,20 @@ components:
       type: object
       required: [screen, path]
       properties:
-        screen: { type: string, description: Identificativo della schermata citata. }
-        path: { type: string, description: Posizione del riferimento nel documento (JSON Pointer). }
+        screen: { type: string, description: Identifier of the cited screen. }
+        path: { type: string, description: Position of the reference in the document (JSON Pointer). }
     ReferenceReport:
       type: object
       required: [references, missing]
       properties:
-        env: { type: string, description: Ambiente controllato; assente se il controllo è sull'esistenza. }
+        env: { type: string, description: Environment checked; absent when the check is on existence. }
         references:
           type: array
-          description: Tutti i riferimenti della versione, nell'ordine del documento.
+          description: All the references of the version, in document order.
           items: { $ref: '#/components/schemas/ScreenReference' }
         missing:
           type: array
-          description: I riferimenti a schermate non pubblicate nell'ambiente (o inesistenti, senza ambiente).
+          description: The references to screens not published in the environment (or that do not exist, without an environment).
           items: { $ref: '#/components/schemas/ScreenReference' }
     PublishRequest:
       type: object
@@ -381,16 +382,16 @@ components:
         correlationId: { type: string }
         errors:
           type: array
-          description: Problemi di validazione del documento (posizione JSON Pointer e messaggio).
+          description: Validation problems of the document (JSON Pointer position and message).
           items:
             type: object
             required: [path, message]
             properties:
               path: { type: string }
               message: { type: string }
-        latest: { type: string, description: Con 412, hash dell'ultima versione. }
-        latestAuthor: { type: string, description: Con 412, autore dell'ultima versione. }
+        latest: { type: string, description: With 412, hash of the latest version. }
+        latestAuthor: { type: string, description: With 412, author of the latest version. }
         missingReferences:
           type: array
-          description: Con 409 alla pubblicazione, le schermate citate e non pubblicate nell'ambiente.
+          description: With 409 on publication, the screens cited and not published in the environment.
           items: { $ref: '#/components/schemas/ScreenReference' }

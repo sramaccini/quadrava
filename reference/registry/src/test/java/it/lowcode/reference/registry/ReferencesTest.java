@@ -6,11 +6,11 @@ import it.lowcode.reference.registry.Model.Kind;
 import it.lowcode.reference.registry.Model.ScreenReference;
 import org.junit.jupiter.api.Test;
 
-/** Riferimenti per identificativo verso altre schermate, dalla navigazione e dalle schermate. */
+/** References by identifier to other screens, from the navigation and from screens. */
 class ReferencesTest {
 
     @Test
-    void laNavigazioneCitaLeSchermateDelleVociAncheAnnidate() {
+    void theNavigationCitesTheScreensOfItsItemsEvenNested() {
         String navigation = """
                 {"schemaVersion":"1.0","navigation":"principale","default":"fatture","areas":[
                   {"id":"fatture","label":"Fatture","items":[
@@ -22,7 +22,7 @@ class ReferencesTest {
     }
 
     @Test
-    void laSchermataCitaPassiNavigateENodiLinkMaNonSeStessaNeLeEspressioni() {
+    void aScreenCitesNavigateStepsAndLinkNodesButNotItselfNorExpressions() {
         String screen = """
                 {"schemaVersion":"1.0","screen":"ordini-elenco","components":[
                   {"type":"link","label":"Dettaglio","screen":"ordine-dettaglio"},
@@ -36,7 +36,7 @@ class ReferencesTest {
     }
 
     @Test
-    void temiECataloghiNonHannoRiferimenti() {
+    void themesAndCataloguesHaveNoReferences() {
         assertThat(References.of(Kind.THEME, "chiaro", "{\"schemaVersion\":\"1.0\",\"theme\":\"chiaro\",\"screen\":\"x\"}")).isEmpty();
     }
 }

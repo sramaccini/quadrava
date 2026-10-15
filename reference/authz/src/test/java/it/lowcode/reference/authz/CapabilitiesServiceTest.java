@@ -13,25 +13,25 @@ class CapabilitiesServiceTest {
             "manager", List.of("ordini.ordine.leggi", "ordini.ordine.approva"))));
 
     @Test
-    void permessiSonoLaUnioneDeiRuoli() {
+    void permissionsAreTheUnionOfTheRoles() {
         var caps = service.forRoles(List.of("operator", "manager"));
         assertThat(caps.permissions()).containsExactly("ordini.ordine.approva", "ordini.ordine.leggi");
     }
 
     @Test
-    void ruoloSconosciutoNonDaPermessi() {
-        assertThat(service.forRoles(List.of("sconosciuto")).permissions()).isEmpty();
+    void unknownRoleGivesNoPermissions() {
+        assertThat(service.forRoles(List.of("unknown")).permissions()).isEmpty();
     }
 
     @Test
-    void laVersioneCambiaQuandoCambianoIPermessi() {
+    void theVersionChangesWhenThePermissionsChange() {
         var operator = service.forRoles(List.of("operator"));
         var manager = service.forRoles(List.of("manager"));
         assertThat(operator.version()).isNotEqualTo(manager.version());
     }
 
     @Test
-    void checkRispettaIPermessi() {
+    void checkFollowsThePermissions() {
         var request = new Model.CheckRequest(List.of(
                 new Model.CheckItem("ordini.ordine.leggi", null),
                 new Model.CheckItem("ordini.ordine.approva", null)));

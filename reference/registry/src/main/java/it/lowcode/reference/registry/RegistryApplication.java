@@ -13,7 +13,7 @@ public class RegistryApplication {
         SpringApplication.run(RegistryApplication.class, args);
     }
 
-    /** Archivio su file se è indicata una cartella, altrimenti in memoria. */
+    /** File store if a folder is given, otherwise in memory. */
     @Bean
     VersionStore versionStore(RegistryProperties properties) {
         String dir = properties.storageDir();

@@ -8,14 +8,14 @@ import java.util.Map;
 import org.springframework.boot.json.JsonParserFactory;
 
 /**
- * Riferimenti per identificativo da un documento ad altre schermate: {@code screen} delle voci della navigazione,
- * passi {@code navigate} e nodi {@code link} con {@code screen} delle schermate. Un riferimento della schermata a se
- * stessa non conta, né un valore con un'espressione ({@code {{ }}}): si sa solo quando la schermata è aperta.
+ * References by identifier from a document to other screens: {@code screen} of the navigation items, {@code navigate}
+ * steps and {@code link} nodes with {@code screen} in screens. A reference of a screen to itself does not count, nor
+ * does a value with an expression ({@code {{ }}}): it is known only when the screen is open.
  */
 public final class References {
     private References() {}
 
-    /** Riferimenti del contenuto (già validato), nell'ordine del documento, con la posizione in JSON Pointer. */
+    /** References of the content (already validated), in document order, with the position as a JSON Pointer. */
     public static List<ScreenReference> of(Kind kind, String documentId, String content) {
         if (kind != Kind.SCREEN && kind != Kind.NAVIGATION) {
             return List.of();

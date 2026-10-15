@@ -12,14 +12,14 @@ import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
-/** Il validatore del registro e quello del frontend (Ajv) devono dare lo stesso giudizio sugli stessi documenti. */
+/** The registry validator and the front-end one (Ajv) must give the same verdict on the same documents. */
 class SchemaValidationTest {
 
     private final SchemaValidation validation = new SchemaValidation();
     private static final Path EXAMPLES = Path.of("..", "..", "examples");
 
     @Test
-    void tuttiGliEsempiSonoValidiAncheNelRegistro() throws IOException {
+    void everyExampleIsValidInTheRegistryToo() throws IOException {
         int checked = 0;
         try (Stream<Path> files = Stream.concat(Files.list(EXAMPLES), Files.list(EXAMPLES.resolve("themes")))) {
             for (Path file : files.filter(f -> f.toString().endsWith(".json") && !f.getFileName().toString().equals("index.json")).toList()) {
@@ -34,7 +34,7 @@ class SchemaValidationTest {
     }
 
     @Test
-    void iCataloghiDegliEsempiSonoDocumentiMessagesValidi() throws IOException {
+    void theExampleCataloguesAreValidMessagesDocuments() throws IOException {
         for (String locale : List.of("it", "en")) {
             String texts = Files.readString(EXAMPLES.resolve("i18n").resolve(locale + ".json"), StandardCharsets.UTF_8);
             String document = "{\"schemaVersion\":\"1.0\",\"messages\":\"" + locale + "\",\"texts\":" + texts + "}";
@@ -44,11 +44,11 @@ class SchemaValidationTest {
     }
 
     @Test
-    void segnalaPosizioneEMotivo() {
+    void reportsPositionAndReason() {
         List<Issue> issues = validation.validate(Kind.SCREEN, """
                 {"schemaVersion":"1.0","screen":"x","components":[{"type":"grid","columns":13,"components":[]}]}""");
         assertThat(issues).isNotEmpty();
         assertThat(issues).anySatisfy(i -> assertThat(i.path()).isEqualTo("/components/0/columns"));
-        assertThat(validation.validate(Kind.THEME, "non json")).extracting(Issue::path).containsExactly("/");
+        assertThat(validation.validate(Kind.THEME, "not json")).extracting(Issue::path).containsExactly("/");
     }
 }

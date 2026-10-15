@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.yaml.snakeyaml.Yaml;
 
-/** Il contratto contracts/registry.yaml è leggibile e coerente, e l'implementazione espone solo ciò che descrive. */
+/** The contract contracts/registry.yaml is readable and consistent, and the implementation exposes only what it describes. */
 class ContractTest {
 
     private static final Path CONTRACT = Path.of("..", "..", "contracts", "registry.yaml");
@@ -30,7 +30,7 @@ class ContractTest {
     }
 
     @Test
-    void ogniRiferimentoPuntaAQualcosaCheEsiste() throws IOException {
+    void everyReferencePointsToSomethingThatExists() throws IOException {
         Map<String, Object> doc = contract();
         assertThat(doc.get("openapi")).isEqualTo("3.1.0");
         String text = Files.readString(CONTRACT, StandardCharsets.UTF_8);
@@ -50,7 +50,7 @@ class ContractTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    void ogniOperazioneDelControllerEDescrittaNelContratto() throws IOException {
+    void everyControllerOperationIsDescribedInTheContract() throws IOException {
         Map<String, Object> paths = (Map<String, Object>) contract().get("paths");
         List<String> undocumented = new ArrayList<>();
         for (Method method : RegistryController.class.getDeclaredMethods()) {

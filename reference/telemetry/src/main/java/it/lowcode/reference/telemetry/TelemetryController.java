@@ -15,8 +15,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Ingestione OTLP/HTTP (JSON) di tracce e log, secondo contracts/telemetry.yaml. Il corpo deve essere un oggetto JSON
- * con l'elenco del suo segnale (`resourceSpans` per le tracce, `resourceLogs` per i log); gli errori sono Problem.
+ * OTLP/HTTP (JSON) ingestion of traces and logs, according to contracts/telemetry.yaml. The body must be a JSON object
+ * with the list of its signal (`resourceSpans` for traces, `resourceLogs` for logs); errors are Problems.
  */
 @RestController
 public class TelemetryController {
@@ -43,21 +43,21 @@ public class TelemetryController {
 
     private ResponseEntity<?> accept(String signal, String listProperty, String payload) {
         if (payload.getBytes(StandardCharsets.UTF_8).length > maxBytes) {
-            return problem(HttpStatus.CONTENT_TOO_LARGE, "Corpo oltre il limite di " + maxBytes + " byte");
+            return problem(HttpStatus.CONTENT_TOO_LARGE, "Body over the limit of " + maxBytes + " bytes");
         }
         Map<String, Object> document;
         try {
             document = JsonParserFactory.getJsonParser().parseMap(payload);
         } catch (IllegalArgumentException e) {
-            // Comprende JsonParseException: non JSON, o JSON che non è un oggetto.
-            return problem(HttpStatus.BAD_REQUEST, "Il corpo non è un oggetto JSON");
+            // Includes JsonParseException: not JSON, or JSON that is not an object.
+            return problem(HttpStatus.BAD_REQUEST, "The body is not a JSON object");
         }
         if (!(document.get(listProperty) instanceof java.util.List<?>)) {
-            return problem(HttpStatus.BAD_REQUEST, "Manca l'elenco " + listProperty + " (payload OTLP/HTTP JSON di " + signal + ")");
+            return problem(HttpStatus.BAD_REQUEST, "The " + listProperty + " list is missing (OTLP/HTTP JSON payload of " + signal + ")");
         }
         String clean = redactor.redact(payload);
-        // In produzione qui si inoltra al collector OpenTelemetry; la reference implementation si limita a registrare.
-        log.debug("Ricevuti {} ({} byte dopo la redazione)", signal, clean.length());
+        // In production this is where the payload goes to the OpenTelemetry collector; the reference implementation only logs it.
+        log.debug("Received {} ({} bytes after redaction)", signal, clean.length());
         return ResponseEntity.accepted().build();
     }
 

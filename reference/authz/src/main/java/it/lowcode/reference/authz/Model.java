@@ -2,7 +2,7 @@ package it.lowcode.reference.authz;
 
 import java.util.List;
 
-/** Tipi del contratto contracts/authz.yaml. */
+/** Types of the contract contracts/authz.yaml. */
 public final class Model {
     private Model() {}
 

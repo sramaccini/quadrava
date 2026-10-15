@@ -26,19 +26,19 @@ import org.slf4j.LoggerFactory;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * Archivio delle versioni. Ogni documento (una schermata, la navigazione, un tema) ha le proprie versioni immutabili,
- * identificate dall'hash del contenuto, e le proprie pubblicazioni: pubblicare è far puntare un ambiente a una versione.
+ * Version store. Every document (a screen, the navigation, a theme) has its own immutable versions, identified by the
+ * hash of the content, and its own publications: publishing means pointing an environment at a version.
  *
- * <p>Senza cartella tutto resta in memoria. Con una cartella ({@code lowcode.registry.storage-dir}) ogni documento ha
- * la sua: {@code <app>/<tipo>/<documento>/index.json} con versioni e pubblicazioni, e un file {@code <hash>.json} per
- * ogni contenuto; i file si scrivono in modo atomico (file temporaneo e poi rinomina). Gli identificativi sono
- * controllati ({@link Model#IDENTIFIER}) prima di diventare percorsi.
+ * <p>Without a folder everything stays in memory. With a folder ({@code lowcode.registry.storage-dir}) every document
+ * has its own: {@code <app>/<kind>/<document>/index.json} with versions and publications, and a {@code <hash>.json}
+ * file for every content; files are written atomically (temporary file, then rename). Identifiers are checked
+ * ({@link Model#IDENTIFIER}) before they become paths.
  */
 public class VersionStore {
 
     private static final Logger log = LoggerFactory.getLogger(VersionStore.class);
 
-    /** Contenuto di {@code index.json}: versioni dalla più vecchia, e ambiente → hash pubblicato. */
+    /** Content of {@code index.json}: versions from the oldest, and environment → published hash. */
     record Index(List<DocumentVersion> versions, Map<String, String> published) {}
 
     private record Entry(List<DocumentVersion> versions, Map<String, String> contents, Map<String, String> published) {
@@ -47,7 +47,7 @@ public class VersionStore {
         }
     }
 
-    /** Esito di un cambio di stato di revisione. */
+    /** Outcome of a review state change. */
     public sealed interface ReviewOutcome {
         record Done(DocumentVersion version) implements ReviewOutcome {}
 
@@ -60,12 +60,12 @@ public class VersionStore {
     private final Path dir;
     private final JsonMapper json = JsonMapper.builder().build();
 
-    /** Archivio in memoria. */
+    /** In-memory store. */
     public VersionStore() {
         this(null);
     }
 
-    /** Archivio su file nella cartella data (creata se manca); {@code null} = in memoria. */
+    /** File store in the given folder (created if missing); {@code null} = in memory. */
     public VersionStore(Path dir) {
         this.dir = dir;
         if (dir != null) {
@@ -90,13 +90,13 @@ public class VersionStore {
         return version;
     }
 
-    /** Ultima versione salvata. */
+    /** Latest saved version. */
     public synchronized Optional<DocumentVersion> latest(DocumentKey key) {
         Entry entry = documents.get(key);
         return entry == null || entry.versions().isEmpty() ? Optional.empty() : Optional.of(entry.versions().getLast());
     }
 
-    /** Versioni di un documento, dalla più recente. */
+    /** Versions of a document, newest first. */
     public synchronized List<DocumentVersion> versions(DocumentKey key) {
         Entry entry = documents.get(key);
         return entry == null ? List.of() : List.copyOf(entry.versions().reversed());
@@ -113,8 +113,8 @@ public class VersionStore {
     }
 
     /**
-     * Cambia lo stato di revisione di una versione: {@code richiedi} da bozza o respinta a in revisione;
-     * {@code approva} e {@code respingi} da in revisione. I controlli su chi può farlo sono del chiamante.
+     * Changes the review state of a version: {@code request} from draft or rejected to in review; {@code approve} and
+     * {@code reject} from in review. Checks on who may do it are up to the caller.
      */
     public synchronized ReviewOutcome review(DocumentKey key, String hash, String action, String reviewer, String note) {
         Entry entry = documents.get(key);
@@ -134,7 +134,7 @@ public class VersionStore {
                 default -> null;
             };
             if (next == null) {
-                return new ReviewOutcome.NotAllowed("Azione «" + action + "» non ammessa per una versione nello stato «" + state + "»");
+                return new ReviewOutcome.NotAllowed("Action «" + action + "» not allowed for a version in state «" + state + "»");
             }
             DocumentVersion updated = version.withReview(next, reviewer, note);
             entry.versions().set(i, updated);
@@ -144,7 +144,7 @@ public class VersionStore {
         return new ReviewOutcome.NotFound();
     }
 
-    /** Fa puntare un ambiente a una versione esistente del documento; false se la versione non esiste. */
+    /** Points an environment at an existing version of the document; false if the version does not exist. */
     public synchronized boolean publish(DocumentKey key, String env, String hash) {
         Entry entry = documents.get(key);
         if (entry == null || !entry.contents().containsKey(hash)) {
@@ -160,13 +160,13 @@ public class VersionStore {
         return entry == null ? Optional.empty() : Optional.ofNullable(entry.published().get(env));
     }
 
-    /** Ambiente → hash pubblicato. */
+    /** Environment → published hash. */
     public synchronized Map<String, String> publishedEnvironments(DocumentKey key) {
         Entry entry = documents.get(key);
         return entry == null ? Map.of() : Map.copyOf(entry.published());
     }
 
-    /** Documenti di un'applicazione. */
+    /** Documents of an application. */
     public synchronized List<DocumentKey> documents(String appId) {
         return documents.keySet().stream().filter(k -> k.appId().equals(appId)).toList();
     }
@@ -175,12 +175,12 @@ public class VersionStore {
         return documents.keySet().stream().map(DocumentKey::appId).distinct().sorted().toList();
     }
 
-    // --- archivio su file ---
+    // --- file store ---
 
     private Path folder(DocumentKey key) {
-        // Identificativi già controllati dal controller; qui di nuovo, perché diventano percorsi.
+        // Identifiers already checked by the controller; checked again here, because they become paths.
         if (!Model.IDENTIFIER.matcher(key.appId()).matches() || !Model.IDENTIFIER.matcher(key.documentId()).matches()) {
-            throw new IllegalArgumentException("Identificativo non valido");
+            throw new IllegalArgumentException("Invalid identifier");
         }
         return dir.resolve(key.appId()).resolve(key.kind().value()).resolve(key.documentId());
     }
@@ -197,7 +197,7 @@ public class VersionStore {
             }
             write(folder.resolve("index.json"), json.writeValueAsString(new Index(entry.versions(), entry.published())));
         } catch (IOException e) {
-            throw new UncheckedIOException("Archivio del registro non scrivibile", e);
+            throw new UncheckedIOException("Registry store not writable", e);
         }
     }
 
@@ -216,9 +216,9 @@ public class VersionStore {
                 }
             }
         } catch (IOException e) {
-            throw new UncheckedIOException("Archivio del registro non leggibile", e);
+            throw new UncheckedIOException("Registry store not readable", e);
         }
-        log.info("Registro su file in {}: {} documenti", dir.toAbsolutePath(), documents.size());
+        log.info("Registry stored on file in {}: {} documents", dir.toAbsolutePath(), documents.size());
     }
 
     private void loadDocument(Path index) throws IOException {
@@ -231,7 +231,7 @@ public class VersionStore {
         String appId = rel.getName(0).toString();
         String documentId = rel.getName(2).toString();
         if (kind.isEmpty() || !Model.IDENTIFIER.matcher(appId).matches() || !Model.IDENTIFIER.matcher(documentId).matches()) {
-            log.warn("Cartella ignorata nell'archivio del registro: {}", rel);
+            log.warn("Folder ignored in the registry store: {}", rel);
             return;
         }
         Index data = json.readValue(Files.readString(index, StandardCharsets.UTF_8), Index.class);
@@ -239,7 +239,7 @@ public class VersionStore {
         for (DocumentVersion version : data.versions()) {
             Path file = folder.resolve(version.hash() + ".json");
             if (!version.hash().matches("[0-9a-f]{64}") || !Files.exists(file)) {
-                log.warn("Versione senza contenuto ignorata: {} {}", rel, version.hash());
+                log.warn("Version without content ignored: {} {}", rel, version.hash());
                 continue;
             }
             entry.versions().add(version);

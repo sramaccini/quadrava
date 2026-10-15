@@ -4,7 +4,7 @@ server:
 spring:
   application:
     name: lowcode-telemetry
-  # Gli errori del framework (parametro mancante, corpo non leggibile) in formato Problem (RFC 9457), come dice il contratto.
+  # Framework errors (missing parameter, unreadable body) in Problem format (RFC 9457), as the contract says.
   mvc:
     problemdetails:
       enabled: true

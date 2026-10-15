@@ -9,9 +9,9 @@ import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * Legge il token CSRF a ogni richiesta, così il cookie {@code XSRF-TOKEN} arriva al browser già con la prima risposta
- * (Spring Security lo crea solo quando qualcuno lo legge). Le applicazioni lo rimandano nell'intestazione
- * {@code X-XSRF-TOKEN} delle scritture.
+ * Reads the CSRF token on every request, so the {@code XSRF-TOKEN} cookie reaches the browser with the very first
+ * response (Spring Security creates it only when someone reads it). The applications send it back in the
+ * {@code X-XSRF-TOKEN} header of writes.
  */
 class CsrfCookieFilter extends OncePerRequestFilter {
 

@@ -5,14 +5,14 @@ import java.util.List;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * Configurazione del BFF.
+ * Configuration of the BFF.
  *
- * @param routes          API inoltrate: ogni prefisso del percorso va a un solo servizio. Nessun altro host è
- *                        raggiungibile dal browser attraverso il BFF.
- * @param frontendOrigins origini delle applicazioni (runtime, editor) verso cui si può tornare dopo il login.
- * @param maxBodyBytes    dimensione massima del corpo inoltrato (i file arrivano fino a 100 MB).
- * @param home            dove va l'utente dopo un login senza pagina di ritorno, e chi apre la radice del BFF.
- * @param endSessionUri   logout OIDC di Keycloak, per chiudere anche la sua sessione all'uscita.
+ * @param routes          forwarded APIs: every path prefix goes to one service only. No other host can be reached from
+ *                        the browser through the BFF.
+ * @param frontendOrigins origins of the applications (runtime, editor) the user may return to after the login.
+ * @param maxBodyBytes    maximum size of a forwarded body (files go up to 100 MB).
+ * @param home            where the user goes after a login without a return page, and whoever opens the BFF root.
+ * @param endSessionUri   Keycloak OIDC logout, to close its session too when signing out.
  */
 @ConfigurationProperties("lowcode.bff")
 public record BffProperties(List<Route> routes, List<String> frontendOrigins, Long maxBodyBytes, String home, String endSessionUri) {
@@ -25,8 +25,8 @@ public record BffProperties(List<Route> routes, List<String> frontendOrigins, Lo
     }
 
     /**
-     * @param prefix percorso inoltrato, per esempio {@code /registry}: vale per {@code /registry} e {@code /registry/...}
-     * @param target indirizzo del servizio, per esempio {@code http://localhost:8081}; il percorso resta quello della richiesta
+     * @param prefix forwarded path, for example {@code /registry}: it covers {@code /registry} and {@code /registry/...}
+     * @param target address of the service, for example {@code http://localhost:8081}; the path stays that of the request
      */
     public record Route(String prefix, URI target) {
 

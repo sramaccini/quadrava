@@ -44,8 +44,8 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 /**
- * Inoltro delle API, sicurezza delle chiamate delle applicazioni e login con ritorno. Il servizio a valle è un server
- * HTTP finto che registra le richieste; il token d'accesso è finto (Keycloak non serve).
+ * API forwarding, security of the applications' calls and login with return. The downstream service is a fake HTTP
+ * server that records the requests; the access token is fake (no Keycloak needed).
  */
 @SpringBootTest
 class ApiForwardingTest {
@@ -64,8 +64,8 @@ class ApiForwardingTest {
             byte[] reply = "{\"ok\":true}".getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().add("Content-Type", "application/json");
             exchange.getResponseHeaders().add("ETag", "\"v1\"");
-            exchange.getResponseHeaders().add("Set-Cookie", "interno=1");
-            exchange.getResponseHeaders().add("X-Interno", "segreto");
+            exchange.getResponseHeaders().add("Set-Cookie", "internal=1");
+            exchange.getResponseHeaders().add("X-Internal", "secret");
             exchange.sendResponseHeaders(exchange.getRequestMethod().equals("POST") ? 201 : 200, reply.length);
             exchange.getResponseBody().write(reply);
             exchange.close();
@@ -82,8 +82,8 @@ class ApiForwardingTest {
     static void routes(DynamicPropertyRegistry registry) {
         registry.add("lowcode.bff.routes[0].prefix", () -> "/registry");
         registry.add("lowcode.bff.routes[0].target", () -> "http://localhost:" + upstream.getAddress().getPort());
-        // Un servizio spento: nessuno ascolta su questa porta.
-        registry.add("lowcode.bff.routes[1].prefix", () -> "/spento");
+        // A service that is down: nobody listens on this port.
+        registry.add("lowcode.bff.routes[1].prefix", () -> "/down");
         registry.add("lowcode.bff.routes[1].target", () -> "http://localhost:1");
         registry.add("lowcode.bff.frontend-origins[0]", () -> "http://localhost:4201");
         registry.add("lowcode.bff.home", () -> "http://localhost:4200/");
@@ -95,7 +95,7 @@ class ApiForwardingTest {
         @Bean
         @Primary
         AccessTokens fakeAccessTokens() {
-            return (user, request, response) -> Optional.of("token-di-prova");
+            return (user, request, response) -> Optional.of("test-token");
         }
     }
 
@@ -117,42 +117,42 @@ class ApiForwardingTest {
     @BeforeEach
     void setUp() {
         received.clear();
-        // Prima la sicurezza, poi l'inoltro: come nel server vero.
+        // Security first, then forwarding: as in the real server.
         mvc = MockMvcBuilders.webAppContextSetup(context).addFilters(security, forwarding).build();
     }
 
     @Test
-    void senzaSessioneLeApiRispondono401ElePagineMandanoAlLogin() throws Exception {
+    void withoutASessionApisAnswer401AndPagesGoToTheLogin() throws Exception {
         mvc.perform(get("/registry/apps")).andExpect(status().isUnauthorized());
         mvc.perform(get("/bff/user")).andExpect(status().isUnauthorized());
-        // Un browser che chiede una pagina (Accept: text/html) va al login.
-        mvc.perform(get("/una-pagina").accept(MediaType.TEXT_HTML)).andExpect(status().is3xxRedirection());
+        // A browser asking for a page (Accept: text/html) goes to the login.
+        mvc.perform(get("/a-page").accept(MediaType.TEXT_HTML)).andExpect(status().is3xxRedirection());
         assertThat(received).isEmpty();
     }
 
     @Test
-    void inoltraConIlTokenDellaSessioneSenzaCookieERestituisceSoloIntestazioniSicure() throws Exception {
+    void forwardsWithTheSessionTokenWithoutCookiesAndReturnsOnlySafeHeaders() throws Exception {
         mvc.perform(get("/registry/apps/demo/documents/screen/ordini-elenco/published").queryParam("env", "production")
                         .with(oauth2Login())
                         .header("traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
-                        .header("Authorization", "Bearer dal-browser")
-                        .cookie(new Cookie("JSESSIONID", "sessione")))
+                        .header("Authorization", "Bearer from-the-browser")
+                        .cookie(new Cookie("JSESSIONID", "session")))
                 .andExpect(status().isOk())
                 .andExpect(content().json("{\"ok\":true}"))
                 .andExpect(header().string("ETag", "\"v1\""))
-                // I cookie del servizio non arrivano al browser (quello del CSRF è del BFF).
-                .andExpect(cookie().doesNotExist("interno"))
-                .andExpect(header().doesNotExist("X-Interno"));
+                // The service's cookies do not reach the browser (the CSRF one belongs to the BFF).
+                .andExpect(cookie().doesNotExist("internal"))
+                .andExpect(header().doesNotExist("X-Internal"));
         assertThat(received).hasSize(1);
         Received r = received.getFirst();
         assertThat(r.uri()).isEqualTo("/registry/apps/demo/documents/screen/ordini-elenco/published?env=production");
-        assertThat(r.headers().get("Authorization")).containsExactly("Bearer token-di-prova");
+        assertThat(r.headers().get("Authorization")).containsExactly("Bearer test-token");
         assertThat(r.headers().get("Traceparent")).containsExactly("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01");
         assertThat(r.headers()).doesNotContainKey("Cookie");
     }
 
     @Test
-    void ilCookieCsrfArrivaGiaConLaPrimaRisposta() throws Exception {
+    void theCsrfCookieArrivesWithTheFirstResponse() throws Exception {
         mvc.perform(get("/registry/apps").with(oauth2Login()))
                 .andExpect(status().isOk())
                 .andExpect(cookie().exists("XSRF-TOKEN"))
@@ -160,10 +160,10 @@ class ApiForwardingTest {
     }
 
     @Test
-    // csrf() di spring-security-test sostituisce per sempre il repository dei token nel filtro condiviso: dopo questo
-    // test si riparte da un contesto pulito.
+    // csrf() of spring-security-test replaces the token repository in the shared filter for good: after this test a
+    // clean context is used.
     @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
-    void leScrittureRichiedonoIlTokenCsrf() throws Exception {
+    void writesRequireTheCsrfToken() throws Exception {
         String doc = "{\"schemaVersion\":\"1.0\",\"screen\":\"ordini-elenco\"}";
         mvc.perform(post("/registry/apps/demo/documents/screen/ordini-elenco/versions").with(oauth2Login())
                         .contentType(MediaType.APPLICATION_JSON).content(doc))
@@ -177,46 +177,46 @@ class ApiForwardingTest {
     }
 
     @Test
-    void servizioSpentoEPercorsiStraniNonPassano() throws Exception {
-        mvc.perform(get("/spento/qualcosa").with(oauth2Login()))
+    void serviceDownAndOddPathsDoNotPass() throws Exception {
+        mvc.perform(get("/down/something").with(oauth2Login()))
                 .andExpect(status().isBadGateway())
-                .andExpect(content().json("{\"title\":\"Servizio non raggiungibile\",\"status\":502}"));
+                .andExpect(content().json("{\"title\":\"Service unreachable\",\"status\":502}"));
         mvc.perform(get("/registry/%2e%2e/actuator/env").with(oauth2Login())).andExpect(status().isBadRequest());
         assertThat(received).isEmpty();
     }
 
     @Test
-    void loginConRitornoSoloVersoLeApplicazioniConsentite() throws Exception {
-        mvc.perform(get("/bff/login").queryParam("return", "http://localhost:4201/?anteprima"))
+    void loginReturnsOnlyToTheAllowedApplications() throws Exception {
+        mvc.perform(get("/bff/login").queryParam("return", "http://localhost:4201/?preview"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/oauth2/authorization/keycloak"))
-                .andExpect(request().sessionAttribute(LoginController.RETURN_ATTRIBUTE, "http://localhost:4201/?anteprima"));
-        mvc.perform(get("/bff/login").queryParam("return", "https://altro.example/")).andExpect(status().isBadRequest());
-        mvc.perform(get("/bff/login").queryParam("return", "http://utente@localhost:4201/")).andExpect(status().isBadRequest());
+                .andExpect(request().sessionAttribute(LoginController.RETURN_ATTRIBUTE, "http://localhost:4201/?preview"));
+        mvc.perform(get("/bff/login").queryParam("return", "https://other.example/")).andExpect(status().isBadRequest());
+        mvc.perform(get("/bff/login").queryParam("return", "http://user@localhost:4201/")).andExpect(status().isBadRequest());
     }
 
     @Test
-    void dopoIlLoginSiTornaAllaPaginaSalvata() throws Exception {
+    void afterTheLoginTheSavedPageIsOpened() throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.getSession(true).setAttribute(LoginController.RETURN_ATTRIBUTE, "http://localhost:4201/");
         MockHttpServletResponse response = new MockHttpServletResponse();
         new LoginController.ReturnToFrontend(properties).onAuthenticationSuccess(request, response, null);
         assertThat(response.getRedirectedUrl()).isEqualTo("http://localhost:4201/");
-        // Senza pagina salvata: la home delle applicazioni.
+        // Without a saved page: the home of the applications.
         MockHttpServletResponse other = new MockHttpServletResponse();
         new LoginController.ReturnToFrontend(properties).onAuthenticationSuccess(new MockHttpServletRequest(), other, null);
         assertThat(other.getRedirectedUrl()).isEqualTo("http://localhost:4200/");
     }
 
     @Test
-    void uscireChiudeAncheLaSessioneDiKeycloak() throws Exception {
+    void signingOutAlsoClosesTheKeycloakSession() throws Exception {
         mvc.perform(post("/logout").with(oidcLogin()).with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(result -> assertThat(result.getResponse().getRedirectedUrl())
                         .startsWith("http://idp.test/logout?id_token_hint=")
                         .endsWith("&post_logout_redirect_uri=http%3A%2F%2Flocalhost%2F"));
         mvc.perform(get("/").with(oidcLogin())).andExpect(redirectedUrl("http://localhost:4200/"));
-        // Dalle applicazioni: una chiamata JSON, che riceve l'indirizzo dove andare.
+        // From the applications: a JSON call, which receives the address to go to.
         mvc.perform(post("/logout").with(oidcLogin()).with(csrf()).accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(result -> assertThat(result.getResponse().getContentAsString()).startsWith("{\"redirect\":\"http://idp.test/logout?id_token_hint="));

@@ -9,7 +9,7 @@ import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
 import org.springframework.stereotype.Component;
 
-/** Il token d'accesso dell'utente della sessione, rinnovato se scaduto. Resta nel BFF: il browser non lo vede mai. */
+/** The access token of the session user, renewed when expired. It stays in the BFF: the browser never sees it. */
 public interface AccessTokens {
 
     Optional<String> forRequest(Authentication user, HttpServletRequest request, HttpServletResponse response);

@@ -4,7 +4,7 @@ server:
 spring:
   application:
     name: lowcode-authz
-  # Gli errori del framework (parametro mancante, corpo non leggibile) in formato Problem (RFC 9457), come dice il contratto.
+  # Framework errors (missing parameter, unreadable body) in Problem format (RFC 9457), as the contract says.
   mvc:
     problemdetails:
       enabled: true
@@ -20,7 +20,7 @@ management:
       exposure:
         include: health
 
-# Mappa ruolo -> permessi dell'applicazione di esempio (formato dominio.risorsa.azione).
+# Role → permissions map of the sample application (domain.resource.action format).
 lowcode:
   authz:
     role-permissions:

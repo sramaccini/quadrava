@@ -1,4 +1,4 @@
-# Keycloak per lo sviluppo locale. Solo per sviluppo: HTTP, credenziali di esempio, database interno.
+# Keycloak for local development. Development only: HTTP, sample credentials, embedded database.
 services:
   keycloak:
     image: quay.io/keycloak/keycloak:26.8.0

@@ -11,11 +11,11 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
- * Il registro accetta solo richieste con un token JWT di Keycloak (in produzione glielo aggiunge il BFF).
+ * The registry accepts only requests with a Keycloak JWT (in production the BFF adds it).
  *
- * <p>Il profilo {@code no-auth} serve solo a provare editor e runtime in locale senza Keycloak: nessuna
- * autenticazione, autore delle versioni «developer». Va attivato a mano ({@code --spring.profiles.active=no-auth})
- * e all'avvio lo segnala nel log.
+ * <p>The {@code no-auth} profile is only for trying the editor and the runtime locally without Keycloak: no
+ * authentication, versions authored by «developer». It must be switched on by hand
+ * ({@code --spring.profiles.active=no-auth}) and it says so in the log at start-up.
  */
 @Configuration
 public class SecurityConfig {
@@ -35,8 +35,8 @@ public class SecurityConfig {
 
     @Bean
     @Profile("no-auth")
-    SecurityFilterChain senzaAutenticazione(HttpSecurity http) throws Exception {
-        log.warn("Registro avviato SENZA autenticazione (profilo no-auth): solo per lo sviluppo locale.");
+    SecurityFilterChain withoutAuthentication(HttpSecurity http) throws Exception {
+        log.warn("Registry started WITHOUT authentication (no-auth profile): for local development only.");
         http.authorizeHttpRequests(a -> a.anyRequest().permitAll()).csrf(AbstractHttpConfigurer::disable);
         return http.build();
     }

@@ -1,19 +1,19 @@
 openapi: 3.1.0
 info:
-  title: KinetiX - Contratto di ingestione della telemetria
+  title: KinetiX - Telemetry ingestion contract
   version: 0.1.0
   description: >
-    Endpoint REST a cui il runtime invia tracce e log in formato OTLP/HTTP (JSON).
-    Il payload segue la specifica OpenTelemetry; qui si definiscono percorsi, sicurezza e limiti.
-    L'endpoint applica una seconda redazione dei dati sensibili e inoltra al collector.
+    REST endpoint to which the runtime sends traces and logs in OTLP/HTTP (JSON) format.
+    The payload follows the OpenTelemetry specification; this contract defines paths, security and limits.
+    The endpoint applies a second redaction of sensitive data and forwards to the collector.
   license:
-    name: Proprietaria
+    name: Proprietary
     identifier: LicenseRef-Proprietary
 servers:
   - url: /
 tags:
   - name: telemetry
-    description: Ingestione di tracce e log.
+    description: Ingestion of traces and logs.
 security:
   - cookieAuth: []
   - bearerAuth: []
@@ -22,14 +22,14 @@ paths:
     post:
       tags: [telemetry]
       operationId: ingestTraces
-      summary: Invio di tracce (OTLP/HTTP JSON)
+      summary: Send traces (OTLP/HTTP JSON)
       requestBody:
         required: true
         content:
           application/json:
             schema: { $ref: '#/components/schemas/OtlpPayload' }
       responses:
-        '202': { description: Accettato per l'elaborazione. }
+        '202': { description: Accepted for processing. }
         '400': { $ref: '#/components/responses/Problem' }
         '401': { $ref: '#/components/responses/Problem' }
         '413': { $ref: '#/components/responses/Problem' }
@@ -38,14 +38,14 @@ paths:
     post:
       tags: [telemetry]
       operationId: ingestLogs
-      summary: Invio di log (OTLP/HTTP JSON)
+      summary: Send logs (OTLP/HTTP JSON)
       requestBody:
         required: true
         content:
           application/json:
             schema: { $ref: '#/components/schemas/OtlpPayload' }
       responses:
-        '202': { description: Accettato per l'elaborazione. }
+        '202': { description: Accepted for processing. }
         '400': { $ref: '#/components/responses/Problem' }
         '401': { $ref: '#/components/responses/Problem' }
         '413': { $ref: '#/components/responses/Problem' }
@@ -56,14 +56,14 @@ components:
     bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
   responses:
     Problem:
-      description: Errore in formato RFC 9457.
+      description: Error in RFC 9457 format.
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }
   schemas:
     OtlpPayload:
       type: object
-      description: Corpo OTLP/HTTP JSON (resourceSpans oppure resourceLogs), come da specifica OpenTelemetry.
+      description: OTLP/HTTP JSON body (resourceSpans or resourceLogs), as in the OpenTelemetry specification.
       additionalProperties: true
     Problem:
       type: object

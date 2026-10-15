@@ -19,9 +19,9 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthzController {
 
     private static final String VERSION_HEADER = "X-Permissions-Version";
-    /** Formato dei permessi (dominio.risorsa.azione, minuscolo), come nel contratto. */
+    /** Permission format (domain.resource.action, lower case), as in the contract. */
     private static final Pattern PERMISSION = Pattern.compile("^[a-z0-9]+\\.[a-z0-9]+\\.[a-z0-9]+$");
-    /** Verifiche al massimo in un lotto (maxItems del contratto). */
+    /** Maximum number of checks in a batch (maxItems of the contract). */
     static final int MAX_CHECKS = 200;
 
     private final CapabilitiesService service;
@@ -40,14 +40,14 @@ public class AuthzController {
     @PostMapping("/authz/check")
     public ResponseEntity<?> check(@RequestBody Model.CheckRequest request, @AuthenticationPrincipal Jwt jwt) {
         if (request == null || request.checks() == null) {
-            return problem("Manca l'elenco checks");
+            return problem("The checks list is missing");
         }
         if (request.checks().size() > MAX_CHECKS) {
-            return problem("Troppe verifiche in un lotto (al massimo " + MAX_CHECKS + ")");
+            return problem("Too many checks in a batch (at most " + MAX_CHECKS + ")");
         }
         for (Model.CheckItem item : request.checks()) {
             if (item == null || item.permission() == null || !PERMISSION.matcher(item.permission()).matches()) {
-                return problem("Permesso non valido: il formato è dominio.risorsa.azione, minuscolo");
+                return problem("Invalid permission: the format is domain.resource.action, lower case");
             }
         }
         List<String> roles = rolesOf(jwt);
@@ -62,7 +62,7 @@ public class AuthzController {
         return ResponseEntity.badRequest().body(problem);
     }
 
-    /** Ruoli del realm Keycloak (claim realm_access.roles). */
+    /** Roles of the Keycloak realm (claim realm_access.roles). */
     private static List<String> rolesOf(Jwt jwt) {
         Object realmAccess = jwt.getClaim("realm_access");
         if (realmAccess instanceof Map<?, ?> map && map.get("roles") instanceof List<?> list) {

@@ -18,7 +18,7 @@ class VersionStoreTest {
     private final DocumentKey menu = new DocumentKey("ordini", Kind.NAVIGATION, "ordini");
 
     @Test
-    void stessoContenutoStessaVersione() {
+    void sameContentSameVersion() {
         var a = store.save(elenco, "{\"schemaVersion\":\"1.0\"}", "mario");
         var b = store.save(elenco, "{\"schemaVersion\":\"1.0\"}", "luisa");
         assertThat(a.hash()).isEqualTo(b.hash());
@@ -26,64 +26,64 @@ class VersionStoreTest {
     }
 
     @Test
-    void nonSiPubblicaUnaVersioneInesistente() {
-        assertThat(store.publish(elenco, "production", "inesistente")).isFalse();
+    void aMissingVersionIsNotPublished() {
+        assertThat(store.publish(elenco, "production", "missing")).isFalse();
     }
 
     @Test
-    void pubblicareFaPuntareUnAmbienteAUnaVersione() {
+    void publishingPointsAnEnvironmentAtAVersion() {
         var v1 = store.save(elenco, "{\"schemaVersion\":\"1.0\",\"n\":1}", "mario");
         var v2 = store.save(elenco, "{\"schemaVersion\":\"1.0\",\"n\":2}", "mario");
         assertThat(store.publish(elenco, "production", v1.hash())).isTrue();
         assertThat(store.publishedHash(elenco, "production")).contains(v1.hash());
-        // Ripristino = ripubblicare una versione: la precedente resta disponibile.
+        // Rollback = publishing a version again: the previous one stays available.
         assertThat(store.publish(elenco, "production", v2.hash())).isTrue();
         assertThat(store.content(elenco, v1.hash())).isPresent();
         assertThat(store.latest(elenco)).contains(v2);
     }
 
     @Test
-    void documentiSeparatiConVersioniEPubblicazioniProprie() {
-        var schermata = store.save(elenco, "{\"schemaVersion\":\"1.0\",\"screen\":\"ordini-elenco\"}", "mario");
+    void separateDocumentsWithTheirOwnVersionsAndPublications() {
+        var screen = store.save(elenco, "{\"schemaVersion\":\"1.0\",\"screen\":\"ordini-elenco\"}", "mario");
         store.save(menu, "{\"schemaVersion\":\"1.0\",\"navigation\":\"ordini\"}", "mario");
         assertThat(store.documents("ordini")).containsExactlyInAnyOrder(elenco, menu);
-        // Una versione di un documento non si pubblica come versione di un altro.
-        assertThat(store.publish(menu, "production", schermata.hash())).isFalse();
-        assertThat(store.publish(elenco, "production", schermata.hash())).isTrue();
-        assertThat(store.publishedEnvironments(elenco)).containsEntry("production", schermata.hash());
+        // A version of one document is not published as a version of another.
+        assertThat(store.publish(menu, "production", screen.hash())).isFalse();
+        assertThat(store.publish(elenco, "production", screen.hash())).isTrue();
+        assertThat(store.publishedEnvironments(elenco)).containsEntry("production", screen.hash());
         assertThat(store.publishedEnvironments(menu)).isEmpty();
         assertThat(store.appIds()).containsExactly("ordini");
     }
 
     @Test
-    void ilContenutoDeveAvereLIdentificativoDelPercorso() {
+    void theContentMustHaveTheIdentifierOfThePath() {
         assertThat(RegistryController.checkContent(elenco, "{\"schemaVersion\":\"1.0\",\"screen\":\"ordini-elenco\"}")).isEmpty();
-        assertThat(RegistryController.checkContent(elenco, "{\"schemaVersion\":\"1.0\",\"screen\":\"altro\"}")).isPresent();
+        assertThat(RegistryController.checkContent(elenco, "{\"schemaVersion\":\"1.0\",\"screen\":\"other\"}")).isPresent();
         assertThat(RegistryController.checkContent(menu, "{\"navigation\":\"ordini\"}")).isPresent();
         assertThat(RegistryController.checkContent(menu, "[1, 2]")).isPresent();
     }
 
     @Test
-    void revisioneDaBozzaAdApprovataORespinta() {
+    void reviewFromDraftToApprovedOrRejected() {
         var v = store.save(elenco, "{\"schemaVersion\":\"1.0\"}", "mario");
         assertThat(v.state()).isEqualTo("draft");
-        // Non si approva una bozza: prima si chiede la revisione.
+        // A draft is not approved: first the review is requested.
         assertThat(store.review(elenco, v.hash(), "approve", "luisa", null)).isInstanceOf(ReviewOutcome.NotAllowed.class);
         assertThat(store.review(elenco, v.hash(), "request", "mario", null)).isInstanceOf(ReviewOutcome.Done.class);
-        var respinta = (ReviewOutcome.Done) store.review(elenco, v.hash(), "reject", "luisa", "Manca il filtro per stato");
-        assertThat(respinta.version().state()).isEqualTo("rejected");
-        assertThat(respinta.version().reviewedBy()).isEqualTo("luisa");
-        assertThat(respinta.version().reviewNote()).isEqualTo("Manca il filtro per stato");
-        // Respinta, si può chiedere di nuovo; poi approvare.
+        var rejected = (ReviewOutcome.Done) store.review(elenco, v.hash(), "reject", "luisa", "The status filter is missing");
+        assertThat(rejected.version().state()).isEqualTo("rejected");
+        assertThat(rejected.version().reviewedBy()).isEqualTo("luisa");
+        assertThat(rejected.version().reviewNote()).isEqualTo("The status filter is missing");
+        // Once rejected, the review can be requested again; then approved.
         store.review(elenco, v.hash(), "request", "mario", null);
-        var approvata = (ReviewOutcome.Done) store.review(elenco, v.hash(), "approve", "luisa", null);
-        assertThat(approvata.version().state()).isEqualTo("approved");
-        assertThat(approvata.version().hash()).isEqualTo(v.hash());
-        assertThat(store.review(elenco, "inesistente", "request", "mario", null)).isInstanceOf(ReviewOutcome.NotFound.class);
+        var approved = (ReviewOutcome.Done) store.review(elenco, v.hash(), "approve", "luisa", null);
+        assertThat(approved.version().state()).isEqualTo("approved");
+        assertThat(approved.version().hash()).isEqualTo(v.hash());
+        assertThat(store.review(elenco, "missing", "request", "mario", null)).isInstanceOf(ReviewOutcome.NotFound.class);
     }
 
     @Test
-    void archivioSuFileSopravviveAlRiavvio(@TempDir Path dir) throws Exception {
+    void theFileStoreSurvivesARestart(@TempDir Path dir) throws Exception {
         var first = new VersionStore(dir);
         var v1 = first.save(elenco, "{\"schemaVersion\":\"1.0\",\"n\":1}", "mario");
         var v2 = first.save(elenco, "{\"schemaVersion\":\"1.0\",\"n\":2}", "mario");
@@ -104,9 +104,9 @@ class VersionStoreTest {
     }
 
     @Test
-    void identificativiNonValidiNonDiventanoPercorsi(@TempDir Path dir) {
+    void invalidIdentifiersDoNotBecomePaths(@TempDir Path dir) {
         var onDisk = new VersionStore(dir);
         assertThatThrownBy(() -> onDisk.save(new DocumentKey("..", Kind.SCREEN, "x"), "{}", "mario")).isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> onDisk.save(new DocumentKey("app", Kind.SCREEN, "../fuori"), "{}", "mario")).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> onDisk.save(new DocumentKey("app", Kind.SCREEN, "../outside"), "{}", "mario")).isInstanceOf(IllegalArgumentException.class);
     }
 }

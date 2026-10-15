@@ -21,14 +21,14 @@ import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 
 /**
- * Sessione lato server: il login OAuth2 (Authorization Code con PKCE) avviene qui e i token restano nel BFF; il
- * browser riceve solo il cookie di sessione.
+ * Server-side session: the OAuth2 login (Authorization Code with PKCE) happens here and the tokens stay in the BFF; the
+ * browser only gets the session cookie.
  *
  * <ul>
- *   <li>Le API ({@code /bff/**} e i prefissi inoltrati) rispondono 401 senza sessione, invece di reindirizzare al
- *       login: le applicazioni mostrano «Accedi» e passano da {@code /bff/login?return=...}.</li>
- *   <li>CSRF per applicazioni a pagina singola: il token sta nel cookie {@code XSRF-TOKEN} (leggibile dal browser) e
- *       torna nell'intestazione {@code X-XSRF-TOKEN} delle scritture.</li>
+ *   <li>The APIs ({@code /bff/**} and the forwarded prefixes) answer 401 without a session instead of redirecting to the
+ *       login: the applications show «Sign in» and go through {@code /bff/login?return=...}.</li>
+ *   <li>CSRF for single-page applications: the token is in the {@code XSRF-TOKEN} cookie (readable by the browser) and
+ *       comes back in the {@code X-XSRF-TOKEN} header of writes.</li>
  * </ul>
  */
 @Configuration
@@ -44,7 +44,7 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/health/**", "/bff/login").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(e -> e.defaultAuthenticationEntryPointFor(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED), api))
-                // spa() decide come leggere il token dalla richiesta; il repository a cookie (leggibile dal browser) va detto a parte.
+                // spa() decides how to read the token from the request; the cookie repository (readable by the browser) is set separately.
                 .csrf(c -> c.spa().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
                 .addFilterAfter(new CsrfCookieFilter(), CsrfFilter.class)
                 .oauth2Login(o -> o.successHandler(returnToFrontend))
@@ -52,7 +52,7 @@ public class SecurityConfig {
         return http.build();
     }
 
-    /** Le richieste delle applicazioni (non della navigazione del browser): {@code /bff/**} e i prefissi inoltrati. */
+    /** The requests of the applications (not browser navigation): {@code /bff/**} and the forwarded prefixes. */
     static RequestMatcher apiMatcher(BffProperties properties) {
         List<RequestMatcher> matchers = new ArrayList<>();
         matchers.add(PathPatternRequestMatcher.withDefaults().matcher("/bff/**"));
@@ -63,7 +63,7 @@ public class SecurityConfig {
         return new OrRequestMatcher(matchers);
     }
 
-    /** Ottiene e rinnova i token d'accesso dell'utente (refresh token), per l'inoltro delle API. */
+    /** Gets and renews the access tokens of the user (refresh token), for forwarding the APIs. */
     @Bean
     OAuth2AuthorizedClientManager authorizedClientManager(ClientRegistrationRepository registrations,
                                                           OAuth2AuthorizedClientRepository clients) {

@@ -11,7 +11,7 @@
 
   <artifactId>lowcode-registry</artifactId>
   <name>KinetiX reference - registry</name>
-  <description>Registry di esempio con versioni immutabili (contratto registry.yaml).</description>
+  <description>Sample registry with immutable versions (contract registry.yaml).</description>
 
   <dependencies>
     <dependency>
@@ -26,7 +26,7 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-actuator</artifactId>
     </dependency>
-    <!-- Validazione dei documenti contro gli stessi JSON Schema del frontend (draft 2020-12). -->
+    <!-- Validation of the documents against the same JSON Schemas as the front end (draft 2020-12). -->
     <dependency>
       <groupId>com.networknt</groupId>
       <artifactId>json-schema-validator</artifactId>
@@ -49,7 +49,7 @@
       <resource>
         <directory>src/main/resources</directory>
       </resource>
-      <!-- Gli schemi hanno una sola fonte: quella del frontend. -->
+      <!-- The schemas have a single source: the front end's. -->
       <resource>
         <directory>${project.basedir}/../../frontend/projects/schema/src/lib/schemas</directory>
         <targetPath>schemas</targetPath>

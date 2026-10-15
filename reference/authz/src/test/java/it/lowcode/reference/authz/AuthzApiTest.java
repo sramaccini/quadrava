@@ -21,7 +21,7 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
-/** Il contratto authz.yaml dal lato HTTP: capacità, verifiche a lotti e loro errori in formato Problem. */
+/** The authz.yaml contract over HTTP: capabilities, batch checks and their errors in Problem format. */
 @SpringBootTest
 class AuthzApiTest {
 
@@ -44,7 +44,7 @@ class AuthzApiTest {
     }
 
     @Test
-    void capacitaConVersioneNellIntestazione() throws Exception {
+    void capabilitiesWithVersionInTheHeader() throws Exception {
         mvc.perform(get("/authz/capabilities").param("app", "demo").with(operator()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.permissions[0]").exists())
@@ -53,7 +53,7 @@ class AuthzApiTest {
     }
 
     @Test
-    void parametroAppMancanteInFormatoProblem() throws Exception {
+    void missingAppParameterInProblemFormat() throws Exception {
         mvc.perform(get("/authz/capabilities").with(operator()))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
@@ -61,15 +61,15 @@ class AuthzApiTest {
     }
 
     @Test
-    void verificheNonValideRifiutate() throws Exception {
-        String formatoSbagliato = "{\"checks\":[{\"permission\":\"Ordini.Approva\"}]}";
-        mvc.perform(post("/authz/check").with(operator()).contentType(MediaType.APPLICATION_JSON).content(formatoSbagliato))
+    void invalidChecksAreRejected() throws Exception {
+        String wrongFormat = "{\"checks\":[{\"permission\":\"Orders.Approve\"}]}";
+        mvc.perform(post("/authz/check").with(operator()).contentType(MediaType.APPLICATION_JSON).content(wrongFormat))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.title").exists());
         mvc.perform(post("/authz/check").with(operator()).contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isBadRequest());
-        String troppe = "{\"checks\":[" + String.join(",", java.util.Collections.nCopies(AuthzController.MAX_CHECKS + 1, "{\"permission\":\"a.b.c\"}")) + "]}";
-        mvc.perform(post("/authz/check").with(operator()).contentType(MediaType.APPLICATION_JSON).content(troppe))
+        String tooMany = "{\"checks\":[" + String.join(",", java.util.Collections.nCopies(AuthzController.MAX_CHECKS + 1, "{\"permission\":\"a.b.c\"}")) + "]}";
+        mvc.perform(post("/authz/check").with(operator()).contentType(MediaType.APPLICATION_JSON).content(tooMany))
                 .andExpect(status().isBadRequest());
         mvc.perform(post("/authz/check").with(operator()).contentType(MediaType.APPLICATION_JSON).content("{\"checks\":[{\"permission\":\"fatture.fattura.leggi\"},{\"permission\":\"x.y.z\"}]}"))
                 .andExpect(status().isOk())
