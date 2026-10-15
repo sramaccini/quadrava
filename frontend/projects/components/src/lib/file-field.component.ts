@@ -5,10 +5,10 @@ import type { FieldDefinition } from 'schema';
 import { IconComponent } from './icon.component';
 
 const DEFAULT_MAX_KB = 1024;
-/** Il contenuto in base64 dentro il JSON pesa un terzo in più: oltre questo limite serve il multipart. */
+/** Base64 content inside the JSON weighs a third more: beyond this limit multipart is needed. */
 const MAX_BASE64_KB = 10240;
 
-/** Il file è ammesso da `accept`? Estensioni (`.pdf`), tipi esatti (`application/pdf`) e famiglie (`image/*`). */
+/** Is the file allowed by `accept`? Extensions (`.pdf`), exact types (`application/pdf`) and families (`image/*`). */
 export function accepts(accept: string | undefined, file: { name: string; type: string }): boolean {
   if (!accept) return true;
   const name = file.name.toLowerCase();
@@ -20,21 +20,21 @@ export function accepts(accept: string | undefined, file: { name: string; type: 
     .some((rule) => (rule.startsWith('.') ? name.endsWith(rule) : rule.endsWith('/*') ? type.startsWith(rule.slice(0, -1)) : type === rule));
 }
 
-/** Contenuto di un file in base64 (senza il prefisso `data:`). */
+/** Content of a file in base64 (without the `data:` prefix). */
 function readBase64(file: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result).replace(/^data:[^,]*,/, ''));
-    reader.onerror = () => reject(reader.error ?? new Error('lettura non riuscita'));
+    reader.onerror = () => reject(reader.error ?? new Error('read failed'));
     reader.readAsDataURL(file);
   });
 }
 
 /**
- * Campo `file`: un file per campo. Tipo e dimensione si controllano prima di qualunque invio. Con `upload` il file
- * parte subito verso il data source: in multipart (predefinito) come file vero, in base64 dentro il corpo JSON
- * (variabile `file`); il valore del campo diventa `{ name, type, size }` più la risposta del servizio. Senza
- * `upload` il valore contiene anche `content` (base64). Il nome del file è sempre testo.
+ * `file` field: one file per field. Type and size are checked before any upload. With `upload` the file
+ * goes right away to the data source: in multipart (default) as a real file, in base64 inside the JSON body
+ * (variable `file`); the value of the field becomes `{ name, type, size }` plus the service response. Without
+ * `upload` the value also contains `content` (base64). The name of the file is always text.
  */
 @Component({
   selector: 'lc-file-field',
@@ -86,7 +86,7 @@ export class FileFieldComponent {
   protected readonly error = signal<string | null>(null);
   private readonly picker = viewChild<ElementRef<HTMLInputElement>>('picker');
 
-  /** File corrente, letto dal valore del campo (anche quando arriva dai dati iniziali). */
+  /** Current file, read from the value of the field (also when it comes from the initial data). */
   protected readonly file = computed<{ name: string; size: number } | null>(() => {
     const v = this.value();
     if (v === null || typeof v !== 'object') return null;

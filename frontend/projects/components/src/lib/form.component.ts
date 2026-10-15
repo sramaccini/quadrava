@@ -8,7 +8,7 @@ import { FieldControlComponent } from './field-control.component';
 import { fieldError, repeaterError, repeaterRows } from './field-validation';
 import { nextId } from './shared';
 
-/** Form: i valori iniziali arrivano dal data source `source` (se restituisce un oggetto); le azioni ricevono `form` nello scope. */
+/** Form: initial values come from the `source` data source (if it returns an object); actions receive `form` in the scope. */
 @Component({
   selector: 'lc-form',
   imports: [FieldControlComponent, NzFormModule, NzButtonModule, NzTooltipModule],
@@ -16,12 +16,12 @@ import { nextId } from './shared';
   styles: `
     :host { display: block; container-type: inline-size; }
     form { max-width: 560px; }
-    /* Le righe ripetibili hanno bisogno di spazio in larghezza. */
+    /* Repeatable rows need horizontal space. */
     form.wide { max-width: 880px; }
     form.grid { max-width: none; display: grid; grid-template-columns: repeat(var(--lc-form-columns), minmax(0, 1fr)); column-gap: 16px; }
     form.grid > nz-form-item { grid-column: span var(--lc-field-span, 1); }
     form.grid > .actions { grid-column: 1 / -1; }
-    /* Con poco spazio (meno di 600px) la griglia torna a una colonna. */
+    /* With little space (less than 600px) the grid goes back to one column. */
     @container (max-width: 600px) {
       form.grid { grid-template-columns: minmax(0, 1fr); }
       form.grid > nz-form-item { grid-column: auto; }
@@ -75,9 +75,9 @@ export class FormComponent {
   readonly node = input.required<FormNode>();
   readonly runtime = input.required<ScreenRuntime>();
   readonly scope = input<Scope>({});
-  /** Se presente, accanto alle azioni compare un pulsante che annulla (usato dalle finestre con form). */
+  /** If present, a button that cancels appears next to the actions (used by form windows). */
   readonly cancelLabel = input<string | null>(null);
-  /** Dopo un'azione: true se i passi sono riusciti. Non si emette se la validazione blocca l'invio. */
+  /** After an action: true if the steps succeeded. Not emitted if validation blocks the submit. */
   readonly completed = output<boolean>();
   readonly cancelled = output<void>();
 
@@ -88,13 +88,13 @@ export class FormComponent {
   protected readonly busy = signal(false);
   protected readonly submitted = signal(false);
 
-  /** Il form contiene righe ripetibili. */
+  /** The form contains repeatable rows. */
   protected readonly hasRows = computed(() => this.node().fields.some((f) => f.type === 'repeater'));
 
-  /** Colonne della griglia (da 1 a 4). */
+  /** Columns of the grid (from 1 to 4). */
   protected readonly columns = computed(() => Math.min(4, Math.max(1, this.node().columns ?? 1)));
 
-  /** Colonne occupate da un campo, mai più di quelle della griglia. */
+  /** Columns taken by a field, never more than those of the grid. */
   protected span(field: FieldDefinition): number {
     return Math.min(this.columns(), Math.max(1, field.span ?? 1));
   }
@@ -102,7 +102,7 @@ export class FormComponent {
   protected readonly fieldScope = computed<Scope>(() => ({ ...this.scope(), form: this.values() }));
 
   constructor() {
-    // Valori iniziali dichiarati nel form (una sola volta), poi quelli del data source quando arriva.
+    // Initial values declared in the form (once), then those of the data source when it arrives.
     effect(() => {
       const initial = this.node().initial;
       untracked(() => this.values.set(this.normalize({ ...this.empty(), ...((initial ? this.runtime().resolveValue(initial, this.scope()) : {}) as Record<string, unknown>) })));
@@ -116,12 +116,12 @@ export class FormComponent {
     });
   }
 
-  /** Ogni campo dichiarato esiste nei valori (nullo): le espressioni `form.campo` non vanno in errore prima che arrivino i dati. */
+  /** Every declared field exists in the values (null): `form.field` expressions do not fail before the data arrives. */
   private empty(): Record<string, unknown> {
     return Object.fromEntries(this.node().fields.map((f) => [f.name, null]));
   }
 
-  /** I campi a righe ripetibili partono con almeno `minRows` righe, vuote. */
+  /** Repeatable-rows fields start with at least `minRows` empty rows. */
   private normalize(values: Record<string, unknown>): Record<string, unknown> {
     const out = { ...values };
     for (const field of this.node().fields) {
@@ -144,7 +144,7 @@ export class FormComponent {
     this.values.update((current) => ({ ...current, [field.name]: value }));
   }
 
-  /** Messaggio di errore del campo, mostrato solo dopo il primo tentativo di invio. */
+  /** Error message of the field, shown only after the first submit attempt. */
   protected error(field: FieldDefinition): string | null {
     return this.submitted() ? this.validate(field) : null;
   }

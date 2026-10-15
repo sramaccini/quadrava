@@ -11,7 +11,7 @@ import { nextId } from './shared';
 
 type Row = Record<string, unknown>;
 
-/** Pezzi di un testo: le parti che corrispondono alla ricerca (senza distinzione tra maiuscole e minuscole) sono marcate. */
+/** Pieces of a text: the parts that match the search (case-insensitive) are marked. */
 export function highlight(text: string, search: string): { text: string; match: boolean }[] {
   const needle = search.trim().toLowerCase();
   if (!needle) return [{ text, match: false }];
@@ -28,12 +28,12 @@ export function highlight(text: string, search: string): { text: string; match: 
 }
 
 /**
- * Vista ad albero sui dati di un data source (nodi radice con i figli annidati). Il titolo dei nodi è sempre testo:
- * il titolo predefinito di NG-ZORRO, durante la ricerca, lo inserirebbe come HTML. La scelta di un nodo scrive la sua
- * chiave nello stato (`bind`) ed esegue `onSelect` con il nodo in `row`.
- * Da tastiera (modello WAI-ARIA «tree»): frecce su e giù tra i nodi visibili, destra apre il ramo o entra nel primo
- * figlio, sinistra chiude il ramo o risale al genitore, Home e Fine, Invio o spazio scelgono. Un solo nodo alla volta
- * è raggiungibile con Tab.
+ * Tree view on the data of a data source (root nodes with their nested children). The title of the nodes is always text:
+ * the default NG-ZORRO title, during a search, would insert it as HTML. Choosing a node writes its key into the
+ * state (`bind`) and runs `onSelect` with the node in `row`.
+ * From the keyboard (WAI-ARIA «tree» pattern): up and down arrows among the visible nodes, right opens the branch or enters
+ * the first child, left closes the branch or goes up to the parent, Home and End, Enter or space choose. Only one node at
+ * a time can be reached with Tab.
  */
 @Component({
   selector: 'lc-tree',
@@ -82,7 +82,7 @@ export function highlight(text: string, search: string): { text: string; match: 
             (focus)="focusKey.set(node.key)"
             (keydown)="onKey($event, node)"
           >
-            <!-- Parti su una sola riga: gli a capo diventerebbero spazi dentro le parole. -->
+            <!-- Parts on one line: line breaks would become spaces inside words. -->
             @for (part of parts(node.title); track $index) {@if (part.match) {<mark>{{ part.text }}</mark>} @else {<span>{{ part.text }}</span>}}
           </span>
         </ng-template>
@@ -105,7 +105,7 @@ export class TreeComponent {
   private busy = false;
 
   protected readonly source = computed(() => this.runtime().source(this.node().source));
-  /** Righe originali per chiave (in testo, come le vuole il componente di NG-ZORRO). */
+  /** Original rows by key (as text, as the NG-ZORRO component wants them). */
   private readonly rows = computed(() => {
     const map = new Map<string, Row>();
     const { keyField, childrenField } = this.fields();
@@ -146,7 +146,7 @@ export class TreeComponent {
     return convert(this.data());
   });
 
-  /** Rami aperti: il primo livello (o tutti con expandAll) quando arrivano i dati; poi decide l'utente. */
+  /** Open branches: the first level (or all with expandAll) when the data arrives; then the user decides. */
   protected readonly expanded = linkedSignal<string[]>(() => {
     const all = this.node().expandAll;
     const keys: string[] = [];
@@ -172,25 +172,25 @@ export class TreeComponent {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
 
   constructor() {
-    // nz-tree mette dentro l'albero un input invisibile per la tastiera: qui la tastiera la gestiscono le voci
-    // (treeitem con tabindex), quindi l'input esce dall'ordine di tabulazione e dall'albero accessibile.
+    // nz-tree puts an invisible input inside the tree for the keyboard: here the keyboard is handled by the items
+    // (treeitem with tabindex), so the input leaves the tab order and the accessible tree.
     afterEveryRender(() => {
       for (const hidden of this.host.querySelectorAll<HTMLInputElement>('nz-tree input')) {
         if (hidden.getAttribute('aria-hidden') !== 'true') hidden.setAttribute('aria-hidden', 'true');
         if (hidden.tabIndex !== -1) hidden.tabIndex = -1;
       }
-      // Le icone di espansione sono decorative: lo stato aperto/chiuso lo dice aria-expanded sulla voce.
+      // The expand icons are decorative: the open/closed state is given by aria-expanded on the item.
       for (const icon of this.host.querySelectorAll<HTMLElement>('nz-tree [role="img"]')) {
         if (icon.getAttribute('aria-hidden') !== 'true') icon.setAttribute('aria-hidden', 'true');
         if (icon.getAttribute('role') === 'img') icon.removeAttribute('role');
       }
     });
   }
-  /** Nodo raggiungibile con Tab: quello scelto, altrimenti il primo; poi segue il focus. */
+  /** Node reachable with Tab: the chosen one, otherwise the first; then it follows the focus. */
   protected readonly focusKey = linkedSignal<string | null>(() => this.selected()[0] ?? this.nodes()[0]?.key ?? null);
 
   protected onKey(event: KeyboardEvent, node: NzTreeNode): void {
-    // Solo i nodi visibili: i figli di un ramo chiuso possono restare nel documento durante l'animazione.
+    // Only the visible nodes: the children of a closed branch can stay in the document during the animation.
     const titles = [...this.host.querySelectorAll<HTMLElement>('.title[data-key][data-shown="true"]')];
     const index = titles.findIndex((t) => t.dataset['key'] === node.key);
     const open = this.expanded().includes(node.key);
@@ -226,7 +226,7 @@ export class TreeComponent {
     event.preventDefault();
   }
 
-  /** Un nodo si vede se tutti i suoi antenati sono aperti; durante una ricerca contano anche i rami aperti da NG-ZORRO. */
+  /** A node is visible if all its ancestors are open; during a search the branches opened by NG-ZORRO count too. */
   protected shown(node: NzTreeNode): boolean {
     const open = this.expanded();
     const searching = this.search().trim() !== '';

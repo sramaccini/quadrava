@@ -2,12 +2,12 @@ import { Injectable, inject } from '@angular/core';
 import { Notifier } from 'core';
 import { NzMessageService } from 'ng-zorro-antd/message';
 
-/** I messaggi di NG-ZORRO interpretano le stringhe come HTML: il testo (che può contenere valori dei dati) va reso innocuo. */
+/** NG-ZORRO messages interpret strings as HTML: the text (which can contain data values) must be made harmless. */
 function escapeHtml(text: string): string {
   return text.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 }
 
-/** Messaggi all'utente con i messaggi di NG-ZORRO (compaiono in alto e spariscono da soli). Il testo viene sempre mostrato com'è, mai interpretato come HTML. */
+/** Messages to the user with NG-ZORRO messages (they appear at the top and disappear by themselves). The text is always shown as it is, never interpreted as HTML. */
 @Injectable({ providedIn: 'root' })
 export class NzNotifier extends Notifier {
   private readonly messages = inject(NzMessageService);

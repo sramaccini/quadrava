@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, Injectable, inject } from '@angular
 import { Confirmation, I18n } from 'core';
 import { NZ_MODAL_DATA, NzModalService } from 'ng-zorro-antd/modal';
 
-/** Contenuto della finestra: il messaggio è sempre testo (nzContent come stringa sarebbe interpretato come HTML). */
+/** Content of the window: the message is always text (nzContent as a string would be interpreted as HTML). */
 @Component({
   selector: 'lc-confirm-message',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -15,8 +15,8 @@ export class ConfirmMessageComponent {
 }
 
 /**
- * Conferma con una finestra modale NG-ZORRO sopra la pagina. Il focus parte su "Annulla" (un Invio distratto non conferma),
- * Esc e clic sullo sfondo annullano. Una sola finestra alla volta: una seconda richiesta viene rifiutata.
+ * Confirmation with an NG-ZORRO modal window over the page. The focus starts on "Cancel" (a careless Enter does not confirm),
+ * Esc and a click on the backdrop cancel. One window at a time: a second request is refused.
  */
 @Injectable({ providedIn: 'root' })
 export class DialogConfirmation extends Confirmation {
@@ -51,7 +51,7 @@ export class DialogConfirmation extends Confirmation {
         nzOnOk: () => finish(true),
         nzOnCancel: () => finish(false),
       });
-      // Chiusa in altro modo (per esempio con Esc o dal clic sullo sfondo): è un annullamento.
+      // Closed in another way (for example with Esc or a click on the backdrop): it is a cancellation.
       ref.afterClose.subscribe(() => finish(false));
     });
   }

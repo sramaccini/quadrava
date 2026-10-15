@@ -4,9 +4,9 @@ import { NzTabsModule } from 'ng-zorro-antd/tabs';
 import type { TabDefinition, TabsNode } from 'schema';
 
 /**
- * Schede. Si vede una scheda alla volta ma tutte restano nella pagina (nascoste): i dati inseriti in un form
- * non si perdono cambiando scheda. Una scheda con `visibleIf` falso non compare. La tastiera (frecce, Home, Fine)
- * è quella di NG-ZORRO.
+ * Tabs. One tab is visible at a time but all of them stay in the page (hidden): data entered in a form
+ * is not lost when switching tabs. A tab with a false `visibleIf` does not appear. The keyboard (arrows, Home, End)
+ * is NG-ZORRO's.
  */
 @Component({
   selector: 'lc-tabs',
@@ -35,7 +35,7 @@ export class TabsComponent {
   private readonly selected = signal<TabDefinition | null>(null);
 
   protected readonly visibleTabs = computed(() => this.node().tabs.filter((t) => this.runtime().isVisible(t, this.scope())));
-  /** Indice della scheda mostrata: quella scelta, se è ancora visibile, altrimenti la prima. */
+  /** Index of the shown tab: the chosen one, if it is still visible, otherwise the first. */
   protected readonly active = computed(() => Math.max(0, this.visibleTabs().indexOf(this.selected() as TabDefinition)));
 
   protected select(index: number): void {

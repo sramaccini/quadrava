@@ -1,11 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 /**
- * Logotipo KinetiX (assets/brand): icona più «Kineti» e la «X» colorata, con il nome del prodotto in chiaro accanto
- * («KinetiX Studio»). Il testo è HTML in Sora, non un'immagine: un SVG caricato come immagine non vede i caratteri
- * della pagina e il logotipo uscirebbe in un altro carattere. I colori sono quelli del marchio, fissi e indipendenti
- * dal tema (il marchio non si ricolora), in due varianti: su chiaro e su scuro. Proporzioni come nel logo originale:
- * icona alta 1,45 volte il testo, spazio pari a un quarto dell'icona.
+ * KinetiX logotype (assets/brand): icon plus «Kineti» and the coloured «X», with the product name in plain text next
+ * to it («KinetiX Studio»). The text is HTML in Sora, not an image: an SVG loaded as an image does not see the fonts
+ * of the page and the logotype would come out in another font. The colours are the brand ones, fixed and independent
+ * of the theme (the brand is not recoloured), in two variants: on light and on dark. Proportions as in the original
+ * logo: icon 1.45 times the text height, gap equal to a quarter of the icon.
  */
 @Component({
   selector: 'lc-kinetix-wordmark',
@@ -34,13 +34,13 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
   `,
 })
 export class KinetixWordmarkComponent {
-  /** Nome del prodotto dopo il marchio, per esempio «Studio». */
+  /** Name of the product after the brand, for example «Studio». */
   readonly product = input('');
-  /** Indirizzo dell'icona (`kinetix-icon-small.svg` sotto i 32 px); senza, solo il testo. */
+  /** Address of the icon (`kinetix-icon-small.svg` below 32 px); without it, text only. */
   readonly icon = input<string | null>(null);
-  /** Su sfondo chiaro o scuro. */
+  /** On a light or dark background. */
   readonly tone = input<'light' | 'dark'>('light');
-  /** Solo l'icona (barra laterale compressa). */
+  /** Icon only (collapsed side bar). */
   readonly compact = input(false);
   protected readonly label = computed(() => (this.product() ? `KinetiX ${this.product()}` : 'KinetiX'));
 }

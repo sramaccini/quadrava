@@ -9,8 +9,8 @@ import { TONE_COLORS } from './display.component';
 type Row = Record<string, unknown>;
 
 /**
- * Eventi di un data source in ordine di data (dal più recente, o dal più vecchio con `order: asc`): data, titolo,
- * descrizione e colore secondo `toneField`/`tones`. Le righe senza una data valida non si mostrano.
+ * Events of a data source in date order (newest first, or oldest first with `order: asc`): date, title,
+ * description and colour according to `toneField`/`tones`. Rows without a valid date are not shown.
  */
 @Component({
   selector: 'lc-timeline',
@@ -62,7 +62,7 @@ export class TimelineComponent {
     const events = rowsOf(this.source().data)
       .map((row: Row) => {
         const iso = text(row[node.dateField]);
-        // Una data senza ora è un giorno: si legge in ora locale, non come mezzanotte UTC.
+        // A date without time is a day: it is read in local time, not as UTC midnight.
         const date = /^\d{4}-\d{2}-\d{2}$/.test(iso) ? new Date(`${iso}T00:00:00`) : new Date(iso);
         const tone = node.toneField ? node.tones?.[text(row[node.toneField])] : undefined;
         return {

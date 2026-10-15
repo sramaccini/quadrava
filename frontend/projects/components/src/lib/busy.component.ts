@@ -2,19 +2,19 @@ import { ChangeDetectionStrategy, Component, DestroyRef, effect, inject, input, 
 import { I18n } from 'core';
 import { NzSpinModule } from 'ng-zorro-antd/spin';
 
-/** Prima di mostrare l'indicatore: le risposte veloci non lo fanno lampeggiare. */
+/** Before showing the indicator: quick responses do not make it flash. */
 export const BUSY_DELAY_MS = 300;
-/** Una volta comparso, l'indicatore resta almeno questo tempo (niente sfarfallio). */
+/** Once shown, the indicator stays at least this long (no flicker). */
 export const BUSY_MIN_VISIBLE_MS = 400;
-/** Oltre questa attesa la scritta diventa «Ci vuole più del solito…». */
+/** Beyond this wait the text becomes «Taking longer than usual…». */
 export const BUSY_SLOW_MS = 8000;
 
 /**
- * Indicatore di lavoro in corso, comune a tutti i componenti che leggono un data source: avvolge il contenuto e,
- * se l'attesa dura più di {@link BUSY_DELAY_MS}, mostra uno spinner sopra di esso. Al primo caricamento (`empty`)
- * riserva un'altezza minima, così la pagina salta poco all'arrivo dei dati; nelle ricariche il contenuto vecchio resta
- * visibile, attenuato, e utilizzabile (per esempio i filtri di una tabella). Per i lettori di schermo il contenuto ha
- * `aria-busy` e una regione `status` annuncia l'attesa. Colori e attenuazione dal tema (`--lc-busy-*`).
+ * Indicator of work in progress, shared by all the components that read a data source: it wraps the content and,
+ * if the wait lasts more than {@link BUSY_DELAY_MS}, shows a spinner over it. On the first load (`empty`)
+ * it reserves a minimum height, so the page jumps little when the data arrives; on reloads the old content stays
+ * visible, dimmed, and usable (for example the filters of a table). For screen readers the content has
+ * `aria-busy` and a `status` region announces the wait. Colours and dimming from the theme (`--lc-busy-*`).
  */
 @Component({
   selector: 'lc-busy',
@@ -25,9 +25,9 @@ export const BUSY_SLOW_MS = 8000;
     .content { transition: opacity 0.15s; }
     .on .content { opacity: var(--lc-busy-dim, 0.45); }
     .reserve .content { min-height: var(--lc-busy-min-height, 160px); }
-    /* Sopra il contenuto ma senza intercettare i clic: filtri e scorrimento restano usabili. */
+    /* Over the content but without catching clicks: filters and scrolling stay usable. */
     .overlay { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
-    /* Lo spinner resta in vista anche scorrendo una tabella lunga: al centro della parte visibile, al massimo metà schermo. */
+    /* The spinner stays in view even while scrolling a long table: in the middle of the visible part, at most half a screen. */
     .spot {
       position: sticky; top: var(--lc-header-height, 0px); height: min(100%, 50vh);
       display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
@@ -55,17 +55,17 @@ export const BUSY_SLOW_MS = 8000;
           </div>
         </div>
       }
-      <!-- Sempre presente (una regione live inserita al momento non sempre viene letta): cambia solo il testo. -->
+      <!-- Always present (a live region inserted on the spot is not always read): only the text changes. -->
       <span class="sr" role="status">{{ visible() ? (slow() ? i18n.t('lc.loadingSlow') : i18n.t('lc.loading')) : '' }}</span>
     </div>
   `,
 })
 export class BusyComponent {
-  /** C'è lavoro in corso. */
+  /** There is work in progress. */
   readonly busy = input(false);
-  /** Non ci sono ancora dati da mostrare (primo caricamento): si riserva un'altezza minima. */
+  /** There is no data to show yet (first load): a minimum height is reserved. */
   readonly empty = input(false);
-  /** Mostra lo spinner subito, senza il ritardo: per un'attesa chiesta dall'utente (per esempio «Aggiorna»). */
+  /** Shows the spinner right away, without the delay: for a wait requested by the user (for example «Refresh»). */
   readonly immediate = input(false);
 
   protected readonly i18n = inject(I18n);
@@ -80,7 +80,7 @@ export class BusyComponent {
       const busy = this.busy();
       untracked(() => (busy ? this.start() : this.stop()));
     });
-    // Un'attesa chiesta dall'utente si mostra subito.
+    // A wait requested by the user is shown right away.
     effect(() => {
       if (this.immediate() && this.busy()) untracked(() => this.show());
     });

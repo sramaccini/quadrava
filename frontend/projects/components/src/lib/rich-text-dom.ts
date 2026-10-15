@@ -1,23 +1,23 @@
 import { parseMarkdown, type Block, type Inline } from 'core';
 
 /**
- * Conversioni tra il Markdown ristretto (il valore dei campi `richtext`) e il contenuto modificabile dell'editor.
+ * Conversions between restricted Markdown (the value of `richtext` fields) and the editable content of the editor.
  *
- * - Da Markdown a contenuto: si costruiscono gli elementi uno per uno (`createElement`, `textContent`), mai con HTML.
- * - Da contenuto a Markdown: si leggono solo i tag ammessi (paragrafi, titoli, elenchi, citazioni, grassetto, corsivo,
- *   barrato, codice, collegamenti con indirizzo ammesso, a capo); tutto il resto vale per il suo testo. Così anche
- *   quello che il browser aggiunge mentre si scrive (div, span con stili) si riduce al formato ammesso.
+ * - From Markdown to content: elements are built one by one (`createElement`, `textContent`), never with HTML.
+ * - From content to Markdown: only the allowed tags are read (paragraphs, headings, lists, quotes, bold, italic,
+ *   strikethrough, code, links with an allowed address, line breaks); everything else counts for its text. So even
+ *   what the browser adds while typing (divs, spans with styles) is reduced to the allowed format.
  */
 
 const HEADING_TAG: Record<1 | 2 | 3, string> = { 1: 'h3', 2: 'h4', 3: 'h5' };
 
-/** Riempie `container` con il Markdown, sostituendo quello che c'era. */
+/** Fills `container` with the Markdown, replacing what was there. */
 export function renderMarkdownInto(container: HTMLElement, source: string | null | undefined): void {
   const doc = container.ownerDocument;
   container.replaceChildren();
   const blocks = parseMarkdown(source);
   for (const block of blocks) container.appendChild(blockNode(doc, block));
-  // Un editor vuoto ha comunque un paragrafo in cui scrivere.
+  // An empty editor still has a paragraph to write in.
   if (blocks.length === 0) container.appendChild(doc.createElement('p')).appendChild(doc.createElement('br'));
 }
 
@@ -60,19 +60,19 @@ function inlineInto(parent: HTMLElement, items: Inline[]): HTMLElement {
   return parent;
 }
 
-// --- da contenuto a Markdown ---
+// --- from content to Markdown ---
 
-/** Caratteri che nel testo vanno protetti per non diventare formattazione. */
+/** Characters that must be escaped in the text so as not to become formatting. */
 function escapeText(text: string): string {
   return text.replace(/([\\`*_~[\]])/g, '\\$1');
 }
 
-/** Protegge l'inizio di una riga che altrimenti diventerebbe un titolo, una citazione o una voce di elenco. */
+/** Escapes the start of a line that would otherwise become a heading, a quote or a list item. */
 function escapeLineStart(line: string): string {
   return line.replace(/^(\s*)(#{1,3} |> ?|[-+] |\d{1,9}[.)] )/, (_m, space: string, marker: string) => space + '\\' + marker);
 }
 
-/** Il contenuto dell'editor in Markdown ristretto. */
+/** The content of the editor in restricted Markdown. */
 export function domToMarkdown(container: HTMLElement): string {
   const blocks: string[] = [];
   let pending: Node[] = [];
@@ -100,14 +100,14 @@ function paragraph(text: string): string {
     .join('\n');
 }
 
-/** Markdown di un nodo di blocco; null se il nodo è in linea (testo, enfasi…). */
+/** Markdown of a block node; null if the node is inline (text, emphasis…). */
 function blockMarkdown(node: Node, depth: number): string | null {
   if (!(node instanceof Element)) return null;
   const tag = node.tagName.toLowerCase();
   switch (tag) {
     case 'p':
     case 'div':
-      // Un div del browser può contenere altri blocchi (elenchi incollati, a capo): si legge come contenitore.
+      // A browser div can contain other blocks (pasted lists, line breaks): it is read as a container.
       return Array.from(node.childNodes).some((c) => blockMarkdown(c, depth) !== null) ? domToMarkdown(node as HTMLElement) : paragraph(inlineMarkdown(Array.from(node.childNodes)).trim());
     case 'h1':
     case 'h2':
@@ -151,12 +151,12 @@ function listMarkdown(list: Element, depth: number): string {
   return lines.join('\n');
 }
 
-/** Markdown dei nodi in linea. */
+/** Markdown of the inline nodes. */
 function inlineMarkdown(nodes: Node[]): string {
   let out = '';
   for (const node of nodes) {
     if (node.nodeType === Node.TEXT_NODE) {
-      // Gli spazi non separabili che il browser mette mentre si scrive diventano spazi normali.
+      // The non-breaking spaces the browser adds while typing become normal spaces.
       out += escapeText((node.textContent ?? '').replace(/ /g, ' '));
       continue;
     }
@@ -165,7 +165,7 @@ function inlineMarkdown(nodes: Node[]): string {
     const inner = () => inlineMarkdown(Array.from(node.childNodes));
     const wrap = (mark: string) => {
       const text = inner();
-      // Gli spazi ai bordi restano fuori dai segni, altrimenti non sarebbero formattazione.
+      // Spaces at the edges stay outside the marks, otherwise they would not be formatting.
       const m = /^(\s*)([\s\S]*?)(\s*)$/.exec(text)!;
       return m[2] ? `${m[1]}${mark}${m[2]}${mark}${m[3]}` : text;
     };
@@ -179,7 +179,7 @@ function inlineMarkdown(nodes: Node[]): string {
     } else if (tag === 'a') {
       const href = node.getAttribute('href') ?? '';
       const text = inner();
-      // Solo indirizzi ammessi; un collegamento verso altro resta testo.
+      // Only allowed addresses; a link to anything else stays text.
       out += /^(https:\/\/|mailto:|\/(?!\/))/i.test(href) && !/[\s()<>]/.test(href) ? `[${text}](${href})` : text;
     } else {
       const block = blockMarkdown(node, 0);

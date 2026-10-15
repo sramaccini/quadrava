@@ -1,9 +1,9 @@
 /*
- * Colorazione della sintassi di JSON e di testi con espressioni `{{ }}`: divide il testo in pezzi e li disegna con
- * elementi e `textContent` (mai HTML). Usata dal visore del codice (`lc-code-view`) e dalle aree di testo dell'editor.
+ * Syntax highlighting of JSON and of texts with `{{ }}` expressions: it splits the text into pieces and draws them with
+ * elements and `textContent` (never HTML). Used by the code viewer (`lc-code-view`) and by the editor's text areas.
  */
 
-/** Tipi di pezzo, ognuno con il suo colore (classi `<prefisso><tipo>`: `lc-code-` nel visore, `ed-code-` nell’editor). */
+/** Kinds of piece, each with its colour (classes `<prefix><kind>`: `lc-code-` in the viewer, `ed-code-` in the editor). */
 export type CodeTokenType =
   | 'key'
   | 'string'
@@ -25,7 +25,7 @@ export interface CodeToken {
 const NUMBER = /^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/;
 const LITERAL = /^(?:true|false|null)\b/;
 const IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_]*/;
-/** Oltre questa lunghezza non si colora (il testo resta normale): l'editor deve restare reattivo. */
+/** Beyond this length nothing is highlighted (the text stays normal): the editor must stay responsive. */
 const MAX_HIGHLIGHT = 400_000;
 
 function collector(): { tokens: CodeToken[]; push: (type: CodeTokenType, value: string) => void } {
@@ -40,9 +40,9 @@ function collector(): { tokens: CodeToken[]; push: (type: CodeTokenType, value: 
 }
 
 /**
- * Divide un testo JSON (anche non valido, mentre lo si scrive) in pezzi da colorare: chiavi, stringhe, numeri,
- * `true`/`false`/`null`, punteggiatura; dentro le stringhe le espressioni `{{ … }}` hanno un pezzo a sé. Il testo
- * dei pezzi, messo in fila, è esattamente quello di partenza.
+ * Splits a JSON text (also invalid, while it is being typed) into pieces to highlight: keys, strings, numbers,
+ * `true`/`false`/`null`, punctuation; inside strings the `{{ … }}` expressions have a piece of their own. The text
+ * of the pieces, put in a row, is exactly the original one.
  */
 export function tokenizeJson(text: string): CodeToken[] {
   const { tokens, push } = collector();
@@ -54,7 +54,7 @@ export function tokenizeJson(text: string): CodeToken[] {
       while (j < text.length && text[j] !== '"' && text[j] !== '\n') j += text[j] === '\\' ? 2 : 1;
       const end = Math.min(j + 1, text.length);
       const value = text.slice(i, end);
-      // Una stringa seguita da «:» è una chiave.
+      // A string followed by «:» is a key.
       let k = end;
       while (k < text.length && (text[k] === ' ' || text[k] === '\t')) k++;
       if (text[k] === ':') push('key', value);
@@ -82,7 +82,7 @@ export function tokenizeJson(text: string): CodeToken[] {
   return tokens;
 }
 
-/** Una stringa JSON, con le espressioni `{{ … }}` separate. */
+/** A JSON string, with the `{{ … }}` expressions separated. */
 function pushJsonString(value: string, push: (type: CodeTokenType, value: string) => void): void {
   let rest = value;
   for (;;) {
@@ -97,9 +97,9 @@ function pushJsonString(value: string, push: (type: CodeTokenType, value: string
 }
 
 /**
- * Divide un testo delle proprietà (titoli, messaggi, condizioni) in pezzi da colorare: il testo fisso resta normale;
- * dentro `{{ … }}` (anche non ancora chiusa, mentre la si scrive) le parti dell'espressione CEL: funzioni, variabili
- * e loro proprietà, stringhe tra apici, numeri, `true`/`false`/`null`, operatori e punteggiatura, più le graffe.
+ * Splits a property text (titles, messages, conditions) into pieces to highlight: the fixed text stays normal;
+ * inside `{{ … }}` (also not yet closed, while it is being typed) the parts of the CEL expression: functions, variables
+ * and their properties, quoted strings, numbers, `true`/`false`/`null`, operators and punctuation, plus the braces.
  */
 export function tokenizeTemplate(text: string): CodeToken[] {
   const { tokens, push } = collector();
@@ -121,7 +121,7 @@ export function tokenizeTemplate(text: string): CodeToken[] {
   return tokens;
 }
 
-/** Il corpo di un'espressione CEL. */
+/** The body of a CEL expression. */
 function pushExpression(text: string, push: (type: CodeTokenType, value: string) => void): void {
   let i = 0;
   let afterDot = false;
@@ -173,7 +173,7 @@ function pushExpression(text: string, push: (type: CodeTokenType, value: string)
   }
 }
 
-/** Disegna i pezzi nell'elemento: solo elementi costruiti e `textContent`, mai HTML. */
+/** Draws the pieces in the element: only built elements and `textContent`, never HTML. */
 export function renderTokens(target: HTMLElement, text: string, tokenize: (text: string) => CodeToken[], prefix = 'lc-code-'): void {
   const fragment = document.createDocumentFragment();
   if (text.length > MAX_HIGHLIGHT) fragment.append(text);
@@ -189,7 +189,7 @@ export function renderTokens(target: HTMLElement, text: string, tokenize: (text:
       fragment.append(span);
     }
   }
-  // Uno spazio dopo un a capo finale, altrimenti l'ultima riga vuota non occupa altezza e il testo si sfasa.
+  // A space after a final line break, otherwise the last empty line takes no height and the text shifts.
   fragment.append(text.endsWith('\n') || text === '' ? ' ' : '');
   target.replaceChildren(fragment);
 }

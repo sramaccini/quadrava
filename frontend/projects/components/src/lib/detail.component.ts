@@ -12,8 +12,8 @@ import { IconComponent } from './icon.component';
 import { TONE_COLORS } from './shared';
 
 /**
- * Scheda di dettaglio in sola lettura: un record mostrato come coppie etichetta e valore.
- * Il data source `source` deve restituire un oggetto; ogni campo usa gli stessi formati delle colonne di una tabella.
+ * Read-only detail panel: a record shown as label and value pairs.
+ * The `source` data source must return an object; every field uses the same formats as the columns of a table.
  */
 @Component({
   selector: 'lc-detail',
@@ -35,7 +35,7 @@ import { TONE_COLORS } from './shared';
             <ng-template #title>
               {{ runtime().text(field.label, scope()) || field.field }}
               @if (tip(field); as text) {
-                <!-- Icona di aiuto raggiungibile da tastiera: il testo è anche il suo nome per gli screen reader. -->
+                <!-- Help icon reachable from the keyboard: the text is also its name for screen readers. -->
                 <span class="help" tabindex="0" role="img" [attr.aria-label]="text" nz-tooltip [nzTooltipTitle]="text"><lc-icon name="help" /></span>
               }
             </ng-template>
@@ -74,7 +74,7 @@ export class DetailComponent {
     return data !== null && typeof data === 'object' && !Array.isArray(data) ? (data as Record<string, unknown>) : null;
   });
 
-  /** Valore di un campo con formato markdown, come testo (null e altri tipi → vuoto). */
+  /** Value of a field with markdown format, as text (null and other types → empty). */
   protected markdownOf(record: Record<string, unknown>, field: { field: string }): string {
     const value = record[field.field];
     return typeof value === 'string' ? value : '';
@@ -84,7 +84,7 @@ export class DetailComponent {
     return formatValue(record[field.field], field, this.i18n.intlLocale(), this.labels());
   }
 
-  /** Testo di aiuto di un campo, già risolto; null se il campo non ne ha. */
+  /** Help text of a field, already resolved; null if the field has none. */
   protected tip(field: ColumnDefinition): string | null {
     return field.tooltip ? this.runtime().text(field.tooltip, this.scope()) || null : null;
   }

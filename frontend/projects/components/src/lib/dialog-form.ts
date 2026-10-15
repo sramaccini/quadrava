@@ -11,7 +11,7 @@ interface DialogData {
   finish: (result: boolean) => void;
 }
 
-/** Contenuto della finestra: titolo come testo (un titolo stringa del modal sarebbe interpretato come HTML) e il form. */
+/** Content of the window: title as text (a string title of the modal would be interpreted as HTML) and the form. */
 @Component({
   selector: 'lc-dialog-form',
   imports: [FormComponent],
@@ -37,16 +37,16 @@ export class DialogFormComponent {
   protected readonly i18n = inject(I18n);
 
   constructor() {
-    // La finestra prende il nome dal titolo (per gli screen reader).
+    // The window takes its name from the title (for screen readers).
     const host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
     afterNextRender(() => host.closest('[role="dialog"]')?.setAttribute('aria-labelledby', this.data.titleId));
   }
 }
 
 /**
- * Finestre con form sul modal di NG-ZORRO. La finestra si chiude quando i passi di invio riescono (risultato true)
- * o quando l'utente annulla (pulsante, Esc, croce: risultato false); se i passi falliscono resta aperta, con i dati
- * inseriti. Una sola finestra alla volta; alla chiusura il focus torna dove era.
+ * Form windows on the NG-ZORRO modal. The window closes when the submit steps succeed (result true)
+ * or when the user cancels (button, Esc, cross: result false); if the steps fail it stays open, with the data
+ * entered. One window at a time; on closing, the focus goes back where it was.
  */
 @Injectable({ providedIn: 'root' })
 export class DialogForm extends FormDialog {

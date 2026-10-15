@@ -13,8 +13,8 @@ export interface UserMenuItem {
 }
 
 /**
- * Utente collegato: icona (iniziale) e nome, con un menu a tendina. La voce di uscita (logout) è sempre l'ultima,
- * separata dalle altre; le altre voci le decide l'applicazione. I testi arrivano come valori e sono mostrati come testo.
+ * Signed-in user: icon (initial) and name, with a drop-down menu. The sign-out item (logout) is always the last one,
+ * separated from the others; the other items are decided by the application. Texts arrive as values and are shown as text.
  */
 @Component({
   selector: 'lc-user-menu',
@@ -27,7 +27,7 @@ export interface UserMenuItem {
     nz-avatar { background: var(--lc-color-primary, #1f5fbf); color: var(--lc-color-on-primary, #fff); }
     li a, li span.row { display: flex; align-items: center; gap: 8px; }
     ul { min-width: 160px; }
-    /* Su schermi stretti resta solo l'iniziale; il nome è comunque nell'aria-label. */
+    /* On narrow screens only the initial stays; the name is in the aria-label anyway. */
     @media (max-width: 767px) { .name { display: none; } }
   `,
   template: `
@@ -57,7 +57,7 @@ export class UserMenuComponent {
   readonly items = input<readonly UserMenuItem[]>([]);
   readonly logoutLabel = input<string>();
   protected readonly i18n = inject(I18n);
-  /** Scelta di una voce diversa dall'uscita. */
+  /** Choice of an item other than sign-out. */
   readonly select = output<string>();
   readonly logout = output<void>();
 

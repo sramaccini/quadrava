@@ -3,10 +3,10 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 import { parseMarkdown } from 'core';
 
 /**
- * Testo formattato (Markdown ristretto, vedi `core/markdown.ts`) disegnato con i template: paragrafi, titoli, elenchi
- * puntati e numerati anche annidati, citazioni, grassetto, corsivo, barrato, codice, collegamenti. Nessun HTML dal testo:
- * ogni pezzo è un nodo di testo o un elemento scritto qui. I collegamenti esterni si aprono in una nuova scheda.
- * `inline`: per celle e spazi stretti, i blocchi diventano righe senza margini.
+ * Formatted text (restricted Markdown, see `core/markdown.ts`) drawn with templates: paragraphs, headings, bulleted
+ * and numbered lists also nested, quotes, bold, italic, strikethrough, code, links. No HTML from the text:
+ * every piece is a text node or an element written here. External links open in a new tab.
+ * `inline`: for cells and narrow spaces, blocks become lines without margins.
  */
 @Component({
   selector: 'lc-markdown',
@@ -100,7 +100,7 @@ import { parseMarkdown } from 'core';
   `,
 })
 export class MarkdownComponent {
-  /** Testo in Markdown ristretto. */
+  /** Text in restricted Markdown. */
   readonly source = input<string | null | undefined>('');
   readonly inline = input(false);
   protected readonly parsed = computed(() => parseMarkdown(this.source()));

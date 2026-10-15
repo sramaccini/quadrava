@@ -17,9 +17,9 @@ export interface NavigateEvent {
 }
 
 /**
- * Barra laterale a più livelli, costruita sul menu di NG-ZORRO. Non conosce il router: le voci sono veri link
- * (`href`, apribili in una nuova scheda) e un clic normale emette `navigate`, che l'applicazione ospite traduce in navigazione.
- * I livelli sono al massimo tre (gruppo, gruppo, voce), come impone lo schema del menu.
+ * Multi-level side bar, built on the NG-ZORRO menu. It knows nothing of the router: items are real links
+ * (`href`, can be opened in a new tab) and a normal click emits `navigate`, which the host application turns into navigation.
+ * There are at most three levels (group, group, item), as the menu schema requires.
  */
 @Component({
   selector: 'lc-sidebar',
@@ -46,7 +46,7 @@ export interface NavigateEvent {
     :host ::ng-deep .area .ant-select-selector { background: transparent !important; border-color: var(--lc-sider-border, #d5dbe3) !important; color: var(--lc-sider-text) !important; }
     :host ::ng-deep .area .ant-select-arrow { color: var(--lc-sider-muted); }
     nav { flex: 1; }
-    /* Colori del menu: tutti dal tema (--lc-sider-*), non dal tema chiaro o scuro della libreria. */
+    /* Menu colours: all from the theme (--lc-sider-*), not from the library's light or dark theme. */
     :host ::ng-deep ul.ant-menu { background: transparent !important; color: var(--lc-sider-text); border-inline-end: 0; }
     :host ::ng-deep .ant-menu-sub.ant-menu-inline { background: transparent !important; }
     :host ::ng-deep .ant-menu-item, :host ::ng-deep .ant-menu-submenu-title { color: var(--lc-sider-text); }
@@ -55,7 +55,7 @@ export interface NavigateEvent {
     :host ::ng-deep .ant-menu-item-selected::after { border-color: var(--lc-sider-active-text); }
     :host ::ng-deep .ant-menu-item a, :host ::ng-deep .ant-menu-item-selected a { color: inherit; }
     :host ::ng-deep .ant-menu-submenu-arrow { color: inherit; }
-    /* Le voci lunghe vanno a capo invece di essere troncate. */
+    /* Long items wrap instead of being truncated. */
     :host ::ng-deep li.ant-menu-item, :host ::ng-deep .ant-menu-submenu-title { height: auto; min-height: 40px; line-height: 1.4; padding-block: 9px; white-space: normal; }
     :host ::ng-deep .ant-menu-title-content { white-space: normal; overflow: visible; text-overflow: clip; }
     a.leaf { display: flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; }
@@ -67,12 +67,12 @@ export interface NavigateEvent {
     .results a { display: flex; flex-direction: column; padding: 6px 10px; border-radius: var(--lc-radius, 6px); color: var(--lc-sider-text); text-decoration: none; }
     .results a:hover, .results a:focus-visible { background: var(--lc-sider-active-bg); color: var(--lc-sider-active-text); outline: none; }
     .results .where { font-size: 12px; color: var(--lc-sider-muted); }
-    /* Contatore accanto alla voce; a barra compressa diventa un pallino sull'icona. */
+    /* Counter next to the item; with the bar collapsed it becomes a dot on the icon. */
     .badge { margin-left: auto; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; font-size: 12px; line-height: 20px; text-align: center;
       background: var(--lc-color-primary, #1f5fbf); color: var(--lc-color-on-primary, #fff); }
     a.leaf { position: relative; }
     .collapsed .badge { position: absolute; top: 2px; left: 14px; min-width: 8px; width: 8px; height: 8px; padding: 0; font-size: 0; }
-    /* Somma dei contatori sul titolo di un gruppo chiuso (aperto, i numeri sono sulle voci); a barra compressa un pallino. */
+    /* Sum of the counters on the title of a closed group (open, the numbers are on the items); with the bar collapsed a dot. */
     :host ::ng-deep .ant-menu-submenu-title[data-lc-badge]::after {
       content: attr(data-lc-badge); position: absolute; right: 40px; top: 50%; transform: translateY(-50%);
       min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; font-size: 12px; line-height: 20px; text-align: center;
@@ -82,8 +82,8 @@ export interface NavigateEvent {
       right: auto; left: 44px; top: 10px; transform: none; min-width: 8px; width: 8px; height: 8px; padding: 0; font-size: 0;
     }
     :host ::ng-deep .ant-menu-submenu-title:focus-visible, a.leaf:focus-visible { outline: 2px solid var(--lc-sider-active-text, #1f5fbf); outline-offset: -2px; }
-    /* Pulsante tondo sul bordo della barra, all'altezza del logo, come in Ant Design Pro. Sta fuori dall’area che scorre.
-       Sporge di 13px nella barra superiore: chi ospita la barra lascia quel margine prima del titolo. */
+    /* Round button on the edge of the bar, at the height of the logo, as in Ant Design Pro. It is outside the scrolling area.
+       It sticks out 13px into the top bar: whoever hosts the bar leaves that margin before the title. */
     .toggle { position: absolute; z-index: 3; top: calc(var(--lc-header-height, 56px) / 2 - 13px); right: -13px; width: 26px; height: 26px; min-width: 26px; padding: 0;
       display: inline-flex; align-items: center; justify-content: center; font-size: 12px; color: var(--lc-color-on-surface, #1b2430); background: var(--lc-color-surface, #fff);
       border: 1px solid var(--lc-sider-border, #d5dbe3); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); }
@@ -91,7 +91,7 @@ export interface NavigateEvent {
   template: `
     <aside class="side" [class.collapsed]="collapsed()">
       <div class="logo">
-        <!-- Un marchio proprio dell'applicazione (elemento con l'attributo lcBrand) sostituisce logo e nome. -->
+        <!-- A brand of the application itself (element with the lcBrand attribute) replaces logo and name. -->
         <ng-content select="[lcBrand]">
           @if (logo(); as src) {
             <img [src]="src" alt="" />
@@ -103,7 +103,7 @@ export interface NavigateEvent {
       </div>
       @if (areas().length > 1) {
         @if (!collapsed()) {
-          <!-- La stessa icona a griglia della barra compressa; l'etichetta «Area» diventa il suo tooltip (e resta per gli screen reader). -->
+          <!-- The same grid icon as the collapsed bar; the «Area» label becomes its tooltip (and stays for screen readers). -->
           <div class="area">
             <span class="area-mark" aria-hidden="true" nz-tooltip [nzTooltipTitle]="i18n.t('lc.area')" nzTooltipPlacement="right"><lc-icon name="sections" /></span>
             <label class="visually-hidden" [for]="selectId">{{ i18n.t('lc.area') }}</label>
@@ -114,7 +114,7 @@ export interface NavigateEvent {
             </nz-select>
           </div>
         } @else {
-          <!-- Da compressa il selettore diventa un'icona (sempre la stessa, a griglia: rappresenta le sezioni) con un menu a tendina. -->
+          <!-- When collapsed the selector becomes an icon (always the same grid: it stands for the areas) with a drop-down menu. -->
           <div class="area-icon">
             <button nz-button nzType="text" class="area-trigger" type="button" nz-dropdown nzTrigger="click" nzPlacement="bottomLeft" [nzDropdownMenu]="areaMenu"
               [attr.aria-label]="i18n.t('lc.area') + ': ' + (current()?.label ?? '')" aria-haspopup="menu"
@@ -176,7 +176,7 @@ export interface NavigateEvent {
           </ul>
         } @else {
         <nav [attr.aria-label]="i18n.t('lc.menu') + ' ' + uc.label" (keydown)="navKey($event)">
-          <!-- La voce evidenziata la decide solo la schermata aperta (nzSelected): NG-ZORRO non la cambia da sé al clic. -->
+          <!-- The highlighted item is decided only by the open screen (nzSelected): NG-ZORRO does not change it by itself on click. -->
           <ul nz-menu nzMode="inline" [nzTheme]="tone()" [nzInlineCollapsed]="collapsed()" [nzInlineIndent]="18" [nzSelectable]="false">
             @for (g1 of uc.items; track g1.id) {
               @if (g1.kind === 'group') {
@@ -232,17 +232,17 @@ export interface NavigateEvent {
 export class SidebarComponent {
   protected readonly i18n = inject(I18n);
   readonly navigation = input.required<NavigationRuntime>();
-  /** Nome mostrato accanto al logo. */
+  /** Name shown next to the logo. */
   readonly brand = input('KinetiX');
-  /** Indirizzo (relativo) dell'immagine del logo; se manca si mostra un'icona. */
+  /** (Relative) address of the logo image; if missing an icon is shown. */
   readonly logo = input<string | null>(null);
-  /** Area mostrata; se manca o non è visibile si mostra la prima disponibile. */
+  /** Area shown; if missing or not visible the first available one is shown. */
   readonly areaId = input<string | null>(null);
-  /** Schermata corrente, per evidenziare la voce attiva e aprire i suoi gruppi. */
+  /** Current screen, to highlight the active item and open its groups. */
   readonly active = input<{ screen: string; params: Record<string, unknown> } | null>(null);
-  /** Costruisce l'indirizzo di una voce (per i link). */
+  /** Builds the address of an item (for the links). */
   readonly hrefFor = input<(area: string, leaf: VisibleLeaf) => string>(() => '#');
-  /** Contatori delle voci (id della voce → numero), mostrati accanto al testo. */
+  /** Counters of the items (item id → number), shown next to the text. */
   readonly badges = input<Record<string, number>>({});
 
   readonly navigate = output<NavigateEvent>();
@@ -250,14 +250,14 @@ export class SidebarComponent {
 
   protected readonly selectId = nextId('lc-area');
   protected readonly searchId = nextId('lc-menu-search');
-  /** Testo cercato nel menu. */
+  /** Text searched in the menu. */
   protected readonly query = signal('');
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
-  /** Barra compressa a sole icone. Con `[(collapsed)]` il pulsante può stare altrove (per esempio nella barra superiore). */
+  /** Bar collapsed to icons only. With `[(collapsed)]` the button can be elsewhere (for example in the top bar). */
   readonly collapsed = model(false);
-  /** Mostra il pulsante di compressione in fondo alla barra. */
+  /** Shows the collapse button at the bottom of the bar. */
   readonly showToggle = input(true);
-  /** Stile del menu della libreria: i colori veri vengono comunque dal tema. */
+  /** Style of the library menu: the real colours come from the theme anyway. */
   readonly tone = input<'light' | 'dark'>('light');
   private readonly expanded = signal<ReadonlySet<string>>(new Set());
 
@@ -272,7 +272,7 @@ export class SidebarComponent {
     return uc && active ? (this.navigation().locate(uc.id, active.screen, active.params) ?? []) : [];
   });
 
-  /** Per ogni gruppo dell’area corrente: il nome e la somma dei contatori delle sue voci (anche nei sottogruppi). */
+  /** For every group of the current area: the name and the sum of the counters of its items (also in subgroups). */
   private readonly groupBadges = computed(() => {
     const badges = this.badges();
     const out: Record<string, { label: string; count: number }> = {};
@@ -287,7 +287,7 @@ export class SidebarComponent {
     return out;
   });
 
-  /** Voci dell’area corrente che contengono il testo cercato (senza badare a maiuscole e accenti), con il loro percorso. */
+  /** Items of the current area that contain the searched text (ignoring case and accents), with their path. */
   protected readonly results = computed(() => {
     const q = plainText(this.query());
     const uc = this.current();
@@ -304,7 +304,7 @@ export class SidebarComponent {
   });
 
   constructor() {
-    // I titoli dei gruppi di NG-ZORRO non si raggiungono da tastiera e non dicono se sono aperti: lo si aggiunge qui.
+    // NG-ZORRO group titles cannot be reached from the keyboard and do not say whether they are open: that is added here.
     afterEveryRender(() => {
       const groups = this.groupBadges();
       for (const title of this.host.nativeElement.querySelectorAll<HTMLElement>('.ant-menu-submenu-title')) {
@@ -312,7 +312,7 @@ export class SidebarComponent {
         if (title.getAttribute('tabindex') !== '0') title.setAttribute('tabindex', '0');
         if (title.getAttribute('role') !== 'button') title.setAttribute('role', 'button');
         if (title.getAttribute('aria-expanded') !== String(open)) title.setAttribute('aria-expanded', String(open));
-        // Contatore del gruppo: chiuso, o a barra compressa (le voci stanno in un menu a parte).
+        // Counter of the group: closed, or with the bar collapsed (the items are in a separate menu).
         const group = groups[title.parentElement?.getAttribute('data-group') ?? ''];
         const show = !!group && group.count > 0 && (!open || this.collapsed());
         const text = show ? (group.count > 99 ? '99+' : String(group.count)) : null;
@@ -327,7 +327,7 @@ export class SidebarComponent {
         }
       }
     });
-    // I gruppi che contengono la voce attiva si aprono da soli; l'utente poi li può chiudere.
+    // The groups that contain the active item open by themselves; the user can close them afterwards.
     effect(() => {
       const ancestors = this.path().slice(0, -1);
       if (ancestors.length === 0) return;
@@ -339,7 +339,7 @@ export class SidebarComponent {
     return this.expanded().has(id);
   }
 
-  /** Al terzo livello ci sono solo voci: lo schema del menu non ammette altri gruppi. */
+  /** At the third level there are only items: the menu schema allows no other groups. */
   protected leaves(items: VisibleItem[]): VisibleLeaf[] {
     return items.filter((i): i is VisibleLeaf => i.kind !== 'group');
   }
@@ -361,13 +361,13 @@ export class SidebarComponent {
     return this.path().at(-1) === leaf.id;
   }
 
-  /** Testo di una voce per chi usa un lettore di schermo, con il contatore se c'è. */
+  /** Text of an item for screen reader users, with the counter if present. */
   protected leafLabel(leaf: VisibleLeaf): string {
     const n = this.badges()[leaf.id];
     return n ? `${leaf.label}, ${this.i18n.t('lc.badge', { n })}` : leaf.label;
   }
 
-  /** Nella ricerca: Freccia giù porta ai risultati, Invio apre il primo, Esc pulisce. */
+  /** In the search: Arrow down goes to the results, Enter opens the first, Esc clears. */
   protected searchKey(event: KeyboardEvent): void {
     if (event.key === 'Escape') {
       this.query.set('');
@@ -386,7 +386,7 @@ export class SidebarComponent {
     event.preventDefault();
   }
 
-  /** Tra i risultati: frecce su e giù (dal primo, su torna alla ricerca). */
+  /** Among the results: up and down arrows (from the first, up goes back to the search). */
   protected resultKey(event: KeyboardEvent): void {
     if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
     event.preventDefault();
@@ -397,9 +397,9 @@ export class SidebarComponent {
   }
 
   /**
-   * Menu da tastiera: frecce su e giù tra voci e gruppi visibili, Home e Fine agli estremi, destra apre un gruppo
-   * (o entra nella prima voce se è già aperto), sinistra lo chiude (o torna al gruppo che contiene la voce), Invio e
-   * Spazio aprono o chiudono un gruppo.
+   * Keyboard menu: up and down arrows among visible items and groups, Home and End to the ends, right opens a group
+   * (or enters the first item if already open), left closes it (or goes back to the group that contains the item), Enter and
+   * Space open or close a group.
    */
   protected navKey(event: KeyboardEvent): void {
     const target = event.target as HTMLElement;
@@ -442,11 +442,11 @@ export class SidebarComponent {
   }
 
   /**
-   * Clic su tutta la riga della voce (non solo sul testo del link): apre la schermata. Prima un clic sul bordo della riga
-   * evidenziava la voce senza aprirla. Il clic sul link arriva qui risalendo dalla riga.
+   * Click on the whole row of the item (not only on the text of the link): it opens the screen. A click on the edge of the row
+   * used to highlight the item without opening it. The click on the link arrives here bubbling up from the row.
    */
   protected go(event: MouseEvent, leaf: VisibleLeaf): void {
-    // Con i tasti modificatori o il clic centrale decide il browser (nuova scheda).
+    // With modifier keys or the middle click the browser decides (new tab).
     if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
     const uc = this.current();
@@ -456,7 +456,7 @@ export class SidebarComponent {
 
 export type { VisibleItem };
 
-/** Testo senza maiuscole né accenti, per cercare. */
+/** Text without capitals or accents, for searching. */
 function plainText(text: string): string {
   return text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
 }

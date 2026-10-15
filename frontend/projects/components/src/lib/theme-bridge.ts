@@ -4,7 +4,7 @@ import { generate } from '@ant-design/colors';
 import { ThemeService } from 'core';
 import type { ThemeDefinition } from 'schema';
 
-/** Nome dello stylesheet scuro di NG-ZORRO, pubblicato come file a parte (vedi la configurazione degli stili dell'applicazione). */
+/** Name of the NG-ZORRO dark stylesheet, published as a separate file (see the style configuration of the application). */
 export const NZ_DARK_STYLESHEET = 'nz-dark.css';
 const DARK_LINK_ID = 'lc-nz-dark-theme';
 
@@ -13,7 +13,7 @@ function rgba(hex: string, alpha: number): string {
   return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
 }
 
-/** Miscela due colori esadecimali: `t` è la quota di `other` (0 = solo `hex`, 1 = solo `other`). */
+/** Mixes two hex colours: `t` is the share of `other` (0 = only `hex`, 1 = only `other`). */
 function mix(hex: string, other: string, t: number): string {
   const a = parseInt(hex.slice(1), 16);
   const b = parseInt(other.slice(1), 16);
@@ -21,7 +21,7 @@ function mix(hex: string, other: string, t: number): string {
   return `#${channel(16)}${channel(8)}${channel(0)}`;
 }
 
-/** Luminanza relativa (WCAG) di un colore esadecimale. */
+/** Relative luminance (WCAG) of a hex colour. */
 function luminance(hex: string): number {
   const n = parseInt(hex.slice(1), 16);
   const channel = (shift: number): number => {
@@ -31,15 +31,15 @@ function luminance(hex: string): number {
   return 0.2126 * channel(16) + 0.7152 * channel(8) + 0.0722 * channel(0);
 }
 
-/** Rapporto di contrasto (WCAG) tra due colori esadecimali. */
+/** Contrast ratio (WCAG) between two hex colours. */
 export function contrast(a: string, b: string): number {
   const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
   return (hi + 0.05) / (lo + 0.05);
 }
 
 /**
- * Il colore `base` reso leggibile su `background`: lo si scurisce (o, su sfondi scuri, lo si schiarisce) a piccoli passi
- * finché il contrasto arriva a 4,5:1 (testo normale, WCAG AA).
+ * The `base` colour made readable on `background`: it is darkened (or, on dark backgrounds, lightened) in small steps
+ * until the contrast reaches 4.5:1 (normal text, WCAG AA).
  */
 export function readable(base: string, background: string): string {
   const toward = luminance(background) > 0.4 ? '#000000' : '#ffffff';
@@ -50,7 +50,7 @@ export function readable(base: string, background: string): string {
   return toward;
 }
 
-/** Variabili CSS di NG-ZORRO (`--ant-*`) ricavate dai colori del tema: primario, successo, errore. Funzione pura. */
+/** NG-ZORRO CSS variables (`--ant-*`) derived from the theme colours: primary, success, error. Pure function. */
 export function themeToNzVars(theme: ThemeDefinition): Record<string, string> {
   const { colors } = theme.tokens;
   const dark = theme.mode === 'dark';
@@ -64,11 +64,11 @@ export function themeToNzVars(theme: ThemeDefinition): Record<string, string> {
     vars[`--ant-${name}-color-outline`] = rgba(base, 0.2);
     if (name === 'primary') palette.slice(0, 7).forEach((c, i) => (vars[`--ant-primary-${i + 1}`] = c));
     else {
-      // Sul chiaro la scala di Ant impasta i colori scuri (un verde scuro diventa grigio): meglio schiarirli verso il bianco.
+      // On light themes the Ant scale muddies dark colours (a dark green becomes grey): better to lighten them towards white.
       const bg = dark ? palette[0] : mix(base, '#ffffff', 0.9);
       vars[`--ant-${name}-color-deprecated-bg`] = bg;
       vars[`--ant-${name}-color-deprecated-border`] = dark ? palette[2] : mix(base, '#ffffff', 0.6);
-      // Testo delle etichette colorate (nz-tag) leggibile sul loro sfondo.
+      // Text of the coloured tags (nz-tag) readable on their background.
       vars[`--lc-tag-${name}-text`] = readable(base, bg);
     }
   };
@@ -79,13 +79,13 @@ export function themeToNzVars(theme: ThemeDefinition): Record<string, string> {
   return vars;
 }
 
-/** Id del foglio di stile con le correzioni di contrasto (una sola volta per documento). */
+/** Id of the style sheet with the contrast fixes (once per document). */
 const A11Y_STYLE_ID = 'lc-nz-contrast';
 
 /**
- * Parti di NG-ZORRO con colori fissi o troppo chiari per il contrasto minimo (WCAG AA): testo delle etichette
- * colorate, segnaposto e frecce delle select, passi in attesa, giorni fuori mese del calendario. Usano i colori del
- * tema (`--lc-*`), già scelti leggibili.
+ * Parts of NG-ZORRO with fixed colours or too light for the minimum contrast (WCAG AA): text of the coloured
+ * tags, placeholders and arrows of selects, waiting steps, days outside the month in the calendar. They use the
+ * theme colours (`--lc-*`), already chosen to be readable.
  */
 export const NZ_CONTRAST_CSS = `
 .ant-tag-success { color: var(--lc-tag-success-text) !important; }
@@ -97,8 +97,8 @@ export const NZ_CONTRAST_CSS = `
 `;
 
 /**
- * Collega il tema della piattaforma a NG-ZORRO: a ogni cambio di tema imposta le variabili `--ant-*` e,
- * per i temi scuri, carica lo stylesheet scuro di NG-ZORRO (rimosso passando a un tema chiaro).
+ * Connects the platform theme to NG-ZORRO: on every theme change it sets the `--ant-*` variables and,
+ * for dark themes, loads the NG-ZORRO dark stylesheet (removed when switching to a light theme).
  */
 export function provideNzThemeBridge(): EnvironmentProviders {
   return provideEnvironmentInitializer(() => {

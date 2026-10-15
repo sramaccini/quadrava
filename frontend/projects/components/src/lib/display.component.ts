@@ -5,7 +5,7 @@ import { NzProgressModule } from 'ng-zorro-antd/progress';
 import type { ImageNode, LinkNode, ProgressNode, Tone } from 'schema';
 import { IconComponent } from './icon.component';
 
-/** Colore di un tono, dal tema. */
+/** Colour of a tone, from the theme. */
 export const TONE_COLORS: Record<Tone, string> = {
   neutral: 'var(--lc-color-muted, #5d6b7a)',
   primary: 'var(--lc-color-primary, #1f5fbf)',
@@ -14,8 +14,8 @@ export const TONE_COLORS: Record<Tone, string> = {
 };
 
 /**
- * Indirizzo di un'immagine ammesso: relativo (senza protocollo, senza `//` iniziale e senza `..`), https, oppure
- * un'immagine incorporata in base64. Tutto il resto (javascript:, http:, file:…) si scarta: null.
+ * Allowed image address: relative (no protocol, no leading `//` and no `..`), https, or an image embedded
+ * in base64. Everything else (javascript:, http:, file:…) is discarded: null.
  */
 export function safeImageSrc(raw: string): string | null {
   const src = raw.trim();
@@ -25,7 +25,7 @@ export function safeImageSrc(raw: string): string | null {
   return null;
 }
 
-/** Immagine con testo alternativo: se l'indirizzo non è ammesso o non si carica, si vede il testo. */
+/** Image with alternative text: if the address is not allowed or does not load, the text is shown. */
 @Component({
   selector: 'lc-image',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -65,8 +65,8 @@ export class ImageComponent {
 }
 
 /**
- * Collegamento: a una schermata dell'applicazione (navigazione interna, con parametri) oppure a un indirizzo. Gli
- * indirizzi esterni (https) si aprono in una nuova scheda che non può agire su questa (noopener, noreferrer).
+ * Link: to a screen of the application (internal navigation, with parameters) or to an address. External
+ * addresses (https) open in a new tab that cannot act on this one (noopener, noreferrer).
  */
 @Component({
   selector: 'lc-link',
@@ -102,7 +102,7 @@ export class LinkComponent {
   }
 }
 
-/** Avanzamento: percentuale di `value` su `max` (100 se assente), tra 0 e 100; un valore non numerico non si mostra. */
+/** Progress: percentage of `value` over `max` (100 if absent), between 0 and 100; a non-numeric value is not shown. */
 @Component({
   selector: 'lc-progress',
   imports: [NzProgressModule],

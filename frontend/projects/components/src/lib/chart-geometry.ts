@@ -1,5 +1,5 @@
 /*
- * Geometria dei grafici: funzioni pure, senza Angular e senza DOM.
+ * Chart geometry: pure functions, without Angular and without DOM.
  */
 
 export interface Scale {
@@ -9,8 +9,8 @@ export interface Scale {
 }
 
 /**
- * Scala «tonda» per l'asse dei valori: comprende sempre lo zero e arriva a un multiplo di 1, 2, 2,5 o 5 per una
- * potenza di dieci, con circa `count` intervalli. Con valori tutti nulli restituisce 0–1.
+ * «Round» scale for the value axis: it always includes zero and reaches a multiple of 1, 2, 2.5 or 5 times a
+ * power of ten, with about `count` intervals. With all values null it returns 0–1.
  */
 export function niceScale(values: number[], count = 4): Scale {
   const finite = values.filter((v) => Number.isFinite(v));
@@ -27,7 +27,7 @@ export function niceScale(values: number[], count = 4): Scale {
   return { min, max, ticks };
 }
 
-/** Punto su una circonferenza; l'angolo 0 è in alto e cresce in senso orario. */
+/** Point on a circle; angle 0 is at the top and grows clockwise. */
 function point(cx: number, cy: number, r: number, angle: number): [number, number] {
   return [cx + r * Math.sin(angle), cy - r * Math.cos(angle)];
 }
@@ -35,8 +35,8 @@ function point(cx: number, cy: number, r: number, angle: number): [number, numbe
 const f = (n: number): string => n.toFixed(2);
 
 /**
- * Tracciati SVG delle fette di una ciambella. I valori negativi o non numerici valgono zero; una fetta che occupa
- * tutto il cerchio si disegna come due semicerchi (un solo arco da 360° non è rappresentabile).
+ * SVG paths of the slices of a doughnut. Negative or non-numeric values count as zero; a slice that takes
+ * the whole circle is drawn as two half circles (a single 360° arc cannot be represented).
  */
 export function pieSlices(values: number[], cx: number, cy: number, outer: number, inner: number): { path: string; share: number }[] {
   const clean = values.map((v) => (Number.isFinite(v) && v > 0 ? v : 0));

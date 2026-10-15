@@ -8,8 +8,8 @@ import type { ActionDefinition } from 'schema';
 import { IconComponent } from './icon.component';
 
 /**
- * Azioni di una riga (tabella e datatable): le prime `inline` azioni visibili sono pulsanti, le altre stanno nel menu «⋯».
- * Visibilità, abilitazione e testi si valutano con la riga in `row`; l'esecuzione resta al componente ospite (`run`).
+ * Actions of a row (table and datatable): the first `inline` visible actions are buttons, the others are in the «⋯» menu.
+ * Visibility, enablement and texts are evaluated with the row in `row`; running them is up to the host component (`run`).
  */
 @Component({
   selector: 'lc-row-actions',
@@ -49,7 +49,7 @@ import { IconComponent } from './icon.component';
 })
 export class RowActionsComponent {
   readonly actions = input.required<readonly ActionDefinition[]>();
-  /** Quante azioni visibili mostrare come pulsanti; se manca, tutte. */
+  /** How many visible actions to show as buttons; if missing, all. */
   readonly inline = input<number | undefined>(undefined);
   readonly row = input.required<Record<string, unknown>>();
   readonly runtime = input.required<ScreenRuntime>();

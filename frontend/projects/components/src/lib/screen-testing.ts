@@ -4,7 +4,7 @@ import { Authorization, DataClient, Notifier, RuntimeDiagnostics, ScreenComponen
 import type { NodeDefinition, ScreenDefinition } from 'schema';
 import { provideLowcodeComponents } from './provide';
 
-/** Solo per i test: monta una schermata con il catalogo standard e porte finte che registrano tutto. */
+/** For tests only: mounts a screen with the standard catalogue and fake ports that record everything. */
 export interface ScreenHarness {
   fixture: ComponentFixture<ScreenComponent>;
   el: HTMLElement;
@@ -13,9 +13,9 @@ export interface ScreenHarness {
   navigations: { screen: string; params: Record<string, unknown> }[];
   reports: { screen: string; source: string; error: string }[];
   permissions: ReturnType<typeof signal<Set<string>>>;
-  /** Fa girare il rilevamento delle modifiche e le promesse in sospeso. */
+  /** Runs change detection and pending promises. */
   settle(rounds?: number): Promise<void>;
-  /** Ripete `settle` finché la condizione è vera (al massimo ~2 s). */
+  /** Repeats `settle` until the condition is true (at most ~2 s). */
   until(condition: () => boolean, label: string): Promise<void>;
 }
 
@@ -70,10 +70,10 @@ export async function renderScreen(options: {
   return { fixture, el: fixture.nativeElement as HTMLElement, requests, toasts, navigations, reports, permissions, settle, until };
 }
 
-/** Testo senza spazi multipli né spazi non separabili (quelli dei formati numerici). */
+/** Text without multiple spaces or non-breaking spaces (those of the number formats). */
 export const plain = (text: string | null | undefined): string => (text ?? '').replace(/[  \s]+/g, ' ').trim();
 
-/** Testi delle celle di una colonna (0 = prima colonna) delle righe di dati. */
+/** Texts of the cells of a column (0 = first column) of the data rows. */
 export const columnTexts = (el: HTMLElement, column: number, table = 0): string[] =>
   [...(el.querySelectorAll('nz-table')[table]?.querySelectorAll('tbody tr:not(.ant-table-placeholder)') ?? [])]
     .filter((tr) => !tr.classList.contains('lc-extra-row'))

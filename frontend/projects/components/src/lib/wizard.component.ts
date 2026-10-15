@@ -6,9 +6,9 @@ import type { WizardNode } from 'schema';
 import { nextId } from './shared';
 
 /**
- * Procedura a passi: indicatore dei passi, contenuto del passo corrente, Indietro e Avanti. Il passo corrente sta
- * nello stato della schermata (`bind`), così anche un pulsante dentro un passo può spostarlo con `set`; senza `bind`
- * è locale. Avanti è abilitato solo se `nextIf` del passo è vero (fail-closed); l'ultimo passo non ha Avanti.
+ * Wizard: step indicator, content of the current step, Back and Next. The current step is in
+ * the screen state (`bind`), so a button inside a step can move it too with `set`; without `bind`
+ * it is local. Next is enabled only if the step's `nextIf` is true (fail-closed); the last step has no Next.
  */
 @Component({
   selector: 'lc-wizard',
@@ -22,7 +22,7 @@ import { nextId } from './shared';
     .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   `,
   template: `
-    <!-- Solo indicazione visiva: nascosta ai lettori di schermo e non raggiungibile (inert); il passo lo annuncia il titolo sotto. -->
+    <!-- Visual indication only: hidden from screen readers and not reachable (inert); the title below announces the step. -->
     <nz-steps [nzCurrent]="current()" nzSize="small" aria-hidden="true" inert>
       @for (step of node().steps; track $index) {
         <nz-step [nzTitle]="runtime().text(step.label, scope())" [nzDescription]="step.description ? runtime().text(step.description, scope()) : undefined" />
@@ -55,10 +55,10 @@ export class WizardComponent {
 
   protected readonly i18n = inject(I18n);
   protected readonly headingId = nextId('lc-wizard');
-  /** Passo corrente senza stato condiviso (nessun `bind`). */
+  /** Current step without shared state (no `bind`). */
   private readonly local = linkedSignal(() => (this.node(), 0));
 
-  /** Passo corrente, sempre dentro i limiti: un valore estraneo nello stato vale come il primo passo. */
+  /** Current step, always within the limits: a foreign value in the state counts as the first step. */
   protected readonly current = computed(() => {
     const bind = this.node().bind;
     const raw = bind ? this.runtime().getState(bind) : this.local();

@@ -15,10 +15,10 @@ import { RichTextEditorComponent } from './rich-text-editor.component';
 import { parseIsoDate, parseIsoDateTime, toIsoDate, toIsoDateTime } from './shared';
 
 /**
- * Il controllo di un campo (senza etichetta né messaggio d'errore, che restano a chi lo ospita): lo usano il form, il
- * componente `input` e la barra dei filtri. Emette il valore così come arriva dal controllo; le conversioni (numeri)
- * spettano a chi lo ospita. Nella variante `filter` il vuoto significa «tutti»: segnaposto `placeholder`, una scelta in
- * più nei pulsanti di scelta, e caselle o interruttori spenti emettono `null` (nessun filtro) invece di `false`.
+ * The control of a field (without label or error message, which stay with the host): used by the form, the
+ * `input` component and the filter bar. It emits the value as it comes from the control; conversions (numbers)
+ * are up to the host. In the `filter` variant empty means «all»: `placeholder` text, one extra choice
+ * in the radio buttons, and checkboxes or switches turned off emit `null` (no filter) instead of `false`.
  */
 @Component({
   selector: 'lc-field-control',
@@ -131,23 +131,23 @@ export class FieldControlComponent {
   readonly value = input<unknown>(null);
   readonly disabled = input(false);
   readonly inputId = input.required<string>();
-  /** Id dell'etichetta (per le righe ripetibili, che la usano come nome del gruppo). */
+  /** Id of the label (for repeatable rows, which use it as the name of the group). */
   readonly labelId = input<string>('');
   readonly invalid = input(false);
-  /** Per le righe ripetibili: errori delle celle visibili dopo il primo invio, e riepilogo. */
+  /** For repeatable rows: errors of the cells visible after the first submit, and summary. */
   readonly submitted = input(false);
   readonly summary = input<string | null>(null);
-  /** Il testo libero si emette a ogni carattere (`input`) o solo uscendo dal campo / con Invio (`change`). */
+  /** Free text is emitted at every character (`input`) or only when leaving the field / with Enter (`change`). */
   readonly commitOn = input<'input' | 'change'>('input');
-  /** `form`: campo di un modulo; `filter`: criterio di ricerca, dove il vuoto vale «tutti». */
+  /** `form`: field of a form; `filter`: search criterion, where empty means «all». */
   readonly variant = input<'form' | 'filter'>('form');
-  /** Testo dei campi a scelta vuoti (e della scelta «tutti» nei filtri). */
+  /** Text of empty choice fields (and of the «all» choice in filters). */
   readonly placeholder = input('—');
   readonly valueChange = output<unknown>();
 
   private readonly i18n = inject(I18n);
 
-  /** Date e liste calcolate una volta per valore: un oggetto nuovo a ogni disegno farebbe riscrivere il controllo di continuo (NG0103). */
+  /** Dates and lists computed once per value: a new object at every render would make the control rewrite itself continuously (NG0103). */
   protected readonly date = computed(() => (this.field().type === 'date' ? parseIsoDate(this.value()) : parseIsoDateTime(this.value())));
   protected readonly list = computed(() => {
     const value = this.value();
@@ -162,18 +162,18 @@ export class FieldControlComponent {
     return value === null || value === undefined ? '' : String(value);
   });
 
-  /** Etichetta di un'opzione: tradotta con `optionKey` (`<prefisso>.<valore>`), altrimenti il valore stesso. */
+  /** Label of an option: translated with `optionKey` (`<prefix>.<value>`), otherwise the value itself. */
   protected optionLabel(option: string): string {
     const key = this.field().optionKey;
     return key ? this.i18n.t(`${key}.${option}`, {}, option) : option;
   }
 
-  /** Casella o interruttore: in un filtro spento vuol dire «nessun filtro». */
+  /** Checkbox or switch: in a filter, off means «no filter». */
   protected toggled(on: boolean): void {
     this.valueChange.emit(this.variant() === 'filter' && !on ? null : on);
   }
 
-  /** Scelta multipla: in un filtro nessuna scelta vuol dire «tutti». */
+  /** Multiple choice: in a filter, no choice means «all». */
   protected multiple(values: string[]): void {
     this.valueChange.emit(this.variant() === 'filter' && values.length === 0 ? null : values);
   }

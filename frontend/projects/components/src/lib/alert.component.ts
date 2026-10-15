@@ -4,7 +4,7 @@ import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { MarkdownComponent } from './markdown.component';
 import type { AlertNode } from 'schema';
 
-/** Messaggio fisso in pagina: informazione, conferma o errore. Compare e sparisce con `visibleIf`. */
+/** Fixed message in the page: information, confirmation or error. It appears and disappears with `visibleIf`. */
 @Component({
   selector: 'lc-alert',
   imports: [NzAlertModule, MarkdownComponent],

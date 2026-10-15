@@ -8,7 +8,7 @@ import { numeric } from './table-data';
 
 type Row = Record<string, unknown>;
 
-/** Tavolozza dei grafici: solo colori del tema e loro mescolanze. */
+/** Chart palette: only theme colours and their mixes. */
 const PALETTE = [
   'var(--lc-color-primary, #1f5fbf)',
   'var(--lc-color-success, #2e7d32)',
@@ -41,10 +41,10 @@ interface Line {
 }
 
 /**
- * Grafico a barre, a linee o a torta (ciambella) disegnato in SVG dalla piattaforma, con i colori del tema. Barre
- * affiancate o impilate, serie su un secondo asse a destra, grafici combinati (barre e linee insieme).
- * Ogni elemento mostra il valore al passaggio del mouse; la legenda è testo; per gli screen reader il disegno è
- * nascosto e i dati sono in una tabella equivalente.
+ * Bar, line or pie (doughnut) chart drawn in SVG by the platform, with the theme colours. Bars side by side
+ * or stacked, series on a second axis on the right, combined charts (bars and lines together).
+ * Every element shows its value on mouse hover; the legend is text; for screen readers the drawing is
+ * hidden and the data is in an equivalent table.
  */
 @Component({
   selector: 'lc-chart',
@@ -147,7 +147,7 @@ export class ChartComponent {
   readonly scope = input<Scope>({});
 
   protected readonly i18n = inject(I18n);
-  /** Larghezza reale del contenitore (testi nitidi); 600 finché non è misurata. */
+  /** Real width of the container (sharp texts); 600 until it is measured. */
   protected readonly width = signal(600);
 
   constructor() {
@@ -173,7 +173,7 @@ export class ChartComponent {
     return Array.isArray(items) ? (items as Row[]) : [];
   });
 
-  /** Etichette delle categorie, formattate o tradotte. */
+  /** Labels of the categories, formatted or translated. */
   protected readonly categories = computed(() =>
     this.rows().map((row) => {
       const raw = row[this.node().categoryField];
@@ -188,7 +188,7 @@ export class ChartComponent {
       return key ? this.i18n.t(`${key}.${value}`, {}, value) : value;
     }),
   );
-  /** Valori per serie (righe in ordine); quelli non numerici valgono null. */
+  /** Values per series (rows in order); non-numeric ones count as null. */
   protected readonly values = computed(() => this.node().series.map((s) => this.rows().map((row) => numeric(row[s.field]))));
   protected readonly seriesLabels = computed(() => this.node().series.map((s) => (s.label ? this.runtime().text(s.label, this.scope()) : s.field)));
   protected readonly caption = computed(() => (this.node().caption ? this.runtime().text(this.node().caption, this.scope()) : ''));
@@ -207,7 +207,7 @@ export class ChartComponent {
   protected readonly hasRight = computed(() => this.node().kind !== 'pie' && this.node().series.some((s) => s.axis === 'right'));
   protected readonly pad = computed(() => ({ ...PAD, right: this.hasRight() ? 64 : PAD.right }));
 
-  /** Valori che una scala deve contenere: le somme impilate delle barre (positive e negative) e i valori delle linee. */
+  /** Values a scale must contain: the stacked sums of the bars (positive and negative) and the values of the lines. */
   private extent(side: Side): number[] {
     const values = this.values();
     const out: number[] = [];
@@ -244,7 +244,7 @@ export class ChartComponent {
     return this.pad().left + this.band() * (index + 0.5);
   }
 
-  /** Barre: affiancate (una colonna per serie) o impilate (una colonna per asse, con i pezzi delle serie uno sopra l'altro). */
+  /** Bars: side by side (one column per series) or stacked (one column per axis, with the pieces of the series on top of each other). */
   protected readonly bars = computed<Mark[]>(() => {
     const values = this.values();
     const bars = values.map((_, j) => j).filter((j) => this.kindOf(j) === 'bar');
@@ -315,7 +315,7 @@ export class ChartComponent {
   protected text(value: number | null | undefined, side: Side = 'left'): string {
     return value === null || value === undefined ? '—' : formatValue(value, this.spec(side), this.i18n.intlLocale()).text;
   }
-  /** Etichette dell'asse in forma breve (per esempio 12 Mln). */
+  /** Axis labels in short form (for example 12M). */
   protected short(value: number, side: Side = 'left'): string {
     const node = this.node();
     const format = this.spec(side).format;

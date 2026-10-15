@@ -22,21 +22,21 @@ const DEFAULT_PAGE_SIZE = 20;
 const TEXT_FILTER_DELAY_MS = 300;
 type NzSortOrder = 'ascend' | 'descend' | null;
 
-/** Un filtro attivo come lo riceve il servizio. */
+/** An active filter as the service receives it. */
 export type ServerFilter = { field: string } & ColumnFilter;
 
-/** Richiesta che la tabella passa al data source nella variabile `request`. */
+/** Request the table passes to the data source in the `request` variable. */
 export interface ServerTableRequest {
-  /** Pagina (da 0) del livello richiesto: le righe, oppure i gruppi del primo livello. */
+  /** Page (from 0) of the requested level: the rows, or the groups of the first level. */
   page: number;
   size: number;
   sort: SortSpec | null;
   filters: ServerFilter[];
-  /** Colonne di raggruppamento scelte, in ordine. */
+  /** Chosen grouping columns, in order. */
   groupBy: string[];
-  /** Gruppo di cui si chiede il contenuto (vuoto = primo livello): con meno valori di groupBy si chiedono sottogruppi, altrimenti righe. */
+  /** Group whose content is requested (empty = first level): with fewer values than groupBy subgroups are requested, otherwise rows. */
   groupPath: { field: string; value: unknown }[];
-  /** Se presente si chiedono solo i valori distinti di questa colonna (per il filtro a scelta), con gli altri filtri applicati. */
+  /** If present only the distinct values of this column are requested (for the choice filter), with the other filters applied. */
   distinct?: string;
 }
 
@@ -46,13 +46,13 @@ export interface ServerGroup {
   aggregates?: Record<string, number | null>;
 }
 
-/** Un livello caricato: il primo (chiave vuota) o il contenuto di un gruppo aperto. */
+/** A loaded level: the first one (empty key) or the content of an open group. */
 interface Level {
   status: 'loading' | 'ready' | 'error';
   rows: Row[];
   groups: ServerGroup[];
   total: number;
-  /** Ultima pagina caricata (dentro un gruppo le pagine si accodano con «mostra altre»). */
+  /** Last loaded page (inside a group pages are appended with «show more»). */
   page: number;
   totals?: Record<string, number | null>;
 }
@@ -74,11 +74,11 @@ function asLevel(data: unknown, page: number, previous?: Level): Level {
 }
 
 /**
- * Datatable pilotata dal servizio, per tabelle molto grandi: filtri, ordinamento, raggruppamento, totali e paginazione
- * li calcola il data source, e nel browser resta solo ciò che si vede. Il componente esegue il data source con la
- * variabile `request` (vedi `ServerTableRequest`) per il primo livello, per il contenuto di ogni gruppo che l'utente
- * apre (righe a pagine, con «mostra altre») e per i valori dei filtri a scelta. Le risposte arrivate fuori ordine si
- * scartano; il passo `refresh` sul data source ripete le richieste.
+ * Datatable driven by the service, for very large tables: filters, sorting, grouping, totals and paging are
+ * computed by the data source, and only what is visible stays in the browser. The component runs the data source with the
+ * `request` variable (see `ServerTableRequest`) for the first level, for the content of every group the user
+ * opens (rows in pages, with «show more») and for the values of the choice filters. Responses arriving out of order are
+ * discarded; the `refresh` step on the data source repeats the requests.
  */
 @Component({
   selector: 'lc-server-data-table',
@@ -147,7 +147,7 @@ function asLevel(data: unknown, page: number, previous?: Level): Level {
                     @if (column.filter) {
                       <nz-filter-trigger [nzActive]="isFiltered(column)" [nzDropdownMenu]="menu" (nzVisibleChange)="$event && column.filter === 'select' && loadOptions(column)" [attr.aria-label]="i18n.t('lc.filterColumn', { label: label(column) })">
                         <lc-icon name="filter" />
-                        <!-- Il menu sta dentro il pulsante: un solo nodo nell'@if, così il pulsante va nel posto giusto dell'intestazione. -->
+                        <!-- The menu is inside the button: a single node in the @if, so the button goes in the right place of the header. -->
                         <nz-dropdown-menu #menu="nzDropdownMenu">
                           <div class="filter-panel" role="group" [attr.aria-label]="i18n.t('lc.filterColumn', { label: label(column) })">
                             @switch (column.filter) {
@@ -302,8 +302,8 @@ export class ServerDataTableComponent {
   readonly runtime = input.required<ScreenRuntime>();
   readonly scope = input<Scope>({});
 
-  /** Pulsante «Aggiorna» del piede: ricarica il data source come il passo `refresh`. */
-  /** Dal clic su «Aggiorna» finché la sua icona gira: lo spinner centrale compare subito. */
+  /** «Refresh» button of the footer: it reloads the data source like the `refresh` step. */
+  /** From the click on «Refresh» while its icon turns: the central spinner appears right away. */
   protected readonly refreshing = signal(false);
 
   protected reload(): void {
@@ -321,14 +321,14 @@ export class ServerDataTableComponent {
   protected readonly pageSize = computed(() => this.node().pageSize ?? DEFAULT_PAGE_SIZE);
   protected readonly colspan = computed(() => this.columns().length + (this.node().rowActions?.length ? 1 : 0));
 
-  // Scelte dell'utente.
+  // User choices.
   protected readonly filters = signal<Record<string, ColumnFilter>>({});
   protected readonly sort = linkedSignal<SortSpec | null>(() => this.node().defaultSort ?? null);
   protected readonly groupBy = linkedSignal<string[]>(() => (this.node().groupBy ?? []).filter((f) => this.byField().get(f)?.groupable).slice(0, 3));
-  /** Pagina del primo livello: torna alla prima quando cambiano filtri, ordinamento o gruppi. */
+  /** Page of the first level: it goes back to the first when filters, sorting or groups change. */
   protected readonly page = linkedSignal<number>(() => (this.filters(), this.sort(), this.groupBy(), 0));
 
-  // Dati caricati: livelli per chiave del gruppo ('' = primo livello), gruppi aperti, valori dei filtri a scelta.
+  // Loaded data: levels by group key ('' = first level), open groups, values of the choice filters.
   private readonly levels = signal<ReadonlyMap<string, Level>>(new Map());
   protected readonly expanded = signal<ReadonlySet<string>>(new Set());
   protected readonly options = signal<Record<string, unknown[]>>({});
@@ -356,13 +356,13 @@ export class ServerDataTableComponent {
   );
 
   constructor() {
-    // Primo livello: a ogni cambio di filtri, ordinamento, gruppi, pagina o refresh si ricomincia da capo.
+    // First level: at every change of filters, sorting, groups, page or refresh it starts over.
     effect(() => {
       const request = this.request(this.page(), []);
       this.runtime().refreshCount()[this.node().source];
       untracked(() => void this.loadTop(request));
     });
-    // La richiesta corrente (senza pagina) nello stato, per altri componenti.
+    // The current request (without page) in the state, for other components.
     effect(() => {
       const bind = this.node().bind;
       const request = { sort: this.sort(), filters: this.activeFilters(), groupBy: this.groupBy() };
@@ -380,7 +380,7 @@ export class ServerDataTableComponent {
     return result.ok ? { ok: true, data: result.data } : { ok: false };
   }
 
-  /** Filtri, ordinamento e gruppi dell'ultima vista caricata: se non cambiano (pagina nuova, refresh) i gruppi aperti restano aperti. */
+  /** Filters, sorting and groups of the last loaded view: if they do not change (new page, refresh) open groups stay open. */
   private lastShape = '';
 
   private async loadTop(request: ServerTableRequest): Promise<void> {
@@ -390,7 +390,7 @@ export class ServerDataTableComponent {
     this.lastShape = shape;
     const before = this.levels();
     const previous = before.get('');
-    // Mentre arriva la nuova pagina restano visibili le righe di prima (con l'indicatore di caricamento).
+    // While the new page arrives the previous rows stay visible (with the loading indicator).
     this.levels.set(new Map([...(sameShape ? before : []), ['', previous ? { ...previous, status: 'loading' } : { status: 'loading', rows: [], groups: [], total: 0, page: request.page }]]));
     if (!sameShape) this.expanded.set(new Set());
     const result = await this.fetch(request);
@@ -400,7 +400,7 @@ export class ServerDataTableComponent {
       this.levels.set(new Map([['', top]]));
       return;
     }
-    // Stessa vista: si ricarica il contenuto dei gruppi aperti, fino a dove l'utente era arrivato.
+    // Same view: the content of the open groups is reloaded, up to where the user had got.
     this.setLevel('', top);
     const open = [...this.expanded()].filter((key) => before.has(key));
     await Promise.all(
@@ -451,7 +451,7 @@ export class ServerDataTableComponent {
     this.levels.update((map) => new Map(map).set(key, level));
   }
 
-  /** Valori proposti da un filtro a scelta: li dà il servizio, con gli altri filtri applicati. */
+  /** Values proposed by a choice filter: the service gives them, with the other filters applied. */
   protected async loadOptions(column: DataColumnDefinition): Promise<void> {
     const others = this.activeFilters().filter((f) => f.field !== column.field);
     const result = await this.runtime().query(this.node().source, { request: { ...this.request(0, []), filters: others, groupBy: [], distinct: column.field } }, this.scope());
@@ -459,7 +459,7 @@ export class ServerDataTableComponent {
     if (Array.isArray(values)) this.options.update((all) => ({ ...all, [column.field]: values }));
   }
 
-  /** Elenco da disegnare: gruppi aperti con il loro contenuto, righe, «mostra altre» e stati di caricamento. */
+  /** List to draw: open groups with their content, rows, «show more» and loading states. */
   protected readonly items = computed<Item[]>(() => {
     const out: Item[] = [];
     const fields = this.groupBy();
@@ -498,7 +498,7 @@ export class ServerDataTableComponent {
     return this.groupBy().length ? this.i18n.t('lc.groupsCount', { n: top.total }) : this.i18n.t('lc.serverRowsCount', { n: top.total });
   });
 
-  // Presentazione.
+  // Presentation.
   protected label(column: DataColumnDefinition): string {
     return this.runtime().text(column.label, this.scope()) || column.field;
   }
@@ -526,7 +526,7 @@ export class ServerDataTableComponent {
     return this.format(value, spec).text;
   }
 
-  // Ordinamento.
+  // Sorting.
   protected order(column: DataColumnDefinition): NzSortOrder {
     const sort = this.sort();
     if (!column.sortable || sort?.field !== column.field) return null;
@@ -542,12 +542,12 @@ export class ServerDataTableComponent {
     this.sort.set(order === 'ascend' ? { field: column.field, direction: 'asc' } : order === 'descend' ? { field: column.field, direction: 'desc' } : null);
   }
 
-  // Raggruppamento.
+  // Grouping.
   protected setGroupBy(fields: string[]): void {
     this.groupBy.set((fields ?? []).slice(0, 3));
   }
 
-  // Filtri.
+  // Filters.
   protected isFiltered(column: DataColumnDefinition): boolean {
     return isActiveFilter(this.filters()[column.field]);
   }
@@ -597,7 +597,7 @@ export class ServerDataTableComponent {
     this.setFilter(column, { kind: 'date', from: toIsoDate(from ?? null), to: toIsoDate(to ?? null) });
   }
 
-  /** Azione di riga. Se cambia i dati, la sequenza termina con `refresh` sul data source della tabella, che ripete le richieste. */
+  /** Row action. If it changes the data, the sequence ends with `refresh` on the table's data source, which repeats the requests. */
   protected async run(action: ActionDefinition, row: Row): Promise<void> {
     if (this.busy()) return;
     this.busy.set(true);

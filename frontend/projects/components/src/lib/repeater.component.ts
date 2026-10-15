@@ -17,9 +17,9 @@ import { nextId, parseIsoDate, toIsoDate } from './shared';
 type Row = Record<string, unknown>;
 
 /**
- * Campo `repeater`: un elenco di righe, ognuna con i campi di `fields` (anche lookup e file, non righe annidate). Il valore è un elenco di oggetti.
- * Righe aggiunte e tolte con i pulsanti, nei limiti di `minRows` e `maxRows`; gli errori delle celle compaiono
- * dopo il primo tentativo di invio del form (`submitted`).
+ * `repeater` field: a list of rows, each with the fields of `fields` (also lookup and file, not nested rows). The value is a list of objects.
+ * Rows are added and removed with the buttons, within `minRows` and `maxRows`; the errors of the cells appear
+ * after the first submit attempt of the form (`submitted`).
  */
 @Component({
   selector: 'lc-repeater',
@@ -134,25 +134,25 @@ export class RepeaterComponent {
   readonly value = input<unknown>(null);
   readonly disabled = input(false);
   readonly submitted = input(false);
-  /** Messaggio complessivo del campo (righe mancanti o non valide), mostrato sotto le righe. */
+  /** Overall message of the field (missing or invalid rows), shown under the rows. */
   readonly summary = input<string | null>(null);
-  /** Id dell'etichetta del campo, per dare un nome al gruppo. */
+  /** Id of the label of the field, to give the group a name. */
   readonly labelId = input<string | null>(null);
   readonly valueChange = output<Row[]>();
 
   protected readonly i18n = inject(I18n);
   protected readonly id = nextId('lc-rep') + '-';
-  /** Righe correnti: seguono il valore del form, ma si aggiornano subito a ogni modifica (due modifiche ravvicinate non si perdono). */
+  /** Current rows: they follow the form value, but update right away at every change (two changes close together are not lost). */
   protected readonly rows = linkedSignal(() => repeaterRows(this.value()));
   protected readonly min = computed(() => this.field().minRows ?? 0);
   protected readonly max = computed(() => this.field().maxRows ?? 50);
   protected readonly errors = computed(() => repeaterCellErrors(this.field(), this.rows(), this.runtime(), this.scope(), this.i18n));
-  /** Date delle celle `date`, una volta per valore (vedi il form). */
+  /** Dates of the `date` cells, once per value (see the form). */
   protected readonly dates = computed(() =>
     this.rows().map((row) => Object.fromEntries((this.field().fields ?? []).filter((f) => f.type === 'date').map((f) => [f.name, parseIsoDate(row[f.name])]))),
   );
 
-  /** Scope di una cella: i data source e le espressioni vedono anche la riga in `item` (una volta per riga). */
+  /** Scope of a cell: data sources and expressions also see the row in `item` (once per row). */
   private readonly cellScopes = new WeakMap<Row, Scope>();
   protected cellScope(row: Row): Scope {
     let scope = this.cellScopes.get(row);

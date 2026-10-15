@@ -1,8 +1,8 @@
 import type { SortSpec } from 'schema';
 
 /*
- * Operazioni sulle righe caricate in pagina (ordinamento, e più avanti filtri, gruppi e totali).
- * Funzioni pure: non conoscono Angular e non lanciano eccezioni.
+ * Operations on the rows loaded in the page (sorting, filters, groups and totals).
+ * Pure functions: they know nothing of Angular and do not throw.
  */
 
 export type Row = Record<string, unknown>;
@@ -15,8 +15,8 @@ function collator(locale: string): Intl.Collator {
 }
 
 /**
- * Confronto tra due valori di una colonna: numeri come numeri, booleani (falso prima di vero), testi secondo la lingua
- * (con i numeri nel testo in ordine naturale, quindi le date ISO restano in ordine). I valori vuoti vanno sempre in fondo.
+ * Comparison between two values of a column: numbers as numbers, booleans (false before true), texts according to the
+ * language (with numbers in the text in natural order, so ISO dates stay in order). Empty values always go last.
  */
 export function compareValues(a: unknown, b: unknown, locale = 'it-IT'): number {
   const emptyA = a === null || a === undefined || a === '';
@@ -27,7 +27,7 @@ export function compareValues(a: unknown, b: unknown, locale = 'it-IT'): number 
   return collator(locale).compare(String(a), String(b));
 }
 
-/** Righe ordinate secondo `sort` (copia: l'originale non cambia). Ordinamento stabile; i vuoti restano in fondo in entrambe le direzioni. */
+/** Rows sorted according to `sort` (a copy: the original does not change). Stable sorting; empty values stay last in both directions. */
 export function sortRows(rows: readonly Row[], sort: SortSpec | null, locale = 'it-IT'): Row[] {
   if (!sort) return [...rows];
   const sign = sort.direction === 'desc' ? -1 : 1;
@@ -44,14 +44,14 @@ export function sortRows(rows: readonly Row[], sort: SortSpec | null, locale = '
     .map((x) => x.row);
 }
 
-/** Legge un ordinamento dallo stato: accetta solo `{ field: testo, direction: 'asc' | 'desc' }`. */
+/** Reads a sorting from the state: it accepts only `{ field: text, direction: 'asc' | 'desc' }`. */
 export function asSort(value: unknown): SortSpec | null {
   if (value === null || typeof value !== 'object') return null;
   const { field, direction } = value as Record<string, unknown>;
   return typeof field === 'string' && field && (direction === 'asc' || direction === 'desc') ? { field, direction } : null;
 }
 
-/** Numero di un valore di riga: numeri e testi numerici; tutto il resto non conta. */
+/** Number of a row value: numbers and numeric texts; everything else does not count. */
 export function numeric(value: unknown): number | null {
   if (typeof value === 'number') return Number.isFinite(value) ? value : null;
   if (typeof value === 'string' && value.trim() !== '') {
@@ -62,8 +62,8 @@ export function numeric(value: unknown): number | null {
 }
 
 /**
- * Valore aggregato di un campo sulle righe date: `count` conta i valori non vuoti, gli altri considerano solo
- * i valori numerici. Senza valori numerici restituisce `null` (cella vuota), mai `NaN`.
+ * Aggregated value of a field over the given rows: `count` counts the non-empty values, the others consider only
+ * numeric values. Without numeric values it returns `null` (empty cell), never `NaN`.
  */
 export function aggregate(rows: readonly Row[], field: string, kind: 'sum' | 'avg' | 'min' | 'max' | 'count'): number | null {
   if (kind === 'count') return rows.filter((r) => r[field] !== null && r[field] !== undefined && r[field] !== '').length;
@@ -81,14 +81,14 @@ export function aggregate(rows: readonly Row[], field: string, kind: 'sum' | 'av
   }
 }
 
-/** Filtro di una colonna della datatable. */
+/** Filter of a datatable column. */
 export type ColumnFilter =
   | { kind: 'text'; text: string }
   | { kind: 'select'; values: unknown[] }
   | { kind: 'number'; from: number | null; to: number | null }
   | { kind: 'date'; from: string | null; to: string | null };
 
-/** Il filtro restringe davvero le righe? Un filtro vuoto non conta. */
+/** Does the filter really narrow the rows? An empty filter does not count. */
 export function isActiveFilter(filter: ColumnFilter | undefined): boolean {
   if (!filter) return false;
   switch (filter.kind) {
@@ -102,9 +102,9 @@ export function isActiveFilter(filter: ColumnFilter | undefined): boolean {
 }
 
 /**
- * Righe che soddisfano tutti i filtri attivi. Testo: contiene (senza distinguere maiuscole e minuscole) nel testo
- * mostrato o nel valore; scelta: uno dei valori; numero e data: dentro l'intervallo (estremi compresi). Un valore
- * vuoto non soddisfa un filtro attivo.
+ * Rows that satisfy all the active filters. Text: contains (case-insensitive) in the shown text
+ * or in the value; choice: one of the values; number and date: inside the range (bounds included). An empty
+ * value does not satisfy an active filter.
  */
 export function filterRows(rows: readonly Row[], filters: Readonly<Record<string, ColumnFilter>>, shown: (row: Row, field: string) => string): Row[] {
   const active = Object.entries(filters).filter(([, f]) => isActiveFilter(f));
@@ -133,7 +133,7 @@ export function filterRows(rows: readonly Row[], filters: Readonly<Record<string
   );
 }
 
-/** Valori distinti di una colonna, in ordine (per il filtro a scelta). */
+/** Distinct values of a column, in order (for the choice filter). */
 export function distinctValues(rows: readonly Row[], field: string, locale = 'it-IT'): unknown[] {
   const seen = new Set<unknown>();
   for (const row of rows) {
@@ -144,7 +144,7 @@ export function distinctValues(rows: readonly Row[], field: string, locale = 'it
 }
 
 export interface RowGroup {
-  /** Chiave univoca del gruppo (percorso dei valori), per aprirlo e chiuderlo. */
+  /** Unique key of the group (path of the values), to open and close it. */
   key: string;
   field: string;
   value: unknown;
@@ -153,7 +153,7 @@ export interface RowGroup {
   children: RowGroup[];
 }
 
-/** Raggruppa le righe per i campi dati, in ordine; i gruppi sono in ordine di valore, le righe restano nel loro ordine. */
+/** Groups the rows by the given fields, in order; groups are in value order, rows keep their order. */
 export function groupRows(rows: readonly Row[], fields: readonly string[], locale = 'it-IT', level = 0, parent = ''): RowGroup[] {
   if (level >= fields.length) return [];
   const field = fields[level];
@@ -174,7 +174,7 @@ export function groupRows(rows: readonly Row[], fields: readonly string[], local
 
 export type DisplayItem = { kind: 'group'; group: RowGroup } | { kind: 'row'; row: Row; level: number };
 
-/** Elenco da disegnare: intestazioni dei gruppi e righe, saltando il contenuto dei gruppi chiusi. */
+/** List to draw: group headers and rows, skipping the content of closed groups. */
 export function flattenGroups(groups: readonly RowGroup[], collapsed: ReadonlySet<string>, depth: number): DisplayItem[] {
   const out: DisplayItem[] = [];
   for (const group of groups) {

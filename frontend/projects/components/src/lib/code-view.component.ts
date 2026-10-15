@@ -2,8 +2,8 @@ import { ChangeDetectionStrategy, Component, ElementRef, afterRenderEffect, inpu
 import { renderTokens, tokenizeJson, tokenizeTemplate } from './code-tokens';
 
 /**
- * Visore di codice in sola lettura con la sintassi colorata: JSON (con le espressioni `{{ }}` evidenziate) o testo con
- * espressioni. I colori si cambiano con le variabili `--lc-code-*`; il testo si seleziona e si copia normalmente.
+ * Read-only code viewer with syntax highlighting: JSON (with the `{{ }}` expressions highlighted) or text with
+ * expressions. Colours change with the `--lc-code-*` variables; the text is selected and copied normally.
  */
 @Component({
   selector: 'lc-code-view',
@@ -17,7 +17,7 @@ import { renderTokens, tokenizeJson, tokenizeTemplate } from './code-tokens';
       border: 1px solid var(--lc-color-border); border-radius: var(--lc-radius, 6px);
     }
     pre:focus-visible { outline: 2px solid var(--lc-color-primary); outline-offset: 1px; }
-    /* Colori su bianco con contrasto almeno 4,5:1, sostituibili dal tema. */
+    /* Colours on white with a contrast of at least 4.5:1, replaceable by the theme. */
     pre ::ng-deep .lc-code-key { color: var(--lc-code-key, #0b5cad); }
     pre ::ng-deep .lc-code-string { color: var(--lc-code-string, #1a7f37); }
     pre ::ng-deep .lc-code-number { color: var(--lc-code-number, #b35900); }
@@ -31,7 +31,7 @@ import { renderTokens, tokenizeJson, tokenizeTemplate } from './code-tokens';
     pre ::ng-deep .lc-code-property { color: var(--lc-code-property, #0a3069); }
     pre ::ng-deep .lc-code-operator { color: var(--lc-code-operator, #b3261e); }
   `,
-  // Il <pre> si può raggiungere con Tab per scorrerlo con la tastiera.
+  // The <pre> can be reached with Tab to scroll it with the keyboard.
   template: `<pre #pre tabindex="0" [attr.aria-label]="label() || null"></pre>`,
 })
 export class CodeViewComponent {
@@ -43,7 +43,7 @@ export class CodeViewComponent {
   constructor() {
     afterRenderEffect(() => {
       const text = this.code();
-      // renderTokens aggiunge uno spazio finale per le aree di testo; qui non serve.
+      // renderTokens adds a trailing space for text areas; not needed here.
       renderTokens(this.pre().nativeElement, text.endsWith('\n') ? text.slice(0, -1) : text, this.language() === 'json' ? tokenizeJson : tokenizeTemplate);
     });
   }

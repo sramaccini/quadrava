@@ -38,8 +38,8 @@ export const REFRESH_MIN_SPIN_MS = 800;
         [nzTooltipTitle]="i18n.t('lc.refresh')"
         (click)="onRefresh()"
       >
-        <!-- Durante il caricamento l'icona gira (niente spinner al suo posto, così il pulsante non cambia misura) e un altro clic
-             non fa nulla; il pulsante non si disabilita, altrimenti chi lo usa da tastiera perderebbe il focus. -->
+        <!-- While loading the icon turns (no spinner in its place, so the button does not change size) and another click
+             does nothing; the button is not disabled, otherwise keyboard users would lose the focus. -->
         <lc-icon name="reload" />
       </button>
     }

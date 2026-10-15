@@ -32,7 +32,7 @@ import { TabsComponent } from './tabs.component';
 import { TextComponent } from './text.component';
 import { provideNzThemeBridge } from './theme-bridge';
 
-/** Italiano di NG-ZORRO completato con le voci che la libreria non traduce (altrimenti avvisa in console a ogni selettore di date). */
+/** NG-ZORRO Italian completed with the entries the library does not translate (otherwise it warns in the console at every date picker). */
 const ITALIAN: NzI18nInterface = {
   ...it_IT,
   DatePicker: {
@@ -41,7 +41,7 @@ const ITALIAN: NzI18nInterface = {
   },
 };
 
-/** Inglese di NG-ZORRO completato con la stessa voce mancante. */
+/** NG-ZORRO English completed with the same missing entry. */
 const ENGLISH: NzI18nInterface = {
   ...en_GB,
   DatePicker: {
@@ -50,13 +50,13 @@ const ENGLISH: NzI18nInterface = {
   },
 };
 
-/** Nomi di mesi e giorni nei selettori di date (date-fns) per ogni lingua; una lingua senza voce usa l'inglese. */
+/** Month and day names in the date pickers (date-fns) for every language; a language without an entry uses English. */
 const DATE_LOCALES: Record<string, Locale> = { it: dateItalian, en: dateEnglish };
 
-/** Lingua di NG-ZORRO per ogni lingua dell'applicazione; una lingua senza voce usa l'inglese. */
+/** NG-ZORRO language for every language of the application; a language without an entry uses English. */
 const NZ_LOCALES: Record<string, NzI18nInterface> = { it: ITALIAN, en: ENGLISH };
 
-/** Catalogo standard. Le applicazioni possono aggiungere o sostituire componenti passando `extra`. */
+/** Standard catalogue. Applications can add or replace components by passing `extra`. */
 export const STANDARD_COMPONENTS: ComponentCatalog = {
   section: SectionComponent,
   text: TextComponent,
@@ -86,10 +86,10 @@ export const STANDARD_COMPONENTS: ComponentCatalog = {
 };
 
 /**
- * Catalogo standard e tutto ciò che NG-ZORRO richiede per funzionare: icone del set integrato, lingua italiana,
- * adattatore delle date (date-fns), ponte tra il tema della piattaforma e quello di NG-ZORRO e finestra di conferma.
- * La lingua di NG-ZORRO e le scritte `lc.*` seguono la lingua attiva del servizio `I18n` (italiano e inglese di serie).
- * Per cambiare la conferma si fornisce `Confirmation` dopo questa chiamata.
+ * Standard catalogue and everything NG-ZORRO needs to work: icons of the built-in set, Italian language,
+ * date adapter (date-fns), bridge between the platform theme and the NG-ZORRO one, and confirmation window.
+ * The NG-ZORRO language and the `lc.*` texts follow the active language of the `I18n` service (Italian and English built in).
+ * To change the confirmation, provide `Confirmation` after this call.
  */
 export function provideLowcodeComponents(extra: ComponentCatalog = {}): (Provider | EnvironmentProviders)[] {
   return [

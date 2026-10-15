@@ -7,13 +7,13 @@ import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import { IconComponent } from './icon.component';
 import { domToMarkdown, renderMarkdownInto } from './rich-text-dom';
 
-/** Comandi della barra: nome, icona, comando del browser e suo argomento. */
+/** Toolbar commands: name, icon, browser command and its argument. */
 interface Tool {
   id: 'bold' | 'italic' | 'strike' | 'heading' | 'bullets' | 'numbers' | 'quote' | 'code' | 'link' | 'clear';
   icon: string;
   command?: string;
   argument?: string;
-  /** Stato da leggere per aria-pressed (queryCommandState). */
+  /** State to read for aria-pressed (queryCommandState). */
   state?: string;
 }
 
@@ -30,13 +30,13 @@ const TOOLS: Tool[] = [
 ];
 
 /**
- * Editor di testo formattato per i campi `richtext`. Il valore è Markdown ristretto (`core/markdown.ts`): mai HTML.
- * L'area modificabile si riempie costruendo gli elementi (`renderMarkdownInto`) e si rilegge accettando solo i tag
- * ammessi (`domToMarkdown`); quello che si incolla entra come testo semplice. Barra con grassetto, corsivo, barrato,
- * titolo, elenchi puntati e numerati, citazione, collegamento (solo https, mailto o percorsi relativi) e «togli
- * formattazione»; Ctrl+B e Ctrl+I funzionano come negli editor di testo.
+ * Formatted-text editor for `richtext` fields. The value is restricted Markdown (`core/markdown.ts`): never HTML.
+ * The editable area is filled by building the elements (`renderMarkdownInto`) and read back accepting only the allowed
+ * tags (`domToMarkdown`); what is pasted goes in as plain text. Toolbar with bold, italic, strikethrough,
+ * heading, bulleted and numbered lists, quote, link (only https, mailto or relative paths) and «remove
+ * formatting»; Ctrl+B and Ctrl+I work as in text editors.
  *
- * Il valore si emette a ogni modifica (\`commitOn: input\`) o uscendo dall'editor (\`change\`).
+ * The value is emitted at every change (\`commitOn: input\`) or when leaving the editor (\`change\`).
  */
 @Component({
   selector: 'lc-rich-text-editor',
@@ -128,29 +128,29 @@ const TOOLS: Tool[] = [
 export class RichTextEditorComponent {
   protected readonly i18n = inject(I18n);
   protected readonly tools = TOOLS;
-  /** Valore in Markdown ristretto. */
+  /** Value in restricted Markdown. */
   readonly value = input<string | null>(null);
   readonly disabled = input(false);
   readonly invalid = input(false);
   readonly inputId = input.required<string>();
-  /** Id dell'etichetta che dà il nome all'area. */
+  /** Id of the label that names the area. */
   readonly labelId = input<string>('');
   readonly placeholder = input('');
-  /** Altezza minima in righe. */
+  /** Minimum height in lines. */
   readonly rows = input(5);
   readonly commitOn = input<'input' | 'change'>('input');
   readonly valueChange = output<string | null>();
 
   private readonly area = viewChild.required<ElementRef<HTMLDivElement>>('area');
-  /** Comandi attivi nel punto del cursore (per aria-pressed). */
+  /** Commands active at the cursor position (for aria-pressed). */
   protected readonly active = signal<string[]>([]);
   protected readonly blank = signal(true);
   protected readonly linking = signal(false);
   protected readonly linkHref = signal('');
   protected readonly linkError = signal(false);
-  /** Selezione salvata quando si apre la casella del collegamento (il fuoco passa all'indirizzo). */
+  /** Selection saved when the link box opens (the focus moves to the address). */
   private savedRange: Range | null = null;
-  /** Ultimo valore emesso o ricevuto: se il valore in ingresso è lo stesso, l'area non si ridisegna (il cursore resta). */
+  /** Last value emitted or received: if the incoming value is the same, the area is not redrawn (the cursor stays). */
   private last: string | null | undefined;
 
   constructor() {
@@ -171,7 +171,7 @@ export class RichTextEditorComponent {
     inject(DestroyRef).onDestroy(() => document.removeEventListener('selectionchange', onSelection));
   }
 
-  /** Il testo attuale in Markdown (vuoto = null). */
+  /** The current text in Markdown (empty = null). */
   private current(): string | null {
     const text = domToMarkdown(this.area().nativeElement).trim();
     return text ? text : null;
@@ -192,7 +192,7 @@ export class RichTextEditorComponent {
     if (this.commitOn() === 'change' && (this.current() ?? '') !== (this.value() ?? '')) this.emit();
   }
 
-  /** Si incolla solo testo: niente stili, script o tag da altre pagine. */
+  /** Only text is pasted: no styles, scripts or tags from other pages. */
   protected paste(event: ClipboardEvent): void {
     event.preventDefault();
     const text = event.clipboardData?.getData('text/plain') ?? '';
@@ -228,7 +228,7 @@ export class RichTextEditorComponent {
     this.refreshState();
   }
 
-  /** Applica il collegamento alla selezione salvata; un indirizzo vuoto toglie il collegamento. */
+  /** Applies the link to the saved selection; an empty address removes the link. */
   protected confirmLink(): void {
     const raw = this.linkHref().trim();
     const href = raw ? safeHref(raw) : '';
@@ -246,7 +246,7 @@ export class RichTextEditorComponent {
     if (href) {
       const selection = document.getSelection();
       if (selection && selection.rangeCount && selection.isCollapsed && area.contains(selection.anchorNode)) {
-        // Senza testo selezionato il collegamento ha come testo il suo indirizzo (elemento costruito, indirizzo già controllato).
+        // Without selected text the link has its address as text (built element, address already checked).
         const link = document.createElement('a');
         link.setAttribute('href', href);
         link.textContent = href;
@@ -265,7 +265,7 @@ export class RichTextEditorComponent {
     this.changed();
   }
 
-  /** L'elemento (nell'area) che contiene il cursore e corrisponde al selettore. */
+  /** The element (in the area) that contains the cursor and matches the selector. */
   private inside(selector: string): Element | null {
     const node = document.getSelection()?.anchorNode ?? null;
     const element = node instanceof Element ? node : node?.parentElement;
@@ -274,8 +274,8 @@ export class RichTextEditorComponent {
   }
 
   private exec(command: string, argument?: string): void {
-    // execCommand è l'unico modo comune ai browser per modificare un'area modificabile mantenendo l'annullamento
-    // (Ctrl+Z); il risultato si rilegge comunque con domToMarkdown, che accetta solo il formato ammesso.
+    // execCommand is the only way common to browsers to change an editable area keeping undo
+    // (Ctrl+Z); the result is read back with domToMarkdown anyway, which accepts only the allowed format.
     document.execCommand?.(command, false, argument);
   }
 

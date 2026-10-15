@@ -17,9 +17,9 @@ type NzSortOrder = 'ascend' | 'descend' | null;
 const DEFAULT_PAGE_SIZE = 10;
 
 /**
- * Tabella con azioni di riga. Contratto della risposta del data source: un array di righe oppure
- * `{ items: [...], total: n, size: n }` per la paginazione lato server. Una riga può contenere `_perm`
- * con i permessi sulla riga (es. `row._perm.update`).
+ * Table with row actions. Contract of the data source response: an array of rows or
+ * `{ items: [...], total: n, size: n }` for server-side paging. A row can contain `_perm`
+ * with the permissions on the row (e.g. `row._perm.update`).
  */
 @Component({
   selector: 'lc-table',
@@ -182,7 +182,7 @@ const DEFAULT_PAGE_SIZE = 10;
         </nz-table>
         </div>
         </lc-busy>
-        <!-- Durante il caricamento il posto resta vuoto: lo indica lc-busy. -->
+        <!-- While loading the place stays empty: lc-busy shows it. -->
         <ng-template #empty>
           @if (source().status !== 'loading') {
             <span role="status">{{ i18n.t('lc.noResults') }}</span>
@@ -212,11 +212,11 @@ export class TableComponent {
 
   protected readonly i18n = inject(I18n);
   private readonly labels = (): FormatLabels => ({ yes: this.i18n.t('lc.yes'), no: this.i18n.t('lc.no'), translate: (key, fallback) => this.i18n.t(key, {}, fallback) });
-  /** Colonne visibili all'utente: `visibleIf` e `hiddenIf` valgono anche per le colonne. */
+  /** Columns visible to the user: `visibleIf` and `hiddenIf` apply to columns too. */
   protected readonly columns = computed(() => this.node().columns.filter((c) => this.runtime().isVisible(c, this.scope())));
 
   protected readonly source = computed(() => this.runtime().source(this.node().source));
-  /** Righe così come arrivano dal servizio. */
+  /** Rows as they arrive from the service. */
   private readonly loaded = computed<Row[]>(() => {
     const data = this.source().data;
     if (Array.isArray(data)) return data as Row[];
@@ -224,14 +224,14 @@ export class TableComponent {
     return Array.isArray(items) ? (items as Row[]) : [];
   });
   protected readonly paged = computed(() => this.runtime().definition.dataSources?.[this.node().source]?.paging === 'server');
-  /** Ordinamento senza stato condiviso (nessun `sort.bind`): parte da `sort.default`. */
+  /** Sorting without shared state (no `sort.bind`): it starts from `sort.default`. */
   private readonly localSort = linkedSignal<SortSpec | null>(() => this.node().sort?.default ?? null);
-  /** Ordinamento corrente: dallo stato della schermata se c'è `sort.bind`, altrimenti locale. */
+  /** Current sorting: from the screen state if there is `sort.bind`, otherwise local. */
   protected readonly sort = computed<SortSpec | null>(() => {
     const bind = this.node().sort?.bind;
     return bind ? asSort(this.runtime().getState(bind)) : this.localSort();
   });
-  /** Con paging server e `sort.bind` l'ordine lo decide il servizio; in tutti gli altri casi si ordina in pagina. */
+  /** With server paging and `sort.bind` the service decides the order; in every other case it sorts in the page. */
   private readonly serverSorted = computed(() => this.paged() && !!this.node().sort?.bind);
   private reportedLocalSort = false;
   protected readonly rows = computed<Row[]>(() => {
@@ -240,7 +240,7 @@ export class TableComponent {
     if (!sort || this.serverSorted()) return rows;
     if (this.paged() && !this.reportedLocalSort) {
       this.reportedLocalSort = true;
-      this.runtime().report(`tabella ${this.node().source}`, 'ordinamento senza sort.bind con paging server: ordinata solo la pagina corrente');
+      this.runtime().report(`table ${this.node().source}`, 'sorting without sort.bind with server paging: only the current page is sorted');
     }
     return sortRows(rows, sort, this.i18n.intlLocale());
   });
@@ -252,15 +252,15 @@ export class TableComponent {
     const size = (this.source().data as { size?: unknown } | null)?.size;
     return typeof size === 'number' && size > 0 ? size : DEFAULT_PAGE_SIZE;
   });
-  /** Se il servizio non dichiara il totale, si mostra solo la pagina corrente (nessuna pagina successiva). */
+  /** If the service does not declare the total, only the current page is shown (no next page). */
   protected readonly total = computed(() => {
     const total = (this.source().data as { total?: unknown } | null)?.total;
     return typeof total === 'number' ? total : (this.page() + 1) * this.pageSize();
   });
 
-  /** Campo che identifica una riga nella selezione. */
+  /** Field that identifies a row in the selection. */
   private readonly key = computed(() => this.node().selection?.key ?? 'id');
-  /** Chiavi delle righe selezionate, dallo stato della schermata. */
+  /** Keys of the selected rows, from the screen state. */
   private readonly selectedKeys = computed<unknown[]>(() => {
     const selection = this.node().selection;
     const value = selection ? this.runtime().getState(selection.bind) : null;
@@ -273,11 +273,11 @@ export class TableComponent {
   });
   protected readonly allSelected = computed(() => this.rows().length > 0 && this.selectedRows().length === this.rows().length);
   protected readonly someSelected = computed(() => this.selectedRows().length > 0 && !this.allSelected());
-  /** Le azioni multiple vedono le righe selezionate in `selection`. */
+  /** Bulk actions see the selected rows in `selection`. */
   protected readonly bulkScope = computed<Scope>(() => ({ ...this.scope(), selection: this.selectedRows() }));
 
   constructor() {
-    // La selezione vale per le righe caricate: le chiavi che non ci sono più (nuova pagina, nuovi filtri, righe tolte) si scartano.
+    // The selection applies to the loaded rows: keys no longer there (new page, new filters, removed rows) are dropped.
     effect(() => {
       const selection = this.node().selection;
       if (!selection || this.source().status !== 'ready') return;
@@ -339,7 +339,7 @@ export class TableComponent {
   }
 
   protected setSort(column: TableColumnDefinition, order: string | null): void {
-    // Ordinando una colonna NG-ZORRO azzera anche le altre: l'azzeramento di una colonna che non è quella ordinata non conta.
+    // Sorting a column NG-ZORRO also resets the others: resetting a column that is not the sorted one does not count.
     if (!order && this.sort()?.field !== column.field) return;
     const next: SortSpec | null = order === 'ascend' ? { field: column.field, direction: 'asc' } : order === 'descend' ? { field: column.field, direction: 'desc' } : null;
     const bind = this.node().sort?.bind;
@@ -348,7 +348,7 @@ export class TableComponent {
       return;
     }
     this.runtime().setState(bind, next);
-    // Un ordinamento nuovo riporta alla prima pagina, come un filtro nuovo.
+    // A new sorting goes back to the first page, like a new filter.
     if (this.paged()) this.runtime().setState('page', 0);
   }
 
@@ -356,10 +356,10 @@ export class TableComponent {
     return column.format === 'number' || column.format === 'currency' || column.format === 'percent';
   }
 
-  /** C'è una riga dei totali se almeno una colonna visibile ha `aggregate`. */
+  /** There is a totals row if at least one visible column has `aggregate`. */
   protected readonly hasTotals = computed(() => this.columns().some((c) => !!c.aggregate));
 
-  /** Valore della riga dei totali per una colonna, con il formato della colonna (numero semplice per il conteggio). */
+  /** Value of the totals row for a column, with the format of the column (plain number for the count). */
   protected totalOf(column: TableColumnDefinition): string {
     if (!column.aggregate) return '';
     const value = aggregate(this.rows(), column.field, column.aggregate);
@@ -379,8 +379,8 @@ export class TableComponent {
     }
   }
 
-/** Pulsante «Aggiorna» del piede: ricarica il data source come il passo `refresh`. */
-  /** Dal clic su «Aggiorna» finché la sua icona gira: lo spinner centrale compare subito. */
+/** «Refresh» button of the footer: it reloads the data source like the `refresh` step. */
+  /** From the click on «Refresh» while its icon turns: the central spinner appears right away. */
   protected readonly refreshing = signal(false);
 
   protected reload(): void {
@@ -391,9 +391,9 @@ export class TableComponent {
     this.runtime().setState('page', Math.max(0, page));
   }
 
-  /** Righe aperte (per chiave, o per posizione se la riga non ha chiave). */
+  /** Open rows (by key, or by position if the row has no key). */
   private readonly expanded = signal<ReadonlySet<unknown>>(new Set());
-  /** Scope di ogni riga, creato una volta per riga: un oggetto nuovo a ogni disegno ricostruirebbe i nodi dell'area aperta. */
+  /** Scope of every row, created once per row: a new object at every render would rebuild the nodes of the open area. */
   private readonly scopes = new WeakMap<Row, Scope>();
   protected readonly colspan = computed(
     () => this.columns().length + (this.node().expand ? 1 : 0) + (this.node().selection ? 1 : 0) + (this.node().rowActions?.length ? 1 : 0),

@@ -19,17 +19,17 @@ import { TONE_COLORS, nextId, parseIsoDate, toIsoDate } from './shared';
 import { aggregate, distinctValues, filterRows, flattenGroups, groupRows, isActiveFilter, sortRows, type ColumnFilter, type DisplayItem, type Row } from './table-data';
 
 const DEFAULT_PAGE_SIZE = 10;
-/** Attesa dopo l'ultima battuta prima di applicare un filtro di testo (con decine di migliaia di righe conta). */
+/** Wait after the last keystroke before applying a text filter (with tens of thousands of rows it matters). */
 const TEXT_FILTER_DELAY_MS = 200;
 type NzSortOrder = 'ascend' | 'descend' | null;
 
 /**
- * Datatable: analizza in pagina un insieme di righe già caricato. Ogni colonna può avere un filtro nell'intestazione
- * (testo, scelta, intervallo numerico o di date), essere ordinata e servire per raggruppare (fino a tre livelli,
- * scelti dall'utente); i gruppi mostrano conteggio e totali delle colonne con `aggregate` e si aprono e chiudono.
- * Paginazione in pagina, totale generale in fondo, azioni di riga come nella tabella.
- * Pensata per decine di migliaia di righe: si disegna solo la pagina corrente, i testi formattati delle celle si
- * calcolano una volta per riga e lingua, e il filtro di testo aspetta una breve pausa tra le battute.
+ * Datatable: analyses in the page a set of rows already loaded. Every column can have a filter in the header
+ * (text, choice, numeric or date range), be sorted and be used for grouping (up to three levels,
+ * chosen by the user); groups show count and totals of the columns with `aggregate` and open and close.
+ * Paging in the page, grand total at the bottom, row actions as in the table.
+ * Designed for tens of thousands of rows: only the current page is drawn, the formatted texts of the cells are
+ * computed once per row and language, and the text filter waits for a short pause between keystrokes.
  */
 @Component({
   selector: 'lc-data-table',
@@ -97,7 +97,7 @@ type NzSortOrder = 'ascend' | 'descend' | null;
                     @if (column.filter) {
                       <nz-filter-trigger [nzActive]="isFiltered(column)" [nzDropdownMenu]="menu" [attr.aria-label]="i18n.t('lc.filterColumn', { label: label(column) })">
                         <lc-icon name="filter" />
-                        <!-- Il menu sta dentro il pulsante: un solo nodo nell'@if, così il pulsante va nel posto giusto dell'intestazione. -->
+                        <!-- The menu is inside the button: a single node in the @if, so the button goes in the right place of the header. -->
                         <nz-dropdown-menu #menu="nzDropdownMenu">
                         <div class="filter-panel" role="group" [attr.aria-label]="i18n.t('lc.filterColumn', { label: label(column) })">
                           @switch (column.filter) {
@@ -234,8 +234,8 @@ export class DataTableComponent {
   readonly runtime = input.required<ScreenRuntime>();
   readonly scope = input<Scope>({});
 
-  /** Pulsante «Aggiorna» del piede: ricarica il data source come il passo `refresh`. */
-  /** Dal clic su «Aggiorna» finché la sua icona gira: lo spinner centrale compare subito. */
+  /** «Refresh» button of the footer: it reloads the data source like the `refresh` step. */
+  /** From the click on «Refresh» while its icon turns: the central spinner appears right away. */
   protected readonly refreshing = signal(false);
 
   protected reload(): void {
@@ -258,7 +258,7 @@ export class DataTableComponent {
   protected readonly groupable = computed(() => this.columns().filter((c) => c.groupable));
   private readonly byField = computed(() => new Map(this.node().columns.map((c) => [c.field, c] as const)));
 
-  // Stato dell'utente: filtri, ordinamento, raggruppamento, gruppi chiusi, pagina.
+  // User state: filters, sorting, grouping, closed groups, page.
   protected readonly filters = signal<Record<string, ColumnFilter>>({});
   protected readonly sort = linkedSignal<SortSpec | null>(() => this.node().defaultSort ?? null);
   protected readonly groupBy = linkedSignal<string[]>(() => (this.node().groupBy ?? []).filter((f) => this.byField().get(f)?.groupable).slice(0, 3));
@@ -272,7 +272,7 @@ export class DataTableComponent {
     if (!fields.length) return this.sorted().map((row) => ({ kind: 'row', row, level: 0 }));
     return flattenGroups(groupRows(this.sorted(), fields, this.i18n.intlLocale()), this.collapsed(), fields.length);
   });
-  /** Pagina corrente: torna alla prima quando cambiano filtri, ordinamento o gruppi. */
+  /** Current page: it goes back to the first when filters, sorting or groups change. */
   protected readonly page = linkedSignal<number>(() => (this.filters(), this.sort(), this.groupBy(), 0));
   protected readonly pageItems = computed(() => {
     const size = this.pageSize();
@@ -284,7 +284,7 @@ export class DataTableComponent {
   protected readonly hasTotals = computed(() => this.columns().some((c) => !!c.aggregate));
   protected readonly anyFilter = computed(() => Object.values(this.filters()).some((f) => isActiveFilter(f)));
 
-  /** Valori proposti dai filtri a scelta, con il testo mostrato (tradotto con valueKey). */
+  /** Values proposed by the choice filters, with the shown text (translated with valueKey). */
   protected readonly options = computed<Record<string, { value: unknown; label: string }[]>>(() =>
     Object.fromEntries(
       this.columns()
@@ -292,7 +292,7 @@ export class DataTableComponent {
         .map((c) => [c.field, distinctValues(this.rows(), c.field, this.i18n.intlLocale()).map((value) => ({ value, label: this.format(value, c).text }))]),
     ),
   );
-  /** Intervalli dei filtri di date come coppie di Date, una volta per valore (vedi i campi data del form). */
+  /** Ranges of the date filters as pairs of Dates, once per value (see the date fields of the form). */
   protected readonly ranges = computed<Record<string, (Date | null)[]>>(() =>
     Object.fromEntries(
       this.columns()
@@ -316,7 +316,7 @@ export class DataTableComponent {
     return this.format(row[column.field], column);
   }
 
-  /** Testi mostrati già calcolati, per riga e campo; si ricominciano al cambio di lingua. */
+  /** Shown texts already computed, by row and field; they start over when the language changes. */
   private readonly texts = computed(() => (this.i18n.locale(), new WeakMap<Row, Map<string, string>>()));
 
   private shownText(row: Row, field: string): string {
@@ -355,7 +355,7 @@ export class DataTableComponent {
     return this.format(value, spec).text;
   }
 
-  // Ordinamento (in pagina, come nella tabella senza paginazione lato server).
+  // Sorting (in the page, as in the table without server-side paging).
   protected order(column: DataColumnDefinition): NzSortOrder {
     const sort = this.sort();
     if (!column.sortable || sort?.field !== column.field) return null;
@@ -371,7 +371,7 @@ export class DataTableComponent {
     this.sort.set(order === 'ascend' ? { field: column.field, direction: 'asc' } : order === 'descend' ? { field: column.field, direction: 'desc' } : null);
   }
 
-  // Raggruppamento.
+  // Grouping.
   protected setGroupBy(fields: string[]): void {
     this.groupBy.set((fields ?? []).slice(0, 3));
     this.collapsed.set(new Set());
@@ -385,7 +385,7 @@ export class DataTableComponent {
     });
   }
 
-  // Filtri.
+  // Filters.
   protected isFiltered(column: DataColumnDefinition): boolean {
     return isActiveFilter(this.filters()[column.field]);
   }

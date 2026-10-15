@@ -12,11 +12,11 @@ import { IconComponent } from './icon.component';
 type Row = Record<string, unknown>;
 
 /**
- * Kanban: le righe del data source in colonne secondo `columnField` (le righe con un valore che non è una colonna non
- * si mostrano). Con `onMove` una scheda si sposta trascinandola in un'altra colonna o, da tastiera, con il menu
- * «Sposta in»: i passi vedono la riga in `row`, la colonna di partenza in `from` e quella di arrivo in `to` (di solito
- * una call e un refresh). `moveIf` decide quali schede si possono spostare (fail-closed). Lo spostamento vero lo fa il
- * servizio: la scheda cambia colonna quando i dati ricaricati lo dicono.
+ * Kanban: the rows of the data source in columns according to `columnField` (rows with a value that is not a column
+ * are not shown). With `onMove` a card moves by dragging it to another column or, from the keyboard, with the «Move
+ * to» menu: the steps see the row in `row`, the starting column in `from` and the target one in `to` (usually
+ * a call and a refresh). `moveIf` decides which cards can be moved (fail-closed). The real move is done by the
+ * service: the card changes column when the reloaded data says so.
  */
 @Component({
   selector: 'lc-kanban',
@@ -110,9 +110,9 @@ export class KanbanComponent {
   readonly runtime = input.required<ScreenRuntime>();
   readonly scope = input<Scope>({});
   protected readonly i18n = inject(I18n);
-  /** Colonna su cui si sta trascinando una scheda. */
+  /** Column a card is being dragged over. */
   protected readonly over = signal<string | null>(null);
-  /** Scheda il cui spostamento è in corso. */
+  /** Card whose move is in progress. */
   protected readonly busy = signal<Row | null>(null);
   private dragged: Row | null = null;
 
@@ -134,7 +134,7 @@ export class KanbanComponent {
     return value === null || value === undefined ? '' : String(value);
   }
 
-  /** Spostabile se ci sono passi per farlo e `moveIf` (se c'è) dice di sì per la riga; un errore vale no. */
+  /** Movable if there are steps to do it and `moveIf` (if present) says yes for the row; an error counts as no. */
   protected canMove(row: Row): boolean {
     const node = this.node();
     if (!node.onMove?.length) return false;

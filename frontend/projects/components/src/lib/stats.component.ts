@@ -6,7 +6,7 @@ import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import type { StatItem, StatsNode, Tone } from 'schema';
 import { IconComponent } from './icon.component';
 
-/** Colore del valore per ogni tono: sempre dal tema. */
+/** Colour of the value for every tone: always from the theme. */
 const TONE_VARS: Record<Tone, string> = {
   neutral: 'var(--lc-color-on-surface, #1b2430)',
   primary: 'var(--lc-color-primary, #1f5fbf)',
@@ -24,9 +24,9 @@ interface StatView {
 }
 
 /**
- * Indicatori (KPI): una fila di riquadri con etichetta e valore grande, che va a capo sugli schermi stretti.
- * Il valore viene da un campo del record restituito da `source` oppure da un'espressione (`value`), che vede
- * il record come `row`; si usano gli stessi formati delle colonne.
+ * Indicators (KPIs): a row of tiles with label and big value, wrapping on narrow screens.
+ * The value comes from a field of the record returned by `source` or from an expression (`value`), which sees
+ * the record as `row`; the same formats as columns are used.
  */
 @Component({
   selector: 'lc-stats',
@@ -94,7 +94,7 @@ export class StatsComponent {
     const row = this.record();
     const scope: Scope = { ...this.scope(), row };
     const runtime = this.runtime();
-    // Finché il data source non ha risposto non si valutano valori e note: su un record vuoto darebbero solo errori.
+    // Until the data source has answered, values and captions are not evaluated: on an empty record they would only give errors.
     const waiting = !!this.node().source && this.source()?.data == null;
     return this.node()
       .items.filter((item) => runtime.isVisible(item, scope))

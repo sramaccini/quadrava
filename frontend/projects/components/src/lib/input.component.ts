@@ -7,17 +7,17 @@ import { fieldError, repeaterError } from './field-validation';
 import { nextId } from './shared';
 
 /**
- * Campo a sé (casella di testo, elenco a discesa, data…) legato allo stato della schermata: legge e scrive `bind`
- * (`state.<nome>` se assente), così data source, espressioni e passi lo vedono come ogni altro stato. Il testo libero si
- * scrive uscendo dal campo o con Invio, per non ricaricare i data source a ogni carattere. Gli errori di validazione si
- * mostrano dopo la prima modifica; l'enforcement resta del servizio che riceve il valore.
+ * Standalone field (text box, drop-down list, date…) bound to the screen state: it reads and writes `bind`
+ * (`state.<name>` if absent), so data sources, expressions and steps see it like any other state. Free text is
+ * written when leaving the field or with Enter, so as not to reload the data sources at every character. Validation
+ * errors are shown after the first change; enforcement stays with the service that receives the value.
  */
 @Component({
   selector: 'lc-input',
   imports: [FieldControlComponent, NzFormModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
-    /* Da solo non supera i 560px; i contenitori di layout tolgono il limite (--lc-input-max: none) per riempire la cella. */
+    /* On its own it is at most 560px wide; layout containers lift the limit (--lc-input-max: none) to fill the cell. */
     :host { display: block; max-width: var(--lc-input-max, 560px); }
     nz-form-item { margin-bottom: 0; }
   `,
@@ -76,9 +76,9 @@ export class InputComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    // Di norma lo stato è già stato preparato dal runtime; qui per i campi in finestre o aggiunti dopo.
+    // Usually the state has already been prepared by the runtime; here for fields in windows or added later.
     if (this.runtime().getState(this.path()) === undefined) this.runtime().setState(this.path(), this.runtime().resolveValue(initialInputValue(this.node()), this.scope()));
-    // Il passo validate controlla i campi del gruppo (`default` se non indicato) finché il campo è sullo schermo.
+    // The validate step checks the fields of the group (`default` if not given) while the field is on the screen.
     const unregister = this.runtime().registerValidator(this.node().group ?? 'default', () => {
       this.touched.set(true);
       return this.error() === null;

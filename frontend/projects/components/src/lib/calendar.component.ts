@@ -17,16 +17,16 @@ const TONE_VARS: Record<Tone, string> = {
 };
 
 const pad = (n: number): string => String(n).padStart(2, '0');
-/** Giorno locale di una data come `AAAA-MM-GG`. */
+/** Local day of a date as `YYYY-MM-DD`. */
 export function dayKey(date: Date): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
-/** Giorno di un valore di riga: `AAAA-MM-GG`, anche seguito dall'ora; altrimenti null. */
+/** Day of a row value: `YYYY-MM-DD`, also followed by the time; otherwise null. */
 export function rowDay(value: unknown): string | null {
   const m = typeof value === 'string' ? /^(\d{4}-\d{2}-\d{2})/.exec(value) : null;
   return m ? m[1] : null;
 }
-/** Mese `AAAA-MM` → primo giorno del mese; null se il testo non è un mese valido. */
+/** Month `YYYY-MM` → first day of the month; null if the text is not a valid month. */
 export function parseMonth(value: unknown): Date | null {
   const m = typeof value === 'string' ? /^(\d{4})-(\d{2})$/.exec(value) : null;
   if (!m || Number(m[2]) < 1 || Number(m[2]) > 12) return null;
@@ -34,9 +34,9 @@ export function parseMonth(value: unknown): Date | null {
 }
 
 /**
- * Calendario mensile con gli eventi di un data source nei giorni. Il mese visibile sta nello stato (`bind`, `AAAA-MM`),
- * così il data source può caricare solo quel mese; senza `bind` è locale. Al massimo `maxPerDay` eventi per giorno
- * (gli altri diventano «+n»); il clic su un evento esegue `onSelect` con l'evento in `row`.
+ * Monthly calendar with the events of a data source in the days. The visible month is in the state (`bind`, `YYYY-MM`),
+ * so the data source can load only that month; without `bind` it is local. At most `maxPerDay` events per day
+ * (the others become «+n»); a click on an event runs `onSelect` with the event in `row`.
  */
 @Component({
   selector: 'lc-calendar',
@@ -102,12 +102,12 @@ export class CalendarComponent {
   protected readonly source = computed(() => this.runtime().source(this.node().source));
   protected readonly max = computed(() => this.node().maxPerDay ?? 3);
 
-  /** Primo giorno del mese visibile: dallo stato (`bind`) se valido, altrimenti locale. */
+  /** First day of the visible month: from the state (`bind`) if valid, otherwise local. */
   protected readonly month = computed<Date>(() => {
     const bind = this.node().bind;
     return (bind ? parseMonth(this.runtime().getState(bind)) : null) ?? this.local();
   });
-  /** Giorno evidenziato da NG-ZORRO: oggi nel mese corrente, altrimenti il primo del mese. */
+  /** Day highlighted by NG-ZORRO: today in the current month, otherwise the first of the month. */
   protected readonly value = computed<Date>(() => {
     const month = this.month();
     const now = new Date();
@@ -115,7 +115,7 @@ export class CalendarComponent {
   });
   protected readonly title = computed(() => new Intl.DateTimeFormat(this.i18n.intlLocale(), { month: 'long', year: 'numeric' }).format(this.month()));
 
-  /** Eventi per giorno (`AAAA-MM-GG`), nell'ordine del servizio. */
+  /** Events per day (`YYYY-MM-DD`), in the order of the service. */
   protected readonly byDay = computed(() => {
     const map = new Map<string, Row[]>();
     const data = this.source().data;
@@ -167,7 +167,7 @@ export class CalendarComponent {
     this.setMonth(new Date());
   }
 
-  /** Clic su un giorno: se è di un altro mese (i giorni in grigio), il calendario passa a quel mese. */
+  /** Click on a day: if it belongs to another month (the grey days), the calendar moves to that month. */
   protected pick(date: Date): void {
     const current = this.month();
     if (date.getFullYear() !== current.getFullYear() || date.getMonth() !== current.getMonth()) this.setMonth(date);

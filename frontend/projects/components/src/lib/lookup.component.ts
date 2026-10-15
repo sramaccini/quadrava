@@ -9,16 +9,16 @@ interface Option {
   label: string;
 }
 
-/** Attesa prima di cercare: le battute ravvicinate diventano una sola richiesta. */
+/** Wait before searching: keystrokes close together become a single request. */
 const DEBOUNCE_MS = 300;
 
 /**
- * Campo `lookup`: propone le righe di un data source GET cercate mentre l'utente scrive (variabile `search`).
- * Il valore è `valueField` della riga scelta, il testo mostrato `labelField`. Una risposta più vecchia
- * di quella dell'ultima ricerca viene scartata. Se il valore corrente non è tra le righe note (per esempio in un
- * form di modifica) e il data source usa `{{ lookupKey }}`, il campo chiede al servizio la riga di quel valore per
- * mostrarne il testo. Le richieste del campo non cambiano le righe che il data source mostra agli altri componenti.
- * Usato dal form, dalla barra dei filtri e dalle righe ripetibili.
+ * `lookup` field: it proposes the rows of a GET data source searched while the user types (variable `search`).
+ * The value is the `valueField` of the chosen row, the text shown is `labelField`. A response older than
+ * that of the latest search is discarded. If the current value is not among the known rows (for example in an
+ * edit form) and the data source uses `{{ lookupKey }}`, the field asks the service for the row of that value to
+ * show its text. The field's requests do not change the rows the data source shows to the other components.
+ * Used by the form, the filter bar and the repeatable rows.
  */
 @Component({
   selector: 'lc-lookup',
@@ -58,13 +58,13 @@ export class LookupComponent {
 
   protected readonly i18n = inject(I18n);
   protected readonly loading = signal(false);
-  /** Righe dell'ultima ricerca; `null` finché l'utente non ha cercato (si usano i dati già caricati del data source). */
+  /** Rows of the latest search; `null` until the user searches (the data already loaded by the data source is used). */
   private readonly found = signal<Record<string, unknown>[] | null>(null);
-  /** Testi già visti per ogni valore: il valore scelto resta leggibile anche quando non è tra i risultati correnti. */
+  /** Texts already seen for every value: the chosen value stays readable even when it is not among the current results. */
   private readonly labels = signal<ReadonlyMap<unknown, string>>(new Map());
   private timer: ReturnType<typeof setTimeout> | null = null;
   private sequence = 0;
-  /** Valori di cui si è già chiesto il testo al servizio (una volta sola per valore). */
+  /** Values whose text has already been asked from the service (only once per value). */
   private readonly asked = new Set<unknown>();
 
   private readonly spec = computed(() => {
@@ -83,12 +83,12 @@ export class LookupComponent {
     return options;
   });
 
-  /** Il data source sa cercare per chiave? Solo allora vale la pena chiedere il testo di un valore. */
+  /** Can the data source search by key? Only then is it worth asking for the text of a value. */
   private readonly resolvable = computed(() => JSON.stringify(this.runtime().definition.dataSources?.[this.spec().source] ?? {}).includes('lookupKey'));
 
   constructor() {
     inject(DestroyRef).onDestroy(() => this.timer && clearTimeout(this.timer));
-    // Valore senza testo noto: si chiede al servizio la sua riga (dopo che il data source ha caricato le sue righe).
+    // Value without a known text: its row is asked from the service (after the data source has loaded its rows).
     effect(() => {
       const value = this.value();
       if (value === null || value === undefined || value === '' || !this.resolvable()) return;
@@ -113,7 +113,7 @@ export class LookupComponent {
     if (this.timer) clearTimeout(this.timer);
     const { minChars } = this.spec();
     if (text.length < minChars) {
-      // Testo troppo corto: si torna alle righe già caricate dal data source, senza nuove richieste.
+      // Text too short: back to the rows already loaded by the data source, without new requests.
       this.sequence++;
       this.found.set(null);
       this.loading.set(false);

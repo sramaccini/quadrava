@@ -6,18 +6,18 @@ import type { SectionNode } from 'schema';
 import { IconComponent } from './icon.component';
 
 /**
- * Strumenti facoltativi nell'intestazione delle sezioni: «JSON» (la definizione della sezione) e «Aiuto» (sui
- * componenti che contiene). Li fornisce l'applicazione (per esempio una vetrina di esempi); senza, le sezioni non
- * mostrano nulla in più.
+ * Optional tools in the header of sections: «JSON» (the definition of the section) and «Help» (on the
+ * components it contains). The application provides them (for example a showcase of examples); without them, sections
+ * show nothing more.
  */
 export abstract class SectionTools {
-  /** Se la sezione mostra gli strumenti. */
+  /** Whether the section shows the tools. */
   abstract applies(section: SectionContext): boolean;
   abstract showSource(section: SectionContext): void;
   abstract showHelp(section: SectionContext): void;
 }
 
-/** La sezione a cui si riferiscono gli strumenti: definizione, schermata e titolo già tradotto. */
+/** The section the tools refer to: definition, screen and already translated title. */
 export interface SectionContext {
   node: SectionNode;
   runtime: ScreenRuntime;
@@ -29,11 +29,11 @@ export interface SectionContext {
   imports: [NodeHostComponent, NzCardModule, NzButtonModule, IconComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
-    /* Affiancata ad altre in un box o in una griglia, la scheda si allunga fino all'altezza della riga. */
+    /* Next to others in a box or in a grid, the card stretches to the height of the row. */
     :host { display: block; height: 100%; }
     nz-card { height: 100%; }
     .body { display: flex; flex-direction: column; gap: var(--lc-gap, 12px); }
-    /* Affiancati: da 200 a 360px ciascuno, a capo quando manca spazio, allineati in basso. */
+    /* Side by side: from 200 to 360px each, wrapping when space runs out, aligned at the bottom. */
     .body.row { flex-direction: row; flex-wrap: wrap; align-items: flex-end; }
     .body.row > lc-node { flex: 1 1 200px; max-width: 360px; --lc-input-max: none; }
     .tools { display: inline-flex; gap: 2px; }
@@ -77,7 +77,7 @@ export class SectionComponent {
   protected readonly context = computed<SectionContext>(() => ({ node: this.node(), runtime: this.runtime(), title: this.title() }));
   protected readonly tools = computed(() => (this.sectionTools?.applies(this.context()) ? this.sectionTools : null));
 
-  /** Nome accessibile dei pulsanti: dice di quale sezione si parla. */
+  /** Accessible name of the buttons: it says which section they are about. */
   protected label(key: string): string {
     return this.i18n.t(key, { title: this.title() ?? '' });
   }

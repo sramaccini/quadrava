@@ -1,14 +1,14 @@
 import type { I18n, ScreenRuntime, Scope } from 'core';
 import type { FieldDefinition } from 'schema';
 
-/** Un valore conta come «mancante»: nullo, testo vuoto o elenco vuoto. */
+/** A value counts as «missing»: null, empty text or empty list. */
 export function isEmptyValue(value: unknown): boolean {
   return value === undefined || value === null || value === '' || (Array.isArray(value) && value.length === 0);
 }
 
 /**
- * Errore di un campo semplice, oppure `null`: obbligatorietà (checkbox e switch non sono mai obbligatori) e regola
- * `validate` valutata con `value` e lo scope dato. Una regola che non si può valutare rende il campo non valido (fail-closed).
+ * Error of a simple field, or `null`: required check (checkbox and switch are never required) and the `validate`
+ * rule evaluated with `value` and the given scope. A rule that cannot be evaluated makes the field invalid (fail-closed).
  */
 export function fieldError(field: FieldDefinition, value: unknown, runtime: ScreenRuntime, scope: Scope, i18n: I18n): string | null {
   const empty = isEmptyValue(value);
@@ -20,12 +20,12 @@ export function fieldError(field: FieldDefinition, value: unknown, runtime: Scre
   return null;
 }
 
-/** Righe di un campo `repeater`: sempre un elenco di oggetti. */
+/** Rows of a `repeater` field: always a list of objects. */
 export function repeaterRows(value: unknown): Record<string, unknown>[] {
   return Array.isArray(value) ? value.filter((r): r is Record<string, unknown> => r !== null && typeof r === 'object' && !Array.isArray(r)) : [];
 }
 
-/** Errori di ogni cella di un campo `repeater` (per riga, per nome del campo). Le regole vedono la riga in `item`. */
+/** Errors of every cell of a `repeater` field (by row, by field name). The rules see the row in `item`. */
 export function repeaterCellErrors(field: FieldDefinition, value: unknown, runtime: ScreenRuntime, scope: Scope, i18n: I18n): Record<string, string>[] {
   return repeaterRows(value).map((item) => {
     const errors: Record<string, string> = {};
@@ -37,7 +37,7 @@ export function repeaterCellErrors(field: FieldDefinition, value: unknown, runti
   });
 }
 
-/** Errore complessivo di un campo `repeater`: numero di righe e celle non valide. */
+/** Overall error of a `repeater` field: number of rows and invalid cells. */
 export function repeaterError(field: FieldDefinition, value: unknown, runtime: ScreenRuntime, scope: Scope, i18n: I18n): string | null {
   const rows = repeaterRows(value);
   const min = field.minRows ?? 0;

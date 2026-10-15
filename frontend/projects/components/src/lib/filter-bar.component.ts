@@ -5,7 +5,7 @@ import type { FieldDefinition, FilterBarNode } from 'schema';
 import { FieldControlComponent } from './field-control.component';
 import { nextId } from './shared';
 
-/** Barra dei filtri: scrive nello stato della schermata (`bind`), da cui i data source dipendono. */
+/** Filter bar: it writes into the screen state (`bind`), on which the data sources depend. */
 @Component({
   selector: 'lc-filter-bar',
   imports: [FieldControlComponent, NzFormModule],
@@ -16,7 +16,7 @@ import { nextId } from './shared';
   `,
   template: `
     <form nz-form ngNoForm nzLayout="inline" role="search" (submit)="$event.preventDefault()">
-      <!-- Un file non è un criterio di ricerca: nella barra dei filtri non si mostra. -->
+      <!-- A file is not a search criterion: it is not shown in the filter bar. -->
       @for (field of fields(); track field.name) {
         @if (field.type !== 'file' && runtime().isVisible(field, scope())) {
           <nz-form-item>
@@ -48,10 +48,10 @@ export class FilterBarComponent implements OnInit {
   readonly scope = input<Scope>({});
   protected readonly i18n = inject(I18n);
   protected readonly id = nextId('lc-filter') + '-';
-  /** In una barra in linea un testo su più righe si cerca con una casella su una riga. */
+  /** In an inline bar a multi-line text is searched with a one-line box. */
   protected readonly fields = computed(() => this.node().fields.map((f) => (f.type === 'textarea' || f.type === 'richtext' ? { ...f, type: 'text' as const } : f)));
   ngOnInit(): void {
-    // Ogni filtro dichiarato esiste nello stato (nullo se non impostato): le espressioni `state.filtri.x` non vanno mai in errore.
+    // Every declared filter exists in the state (null if not set): the `state.filters.x` expressions never fail.
     for (const field of this.node().fields) {
       if (this.runtime().getState(this.path(field)) === undefined) this.runtime().setState(this.path(field), null);
     }
@@ -71,7 +71,7 @@ export class FilterBarComponent implements OnInit {
     let value: unknown = raw === '' || raw === undefined ? null : raw;
     if (field.type === 'number' && value !== null) value = Number(value);
     this.runtime().setState(this.path(field), value);
-    // Un filtro nuovo riporta alla prima pagina.
+    // A new filter goes back to the first page.
     this.runtime().setState('page', 0);
   }
 }

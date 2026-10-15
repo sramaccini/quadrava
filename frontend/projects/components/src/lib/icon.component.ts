@@ -48,8 +48,8 @@ import type { IconDefinition } from '@ant-design/icons-angular';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 
 /**
- * Set di icone integrato: nome usato nei JSON → icona di Ant Design. Le icone sono registrate una per una
- * (`provideLowcodeComponents`): un nome sconosciuto non mostra nulla e non provoca mai il caricamento di icone dalla rete.
+ * Built-in icon set: name used in the JSON → Ant Design icon. Icons are registered one by one
+ * (`provideLowcodeComponents`): an unknown name shows nothing and never causes icons to be loaded from the network.
  */
 export const ICON_TYPES: Record<string, { type: string; icon: IconDefinition }> = {
   help: { type: 'question-circle', icon: QuestionCircleOutline },
@@ -86,7 +86,7 @@ export const ICON_TYPES: Record<string, { type: string; icon: IconDefinition }> 
   first: { type: 'vertical-right', icon: VerticalRightOutline },
   last: { type: 'vertical-left', icon: VerticalLeftOutline },
   copy: { type: 'copy', icon: CopyOutline },
-  // Barra dell'editor di testo formattato.
+  // Toolbar of the formatted-text editor.
   'rich-bold': { type: 'bold', icon: BoldOutline },
   'rich-italic': { type: 'italic', icon: ItalicOutline },
   'rich-strike': { type: 'strikethrough', icon: StrikethroughOutline },
@@ -98,7 +98,7 @@ export const ICON_TYPES: Record<string, { type: string; icon: IconDefinition }> 
   'rich-clear': { type: 'clear', icon: ClearOutline },
 };
 
-/** Tipo NG-ZORRO di un nome di icona del set integrato, oppure `null` se il nome non è noto. */
+/** NG-ZORRO type of an icon name of the built-in set, or `null` if the name is not known. */
 export function iconType(name: string | undefined): string | null {
   return name ? (ICON_TYPES[name]?.type ?? null) : null;
 }
