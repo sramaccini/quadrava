@@ -3,15 +3,15 @@ import { CodeViewComponent } from './code-view.component';
 import { renderScreen } from './screen-testing';
 import { SectionTools, type SectionContext } from './section.component';
 
-describe('Strumenti delle sezioni e visore del codice', () => {
-  const components = [{ id: 's', type: 'section' as const, title: 'Prova', components: [{ type: 'text' as const, text: 'x' }] }];
+describe('Section tools and code viewer', () => {
+  const components = [{ id: 's', type: 'section' as const, title: 'Sample', components: [{ type: 'text' as const, text: 'x' }] }];
 
-  it('senza SectionTools la sezione non ha nulla in più', async () => {
+  it('without SectionTools the section has nothing more', async () => {
     const { el } = await renderScreen({ components });
     expect(el.querySelector('lc-section .ant-card-extra')).toBeNull();
   });
 
-  it('con SectionTools: «JSON» e «Aiuto» ricevono la sezione con il titolo tradotto', async () => {
+  it('with SectionTools: «JSON» and «Help» receive the section with its translated title', async () => {
     const calls: [string, SectionContext][] = [];
     const tools: SectionTools = {
       applies: ({ node }) => node.id === 's',
@@ -20,17 +20,17 @@ describe('Strumenti delle sezioni e visore del codice', () => {
     };
     const { el, settle } = await renderScreen({ components, extraProviders: [{ provide: SectionTools, useValue: tools }] });
     const buttons = [...el.querySelectorAll<HTMLButtonElement>('lc-section .ant-card-extra button')];
-    expect(buttons.map((b) => b.getAttribute('aria-label'))).toEqual(['JSON della sezione «Prova»', 'Aiuto sui componenti della sezione «Prova»']);
+    expect(buttons.map((b) => b.getAttribute('aria-label'))).toEqual(['JSON della sezione «Sample»', 'Aiuto sui componenti della sezione «Sample»']);
     buttons[0].click();
     buttons[1].click();
     await settle();
     expect(calls.map(([kind, c]) => [kind, c.node.id, c.title])).toEqual([
-      ['source', 's', 'Prova'],
-      ['help', 's', 'Prova'],
+      ['source', 's', 'Sample'],
+      ['help', 's', 'Sample'],
     ]);
   });
 
-  it('il visore colora il JSON con elementi e testo, mai HTML', async () => {
+  it('the viewer colours the JSON with elements and text, never HTML', async () => {
     const fixture = TestBed.createComponent(CodeViewComponent);
     fixture.componentRef.setInput('code', JSON.stringify({ a: '<img src=x onerror=alert(1)>', b: '{{ state.n }}', c: 1, d: true }, null, 2));
     fixture.detectChanges();

@@ -12,7 +12,7 @@ describe('UserMenuComponent', () => {
   };
   const menuItems = (): string[] => [...document.querySelectorAll('.ant-dropdown li.ant-dropdown-menu-item, .ant-dropdown li[nz-menu-item]')].map((li) => (li.textContent ?? '').replace(/\s+/g, ' ').trim());
 
-  async function render(items = [{ id: 'permessi', label: '4 permessi', icon: 'safety', disabled: true }, { id: 'profilo', label: 'Profilo', icon: 'user' }]) {
+  async function render(items = [{ id: 'permissions', label: '4 permissions', icon: 'safety', disabled: true }, { id: 'profile', label: 'Profile', icon: 'user' }]) {
     TestBed.configureTestingModule({ providers: [provideLowcodeComponents()] });
     const fixture = TestBed.createComponent(UserMenuComponent);
     fixture.componentRef.setInput('name', 'mario');
@@ -29,31 +29,31 @@ describe('UserMenuComponent', () => {
 
   afterEach(() => document.querySelectorAll('.cdk-overlay-container').forEach((c) => (c.innerHTML = '')));
 
-  it('mostra iniziale e nome, e il logout è l’ultima voce', async () => {
+  it('shows initial and name, and logout is the last item', async () => {
     const { fixture } = await render();
     expect(fixture.nativeElement.querySelector('nz-avatar')?.textContent?.trim()).toBe('M');
     expect(fixture.nativeElement.querySelector('.name')?.textContent?.trim()).toBe('mario');
     const items = menuItems();
     expect(items.at(-1)).toBe('Esci');
-    expect(items).toEqual(['4 permessi', 'Profilo', 'Esci']);
+    expect(items).toEqual(['4 permissions', 'Profile', 'Esci']);
   });
 
-  it('emette la voce scelta, ignora quelle disabilitate e segnala il logout', async () => {
+  it('emits the chosen item, ignores disabled ones and reports logout', async () => {
     const { selected, logouts } = await render();
     const all = [...document.querySelectorAll<HTMLElement>('.ant-dropdown li[nz-menu-item]')];
     all[0].click();
     all[1].click();
     all[2].click();
-    expect(selected).toEqual(['profilo']);
+    expect(selected).toEqual(['profile']);
     expect(logouts()).toBe(1);
   });
 
-  it('senza altre voci mostra solo l’uscita', async () => {
+  it('without other items it shows only the exit', async () => {
     await render([]);
     expect(menuItems()).toEqual(['Esci']);
   });
 
-  it('il nome è mostrato come testo, non come HTML', async () => {
+  it('the name is shown as text, not as HTML', async () => {
     TestBed.configureTestingModule({ providers: [provideLowcodeComponents()] });
     const fixture = TestBed.createComponent(UserMenuComponent);
     fixture.componentRef.setInput('name', '<img src=x onerror=alert(1)>');

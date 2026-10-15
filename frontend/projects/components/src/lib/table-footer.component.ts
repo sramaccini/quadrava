@@ -5,12 +5,12 @@ import { NzPaginationModule } from 'ng-zorro-antd/pagination';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import { IconComponent } from './icon.component';
 
-/** Dopo un clic su «Aggiorna» l'icona gira almeno un giro, anche se i dati arrivano prima: il clic deve dare un riscontro. */
+/** After a click on «Refresh» the icon turns at least once, even if the data arrive earlier: the click must give feedback. */
 export const REFRESH_MIN_SPIN_MS = 800;
 
 /**
- * Piede comune delle tabelle (tabella, datatable, datatable lato server): a sinistra il pulsante facoltativo «Aggiorna»
- * (`refreshable`), a destra le pagine con «prima» e «ultima». Le pagine compaiono solo se ce n'è più di una.
+ * Common footer of the tables (table, datatable, server-side datatable): on the left the optional «Refresh» button
+ * (`refreshable`), on the right the pages with «first» and «last». The pages appear only when there is more than one.
  */
 @Component({
   selector: 'lc-table-footer',
@@ -58,27 +58,27 @@ export const REFRESH_MIN_SPIN_MS = 800;
 })
 export class TableFooterComponent {
   readonly refreshable = input(false);
-  /** Caricamento in corso: «Aggiorna» mostra l'attesa e non si ripete. */
+  /** Loading in progress: «Refresh» shows the wait and does not repeat. */
   readonly busy = input(false);
-  /** Pagina corrente, da 0. */
+  /** Current page, from 0. */
   readonly page = input(0);
   readonly pageSize = input(10);
   readonly total = input(0);
   readonly pageChange = output<number>();
   readonly refresh = output<void>();
   /**
-   * Vero dal clic su «Aggiorna» finché l'icona smette di girare: la tabella mostra subito il suo spinner centrale, per lo
-   * stesso tempo. I caricamenti non chiesti con il pulsante non lo cambiano (lì lo spinner ha il suo ritardo).
+   * True from the click on «Refresh» until the icon stops turning: the table shows its central spinner at once, for the
+   * same time. Loads not requested with the button do not change it (there the spinner has its own delay).
    */
   readonly refreshingChange = output<boolean>();
 
   protected readonly i18n = inject(I18n);
   protected readonly pages = computed(() => Math.max(1, Math.ceil(this.total() / Math.max(1, this.pageSize()))));
 
-  /** L'icona gira durante il caricamento e, dopo un clic, almeno {@link REFRESH_MIN_SPIN_MS}. */
+  /** The icon turns during loading and, after a click, for at least {@link REFRESH_MIN_SPIN_MS}. */
   protected readonly spinning = signal(false);
   private clickedAt = 0;
-  /** L'icona gira per un clic su «Aggiorna» (non per un caricamento qualunque). */
+  /** The icon turns for a click on «Refresh» (not for any load). */
   private manual = false;
   private timer: ReturnType<typeof setTimeout> | undefined;
 
@@ -114,7 +114,7 @@ export class TableFooterComponent {
     this.refreshingChange.emit(true);
     this.setSpinning(true);
     clearTimeout(this.timer);
-    // Se il caricamento non parte (o finisce subito) l'icona si ferma comunque dopo il giro minimo.
+    // If the load does not start (or ends at once) the icon stops anyway after the minimum turn.
     this.timer = setTimeout(() => {
       if (!this.busy()) this.setSpinning(false);
     }, REFRESH_MIN_SPIN_MS);

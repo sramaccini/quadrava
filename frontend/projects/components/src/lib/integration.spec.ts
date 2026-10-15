@@ -7,27 +7,27 @@ import { openSelect, stubViewportHeight } from './select-testing';
 
 const screen: ScreenDefinition = {
   schemaVersion: '1.0',
-  screen: 'ordini-elenco',
-  title: 'Ordini',
-  requires: 'ordini.ordine.leggi',
+  screen: 'order-list',
+  title: 'Orders',
+  requires: 'orders.order.read',
   dataSources: {
-    ordini: { type: 'rest', method: 'GET', url: '/api/ordini', params: { stato: '{{state.filtri.stato}}', page: '{{state.page}}' }, paging: 'server' },
-    approvaOrdine: { type: 'rest', method: 'POST', url: '/api/ordini/{{id}}/approva' },
+    orders: { type: 'rest', method: 'GET', url: '/api/orders', params: { status: '{{state.filters.status}}', page: '{{state.page}}' }, paging: 'server' },
+    approveOrder: { type: 'rest', method: 'POST', url: '/api/orders/{{id}}/approve' },
   },
   components: [
-    { type: 'filterBar', bind: 'state.filtri', fields: [{ name: 'stato', type: 'select', label: 'Stato', options: ['bozza', 'inviato'] }] },
+    { type: 'filterBar', bind: 'state.filters', fields: [{ name: 'status', type: 'select', label: 'Status', options: ['draft', 'sent'] }] },
     {
       type: 'table',
-      source: 'ordini',
-      columns: [{ field: 'numero' }, { field: 'stato' }],
+      source: 'orders',
+      columns: [{ field: 'number' }, { field: 'status' }],
       rowActions: [
         {
-          label: 'Approva',
-          visibleIf: "{{can('ordini.ordine.approva') && row.stato == 'inviato'}}",
+          label: 'Approve',
+          visibleIf: "{{can('orders.order.approve') && row.status == 'sent'}}",
           onClick: [
-            { call: 'approvaOrdine', args: { id: '{{row.id}}' }, onError: { toast: 'Approvazione non riuscita' } },
-            { refresh: 'ordini' },
-            { toast: 'Ordine {{row.numero}} approvato' },
+            { call: 'approveOrder', args: { id: '{{row.id}}' }, onError: { toast: 'Approval failed' } },
+            { refresh: 'orders' },
+            { toast: 'Order {{row.number}} approved' },
           ],
         },
       ],
@@ -36,23 +36,23 @@ const screen: ScreenDefinition = {
 };
 
 const rows = [
-  { id: 1, numero: 'A-1', stato: 'bozza' },
-  { id: 2, numero: 'A-2', stato: 'inviato' },
+  { id: 1, number: 'A-1', status: 'draft' },
+  { id: 2, number: 'A-2', status: 'sent' },
 ];
 
-describe('ScreenComponent + catalogo standard', () => {
+describe('ScreenComponent + standard catalogue', () => {
   let restore: () => void;
   beforeAll(() => (restore = stubViewportHeight()));
   afterAll(() => restore());
 
-  // Come l'implementazione reale di Authorization, i permessi sono un signal: un cambio ridisegna la schermata.
+  // Like the real Authorization implementation, permissions are a signal: a change redraws the screen.
   const permissions = signal(new Set<string>());
   const grant = (p: string): void => permissions.update((s) => new Set(s).add(p));
   let requests: DataRequest[];
   let toasts: string[];
 
   async function render(): Promise<{ fixture: ComponentFixture<ScreenComponent>; el: HTMLElement }> {
-    permissions.set(new Set(['ordini.ordine.leggi']));
+    permissions.set(new Set(['orders.order.read']));
     requests = [];
     toasts = [];
     TestBed.configureTestingModule({
@@ -88,61 +88,61 @@ describe('ScreenComponent + catalogo standard', () => {
 
   const buttons = (el: HTMLElement): string[] => [...el.querySelectorAll('button')].map((b) => b.textContent?.trim() ?? '');
 
-  it('mostra titolo e righe caricate', async () => {
+  it('shows the title and the loaded rows', async () => {
     const { el } = await render();
-    expect(el.querySelector('h1')?.textContent?.trim()).toBe('Ordini');
+    expect(el.querySelector('h1')?.textContent?.trim()).toBe('Orders');
     expect(el.querySelectorAll('tbody tr')).toHaveLength(2);
-    expect(requests[0]).toEqual({ method: 'GET', url: '/api/ordini', query: { page: 0 } });
+    expect(requests[0]).toEqual({ method: 'GET', url: '/api/orders', query: { page: 0 } });
   });
 
-  it('l’intestazione di pagina mostra briciole di pane, titolo e descrizione', async () => {
+  it('the page header shows breadcrumbs, title and description', async () => {
     const { fixture, el } = await render();
     expect(el.querySelector('nz-breadcrumb')).toBeNull();
-    fixture.componentRef.setInput('breadcrumb', ['Consultazione', 'Ordini']);
-    fixture.componentRef.setInput('definition', { ...screen, description: 'Elenco degli ordini.' });
+    fixture.componentRef.setInput('breadcrumb', ['Browse', 'Orders']);
+    fixture.componentRef.setInput('definition', { ...screen, description: 'List of orders.' });
     await settle(fixture);
     const crumbs = [...el.querySelectorAll('nz-breadcrumb-item')].map((n) => (n.textContent ?? '').replace('/', '').trim());
-    expect(crumbs).toEqual(['Consultazione', 'Ordini']);
-    expect(el.querySelector('header.page-header h1')?.textContent?.trim()).toBe('Ordini');
-    expect(el.querySelector('header.page-header .description')?.textContent?.trim()).toBe('Elenco degli ordini.');
+    expect(crumbs).toEqual(['Browse', 'Orders']);
+    expect(el.querySelector('header.page-header h1')?.textContent?.trim()).toBe('Orders');
+    expect(el.querySelector('header.page-header .description')?.textContent?.trim()).toBe('List of orders.');
   });
 
-  it('senza il permesso di approvazione non mostra il pulsante', async () => {
+  it('without the approval permission it does not show the button', async () => {
     const { el } = await render();
-    expect(buttons(el)).not.toContain('Approva');
+    expect(buttons(el)).not.toContain('Approve');
   });
 
-  it('con il permesso mostra Approva solo sulle righe inviate', async () => {
+  it('with the permission it shows Approve only on sent rows', async () => {
     const { fixture, el } = await render();
-    grant('ordini.ordine.approva');
+    grant('orders.order.approve');
     await settle(fixture);
-    expect(buttons(el).filter((b) => b === 'Approva')).toHaveLength(1);
-    expect(el.querySelectorAll('tbody tr')[1]?.textContent).toContain('Approva');
+    expect(buttons(el).filter((b) => b === 'Approve')).toHaveLength(1);
+    expect(el.querySelectorAll('tbody tr')[1]?.textContent).toContain('Approve');
   });
 
-  it('il click esegue la chiamata, ricarica la tabella e avvisa', async () => {
+  it('the click runs the call, reloads the table and notifies', async () => {
     const { fixture, el } = await render();
-    grant('ordini.ordine.approva');
+    grant('orders.order.approve');
     await settle(fixture);
-    const approva = [...el.querySelectorAll('button')].find((b) => b.textContent?.trim() === 'Approva') as HTMLButtonElement;
-    approva.click();
-    // I passi sono asincroni: attende la fine della sequenza (l'ultimo è il messaggio).
+    const approve = [...el.querySelectorAll('button')].find((b) => b.textContent?.trim() === 'Approve') as HTMLButtonElement;
+    approve.click();
+    // The steps are asynchronous: wait for the end of the sequence (the last one is the message).
     for (let i = 0; i < 20 && toasts.length === 0; i++) await new Promise((r) => setTimeout(r));
     await settle(fixture);
-    expect(requests.some((r) => r.method === 'POST' && r.url === '/api/ordini/2/approva')).toBe(true);
+    expect(requests.some((r) => r.method === 'POST' && r.url === '/api/orders/2/approve')).toBe(true);
     expect(requests.filter((r) => r.method === 'GET').length).toBeGreaterThanOrEqual(2);
-    expect(toasts).toEqual(['Ordine A-2 approvato']);
+    expect(toasts).toEqual(['Order A-2 approved']);
   });
 
-  it('cambiare un filtro ricarica con il parametro', async () => {
+  it('changing a filter reloads with the parameter', async () => {
     const { fixture, el } = await render();
     const options = await openSelect(el.querySelector('lc-filter-bar nz-select') as Element, () => settle(fixture));
-    (options.find((o) => o.textContent?.trim() === 'inviato') as HTMLElement).click();
+    (options.find((o) => o.textContent?.trim() === 'sent') as HTMLElement).click();
     await settle(fixture);
-    expect(requests.at(-1)?.query).toEqual({ stato: 'inviato', page: 0 });
+    expect(requests.at(-1)?.query).toEqual({ status: 'sent', page: 0 });
   });
 
-  it('senza il permesso della schermata mostra il rifiuto e non chiama il backend', async () => {
+  it('without the screen permission it shows the refusal and does not call the back end', async () => {
     const { fixture, el } = await render();
     permissions.set(new Set());
     requests.length = 0;

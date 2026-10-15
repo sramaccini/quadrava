@@ -1,8 +1,8 @@
 import type { Messages } from 'core';
 
 /**
- * Scritte della piattaforma (chiavi `lc.*`), nelle lingue fornite di serie. Le applicazioni possono sovrascrivere
- * qualunque chiave nei propri cataloghi e aggiungere altre lingue.
+ * Texts of the platform (`lc.*` keys), in the languages supplied out of the box. Applications can override
+ * any key in their own catalogues and add other languages.
  */
 export const BUILTIN_MESSAGES: Record<string, Messages> = {
   it: {

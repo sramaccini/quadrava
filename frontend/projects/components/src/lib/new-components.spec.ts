@@ -8,7 +8,7 @@ import { provideLowcodeComponents } from './provide';
 
 const plain = (text: string | null | undefined): string => (text ?? '').replace(/[  \s]+/g, ' ').trim();
 
-describe('nuovi componenti del catalogo', () => {
+describe('new catalogue components', () => {
   const permissions = signal(new Set<string>());
   let requests: DataRequest[];
   let toasts: string[];
@@ -34,7 +34,7 @@ describe('nuovi componenti del catalogo', () => {
       ],
     });
     const fixture = TestBed.createComponent(ScreenComponent);
-    fixture.componentRef.setInput('definition', { schemaVersion: '1.0', screen: 'prova', dataSources, components } satisfies ScreenDefinition);
+    fixture.componentRef.setInput('definition', { schemaVersion: '1.0', screen: 'test', dataSources, components } satisfies ScreenDefinition);
     await settle(fixture);
     return { fixture, el: fixture.nativeElement as HTMLElement };
   }
@@ -63,61 +63,61 @@ describe('nuovi componenti del catalogo', () => {
     const fixture = TestBed.createComponent(ScreenComponent);
     fixture.componentRef.setInput('definition', {
       schemaVersion: '1.0',
-      screen: 'prova',
-      dataSources: { dati: { type: 'rest', method: 'GET', url: '/api/dati' } },
+      screen: 'test',
+      dataSources: { data: { type: 'rest', method: 'GET', url: '/api/data' } },
       components,
     } satisfies ScreenDefinition);
     await settle(fixture);
     return { fixture, el: fixture.nativeElement as HTMLElement };
   }
 
-  describe('formati di cella della tabella', () => {
-    const row = { id: 1, importo: 12500, sconto: 10, emessa: '2026-10-07', pagata: true, stato: 'approvato', altro: 'inviato', iban: 'IT60X0542811101000000123456' };
+  describe('table cell formats', () => {
+    const row = { id: 1, amount: 12500, discount: 10, issued: '2026-10-07', paid: true, status: 'approved', other: 'sent', iban: 'IT60X0542811101000000123456' };
     const table: NodeDefinition = {
       type: 'table',
-      source: 'dati',
+      source: 'data',
       columns: [
-        { field: 'importo', label: 'Importo', format: 'currency' },
-        { field: 'sconto', label: 'Sconto', format: 'percent' },
-        { field: 'emessa', label: 'Emessa', format: 'date' },
-        { field: 'pagata', label: 'Pagata', format: 'boolean' },
-        { field: 'stato', label: 'Stato', format: 'badge', badges: { approvato: 'success' } },
-        { field: 'altro', label: 'Altro', format: 'badge', badges: { approvato: 'success' } },
-        { field: 'iban', label: 'IBAN', hiddenIf: "{{!can('ordini.iban.leggi')}}" },
+        { field: 'amount', label: 'Amount', format: 'currency' },
+        { field: 'discount', label: 'Discount', format: 'percent' },
+        { field: 'issued', label: 'Issued', format: 'date' },
+        { field: 'paid', label: 'Paid', format: 'boolean' },
+        { field: 'status', label: 'Status', format: 'badge', badges: { approved: 'success' } },
+        { field: 'other', label: 'Other', format: 'badge', badges: { approved: 'success' } },
+        { field: 'iban', label: 'IBAN', hiddenIf: "{{!can('orders.iban.read')}}" },
       ],
     };
 
-    it('mostra i valori formattati', async () => {
+    it('shows the formatted values', async () => {
       const { el } = await renderWithData([table], [row]);
       const cells = [...el.querySelectorAll('tbody td')].map((c) => plain(c.textContent));
       expect(cells.slice(0, 4)).toEqual(['12.500,00 €', '10 %', '07/10/26', 'Sì']);
-      expect(cells.slice(4, 6)).toEqual(['approvato', 'inviato']);
+      expect(cells.slice(4, 6)).toEqual(['approved', 'sent']);
     });
 
-    it('i badge hanno il tono del tema; i valori non elencati sono neutri', async () => {
+    it('badges take the tone of the theme; values not listed are neutral', async () => {
       const { el } = await renderWithData([table], [row]);
       const badges = [...el.querySelectorAll('tbody nz-tag')];
       expect(badges.map((b) => [...b.classList].find((c) => c.startsWith('ant-tag-') && c !== 'ant-tag'))).toEqual(['ant-tag-success', 'ant-tag-default']);
     });
 
-    it('importi e percentuali sono allineati a destra', async () => {
+    it('amounts and percentages are right-aligned', async () => {
       const { el } = await renderWithData([table], [row]);
       const aligned = [...el.querySelectorAll<HTMLElement>('thead th')].map((h) => h.style.textAlign === 'right');
       expect(aligned.slice(0, 5)).toEqual([true, true, false, false, false]);
     });
 
-    it('una colonna con hiddenIf compare solo a chi ha il permesso, intestazione compresa', async () => {
+    it('a column with hiddenIf appears only to those with the permission, header included', async () => {
       const denied = await renderWithData([table], [row]);
       expect(denied.el.querySelectorAll('thead th')).toHaveLength(6);
       expect(denied.el.textContent).not.toContain('IT60X');
       TestBed.resetTestingModule();
-      const allowed = await renderWithData([table], [row], ['ordini.iban.leggi']);
+      const allowed = await renderWithData([table], [row], ['orders.iban.read']);
       expect(allowed.el.querySelectorAll('thead th')).toHaveLength(7);
       expect(allowed.el.textContent).toContain('IT60X0542811101000000123456');
     });
 
-    it('un testo come valore di un badge non viene interpretato come HTML', async () => {
-      const { el } = await renderWithData([table], [{ ...row, stato: '<img src=x onerror=alert(1)>' }]);
+    it('a text as a badge value is not interpreted as HTML', async () => {
+      const { el } = await renderWithData([table], [{ ...row, status: '<img src=x onerror=alert(1)>' }]);
       expect(el.querySelector('tbody img')).toBeNull();
       expect(el.querySelector('tbody')?.textContent).toContain('<img');
     });
@@ -126,39 +126,39 @@ describe('nuovi componenti del catalogo', () => {
   describe('detail', () => {
     const detail: NodeDefinition = {
       type: 'detail',
-      source: 'dati',
-      title: 'Ordine',
+      source: 'data',
+      title: 'Order',
       fields: [
-        { field: 'numero', label: 'Numero' },
-        { field: 'sconto', label: 'Sconto', format: 'percent' },
-        { field: 'stato', label: 'Stato', format: 'badge', badges: { approvato: 'success' } },
-        { field: 'nota', label: 'Nota' },
-        { field: 'iban', label: 'IBAN', hiddenIf: "{{!can('ordini.iban.leggi')}}" },
+        { field: 'number', label: 'Number' },
+        { field: 'discount', label: 'Discount', format: 'percent' },
+        { field: 'status', label: 'Status', format: 'badge', badges: { approved: 'success' } },
+        { field: 'note', label: 'Note' },
+        { field: 'iban', label: 'IBAN', hiddenIf: "{{!can('orders.iban.read')}}" },
       ],
     };
-    const record = { numero: 'ORD-1', sconto: 10, stato: 'approvato', nota: null, iban: 'IT60' };
+    const record = { number: 'ORD-1', discount: 10, status: 'approved', note: null, iban: 'IT60' };
 
-    it('mostra etichette e valori formattati; un valore vuoto è un trattino', async () => {
+    it('shows labels and formatted values; an empty value is a dash', async () => {
       const { el } = await renderWithData([detail], record);
-      expect(plain(el.querySelector('.ant-card-head-title')?.textContent)).toBe('Ordine');
+      expect(plain(el.querySelector('.ant-card-head-title')?.textContent)).toBe('Order');
       const labels = [...el.querySelectorAll('.ant-descriptions-item-label')].map((d) => plain(d.textContent));
       const values = [...el.querySelectorAll('.ant-descriptions-item-content')].map((d) => plain(d.textContent));
-      expect(labels).toEqual(['Numero', 'Sconto', 'Stato', 'Nota']);
-      expect(values).toEqual(['ORD-1', '10 %', 'approvato', '—']);
+      expect(labels).toEqual(['Number', 'Discount', 'Status', 'Note']);
+      expect(values).toEqual(['ORD-1', '10 %', 'approved', '—']);
       expect(el.querySelector('.ant-descriptions-item-content nz-tag.ant-tag-success')).not.toBeNull();
     });
 
-    it('i campi con hiddenIf compaiono solo con il permesso', async () => {
-      const { el } = await renderWithData([detail], record, ['ordini.iban.leggi']);
+    it('fields with hiddenIf appear only with the permission', async () => {
+      const { el } = await renderWithData([detail], record, ['orders.iban.read']);
       expect(el.textContent).toContain('IBAN');
     });
 
-    it('prima dei dati mostra il caricamento; se la risposta non è un record, "Nessun dato"', async () => {
+    it('before the data it shows the loading state; if the response is not a record, "Nessun dato"', async () => {
       const { el } = await renderWithData([detail], [1, 2]);
       expect(plain(el.textContent)).toContain('Nessun dato.');
     });
 
-    it('se il servizio fallisce mostra un errore leggibile da chi usa uno screen reader', async () => {
+    it('if the service fails it shows an error readable by screen reader users', async () => {
       permissions.set(new Set());
       TestBed.configureTestingModule({
         providers: [
@@ -171,18 +171,18 @@ describe('nuovi componenti del catalogo', () => {
         ],
       });
       const fixture = TestBed.createComponent(ScreenComponent);
-      fixture.componentRef.setInput('definition', { schemaVersion: '1.0', screen: 'p', dataSources: { dati: { type: 'rest', method: 'GET', url: '/api/dati' } }, components: [detail] });
+      fixture.componentRef.setInput('definition', { schemaVersion: '1.0', screen: 'p', dataSources: { data: { type: 'rest', method: 'GET', url: '/api/data' } }, components: [detail] });
       await settle(fixture);
       expect(fixture.nativeElement.querySelector('[role=alert]')).not.toBeNull();
     });
   });
 
   describe('alert', () => {
-    it('usa il ruolo giusto per il tipo e interpola i valori', async () => {
+    it('uses the right role for the kind and interpolates the values', async () => {
       const { el } = await render([
-        { type: 'alert', text: 'Ciao {{user.username}}' },
-        { type: 'alert', text: 'Salvato', kind: 'success' },
-        { type: 'alert', text: 'Errore', kind: 'error' },
+        { type: 'alert', text: 'Hello {{user.username}}' },
+        { type: 'alert', text: 'Saved', kind: 'success' },
+        { type: 'alert', text: 'Error', kind: 'error' },
       ]);
       const alerts = [...el.querySelectorAll('lc-alert > div')];
       const kind = (a: Element): string | undefined => [...(a.querySelector('.ant-alert')?.classList ?? [])].find((c) => /^ant-alert-(info|success|error)$/.test(c));
@@ -191,13 +191,13 @@ describe('nuovi componenti del catalogo', () => {
         ['status', 'ant-alert-success'],
         ['alert', 'ant-alert-error'],
       ]);
-      expect(plain(alerts[0].textContent)).toBe('Ciao u');
+      expect(plain(alerts[0].textContent)).toBe('Hello u');
     });
 
-    it('compare e sparisce con visibleIf, che dipende dai permessi', async () => {
-      const { fixture, el } = await render([{ type: 'alert', text: 'Sola lettura', visibleIf: "{{!can('ordini.ordine.scrivi')}}" }]);
+    it('appears and disappears with visibleIf, which depends on permissions', async () => {
+      const { fixture, el } = await render([{ type: 'alert', text: 'Read only', visibleIf: "{{!can('orders.order.write')}}" }]);
       expect(el.querySelector('lc-alert')).not.toBeNull();
-      permissions.set(new Set(['ordini.ordine.scrivi']));
+      permissions.set(new Set(['orders.order.write']));
       await settle(fixture);
       expect(el.querySelector('lc-alert')).toBeNull();
     });
@@ -207,25 +207,25 @@ describe('nuovi componenti del catalogo', () => {
     const tabs: NodeDefinition = {
       type: 'tabs',
       tabs: [
-        { label: 'Dati', components: [{ type: 'form', fields: [{ name: 'cliente', type: 'text', label: 'Cliente' }] }] },
-        { label: 'Note', components: [{ type: 'text', text: 'Testo delle note' }] },
-        { label: 'Banca', visibleIf: "{{can('ordini.iban.leggi')}}", components: [{ type: 'text', text: 'Dati bancari' }] },
+        { label: 'Data', components: [{ type: 'form', fields: [{ name: 'customer', type: 'text', label: 'Customer' }] }] },
+        { label: 'Note', components: [{ type: 'text', text: 'Text of the notes' }] },
+        { label: 'Bank', visibleIf: "{{can('orders.iban.read')}}", components: [{ type: 'text', text: 'Bank details' }] },
       ],
     };
     const tabButtons = (el: HTMLElement): HTMLElement[] => [...el.querySelectorAll<HTMLElement>('[role=tab]')];
     const panels = (el: HTMLElement): HTMLElement[] => [...el.querySelectorAll<HTMLElement>('[role=tabpanel]')];
     const selected = (el: HTMLElement): (string | null)[] => tabButtons(el).map((b) => b.getAttribute('aria-selected'));
 
-    it('mostra la prima scheda e collega le schede ai loro pannelli', async () => {
+    it('shows the first tab and links the tabs to their panels', async () => {
       const { el } = await render([tabs]);
-      expect(tabButtons(el).map((b) => plain(b.textContent))).toEqual(['Dati', 'Note']);
+      expect(tabButtons(el).map((b) => plain(b.textContent))).toEqual(['Data', 'Note']);
       expect(selected(el)).toEqual(['true', 'false']);
-      // Tutti i pannelli restano nella pagina; quelli non scelti sono nascosti a chi usa uno screen reader.
+      // All panels stay in the page; the ones not chosen are hidden from screen reader users.
       expect(panels(el).map((p) => p.getAttribute('aria-hidden'))).toEqual(['false', 'true']);
       expect(panels(el)[0].getAttribute('aria-labelledby')).toBe(tabButtons(el)[0].id);
     });
 
-    it('il click cambia scheda e solo la scheda scelta è nel tabindex', async () => {
+    it('a click changes tab and only the chosen tab is in the tab order', async () => {
       const { fixture, el } = await render([tabs]);
       tabButtons(el)[1].click();
       await settle(fixture);
@@ -234,22 +234,22 @@ describe('nuovi componenti del catalogo', () => {
       expect(tabButtons(el).map((b) => b.tabIndex)).toEqual([-1, 0]);
     });
 
-    it('i dati scritti in una scheda non si perdono cambiando scheda', async () => {
+    it('data written in a tab is not lost when changing tab', async () => {
       const { fixture, el } = await render([tabs]);
       const input = el.querySelector('input') as HTMLInputElement;
-      input.value = 'Rossi Srl';
+      input.value = 'Acme Ltd';
       input.dispatchEvent(new Event('input'));
       await settle(fixture);
       tabButtons(el)[1].click();
       await settle(fixture);
       tabButtons(el)[0].click();
       await settle(fixture);
-      expect((el.querySelector('input') as HTMLInputElement).value).toBe('Rossi Srl');
+      expect((el.querySelector('input') as HTMLInputElement).value).toBe('Acme Ltd');
     });
 
-    it('una scheda con visibleIf compare con il permesso; se sparisce, si torna alla prima', async () => {
-      const { fixture, el } = await render([tabs], {}, ['ordini.iban.leggi']);
-      expect(tabButtons(el).map((b) => plain(b.textContent))).toEqual(['Dati', 'Note', 'Banca']);
+    it('a tab with visibleIf appears with the permission; if it disappears, the first one is selected again', async () => {
+      const { fixture, el } = await render([tabs], {}, ['orders.iban.read']);
+      expect(tabButtons(el).map((b) => plain(b.textContent))).toEqual(['Data', 'Note', 'Bank']);
       tabButtons(el)[2].click();
       await settle(fixture);
       expect(selected(el)).toEqual(['false', 'false', 'true']);
@@ -260,15 +260,15 @@ describe('nuovi componenti del catalogo', () => {
     });
   });
 
-  describe('finestra di conferma', () => {
-    // Una finestra appena chiusa resta nel documento fino alla fine della sua animazione: conta l'ultima.
+  describe('confirmation dialog', () => {
+    // A dialog just closed stays in the document until the end of its animation: the last one counts.
     const dialog = (): HTMLElement | null => [...document.body.querySelectorAll<HTMLElement>('.ant-modal-confirm')].at(-1) ?? null;
     const button = (action: 'cancel' | 'confirm'): HTMLButtonElement => {
       const all = [...document.body.querySelectorAll<HTMLElement>('.ant-modal-confirm-btns')].at(-1)!.querySelectorAll<HTMLButtonElement>('button');
       return action === 'cancel' ? all[0] : all[1];
     };
     const click = (action: 'cancel' | 'confirm'): void => button(action).click();
-    /** La finestra compare dopo un ciclo di rilevamento delle modifiche e la sua animazione. */
+    /** The dialog appears after a change-detection cycle and its animation. */
     const flush = async (): Promise<void> => {
       for (let i = 0; i < 4; i++) {
         TestBed.inject(ApplicationRef).tick();
@@ -282,47 +282,47 @@ describe('nuovi componenti del catalogo', () => {
       document.body.querySelectorAll('.cdk-overlay-container, .stub').forEach((n) => n.remove());
     });
 
-    it('mostra il messaggio come testo, con il focus su Annulla, e Conferma risolve true', async () => {
-      const result = ask('Approvare <b>ORD-1</b>?');
+    it('shows the message as text, with the focus on Cancel, and Confirm resolves true', async () => {
+      const result = ask('Approve <b>ORD-1</b>?');
       await flush();
       expect(document.body.querySelector('[role=dialog]')).not.toBeNull();
       expect(dialog()?.querySelector('b')).toBeNull();
-      expect(dialog()?.textContent).toContain('Approvare <b>ORD-1</b>?');
+      expect(dialog()?.textContent).toContain('Approve <b>ORD-1</b>?');
       expect(plain(button('confirm').textContent)).toBe('Conferma');
       click('confirm');
       expect(await result).toBe(true);
     });
 
-    it('il focus parte su Annulla (la prova di focus non è possibile in jsdom: si controlla la configurazione)', async () => {
+    it('the focus starts on Cancel (focus cannot be tested in jsdom: the configuration is checked)', async () => {
       const spy = vi.spyOn(TestBed.inject(NzModalService), 'confirm');
-      const result = ask('Sicuro?');
+      const result = ask('Sure?');
       await flush();
       expect(spy).toHaveBeenCalledWith(expect.objectContaining({ nzAutofocus: 'cancel', nzKeyboard: true, nzMaskClosable: true }));
       click('cancel');
       await result;
     });
 
-    it('Annulla, Esc e clic sullo sfondo risolvono false', async () => {
-      let result = ask('Sicuro?');
+    it('Cancel, Esc and a click on the backdrop resolve false', async () => {
+      let result = ask('Sure?');
       await flush();
       click('cancel');
       expect(await result).toBe(false);
       await flush();
-      result = ask('Sicuro?');
+      result = ask('Sure?');
       await flush();
       (document.activeElement as HTMLElement).dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, bubbles: true }));
       await flush();
       expect(await result).toBe(false);
       await flush();
-      result = ask('Sicuro?');
+      result = ask('Sure?');
       await flush();
       ([...document.body.querySelectorAll<HTMLElement>('.ant-modal-wrap')].at(-1) as HTMLElement).click();
       await flush();
       expect(await result).toBe(false);
     });
 
-    it('un clic dentro la finestra, fuori dai pulsanti, non annulla', async () => {
-      const result = ask('Sicuro?');
+    it('a click inside the dialog, outside the buttons, does not cancel', async () => {
+      const result = ask('Sure?');
       await flush();
       (dialog()?.querySelector('.ant-modal-confirm-content') as HTMLElement).click();
       await flush();
@@ -331,21 +331,21 @@ describe('nuovi componenti del catalogo', () => {
       await result;
     });
 
-    it('una seconda richiesta mentre la finestra è aperta viene rifiutata', async () => {
-      const first = ask('Prima');
+    it('a second request while the dialog is open is rejected', async () => {
+      const first = ask('First');
       await flush();
-      expect(await TestBed.inject(DialogConfirmation).confirm('Seconda')).toBe(false);
+      expect(await TestBed.inject(DialogConfirmation).confirm('Second')).toBe(false);
       expect(document.body.querySelectorAll('.ant-modal-confirm-btns')).toHaveLength(1);
       click('confirm');
       expect(await first).toBe(true);
     });
 
-    it('alla chiusura il focus torna dove era', async () => {
+    it('on closing, the focus goes back where it was', async () => {
       const opener = document.createElement('button');
       opener.className = 'stub';
       document.body.appendChild(opener);
       opener.focus();
-      const result = ask('Sicuro?');
+      const result = ask('Sure?');
       await flush();
       expect(document.activeElement).not.toBe(opener);
       click('cancel');
@@ -353,20 +353,20 @@ describe('nuovi componenti del catalogo', () => {
       expect(document.activeElement).toBe(opener);
     });
 
-    it('in una schermata, un pulsante con confirm non chiama il servizio se si annulla e lo chiama se si conferma', async () => {
+    it('in a screen, a button with confirm does not call the service when cancelled and calls it when confirmed', async () => {
       const buttonNode: NodeDefinition = {
         type: 'button',
-        label: 'Elimina',
-        onClick: [{ confirm: 'Eliminare {{user.username}}?' }, { call: 'elimina' }, { toast: 'Eliminato' }],
+        label: 'Delete',
+        onClick: [{ confirm: 'Delete {{user.username}}?' }, { call: 'delete' }, { toast: 'Deleted' }],
       };
-      const { fixture, el } = await render([buttonNode], { elimina: { type: 'rest', method: 'POST', url: '/api/elimina' } });
+      const { fixture, el } = await render([buttonNode], { delete: { type: 'rest', method: 'POST', url: '/api/delete' } });
       const press = async (): Promise<void> => {
         (el.querySelector('lc-button button') as HTMLButtonElement).click();
         await flush();
         await settle(fixture);
       };
       await press();
-      expect(dialog()?.textContent).toContain('Eliminare u?');
+      expect(dialog()?.textContent).toContain('Delete u?');
       click('cancel');
       await flush();
       await settle(fixture);
@@ -375,8 +375,8 @@ describe('nuovi componenti del catalogo', () => {
       await press();
       click('confirm');
       for (let i = 0; i < 20 && toasts.length === 0; i++) await new Promise((r) => setTimeout(r));
-      expect(requests.map((r) => r.url)).toEqual(['/api/elimina']);
-      expect(toasts).toEqual(['Eliminato']);
+      expect(requests.map((r) => r.url)).toEqual(['/api/delete']);
+      expect(toasts).toEqual(['Deleted']);
     });
   });
 });

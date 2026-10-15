@@ -4,7 +4,7 @@ import { NzI18nService } from 'ng-zorro-antd/i18n';
 import type { NodeDefinition, ScreenDefinition } from 'schema';
 import { provideLowcodeComponents } from './provide';
 
-describe('lingua e traduzioni nei componenti', () => {
+describe('language and translations in the components', () => {
   let i18n: I18n;
 
   async function render(components: NodeDefinition[], data: unknown = {}): Promise<{ fixture: ComponentFixture<ScreenComponent>; el: HTMLElement }> {
@@ -19,14 +19,14 @@ describe('lingua e traduzioni nei componenti', () => {
       ],
     });
     i18n = TestBed.inject(I18n);
-    i18n.addMessages('it', { 'x.salva': 'Salva', 'x.numero': 'Numero', 'x.nome': 'Nome', 'x.aiuto': 'Aiuto' });
-    i18n.addMessages('en', { 'x.salva': 'Save', 'x.numero': 'Number', 'x.nome': 'Name', 'x.aiuto': 'Help' });
+    i18n.addMessages('it', { 'x.save': 'Salva', 'x.number': 'Numero', 'x.name': 'Nome', 'x.help': 'Aiuto' });
+    i18n.addMessages('en', { 'x.save': 'Save', 'x.number': 'Number', 'x.name': 'Name', 'x.help': 'Help' });
     const fixture = TestBed.createComponent(ScreenComponent);
     fixture.componentRef.setInput('definition', {
       schemaVersion: '1.0',
       screen: 'p',
-      title: "{{ t('x.salva', 'Salva') }}",
-      dataSources: { righe: { type: 'rest', method: 'GET', url: '/api/righe' } },
+      title: "{{ t('x.save', 'Salva') }}",
+      dataSources: { rows: { type: 'rest', method: 'GET', url: '/api/rows' } },
       components,
     } satisfies ScreenDefinition);
     await settle(fixture);
@@ -40,12 +40,12 @@ describe('lingua e traduzioni nei componenti', () => {
     }
   }
 
-  it('titolo, pulsante, colonne e campi cambiano insieme alla lingua, senza ricaricare', async () => {
+  it('title, button, columns and fields change together with the language, without reloading', async () => {
     const { fixture, el } = await render(
       [
-        { type: 'button', label: "{{ t('x.salva', 'Salva') }}", onClick: [] },
-        { type: 'table', source: 'righe', columns: [{ field: 'n', label: "{{ t('x.numero', 'Numero') }}" }] },
-        { type: 'form', fields: [{ name: 'nome', type: 'text', label: "{{ t('x.nome', 'Nome') }}" }], actions: [{ label: "{{ t('x.salva', 'Salva') }}", onClick: [] }] } as NodeDefinition,
+        { type: 'button', label: "{{ t('x.save', 'Salva') }}", onClick: [] },
+        { type: 'table', source: 'rows', columns: [{ field: 'n', label: "{{ t('x.number', 'Numero') }}" }] },
+        { type: 'form', fields: [{ name: 'name', type: 'text', label: "{{ t('x.name', 'Nome') }}" }], actions: [{ label: "{{ t('x.save', 'Salva') }}", onClick: [] }] } as NodeDefinition,
       ],
       { items: [{ n: 1 }], total: 1 },
     );
@@ -61,8 +61,8 @@ describe('lingua e traduzioni nei componenti', () => {
     expect(el.textContent).not.toContain('Salva');
   });
 
-  it('le scritte del runtime e la lingua di NG-ZORRO seguono la lingua attiva', async () => {
-    const { fixture, el } = await render([{ type: 'table', source: 'righe', columns: [{ field: 'n' }] }], { items: [], total: 0 });
+  it('runtime texts and the NG-ZORRO language follow the active language', async () => {
+    const { fixture, el } = await render([{ type: 'table', source: 'rows', columns: [{ field: 'n' }] }], { items: [], total: 0 });
     expect(el.textContent).toContain('Nessun risultato.');
     const nz = TestBed.inject(NzI18nService);
     expect(nz.getLocaleId()).toBe('it');
@@ -72,25 +72,25 @@ describe('lingua e traduzioni nei componenti', () => {
     expect(nz.getLocaleId()).toBe('en-gb');
   });
 
-  it('una colonna senza etichetta mostra il nome del campo', async () => {
-    const { el } = await render([{ type: 'table', source: 'righe', columns: [{ field: 'importo' }] }], { items: [{ importo: 1 }], total: 1 });
-    expect(el.querySelector('th')!.textContent).toContain('importo');
+  it('a column without a label shows the field name', async () => {
+    const { el } = await render([{ type: 'table', source: 'rows', columns: [{ field: 'amount' }] }], { items: [{ amount: 1 }], total: 1 });
+    expect(el.querySelector('th')!.textContent).toContain('amount');
   });
 
-  it('i valori mostrati (valueKey), le opzioni (optionKey) e i messaggi di validazione seguono la lingua', async () => {
+  it('shown values (valueKey), options (optionKey) and validation messages follow the language', async () => {
     const { fixture, el } = await render(
       [
-        { type: 'table', source: 'righe', columns: [{ field: 'stato', valueKey: 'val.stato' }, { field: 'tipo', format: 'badge', valueKey: 'val.tipo', badges: { a: 'success' } }] },
+        { type: 'table', source: 'rows', columns: [{ field: 'status', valueKey: 'val.status' }, { field: 'kind', format: 'badge', valueKey: 'val.kind', badges: { a: 'success' } }] },
         {
           type: 'form',
-          fields: [{ name: 'tipo', type: 'select', options: ['a', 'b'], optionKey: 'val.tipo', validate: { rule: '{{ false }}', message: "{{ t('x.errore', 'Errore') }}" } }],
+          fields: [{ name: 'kind', type: 'select', options: ['a', 'b'], optionKey: 'val.kind', validate: { rule: '{{ false }}', message: "{{ t('x.error', 'Errore') }}" } }],
           actions: [{ label: 'Ok', onClick: [] }],
         } as NodeDefinition,
       ],
-      { items: [{ stato: 'bozza', tipo: 'a' }], total: 1 },
+      { items: [{ status: 'draft', kind: 'a' }], total: 1 },
     );
-    i18n.addMessages('it', { 'val.stato.bozza': 'Bozza', 'val.tipo.a': 'Alfa', 'x.errore': 'Errore' });
-    i18n.addMessages('en', { 'val.stato.bozza': 'Draft', 'val.tipo.a': 'Alpha', 'x.errore': 'Error' });
+    i18n.addMessages('it', { 'val.status.draft': 'Bozza', 'val.kind.a': 'Alfa', 'x.error': 'Errore' });
+    i18n.addMessages('en', { 'val.status.draft': 'Draft', 'val.kind.a': 'Alpha', 'x.error': 'Error' });
     await settle(fixture);
     expect(el.querySelector('tbody')!.textContent).toContain('Bozza');
     expect(el.querySelector('tbody nz-tag')!.textContent).toContain('Alfa');
@@ -98,11 +98,11 @@ describe('lingua e traduzioni nei componenti', () => {
     await settle(fixture);
     expect(el.querySelector('tbody')!.textContent).toContain('Draft');
     expect(el.querySelector('tbody nz-tag')!.textContent).toContain('Alpha');
-    // Un valore senza traduzione resta quello originale.
-    expect(i18n.t('val.tipo.zzz', {}, 'zzz')).toBe('zzz');
+    // A value without a translation stays the original one.
+    expect(i18n.t('val.kind.zzz', {}, 'zzz')).toBe('zzz');
   });
 
-  it('il messaggio "obbligatorio" del form è tradotto', async () => {
+  it('the "required" message of the form is translated', async () => {
     const { fixture, el } = await render([
       { type: 'form', fields: [{ name: 'n', type: 'text', label: 'Nome', required: true }], actions: [{ label: 'Invia', onClick: [] }] } as NodeDefinition,
     ]);

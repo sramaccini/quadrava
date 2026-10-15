@@ -1,31 +1,31 @@
 import type { NodeDefinition } from 'schema';
 import { plain, renderScreen } from './screen-testing';
 
-describe('tooltip nella scheda di dettaglio', () => {
+describe('tooltip in the detail card', () => {
   afterEach(() => document.querySelectorAll('.cdk-overlay-container').forEach((c) => (c.innerHTML = '')));
 
   const detail: NodeDefinition = {
     type: 'detail',
-    source: 'ordine',
+    source: 'order',
     fields: [
-      { field: 'numero', label: 'Numero' },
-      { field: 'sconto', label: 'Sconto', format: 'percent', tooltip: 'Sconto di {{ user.username }} <b>x</b>' },
+      { field: 'number', label: 'Number' },
+      { field: 'discount', label: 'Discount', format: 'percent', tooltip: 'Discount for {{ user.username }} <b>x</b>' },
     ],
   };
-  const dataSources = { ordine: { type: 'rest' as const, method: 'GET' as const, url: '/api/ordine' } };
+  const dataSources = { order: { type: 'rest' as const, method: 'GET' as const, url: '/api/order' } };
 
-  it('solo i campi con tooltip hanno l’icona di aiuto, raggiungibile da tastiera, con il testo come testo', async () => {
-    const h = await renderScreen({ components: [detail], dataSources, respond: () => ({ numero: 'O-1', sconto: 10 }) });
-    await h.until(() => h.el.querySelectorAll('.ant-descriptions-item-label').length === 2, 'dettaglio');
+  it('only fields with a tooltip have the help icon, reachable from the keyboard, with the text as text', async () => {
+    const h = await renderScreen({ components: [detail], dataSources, respond: () => ({ number: 'O-1', discount: 10 }) });
+    await h.until(() => h.el.querySelectorAll('.ant-descriptions-item-label').length === 2, 'detail');
     const labels = [...h.el.querySelectorAll('.ant-descriptions-item-label')];
     expect(labels[0].querySelector('.help')).toBeNull();
     const help = labels[1].querySelector('.help') as HTMLElement;
-    expect(plain(labels[1].textContent)).toBe('Sconto');
+    expect(plain(labels[1].textContent)).toBe('Discount');
     expect(help.getAttribute('tabindex')).toBe('0');
-    expect(help.getAttribute('aria-label')).toBe('Sconto di u <b>x</b>');
+    expect(help.getAttribute('aria-label')).toBe('Discount for u <b>x</b>');
     help.dispatchEvent(new MouseEvent('mouseenter'));
     await h.until(() => !!document.querySelector('.ant-tooltip-inner'), 'tooltip');
-    expect(document.querySelector('.ant-tooltip-inner')?.textContent).toBe('Sconto di u <b>x</b>');
+    expect(document.querySelector('.ant-tooltip-inner')?.textContent).toBe('Discount for u <b>x</b>');
     expect(document.querySelector('.ant-tooltip-inner b')).toBeNull();
   });
 });

@@ -7,14 +7,14 @@ import { renderScreen } from './screen-testing';
 
 @Component({
   imports: [BusyComponent],
-  template: `<lc-busy [busy]="busy()" [empty]="empty()"><p class="dati">righe</p></lc-busy>`,
+  template: `<lc-busy [busy]="busy()" [empty]="empty()"><p class="data">rows</p></lc-busy>`,
 })
 class Host {
   readonly busy = signal(false);
   readonly empty = signal(false);
 }
 
-describe('Indicatore di attività (lc-busy)', () => {
+describe('Activity indicator (lc-busy)', () => {
   afterEach(() => vi.useRealTimers());
 
   async function mount() {
@@ -32,7 +32,7 @@ describe('Indicatore di attività (lc-busy)', () => {
   const overlay = (el: HTMLElement) => el.querySelector('lc-busy .overlay');
   const status = (el: HTMLElement) => el.querySelector('lc-busy [role="status"]')?.textContent?.trim();
 
-  it('una risposta veloce non mostra nulla; aria-busy segue comunque l’attesa', async () => {
+  it('a fast response shows nothing; aria-busy follows the wait anyway', async () => {
     const { el, host, advance } = await mount();
     host.busy.set(true);
     await advance(BUSY_DELAY_MS - 50);
@@ -44,14 +44,14 @@ describe('Indicatore di attività (lc-busy)', () => {
     expect(el.querySelector('.content')?.getAttribute('aria-busy')).toBe('false');
   });
 
-  it('un’attesa vera mostra spinner e annuncio, il contenuto resta (attenuato); poi resta visibile il minimo previsto', async () => {
+  it('a real wait shows a spinner and an announcement, the content stays (dimmed); then it stays visible for the planned minimum', async () => {
     const { el, host, advance } = await mount();
     host.busy.set(true);
     await advance(BUSY_DELAY_MS);
     expect(overlay(el)?.querySelector('nz-spin')).not.toBeNull();
     expect(status(el)).toBe('Caricamento…');
     expect(el.querySelector('.busy')?.classList.contains('on')).toBe(true);
-    expect(el.querySelector('.dati')?.textContent).toBe('righe');
+    expect(el.querySelector('.data')?.textContent).toBe('rows');
     host.busy.set(false);
     await advance(BUSY_MIN_VISIBLE_MS - 50);
     expect(overlay(el)).not.toBeNull();
@@ -60,7 +60,7 @@ describe('Indicatore di attività (lc-busy)', () => {
     expect(status(el)).toBe('');
   });
 
-  it('oltre l’attesa normale dice che ci vuole più del solito', async () => {
+  it('beyond the normal wait it says it is taking longer than usual', async () => {
     const { el, host, advance } = await mount();
     host.busy.set(true);
     await advance(BUSY_SLOW_MS);
@@ -68,7 +68,7 @@ describe('Indicatore di attività (lc-busy)', () => {
     expect(el.querySelector('.label')?.textContent?.trim()).toBe('Ci vuole più del solito…');
   });
 
-  it('al primo caricamento riserva lo spazio, poi lo rilascia', async () => {
+  it('on the first load it reserves the space, then releases it', async () => {
     const { el, host, advance } = await mount();
     host.empty.set(true);
     host.busy.set(true);
@@ -81,28 +81,28 @@ describe('Indicatore di attività (lc-busy)', () => {
   });
 });
 
-describe('Indicatore di attività nei componenti con data source', () => {
-  it('la datatable mostra lo spinner al primo caricamento e nella ricarica tiene le righe', async () => {
+describe('Activity indicator in components with a data source', () => {
+  it('the datatable shows the spinner on the first load and keeps the rows while reloading', async () => {
     let release: (value: unknown) => void = () => undefined;
     const { el, settle, until, fixture } = await renderScreen({
-      dataSources: { righe: { type: 'rest', method: 'GET', url: '/api/righe', params: { f: "{{ has(state.f) ? state.f : '' }}" } } },
-      components: [{ type: 'dataTable', source: 'righe', columns: [{ field: 'nome', label: 'Nome' }] }],
+      dataSources: { rows: { type: 'rest', method: 'GET', url: '/api/rows', params: { f: "{{ has(state.f) ? state.f : '' }}" } } },
+      components: [{ type: 'dataTable', source: 'rows', columns: [{ field: 'name', label: 'Name' }] }],
       respond: () => new Promise((resolve) => (release = resolve)),
     });
-    await until(() => !!el.querySelector('lc-data-table lc-busy .overlay'), 'spinner al primo caricamento');
+    await until(() => !!el.querySelector('lc-data-table lc-busy .overlay'), 'spinner on the first load');
     expect(el.querySelector('lc-data-table lc-busy .busy')?.classList.contains('reserve')).toBe(true);
-    // Durante il caricamento la tabella non dice «Nessun risultato».
+    // While loading, the table does not say «No results».
     expect(el.querySelector('lc-data-table .ant-table-placeholder')?.textContent?.trim() ?? '').toBe('');
-    release([{ nome: 'Anna' }]);
-    await until(() => !el.querySelector('lc-data-table lc-busy .overlay'), 'spinner tolto');
+    release([{ name: 'Anna' }]);
+    await until(() => !el.querySelector('lc-data-table lc-busy .overlay'), 'spinner removed');
     expect(el.querySelector('lc-data-table tbody td')?.textContent?.trim()).toBe('Anna');
 
-    // Ricarica: le righe restano, attenuate, con lo spinner sopra.
+    // Reload: the rows stay, dimmed, with the spinner on top.
     fixture.componentInstance.runtime()!.state.update((s) => ({ ...s, f: 'x' }));
-    await until(() => !!el.querySelector('lc-data-table lc-busy .busy.on'), 'ricarica');
+    await until(() => !!el.querySelector('lc-data-table lc-busy .busy.on'), 'reload');
     expect(el.querySelector('lc-data-table tbody td')?.textContent?.trim()).toBe('Anna');
-    release([{ nome: 'Bruno' }]);
-    await until(() => el.querySelector('lc-data-table tbody td')?.textContent?.trim() === 'Bruno', 'nuove righe');
+    release([{ name: 'Bruno' }]);
+    await until(() => el.querySelector('lc-data-table tbody td')?.textContent?.trim() === 'Bruno', 'new rows');
     await settle();
   });
 });

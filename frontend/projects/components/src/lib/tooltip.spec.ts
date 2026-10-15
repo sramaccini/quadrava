@@ -3,7 +3,7 @@ import { Authorization, DataClient, Notifier, ScreenComponent, ScreenNavigator, 
 import type { NodeDefinition, ScreenDefinition } from 'schema';
 import { provideLowcodeComponents } from './provide';
 
-describe('tooltip opzionale', () => {
+describe('optional tooltip', () => {
   async function render(components: NodeDefinition[]): Promise<{ fixture: ComponentFixture<ScreenComponent>; el: HTMLElement }> {
     TestBed.configureTestingModule({
       providers: [
@@ -16,7 +16,7 @@ describe('tooltip opzionale', () => {
       ],
     });
     const fixture = TestBed.createComponent(ScreenComponent);
-    fixture.componentRef.setInput('definition', { schemaVersion: '1.0', screen: 'prova', components } satisfies ScreenDefinition);
+    fixture.componentRef.setInput('definition', { schemaVersion: '1.0', screen: 'test', components } satisfies ScreenDefinition);
     for (let i = 0; i < 4; i++) {
       fixture.detectChanges();
       await fixture.whenStable();
@@ -36,28 +36,28 @@ describe('tooltip opzionale', () => {
 
   afterEach(() => document.querySelectorAll('.cdk-overlay-container').forEach((e) => (e.innerHTML = '')));
 
-  it('mostra il testo con le espressioni risolte, senza interpretare HTML', async () => {
+  it('shows the text with the expressions resolved, without interpreting HTML', async () => {
     const { fixture, el } = await render([
-      { type: 'button', label: 'Salva', tooltip: 'Ciao {{user.username}} <b>x</b>', onClick: [] },
+      { type: 'button', label: 'Save', tooltip: 'Hello {{user.username}} <b>x</b>', onClick: [] },
     ]);
     el.querySelector('.tip')!.dispatchEvent(new MouseEvent('mouseenter'));
-    expect(await overlayText(fixture)).toBe('Ciao mario <b>x</b>');
+    expect(await overlayText(fixture)).toBe('Hello mario <b>x</b>');
     expect(document.querySelector('.ant-tooltip-inner b')).toBeNull();
   });
 
-  it('senza tooltip non aggiunge involucri', async () => {
-    const { el } = await render([{ type: 'text', text: 'Ciao' }]);
+  it('without a tooltip it adds no wrappers', async () => {
+    const { el } = await render([{ type: 'text', text: 'Hello' }]);
     expect(el.querySelector('.tip')).toBeNull();
   });
 
-  it('un tooltip che si risolve in vuoto non viene mostrato', async () => {
-    const { el } = await render([{ type: 'text', text: 'Ciao', tooltip: '{{ "" }}' }]);
+  it('a tooltip resolving to empty is not shown', async () => {
+    const { el } = await render([{ type: 'text', text: 'Hello', tooltip: '{{ "" }}' }]);
     expect(el.querySelector('.tip')).toBeNull();
   });
 
-  it('le etichette di campo mostrano l’icona di aiuto', async () => {
+  it('field labels show the help icon', async () => {
     const { el } = await render([
-      { type: 'form', fields: [{ name: 'n', type: 'text', label: 'Nome', tooltip: 'Il nome' }], actions: [] } as NodeDefinition,
+      { type: 'form', fields: [{ name: 'n', type: 'text', label: 'Name', tooltip: 'The name' }], actions: [] } as NodeDefinition,
     ]);
     expect(el.querySelector('nz-form-label [nz-icon], nz-form-label .anticon')).not.toBeNull();
   });

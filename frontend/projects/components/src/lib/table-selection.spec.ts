@@ -1,36 +1,36 @@
 import type { NodeDefinition } from 'schema';
 import { columnTexts, plain, renderScreen } from './screen-testing';
 
-describe('selezione delle righe e azioni multiple', () => {
+describe('row selection and bulk actions', () => {
   const rows = [
-    { id: 1, numero: 'F-1', stato: 'bozza' },
-    { id: 2, numero: 'F-2', stato: 'inviata' },
-    { id: 3, numero: 'F-3', stato: 'bozza' },
+    { id: 1, number: 'F-1', status: 'draft' },
+    { id: 2, number: 'F-2', status: 'sent' },
+    { id: 3, number: 'F-3', status: 'draft' },
   ];
   const table: NodeDefinition = {
     type: 'table',
-    source: 'dati',
-    selection: { bind: 'state.scelte' },
-    columns: [{ field: 'numero', label: 'Numero' }],
+    source: 'data',
+    selection: { bind: 'state.chosen' },
+    columns: [{ field: 'number', label: 'Number' }],
     bulkActions: [
       {
-        label: 'Invia {{ size(selection) }}',
-        enabledIf: "{{ size(selection) > 0 && selection.all(r, r.stato == 'bozza') }}",
-        onClick: [{ call: 'invia', args: { ids: '{{ selection.map(r, r.id) }}' } }, { toast: 'Inviate' }],
+        label: 'Send {{ size(selection) }}',
+        enabledIf: "{{ size(selection) > 0 && selection.all(r, r.status == 'draft') }}",
+        onClick: [{ call: 'send', args: { ids: '{{ selection.map(r, r.id) }}' } }, { toast: 'Sent' }],
       },
     ],
   };
   const dataSources = {
-    dati: { type: 'rest' as const, method: 'GET' as const, url: '/api/dati' },
-    invia: { type: 'rest' as const, method: 'POST' as const, url: '/api/invia', body: { ids: '{{ids}}' } },
+    data: { type: 'rest' as const, method: 'GET' as const, url: '/api/data' },
+    send: { type: 'rest' as const, method: 'POST' as const, url: '/api/send', body: { ids: '{{ids}}' } },
   };
   const boxes = (el: HTMLElement): HTMLInputElement[] => [...el.querySelectorAll<HTMLInputElement>('nz-table input[type="checkbox"]')];
   const bulkButton = (el: HTMLElement): HTMLButtonElement => el.querySelector('.bulk button') as HTMLButtonElement;
 
-  it('una casella per riga e una per tutte; le azioni vedono le righe scelte', async () => {
+  it('a checkbox per row and one for all; the actions see the chosen rows', async () => {
     const h = await renderScreen({ components: [table], dataSources, respond: (r) => (r.method === 'GET' ? rows : {}) });
-    await h.until(() => columnTexts(h.el, 1).length === 3, 'righe');
-    // 1 casella nell'intestazione + 3 nelle righe
+    await h.until(() => columnTexts(h.el, 1).length === 3, 'rows');
+    // 1 checkbox in the header + 3 in the rows
     expect(boxes(h.el)).toHaveLength(4);
     expect(plain(h.el.querySelector('.bulk .count')?.textContent)).toBe('Nessuna riga selezionata');
     expect(bulkButton(h.el).disabled).toBe(true);
@@ -38,42 +38,42 @@ describe('selezione delle righe e azioni multiple', () => {
     boxes(h.el)[3].click();
     await h.settle();
     expect(plain(h.el.querySelector('.bulk .count')?.textContent)).toBe('2 righe selezionate');
-    expect(plain(bulkButton(h.el).textContent)).toBe('Invia 2');
+    expect(plain(bulkButton(h.el).textContent)).toBe('Send 2');
     expect(bulkButton(h.el).disabled).toBe(false);
     expect(h.el.querySelectorAll('tr.ant-table-row-selected')).toHaveLength(2);
     bulkButton(h.el).click();
-    await h.until(() => h.toasts.length > 0, 'azione eseguita');
+    await h.until(() => h.toasts.length > 0, 'action run');
     expect(h.requests.find((r) => r.method === 'POST')?.body).toEqual({ ids: [1, 3] });
   });
 
-  it('la casella dell’intestazione sceglie tutto o niente e l’azione si disabilita se la regola non vale', async () => {
+  it('the header checkbox chooses all or nothing and the action is disabled when the rule does not hold', async () => {
     const h = await renderScreen({ components: [table], dataSources, respond: () => rows });
-    await h.until(() => columnTexts(h.el, 1).length === 3, 'righe');
+    await h.until(() => columnTexts(h.el, 1).length === 3, 'rows');
     boxes(h.el)[0].click();
     await h.settle();
     expect(plain(h.el.querySelector('.bulk .count')?.textContent)).toBe('3 righe selezionate');
-    // F-2 non è in bozza: l'azione resta disabilitata.
+    // F-2 is not a draft: the action stays disabled.
     expect(bulkButton(h.el).disabled).toBe(true);
     boxes(h.el)[0].click();
     await h.settle();
     expect(plain(h.el.querySelector('.bulk .count')?.textContent)).toBe('Nessuna riga selezionata');
   });
 
-  it('le chiavi delle righe che non ci sono più escono dalla selezione', async () => {
+  it('keys of rows that are no longer there leave the selection', async () => {
     let data = rows;
     const h = await renderScreen({
-      components: [table, { type: 'button', label: 'Ricarica', onClick: [{ refresh: 'dati' }] }],
+      components: [table, { type: 'button', label: 'Reload', onClick: [{ refresh: 'data' }] }],
       dataSources,
       respond: () => data,
     });
-    await h.until(() => columnTexts(h.el, 1).length === 3, 'righe');
+    await h.until(() => columnTexts(h.el, 1).length === 3, 'rows');
     boxes(h.el)[1].click();
     boxes(h.el)[2].click();
     await h.settle();
     expect(plain(h.el.querySelector('.bulk .count')?.textContent)).toBe('2 righe selezionate');
     data = rows.slice(1);
-    ([...h.el.querySelectorAll('button')].find((b) => b.textContent?.includes('Ricarica')) as HTMLButtonElement).click();
-    await h.until(() => columnTexts(h.el, 1).length === 2, 'righe ricaricate');
+    ([...h.el.querySelectorAll('button')].find((b) => b.textContent?.includes('Reload')) as HTMLButtonElement).click();
+    await h.until(() => columnTexts(h.el, 1).length === 2, 'rows reloaded');
     await h.settle();
     expect(plain(h.el.querySelector('.bulk .count')?.textContent)).toBe('1 riga selezionata');
   });

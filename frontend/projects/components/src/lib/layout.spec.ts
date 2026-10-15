@@ -1,11 +1,11 @@
 import type { NodeDefinition } from 'schema';
 import { plain, renderScreen } from './screen-testing';
 
-describe('contenitori di layout', () => {
+describe('layout containers', () => {
   const text = (id: string, extra: Record<string, unknown> = {}): NodeDefinition => ({ id, type: 'text', text: id, ...extra }) as NodeDefinition;
   const host = (el: HTMLElement, id: string): HTMLElement => el.querySelector(`[data-node-id="${id}"]`) as HTMLElement;
 
-  it('box: direzione, allineamento, distribuzione, a capo, spazio e quote di grow', async () => {
+  it('box: direction, alignment, distribution, wrapping, gap and grow shares', async () => {
     const h = await renderScreen({
       components: [
         { type: 'box', align: 'end', justify: 'between', gap: 'large', components: [text('a', { grow: 2 }), text('b'), text('c', { grow: 1 })] },
@@ -25,57 +25,57 @@ describe('contenitori di layout', () => {
     expect(column.classList).toContain('gap-none');
   });
 
-  it('griglia: colonne e span limitato alle colonne disponibili', async () => {
+  it('grid: columns and span limited to the available columns', async () => {
     const h = await renderScreen({ components: [{ type: 'grid', columns: 3, components: [text('a', { span: 2 }), text('b'), text('c', { span: 9 })] }] });
     expect((h.el.querySelector('lc-grid .grid') as HTMLElement).style.getPropertyValue('--lc-grid-columns')).toBe('3');
     expect(['a', 'b', 'c'].map((id) => host(h.el, id).style.getPropertyValue('--lc-span'))).toEqual(['2', '1', '3']);
   });
 
-  it('griglia senza columns: due colonne', async () => {
+  it('grid without columns: two columns', async () => {
     const two = await renderScreen({ components: [{ type: 'grid', components: [text('x')] }] });
     expect((two.el.querySelector('lc-grid .grid') as HTMLElement).style.getPropertyValue('--lc-grid-columns')).toBe('2');
   });
 
-  it('border: figli per regione (center se non indicata), solo le regioni usate occupano spazio', async () => {
+  it('border: children by region (center when not given), only the regions used take space', async () => {
     const h = await renderScreen({
       components: [
         {
           type: 'border',
           westWidth: 200,
-          components: [text('titolo', { region: 'north' }), text('menu', { region: 'west' }), text('corpo'), text('altro', { region: 'center' }), text('piede', { region: 'south' })],
+          components: [text('title', { region: 'north' }), text('menu', { region: 'west' }), text('body'), text('other', { region: 'center' }), text('footer', { region: 'south' })],
         },
       ],
     });
     const regions = [...h.el.querySelectorAll<HTMLElement>('lc-border .region')];
     expect(regions.map((r) => r.dataset['region'])).toEqual(['north', 'west', 'center', 'south']);
-    expect(regions.map((r) => [...r.querySelectorAll('lc-node')].map((n) => n.getAttribute('data-node-id')))).toEqual([['titolo'], ['menu'], ['corpo', 'altro'], ['piede']]);
+    expect(regions.map((r) => [...r.querySelectorAll('lc-node')].map((n) => n.getAttribute('data-node-id')))).toEqual([['title'], ['menu'], ['body', 'other'], ['footer']]);
     const grid = h.el.querySelector('lc-border .border') as HTMLElement;
     expect(grid.style.getPropertyValue('--lc-border-columns')).toBe('200px minmax(0, 1fr)');
     expect(grid.style.getPropertyValue('--lc-border-areas')).toBe('"north north" "west center" "south south"');
   });
 
-  it('i figli dei contenitori rispettano visibilità e preparano lo stato dei campi prima del primo caricamento', async () => {
+  it('children of containers respect visibility and prepare the state of their fields before the first load', async () => {
     const h = await renderScreen({
       components: [
         {
           type: 'grid',
           components: [
             { type: 'border', components: [{ type: 'box', components: [{ type: 'input', default: 'x', field: { name: 'q', type: 'text', label: 'Q' } }] }] },
-            text('nascosto', { visibleIf: '{{ false }}' }),
+            text('hidden', { visibleIf: '{{ false }}' }),
           ],
         },
       ],
-      dataSources: { righe: { type: 'rest', method: 'GET', url: '/api/righe', params: { q: '{{ state.q }}' } } },
+      dataSources: { rows: { type: 'rest', method: 'GET', url: '/api/rows', params: { q: '{{ state.q }}' } } },
       respond: () => [],
     });
-    await h.until(() => h.requests.length > 0, 'caricamento');
+    await h.until(() => h.requests.length > 0, 'loading');
     expect(h.requests[0].query).toEqual({ q: 'x' });
-    expect(plain(host(h.el, 'nascosto').textContent)).toBe('');
+    expect(plain(host(h.el, 'hidden').textContent)).toBe('');
   });
 
-  it('border ridimensionabile: divisori accessibili, tastiera e trascinamento entro 120–600px', async () => {
+  it('resizable border: accessible dividers, keyboard and dragging within 120–600px', async () => {
     const h = await renderScreen({
-      components: [{ type: 'border', resizable: true, westWidth: 200, components: [text('menu', { region: 'west' }), text('corpo'), text('note', { region: 'east' })] }],
+      components: [{ type: 'border', resizable: true, westWidth: 200, components: [text('menu', { region: 'west' }), text('body'), text('note', { region: 'east' })] }],
     });
     const [west, east] = [...h.el.querySelectorAll<HTMLElement>('lc-border .handle')];
     const columns = () => (h.el.querySelector('lc-border .border') as HTMLElement).style.getPropertyValue('--lc-border-columns');
@@ -89,7 +89,7 @@ describe('contenitori di layout', () => {
     west.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true }));
     await h.settle();
     expect(west.getAttribute('aria-valuenow')).toBe('120');
-    // Trascinamento: 500px a destra si fermano al massimo.
+    // Dragging: 500px to the right stop at the maximum.
     const pointer = (type: string, x: number) => west.dispatchEvent(Object.assign(new MouseEvent(type, { bubbles: true, clientX: x }), { pointerId: 1 }));
     pointer('pointerdown', 100);
     pointer('pointermove', 600);
@@ -98,8 +98,8 @@ describe('contenitori di layout', () => {
     expect(west.getAttribute('aria-valuenow')).toBe('600');
   });
 
-  it('border senza resizable: nessun divisore', async () => {
-    const h = await renderScreen({ components: [{ type: 'border', components: [text('menu', { region: 'west' }), text('corpo')] }] });
+  it('border without resizable: no divider', async () => {
+    const h = await renderScreen({ components: [{ type: 'border', components: [text('menu', { region: 'west' }), text('body')] }] });
     expect(h.el.querySelector('lc-border .handle')).toBeNull();
   });
 });

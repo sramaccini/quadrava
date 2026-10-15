@@ -47,7 +47,7 @@ export async function renderScreen(options: {
   const fixture = TestBed.createComponent(ScreenComponent);
   fixture.componentRef.setInput('definition', {
     schemaVersion: '1.0',
-    screen: 'prova',
+    screen: 'test',
     dataSources: options.dataSources ?? {},
     components: options.components,
   } satisfies ScreenDefinition);

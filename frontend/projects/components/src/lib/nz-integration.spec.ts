@@ -11,12 +11,12 @@ import { themeToNzVars } from './theme-bridge';
 
 const theme = (mode: 'light' | 'dark'): ThemeDefinition => ({
   schemaVersion: '1.0',
-  theme: 'prova',
+  theme: 'test',
   mode,
   tokens: { colors: { primary: '#1f5fbf', onPrimary: '#fff', background: mode === 'dark' ? '#141414' : '#f4f6f9', surface: '#fff', onSurface: '#111', border: '#ccc', danger: '#c62828', success: '#2e7d32' } },
 });
 
-describe('integrazione con NG-ZORRO', () => {
+describe('integration with NG-ZORRO', () => {
   let restore: () => void;
   beforeAll(() => (restore = stubViewportHeight()));
   afterAll(() => restore());
@@ -46,7 +46,7 @@ describe('integrazione con NG-ZORRO', () => {
       ],
     });
     const fixture = TestBed.createComponent(ScreenComponent);
-    fixture.componentRef.setInput('definition', { schemaVersion: '1.0', screen: 'prova', dataSources, components } satisfies ScreenDefinition);
+    fixture.componentRef.setInput('definition', { schemaVersion: '1.0', screen: 'test', dataSources, components } satisfies ScreenDefinition);
     await settle(fixture);
     return { fixture, el: fixture.nativeElement as HTMLElement };
   }
@@ -57,8 +57,8 @@ describe('integrazione con NG-ZORRO', () => {
     document.documentElement.removeAttribute('style');
   });
 
-  describe('tema', () => {
-    it('i colori del tema diventano le variabili di NG-ZORRO, con la scala del primario', () => {
+  describe('theme', () => {
+    it('theme colours become NG-ZORRO variables, with the primary scale', () => {
       const vars = themeToNzVars(theme('light'));
       expect(vars['--ant-primary-color']).toBe('#1f5fbf');
       expect(vars['--ant-primary-color-outline']).toBe('rgba(31, 95, 191, 0.2)');
@@ -67,11 +67,11 @@ describe('integrazione con NG-ZORRO', () => {
       expect(vars['--ant-error-color']).toBe('#c62828');
     });
 
-    it('il tema scuro usa una scala diversa e il chiaro non cambia il primario', () => {
+    it('the dark theme uses a different scale and the light one does not change the primary', () => {
       expect(themeToNzVars(theme('dark'))['--ant-primary-1']).not.toBe(themeToNzVars(theme('light'))['--ant-primary-1']);
     });
 
-    it('applicare un tema scuro carica lo stylesheet scuro; uno chiaro lo toglie', async () => {
+    it('applying a dark theme loads the dark stylesheet; a light one removes it', async () => {
       TestBed.configureTestingModule({ providers: [provideLowcodeComponents()] });
       const themes = TestBed.inject(ThemeService);
       themes.apply(theme('dark'));
@@ -84,8 +84,8 @@ describe('integrazione con NG-ZORRO', () => {
     });
   });
 
-  describe('icone e messaggi', () => {
-    it('solo i nomi del set integrato mostrano un’icona; gli altri non caricano nulla', async () => {
+  describe('icons and messages', () => {
+    it('only names of the built-in set show an icon; the others load nothing', async () => {
       expect(iconType('home')).toBe('home');
       expect(iconType('file-plus')).toBe('file-add');
       expect(iconType('../../evil')).toBeNull();
@@ -95,26 +95,26 @@ describe('integrazione con NG-ZORRO', () => {
       known.detectChanges();
       expect(known.nativeElement.querySelector('[nz-icon], nz-icon')).not.toBeNull();
       const unknown = TestBed.createComponent(IconComponent);
-      unknown.componentRef.setInput('name', 'sconosciuta');
+      unknown.componentRef.setInput('name', 'unknown');
       unknown.detectChanges();
       expect(unknown.nativeElement.querySelector('[nz-icon], nz-icon')).toBeNull();
     });
 
-    it('il notificatore usa i messaggi di NG-ZORRO e non interpreta HTML', async () => {
+    it('the notifier uses NG-ZORRO messages and does not interpret HTML', async () => {
       TestBed.configureTestingModule({ providers: [provideLowcodeComponents()] });
       const messages = TestBed.inject(NzMessageService);
       const info = vi.spyOn(messages, 'info');
       const error = vi.spyOn(messages, 'error');
       const notifier = TestBed.inject(NzNotifier);
-      notifier.toast('Fatto');
-      notifier.toast('<b>Guasto</b>', 'error');
-      expect(info).toHaveBeenCalledWith('Fatto');
-      expect(error).toHaveBeenCalledWith('&#60;b&#62;Guasto&#60;/b&#62;');
+      notifier.toast('Done');
+      notifier.toast('<b>Broken</b>', 'error');
+      expect(info).toHaveBeenCalledWith('Done');
+      expect(error).toHaveBeenCalledWith('&#60;b&#62;Broken&#60;/b&#62;');
       TestBed.tick();
       await new Promise((r) => setTimeout(r, 10));
       TestBed.tick();
       const text = document.body.querySelector('.ant-message')?.textContent ?? '';
-      expect(text).toContain('<b>Guasto</b>');
+      expect(text).toContain('<b>Broken</b>');
       expect(document.body.querySelector('.ant-message b')).toBeNull();
     });
   });
@@ -123,17 +123,17 @@ describe('integrazione con NG-ZORRO', () => {
     const form: NodeDefinition = {
       type: 'form',
       fields: [
-        { name: 'categoria', type: 'select', label: 'Categoria', options: ['privato', 'business'] },
-        { name: 'data', type: 'date', label: 'Data' },
-        { name: 'accetto', type: 'checkbox', label: 'Accetto' },
+        { name: 'category', type: 'select', label: 'Category', options: ['private', 'business'] },
+        { name: 'data', type: 'date', label: 'Date' },
+        { name: 'accepted', type: 'checkbox', label: 'I accept' },
       ],
       initial: { data: '2026-10-07' },
-      actions: [{ label: 'Invia', onClick: [{ toast: '{{form.categoria}}|{{form.data}}|{{form.accetto}}' }] }],
+      actions: [{ label: 'Send', onClick: [{ toast: '{{form.category}}|{{form.data}}|{{form.accepted}}' }] }],
     };
 
-    it('select, data e casella scrivono i valori nel form', async () => {
+    it('select, date and checkbox write their values into the form', async () => {
       const { fixture, el } = await render([form]);
-      // la data iniziale compare nel selettore di date
+      // the initial date appears in the date picker
       expect((el.querySelector('nz-date-picker input') as HTMLInputElement).value).toBe('07/10/2026');
       const options = await openSelect(el.querySelector('lc-form nz-select') as Element, () => settle(fixture));
       (options.find((o) => o.textContent?.trim() === 'business') as HTMLElement).click();
@@ -145,19 +145,19 @@ describe('integrazione con NG-ZORRO', () => {
       expect(toasts).toEqual(['business|2026-10-07|true']);
     });
 
-    it('le date si convertono senza fuso orario', () => {
+    it('dates are converted without time zone', () => {
       expect(toIsoDate(parseIsoDate('2026-10-07'))).toBe('2026-10-07');
       expect(parseIsoDate('2026-13-45')?.getMonth()).not.toBe(12);
-      expect(parseIsoDate('non una data')).toBeNull();
+      expect(parseIsoDate('not a date')).toBeNull();
       expect(toIsoDate(null)).toBeNull();
     });
   });
 
-  describe('tabella con paginazione lato server', () => {
-    it('mostra le pagine dal totale e chiede la pagina scelta', async () => {
+  describe('table with server-side paging', () => {
+    it('shows the pages from the total and asks for the chosen page', async () => {
       const { fixture, el } = await render(
-        [{ type: 'table', source: 'dati', columns: [{ field: 'n', label: 'N' }] }],
-        { dati: { type: 'rest', method: 'GET', url: '/api/dati', params: { page: '{{state.page}}' }, paging: 'server' } },
+        [{ type: 'table', source: 'data', columns: [{ field: 'n', label: 'N' }] }],
+        { data: { type: 'rest', method: 'GET', url: '/api/data', params: { page: '{{state.page}}' }, paging: 'server' } },
         (r) => ({ items: [{ n: Number(r.query?.['page'] ?? 0) }], total: 25, size: 10 }),
       );
       expect([...el.querySelectorAll('.ant-pagination-item')].map((i) => i.textContent?.trim())).toEqual(['1', '2', '3']);
@@ -168,13 +168,13 @@ describe('integrazione con NG-ZORRO', () => {
     });
   });
 
-  describe('sezione e testo', () => {
-    it('la sezione ha titolo e contenuto; il testo ha titolo o corpo', async () => {
-      const { el } = await render([{ type: 'section', title: 'Riepilogo', components: [{ type: 'text', text: 'Titolo', style: 'heading' }, { type: 'text', text: 'Corpo' }] }]);
-      expect(el.querySelector('nz-card[role=region]')?.getAttribute('aria-label')).toBe('Riepilogo');
-      expect(el.querySelector('.ant-card-head-title')?.textContent?.trim()).toBe('Riepilogo');
-      expect(el.querySelector('h2')?.textContent?.trim()).toBe('Titolo');
-      expect(el.querySelector('p')?.textContent?.trim()).toBe('Corpo');
+  describe('section and text', () => {
+    it('the section has a title and content; the text has a heading or body style', async () => {
+      const { el } = await render([{ type: 'section', title: 'Summary', components: [{ type: 'text', text: 'Title', style: 'heading' }, { type: 'text', text: 'Body' }] }]);
+      expect(el.querySelector('nz-card[role=region]')?.getAttribute('aria-label')).toBe('Summary');
+      expect(el.querySelector('.ant-card-head-title')?.textContent?.trim()).toBe('Summary');
+      expect(el.querySelector('h2')?.textContent?.trim()).toBe('Title');
+      expect(el.querySelector('p')?.textContent?.trim()).toBe('Body');
     });
   });
 });

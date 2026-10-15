@@ -1,69 +1,69 @@
 import { renderScreen } from './screen-testing';
 
-describe('Piede delle tabelle: «Aggiorna», prima e ultima pagina', () => {
-  const rows = (n: number) => Array.from({ length: n }, (_, i) => ({ nome: `Riga ${i + 1}` }));
+describe('Table footer: «Refresh», first and last page', () => {
+  const rows = (n: number) => Array.from({ length: n }, (_, i) => ({ name: `Row ${i + 1}` }));
   const footer = (el: HTMLElement) => el.querySelector('lc-table-footer');
   const button = (el: HTMLElement, cls: string) => footer(el)?.querySelector<HTMLButtonElement>(`button.${cls}`) ?? null;
   const firstCell = (el: HTMLElement) => el.querySelector('tbody tr:not(.ant-table-placeholder) td')?.textContent?.trim();
 
-  it('senza refreshable e con una sola pagina il piede non c’è', async () => {
+  it('without refreshable and with a single page there is no footer', async () => {
     const { el } = await renderScreen({
-      dataSources: { righe: { type: 'rest', method: 'GET', url: '/api/righe' } },
-      components: [{ type: 'dataTable', source: 'righe', columns: [{ field: 'nome', label: 'Nome' }] }],
+      dataSources: { rows: { type: 'rest', method: 'GET', url: '/api/rows' } },
+      components: [{ type: 'dataTable', source: 'rows', columns: [{ field: 'name', label: 'Name' }] }],
       respond: () => rows(3),
     });
     expect(footer(el)).toBeNull();
   });
 
-  it('datatable: prima e ultima pagina, disabilitate agli estremi; «Aggiorna» rilegge il data source', async () => {
+  it('datatable: first and last page, disabled at the ends; «Refresh» reads the data source again', async () => {
     const { el, settle, until, requests } = await renderScreen({
-      dataSources: { righe: { type: 'rest', method: 'GET', url: '/api/righe' } },
-      components: [{ type: 'dataTable', source: 'righe', refreshable: true, pageSize: 5, columns: [{ field: 'nome', label: 'Nome' }] }],
+      dataSources: { rows: { type: 'rest', method: 'GET', url: '/api/rows' } },
+      components: [{ type: 'dataTable', source: 'rows', refreshable: true, pageSize: 5, columns: [{ field: 'name', label: 'Name' }] }],
       respond: () => rows(12),
     });
-    await until(() => firstCell(el) === 'Riga 1', 'righe');
+    await until(() => firstCell(el) === 'Row 1', 'rows');
     expect(button(el, 'first')?.disabled).toBe(true);
     expect(button(el, 'first')?.getAttribute('aria-label')).toBe('Prima pagina');
     button(el, 'last')!.click();
     await settle();
-    expect(firstCell(el)).toBe('Riga 11');
+    expect(firstCell(el)).toBe('Row 11');
     expect(button(el, 'last')?.disabled).toBe(true);
     button(el, 'first')!.click();
     await settle();
-    expect(firstCell(el)).toBe('Riga 1');
+    expect(firstCell(el)).toBe('Row 1');
 
-    // «Aggiorna» a sinistra: una richiesta in più, con il nome accessibile.
+    // «Refresh» on the left: one more request, with the accessible name.
     const refresh = button(el, 'refresh')!;
     expect(refresh.getAttribute('aria-label')).toBe('Aggiorna');
     expect(footer(el)!.firstElementChild).toBe(refresh);
     const before = requests.length;
     refresh.click();
-    await until(() => requests.length === before + 1, 'ricarica');
-    // Riscontro immediato: l'icona gira anche se la risposta è istantanea, poi si ferma dopo il giro minimo.
+    await until(() => requests.length === before + 1, 'reload');
+    // Immediate feedback: the icon turns even if the response is instant, then stops after the minimum turn.
     await settle();
     expect(refresh.classList.contains('busy')).toBe(true);
     expect(refresh.getAttribute('aria-busy')).toBe('true');
-    // E lo spinner al centro della tabella, con il messaggio, compare subito (senza il ritardo dei caricamenti normali).
+    // And the spinner in the centre of the table, with the message, appears at once (without the delay of normal loads).
     expect(el.querySelector('lc-data-table lc-busy .overlay .label')?.textContent?.trim()).toBe('Caricamento…');
-    // Un secondo clic mentre gira non ripete la richiesta.
+    // A second click while turning does not repeat the request.
     refresh.click();
     await settle();
     expect(requests).toHaveLength(before + 1);
-    await until(() => !refresh.classList.contains('busy'), 'fine del giro');
+    await until(() => !refresh.classList.contains('busy'), 'end of the turn');
   });
 
-  it('tabella paginata dal servizio: «ultima» chiede l’ultima pagina', async () => {
+  it('table paged by the service: «last» asks for the last page', async () => {
     const { el, until, requests } = await renderScreen({
-      dataSources: { ordini: { type: 'rest', method: 'GET', url: '/api/ordini', paging: 'server', params: { page: '{{ state.page }}' } } },
-      components: [{ type: 'table', source: 'ordini', refreshable: true, columns: [{ field: 'nome', label: 'Nome' }] }],
+      dataSources: { orders: { type: 'rest', method: 'GET', url: '/api/orders', paging: 'server', params: { page: '{{ state.page }}' } } },
+      components: [{ type: 'table', source: 'orders', refreshable: true, columns: [{ field: 'name', label: 'Name' }] }],
       respond: (r) => {
         const page = Number(r.query?.['page'] ?? 0);
-        return { items: rows(10).map((x, i) => ({ nome: `P${page} ${i}` })), page, size: 10, total: 45 };
+        return { items: rows(10).map((x, i) => ({ name: `P${page} ${i}` })), page, size: 10, total: 45 };
       },
     });
-    await until(() => !!button(el, 'last'), 'pagine');
+    await until(() => !!button(el, 'last'), 'pages');
     button(el, 'last')!.click();
-    await until(() => firstCell(el) === 'P4 0', 'ultima pagina');
+    await until(() => firstCell(el) === 'P4 0', 'last page');
     expect(requests.at(-1)?.query).toMatchObject({ page: 4 });
     expect(button(el, 'last')?.disabled).toBe(true);
   });
