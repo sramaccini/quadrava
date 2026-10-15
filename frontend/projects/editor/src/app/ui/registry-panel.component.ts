@@ -8,20 +8,9 @@ import { NzTagModule } from 'ng-zorro-antd/tag';
 import type { Json } from '../model/doc-ops';
 import type { DocumentState } from '../model/document-state';
 import { jsonDiff, type JsonChange } from '../model/json-diff';
-import {
-  EDITOR_REDIRECT,
-  RegistryClient,
-  RegistryError,
-  documentRef,
-  loginUrl,
-  type DocumentKind,
-  type DocumentVersion,
-  type RegistryIssue,
-  type ReviewAction,
-  REGISTRY_SETTINGS_KEY,
-  readRegistrySettings,
-  type RegistrySettings,
-} from '../model/registry-client';
+import { RegistryClient, RegistryError, documentRef, type DocumentKind, type DocumentVersion, type ReviewAction } from '../model/registry-client';
+import { RegistrySession } from '../model/registry-session';
+import { SavedDocuments } from '../model/saved-documents';
 
 /** Colore dell'etichetta di ogni stato di revisione. */
 const STATE_COLORS: Record<string, string> = { bozza: 'default', 'in-revisione': 'orange', approvata: 'cyan', respinta: 'red' };
@@ -33,7 +22,8 @@ const STATE_COLORS: Record<string, string> = { bozza: 'default', 'in-revisione':
  * e la pubblica in un ambiente. Applicazione e ambiente si ricordano nel browser.
  *
  * Il salvataggio indica al registro la versione da cui si è partiti (aperta o appena salvata): se nel frattempo un
- * altro autore ha salvato, il pannello lo dice e chiede se salvare comunque.
+ * altro autore ha salvato, il pannello lo dice e chiede se salvare comunque. Applicazione, ambiente, accesso e versione
+ * di partenza stanno in RegistrySession, condivisa con «Salva in registro» e «Apri da registro…» del menu File.
  */
 @Component({
   selector: 'ed-registry-panel',
@@ -181,27 +171,26 @@ export class RegistryPanelComponent {
   private readonly client = inject(RegistryClient);
   private readonly notifier = inject(Notifier);
   private readonly confirmation = inject(Confirmation);
-  private readonly redirect = inject(EDITOR_REDIRECT);
+  private readonly session = inject(RegistrySession);
+  private readonly saved = inject(SavedDocuments);
   protected readonly i18n = inject(I18n);
 
   /** Il documento aperto e il suo tipo. */
   readonly state = input.required<DocumentState & { load(doc: Json): void }>();
   readonly kind = input.required<DocumentKind>();
 
-  private readonly settings = readRegistrySettings();
-  protected readonly appId = signal(this.settings.appId);
-  protected readonly env = signal(this.settings.env);
-  protected readonly busy = signal(false);
+  protected readonly appId = this.session.appId;
+  protected readonly env = this.session.env;
+  private readonly working = signal(false);
+  protected readonly busy = computed(() => this.working() || this.session.busy());
   protected readonly loaded = signal(false);
   /** Il registro ha risposto 401: serve il login (attraverso il BFF), poi si torna qui. */
-  protected readonly needsLogin = signal(false);
+  protected readonly needsLogin = computed(() => this.session.status() === 'login');
   protected readonly versions = signal<DocumentVersion[]>([]);
   /** Ambiente → hash pubblicato, per il documento aperto. */
   private readonly published = signal<Record<string, string>>({});
-  /** Versione da cui parte il documento aperto (aperta o appena salvata): il registro la usa per le modifiche concorrenti. */
-  protected readonly basedOn = signal<string | null>(null);
-  /** Problemi di validazione segnalati dal registro all'ultimo salvataggio. */
-  protected readonly issues = signal<RegistryIssue[]>([]);
+  /** Problemi di validazione segnalati dal registro all'ultimo salvataggio (anche da «Salva in registro»). */
+  protected readonly issues = this.session.issues;
   /** Nota per la prossima azione di revisione. */
   protected readonly note = signal('');
   /** Confronto aperto: la versione e le differenze verso il documento aperto. */
@@ -209,24 +198,16 @@ export class RegistryPanelComponent {
 
   /** Il documento aperto; cambia solo se cambiano tipo o identificativo, non a ogni modifica del contenuto. */
   protected readonly ref = computed(() => documentRef(this.kind(), this.state().doc()), { equal: (a, b) => a?.kind === b?.kind && a?.id === b?.id });
+  /** Versione da cui parte il documento aperto (aperta o appena salvata): il registro la usa per le modifiche concorrenti. */
+  protected readonly basedOn = computed(() => this.session.basedOn(this.ref()));
   protected readonly canSave = computed(() => !!this.ref() && !!this.appId() && this.state().errorCount() === 0 && !this.busy());
 
   constructor() {
-    effect(() => {
-      const settings: RegistrySettings = { appId: this.appId(), env: this.env() };
-      try {
-        localStorage.setItem(REGISTRY_SETTINGS_KEY, JSON.stringify(settings));
-      } catch {
-        // vedi la bozza
-      }
-    });
     // Cambiando documento lo storico mostrato non vale più.
     effect(() => {
       this.ref();
       this.kind();
       this.loaded.set(false);
-      this.basedOn.set(null);
-      this.issues.set([]);
       this.diff.set(null);
     });
   }
@@ -242,7 +223,7 @@ export class RegistryPanelComponent {
   }
 
   protected login(): void {
-    this.redirect(loginUrl(globalThis.location.href));
+    this.session.login();
   }
 
   protected envsOf(hash: string): string[] {
@@ -264,33 +245,9 @@ export class RegistryPanelComponent {
   }
 
   protected async save(): Promise<void> {
-    const ref = this.ref();
-    if (!ref || !this.canSave()) return;
-    this.issues.set([]);
-    let conflict: RegistryError | null = null;
-    await this.run(
-      async () => {
-        const version = await this.client.save(this.appId(), ref.kind, ref.id, this.state().doc(), this.basedOn());
-        this.basedOn.set(version.hash);
-        this.notifier.toast(this.i18n.t('ed.registry.saved', { hash: version.hash.slice(0, 10) }));
-      },
-      (e) => {
-        if (e.status === 412) conflict = e;
-        else if (e.status === 400 && e.issues.length) this.issues.set(e.issues);
-        else return false;
-        return true;
-      },
-    );
-    const found = conflict as RegistryError | null;
-    if (found) {
-      // Qualcuno ha salvato dopo la versione da cui si è partiti: si salva comunque solo se l'autore lo conferma.
-      const ok = await this.confirmation.confirm(this.i18n.t('ed.registry.conflict', { author: found.latestAuthor ?? '?' }));
-      if (ok) {
-        this.basedOn.set(null);
-        await this.save();
-        return;
-      }
-    }
+    if (!this.canSave()) return;
+    const doc = this.state().doc();
+    if (await this.session.save(this.kind(), doc)) this.markSaved(doc);
     await this.refresh();
   }
 
@@ -320,7 +277,8 @@ export class RegistryPanelComponent {
     if (!ref || !(await this.confirmation.confirm(this.i18n.t('ed.confirmReplace')))) return;
     await this.run(async () => {
       this.state().load(await this.client.version(this.appId(), ref.kind, ref.id, version.hash));
-      this.basedOn.set(version.hash);
+      this.session.setOrigin(ref, version.hash);
+      this.markSaved(this.state().doc());
       this.notifier.toast(this.i18n.t('ed.opened', { name: `${ref.id} @ ${version.hash.slice(0, 10)}` }));
     });
   }
@@ -336,30 +294,24 @@ export class RegistryPanelComponent {
     await this.refresh();
   }
 
-  /**
-   * Esegue un'operazione segnalando gli errori in modo comprensibile, senza dettagli tecnici del servizio. `handle`
-   * può occuparsi di un errore registro particolare (restituisce true se l'ha gestito).
-   */
-  private async run(action: () => Promise<void>, handle?: (e: RegistryError) => boolean): Promise<void> {
-    this.busy.set(true);
+  /** Il documento salvato o aperto dal registro non ha modifiche da salvare (solo i tipi con una modalità dell'editor). */
+  private markSaved(doc: Json): void {
+    const kind = this.kind();
+    if (kind !== 'messages') this.saved.markSaved(kind, doc);
+  }
+
+  /** Esegue un'operazione segnalando gli errori in modo comprensibile, senza dettagli tecnici del servizio. */
+  private async run(action: () => Promise<void>): Promise<void> {
+    this.working.set(true);
     try {
       await action();
-      this.needsLogin.set(false);
+      this.session.status.set('available');
     } catch (e) {
-      if (e instanceof RegistryError && handle?.(e)) return;
-      const status = e instanceof RegistryError ? e.status : 0;
-      if (status === 401) {
-        this.needsLogin.set(true);
-        return;
-      }
-      // 403 con un titolo (per esempio «L'autore di una versione non può approvarla») lo mostra; senza, il messaggio generico.
-      const titled = e instanceof RegistryError && e.message !== '';
-      const key =
-        status === 0 ? 'ed.registry.unreachable' : status === 403 && !titled ? 'ed.registry.forbidden' : status === 404 ? 'ed.registry.notFound' : 'ed.registry.rejected';
-      // Il titolo del Problem è un testo pensato per l'autore (per esempio «identificativo diverso dal percorso»).
-      this.notifier.toast(this.i18n.t(key, { reason: e instanceof RegistryError ? e.message : '' }), 'error');
+      // Senza sessione il pannello mostra «Accedi» invece di un messaggio.
+      if (e instanceof RegistryError && e.status === 401) this.session.status.set('login');
+      else this.session.report(e);
     } finally {
-      this.busy.set(false);
+      this.working.set(false);
     }
   }
 }

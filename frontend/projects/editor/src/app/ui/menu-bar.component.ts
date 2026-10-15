@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ElementRef, Injector, afterNextRender, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, Injector, afterNextRender, inject, input, output, signal } from '@angular/core';
 
 /** Una voce di menu: un comando (`run`) oppure un sottomenu (`children`). */
 export interface MenuItem {
@@ -8,6 +8,8 @@ export interface MenuItem {
   /** Scorciatoia mostrata a destra (solo testo: la scorciatoia vera la gestisce chi la offre). */
   shortcut?: string;
   disabled?: boolean;
+  /** Suggerimento al passaggio del mouse (per esempio perché la voce è spenta); lo leggono anche gli screen reader. */
+  hint?: string;
   /** Linea di separazione prima della voce. */
   separator?: boolean;
   children?: MenuItem[];
@@ -109,6 +111,8 @@ export interface Menu {
             [attr.data-level]="level"
             [attr.aria-checked]="item.toggle ? !!item.checked : null"
             [attr.aria-disabled]="item.disabled ? 'true' : null"
+            [attr.title]="item.hint ?? null"
+            [attr.aria-description]="item.hint ?? null"
             [attr.aria-haspopup]="item.children ? 'menu' : null"
             [attr.aria-expanded]="item.children ? sub() === item.id : null"
             (click)="activate(item, $event)"
@@ -157,6 +161,8 @@ export interface Menu {
 })
 export class MenuBarComponent {
   readonly menus = input.required<Menu[]>();
+  /** Un menu si apre (dalla barra chiusa): chi lo offre può aggiornare le voci, per esempio la disponibilità del registro. */
+  readonly opened = output<string>();
   /** Nome della barra per i lettori di schermo. */
   readonly label = input('');
 
@@ -301,6 +307,7 @@ export class MenuBarComponent {
       const active = document.activeElement;
       this.returnFocus = active instanceof HTMLElement && !this.host.nativeElement.contains(active) ? active : null;
     }
+    if (this.open() !== index) this.opened.emit(this.menus()[index]?.id ?? '');
     this.current.set(index);
     this.open.set(index);
     this.sub.set(null);

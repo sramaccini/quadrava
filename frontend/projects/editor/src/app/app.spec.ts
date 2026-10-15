@@ -105,6 +105,14 @@ describe('editor delle schermate', () => {
     await settle();
   }
 
+  /** Come menuCommand, ma per una voce del registro: aspetta che la verifica del registro (all'apertura del menu) la accenda. */
+  async function registryCommand(item: string): Promise<void> {
+    (el.querySelector('ed-menu-bar [data-menu="file"]') as HTMLButtonElement).click();
+    await until(() => el.querySelector(`ed-menu-bar [data-item="${item}"]`)?.getAttribute('aria-disabled') !== 'true', `voce ${item} attiva`);
+    (el.querySelector(`ed-menu-bar [data-item="${item}"]`) as HTMLButtonElement).click();
+    await settle();
+  }
+
   it('dalla tavolozza alla struttura, alle proprietà e all’anteprima', async () => {
     expect(el.querySelector('ed-outline .empty')).not.toBeNull();
     (el.querySelector('ed-palette button[data-type="section"]') as HTMLButtonElement).click();
@@ -159,21 +167,22 @@ describe('editor delle schermate', () => {
     await menuCommand('edit', 'delete');
     expect(store.doc()).toMatchObject({ components: [] });
 
-    // File → Apri esempio → vetrina-layout, dopo la conferma.
+    // File → Apri esempio → vetrina-layout.
     (el.querySelector('ed-menu-bar [data-menu="file"]') as HTMLButtonElement).click();
     await settle();
     expect([...el.querySelectorAll('ed-menu-bar [data-level="0"] .label')].map((l) => l.textContent)).toEqual([
       'Nuova',
+      'Apri…',
+      'Apri da registro…',
       'Apri esempio',
-      'Importa…',
-      'Esporta',
+      'Salva',
+      'Salva in registro',
       'Registro…',
     ]);
     item('open-example')!.click();
     await until(() => !!item('example:vetrina-layout'), 'esempi nel sottomenu');
+    // Il documento è tornato quello di partenza (annulla ed elimina): niente da perdere, quindi nessuna conferma.
     item('example:vetrina-layout')!.click();
-    await until(() => !![...document.querySelectorAll('.ant-modal')].at(-1)?.querySelector('.ant-btn-primary'), 'conferma');
-    ([...document.querySelectorAll('.ant-modal')].at(-1)!.querySelector('.ant-btn-primary') as HTMLButtonElement).click();
     await until(() => (store.doc() as { screen?: string }).screen === 'vetrina-layout', 'esempio aperto');
     expect(item('open-example')).toBeNull();
   });
@@ -940,7 +949,8 @@ describe('editor delle schermate', () => {
     const button = (label: string): HTMLButtonElement => [...panel.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.includes(label))!;
     button('Salva versione').click();
     await until(() => !!panel.querySelector('ol li .hash'), 'storico');
-    expect(calls.slice(0, 1)).toEqual([{ url: '/registry/apps/ordini/documents/screen/nuova-schermata/versions', method: 'POST' }]);
+    // La verifica del registro (GET /registry/apps) parte aprendo il menu File; qui conta il salvataggio.
+    expect(calls.filter((c) => c.url !== '/registry/apps').slice(0, 1)).toEqual([{ url: '/registry/apps/ordini/documents/screen/nuova-schermata/versions', method: 'POST' }]);
     expect(panel.querySelector('ol li')?.textContent).toContain('a1b2c3d4e5');
     expect(panel.querySelector('ol li nz-tag')?.textContent?.trim()).toBe('sviluppo');
     // Pubblicare chiede conferma.
@@ -1064,5 +1074,121 @@ describe('editor delle schermate', () => {
     document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete', bubbles: true }));
     await settle();
     expect(outline().length).toBe(before - 1);
+  });
+
+  it('menu File senza registro: «Apri da registro…» e «Salva in registro» spenti con il motivo; «Salva» e Ctrl+S sul file', async () => {
+    (el.querySelector('ed-menu-bar [data-menu="file"]') as HTMLButtonElement).click();
+    await until(() => el.querySelector('ed-menu-bar [data-item="save-registry"]')?.getAttribute('title')?.includes('non disponibile') ?? false, 'registro assente');
+    for (const id of ['open-registry', 'save-registry']) {
+      expect(el.querySelector(`ed-menu-bar [data-item="${id}"]`)?.getAttribute('aria-disabled')).toBe('true');
+    }
+    expect(el.querySelector('ed-menu-bar [data-item="save"] .shortcut')?.textContent).toBe('Ctrl+S');
+    (el.querySelector('ed-menu-bar [data-menu="file"]') as HTMLButtonElement).click();
+    await settle();
+    // Appena aperto non ci sono modifiche da salvare; una modifica accende l'indicatore.
+    expect(el.querySelector('[data-unsaved]')).toBeNull();
+    store.setValue(['title'], 'Elenco ordini');
+    await settle();
+    expect(el.querySelector('[data-unsaved]')?.textContent).toContain('Modifiche non salvate');
+    // Ctrl+S: il primo salvataggio chiede dove (nome proposto dall'identificativo), il secondo riscrive lo stesso file.
+    const written: string[] = [];
+    const picker = vi.fn(async () => ({
+      name: 'nuova-schermata.json',
+      getFile: async () => new File([''], 'nuova-schermata.json'),
+      createWritable: async () => ({ write: async (b: Blob) => void written.push(await b.text()), close: async () => undefined }),
+    }));
+    vi.stubGlobal('showSaveFilePicker', picker);
+    document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 's', ctrlKey: true, bubbles: true }));
+    await until(() => written.length === 1, 'primo salvataggio');
+    expect(picker.mock.calls[0]).toEqual([expect.objectContaining({ suggestedName: 'nuova-schermata.json' })]);
+    expect(JSON.parse(written[0])).toMatchObject({ screen: 'nuova-schermata', title: 'Elenco ordini' });
+    await until(() => !el.querySelector('[data-unsaved]'), 'indicatore spento');
+    store.setValue(['title'], 'Elenco ordini aperti');
+    await settle();
+    await menuCommand('file', 'save');
+    await until(() => written.length === 2, 'secondo salvataggio');
+    expect(picker).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(written[1])).toMatchObject({ title: 'Elenco ordini aperti' });
+    // Senza modifiche non salvate, aprire un esempio non chiede conferma.
+    await menuCommand('file', 'open-example');
+    await until(() => !!el.querySelector('ed-menu-bar [data-item="example:vetrina-layout"]'), 'esempi');
+    (el.querySelector('ed-menu-bar [data-item="example:vetrina-layout"]') as HTMLButtonElement).click();
+    await until(() => (store.doc() as { screen?: string }).screen === 'vetrina-layout', 'esempio aperto senza conferma');
+  });
+
+  it('menu File con il registro: «Apri da registro…» sceglie applicazione, documento e versione; «Salva in registro» riparte da lì', async () => {
+    const calls: { url: string; method: string; ifMatch?: string }[] = [];
+    const content = { schemaVersion: '1.0', screen: 'elenco-ordini', title: 'Elenco ordini', components: [] };
+    vi.stubGlobal('fetch', async (url: string, init: RequestInit = {}) => {
+      const method = init.method ?? 'GET';
+      if (url.startsWith('/registry')) calls.push({ url, method, ifMatch: ((init.headers ?? {}) as Record<string, string>)['If-Match'] });
+      const json = (body: unknown, status = 200) => ({ ok: status < 400, status, json: async () => body });
+      if (url === '/registry/apps') return json([{ id: 'ordini', name: 'Ordini' }]);
+      if (url.endsWith('/documents'))
+        return json([
+          { kind: 'screen', id: 'elenco-ordini', latest: { hash: 'cccccccccccc', createdAt: '', author: 'mario', state: 'bozza' }, publishedEnvironments: { sviluppo: 'aaaaaaaaaaaa' } },
+          { kind: 'theme', id: 'chiaro' },
+        ]);
+      if (url.includes('/versions/aaaaaaaaaaaa')) return json(content);
+      if (url.endsWith('/versions') && method === 'POST') return json({ hash: 'dddddddddddd', createdAt: '', author: 'mario' }, 201);
+      const body = FILES[url];
+      return body ? json(body) : json({}, 404);
+    });
+    await registryCommand('open-registry');
+    await until(() => !!document.querySelector('ed-registry-open #registry-open-app'), 'finestra del registro');
+    const dialog = document.querySelector('ed-registry-open') as HTMLElement;
+    type(dialog.querySelector('#registry-open-app') as HTMLInputElement, 'ordini');
+    await settle();
+    dialog.querySelector('form')!.dispatchEvent(new Event('submit', { cancelable: true }));
+    await until(() => dialog.querySelectorAll('input[type="radio"]').length === 1, 'documenti del tipo della modalità');
+    expect(dialog.textContent).toContain('elenco-ordini');
+    (dialog.querySelector('input[type="radio"]') as HTMLInputElement).dispatchEvent(new Event('change'));
+    await settle();
+    const select = dialog.querySelector('#registry-open-version') as HTMLSelectElement;
+    expect([...select.options].map((o) => o.textContent?.trim())).toEqual(['Ultima versione (cccccccccc)', 'Pubblicata in sviluppo (aaaaaaaaaa)']);
+    select.value = 'env:sviluppo';
+    select.dispatchEvent(new Event('change'));
+    await settle();
+    ([...dialog.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.trim() === 'Apri') as HTMLButtonElement).click();
+    await until(() => (store.doc() as { screen?: string }).screen === 'elenco-ordini', 'versione aperta');
+    expect(calls.some((c) => c.url === '/registry/apps/ordini/documents/screen/elenco-ordini/versions/aaaaaaaaaaaa')).toBe(true);
+    expect(el.querySelector('[data-unsaved]')).toBeNull();
+    // Salva in registro: una nuova versione, indicando quella da cui si è partiti.
+    store.setValue(['title'], 'Ordini aperti');
+    await settle();
+    await registryCommand('save-registry');
+    await until(() => calls.some((c) => c.method === 'POST'), 'salvataggio nel registro');
+    const post = calls.find((c) => c.method === 'POST')!;
+    expect(post.url).toBe('/registry/apps/ordini/documents/screen/elenco-ordini/versions');
+    expect(post.ifMatch).toContain('aaaaaaaaaaaa');
+    await until(() => !el.querySelector('[data-unsaved]'), 'salvato');
+  });
+
+  it('«Salva in registro» senza applicazione la chiede; con 401 manda al login', async () => {
+    let status = 200;
+    const posts: string[] = [];
+    vi.stubGlobal('fetch', async (url: string, init: RequestInit = {}) => {
+      const json = (body: unknown, code = 200) => ({ ok: code < 400, status: code, json: async () => body });
+      if (url === '/registry/apps') return json([{ id: 'ordini', name: 'Ordini' }], status);
+      if (url.endsWith('/versions') && init.method === 'POST') {
+        posts.push(url);
+        return json({ hash: 'eeeeeeeeeeee', createdAt: '', author: 'mario' }, 201);
+      }
+      const body = FILES[url];
+      return body ? json(body) : json({}, 404);
+    });
+    await registryCommand('save-registry');
+    await until(() => !!document.querySelector('ed-registry-target #registry-target-app'), 'scelta dell’applicazione');
+    const target = document.querySelector('ed-registry-target') as HTMLElement;
+    expect(target.querySelector('datalist option')?.getAttribute('value')).toBe('ordini');
+    type(target.querySelector('#registry-target-app') as HTMLInputElement, 'ordini');
+    await settle();
+    target.querySelector('form')!.dispatchEvent(new Event('submit', { cancelable: true }));
+    await until(() => posts.length === 1, 'salvataggio');
+    expect(posts[0]).toBe('/registry/apps/ordini/documents/screen/nuova-schermata/versions');
+    status = 401;
+    await registryCommand('save-registry');
+    await until(() => redirects.length === 1, 'login');
+    expect(redirects[0]).toContain('/bff/login?return=');
   });
 });

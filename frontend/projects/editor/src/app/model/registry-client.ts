@@ -70,6 +70,13 @@ export interface RegistryIssue {
   message: string;
 }
 
+/** Un'applicazione del registro visibile all'utente. */
+export interface AppSummary {
+  id: string;
+  name: string;
+  documentCount?: number;
+}
+
 export interface DocumentSummary {
   kind: DocumentKind;
   id: string;
@@ -103,6 +110,11 @@ export function documentRef(kind: DocumentKind, doc: Json): { kind: DocumentKind
 export class RegistryClient {
   /** Radice delle API del registro (stessa origine). */
   base = '/registry';
+
+  /** Applicazioni visibili all'utente: serve anche a sapere se il registro c'è e se chiede l'accesso (401). */
+  async apps(): Promise<AppSummary[]> {
+    return this.call<AppSummary[]>('GET', '/apps');
+  }
 
   async documents(appId: string): Promise<DocumentSummary[]> {
     return this.call<DocumentSummary[]>('GET', `/apps/${enc(appId)}/documents`);

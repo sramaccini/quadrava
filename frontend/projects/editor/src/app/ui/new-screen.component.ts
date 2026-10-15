@@ -20,10 +20,10 @@ export interface NewScreen {
   imports: [FormsModule, NzButtonModule, NzInputModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
-    .replace { margin: 0 0 16px; color: var(--ed-muted, #5d6b7a); }
+    .replace { margin: 0 0 16px; color: var(--lc-color-muted); }
     .field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
-    .hint { font-size: 12px; color: var(--ed-muted, #5d6b7a); }
-    .error { font-size: 12px; color: #c62828; }
+    .hint { font-size: 12px; color: var(--lc-color-muted); }
+    .error { font-size: 12px; color: var(--lc-color-danger); }
     .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
   `,
   template: `

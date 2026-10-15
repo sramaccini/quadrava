@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, computed, effect, inject, resource, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, resource, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Confirmation, I18n, Notifier, ThemeService, loadMessages } from 'core';
 import { NzButtonModule } from 'ng-zorro-antd/button';
@@ -15,7 +15,11 @@ import { validateTheme } from 'schema';
 import { isObject, type Json } from './model/doc-ops';
 import type { DocumentState } from './model/document-state';
 import { EditorStore } from './model/editor-store';
+import { FileAccess } from './model/file-access';
 import { NavigationStore } from './model/navigation-store';
+import { documentRef } from './model/registry-client';
+import { RegistrySession, type RegistryRef } from './model/registry-session';
+import { SavedDocuments } from './model/saved-documents';
 import { ThemeStore } from './model/theme-store';
 import { PreviewComponent } from './preview/preview.component';
 import { DataSourcesComponent } from './ui/data-sources.component';
@@ -31,7 +35,9 @@ import { NavigationEditorComponent } from './ui/navigation-editor.component';
 import { ThemeEditorComponent } from './ui/theme-editor.component';
 import { OutlineComponent } from './ui/outline.component';
 import { PaletteComponent } from './ui/palette.component';
+import { RegistryOpenComponent, type RegistryDocument } from './ui/registry-open.component';
 import { RegistryPanelComponent } from './ui/registry-panel.component';
+import { RegistryTargetComponent } from './ui/registry-target.component';
 import { TextsComponent } from './ui/texts.component';
 
 const LANGUAGES = ['it', 'en'];
@@ -48,7 +54,10 @@ const VIEW_LABELS: Record<(typeof VIEWS)[number], string> = { preview: 'ed.tabs.
 
 /** Scorciatoie dell'aiuto: gruppo → [tasti, descrizione]. I tasti con nomi da tradurre sono chiavi dei messaggi (`ed.`). */
 const SHORTCUTS: { group: string; keys: [string, string][] }[] = [
-  { group: 'ed.keys.general', keys: [['Ctrl+Z', 'ed.keys.undo'], ['ed.keys.k.redo', 'ed.keys.redo'], ['F1', 'ed.keys.help']] },
+  {
+    group: 'ed.keys.general',
+    keys: [['Ctrl+S', 'ed.keys.save'], ['Ctrl+O', 'ed.keys.open'], ['Ctrl+Z', 'ed.keys.undo'], ['ed.keys.k.redo', 'ed.keys.redo'], ['F1', 'ed.keys.help']],
+  },
   {
     group: 'ed.keys.outline',
     keys: [
@@ -97,7 +106,9 @@ const SHORTCUTS: { group: string; keys: [string, string][] }[] = [
     ThemeEditorComponent,
     OutlineComponent,
     PaletteComponent,
+    RegistryOpenComponent,
     RegistryPanelComponent,
+    RegistryTargetComponent,
     NzDrawerModule,
     PreviewComponent,
     TextsComponent,
@@ -134,7 +145,12 @@ export class App {
   private readonly confirmation = inject(Confirmation);
   private readonly notifier = inject(Notifier);
   private readonly themes = inject(ThemeService);
+  private readonly files = inject(FileAccess);
+  private readonly saved = inject(SavedDocuments);
+  protected readonly registry = inject(RegistrySession);
   protected readonly languages = LANGUAGES;
+  /** Il documento aperto è diverso dall'ultimo salvato (su file o nel registro) o aperto. */
+  protected readonly unsaved = computed(() => !this.saved.isSaved(this.mode(), this.active().doc()));
 
   protected readonly viewIndex = computed(() => VIEWS.indexOf(this.store.view()));
   /** Il documento aperto con la sua apertura (per riaprire una versione dal registro). */
@@ -146,29 +162,36 @@ export class App {
   protected readonly showShortcuts = signal(false);
   protected readonly showAbout = signal(false);
   protected readonly showNewScreen = signal(false);
+  protected readonly showRegistryOpen = signal(false);
+  /** Finestra che chiede l'applicazione prima di «Salva in registro». */
+  protected readonly showRegistryTarget = signal(false);
   /** Scorciatoie mostrate nell'aiuto, per gruppo (testi nei messaggi `ed.keys.*`). */
   protected readonly shortcutGroups = SHORTCUTS;
   protected readonly dock = inject(Dock);
   /** Riquadri dei due lati della schermata (per la larghezza delle colonne). */
   protected readonly leftPanels: DockPanel[] = ['palette', 'outline'];
   protected readonly rightPanels: DockPanel[] = ['inspector'];
-  private readonly fileInput = viewChild<ElementRef<HTMLInputElement>>('fileInput');
 
   /** Barra dei menu: File (documento) e Modifica (comandi del documento e della selezione, con le scorciatoie). */
   protected readonly menus = computed<Menu[]>(() => {
     const t = (key: string) => this.i18n.t(key);
     const active = this.active();
     const mode = this.mode();
+    // Le voci del registro sono spente se il registro non c'è (come nell'editor della demo), con il motivo nel suggerimento.
+    const noRegistry = !this.registry.usable();
+    const registryHint = this.registry.status() === 'checking' ? t('ed.menu.registryChecking') : noRegistry ? t('ed.menu.registryUnavailable') : undefined;
     const file: MenuItem[] = [
       { id: 'new', label: t('ed.menu.new'), run: () => void this.newDocument() },
+      { id: 'open', label: t('ed.menu.open'), shortcut: 'Ctrl+O', run: () => void this.openFile() },
+      { id: 'open-registry', label: t('ed.menu.openRegistry'), disabled: noRegistry, hint: registryHint, run: () => void this.openFromRegistry() },
       {
         id: 'open-example',
         label: t('ed.openExample'),
         emptyLabel: t('ed.menu.noExamples'),
         children: this.exampleNames().map((name) => ({ id: 'example:' + name, label: name, run: () => void this.openExample(name) })),
       },
-      { id: 'import', label: t('ed.menu.import'), run: () => this.fileInput()?.nativeElement.click() },
-      { id: 'export', label: t('ed.export'), run: () => this.exportFile() },
+      { id: 'save', label: t('ed.menu.save'), shortcut: 'Ctrl+S', separator: true, run: () => void this.saveFile() },
+      { id: 'save-registry', label: t('ed.menu.saveRegistry'), disabled: noRegistry, hint: registryHint, run: () => void this.saveToRegistry() },
       { id: 'registry', label: t('ed.menu.registry'), separator: true, run: () => this.showRegistry.set(true) },
     ];
     const edit: MenuItem[] = [
@@ -260,6 +283,9 @@ export class App {
         if (result?.valid) this.themes.apply(result.value);
       })
       .catch(() => undefined);
+    this.saved.ensureBaseline('screen', this.store.doc());
+    this.saved.ensureBaseline('navigation', this.nav.doc());
+    this.saved.ensureBaseline('theme', this.theme.doc());
     effect(() => (document.documentElement.lang = this.i18n.locale()));
     effect(() => {
       try {
@@ -280,14 +306,16 @@ export class App {
       this.showNewScreen.set(true);
       return;
     }
-    if (!(await this.confirmation.confirm(this.i18n.t('ed.confirmReplace')))) return;
+    if (!(await this.confirmReplace())) return;
     if (this.mode() === 'navigation') this.nav.newNavigation();
     else this.theme.newTheme();
+    this.replaced(null, null);
   }
 
   protected createScreen(screen: NewScreen): void {
     this.showNewScreen.set(false);
     this.store.newScreen(screen.title, screen.screen);
+    this.replaced(null, null);
   }
 
   /** Esempi apribili nella modalità corrente: le schermate, oppure la navigazione della demo. */
@@ -298,28 +326,99 @@ export class App {
   });
 
   protected async openExample(name: string): Promise<void> {
-    if (!(await this.confirmation.confirm(this.i18n.t('ed.confirmReplace')))) return;
+    if (!(await this.confirmReplace())) return;
     try {
       const response = await fetch(`examples/${name.split('/').map(encodeURIComponent).join('/')}.json`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       this.loadDocument((await response.json()) as Json);
+      this.replaced(null, null);
       this.notifier.toast(this.i18n.t('ed.opened', { name }));
     } catch (e) {
       this.notifier.toast(this.i18n.t('ed.loadFailed', { e: e instanceof Error ? e.message : String(e) }), 'error');
     }
   }
 
-  protected async importFile(input: HTMLInputElement): Promise<void> {
-    const file = input.files?.[0];
-    input.value = '';
-    if (!file || !(await this.confirmation.confirm(this.i18n.t('ed.confirmReplace')))) return;
+  /** «Apri…»: un file JSON dal computer, nella modalità corrente; dove si può, il prossimo «Salva» riscrive quel file. */
+  protected async openFile(): Promise<void> {
+    if (!(await this.confirmReplace())) return;
+    const kind = this.mode();
     try {
-      const doc = JSON.parse(await file.text()) as Json;
-      this.loadDocument(doc);
+      const file = await this.files.open(kind);
+      if (!file) return;
+      this.loadDocument(file.doc);
+      this.registry.setOrigin(null, null);
+      this.saved.markSaved(kind, this.active().doc());
       this.notifier.toast(this.i18n.t('ed.opened', { name: file.name }));
     } catch (e) {
       this.notifier.toast(this.i18n.t('ed.loadFailed', { e: e instanceof Error ? e.message : String(e) }), 'error');
     }
+  }
+
+  /** «Salva»: il documento in JSON, nel file aperto o già scelto, altrimenti in uno nuovo (o scaricato). */
+  protected async saveFile(): Promise<void> {
+    const kind = this.mode();
+    const doc = this.active().doc();
+    const id = isObject(doc) && typeof doc[kind] === 'string' && doc[kind] ? doc[kind] : kind;
+    try {
+      const name = await this.files.save(kind, doc, `${id}.json`);
+      if (!name) return;
+      this.saved.markSaved(kind, doc);
+      const errors = this.active().errorCount();
+      this.notifier.toast(errors ? this.i18n.t('ed.savedWithErrors', { name, n: errors }) : this.i18n.t('ed.savedFile', { name }));
+    } catch (e) {
+      this.notifier.toast(this.i18n.t('ed.saveFailed', { e: e instanceof Error ? e.message : String(e) }), 'error');
+    }
+  }
+
+  /** «Apri da registro…»: la finestra con applicazione, documento e versione (o il login, se il registro lo chiede). */
+  protected async openFromRegistry(): Promise<void> {
+    if ((await this.registry.check()) === 'login') return this.registry.login();
+    if (this.registry.status() !== 'available' || !(await this.confirmReplace())) return;
+    this.showRegistryOpen.set(true);
+  }
+
+  protected openedFromRegistry(opened: RegistryDocument): void {
+    this.showRegistryOpen.set(false);
+    this.loadDocument(opened.doc);
+    this.replaced(opened.ref, opened.hash);
+    this.notifier.toast(this.i18n.t('ed.opened', { name: `${opened.ref.id} @ ${opened.hash.slice(0, 10)}` }));
+  }
+
+  /** «Salva in registro»: una nuova versione nell'applicazione scelta (chiesta prima, se manca). */
+  protected async saveToRegistry(): Promise<void> {
+    if ((await this.registry.check()) === 'login') return this.registry.login();
+    if (this.registry.status() !== 'available') return;
+    const kind = this.mode();
+    const active = this.active();
+    if (!documentRef(kind, active.doc())) return this.notifier.toast(this.i18n.t('ed.registry.noId'), 'error');
+    if (active.errorCount()) return this.notifier.toast(this.i18n.t('ed.registry.hasErrors'), 'error');
+    if (!this.registry.appId()) return this.showRegistryTarget.set(true);
+    const doc = active.doc();
+    if (await this.registry.save(kind, doc)) this.saved.markSaved(kind, doc);
+    // I problemi di validazione del registro si leggono, punto per punto, nel pannello Registro.
+    else if (this.registry.issues().length) this.showRegistry.set(true);
+  }
+
+  protected async chooseRegistryApp(appId: string): Promise<void> {
+    this.showRegistryTarget.set(false);
+    this.registry.appId.set(appId);
+    await this.saveToRegistry();
+  }
+
+  /** Con modifiche non salvate, chiede conferma prima di sostituire il documento aperto. */
+  private async confirmReplace(): Promise<boolean> {
+    return !this.unsaved() || this.confirmation.confirm(this.i18n.t('ed.confirmReplace'));
+  }
+
+  /**
+   * Il documento aperto è stato sostituito: nuovo o esempio (nessuna origine), oppure una versione del registro. Non ha
+   * modifiche da salvare e il prossimo «Salva» chiede di nuovo dove salvare.
+   */
+  private replaced(ref: RegistryRef | null, hash: string | null): void {
+    const kind = this.mode();
+    this.files.forget(kind);
+    this.registry.setOrigin(ref, hash);
+    this.saved.markSaved(kind, this.active().doc());
   }
 
   private loadDocument(doc: Json): void {
@@ -327,19 +426,6 @@ export class App {
     if (mode === 'screen') this.store.load(doc);
     else if (mode === 'navigation') this.nav.load(doc);
     else this.theme.load(doc);
-  }
-
-  protected exportFile(): void {
-    const doc = this.active().doc();
-    const key = this.mode();
-    const name = isObject(doc) && typeof doc[key] === 'string' && doc[key] ? doc[key] : key;
-    const blob = new Blob([JSON.stringify(doc, null, 2) + '\n'], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${name}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
   }
 
   /** Scorciatoie: annulla e ripeti sempre; le altre solo fuori dai campi di testo (dove valgono quelle del campo). */
@@ -350,6 +436,11 @@ export class App {
     const active = this.active();
     if (ctrl && key === 'z' && !event.shiftKey) return this.handled(event, () => active.undo());
     if (ctrl && (key === 'y' || (key === 'z' && event.shiftKey))) return this.handled(event, () => active.redo());
+    // Salva e Apri valgono anche dentro i campi (come nelle applicazioni desktop), non con una finestra aperta.
+    if (ctrl && (key === 's' || key === 'o') && !event.shiftKey && !event.altKey) {
+      if (document.querySelector('.cdk-overlay-container .ant-modal-wrap')) return;
+      return this.handled(event, () => void (key === 's' ? this.saveFile() : this.openFile()));
+    }
     if (isEditable(event.target) || document.querySelector('.cdk-overlay-container .ant-modal-wrap')) return;
     if (this.mode() === 'navigation') return this.navigationKey(event, ctrl, key);
     if (this.mode() === 'theme') return;

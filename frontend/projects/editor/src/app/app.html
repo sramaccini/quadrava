@@ -1,9 +1,8 @@
 <div class="editor" [style.--ed-left.px]="dock.columnWidth('left', leftPanels, 280)" [style.--ed-right.px]="dock.columnWidth('right', rightPanels, 320)">
   <header class="toolbar">
     <h1 class="brand"><lc-kinetix-wordmark icon="brand/kinetix-studio-icon-small.svg" product="Studio" /></h1>
-    <!-- Menu come nelle applicazioni desktop: File (nuova, esempi, importa, esporta, registro) e Modifica. -->
-    <ed-menu-bar [menus]="menus()" [label]="i18n.t('ed.menu.bar')" />
-    <input #fileInput type="file" accept="application/json,.json" hidden (change)="importFile(fileInput)" />
+    <!-- Menu come nelle applicazioni desktop: File (nuova, apri, salva, su file e nel registro), Modifica, Visualizza, Aiuto. -->
+    <ed-menu-bar [menus]="menus()" [label]="i18n.t('ed.menu.bar')" (opened)="$event === 'file' && registry.check()" />
     <div class="group">
       <button nz-button nzType="text" nzSize="small" type="button" [disabled]="!active().canUndo()" (click)="active().undo()" [attr.aria-label]="i18n.t('ed.undo')" [nz-tooltip]="i18n.t('ed.undo')">
         <span nz-icon nzType="undo"></span>
@@ -22,6 +21,9 @@
         }
         @if (warningCount()) {
           <nz-tag nzColor="warning">{{ i18n.t('ed.warnings', { n: warningCount() }) }}</nz-tag>
+        }
+        @if (unsaved()) {
+          <nz-tag data-unsaved>{{ i18n.t('ed.unsaved') }}</nz-tag>
         }
       </div>
       <nz-segmented class="mode" nzSize="small" [nzOptions]="modeOptions()" [ngModel]="mode()" (ngModelChange)="mode.set($event)" [attr.aria-label]="i18n.t('ed.mode.label')" />
@@ -94,6 +96,20 @@
     <ng-container *nzModalContent>
       @if (showNewScreen()) {
         <ed-new-screen (created)="createScreen($event)" (cancelled)="showNewScreen.set(false)" />
+      }
+    </ng-container>
+  </nz-modal>
+  <nz-modal [nzVisible]="showRegistryOpen()" [nzTitle]="i18n.t('ed.openRegistry.title')" [nzFooter]="null" [nzWidth]="520" (nzOnCancel)="showRegistryOpen.set(false)">
+    <ng-container *nzModalContent>
+      @if (showRegistryOpen()) {
+        <ed-registry-open [kind]="mode()" (opened)="openedFromRegistry($event)" (cancelled)="showRegistryOpen.set(false)" />
+      }
+    </ng-container>
+  </nz-modal>
+  <nz-modal [nzVisible]="showRegistryTarget()" [nzTitle]="i18n.t('ed.menu.saveRegistry')" [nzFooter]="null" [nzWidth]="420" (nzOnCancel)="showRegistryTarget.set(false)">
+    <ng-container *nzModalContent>
+      @if (showRegistryTarget()) {
+        <ed-registry-target (chosen)="chooseRegistryApp($event)" (cancelled)="showRegistryTarget.set(false)" />
       }
     </ng-container>
   </nz-modal>

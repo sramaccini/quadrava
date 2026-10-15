@@ -28,7 +28,14 @@ The editor's interface is available in Italian and English; the labels below are
 
 At the top left is the **KinetiX Studio** logotype (icon and name; the Studio icon in the browser tab), then a **menu bar** as in desktop applications:
 
-- **File**: New, Open example ▸ (submenu with the examples of the current mode), Import…, Export, Registry…. For screens, «New» opens a window that asks for the **title** and the **identifier** (`screen`): the identifier is derived from the title (kebab-case, without accents, up to 60 characters) until you edit it, and «Create» stays disabled while the title is missing or the identifier is not valid; the window also warns that the open screen will be replaced. For navigation and theme «New» only asks for confirmation;
+- **File**: New, Open… (Ctrl+O), Open from registry…, Open example ▸ (submenu with the examples of the current mode), Save (Ctrl+S), Save to registry, Registry…. Every command works on the document of the current mode (screen, navigation or theme):
+  - **New**: for screens it opens a window that asks for the **title** and the **identifier** (`screen`): the identifier is derived from the title (kebab-case, without accents, up to 60 characters) until you edit it, and «Create» stays disabled while the title is missing or the identifier is not valid. For navigation and theme it creates the starting document.
+  - **Open…**: a `.json` file from the computer. In browsers that allow writing files (Chrome, Edge) the editor keeps a reference to the file, so the next «Save» rewrites that same file. A file that is not JSON shows an error and leaves the open document as it is.
+  - **Save**: the document as indented JSON. The first time it asks where to save, proposing `<identifier>.json`; afterwards it rewrites the same file without asking. Firefox and Safari cannot rewrite a file: there «Save» downloads the file every time. A document with errors is saved anyway (it is work in progress), and the message says how many errors there are.
+  - **Save to registry**: a new version of the document in the registry application, as «Save version» in the Registry panel does: blocked while the document has errors, with the concurrent-change check (If-Match, starting from the version opened or last saved) and the registry's validation problems listed point by point in the Registry panel. If no application has been chosen yet, a small window asks for it (the list comes from the registry, a new name can be typed).
+  - **Open from registry…**: a window with the application, its documents of the current kind (with the review status of the latest version and the environments where it is published) and the version to open: the latest or the one published in an environment. A later «Save to registry» starts from that version.
+  - The two registry commands are enabled when `GET /registry/apps` answers (checked at start-up and every time the File menu opens); without a registry, as in the demo editor (`npm run start:editor`), they are disabled and the tooltip says why. If the registry asks for authentication (401), they go through the BFF login and come back to the editor.
+  - Next to the document status the tag **«Unsaved changes»** appears while the document differs from the last one saved (to file or to the registry), opened or created. New, Open… and the open commands ask for confirmation only when there are unsaved changes.
 - **Edit**: Undo, Redo; for screens Cut, Copy, Paste; Duplicate, Delete, Move up, Move down (in navigation too). Every item shows its shortcut; those that cannot be used (nothing to undo, no node selected, empty clipboard) are disabled.
 - **View**: the pinned state of «Components», «Structure» and «Properties» (the panels of the mode) and «Problems panel» (items with a check mark); for screens, the central view (Preview, JSON, Data sources, Texts), as single-choice items.
 - **Help**: «Keyboard shortcuts» (also **F1**), a window with all the shortcuts by group, and «About KinetiX Studio».
@@ -70,7 +77,7 @@ In the central area the tabs (Preview, JSON, Data sources, Texts) sit below the 
 
 - **Registry.** «File → Registry…» opens a panel for the open document (screen, navigation or theme), which in the registry is a document of its own (`contracts/registry.yaml` 0.3): you give application and environment (remembered in the browser; «sviluppo» to begin with); «Save version» sends the document (blocked if it has errors or if the identifier is invalid) stating the version it started from: if someone else saved in the meantime, the panel says so and asks whether to save anyway; if the registry rejects the document, schema errors are listed one by one. «History» lists the versions, newest first, with their **review status** (draft, in review, approved, rejected, with who decided and the note) and the environments where each one is published; every version can be reopened, **compared** with the open document (differences by path), sent for review, approved or rejected (reviewers only, never the author: the registry decides) or published in the given environment (with confirmation; testing and production accept only approved versions). Service errors are shown as short messages (registry unreachable, permissions, not found, rejected with the Problem's title), never with technical details. Calls go to `/registry` on the same origin and the BFF forwards them, with the user's token: writes send back the CSRF token from the `XSRF-TOKEN` cookie (if the cookie was not there yet, the first write gets 403 and is retried once). Without a session the panel shows «Sign in», which goes through the BFF login and returns to the editor. In development without Keycloak: `npm run start:editor:registro` talks directly to the reference registry started with the `senza-auth` profile.
 
-The draft (document, sample data and translations written in the editor) saves itself in the browser on every change and is restored on reopening. «File → Open example» offers the screens in `examples/` (the `examples/index.json` list is written by `tools/copy-examples.mjs`); «Import…» and «Export» read and write a `.json` file.
+The draft (document, sample data and translations written in the editor) saves itself in the browser on every change and is restored on reopening; it stays in that browser only, so the real copy is the one saved with «Save» or «Save to registry». «File → Open example» offers the screens in `examples/` (the `examples/index.json` list is written by `tools/copy-examples.mjs`).
 
 ## 2. Property panel generated from the schema
 
@@ -126,7 +133,7 @@ To link drawing and structure, `lc-node` exposes `data-node-id` and `data-node-t
 - **Menu preview** in the centre: the real menu (`lc-sidebar` with `NavigationRuntime`) and a **simulated profile**. With «All permissions» off you choose which permissions the user has (those mentioned by the menu's `requires`) and see what appears for them. A click on an item does not navigate: it shows which screen it would open.
 - **Problems**: schema, expressions, ids repeated among siblings (errors), unknown screens and a default use case that does not exist (warnings).
 
-The navigation draft is saved in the browser like the screen's; «Open example» opens the demo's navigation, «Export» downloads `<navigation>.json`.
+The navigation draft is saved in the browser like the screen's; «Open example» opens the demo's navigation, «Save» writes `<navigation>.json`.
 
 ## 3c. Theme
 
@@ -138,6 +145,7 @@ The navigation draft is saved in the browser like the screen's; «Open example»
 | --- | --- |
 | F1 | keyboard shortcuts |
 | Tab to the menu bar, then arrows | opens the File, Edit, View and Help menus (see above) |
+| Ctrl+S / Ctrl+O | save to file / open a file (inside fields too; not with a window open) |
 | Ctrl+Z / Ctrl+Y (or Ctrl+Shift+Z) | undo / redo (inside fields too: rapid changes to the same property are a single step) |
 | Del | deletes the selected node |
 | Ctrl+D | duplicate |
