@@ -178,7 +178,7 @@ Real focus handling and the dark theme are not covered yet (the application shel
 * TypeScript strict; no `any` without a comment; prefer `readonly`, signals and `computed`.
 * Standalone components, `OnPush`, `input()` / `output()` functions, new control flow (`@if`, `@for`).
 * Accessibility: landmarks and labels (`role`, `aria-label`), keyboard operability, no colour-only meaning.
-* Everything is in English (the project is open source): code, identifiers, comments, test names, schema and contract descriptions, diagnostics, documentation and commit messages. Italian is only one of the translation catalogues of the user-facing texts. Parts still in Italian are translated when touched (see `CLAUDE.md` § 2).
+* Everything is in English (the project is open source): code, identifiers, comments, test names, schema and contract descriptions, diagnostics, documentation and commit messages. Italian is only one of the translation catalogues of the user-facing texts.
 * Keep libraries free of application knowledge: there are no built-in areas or domains.
 
 ## 11. Contracts and reference implementation

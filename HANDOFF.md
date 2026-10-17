@@ -30,7 +30,6 @@ From `frontend/`:
 - `npm run validate:examples` — validates the examples (schema + translation keys)
 - `npm run demo:prepare` / `npm run start:runtime` — copies `examples/` into `projects/runtime/public/examples` and starts the demo (port 4200). The dev server does **not** reload `dist`: restart it after changing libraries or examples.
 - `npm run start:editor` — Quadrava Studio (visual editor) on port 4201 (it also prepares the examples, with `examples/index.json`).
-- `.claude/launch.json` starts a copy of the demo on port 4300, of the editor on 4301 and of the two apps in registry mode on 4302 and 4303 (launch configurations for previewing in the browser).
 - Local registry without Keycloak: `java -jar reference/registry/target/lowcode-registry-0.1.0-SNAPSHOT.jar --spring.profiles.active=no-auth`, then `npm run publish:examples`, then `npm run start:runtime:registry` / `start:editor:registry`.
 - `runtime-config.json` (the runtime's public folder) decides where definitions come from: `examples` (demo) or `registry` (app, environment, navigation, themes); the `registry` configuration in angular.json uses `projects/runtime/config/registry/`. With `services: { source: 'bff', appId }` the runtime uses the real ports from `services` (`bff` configuration, `projects/runtime/config/bff/`).
 - **Full stack with Keycloak step by step** (Docker Desktop running): `cd idp && docker compose up -d`; in `reference/` `mvn -q package -DskipTests` and `java -jar <module>/target/*.jar` for registry (with `--lowcode.registry.storage-dir=<folder>` to keep the data), authz, telemetry, bff; in `frontend/` `npm run demo-api` (8084), `npm run publish:examples -- --user administrator --password administrator`, then `npm run start:runtime:bff` (4200) and `start:editor:bff` (4201). The origins allowed by the BFF are 4200 and 4201.
@@ -129,7 +128,7 @@ List drawn up on 13 October and **implemented the same day**. For each item, whe
 
 ## 9. Working conventions
 
-- Commits in English (Conventional Commits), one per component, in the author's name: no trailers (full rules in `CLAUDE.md`). Licence MPL-2.0; external contributions under the CLA (`CONTRIBUTING.md`).
+- Commits in English (Conventional Commits), one per component, in the author's name: no trailers (details in DEVELOPMENT-GUIDE). Licence MPL-2.0; external contributions under the CLA (`CONTRIBUTING.md`).
 - After every code change: `build:libs`, tests of the projects touched, `validate:examples` if examples or schemas are touched; for the UI a check in the browser (demo on 4300).
 - The JSON schemas are the source: edit `*.schema.json`, then `schema:sync`, then the types in `schema/src/lib/types.ts`.
 - Every new component: schema, type, component registered in `STANDARD_COMPONENTS`, tests (schema in `schema/new-components.spec.ts`, component in `components/*.spec.ts` with `renderScreen`, showcase in `runtime/showcase-advanced.spec.ts` with `openShowcase`), example in `examples/showcase-*.json` with texts in `examples/i18n/it.json` and `en.json`.

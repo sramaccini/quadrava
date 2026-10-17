@@ -14,7 +14,7 @@ If you contribute on behalf of your employer, make sure you are allowed to, or a
 
 ## How to work
 
-- Read [CLAUDE.md](CLAUDE.md) (the project rules) and the [development guide](DEVELOPMENT-GUIDE.md).
+- Read the [development guide](DEVELOPMENT-GUIDE.md): commands, conventions and the checks to run.
 - Everything is in English: code, comments, tests, documentation, commit messages. Italian exists only as a translation catalogue.
 - One change per pull request, with its tests and documentation; Conventional Commits for the messages.
 - Run the checks of DEVELOPMENT-GUIDE § 3 before opening the pull request; CI repeats them.
