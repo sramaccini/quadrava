@@ -18,4 +18,4 @@ If you contribute on behalf of your employer, make sure you are allowed to, or a
 - Everything is in English: code, comments, tests, documentation, commit messages. Italian exists only as a translation catalogue.
 - One change per pull request, with its tests and documentation; Conventional Commits for the messages.
 - Run the checks of DEVELOPMENT-GUIDE § 3 before opening the pull request; CI repeats them.
-- Report security problems privately, not in a public issue.
+- Report security problems privately, not in a public issue: see [SECURITY.md](SECURITY.md).

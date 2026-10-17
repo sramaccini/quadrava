@@ -13,7 +13,7 @@
 
 A Quadrava application is a set of JSON documents: screens (components, data sources, actions), a theme and a navigation menu. A generic runtime reads those documents and renders a working Angular application, built on the [NG-ZORRO](https://ng.ant.design) UI library (Ant Design for Angular). Authors never write Angular code: they declare *what* a screen shows and *which* API each action calls, and the platform takes care of authentication, authorization, tracing and error handling in one place.
 
-> **Product boundary.** On the back-end side Quadrava delivers **REST contracts (OpenAPI) and a non-production reference implementation only**. Business back ends and the identity provider belong to the customer. Quadrava never ships production back-end services.
+> **Product boundary.** On the back-end side this open-source project delivers **REST contracts (OpenAPI) and a non-production reference implementation only**. Business back ends and the identity provider belong to whoever adopts Quadrava.
 
 Contributor documentation: [DEVELOPMENT-GUIDE.md](DEVELOPMENT-GUIDE.md). Design documents (functional, architecture, implementation guidelines, component catalogue) are linked from [docs/README.md](docs/README.md).
 
@@ -427,3 +427,7 @@ Also without Keycloak, with the registry's `no-auth` profile and file storage.
 ## License
 
 Quadrava is open source under the [Mozilla Public License 2.0](LICENSE): it can be used, also inside closed commercial products, and changes to Quadrava's own files are shared under the same licence. Attributions are in [NOTICE](NOTICE), and the third-party packages shipped in the bundles, with their licences, in [frontend/THIRD-PARTY-NOTICES.md](frontend/THIRD-PARTY-NOTICES.md). The name and the logos are not covered by the licence: see [TRADEMARKS.md](TRADEMARKS.md). Contributions are accepted under the [CLA](CLA.md), as described in [CONTRIBUTING.md](CONTRIBUTING.md).
+
+**Commercial use.** You can build and sell products and services on Quadrava, including closed ones: the MPL only asks that changes to Quadrava's own files stay open. The maintainer may also offer commercial editions, hosted services or support around the open-source core; the open-source project stays complete and usable on its own.
+
+**Security.** Report vulnerabilities privately, as described in [SECURITY.md](SECURITY.md).
