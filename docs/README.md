@@ -1,6 +1,6 @@
 # Quadrava documentation
 
-For the project description and the contributor guide see [README.md](../README.md) and [DEVELOPMENT-GUIDE.md](../DEVELOPMENT-GUIDE.md).
+For the project description and the contributor guide see [README.md](../README.md), [DEVELOPMENT-GUIDE.md](../DEVELOPMENT-GUIDE.md) and, for status and next steps, [ROADMAP.md](../ROADMAP.md).
 
 Reference documents:
 
