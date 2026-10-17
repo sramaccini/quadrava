@@ -36,7 +36,7 @@ From `frontend/`:
 - **Full stack with Keycloak step by step** (Docker Desktop running): `cd idp && docker compose up -d`; in `reference/` `mvn -q package -DskipTests` and `java -jar <module>/target/*.jar` for registry (with `--lowcode.registry.storage-dir=<folder>` to keep the data), authz, telemetry, bff; in `frontend/` `npm run demo-api` (8084), `npm run publish:examples -- --user administrator --password administrator`, then `npm run start:runtime:bff` (4200) and `start:editor:bff` (4201). The origins allowed by the BFF are 4200 and 4201.
 - tests per project: `npx ng test <schema|expressions|core|components|services|runtime|editor> --watch=false`
 
-Test status (all green): schema 71, expressions 42, core 86, components 181, services 34, runtime 86, editor 132 (**632**); Java 43 (authz 7, bff 8, registry 22, telemetry 6); Playwright 18 (12 of them for accessibility and 2 for the rich text editor); conformance kits: registry 20/20 (4 skipped without tokens), authorization 11/11, telemetry 6/6. Production builds: runtime 2.46 MB initial (422 kB transferred), editor 818 kB initial (preview and editor load separately).
+Test status (all green, 17 October 2026, in English): schema 71, expressions 42, core 88, components 181, services 34, runtime 86, editor 132 (**634**); Java 43 (authz 7, bff 8, registry 22, telemetry 6); Playwright 18 (12 of them for accessibility and 2 for the rich text editor); conformance kits: registry 20/20 (4 skipped without tokens), authorization 11/11, telemetry 6/6. Production builds: runtime 2.46 MB initial (422 kB transferred), editor 818 kB initial (preview and editor load separately).
 
 ## 4. Architecture in brief
 
@@ -96,13 +96,14 @@ The main ones are in the DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In short:
 
 ## 8. Next steps (in the suggested order)
 
-1. Trademark search for «Quadrava» (TMview, WIPO) before the public launch; legal review of `CLA.md` before the first external pull request; a generated third-party notices file (npm and Maven) shipped with the builds.
-2. Local data after the October renames: recreate Keycloak (`cd idp && docker compose down && docker compose up -d`) and delete `data/registry` (old review states, roles, identifiers and permissions).
-3. Conformance kits in CI against the reference services (today they are run by hand, for example after `npm run stack`).
-4. Editor: comparison between two registry versions; border side widths from the preview.
-5. e2e in Firefox and WebKit.
-6. CEL in `validate:examples` and, eventually, in the registry.
-7. Bring the project documents (architecture § 9, functional specification, guidelines) up to date with the October status.
+1. Before making the repository public: enable GitHub's private vulnerability reporting (Settings → Code security), check the repository description and topics, and decide whether the author e-mail in the commits may stay public. The tree and the history contain no secrets: only the development credentials of `idp/` and `reference/`, labelled as such.
+2. Trademark: a web search (17 October 2026) found no «Quadrava» mark or product, but similar registered software marks exist (for example US «QUADRA», class 42, asset-management software). A professional search on EUIPO TMview, WIPO Global Brand Database and USPTO, and possibly a filing in class 9/42, are advised before investing in the brand. Legal review of `CLA.md` before the first external pull request.
+3. Local data after the October renames: recreate Keycloak (`cd idp && docker compose down && docker compose up -d`) and delete `data/registry` (old review states, roles, identifiers and permissions).
+4. Conformance kits in CI against the reference services (today they are run by hand, for example after `npm run stack`).
+5. Editor: comparison between two registry versions; border side widths from the preview.
+6. e2e in Firefox and WebKit.
+7. CEL in `validate:examples` and, eventually, in the registry.
+8. Bring the project documents (architecture § 9, functional specification, guidelines) up to date with the October status.
 
 ## 8b. What was missing and proposed optimisations (13 October 2026)
 
@@ -139,4 +140,4 @@ List drawn up on 13 October and **implemented the same day**. For each item, whe
 
 - `README.md`, `DEVELOPMENT-GUIDE.md`, `docs/README.md` (index of the documentation).
 - Project documents: `docs/functional-spec.md`, `docs/architecture.md`, `docs/implementation-guidelines.md`, `docs/dynamic-texts-and-i18n.md`; `docs/component-catalogue.md`, `docs/editor.md`, `docs/schema-reference.md`.
-- Recent history (October 2026): `965d633` MPL-2.0 licence, `b25b72a`/`084e5d9`/`01002b8`/`365396e`/`caac5ff` English everywhere (libraries, editor, demo, services, components), `3e3ea53`/`803a734` Quadrava brand, `0c6c9f1` cross-document references in the registry. Earlier: `0a81b58` editor: drag and drop, `5e45e21` suggestions, `01a3233` linked preview, `7ba8c36` field-by-field lists, `ac3988f` first version of the editor; `417c426` serverDataTable; `3347671` stacked charts and dual axis, `3115710` data table for large volumes, `35b0faf` keyboard tree, `d57f0c8` lookup and file in rows, `59c2971` multipart files, `7c621e5` text of values in the lookup; `01c6367` data table … `72af122` sorting, `659c4f3` catalogue; `bc1424d` data source reload fix; `90224d7` responsive shell; `e67dfbe` full i18n.
+- Recent history (October 2026): `e6b5c41` security policy and templates, `100b72d` third-party notices, `cd2952e` English as the default language, `965d633` MPL-2.0 licence, `b25b72a`/`084e5d9`/`01002b8`/`365396e`/`caac5ff` English everywhere (libraries, editor, demo, services, components), `3e3ea53`/`803a734` Quadrava brand, `0c6c9f1` cross-document references in the registry. Earlier: `0a81b58` editor: drag and drop, `5e45e21` suggestions, `01a3233` linked preview, `7ba8c36` field-by-field lists, `ac3988f` first version of the editor; `417c426` serverDataTable; `3347671` stacked charts and dual axis, `3115710` data table for large volumes, `35b0faf` keyboard tree, `d57f0c8` lookup and file in rows, `59c2971` multipart files, `7c621e5` text of values in the lookup; `01c6367` data table … `72af122` sorting, `659c4f3` catalogue; `bc1424d` data source reload fix; `90224d7` responsive shell; `e67dfbe` full i18n.
