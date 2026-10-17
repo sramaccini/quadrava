@@ -14,16 +14,16 @@ class HttpError extends Error {
 
 const screen: ScreenDefinition = {
   schemaVersion: '1.0',
-  screen: 'prova',
+  screen: 'test',
   dataSources: {
-    crea: { type: 'rest', method: 'POST', url: '/api/ordini', body: '{{ form }}' },
-    dettaglio: { type: 'rest', method: 'GET', url: '/api/ordini/{{ id }}' },
-    approva: { type: 'rest', method: 'POST', url: '/api/ordini/{{ id }}/approva' },
+    create: { type: 'rest', method: 'POST', url: '/api/orders', body: '{{ form }}' },
+    detail: { type: 'rest', method: 'GET', url: '/api/orders/{{ id }}' },
+    approve: { type: 'rest', method: 'POST', url: '/api/orders/{{ id }}/approve' },
   },
   actions: {
-    salvaOrdine: [{ call: 'crea', as: 'creato' }, { toast: 'Ordine {{ creato.id }} salvato' }],
-    avvisa: { toast: 'Ciao {{ form.cliente }}' },
-    ciclo: { run: 'ciclo' },
+    saveOrder: [{ call: 'create', as: 'created' }, { toast: 'Order {{ created.id }} saved' }],
+    notify: { toast: 'Hello {{ form.customer }}' },
+    loop: { run: 'loop' },
   },
   components: [],
 };
@@ -37,30 +37,30 @@ describe('steps before and after a call', () => {
   });
 
   it('as: the response of the call is visible to the following steps (and only to them)', async () => {
-    fakes.respond = (r: DataRequest) => (r.method === 'POST' ? { id: 42, stato: 'bozza' } : {});
+    fakes.respond = (r: DataRequest) => (r.method === 'POST' ? { id: 42, status: 'draft' } : {});
     const rt = fakes.runtime(screen, injector);
     const ok = await runSteps(rt, [
-      { toast: 'prima: {{ has(creato) }}' },
-      { call: 'crea', as: 'creato' },
-      { toast: 'creato {{ creato.id }} in {{ creato.stato }}' },
-      { call: 'dettaglio', args: { id: '{{ creato.id }}' } },
-    ], { form: { cliente: 'Rossi' } });
+      { toast: 'before: {{ has(created) }}' },
+      { call: 'create', as: 'created' },
+      { toast: 'created {{ created.id }} in {{ created.status }}' },
+      { call: 'detail', args: { id: '{{ created.id }}' } },
+    ], { form: { customer: 'Smith' } });
     expect(ok).toBe(true);
-    expect(fakes.toasts.map((t) => t.message)).toEqual(['prima: {{ has(creato) }}', 'creato 42 in bozza']);
-    expect(fakes.requests.map((r) => `${r.method} ${r.url}`)).toEqual(['POST /api/ordini', 'GET /api/ordini/42']);
+    expect(fakes.toasts.map((t) => t.message)).toEqual(['before: {{ has(created) }}', 'created 42 in draft']);
+    expect(fakes.requests.map((r) => `${r.method} ${r.url}`)).toEqual(['POST /api/orders', 'GET /api/orders/42']);
   });
 
   it('if: then or else according to the condition; a condition that cannot be evaluated stops everything (fail-closed)', async () => {
-    fakes.respond = () => ({ id: 7, stato: 'inviato' });
+    fakes.respond = () => ({ id: 7, status: 'submitted' });
     const rt = fakes.runtime(screen, injector);
     await runSteps(rt, [
-      { call: 'crea', as: 'creato' },
-      { if: "{{ creato.stato == 'bozza' }}", then: { toast: 'bozza' }, else: [{ toast: 'altro stato' }, { toast: 'ancora' }] },
-      { if: '{{ creato.id > 5 }}', then: { toast: 'grande' } },
-      { if: '{{ creato.id < 5 }}', then: { toast: 'piccolo' } },
-      { toast: 'fine' },
+      { call: 'create', as: 'created' },
+      { if: "{{ created.status == 'draft' }}", then: { toast: 'draft' }, else: [{ toast: 'other status' }, { toast: 'again' }] },
+      { if: '{{ created.id > 5 }}', then: { toast: 'big' } },
+      { if: '{{ created.id < 5 }}', then: { toast: 'small' } },
+      { toast: 'end' },
     ]);
-    expect(fakes.toasts.map((t) => t.message)).toEqual(['altro stato', 'ancora', 'grande', 'fine']);
+    expect(fakes.toasts.map((t) => t.message)).toEqual(['other status', 'again', 'big', 'end']);
 
     fakes.toasts = [];
     const ok = await runSteps(rt, [{ if: '{{ missing.field }}', then: { toast: 'no' }, else: { toast: 'neither' } }, { toast: 'after' }]);
@@ -75,16 +75,16 @@ describe('steps before and after a call', () => {
   it('run: named sequences with the variables of the point where they are called; unknown or cyclic ones stop', async () => {
     fakes.respond = () => ({ id: 3 });
     const rt = fakes.runtime(screen, injector);
-    expect(await runSteps(rt, [{ run: 'salvaOrdine' }, { run: 'avvisa' }], { form: { cliente: 'Bianchi' } })).toBe(true);
-    expect(fakes.toasts.map((t) => t.message)).toEqual(['Ordine 3 salvato', 'Ciao Bianchi']);
+    expect(await runSteps(rt, [{ run: 'saveOrder' }, { run: 'notify' }], { form: { customer: 'Baker' } })).toBe(true);
+    expect(fakes.toasts.map((t) => t.message)).toEqual(['Order 3 saved', 'Hello Baker']);
     // The variables of a named sequence stay its own.
     fakes.toasts = [];
-    await runSteps(rt, [{ run: 'salvaOrdine' }, { toast: '{{ has(creato) }}' }]);
-    expect(fakes.toasts.at(-1)?.message).toBe('{{ has(creato) }}');
+    await runSteps(rt, [{ run: 'saveOrder' }, { toast: '{{ has(created) }}' }]);
+    expect(fakes.toasts.at(-1)?.message).toBe('{{ has(created) }}');
 
     fakes.toasts = [];
-    expect(await runSteps(rt, [{ run: 'manca' }, { toast: 'after' }])).toBe(false);
-    expect(await runSteps(rt, [{ run: 'ciclo' }])).toBe(false);
+    expect(await runSteps(rt, [{ run: 'missing' }, { toast: 'after' }])).toBe(false);
+    expect(await runSteps(rt, [{ run: 'loop' }])).toBe(false);
     expect(fakes.toasts.map((t) => t.kind)).toEqual(['error', 'error']);
     expect(fakes.reports.map((r) => r.error)).toEqual(expect.arrayContaining(['unknown sequence', 'sequences called one inside the other too many times']));
   });
@@ -98,15 +98,15 @@ describe('steps before and after a call', () => {
     fakes.respond = () => {
       throw new HttpError(409);
     };
-    expect(await runSteps(rt, [{ call: 'approva', args: { id: 1 }, onError: handler }, { toast: 'non arriva' }])).toBe(false);
+    expect(await runSteps(rt, [{ call: 'approve', args: { id: 1 }, onError: handler }, { toast: 'not reached' }])).toBe(false);
     fakes.respond = () => {
-      throw new Error('404 GET /api/ordini/1/approva');
+      throw new Error('404 GET /api/orders/1/approve');
     };
-    await runSteps(rt, [{ call: 'approva', args: { id: 1 }, onError: handler }]);
+    await runSteps(rt, [{ call: 'approve', args: { id: 1 }, onError: handler }]);
     fakes.respond = () => {
       throw new TypeError('Failed to fetch');
     };
-    await runSteps(rt, [{ call: 'approva', args: { id: 1 }, onError: handler }]);
+    await runSteps(rt, [{ call: 'approve', args: { id: 1 }, onError: handler }]);
     expect(fakes.toasts.map((t) => t.message)).toEqual(['Already approved', 'false', 'Error 404', 'false', 'Error 0', 'false']);
   });
 });

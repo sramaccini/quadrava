@@ -19,14 +19,14 @@ describe('Showcase: advanced components', () => {
       // Orders: number descending on opening, decided by the service.
       await until(() => cells(el, 0, 0).length === 8, 'orders');
       expect(cells(el, 0, 0)[0]).toBe('ORD-0021');
-      headerCell(el, 0, 'Cliente').click();
+      headerCell(el, 0, 'Customer').click();
       await until(() => cells(el, 0, 1)[0] === 'Baker Inc', 'orders by customer');
       // Invoices: in-page sorting on the amount.
       await until(() => cells(el, 1, 0).length === 8, 'invoices');
-      headerCell(el, 1, 'Importo (€)').click();
-      await until(() => cells(el, 1, 3)[0]?.startsWith('250'), 'amount ascending');
-      headerCell(el, 1, 'Importo (€)').click();
-      await until(() => /^1.?195/.test(cells(el, 1, 3)[0] ?? ''), 'amount descending');
+      headerCell(el, 1, 'Amount (€)').click();
+      await until(() => cells(el, 1, 3)[0]?.includes('250'), 'amount ascending');
+      headerCell(el, 1, 'Amount (€)').click();
+      await until(() => /1,?195/.test(cells(el, 1, 3)[0] ?? ''), 'amount descending');
       expect(diagnostics.events(), JSON.stringify(diagnostics.events())).toEqual([]);
     });
 
@@ -34,23 +34,23 @@ describe('Showcase: advanced components', () => {
       const { el, until } = await openShowcase('/showcase/showcase-advanced-tables');
       const table = (): Element => el.querySelectorAll('main nz-table')[2];
       const boxes = (): HTMLInputElement[] => [...table().querySelectorAll<HTMLInputElement>('input[type="checkbox"]')];
-      const send = (): HTMLButtonElement => [...el.querySelectorAll<HTMLButtonElement>('main .bulk button')].find((b) => b.textContent?.includes('Invia le selezionate'))!;
+      const send = (): HTMLButtonElement => [...el.querySelectorAll<HTMLButtonElement>('main .bulk button')].find((b) => b.textContent?.includes('Send selected'))!;
       await until(() => cells(el, 2, 1).length === 8, 'invoices');
-      expect(cells(el, 2, 3).slice(0, 4)).toEqual(['Bozza', 'Inviata', 'Pagata', 'Bozza']);
+      expect(cells(el, 2, 3).slice(0, 4)).toEqual(['Draft', 'Sent', 'Paid', 'Draft']);
       boxes()[2].click(); // row 2: sent
-      await until(() => !!el.querySelector('main .bulk .count')?.textContent?.includes('1 riga'), 'one row');
+      await until(() => !!el.querySelector('main .bulk .count')?.textContent?.includes('1 row'), 'one row');
       expect(send().disabled).toBe(true);
       boxes()[2].click();
       boxes()[1].click();
       boxes()[4].click();
-      await until(() => !!el.querySelector('main .bulk .count')?.textContent?.includes('2 righe'), 'two rows');
+      await until(() => !!el.querySelector('main .bulk .count')?.textContent?.includes('2 rows'), 'two rows');
       expect(send().disabled).toBe(false);
       send().click();
       await until(() => !!document.querySelector('.ant-modal-confirm-btns'), 'confirmation');
-      expect(document.querySelector('.ant-modal-confirm-content')?.textContent).toContain('Inviare 2 fatture?');
+      expect(document.querySelector('.ant-modal-confirm-content')?.textContent).toContain('Send 2 invoices?');
       ([...document.querySelectorAll('.ant-modal-confirm-btns')].at(-1)!.querySelectorAll('button')[1] as HTMLButtonElement).click();
-      await until(() => cells(el, 2, 3)[0] === 'Inviata' && cells(el, 2, 3)[3] === 'Inviata', 'invoices sent');
-      expect(el.querySelector('main .bulk .count')?.textContent).toContain('Nessuna riga selezionata');
+      await until(() => cells(el, 2, 3)[0] === 'Sent' && cells(el, 2, 3)[3] === 'Sent', 'invoices sent');
+      expect(el.querySelector('main .bulk .count')?.textContent).toContain('No rows selected');
     });
 
     it('actions menu: one button per row, the other actions in the «⋯» menu', async () => {
@@ -58,16 +58,16 @@ describe('Showcase: advanced components', () => {
       await until(() => cells(el, 3, 0).length === 8, 'invoices');
       const rows = [...el.querySelectorAll('main nz-table')[3].querySelectorAll('tbody tr')];
       const inline = (i: number): string[] => [...rows[i].querySelectorAll('.actions > span button')].map((b) => b.textContent!.trim());
-      expect(inline(0)).toEqual(['Invia']);
-      expect(inline(1)).toEqual(['Invia']);
+      expect(inline(0)).toEqual(['Send']);
+      expect(inline(1)).toEqual(['Send']);
       expect((rows[1].querySelector('.actions > span button') as HTMLButtonElement).disabled).toBe(true);
       (rows[1].querySelector('button.more') as HTMLButtonElement).click();
       const items = (): HTMLElement[] => [...document.querySelectorAll<HTMLElement>('.ant-dropdown li.lc-row-action')];
       await until(() => items().length === 2, 'menu of the second row');
-      expect(items().map((i) => i.textContent!.trim())).toEqual(['Duplica', 'Sollecita il pagamento']);
+      expect(items().map((i) => i.textContent!.trim())).toEqual(['Duplicate', 'Send a payment reminder']);
       items()[1].click();
       await until(() => !!document.querySelector('.ant-message-notice'), 'message');
-      expect(document.querySelector('.ant-message-notice')?.textContent).toContain('Sollecito inviato a Baker Inc');
+      expect(document.querySelector('.ant-message-notice')?.textContent).toContain('Reminder sent to Baker Inc');
     });
 
     it('expandable rows: the area shows the data of the row and the button opens the order', async () => {
@@ -80,10 +80,10 @@ describe('Showcase: advanced components', () => {
       (rows()[2].querySelector('button.ant-table-row-expand-icon') as HTMLButtonElement).click();
       await until(() => el.querySelectorAll('main nz-table')[4].querySelectorAll('tr.lc-extra-row').length === 2, 'two areas open');
       const areas = [...el.querySelectorAll('main nz-table')[4].querySelectorAll('tr.lc-extra-row')];
-      expect(areas[0].textContent).toContain('Cliente Nolan Group, sconto 10 %.');
-      expect(areas[0].textContent).not.toContain('Ordine in bozza');
-      expect(areas[1].textContent).toContain('Ordine in bozza');
-      ([...areas[1].querySelectorAll('button')].find((b) => b.textContent?.includes('Apri l’ordine')) as HTMLButtonElement).click();
+      expect(areas[0].textContent).toContain('Customer Nolan Group, discount 10%.');
+      expect(areas[0].textContent).not.toContain('Draft order');
+      expect(areas[1].textContent).toContain('Draft order');
+      ([...areas[1].querySelectorAll('button')].find((b) => b.textContent?.includes('Open the order')) as HTMLButtonElement).click();
       await until(() => TestBed.inject(Location).path().startsWith('/showcase/order-detail'), 'navigation');
       expect(TestBed.inject(Location).path()).toContain('id=19');
     });
@@ -93,10 +93,10 @@ describe('Showcase: advanced components', () => {
       await until(() => cells(el, 5, 0).length === 8, 'invoices');
       expect(cells(el, 5, 2).slice(0, 3)).toEqual(['1', '2', '3']);
       const totals = [...el.querySelectorAll('main nz-table')[5].querySelectorAll('tfoot tr.totals td')].map((td) => plainText(td.textContent));
-      expect(totals).toEqual(['Totale', 'N. 8', '21', 'Media 19 %', '5780,00 €']);
+      expect(totals).toEqual(['Total', 'Count 8', '21', 'Average 19 %', '€5,780.00']);
       (el.querySelectorAll('main nz-table')[5].querySelector('tbody button.cell-link') as HTMLButtonElement).click();
       await until(() => !!document.querySelector('.ant-message-notice'), 'message');
-      expect(document.querySelector('.ant-message-notice')?.textContent).toContain('Hai aperto la fattura FT-2026-001');
+      expect(document.querySelector('.ant-message-notice')?.textContent).toContain('You opened invoice FT-2026-001');
     });
   });
 
@@ -117,26 +117,26 @@ describe('Showcase: advanced components', () => {
       textarea.value = 'Citofonare Rossi';
       textarea.dispatchEvent(new Event('input'));
       const radios = [...form.querySelectorAll<HTMLElement>('label[nz-radio]')];
-      expect(radios.map((r) => r.textContent?.trim())).toEqual(['Bassa', 'Normale', 'Alta']);
+      expect(radios.map((r) => r.textContent?.trim())).toEqual(['Low', 'Normal', 'High']);
       (radios[2].querySelector('input') as HTMLInputElement).click();
       (form.querySelector('nz-switch button') as HTMLButtonElement).click();
-      await pick(until, settle, form.querySelector('nz-select')!, ['SMS']);
-      ([...form.querySelectorAll('button')].find((b) => b.textContent?.trim() === 'Invia') as HTMLButtonElement).click();
+      await pick(until, settle, form.querySelector('nz-select')!, ['Text message']);
+      ([...form.querySelectorAll('button')].find((b) => b.textContent?.trim() === 'Send') as HTMLButtonElement).click();
       await until(() => !!document.querySelector('.ant-message-notice'), 'message');
-      expect(document.querySelector('.ant-message-notice')?.textContent).toContain('Priorità alta, spedizione urgente, avvisi su 2 canali');
+      expect(document.querySelector('.ant-message-notice')?.textContent).toContain('Priority high, express shipping, notifications on 2 channels');
     });
 
     it('new types in the filters: several statuses together and type with «Tutti»', { timeout: 20000 }, async () => {
       const { el, until, settle } = await openShowcase('/showcase/showcase-fields');
       await until(() => cells(el, 1, 0).length === 8, 'invoices');
       const bar = el.querySelector('main lc-filter-bar') as HTMLElement;
-      await pick(until, settle, bar.querySelector('nz-select')!, ['Bozza', 'Pagata']);
-      await until(() => cells(el, 1, 2).every((c) => c === 'Bozza' || c === 'Pagata') && cells(el, 1, 2).includes('Pagata'), 'two statuses');
+      await pick(until, settle, bar.querySelector('nz-select')!, ['Draft', 'Paid']);
+      await until(() => cells(el, 1, 2).every((c) => c === 'Draft' || c === 'Paid') && cells(el, 1, 2).includes('Paid'), 'two statuses');
       const radios = [...bar.querySelectorAll<HTMLInputElement>('nz-radio-group input')];
       radios[2].click();
-      await until(() => cells(el, 1, 1).length > 0 && cells(el, 1, 1).every((c) => c === 'Passiva'), 'purchases only');
+      await until(() => cells(el, 1, 1).length > 0 && cells(el, 1, 1).every((c) => c === 'Purchase'), 'purchases only');
       radios[0].click();
-      await until(() => cells(el, 1, 1).includes('Attiva'), 'all types');
+      await until(() => cells(el, 1, 1).includes('Sales'), 'all types');
     });
 
     it('lookup: searches the customers while typing, in the form and in the filters', { timeout: 20000 }, async () => {
@@ -152,9 +152,9 @@ describe('Showcase: advanced components', () => {
       // The value already chosen stays in the list next to the search results.
       await until(() => options().map((o) => o.textContent?.trim()).join('|') === 'Marine Builders|Smith Ltd', 'search result');
       options()[1].click();
-      ([...form.querySelectorAll('button')].find((b) => b.textContent?.trim() === 'Conferma') as HTMLButtonElement).click();
+      ([...form.querySelectorAll('button')].find((b) => b.textContent?.trim() === 'Confirm') as HTMLButtonElement).click();
       await until(() => !!document.querySelector('.ant-message-notice'), 'message');
-      expect(document.querySelector('.ant-message-notice')?.textContent).toContain('Cliente scelto: id 1');
+      expect(document.querySelector('.ant-message-notice')?.textContent).toContain('Customer chosen: id 1');
       document.querySelectorAll('.cdk-overlay-container').forEach((c) => (c.innerHTML = ''));
       // In the filters the value is the customer name and the table is filtered.
       const bar = el.querySelector('main lc-filter-bar') as HTMLElement;
@@ -173,9 +173,9 @@ describe('Showcase: advanced components', () => {
       input.dispatchEvent(new Event('change'));
       await until(() => field.querySelector('.name')?.textContent?.trim() === 'contratto.pdf', 'file uploaded');
       const form = field.closest('lc-form') as HTMLElement;
-      ([...form.querySelectorAll('button')].find((b) => b.textContent?.trim() === 'Salva') as HTMLButtonElement).click();
+      ([...form.querySelectorAll('button')].find((b) => b.textContent?.trim() === 'Save') as HTMLButtonElement).click();
       await until(() => !!document.querySelector('.ant-message-notice'), 'message');
-      expect(document.querySelector('.ant-message-notice')?.textContent).toContain('Allegato contratto.pdf salvato (id 1)');
+      expect(document.querySelector('.ant-message-notice')?.textContent).toContain('Attachment contratto.pdf saved (id 1)');
     });
 
     it('grid: the profile form has three columns and wide fields take several columns', async () => {
@@ -194,9 +194,9 @@ describe('Showcase: advanced components', () => {
       expect(rows()).toHaveLength(1);
       // The article of the initial row is a code: the lookup shows its name, asked of the service.
       await until(() => rows()[0].querySelector('lc-lookup .ant-select-selection-item')?.textContent?.trim() === 'Printer toner', 'initial article');
-      ([...repeater.querySelectorAll('button')].find((b) => b.textContent?.includes('Aggiungi un articolo')) as HTMLButtonElement).click();
+      ([...repeater.querySelectorAll('button')].find((b) => b.textContent?.includes('Add an item')) as HTMLButtonElement).click();
       await settle();
-      const save = (): void => ([...form.querySelectorAll(':scope > form > .actions button')].find((b) => b.textContent?.trim() === 'Salva') as HTMLButtonElement).click();
+      const save = (): void => ([...form.querySelectorAll(':scope > form > .actions button')].find((b) => b.textContent?.trim() === 'Save') as HTMLButtonElement).click();
       save();
       await until(() => repeater.querySelectorAll('.cell-error').length === 2, 'errors of the new row');
       const second = rows()[1];
@@ -209,7 +209,7 @@ describe('Showcase: advanced components', () => {
       await settle();
       save();
       await until(() => !!document.querySelector('.ant-message-notice'), 'message');
-      expect(document.querySelector('.ant-message-notice')?.textContent).toContain('Ordine salvato con 2 righe');
+      expect(document.querySelector('.ant-message-notice')?.textContent).toContain('Order saved with 2 lines');
     });
 
     it('dialog with form: new contact and editing of a row, with the table reloaded', { timeout: 20000 }, async () => {
@@ -221,23 +221,23 @@ describe('Showcase: advanced components', () => {
         input.value = value;
         input.dispatchEvent(new Event('input'));
       };
-      const save = (): void => ([...dialog().querySelectorAll('button')].find((b) => b.textContent?.trim() === 'Salva') as HTMLButtonElement).click();
-      ([...el.querySelectorAll('main button')].find((b) => b.textContent?.trim() === 'Nuovo contatto') as HTMLButtonElement).click();
+      const save = (): void => ([...dialog().querySelectorAll('button')].find((b) => b.textContent?.trim() === 'Save') as HTMLButtonElement).click();
+      ([...el.querySelectorAll('main button')].find((b) => b.textContent?.trim() === 'New contact') as HTMLButtonElement).click();
       await until(() => !!document.querySelector('.lc-dialog-form .ant-modal input'), 'dialog');
-      expect(dialog().querySelector('h2')?.textContent?.trim()).toBe('Nuovo contatto');
+      expect(dialog().querySelector('h2')?.textContent?.trim()).toBe('New contact');
       fill('name', 'Sara Greco');
       fill('email', 'sara.greco');
       save();
       await until(() => !!dialog().querySelector('.ant-form-item-explain-error'), 'invalid e-mail');
-      expect(dialog().querySelector('.ant-form-item-explain-error')?.textContent).toContain('Indirizzo e-mail non valido');
+      expect(dialog().querySelector('.ant-form-item-explain-error')?.textContent).toContain('Invalid email address');
       fill('email', 'sara.greco@example.com');
       save();
       await until(() => cells(el, 0, 0).includes('Sara Greco'), 'contact created');
-      expect(document.querySelector('.ant-message-notice')?.textContent).toContain('Contatto creato');
+      expect(document.querySelector('.ant-message-notice')?.textContent).toContain('Contact created');
       // Edit: the dialog starts with the data of the row.
       const rows = [...el.querySelectorAll('main nz-table')[0].querySelectorAll('tbody tr')];
       (rows[0].querySelector('.actions button') as HTMLButtonElement).click();
-      await until(() => dialog().querySelector('h2')?.textContent?.trim() === 'Modifica Anna Conti', 'edit dialog');
+      await until(() => dialog().querySelector('h2')?.textContent?.trim() === 'Edit Anna Conti', 'edit dialog');
       await settle();
       expect([...dialog().querySelectorAll<HTMLInputElement>('input')].find((i) => i.id.endsWith('-email'))?.value).toBe('anna.conti@example.com');
       fill('email', 'anna@example.com');
@@ -251,41 +251,41 @@ describe('Showcase: advanced components', () => {
       const { el, until, settle } = await openShowcase('/showcase/showcase-input');
       await until(() => cells(el, 0, 0).length === 8, 'invoices');
       const row = el.querySelector('main lc-section .body.row') as HTMLElement;
-      expect([...row.querySelectorAll('nz-form-label')].map((l) => plainText(l.textContent))).toEqual(['Tipo', 'Stato', 'Cliente']);
+      expect([...row.querySelectorAll('nz-form-label')].map((l) => plainText(l.textContent))).toEqual(['Type', 'Status', 'Customer']);
       // Type: purchase.
       await openSelect(row.querySelector('nz-select')!, settle);
       await until(() => document.querySelectorAll('.ant-select-item-option').length > 0, 'options');
       const options = [...document.querySelectorAll<HTMLElement>('.ant-select-item-option')];
-      expect(options.map((o) => plainText(o.textContent))).toEqual(['Attiva', 'Passiva']);
+      expect(options.map((o) => plainText(o.textContent))).toEqual(['Sales', 'Purchase']);
       options[1].click();
-      await until(() => cells(el, 0, 2).length > 0 && cells(el, 0, 2).every((c) => c === 'Passiva'), 'purchases only');
+      await until(() => cells(el, 0, 2).length > 0 && cells(el, 0, 2).every((c) => c === 'Purchase'), 'purchases only');
       // Name and quantity end up in the summary; the switch notifies and unlocks the notes.
       const input = (label: string) => [...el.querySelectorAll('main lc-input')].find((i) => plainText(i.querySelector('nz-form-label')?.textContent) === label) as HTMLElement;
-      const nome = input('Nome').querySelector('input') as HTMLInputElement;
+      const nome = input('Name').querySelector('input') as HTMLInputElement;
       nome.value = 'Anna';
       nome.dispatchEvent(new Event('change'));
-      await until(() => plainText(el.querySelector('[data-node-id="summary"]')?.textContent) === 'Ciao Anna: 1 pezzi, consegna —', 'summary');
-      const note = input('Motivo dell’urgenza (attivo solo se urgente)').querySelector('textarea') as HTMLTextAreaElement;
+      await until(() => plainText(el.querySelector('[data-node-id="summary"]')?.textContent) === 'Hello Anna: 1 pieces, delivery —', 'summary');
+      const note = input('Reason for urgency (only when urgent)').querySelector('textarea') as HTMLTextAreaElement;
       expect(note.readOnly).toBe(true);
-      (input('Urgente').querySelector('nz-switch button') as HTMLButtonElement).click();
+      (input('Urgent').querySelector('nz-switch button') as HTMLButtonElement).click();
       await until(() => !note.readOnly && !!document.querySelector('.ant-message-notice'), 'urgent');
-      expect(document.querySelector('.ant-message-notice')?.textContent).toContain('Segnata come urgente');
+      expect(document.querySelector('.ant-message-notice')?.textContent).toContain('Marked as urgent');
     });
   });
 
   describe('validation of standalone fields', () => {
     it('«Conferma» checks the group: without a name it stops and says so, with the right data it goes on', { timeout: 20000 }, async () => {
       const { el, until } = await openShowcase('/showcase/showcase-input');
-      const button = [...el.querySelectorAll<HTMLButtonElement>('main lc-button button')].find((b) => plainText(b.textContent).startsWith('Conferma'))!;
+      const button = [...el.querySelectorAll<HTMLButtonElement>('main lc-button button')].find((b) => plainText(b.textContent).startsWith('Confirm'))!;
       button.click();
       await until(() => !!document.querySelector('.ant-message-notice'), 'notice');
-      expect(document.querySelector('.ant-message-notice')?.textContent).toContain('Controlla i campi evidenziati');
-      expect([...el.querySelectorAll('main .ant-form-item-explain-error')].map((e) => plainText(e.textContent))).toContain('Campo obbligatorio');
-      const nome = [...el.querySelectorAll('main lc-input')].find((i) => plainText(i.querySelector('nz-form-label')?.textContent) === 'Nome')!.querySelector('input') as HTMLInputElement;
+      expect(document.querySelector('.ant-message-notice')?.textContent).toContain('Check the highlighted fields');
+      expect([...el.querySelectorAll('main .ant-form-item-explain-error')].map((e) => plainText(e.textContent))).toContain('Required field');
+      const nome = [...el.querySelectorAll('main lc-input')].find((i) => plainText(i.querySelector('nz-form-label')?.textContent) === 'Name')!.querySelector('input') as HTMLInputElement;
       nome.value = 'Anna';
       nome.dispatchEvent(new Event('change'));
       button.click();
-      await until(() => [...document.querySelectorAll('.ant-message-notice')].some((n) => n.textContent?.includes('Dati corretti')), 'confirmation');
+      await until(() => [...document.querySelectorAll('.ant-message-notice')].some((n) => n.textContent?.includes('Data is correct')), 'confirmation');
     });
   });
 
@@ -295,13 +295,13 @@ describe('Showcase: advanced components', () => {
       const column = (label: string) => [...el.querySelectorAll<HTMLElement>('main lc-kanban section')].find((c) => c.getAttribute('aria-label') === label)!;
       const titles = (label: string) => [...column(label).querySelectorAll('.title')].map((t) => plainText(t.textContent));
       await until(() => el.querySelectorAll('main lc-kanban .card').length === 5, 'tabs');
-      expect(titles('Da fare')).toEqual(['Quote for Smith Ltd', 'Contract for Baker Inc']);
-      (column('Da fare').querySelector('.card button') as HTMLButtonElement).click();
+      expect(titles('To do')).toEqual(['Quote for Smith Ltd', 'Contract for Baker Inc']);
+      (column('To do').querySelector('.card button') as HTMLButtonElement).click();
       await until(() => document.querySelectorAll('.ant-dropdown-menu-item').length > 0, 'menu');
-      ([...document.querySelectorAll<HTMLElement>('.ant-dropdown-menu-item')].find((i) => plainText(i.textContent) === 'Fatto') as HTMLElement).click();
-      await until(() => titles('Fatto').includes('Quote for Smith Ltd'), 'moved');
-      expect(titles('Da fare')).toEqual(['Contract for Baker Inc']);
-      await until(() => [...document.querySelectorAll('.ant-message-notice')].some((n) => n.textContent?.includes('«Quote for Smith Ltd» spostata')), 'notice');
+      ([...document.querySelectorAll<HTMLElement>('.ant-dropdown-menu-item')].find((i) => plainText(i.textContent) === 'Done') as HTMLElement).click();
+      await until(() => titles('Done').includes('Quote for Smith Ltd'), 'moved');
+      expect(titles('To do')).toEqual(['Contract for Baker Inc']);
+      await until(() => [...document.querySelectorAll('.ant-message-notice')].some((n) => n.textContent?.includes('“Quote for Smith Ltd” moved')), 'notice');
       // Timeline from the most recent, and progress bars.
       await until(() => el.querySelectorAll('main lc-timeline .title').length === 4, 'events');
       expect(plainText(el.querySelector('main lc-timeline .title')?.textContent)).toBe('Order 1001 delivered');
@@ -327,9 +327,9 @@ describe('Showcase: advanced components', () => {
       expect(regions[2].querySelector('nz-table')).not.toBeNull();
       // The filter on the west writes to the state the table in the center depends on.
       const radios = [...regions[1].querySelectorAll<HTMLElement>('label[nz-radio]')];
-      expect(radios.map((r) => plainText(r.textContent))).toEqual(['Bozza', 'Inviata', 'Pagata']);
+      expect(radios.map((r) => plainText(r.textContent))).toEqual(['Draft', 'Sent', 'Paid']);
       (radios[2].querySelector('input') as HTMLInputElement).click();
-      await until(() => cells(el, 0, 2).length > 0 && cells(el, 0, 2).every((c) => c === 'Pagata'), 'paid only');
+      await until(() => cells(el, 0, 2).length > 0 && cells(el, 0, 2).every((c) => c === 'Paid'), 'paid only');
       expect([...el.querySelectorAll<HTMLElement>('main lc-grid .grid > lc-node')].map((n) => n.style.getPropertyValue('--lc-span'))).toEqual(['2', '1', '3']);
       expect((el.querySelector('[data-node-id="section-two-thirds"]') as HTMLElement).style.flex).toBe('2 1 0px');
     });
@@ -340,8 +340,8 @@ describe('Showcase: advanced components', () => {
       const { el, until } = await openShowcase('/showcase/showcase-layout');
       await until(() => el.querySelectorAll('main lc-detail .help').length === 2, 'help icons');
       expect([...el.querySelectorAll('main lc-detail .help')].map((h) => h.getAttribute('aria-label'))).toEqual([
-        'Percentuale applicata al totale dell’ordine',
-        'Bozza, inviato al cliente o approvato',
+        'Percentage applied to the order total',
+        'Draft, sent to the customer or approved',
       ]);
     });
   });
@@ -351,8 +351,8 @@ describe('Showcase: advanced components', () => {
       const { el, until } = await openShowcase('/showcase/showcase-dashboard');
       const values = (): string[] => [...el.querySelectorAll('main lc-stats .value')].map((v) => plainText(v.textContent));
       await until(() => values().length === 4 && values()[0] !== '…', 'indicators');
-      expect(values()).toEqual(['11.275,00 €', '5975,00 €', '10', '2818,75 €']);
-      expect([...el.querySelectorAll('main lc-stats .caption')].map((c) => plainText(c.textContent))).toEqual(['+12,5 % rispetto al mese scorso', 'su 14 in tutto']);
+      expect(values()).toEqual(['€11,275.00', '€5,975.00', '10', '€2,818.75']);
+      expect([...el.querySelectorAll('main lc-stats .caption')].map((c) => plainText(c.textContent))).toEqual(['+12.5% on last month', 'out of 14']);
       // No expression errors while the data arrive.
       await new Promise((r) => setTimeout(r, 0));
       expect(TestBed.inject(DemoDiagnostics).events()).toEqual([]);
@@ -366,11 +366,11 @@ describe('Showcase: advanced components', () => {
       expect(new Set([...charts()[1].querySelectorAll('rect.mark')].map((r) => r.getAttribute('x'))).size).toBe(12);
       expect(charts()[1].querySelectorAll('circle')).toHaveLength(12);
       expect(charts()[1].querySelector('text.axis.right')?.textContent?.trim()).toMatch(/%$/);
-      expect([...charts()[1].querySelectorAll('.legend li')].map((li) => li.textContent?.trim())).toEqual(['Fatture attive', 'Fatture passive', 'Margine (asse destro)']);
+      expect([...charts()[1].querySelectorAll('.legend li')].map((li) => li.textContent?.trim())).toEqual(['Sales invoices', 'Purchase invoices', 'Margin (right axis)']);
       expect(charts()[2].querySelectorAll('circle')).toHaveLength(12);
-      expect([...charts()[3].querySelectorAll('.legend li')].map((li) => li.textContent?.trim())).toEqual(['Bozza', 'Inviata', 'Pagata']);
+      expect([...charts()[3].querySelectorAll('.legend li')].map((li) => li.textContent?.trim())).toEqual(['Draft', 'Sent', 'Paid']);
       expect(charts()[3].querySelector('text.total')?.textContent?.trim()).toBe('14');
-      expect(charts()[0].querySelector('table caption')?.textContent).toContain('Fatture attive e passive per mese');
+      expect(charts()[0].querySelector('table caption')?.textContent).toContain('Sales and purchase invoices by month');
       expect(TestBed.inject(DemoDiagnostics).events()).toEqual([]);
     });
   });
@@ -380,21 +380,21 @@ describe('Showcase: advanced components', () => {
       const { el, until, settle } = await openShowcase('/showcase/showcase-views');
       const wizard = el.querySelector('main lc-wizard') as HTMLElement;
       const button = (text: string): HTMLButtonElement | undefined => [...wizard.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.trim() === text);
-      expect(button('Avanti')!.disabled).toBe(true);
+      expect(button('Next')!.disabled).toBe(true);
       const input = wizard.querySelector('input[type="text"]') as HTMLInputElement;
       input.value = 'New monitor';
       input.dispatchEvent(new Event('input'));
       (wizard.querySelectorAll<HTMLInputElement>('input[type="radio"]')[2]).click();
       await settle();
-      button('Continua')!.click();
-      await until(() => !!wizard.querySelector('section')?.textContent?.includes('Oggetto: New monitor. Priorità: alta.'), 'summary');
-      button('Avanti')!.click();
-      await until(() => !!button('Invia la richiesta'), 'sending step');
-      button('Invia la richiesta')!.click();
-      await until(() => !!wizard.querySelector('nz-alert')?.textContent?.includes('La richiesta «New monitor» è stata inviata.'), 'outcome');
-      expect(button('Avanti')).toBeUndefined();
-      button('Nuova richiesta')!.click();
-      await until(() => !!wizard.querySelector('lc-form') && button('Avanti')?.disabled === true, 'back to the first step, to fill in');
+      button('Continue')!.click();
+      await until(() => !!wizard.querySelector('section')?.textContent?.includes('Subject: New monitor. Priority: high.'), 'summary');
+      button('Next')!.click();
+      await until(() => !!button('Send the request'), 'sending step');
+      button('Send the request')!.click();
+      await until(() => !!wizard.querySelector('nz-alert')?.textContent?.includes('The request “New monitor” has been sent.'), 'outcome');
+      expect(button('Next')).toBeUndefined();
+      button('New request')!.click();
+      await until(() => !!wizard.querySelector('lc-form') && button('Next')?.disabled === true, 'back to the first step, to fill in');
       expect(TestBed.inject(DemoDiagnostics).events()).toEqual([]);
     });
 
@@ -404,8 +404,8 @@ describe('Showcase: advanced components', () => {
       await until(() => titles().some((t) => t.textContent?.trim() === 'IT'), 'tree');
       titles().find((t) => t.textContent?.trim() === 'Maintenance')!.click();
       await until(() => !!document.querySelector('.ant-message-notice'), 'message');
-      expect(document.querySelector('.ant-message-notice')?.textContent).toContain('Maintenance: 18 voci di spesa');
-      await until(() => !!el.querySelector('main')?.textContent?.includes('Codice scelto: ser-mnt'), 'state updated');
+      expect(document.querySelector('.ant-message-notice')?.textContent).toContain('Maintenance: 18 expense items');
+      await until(() => !!el.querySelector('main')?.textContent?.includes('Chosen code: ser-mnt'), 'state updated');
       expect(TestBed.inject(DemoDiagnostics).events()).toEqual([]);
     });
 
@@ -414,12 +414,12 @@ describe('Showcase: advanced components', () => {
       const events = (): HTMLButtonElement[] => [...el.querySelectorAll<HTMLButtonElement>('main lc-calendar button.event')];
       await until(() => events().length > 0, 'deadlines');
       // Day 8 has four deadlines: three visible and «+1 altri».
-      expect(el.querySelector('main lc-calendar .more')?.textContent?.trim()).toBe('+1 altri');
+      expect(el.querySelector('main lc-calendar .more')?.textContent?.trim()).toBe('+1 more');
       events().find((b) => b.textContent?.includes('Salaries'))!.click();
       await until(() => !!document.querySelector('.ant-message-notice'), 'message');
-      expect(document.querySelector('.ant-message-notice')?.textContent).toContain('Salaries: 1470,00');
+      expect(document.querySelector('.ant-message-notice')?.textContent).toContain('Salaries: €1,470.00');
       const title = el.querySelector('main lc-calendar .header h3')?.textContent;
-      (el.querySelector('main lc-calendar button[aria-label="Mese successivo"]') as HTMLButtonElement).click();
+      (el.querySelector('main lc-calendar button[aria-label="Next month"]') as HTMLButtonElement).click();
       await until(() => el.querySelector('main lc-calendar .header h3')?.textContent !== title && events().length > 0, 'next month');
       expect(TestBed.inject(DemoDiagnostics).events()).toEqual([]);
     });
@@ -431,24 +431,24 @@ describe('Showcase: advanced components', () => {
       const dt = (): HTMLElement => el.querySelector('main lc-data-table') as HTMLElement;
       const groups = (): string[] => [...dt().querySelectorAll('tr.group-row .group-label')].map((g) => plainText(g.textContent));
       await until(() => groups().length > 0, 'groups');
-      expect(plainText(dt().querySelector('.count')?.textContent)).toBe('60 di 60 righe');
-      expect(groups()[0]).toMatch(/^Conto: Alpha Bank \(\d+\)$/);
-      expect(dt().querySelector('tfoot')?.textContent).toContain('Totale');
+      expect(plainText(dt().querySelector('.count')?.textContent)).toBe('60 of 60 rows');
+      expect(groups()[0]).toMatch(/^Account: Alpha Bank \(\d+\)$/);
+      expect(dt().querySelector('tfoot')?.textContent).toContain('Total');
       // Filter: only the transactions to check.
-      (([...dt().querySelectorAll<HTMLElement>('th')].find((th) => th.textContent?.trim().startsWith('Stato'))!.querySelector('nz-filter-trigger span')) as HTMLElement).click();
-      const panel = (): HTMLElement | undefined => [...document.querySelectorAll<HTMLElement>('.ant-dropdown .filter-panel')].find((p) => p.getAttribute('aria-label') === 'Filtra Stato');
+      (([...dt().querySelectorAll<HTMLElement>('th')].find((th) => th.textContent?.trim().startsWith('Status'))!.querySelector('nz-filter-trigger span')) as HTMLElement).click();
+      const panel = (): HTMLElement | undefined => [...document.querySelectorAll<HTMLElement>('.ant-dropdown .filter-panel')].find((p) => p.getAttribute('aria-label') === 'Filter Status');
       await until(() => !!panel(), 'filter');
       const options = [...panel()!.querySelectorAll<HTMLElement>('label[nz-checkbox]')];
-      expect(options.map((o) => plainText(o.textContent))).toEqual(['Registrato', 'Da verificare']);
+      expect(options.map((o) => plainText(o.textContent))).toEqual(['Recorded', 'To check']);
       (options[1].querySelector('input') as HTMLInputElement).click();
-      await until(() => plainText(dt().querySelector('.count')?.textContent) !== '60 di 60 righe', 'filtered');
-      expect(plainText(dt().querySelector('.count')?.textContent)).toBe('7 di 60 righe');
+      await until(() => plainText(dt().querySelector('.count')?.textContent) !== '60 of 60 rows', 'filtered');
+      expect(plainText(dt().querySelector('.count')?.textContent)).toBe('7 of 60 rows');
       document.querySelectorAll('.cdk-overlay-container').forEach((c) => (c.innerHTML = ''));
       // Grouping: by category too.
       await openSelect(dt().querySelector('.toolbar nz-select')!, settle);
       await until(() => document.querySelectorAll('.ant-select-item-option').length > 0, 'options');
-      ([...document.querySelectorAll<HTMLElement>('.ant-select-item-option')].find((o) => o.textContent?.trim() === 'Categoria'))!.click();
-      await until(() => groups().some((g) => g.startsWith('Categoria:')), 'two levels');
+      ([...document.querySelectorAll<HTMLElement>('.ant-select-item-option')].find((o) => o.textContent?.trim() === 'Category'))!.click();
+      await until(() => groups().some((g) => g.startsWith('Category:')), 'two levels');
       // The «Verifica» row action is enabled only for the transactions to check.
       const verify = [...dt().querySelectorAll<HTMLButtonElement>('lc-row-actions .actions > span button')];
       expect(verify.length).toBeGreaterThan(0);
@@ -463,17 +463,17 @@ describe('Showcase: advanced components', () => {
       const sdt = (): HTMLElement => el.querySelector('main lc-server-data-table') as HTMLElement;
       const groups = (): string[] => [...sdt().querySelectorAll('tr.group-row .group-label')].map((g) => plainText(g.textContent));
       await until(() => groups().length === 4, 'groups');
-      expect(plainText(sdt().querySelector('.count')?.textContent)).toBe('4 gruppi');
-      expect(groups()[0]).toBe('Conto: Alpha Bank (50.000)');
+      expect(plainText(sdt().querySelector('.count')?.textContent)).toBe('4 groups');
+      expect(groups()[0]).toBe('Account: Alpha Bank (50,000)');
       (sdt().querySelector('tr.group-row button.toggle') as HTMLButtonElement).click();
       await until(() => sdt().querySelectorAll('tbody tr:not(.group-row):not(.note-row)').length === 15, 'rows of the group');
-      expect(sdt().querySelector('tr.note-row button')?.textContent).toContain('49.985');
+      expect(sdt().querySelector('tr.note-row button')?.textContent).toContain('49,985');
       // The first row to check in the group: Verifica, then refresh and message.
       const verify = [...sdt().querySelectorAll<HTMLButtonElement>('lc-row-actions .actions > span button')].find((b) => !b.disabled);
       if (verify) {
         verify.click();
         await until(() => !!document.querySelector('.ant-message-notice'), 'message');
-        expect(document.querySelector('.ant-message-notice')?.textContent).toContain('verificato');
+        expect(document.querySelector('.ant-message-notice')?.textContent).toContain('checked');
       }
       expect(TestBed.inject(DemoDiagnostics).events()).toEqual([]);
     });

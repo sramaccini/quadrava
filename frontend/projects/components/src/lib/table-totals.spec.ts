@@ -34,10 +34,10 @@ describe('number format, clickable cells and totals row', () => {
   it('numbers formatted and right-aligned, totals with the format of the column', async () => {
     const h = await renderScreen({ components: [table], dataSources, respond: () => rows });
     await h.until(() => columnTexts(h.el, 0).length === 2, 'rows');
-    expect(columnTexts(h.el, 1)).toEqual(['1200,5', '3,0']);
+    expect(columnTexts(h.el, 1)).toEqual(['1,200.5', '3.0']);
     expect(h.el.querySelector('tbody td:nth-child(2)')?.getAttribute('style') ?? h.el.querySelector('tbody td:nth-child(2)')?.className).toContain('right');
     const totals = [...h.el.querySelectorAll('tfoot tr.totals td')].map((td) => plain(td.textContent));
-    expect(totals).toEqual(['Totale', '1203,5', '350,25 €', 'Media 15 %', 'N. 2']);
+    expect(totals).toEqual(['Total', '1,203.5', '€350.25', 'Average 15 %', 'Count 2']);
   });
 
   it('the value of a column with onClick is a button running the steps with the row', async () => {

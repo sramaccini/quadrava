@@ -16,7 +16,7 @@ import { ShellSession } from './shell-session';
 import { DemoNetwork, NETWORK_SPEEDS, type NetworkSpeed } from '../demo/demo-ports';
 
 /** Languages of the demo: each has its `examples/i18n/<language>.json`. */
-const LANGUAGES = ['it', 'en'];
+const LANGUAGES = ['en', 'it'];
 
 const LANGUAGE_KEY = 'lc.language';
 
@@ -47,7 +47,7 @@ function viewportSignal(destroyRef: DestroyRef) {
   return current.asReadonly();
 }
 
-/** Initial language: the last one chosen, otherwise the browser's if supported, otherwise Italian. */
+/** Initial language: the last one chosen, otherwise the browser's if supported, otherwise English. */
 function initialLanguage(): string {
   try {
     const stored = localStorage.getItem(LANGUAGE_KEY);
@@ -56,7 +56,7 @@ function initialLanguage(): string {
     // see above
   }
   const browser = (typeof navigator === 'undefined' ? '' : navigator.language).slice(0, 2);
-  return LANGUAGES.includes(browser) ? browser : 'it';
+  return LANGUAGES.includes(browser) ? browser : 'en';
 }
 
 /** Shell of the application: top bar (profile and theme of the demo), side menu, content and notifications. */

@@ -40,12 +40,12 @@
     {
       "id": "section-transactions",
       "type": "section",
-      "title": "{{ t('showcase_datatable.account_movements', 'Account movements') }}",
+      "title": "{{ t('showcase_datatable.account_transactions', 'Account transactions') }}",
       "components": [
         {
           "id": "explain-transactions",
           "type": "text",
-          "text": "{{ t('showcase_datatable.sixty_movements_loaded_once_filt', 'Sixty movements loaded once: filter from the icon in the headers, sort with the arrows, pick one or more columns to group by. Each group shows the number of movements and the balance.') }}"
+          "text": "{{ t('showcase_datatable.sixty_transactions_loaded_once', 'Sixty transactions loaded once: filter from the icon in the headers, sort with the arrows, pick one or more columns to group by. Each group shows the number of transactions and the balance.') }}"
         },
         {
           "id": "datatable-transactions",
@@ -116,7 +116,7 @@
               "enabledIf": "{{ row.status == 'to-check' }}",
               "onClick": [
                 {
-                  "toast": "{{ t('showcase_datatable.movement_checked_example', 'Movement {d} checked (example)', {'d': row.description}) }}"
+                  "toast": "{{ t('showcase_datatable.transaction_checked_example', 'Transaction {d} checked (example)', {'d': row.description}) }}"
                 }
               ]
             },
@@ -136,7 +136,7 @@
     {
       "id": "section-archive",
       "type": "section",
-      "title": "{{ t('showcase_datatable.large_volumes_20_000_movements', 'Large volumes: 20,000 movements') }}",
+      "title": "{{ t('showcase_datatable.large_volumes_20_000_transactions', 'Large volumes: 20,000 transactions') }}",
       "components": [
         {
           "id": "explain-archive",
@@ -207,7 +207,7 @@
     {
       "id": "section-server",
       "type": "section",
-      "title": "{{ t('showcase_datatable.server_side_200_000_movements', 'Server side: 200,000 movements') }}",
+      "title": "{{ t('showcase_datatable.server_side_200_000_transactions', 'Server side: 200,000 transactions') }}",
       "components": [
         {
           "id": "explain-server",
@@ -293,7 +293,7 @@
                   "refresh": "search"
                 },
                 {
-                  "toast": "{{ t('showcase_datatable.movement_checked', 'Movement {d} checked', {'d': row.description}) }}"
+                  "toast": "{{ t('showcase_datatable.transaction_checked', 'Transaction {d} checked', {'d': row.description}) }}"
                 }
               ]
             }

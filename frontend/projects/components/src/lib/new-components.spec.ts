@@ -90,7 +90,7 @@ describe('new catalogue components', () => {
     it('shows the formatted values', async () => {
       const { el } = await renderWithData([table], [row]);
       const cells = [...el.querySelectorAll('tbody td')].map((c) => plain(c.textContent));
-      expect(cells.slice(0, 4)).toEqual(['12.500,00 €', '10 %', '07/10/26', 'Sì']);
+      expect(cells.slice(0, 4)).toEqual(['€12,500.00', '10 %', '07/10/2026', 'Yes']);
       expect(cells.slice(4, 6)).toEqual(['approved', 'sent']);
     });
 
@@ -132,7 +132,7 @@ describe('new catalogue components', () => {
         { field: 'number', label: 'Number' },
         { field: 'discount', label: 'Discount', format: 'percent' },
         { field: 'status', label: 'Status', format: 'badge', badges: { approved: 'success' } },
-        { field: 'note', label: 'Note' },
+        { field: 'note', label: 'Notes' },
         { field: 'iban', label: 'IBAN', hiddenIf: "{{!can('orders.iban.read')}}" },
       ],
     };
@@ -143,7 +143,7 @@ describe('new catalogue components', () => {
       expect(plain(el.querySelector('.ant-card-head-title')?.textContent)).toBe('Order');
       const labels = [...el.querySelectorAll('.ant-descriptions-item-label')].map((d) => plain(d.textContent));
       const values = [...el.querySelectorAll('.ant-descriptions-item-content')].map((d) => plain(d.textContent));
-      expect(labels).toEqual(['Number', 'Discount', 'Status', 'Note']);
+      expect(labels).toEqual(['Number', 'Discount', 'Status', 'Notes']);
       expect(values).toEqual(['ORD-1', '10 %', 'approved', '—']);
       expect(el.querySelector('.ant-descriptions-item-content nz-tag.ant-tag-success')).not.toBeNull();
     });
@@ -155,7 +155,7 @@ describe('new catalogue components', () => {
 
     it('before the data it shows the loading state; if the response is not a record, "Nessun dato"', async () => {
       const { el } = await renderWithData([detail], [1, 2]);
-      expect(plain(el.textContent)).toContain('Nessun dato.');
+      expect(plain(el.textContent)).toContain('No data.');
     });
 
     it('if the service fails it shows an error readable by screen reader users', async () => {
@@ -207,8 +207,8 @@ describe('new catalogue components', () => {
     const tabs: NodeDefinition = {
       type: 'tabs',
       tabs: [
-        { label: 'Data', components: [{ type: 'form', fields: [{ name: 'customer', type: 'text', label: 'Customer' }] }] },
-        { label: 'Note', components: [{ type: 'text', text: 'Text of the notes' }] },
+        { label: 'Date', components: [{ type: 'form', fields: [{ name: 'customer', type: 'text', label: 'Customer' }] }] },
+        { label: 'Notes', components: [{ type: 'text', text: 'Text of the notes' }] },
         { label: 'Bank', visibleIf: "{{can('orders.iban.read')}}", components: [{ type: 'text', text: 'Bank details' }] },
       ],
     };
@@ -218,7 +218,7 @@ describe('new catalogue components', () => {
 
     it('shows the first tab and links the tabs to their panels', async () => {
       const { el } = await render([tabs]);
-      expect(tabButtons(el).map((b) => plain(b.textContent))).toEqual(['Data', 'Note']);
+      expect(tabButtons(el).map((b) => plain(b.textContent))).toEqual(['Date', 'Notes']);
       expect(selected(el)).toEqual(['true', 'false']);
       // All panels stay in the page; the ones not chosen are hidden from screen reader users.
       expect(panels(el).map((p) => p.getAttribute('aria-hidden'))).toEqual(['false', 'true']);
@@ -249,7 +249,7 @@ describe('new catalogue components', () => {
 
     it('a tab with visibleIf appears with the permission; if it disappears, the first one is selected again', async () => {
       const { fixture, el } = await render([tabs], {}, ['orders.iban.read']);
-      expect(tabButtons(el).map((b) => plain(b.textContent))).toEqual(['Data', 'Note', 'Bank']);
+      expect(tabButtons(el).map((b) => plain(b.textContent))).toEqual(['Date', 'Notes', 'Bank']);
       tabButtons(el)[2].click();
       await settle(fixture);
       expect(selected(el)).toEqual(['false', 'false', 'true']);
@@ -288,7 +288,7 @@ describe('new catalogue components', () => {
       expect(document.body.querySelector('[role=dialog]')).not.toBeNull();
       expect(dialog()?.querySelector('b')).toBeNull();
       expect(dialog()?.textContent).toContain('Approve <b>ORD-1</b>?');
-      expect(plain(button('confirm').textContent)).toBe('Conferma');
+      expect(plain(button('confirm').textContent)).toBe('Confirm');
       click('confirm');
       expect(await result).toBe(true);
     });

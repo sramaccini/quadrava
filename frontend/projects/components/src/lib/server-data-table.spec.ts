@@ -43,7 +43,7 @@ describe('serverDataTable', () => {
       source: 'search',
       pageSize: 5,
       columns: [
-        { field: 'note', label: 'Note', filter: 'text', sortable: true },
+        { field: 'note', label: 'Notes', filter: 'text', sortable: true },
         { field: 'account', label: 'Account', filter: 'select', groupable: true },
         { field: 'category', label: 'Category', groupable: true },
         { field: 'amount', label: 'Amount', format: 'currency', sortable: true, filter: 'number', aggregate: 'sum' },
@@ -63,36 +63,36 @@ describe('serverDataTable', () => {
     const h = await render();
     await h.until(() => body(h).length === 5, 'first page');
     expect(lastRequest(h)).toEqual({ page: 0, size: 5, sort: null, filters: [], groupBy: [], groupPath: [] });
-    expect(count(h)).toBe('12 righe');
-    expect(plain(h.el.querySelector('lc-server-data-table tfoot')?.textContent)).toContain('780,00 €');
+    expect(count(h)).toBe('12 rows');
+    expect(plain(h.el.querySelector('lc-server-data-table tfoot')?.textContent)).toContain('€780.00');
     (h.el.querySelectorAll('lc-server-data-table .ant-pagination-item')[2] as HTMLElement).click();
     await h.until(() => lastRequest(h).page === 2 && body(h).length === 2, 'third page');
     header(h, 'Amount').click();
     await h.until(() => lastRequest(h).sort?.field === 'amount', 'sorting');
     expect(lastRequest(h).page).toBe(0);
     header(h, 'Amount').click();
-    await h.until(() => body(h)[0]?.[3] === '120,00 €', 'amount descending');
-    (header(h, 'Note').querySelector('nz-filter-trigger span') as HTMLElement).click();
+    await h.until(() => body(h)[0]?.[3] === '€120.00', 'amount descending');
+    (header(h, 'Notes').querySelector('nz-filter-trigger span') as HTMLElement).click();
     await h.until(() => !!document.querySelector('.ant-dropdown .filter-panel input'), 'filter');
     const input = document.querySelector('.ant-dropdown .filter-panel input') as HTMLInputElement;
     input.value = 'Transaction 1';
     input.dispatchEvent(new Event('input'));
-    await h.until(() => count(h) === '4 righe', 'text filter');
+    await h.until(() => count(h) === '4 rows', 'text filter');
     expect(lastRequest(h).filters).toEqual([{ field: 'note', kind: 'text', text: 'Transaction 1' }]);
   });
 
   it('groups: the service gives counts and totals; an open group loads its rows in pages', async () => {
     const h = await render({ groupBy: ['account'] });
     await h.until(() => h.el.querySelectorAll('lc-server-data-table tr.group-row').length === 2, 'groups');
-    expect(count(h)).toBe('2 gruppi');
+    expect(count(h)).toBe('2 groups');
     const groups = (): string[] => [...h.el.querySelectorAll('lc-server-data-table tr.group-row .group-label')].map((g) => plain(g.textContent));
     expect(groups()).toEqual(['Account: Bank (6)', 'Account: Cash (6)']);
-    expect(plain(h.el.querySelectorAll('lc-server-data-table tr.group-row')[0].querySelectorAll('td')[3].textContent)).toBe('360,00 €');
+    expect(plain(h.el.querySelectorAll('lc-server-data-table tr.group-row')[0].querySelectorAll('td')[3].textContent)).toBe('€360.00');
     (h.el.querySelector('lc-server-data-table tr.group-row button.toggle') as HTMLButtonElement).click();
     await h.until(() => body(h).length === 2 + 5 + 1, 'rows of the group');
     expect(lastRequest(h).groupPath).toEqual([{ field: 'account', value: 'Bank' }]);
     const more = [...h.el.querySelectorAll<HTMLButtonElement>('lc-server-data-table tr.note-row button')][0];
-    expect(plain(more.textContent)).toBe('Mostra altre (1 rimanenti)');
+    expect(plain(more.textContent)).toBe('Show more (1 left)');
     more.click();
     await h.until(() => body(h).length === 2 + 6, 'all the rows of the group');
     expect(lastRequest(h).page).toBe(1);
@@ -105,7 +105,7 @@ describe('serverDataTable', () => {
     await h.until(() => document.querySelectorAll('.ant-dropdown label[nz-checkbox]').length === 2, 'values');
     expect(lastRequest(h).distinct).toBe('account');
     ([...document.querySelectorAll<HTMLElement>('.ant-dropdown label[nz-checkbox]')][1].querySelector('input') as HTMLInputElement).click();
-    await h.until(() => count(h) === '6 righe', 'choice filter');
+    await h.until(() => count(h) === '6 rows', 'choice filter');
     expect(lastRequest(h).filters).toEqual([{ field: 'account', kind: 'select', values: ['Cash'] }]);
   });
 

@@ -13,7 +13,7 @@ describe('column grid in the form', () => {
         { name: 'surname', type: 'text', label: 'Surname' },
         { name: 'postcode', type: 'text', label: 'Postcode' },
         { name: 'address', type: 'text', label: 'Address', span: 2 },
-        { name: 'note', type: 'textarea', label: 'Note', span: 4 },
+        { name: 'note', type: 'textarea', label: 'Notes', span: 4 },
       ],
     };
     const h = await renderScreen({ components: [form] });

@@ -29,7 +29,7 @@ describe('validateScreen', () => {
           columns: [{ field: 'numero' }],
           rowActions: [
             {
-              label: 'Approva',
+              label: 'Approve',
               visibleIf: "{{can('orders.order.approve') && row.status == 'submitted'}}",
               onClick: [{ call: 'approveOrder', onError: { toast: 'Error' } }, { refresh: 'orders' }],
             },
@@ -78,7 +78,7 @@ describe('validateScreen', () => {
   });
 
   it('rejects a malformed permission', () => {
-    expect(issuesOf({ ...minimal(), requires: 'Ordini' }).some((m) => m.startsWith('/requires'))).toBe(true);
+    expect(issuesOf({ ...minimal(), requires: 'Orders' }).some((m) => m.startsWith('/requires'))).toBe(true);
   });
 
   it('rejects an unknown action step', () => {
@@ -148,7 +148,7 @@ describe('validateNavigation', () => {
   });
 
   it('rejects items without a screen or children, and groups without children', () => {
-    expect(validateNavigation(doc([{ id: 'a', label: 'A' }])).valid).toBe(false);
+    expect(validateNavigation(doc([{ id: 'a', label: 'To' }])).valid).toBe(false);
     expect(validateNavigation(doc([{ id: 'g', label: 'G', children: [] }])).valid).toBe(false);
   });
 
@@ -161,7 +161,7 @@ describe('validateNavigation', () => {
 describe('permission format domain.resource.action', () => {
   it('accepts three parts and rejects two or four, in screens and navigation', () => {
     const screen = (requires: string) => ({ schemaVersion: '1.0', screen: 'x', requires, components: [{ type: 'text', text: 'a' }] });
-    const nav = (requires: string) => ({ schemaVersion: '1.0', navigation: 'n', areas: [{ id: 'u', label: 'U', items: [{ id: 'a', label: 'A', screen: 's', requires }] }] });
+    const nav = (requires: string) => ({ schemaVersion: '1.0', navigation: 'n', areas: [{ id: 'u', label: 'U', items: [{ id: 'a', label: 'To', screen: 's', requires }] }] });
     for (const make of [screen, nav]) {
       expect(JSON.stringify(validateAny(make, 'orders.order.approve'))).toContain('true');
       expect(JSON.stringify(validateAny(make, 'ordini.approva'))).toContain('false');
@@ -206,7 +206,7 @@ describe('new components: cell formats, tabs, detail, messages and confirmation'
       {
         type: 'tabs',
         tabs: [
-          { label: 'Data', components: [{ type: 'detail', source: 'order', title: 'Order', fields: [{ field: 'customer' }, { field: 'discount', format: 'percent' }] }] },
+          { label: 'Date', components: [{ type: 'detail', source: 'order', title: 'Order', fields: [{ field: 'customer' }, { field: 'discount', format: 'percent' }] }] },
           { id: 'bank', label: 'Bank details', visibleIf: "{{can('orders.iban.read')}}", components: [{ type: 'tabs', tabs: [{ label: 'Internal', components: [] }] }] },
         ],
       },
@@ -224,7 +224,7 @@ describe('new components: cell formats, tabs, detail, messages and confirmation'
 
   it('accepts the confirm step and rejects wrong shapes', () => {
     const button = (onClick: unknown[]) => screen([{ type: 'button', label: 'Vai', onClick }]);
-    expect(issuesOf(button([{ confirm: "Approvare l'ordine {{row.numero}}?" }, { toast: 'Fatto' }]))).toEqual([]);
+    expect(issuesOf(button([{ confirm: "Approvare l'ordine {{row.numero}}?" }, { toast: 'Done' }]))).toEqual([]);
     expect(issuesOf(button([{ confirm: 5 }])).length).toBeGreaterThan(0);
     expect(issuesOf(button([{ confirm: 'ok', titolo: 'x' }])).length).toBeGreaterThan(0);
   });

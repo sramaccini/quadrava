@@ -4,7 +4,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 test.describe('Showcase: layout containers', () => {
   async function open(page: Page, width: number): Promise<(name: string) => Locator> {
     await page.setViewportSize({ width, height: 900 });
-    await page.addInitScript(() => localStorage.setItem('lc.language', 'it'));
+    await page.addInitScript(() => localStorage.setItem('lc.language', 'en'));
     await page.goto('/showcase/showcase-containers');
     const border = page.locator('lc-border').first();
     await expect(border.locator('[data-region="center"] tbody tr').first()).toBeVisible();

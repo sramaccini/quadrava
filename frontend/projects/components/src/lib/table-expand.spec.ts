@@ -27,7 +27,7 @@ describe('expandable detail rows', () => {
     // The second row has no lines: no button.
     expect(toggles).toHaveLength(1);
     expect(toggles[0].getAttribute('aria-expanded')).toBe('false');
-    expect(toggles[0].getAttribute('aria-label')).toBe('Mostra i dettagli della riga');
+    expect(toggles[0].getAttribute('aria-label')).toBe('Show row details');
     toggles[0].click();
     await h.settle();
     const area = h.el.querySelector('tr.lc-extra-row');

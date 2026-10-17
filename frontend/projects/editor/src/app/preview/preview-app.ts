@@ -9,7 +9,7 @@ import { resizeValue } from './resize';
 /** Components containing others: a drop in the centre puts it inside. */
 const CONTAINERS = new Set(['section', 'box', 'grid', 'border', 'tabs', 'wizard']);
 
-const LANGUAGES = ['it', 'en'];
+const LANGUAGES = ['en', 'it'];
 
 /** Equality by content: every message arrives cloned, hence with new objects even when nothing changed. */
 const sameJson = (a: unknown, b: unknown): boolean => a === b || JSON.stringify(a) === JSON.stringify(b);

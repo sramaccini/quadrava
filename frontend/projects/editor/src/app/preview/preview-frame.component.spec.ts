@@ -23,7 +23,7 @@ describe('preview frame', () => {
   afterEach(() => vi.unstubAllGlobals());
 
   it('a fixed width larger than the space shrinks to fit, with the percentage; if it fits it stays at 100%', async () => {
-    TestBed.inject(I18n).addMessages('it', EDITOR_MESSAGES['it']);
+    TestBed.inject(I18n).addMessages('en', EDITOR_MESSAGES['en']);
     const fixture = TestBed.createComponent(PreviewFrameComponent);
     fixture.componentRef.setInput('state', previewState({}));
     fixture.componentRef.setInput('width', 768);
@@ -38,7 +38,7 @@ describe('preview frame', () => {
     expect(iframe.style.width).toBe('768px');
     expect(iframe.style.transform).toBe('scale(0.8997395833333334)');
     expect(iframe.style.height).toMatch(/^calc\(111\.14\d*%\)$/);
-    expect(el.querySelector('.zoom')?.textContent).toBe('Ridotta al 90% per starci');
+    expect(el.querySelector('.zoom')?.textContent).toBe('Scaled to 90% to fit');
     // Enough space: no reduction.
     FakeResizeObserver.last!.resize(900);
     await settle();

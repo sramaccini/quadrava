@@ -44,13 +44,13 @@ export type ExpressionErrorHandler = (info: { source: string; error: string }) =
 
 export interface ExpressionEngineOptions {
   onError?: ExpressionErrorHandler;
-  /** If absent, `t()` returns the fallback text (or the key) and formats use `it-IT`. */
+  /** If absent, `t()` returns the fallback text (or the key) and formats use `en-GB`. */
   i18n?: ExpressionI18n;
 }
 
 /** Internationalisation hook: the active language and the lookup of translations. In the runtime it is the core `I18n` service. */
 export interface ExpressionI18n {
-  /** Active language as a BCP 47 tag (for `Intl`), for example `it-IT`. */
+  /** Active language as a BCP 47 tag (for `Intl`), for example `en-GB`. */
   locale(): string;
   /** Translated text of a key; if missing everywhere `fallback`, and without it the key itself. */
   translate(key: string, fallback: string | undefined, params: Record<string, unknown>): string;

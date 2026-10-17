@@ -49,7 +49,7 @@ describe('Activity indicator (lc-busy)', () => {
     host.busy.set(true);
     await advance(BUSY_DELAY_MS);
     expect(overlay(el)?.querySelector('nz-spin')).not.toBeNull();
-    expect(status(el)).toBe('Caricamento…');
+    expect(status(el)).toBe('Loading…');
     expect(el.querySelector('.busy')?.classList.contains('on')).toBe(true);
     expect(el.querySelector('.data')?.textContent).toBe('rows');
     host.busy.set(false);
@@ -64,8 +64,8 @@ describe('Activity indicator (lc-busy)', () => {
     const { el, host, advance } = await mount();
     host.busy.set(true);
     await advance(BUSY_SLOW_MS);
-    expect(status(el)).toBe('Ci vuole più del solito…');
-    expect(el.querySelector('.label')?.textContent?.trim()).toBe('Ci vuole più del solito…');
+    expect(status(el)).toBe('This is taking longer than usual…');
+    expect(el.querySelector('.label')?.textContent?.trim()).toBe('This is taking longer than usual…');
   });
 
   it('on the first load it reserves the space, then releases it', async () => {

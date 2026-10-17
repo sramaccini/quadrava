@@ -21,7 +21,7 @@ describe('new field types', () => {
     type: 'form',
     initial: { when: '2026-10-07T14:30', urgent: false, channels: ['email'] },
     fields: [
-      { name: 'note', type: 'textarea', label: 'Note', rows: 6, required: true },
+      { name: 'note', type: 'textarea', label: 'Notes', rows: 6, required: true },
       { name: 'when', type: 'datetime', label: 'When' },
       { name: 'priority', type: 'radio', label: 'Priority', options: ['low', 'high'], optionKey: 'prio' },
       { name: 'urgent', type: 'switch', label: 'Urgent' },
@@ -101,7 +101,7 @@ describe('new field types', () => {
           initial: { rows: [{ item: 'a' }] },
           fields: [
             { name: 'code', type: 'text', label: 'Code', readOnlyIf: '{{ true }}' },
-            { name: 'note', type: 'textarea', label: 'Note', readOnlyIf: '{{ true }}' },
+            { name: 'note', type: 'textarea', label: 'Notes', readOnlyIf: '{{ true }}' },
             { name: 'free', type: 'text', label: 'Free' },
             { name: 'rows', type: 'repeater', label: 'Rows', readOnlyIf: '{{ true }}', fields: [{ name: 'item', type: 'text', label: 'Item' }] },
           ],

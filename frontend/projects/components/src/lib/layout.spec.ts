@@ -80,7 +80,7 @@ describe('layout containers', () => {
     const [west, east] = [...h.el.querySelectorAll<HTMLElement>('lc-border .handle')];
     const columns = () => (h.el.querySelector('lc-border .border') as HTMLElement).style.getPropertyValue('--lc-border-columns');
     expect(west.getAttribute('role')).toBe('separator');
-    expect(west.getAttribute('aria-label')).toBe('Larghezza del pannello sinistro');
+    expect(west.getAttribute('aria-label')).toBe('Width of the left panel');
     expect([west.getAttribute('aria-valuenow'), east.getAttribute('aria-valuenow')]).toEqual(['200', '240']);
     west.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
     east.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', shiftKey: true, bubbles: true }));

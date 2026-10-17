@@ -25,7 +25,7 @@ interface Draft {
 export type Translations = Record<string, Record<string, string>>;
 
 /** Starting languages of the translations (those of the demo); others can be added in the «Texts» panel. */
-export const EDITOR_LOCALES = ['it', 'en'];
+export const EDITOR_LOCALES = ['en', 'it'];
 /** Code of a language: two or three lower-case letters, with an optional country variant (`pt-BR`). */
 export const LANGUAGE_CODE = /^[a-z]{2,3}(-[A-Z]{2})?$/;
 

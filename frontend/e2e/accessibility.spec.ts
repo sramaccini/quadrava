@@ -23,7 +23,7 @@ const SCREENS = [
 
 for (const screen of SCREENS) {
   test(`accessibility: ${screen}`, async ({ page }) => {
-    await page.addInitScript(() => localStorage.setItem('lc.language', 'it'));
+    await page.addInitScript(() => localStorage.setItem('lc.language', 'en'));
     await page.goto(`/showcase/${screen}`);
     await expect(page.locator('main lc-screen')).toBeVisible();
     // The simulated data arrive after a short delay: wait until no component is still loading.

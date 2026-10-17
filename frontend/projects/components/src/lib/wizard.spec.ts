@@ -7,7 +7,7 @@ describe('step-by-step procedure (wizard)', () => {
     ...(bind ? { bind } : {}),
     steps: [
       {
-        label: 'Data',
+        label: 'Date',
         nextIf: '{{ has(state.ready) && state.ready == true }}',
         components: [
           { type: 'text', text: 'First step' },
@@ -25,25 +25,25 @@ describe('step-by-step procedure (wizard)', () => {
   it('shows the current step; Next follows nextIf; Back goes back; the last step has no Next', async () => {
     const h = await renderScreen({ components: [wizard('state.step')] });
     expect(h.el.querySelectorAll('nz-step')).toHaveLength(3);
-    expect(body(h)).toContain('Passo 1 di 3: Data');
+    expect(body(h)).toContain('Step 1 of 3: Date');
     expect(body(h)).toContain('First step');
-    expect(button(h, 'Indietro')).toBeUndefined();
-    expect(button(h, 'Avanti')!.disabled).toBe(true);
+    expect(button(h, 'Back')).toBeUndefined();
+    expect(button(h, 'Next')!.disabled).toBe(true);
     button(h, 'Ready')!.click();
     await h.settle();
-    expect(button(h, 'Avanti')!.disabled).toBe(false);
-    button(h, 'Avanti')!.click();
+    expect(button(h, 'Next')!.disabled).toBe(false);
+    button(h, 'Next')!.click();
     await h.settle();
     expect(body(h)).toContain('Second step');
     expect(h.el.querySelector('.ant-steps-item-process')?.textContent).toContain('Check');
-    button(h, 'Avanti')!.click();
+    button(h, 'Next')!.click();
     await h.settle();
     expect(body(h)).toContain('Third step');
-    expect(button(h, 'Avanti')).toBeUndefined();
-    button(h, 'Indietro')!.click();
+    expect(button(h, 'Next')).toBeUndefined();
+    button(h, 'Back')!.click();
     await h.settle();
     expect(body(h)).toContain('Second step');
-    button(h, 'Avanti')!.click();
+    button(h, 'Next')!.click();
     await h.settle();
     // A button in the step moves the step by writing to the state.
     button(h, 'Start again')!.click();
@@ -57,7 +57,7 @@ describe('step-by-step procedure (wizard)', () => {
     const h = await renderScreen({ components: [wizard()] });
     button(h, 'Ready')!.click();
     await h.settle();
-    button(h, 'Avanti')!.click();
+    button(h, 'Next')!.click();
     await h.settle();
     expect(body(h)).toContain('Second step');
   });

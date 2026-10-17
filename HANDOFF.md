@@ -12,7 +12,7 @@ Project status, conventions and next steps, for picking the work up locally. Las
 - **Architectural review** mode: point out inconsistencies, missing pieces and shortcomings against the requirements.
 - Documents explain things simply, with figures and practical examples; new content goes into the relevant sections, not into isolated comparison paragraphs.
 - Latest stack; lightweight, governable DSL/expression solutions (no heavy rule engines).
-- **Everything is in English**: code, identifiers, comments, tests, documentation, schema descriptions, contracts, commit messages, the demo (ids, data, permissions, API paths). Italian survives only as a translation catalogue (`examples/i18n/it.json`, the `it` halves of `messages.ts`) and in the tests that check it. The tests of `components`, `runtime` and `editor` run with the Italian UI, so their assertions on displayed texts are in Italian.
+- **Everything is in English**: code, identifiers, comments, tests, documentation, schema descriptions, contracts, commit messages, the demo (ids, data, permissions, API paths). Italian survives only as a translation catalogue (`examples/i18n/it.json`, the `it` halves of `messages.ts`) and in the tests that check it. The default language is English (platform, demo, editor, formats `en-GB`); the tests run in English, except those that check the Italian translation.
 - In long blocks of work: one commit per component, tests and a visual check before moving on to the next.
 
 ## 3. Stack and commands
@@ -96,14 +96,13 @@ The main ones are in the DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In short:
 
 ## 8. Next steps (in the suggested order)
 
-1. Decide the default language: today the platform, the demo and the tests start in Italian (`I18n` default `it`, `formatValue` default `it-IT` and «Sì», runtime fallback `it`), while the texts written in the JSON are now English. For an English-first open-source project the default should probably become English (a behaviour change, many test assertions to rewrite).
-2. Trademark search for «Quadrava» (TMview, WIPO) before the public launch; legal review of `CLA.md` before the first external pull request; a generated third-party notices file (npm and Maven) shipped with the builds.
-3. Local data after the October renames: recreate Keycloak (`cd idp && docker compose down && docker compose up -d`) and delete `data/registry` (old review states, roles, identifiers and permissions).
-4. Conformance kits in CI against the reference services (today they are run by hand, for example after `npm run stack`).
-5. Editor: comparison between two registry versions; border side widths from the preview.
-6. e2e in Firefox and WebKit.
-7. CEL in `validate:examples` and, eventually, in the registry.
-8. Bring the project documents (architecture § 9, functional specification, guidelines) up to date with the October status.
+1. Trademark search for «Quadrava» (TMview, WIPO) before the public launch; legal review of `CLA.md` before the first external pull request; a generated third-party notices file (npm and Maven) shipped with the builds.
+2. Local data after the October renames: recreate Keycloak (`cd idp && docker compose down && docker compose up -d`) and delete `data/registry` (old review states, roles, identifiers and permissions).
+3. Conformance kits in CI against the reference services (today they are run by hand, for example after `npm run stack`).
+4. Editor: comparison between two registry versions; border side widths from the preview.
+5. e2e in Firefox and WebKit.
+6. CEL in `validate:examples` and, eventually, in the registry.
+7. Bring the project documents (architecture § 9, functional specification, guidelines) up to date with the October status.
 
 ## 8b. What was missing and proposed optimisations (13 October 2026)
 

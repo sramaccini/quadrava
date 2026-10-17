@@ -14,7 +14,7 @@ describe('tree view', () => {
   });
 
   const data = [
-    { code: 'A', name: 'Purchases', children: [{ code: 'A1', name: 'Stationery <b>x</b>', children: [] }, { code: 'A2', name: 'IT' }] },
+    { code: 'To', name: 'Purchases', children: [{ code: 'A1', name: 'Stationery <b>x</b>', children: [] }, { code: 'A2', name: 'IT' }] },
     { code: 'S', name: 'Services', children: [{ code: 'S1', name: 'Consulting', children: [{ code: 'S11', name: 'Legal' }] }] },
   ];
   const tree = (extra: Record<string, unknown> = {}): NodeDefinition =>

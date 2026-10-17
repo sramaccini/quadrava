@@ -143,7 +143,7 @@ describe('ScreenRuntime', () => {
   });
 });
 
-describe('ScreenRuntime: lingua e traduzioni', () => {
+describe('ScreenRuntime: language and translations', () => {
   let fakes: Fakes;
   let injector: Injector;
   const screenWith = (components: ScreenDefinition['components']): ScreenDefinition => ({ schemaVersion: '1.0', screen: 'p', components });
@@ -157,10 +157,10 @@ describe('ScreenRuntime: lingua e traduzioni', () => {
 
   it('text() translates with the active language and follows the language change', () => {
     const rt = fakes.runtime(screenWith([]), injector);
-    const template = "{{ t('p.hello', 'Ciao {name}', {'name': user.username}) }}";
-    expect(rt.text(template)).toBe('Ciao test');
-    fakes.i18n.setLocale('en');
+    const template = "{{ t('p.hello', 'Hello {name}', {'name': user.username}) }}";
     expect(rt.text(template)).toBe('Hello test');
+    fakes.i18n.setLocale('it');
+    expect(rt.text(template)).toBe('Ciao test');
   });
 
   it('exposes the language as user.locale', () => {
@@ -179,10 +179,10 @@ describe('ScreenRuntime: lingua e traduzioni', () => {
 
   it('the generic messages of the runtime follow the language', () => {
     const rt = fakes.runtime(screenWith([]), injector);
-    fakes.i18n.addMessages('en', { 'lc.operationFailed': 'Operation failed' }, 'builtin');
-    expect(rt.systemText('lc.operationFailed', 'Operazione non riuscita')).toBe('Operazione non riuscita');
-    fakes.i18n.setLocale('en');
-    expect(rt.systemText('lc.operationFailed', 'Operazione non riuscita')).toBe('Operation failed');
+    fakes.i18n.addMessages('it', { 'lc.operationFailed': 'Operazione non riuscita' }, 'builtin');
+    expect(rt.systemText('lc.operationFailed', 'Operation failed')).toBe('Operation failed');
+    fakes.i18n.setLocale('it');
+    expect(rt.systemText('lc.operationFailed', 'Operation failed')).toBe('Operazione non riuscita');
   });
 });
 

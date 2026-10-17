@@ -26,7 +26,7 @@ describe('«New screen» dialog', () => {
   let created: NewScreen[];
 
   beforeEach(async () => {
-    TestBed.inject(I18n).addMessages('it', EDITOR_MESSAGES['it']);
+    TestBed.inject(I18n).addMessages('en', EDITOR_MESSAGES['en']);
     fixture = TestBed.createComponent(NewScreenComponent);
     el = fixture.nativeElement as HTMLElement;
     created = [];
@@ -64,7 +64,7 @@ describe('«New screen» dialog', () => {
     await type('new-screen-id', 'Orders List');
     expect(create().disabled).toBe(true);
     expect(input('new-screen-id').getAttribute('aria-invalid')).toBe('true');
-    expect(el.textContent).toContain(EDITOR_MESSAGES['it']['ed.newScreen.idInvalid']);
+    expect(el.textContent).toContain(EDITOR_MESSAGES['en']['ed.newScreen.idInvalid']);
     await type('new-screen-id', '');
     expect(input('new-screen-id').value).toBe('list-of-the-orders');
   });

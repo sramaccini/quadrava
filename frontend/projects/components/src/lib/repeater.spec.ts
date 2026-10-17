@@ -49,7 +49,7 @@ describe('repeatable rows in the form', () => {
     typeIn(rows(h)[1].querySelector('input[type="number"]'), '5');
     (rows(h)[1].querySelector('label[nz-checkbox] input') as HTMLInputElement).click();
     const remove = rows(h)[2].querySelector('td.remove button') as HTMLButtonElement;
-    expect(remove.getAttribute('aria-label')).toBe('Togli la riga 3');
+    expect(remove.getAttribute('aria-label')).toBe('Remove row 3');
     remove.click();
     await h.settle();
     button(h, 'Save').click();
@@ -73,8 +73,8 @@ describe('repeatable rows in the form', () => {
     button(h, 'Save').click();
     await h.settle();
     const errors = [...h.el.querySelectorAll('lc-repeater .cell-error')].map((e) => plain(e.textContent));
-    expect(errors).toEqual(['Positive quantity', 'Campo obbligatorio']);
-    expect(plain(h.el.querySelector('lc-repeater .summary')?.textContent)).toBe('Controlla le righe evidenziate');
+    expect(errors).toEqual(['Positive quantity', 'Required field']);
+    expect(plain(h.el.querySelector('lc-repeater .summary')?.textContent)).toBe('Check the highlighted rows');
     // Only the wrong cells are highlighted, not the whole field.
     expect(h.el.querySelector('nz-form-item.ant-form-item-has-error')).toBeNull();
     expect(h.requests).toEqual([]);

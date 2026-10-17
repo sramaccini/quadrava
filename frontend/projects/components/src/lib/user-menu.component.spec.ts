@@ -34,8 +34,8 @@ describe('UserMenuComponent', () => {
     expect(fixture.nativeElement.querySelector('nz-avatar')?.textContent?.trim()).toBe('M');
     expect(fixture.nativeElement.querySelector('.name')?.textContent?.trim()).toBe('mario');
     const items = menuItems();
-    expect(items.at(-1)).toBe('Esci');
-    expect(items).toEqual(['4 permissions', 'Profile', 'Esci']);
+    expect(items.at(-1)).toBe('Sign out');
+    expect(items).toEqual(['4 permissions', 'Profile', 'Sign out']);
   });
 
   it('emits the chosen item, ignores disabled ones and reports logout', async () => {
@@ -50,7 +50,7 @@ describe('UserMenuComponent', () => {
 
   it('without other items it shows only the exit', async () => {
     await render([]);
-    expect(menuItems()).toEqual(['Esci']);
+    expect(menuItems()).toEqual(['Sign out']);
   });
 
   it('the name is shown as text, not as HTML', async () => {

@@ -45,7 +45,7 @@ describe('formatted text (restricted Markdown)', () => {
     const h = await renderScreen({
       components: [
         { type: 'alert', kind: 'info', format: 'markdown', text: 'Remember: **two** things\n\n- one\n- two' },
-        { type: 'detail', source: 'detail', fields: [{ field: 'note', label: 'Note', format: 'markdown' }] },
+        { type: 'detail', source: 'detail', fields: [{ field: 'note', label: 'Notes', format: 'markdown' }] },
       ] as NodeDefinition[],
       dataSources: { detail: { type: 'rest', method: 'GET', url: '/api/x' } },
       respond: () => ({ note: '- first\n- *second*' }),
@@ -104,7 +104,7 @@ describe('richtext field', () => {
         {
           type: 'form',
           initial: { note: '**Urgent**\n\n- first point' },
-          fields: [{ name: 'note', type: 'richtext', label: 'Note', required: true }],
+          fields: [{ name: 'note', type: 'richtext', label: 'Notes', required: true }],
           actions: [{ label: 'Send', onClick: [{ toast: '{{ form.note }}' }] }],
         },
       ],
@@ -112,7 +112,7 @@ describe('richtext field', () => {
     const box = h.el.querySelector('lc-rich-text-editor .area') as HTMLElement;
     expect(box.getAttribute('role')).toBe('textbox');
     expect(box.getAttribute('aria-multiline')).toBe('true');
-    expect(document.getElementById(box.getAttribute('aria-labelledby')!)?.textContent).toContain('Note');
+    expect(document.getElementById(box.getAttribute('aria-labelledby')!)?.textContent).toContain('Notes');
     expect(box.querySelector('strong')?.textContent).toBe('Urgent');
     expect(h.el.querySelectorAll('lc-rich-text-editor [role="toolbar"] button').length).toBe(9);
     // A change in the area (like the browser's) becomes Markdown.

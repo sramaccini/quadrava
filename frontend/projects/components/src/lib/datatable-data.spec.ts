@@ -45,7 +45,7 @@ describe('datatable: filters and groups', () => {
   });
 
   it('50,000 rows: filter, sorting, groups and flattening in interface time', () => {
-    const big = Array.from({ length: 50000 }, (_, i) => ({ id: i, account: ['A', 'B', 'C'][i % 3], cat: String(i % 40), amount: (i * 7919) % 10000, note: 'row ' + i }));
+    const big = Array.from({ length: 50000 }, (_, i) => ({ id: i, account: ['To', 'B', 'C'][i % 3], cat: String(i % 40), amount: (i * 7919) % 10000, note: 'row ' + i }));
     const t0 = performance.now();
     const filtered = filterRows(big, { amount: { kind: 'number', from: 1000, to: null }, note: { kind: 'text', text: '9' } }, (r, f) => String(r[f]));
     const sorted = sortRows(filtered, { field: 'amount', direction: 'desc' });

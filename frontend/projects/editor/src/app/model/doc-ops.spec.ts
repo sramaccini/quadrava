@@ -4,8 +4,8 @@ describe('operations on the document', () => {
   const doc: Json = { components: [{ type: 'text', text: 'a' }, { type: 'section', components: [{ type: 'text', text: 'b' }] }, { type: 'text', text: 'c' }] };
 
   it('setIn copies only the touched path and removes properties with undefined', () => {
-    const next = setIn(doc, ['components', 0, 'text'], 'A');
-    expect(getIn(next, ['components', 0, 'text'])).toBe('A');
+    const next = setIn(doc, ['components', 0, 'text'], 'To');
+    expect(getIn(next, ['components', 0, 'text'])).toBe('To');
     expect(getIn(doc, ['components', 0, 'text'])).toBe('a');
     expect((next as { components: Json[] }).components[1]).toBe((doc as { components: Json[] }).components[1]);
     expect(getIn(setIn(doc, ['components', 0, 'text'], undefined), ['components', 0])).toEqual({ type: 'text' });

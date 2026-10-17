@@ -4,7 +4,7 @@ Quadrava Studio, the visual editor of Quadrava (`frontend/projects/editor`), edi
 
 Start it with `cd frontend && npm run start:editor` (port 4201; it builds the libraries and copies the examples).
 
-The editor's interface is available in Italian and English; the labels below are the English ones.
+The editor's interface is in English, with an Italian translation; the labels below are the English ones.
 
 ## 1. How it is laid out
 
@@ -181,7 +181,7 @@ editor/src/app/
 
 ## 6. Limits and next steps
 
-- **Translations.** Languages are added in the «Texts» panel; the editor's interface is in Italian and English. Catalogues (`messages` documents) are reviewed through the registry APIs; the «Texts» panel saves and publishes directly.
+- **Translations.** Languages are added in the «Texts» panel; the editor's interface is in English and Italian. Catalogues (`messages` documents) are reviewed through the registry APIs; the «Texts» panel saves and publishes directly.
 - **Expressions.** Completion and syntax checking, but no check that the fields used (`row.x`) really exist in the services' responses.
 - **Preview.** In «Select» mode components are dragged to move them and the selected one in a grid or a box has a handle for `span` or `grow`; the sides of the border can be resized only in the runtime (in the editor with `westWidth` and `eastWidth`).
 - **Comparison.** Between a registry version and the open document; to compare two versions, open one and compare it with the other.

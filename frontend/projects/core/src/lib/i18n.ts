@@ -4,7 +4,7 @@ import { formatMessage } from 'expressions';
 /** A catalogue: key → message (simplified ICU format, see `formatMessage`). */
 export type Messages = Record<string, string>;
 
-/** From the language of the application (`it`) to the tag used by `Intl` (`it-IT`). A language not listed is used as it is. */
+/** From the language of the application (`en`) to the tag used by `Intl` (`en-GB`). A language not listed is used as it is. */
 const INTL_TAGS: Record<string, string> = { it: 'it-IT', en: 'en-GB' };
 
 /**
@@ -14,10 +14,10 @@ const INTL_TAGS: Record<string, string> = { it: 'it-IT', en: 'en-GB' };
  */
 @Injectable({ providedIn: 'root' })
 export class I18n {
-  /** Active language (`it`, `en`…). Changing it updates every text without reloading. */
-  readonly locale = signal('it');
+  /** Active language (`en`, `it`…). Changing it updates every text without reloading. */
+  readonly locale = signal('en');
   /** Language used when a translation is missing. */
-  readonly defaultLocale = signal('it');
+  readonly defaultLocale = signal('en');
   /** `Intl` tag of the active language. */
   readonly intlLocale = computed(() => intlTag(this.locale()));
 

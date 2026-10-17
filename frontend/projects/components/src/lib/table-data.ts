@@ -18,7 +18,7 @@ function collator(locale: string): Intl.Collator {
  * Comparison between two values of a column: numbers as numbers, booleans (false before true), texts according to the
  * language (with numbers in the text in natural order, so ISO dates stay in order). Empty values always go last.
  */
-export function compareValues(a: unknown, b: unknown, locale = 'it-IT'): number {
+export function compareValues(a: unknown, b: unknown, locale = 'en-GB'): number {
   const emptyA = a === null || a === undefined || a === '';
   const emptyB = b === null || b === undefined || b === '';
   if (emptyA || emptyB) return emptyA === emptyB ? 0 : emptyA ? 1 : -1;
@@ -28,7 +28,7 @@ export function compareValues(a: unknown, b: unknown, locale = 'it-IT'): number 
 }
 
 /** Rows sorted according to `sort` (a copy: the original does not change). Stable sorting; empty values stay last in both directions. */
-export function sortRows(rows: readonly Row[], sort: SortSpec | null, locale = 'it-IT'): Row[] {
+export function sortRows(rows: readonly Row[], sort: SortSpec | null, locale = 'en-GB'): Row[] {
   if (!sort) return [...rows];
   const sign = sort.direction === 'desc' ? -1 : 1;
   return rows
@@ -134,7 +134,7 @@ export function filterRows(rows: readonly Row[], filters: Readonly<Record<string
 }
 
 /** Distinct values of a column, in order (for the choice filter). */
-export function distinctValues(rows: readonly Row[], field: string, locale = 'it-IT'): unknown[] {
+export function distinctValues(rows: readonly Row[], field: string, locale = 'en-GB'): unknown[] {
   const seen = new Set<unknown>();
   for (const row of rows) {
     const v = row[field];
@@ -154,7 +154,7 @@ export interface RowGroup {
 }
 
 /** Groups the rows by the given fields, in order; groups are in value order, rows keep their order. */
-export function groupRows(rows: readonly Row[], fields: readonly string[], locale = 'it-IT', level = 0, parent = ''): RowGroup[] {
+export function groupRows(rows: readonly Row[], fields: readonly string[], locale = 'en-GB', level = 0, parent = ''): RowGroup[] {
   if (level >= fields.length) return [];
   const field = fields[level];
   const buckets = new Map<unknown, Row[]>();

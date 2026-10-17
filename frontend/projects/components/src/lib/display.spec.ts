@@ -146,7 +146,7 @@ describe('image, link, progress, timeline and kanban', () => {
       expect([...h.el.querySelectorAll('lc-kanban .card')].map((c) => c.getAttribute('draggable'))).toEqual(['true', 'false']);
       // The «Move to» menu is there only where moving is allowed, with an understandable name.
       const buttons = [...h.el.querySelectorAll('lc-kanban .card button')];
-      expect(buttons.map((b) => b.getAttribute('aria-label'))).toEqual(['Sposta «Quote» in…']);
+      expect(buttons.map((b) => b.getAttribute('aria-label'))).toEqual(['Move “Quote” to…']);
     });
   });
 });

@@ -40,7 +40,7 @@ import { RegistryPanelComponent } from './ui/registry-panel.component';
 import { RegistryTargetComponent } from './ui/registry-target.component';
 import { TextsComponent } from './ui/texts.component';
 
-const LANGUAGES = ['it', 'en'];
+const LANGUAGES = ['en', 'it'];
 const MODE_KEY = 'lc.editor.mode';
 
 /** What is being edited: a screen, the navigation or the theme of the application. */

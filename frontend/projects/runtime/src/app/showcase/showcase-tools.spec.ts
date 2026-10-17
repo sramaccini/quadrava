@@ -61,8 +61,8 @@ describe('Showcase: JSON and help of the sections', () => {
       await until(() => !!el.querySelector('main lc-kanban'), 'kanban');
       const card = el.querySelector('main lc-kanban')!.closest('lc-section') as HTMLElement;
       const buttons = [...card.querySelectorAll<HTMLButtonElement>('.ant-card-extra button')];
-      expect(buttons.map((b) => plainText(b.textContent))).toEqual(['JSON', 'Aiuto']);
-      expect(buttons[0].getAttribute('aria-label')).toMatch(/^JSON della sezione «.+»$/);
+      expect(buttons.map((b) => plainText(b.textContent))).toEqual(['JSON', 'Help']);
+      expect(buttons[0].getAttribute('aria-label')).toMatch(/^JSON of the «.+» section$/);
 
       buttons[0].click();
       await until(() => document.querySelectorAll('.ant-modal lc-code-view pre').length === 2, 'source');
@@ -79,7 +79,7 @@ describe('Showcase: JSON and help of the sections', () => {
       await until(() => !!document.querySelector('#help-kanban'), 'help');
       expect(plainText(document.querySelector('#help-kanban')?.textContent)).toBe('Kanban kanban');
       const help = document.querySelector('#help-kanban')!.closest('section')!;
-      expect(plainText(help.querySelector('lc-markdown')?.textContent)).toContain('Schede in colonne');
+      expect(plainText(help.querySelector('lc-markdown')?.textContent)).toContain('Cards in columns');
       expect([...help.querySelectorAll('dt code')].map((c) => c.textContent)).toContain('onMove');
     });
   });

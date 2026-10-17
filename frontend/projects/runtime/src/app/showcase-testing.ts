@@ -38,11 +38,11 @@ export const SHOWCASE_FILES: Record<string, unknown> = {
   'examples/themes/light.json': light,
 };
 
-/** Prepares the test module of the demo: Italian language and a fake `fetch` over the showcase documents. */
+/** Prepares the test module of the demo: English language and a fake `fetch` over the showcase documents. */
 export function setupShowcase(): void {
   // jsdom has no scrollTo, which the NG-ZORRO option list calls with a delay.
   if (typeof Element.prototype.scrollTo !== 'function') Element.prototype.scrollTo = () => undefined;
-  localStorage.setItem('lc.language', 'it');
+  localStorage.setItem('lc.language', 'en');
   vi.stubGlobal('fetch', async (url: string) => {
     const body = SHOWCASE_FILES[url];
     return body ? { ok: true, status: 200, json: async () => body } : { ok: false, status: 404, json: async () => ({}) };

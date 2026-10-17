@@ -20,7 +20,7 @@ describe('indicators (KPI)', () => {
     const h = await renderScreen({ components: [stats], dataSources, respond: () => ({ revenue: 12000, open: 7, total: 20, restricted: 'x' }) });
     await h.until(() => values(h.el)[0] !== '…', 'values');
     expect([...h.el.querySelectorAll('lc-stats dt')].map((d) => plain(d.textContent))).toEqual(['Revenue', 'Open invoices', 'Average receipt', 'No data']);
-    expect(values(h.el)).toEqual(['12.000,00 €', '7', '600,00 €', '—']);
+    expect(values(h.el)).toEqual(['€12,000.00', '7', '€600.00', '—']);
     expect(plain(h.el.querySelector('lc-stats .caption')?.textContent)).toBe('of 20 in total');
     expect((h.el.querySelector('lc-stats .value') as HTMLElement).style.color).toContain('--lc-color-success');
     expect(h.el.querySelector('lc-stats dt .help')?.getAttribute('aria-label')).toBe('Invoices issued');

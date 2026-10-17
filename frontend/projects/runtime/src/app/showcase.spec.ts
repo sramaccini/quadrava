@@ -39,8 +39,8 @@ describe('Component showcase', () => {
   afterAll(() => restoreViewport());
 
   beforeEach(() => {
-    // Demo language fixed: jsdom declares an English browser.
-    localStorage.setItem('lc.language', 'it');
+    // Demo language fixed, whatever the browser declares.
+    localStorage.setItem('lc.language', 'en');
     vi.stubGlobal('fetch', async (url: string) => {
       const body = files[url];
       return body ? { ok: true, status: 200, json: async () => body } : { ok: false, status: 404, json: async () => ({}) };
@@ -110,14 +110,14 @@ describe('Component showcase', () => {
   it('the area appears in the menu and the screens open without errors', async () => {
     const diagnostics = TestBed.inject(DemoDiagnostics);
     for (const [path, titolo] of [
-      ['/showcase/showcase-basics', 'Componenti base'],
-      ['/showcase/showcase-form', 'Form'],
-      ['/showcase/showcase-tables', 'Filtri e tabelle'],
-      ['/showcase/showcase-layout', 'Schede, dettaglio e messaggi'],
+      ['/showcase/showcase-basics', 'Basic components'],
+      ['/showcase/showcase-form', 'Forms'],
+      ['/showcase/showcase-tables', 'Filters and tables'],
+      ['/showcase/showcase-layout', 'Tabs, detail and messages'],
     ]) {
       const { el, fixture } = await open(path);
       await until(fixture, () => main(el).includes(titolo), titolo);
-      expect(el.querySelector('lc-sidebar')?.textContent).toContain('Componenti base');
+      expect(el.querySelector('lc-sidebar')?.textContent).toContain('Basic components');
       fixture.destroy();
     }
     expect(diagnostics.events(), JSON.stringify(diagnostics.events())).toEqual([]);
@@ -126,21 +126,21 @@ describe('Component showcase', () => {
   describe('basic components', () => {
     it('the counter changes the text and enables the button conditioned by the state', async () => {
       const { fixture, el } = await open('/showcase/showcase-basics');
-      expect(main(el)).toContain('Hai premuto il pulsante 0 volte');
-      expect(button(el, 'Abilitato dopo')!.disabled).toBe(true);
-      button(el, 'Incrementa')!.click();
-      await until(fixture, () => main(el).includes('1 volte'), 'first increment');
+      expect(main(el)).toContain('You pressed the button 0 times');
+      expect(button(el, 'Enabled after')!.disabled).toBe(true);
+      button(el, 'Increment')!.click();
+      await until(fixture, () => main(el).includes('1 times'), 'first increment');
       await new Promise((r) => setTimeout(r, 30)); // the button stays busy until the action ends
-      button(el, 'Incrementa')!.click();
-      await until(fixture, () => main(el).includes('2 volte'), 'second increment');
-      expect(button(el, 'Abilitato dopo')!.disabled).toBe(false);
+      button(el, 'Increment')!.click();
+      await until(fixture, () => main(el).includes('2 times'), 'second increment');
+      expect(button(el, 'Enabled after')!.disabled).toBe(false);
     });
 
     it('the failing call shows only the onError message and stops the sequence', async () => {
       const { fixture, el } = await open('/showcase/showcase-basics');
-      button(el, 'Chiamata che fallisce')!.click();
+      button(el, 'Failing call')!.click();
       await until(fixture, () => !!toast(), 'toast');
-      expect(toast()?.textContent).toContain('Errore gestito');
+      expect(toast()?.textContent).toContain('Error handled');
       await new Promise((r) => setTimeout(r, 300));
       expect(el.textContent).not.toContain('non compare mai');
     });
@@ -148,9 +148,9 @@ describe('Component showcase', () => {
     it('visibility follows the permissions of the profile', async () => {
       const { el } = await open('/showcase/showcase-basics');
       expect(button(el, 'Visibile solo con il permesso')).toBeUndefined();
-      expect(button(el, 'Nascosto a chi può leggere')).toBeDefined();
+      expect(button(el, 'Hidden from those who can read')).toBeDefined();
       const admin = await open('/showcase/showcase-basics', 'administrator');
-      expect(button(admin.el, 'Visibile solo con il permesso')).toBeDefined();
+      expect(button(admin.el, 'Visible only with the permission')).toBeDefined();
       expect(button(admin.el, 'Nascosto a chi può leggere')).toBeUndefined();
     });
   });
@@ -159,16 +159,16 @@ describe('Component showcase', () => {
     it('required fields and rules show their errors only after submitting', async () => {
       const { fixture, el } = await open('/showcase/showcase-form');
       expect(el.querySelectorAll('main .ant-form-item-explain-error').length).toBe(0);
-      button(el, 'Invia')!.click();
+      button(el, 'Submit')!.click();
       await until(fixture, () => el.querySelectorAll('main .ant-form-item-explain-error').length > 0, 'name error');
       await type(fixture, el, 'name', 'Mario');
       await type(fixture, el, 'age', '12');
-      button(el, 'Invia')!.click();
-      await until(fixture, () => main(el).includes("L'età deve essere tra 18 e 120"), 'age rule');
+      button(el, 'Submit')!.click();
+      await until(fixture, () => main(el).includes("Age must be between 18 and 120"), 'age rule');
       await type(fixture, el, 'age', '40');
-      button(el, 'Invia')!.click();
+      button(el, 'Submit')!.click();
       await until(fixture, () => !!toast(), 'sent successfully');
-      expect(toast()?.textContent).toContain('Dati inviati');
+      expect(toast()?.textContent).toContain('Data submitted');
     });
 
     it('the VAT number field appears only for business customers and becomes required', async () => {
@@ -177,23 +177,23 @@ describe('Component showcase', () => {
       await type(fixture, el, 'category', 'Business');
       await until(fixture, () => !!field(el, 'vatNumber'), 'conditional field');
       await type(fixture, el, 'name', 'Mario');
-      button(el, 'Invia')!.click();
-      await until(fixture, () => main(el).includes('Campo obbligatorio'), 'VAT number required');
+      button(el, 'Submit')!.click();
+      await until(fixture, () => main(el).includes('Required field'), 'VAT number required');
       await type(fixture, el, 'vatNumber', '123');
-      button(el, 'Invia')!.click();
-      await until(fixture, () => main(el).includes('La partita IVA ha 11 cifre'), 'VAT number rule');
+      button(el, 'Submit')!.click();
+      await until(fixture, () => main(el).includes('The VAT number has 11 digits'), 'VAT number rule');
     });
 
     it('the edit form loads the data and protects IBAN and saving according to the permissions', async () => {
       const operator = await open('/showcase/showcase-form');
       await until(operator.fixture, () => (field(operator.el, 'customer') as HTMLInputElement | null)?.value === 'Smith Ltd', 'data loaded');
       expect(field(operator.el, 'iban')).toBeNull();
-      expect(button(operator.el, 'Salva')!.disabled).toBe(true);
+      expect(button(operator.el, 'Save')!.disabled).toBe(true);
       operator.fixture.destroy();
       const admin = await open('/showcase/showcase-form', 'administrator');
       await until(admin.fixture, () => (field(admin.el, 'customer') as HTMLInputElement | null)?.value === 'Smith Ltd', 'data loaded');
       expect(field(admin.el, 'iban')).not.toBeNull();
-      await until(admin.fixture, () => button(admin.el, 'Salva')!.disabled === false, 'saving enabled');
+      await until(admin.fixture, () => button(admin.el, 'Save')!.disabled === false, 'saving enabled');
     });
   });
 
@@ -203,7 +203,7 @@ describe('Component showcase', () => {
       await until(fixture, () => rows(el, 0) === 8, 'first page');
       (el.querySelector('main .ant-pagination-next button') as HTMLButtonElement).click();
       await until(fixture, () => el.querySelector('main .ant-pagination-item-active')?.textContent?.trim() === '2' && rows(el, 0) === 8, 'second page');
-      await type(fixture, el, 'status', 'Approvato');
+      await type(fixture, el, 'status', 'Approved');
       // Filtered rows fit in a single page: back to the first one and the pages disappear.
       await until(fixture, () => rows(el, 0) === 7 && !el.querySelector('main lc-table-footer .ant-pagination'), 'filter applied');
     });
@@ -211,27 +211,27 @@ describe('Component showcase', () => {
     it('row actions respect permissions and row status', async () => {
       const operator = await open('/showcase/showcase-tables');
       await until(operator.fixture, () => rows(operator.el, 0) > 0, 'rows');
-      expect(button(operator.el, 'Approva')).toBeUndefined();
+      expect(button(operator.el, 'Approve')).toBeUndefined();
       operator.fixture.destroy();
       const manager = await open('/showcase/showcase-tables', 'manager');
       await until(manager.fixture, () => rows(manager.el, 0) > 0, 'rows');
-      const approve = [...manager.el.querySelectorAll('main button')].filter((b) => b.textContent?.trim() === 'Approva');
+      const approve = [...manager.el.querySelectorAll('main button')].filter((b) => b.textContent?.trim() === 'Approve');
       expect(approve.length).toBeGreaterThan(0);
       expect(approve.length).toBeLessThan(8); // only "submitted" orders
       const before = approve.length;
       (approve[0] as HTMLButtonElement).click();
       // Approval asks for confirmation: cancelling changes nothing.
       await until(manager.fixture, () => !!dialog(), 'confirmation dialog');
-      expect(dialog()?.textContent).toMatch(/Approvare l'ordine ORD-\d{4}\?/);
+      expect(dialog()?.textContent).toMatch(/Approve order ORD-\d{4}\?/);
       answer('cancel');
       await new Promise((r) => setTimeout(r, 300));
       expect(toast()).toBeNull();
-      expect([...manager.el.querySelectorAll('main button')].filter((b) => b.textContent?.trim() === 'Approva').length).toBe(before);
+      expect([...manager.el.querySelectorAll('main button')].filter((b) => b.textContent?.trim() === 'Approve').length).toBe(before);
       (approve[0] as HTMLButtonElement).click();
       await until(manager.fixture, () => !!dialog(), 'second confirmation dialog');
       answer('confirm');
       await until(manager.fixture, () => !!toast(), 'confirmation');
-      await until(manager.fixture, () => [...manager.el.querySelectorAll('main button')].filter((b) => b.textContent?.trim() === 'Approva').length === before - 1, 'row updated');
+      await until(manager.fixture, () => [...manager.el.querySelectorAll('main button')].filter((b) => b.textContent?.trim() === 'Approve').length === before - 1, 'row updated');
     });
 
     it('the simple table shows an array of rows', async () => {
@@ -246,10 +246,10 @@ describe('Component showcase', () => {
       expect(first[3]).toBe('0 %');
       expect(el.querySelector('main nz-table tbody tr nz-tag')?.className).toContain('ant-tag-');
       const invoice = [...el.querySelectorAll('main nz-table')[2].querySelectorAll('tbody tr')[0].querySelectorAll('td')].map((c) => plain(c.textContent));
-      expect(invoice[2]).toMatch(/^\d+,00 €$/);
-      expect(invoice[3]).toMatch(/^\d{2}\/09\/26$/);
+      expect(invoice[2]).toMatch(/^€[\d,]+\.00$/);
+      expect(invoice[3]).toMatch(/^\d{2}\/09\/2026$/);
       expect(invoice[4]).toBe('No');
-      expect(invoice[5]).toBe('Inviata');
+      expect(invoice[5]).toBe('Sent');
     });
   });
 
@@ -263,10 +263,10 @@ describe('Component showcase', () => {
     it('the operator sees the order detail, the read-only message and three tabs', async () => {
       const { fixture, el } = await open('/showcase/showcase-layout');
       await until(fixture, () => main(el).includes('ORD-0001'), 'detail');
-      expect(tabs(el)).toEqual(["Dati dell'ordine", 'Fatture pagate', 'Azioni con conferma']);
-      expect(el.querySelector('main lc-alert .ant-alert-error')?.textContent).toContain('non può modificare');
+      expect(tabs(el)).toEqual(["Order data", 'Paid invoices', 'Actions with confirmation']);
+      expect(el.querySelector('main lc-alert .ant-alert-error')?.textContent).toContain('cannot edit');
       const pairs = [...el.querySelectorAll('main .ant-descriptions-item-label')].map((l) => plain(`${l.textContent} ${l.nextElementSibling?.textContent}`));
-      expect(pairs).toContain('Sconto 0 %');
+      expect(pairs).toContain('Discount 0 %');
       expect(main(el)).not.toContain('IBAN');
     });
 
@@ -277,42 +277,42 @@ describe('Component showcase', () => {
       manager.fixture.destroy();
       const admin = await open('/showcase/showcase-layout', 'administrator');
       await until(admin.fixture, () => main(admin.el).includes('ORD-0001'), 'detail');
-      expect(tabs(admin.el)).toEqual(["Dati dell'ordine", 'Fatture pagate', 'Azioni con conferma', 'Dati riservati']);
+      expect(tabs(admin.el)).toEqual(["Order data", 'Paid invoices', 'Actions with confirmation', 'Restricted data']);
       expect(main(admin.el)).toContain('IBAN');
       expect(main(admin.el)).toContain('IT60X0542811101');
     });
 
     it('the invoices tab shows amount, date and yes/no formatted', async () => {
       const { fixture, el } = await open('/showcase/showcase-layout');
-      await openTab(fixture, el, 'Fatture pagate');
+      await openTab(fixture, el, 'Paid invoices');
       await until(fixture, () => rows(el, 0) > 0, 'paid invoices');
       const cells = [...el.querySelectorAll('main nz-table tbody tr')[0].querySelectorAll('td')].map((c) => plain(c.textContent));
-      expect(cells[1]).toMatch(/,00 €$/);
-      expect(cells[2]).toMatch(/^\d{2}\/09\/26$/);
-      expect(cells[3]).toBe('Sì');
+      expect(cells[1]).toMatch(/\.00$/);
+      expect(cells[2]).toMatch(/^\d{2}\/09\/2026$/);
+      expect(cells[3]).toBe('Yes');
     });
 
     it('the action with confirmation: Cancel does nothing, Confirm runs and notifies', async () => {
       const { fixture, el } = await open('/showcase/showcase-layout');
-      await openTab(fixture, el, 'Azioni con conferma');
-      button(el, 'Elimina la bozza')!.click();
+      await openTab(fixture, el, 'Actions with confirmation');
+      button(el, 'Delete the draft')!.click();
       await until(fixture, () => !!dialog(), 'dialog');
-      expect(dialog()?.textContent).toContain('bozza di operator');
+      expect(dialog()?.textContent).toContain('draft of operator');
       answer('cancel');
       await new Promise((r) => setTimeout(r, 300));
       expect(toast()).toBeNull();
-      button(el, 'Elimina la bozza')!.click();
+      button(el, 'Delete the draft')!.click();
       await until(fixture, () => !!dialog(), 'second dialog');
       answer('confirm');
       await until(fixture, () => !!toast(), 'confirmation');
-      expect(toast()?.textContent).toContain('Bozza eliminata');
+      expect(toast()?.textContent).toContain('Draft deleted');
     });
   });
 
   it('changing language changes title, menu, screen texts and shell labels', async () => {
     const { fixture, el } = await open('/invoice-entry/showcase-basics');
-    await until(fixture, () => !!el.querySelector('h1') && el.querySelector('h1')!.textContent!.includes('Vetrina: componenti base'), 'title in Italian');
-    expect(el.querySelector('lc-sidebar')!.textContent).toContain('Inserimento Fattura');
+    await until(fixture, () => !!el.querySelector('h1') && el.querySelector('h1')!.textContent!.includes('Showcase: basic components'), 'title in Italian');
+    expect(el.querySelector('lc-sidebar')!.textContent).toContain('Invoice entry');
     TestBed.inject(I18n).setLocale('en');
     await until(fixture, () => el.querySelector('h1')!.textContent!.includes('Showcase: basic components'), 'title in English');
     expect(el.querySelector('lc-sidebar')!.textContent).toContain('Invoice entry');

@@ -23,7 +23,7 @@ describe('Table footer: «Refresh», first and last page', () => {
     });
     await until(() => firstCell(el) === 'Row 1', 'rows');
     expect(button(el, 'first')?.disabled).toBe(true);
-    expect(button(el, 'first')?.getAttribute('aria-label')).toBe('Prima pagina');
+    expect(button(el, 'first')?.getAttribute('aria-label')).toBe('First page');
     button(el, 'last')!.click();
     await settle();
     expect(firstCell(el)).toBe('Row 11');
@@ -34,7 +34,7 @@ describe('Table footer: «Refresh», first and last page', () => {
 
     // «Refresh» on the left: one more request, with the accessible name.
     const refresh = button(el, 'refresh')!;
-    expect(refresh.getAttribute('aria-label')).toBe('Aggiorna');
+    expect(refresh.getAttribute('aria-label')).toBe('Refresh');
     expect(footer(el)!.firstElementChild).toBe(refresh);
     const before = requests.length;
     refresh.click();
@@ -44,7 +44,7 @@ describe('Table footer: «Refresh», first and last page', () => {
     expect(refresh.classList.contains('busy')).toBe(true);
     expect(refresh.getAttribute('aria-busy')).toBe('true');
     // And the spinner in the centre of the table, with the message, appears at once (without the delay of normal loads).
-    expect(el.querySelector('lc-data-table lc-busy .overlay .label')?.textContent?.trim()).toBe('Caricamento…');
+    expect(el.querySelector('lc-data-table lc-busy .overlay .label')?.textContent?.trim()).toBe('Loading…');
     // A second click while turning does not repeat the request.
     refresh.click();
     await settle();

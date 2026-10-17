@@ -3,33 +3,40 @@ import { I18n, loadMessages, loadCatalogs } from './i18n';
 describe('I18n', () => {
   function make(): I18n {
     const i18n = new I18n();
-    i18n.addMessages('it', { 'a.salva': 'Salva', 'lc.ok': 'OK it' });
-    i18n.addMessages('en', { 'a.salva': 'Save', 'a.solo_en': 'Only English' });
-    i18n.addMessages('it', { 'lc.ok': 'OK builtin it', 'lc.altro': 'Altro' }, 'builtin');
+    i18n.addMessages('en', { 'a.save': 'Save', 'lc.ok': 'OK en' });
+    i18n.addMessages('it', { 'a.save': 'Salva', 'a.only_it': 'Solo italiano' });
+    i18n.addMessages('en', { 'lc.ok': 'OK builtin en', 'lc.other': 'Other' }, 'builtin');
     return i18n;
   }
 
+  it('starts in English, the default language', () => {
+    const i18n = make();
+    expect(i18n.locale()).toBe('en');
+    expect(i18n.defaultLocale()).toBe('en');
+    expect(i18n.t('a.save')).toBe('Save');
+  });
+
   it('looks in the active language, then in the default one, then in the fallback, then the key', () => {
     const i18n = make();
-    i18n.setLocale('en');
-    expect(i18n.lookup('a.salva')).toEqual({ text: 'Save', found: true });
-    expect(i18n.lookup('lc.altro')).toEqual({ text: 'Altro', found: true });
-    expect(i18n.lookup('x.new', 'Nuovo testo')).toEqual({ text: 'Nuovo testo', found: true });
+    i18n.setLocale('it');
+    expect(i18n.lookup('a.save')).toEqual({ text: 'Salva', found: true });
+    expect(i18n.lookup('lc.other')).toEqual({ text: 'Other', found: true });
+    expect(i18n.lookup('x.new', 'New text')).toEqual({ text: 'New text', found: true });
     expect(i18n.lookup('x.new')).toEqual({ text: 'x.new', found: false });
   });
 
-  it('i messaggi dell\'applicazione prevalgono su quelli integrati', () => {
-    expect(make().t('lc.ok')).toBe('OK it');
+  it('the messages of the application win over the built-in ones', () => {
+    expect(make().t('lc.ok')).toBe('OK en');
   });
 
   it('formats with the parameters according to the language, and the language changes the texts', () => {
     const i18n = make();
-    i18n.addMessages('it', { 'a.n': '{n, plural, one {# riga} other {# righe}}' });
-    expect(i18n.t('a.n', { n: 3 })).toBe('3 righe');
-    expect(i18n.intlLocale()).toBe('it-IT');
-    i18n.setLocale('en');
+    i18n.addMessages('en', { 'a.n': '{n, plural, one {# row} other {# rows}}' });
+    expect(i18n.t('a.n', { n: 3 })).toBe('3 rows');
     expect(i18n.intlLocale()).toBe('en-GB');
-    expect(i18n.t('a.salva')).toBe('Save');
+    i18n.setLocale('it');
+    expect(i18n.intlLocale()).toBe('it-IT');
+    expect(i18n.t('a.save')).toBe('Salva');
   });
 });
 
@@ -55,10 +62,10 @@ describe('loadMessages', () => {
     const i18n = new I18n();
     const problems = await loadCatalogs(i18n, ['it', 'en', 'fr'], async (l) => {
       if (l === 'fr') throw new Error('HTTP 404');
-      return l === 'it' ? { saluto: 'Ciao', n: 3 } : { saluto: 'Hello' };
+      return l === 'it' ? { greeting: 'Ciao', n: 3 } : { greeting: 'Hello' };
     });
     expect(problems).toEqual(['it: the key n is not a text', 'fr: catalogue not loaded (HTTP 404)']);
-    expect(i18n.raw('saluto', 'it')).toBe('Ciao');
-    expect(i18n.raw('saluto', 'en')).toBe('Hello');
+    expect(i18n.raw('greeting', 'it')).toBe('Ciao');
+    expect(i18n.raw('greeting', 'en')).toBe('Hello');
   });
 });

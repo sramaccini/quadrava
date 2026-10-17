@@ -17,7 +17,7 @@ describe('RegistrySession', () => {
         { provide: Confirmation, useValue: { confirm: async () => true } },
       ],
     });
-    TestBed.inject(I18n).addMessages('it', EDITOR_MESSAGES['it']);
+    TestBed.inject(I18n).addMessages('en', EDITOR_MESSAGES['en']);
   });
 
   afterEach(() => vi.unstubAllGlobals());

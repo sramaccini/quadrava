@@ -10,7 +10,7 @@ describe('NavigationStore', () => {
 
   beforeEach(() => {
     localStorage.clear();
-    TestBed.inject(I18n).addMessages('it', EDITOR_MESSAGES['it']);
+    TestBed.inject(I18n).addMessages('en', EDITOR_MESSAGES['en']);
     store = TestBed.inject(NavigationStore);
     store.newNavigation();
   });

@@ -7,7 +7,7 @@
  * Literal braces are written `\{` and `\}`. It never throws: if the message is malformed it returns the original text.
  * The result is always plain text (never HTML): the values of the placeholders are not interpreted.
  */
-export function formatMessage(pattern: string, params: Record<string, unknown> = {}, locale = 'it'): string {
+export function formatMessage(pattern: string, params: Record<string, unknown> = {}, locale = 'en'): string {
   if (!pattern.includes('{') && !pattern.includes('\\')) return pattern;
   try {
     return render(pattern, params, locale, undefined);

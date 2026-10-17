@@ -117,10 +117,10 @@ describe('screen editor', () => {
     expect(el.querySelector('ed-outline .empty')).not.toBeNull();
     (el.querySelector('ed-palette button[data-type="section"]') as HTMLButtonElement).click();
     await settle();
-    expect(outline()).toEqual(['Sezione']);
-    expect(el.querySelector('ed-inspector .kind')?.textContent).toBe('Sezione');
-    type(el.querySelector('#prop-title') as HTMLTextAreaElement, 'Riepilogo');
-    await untilState('ed-preview', (st) => getAt(screenOf(st), ['components', 0, 'title']) === 'Riepilogo', 'title in the preview');
+    expect(outline()).toEqual(['Section']);
+    expect(el.querySelector('ed-inspector .kind')?.textContent).toBe('Section');
+    type(el.querySelector('#prop-title') as HTMLTextAreaElement, 'Summary');
+    await untilState('ed-preview', (st) => getAt(screenOf(st), ['components', 0, 'title']) === 'Summary', 'title in the preview');
     // The property text has the coloured syntax behind the text area (also with an expression).
     const title = el.querySelector('#prop-title') as HTMLTextAreaElement;
     type(title, "Riepilogo {{ state.n }}");
@@ -128,18 +128,18 @@ describe('screen editor', () => {
     const layer = title.previousElementSibling as HTMLElement;
     expect(layer.classList.contains('ed-code-layer')).toBe(true);
     expect([...layer.querySelectorAll('span')].map((s) => s.className)).toEqual(['ed-code-delimiter', 'ed-code-variable', 'ed-code-punctuation', 'ed-code-property', 'ed-code-delimiter']);
-    type(title, 'Riepilogo');
+    type(title, 'Summary');
     await settle();
     // The next node ends up inside the selected section.
     (el.querySelector('ed-palette button[data-type="alert"]') as HTMLButtonElement).click();
     await untilState('ed-preview', (st) => getAt(screenOf(st), ['components', 0, 'components', 0, 'type']) === 'alert', 'message inside the section');
     expect(store.selection()).toEqual(['components', 0, 'components', 0]);
-    expect(el.querySelector('.status')?.textContent).toContain('Valida');
+    expect(el.querySelector('.status')?.textContent).toContain('Valid');
   });
 
   it('menu bar: Edit acts on the selection, File opens an example from the submenu', async () => {
     const bar = el.querySelector('ed-menu-bar [role="menubar"]') as HTMLElement;
-    expect([...bar.querySelectorAll(':scope > li > [role="menuitem"]')].map((b) => b.textContent?.trim())).toEqual(['File', 'Modifica', 'Visualizza', 'Aiuto']);
+    expect([...bar.querySelectorAll(':scope > li > [role="menuitem"]')].map((b) => b.textContent?.trim())).toEqual(['File', 'Edit', 'View', 'Help']);
     const item = (id: string) => el.querySelector(`ed-menu-bar [data-item="${id}"]`) as HTMLButtonElement | null;
 
     // Without a selection the selection commands are off and do nothing.
@@ -147,7 +147,7 @@ describe('screen editor', () => {
     await settle();
     expect(item('duplicate')?.getAttribute('aria-disabled')).toBe('true');
     expect(item('undo')?.getAttribute('aria-disabled')).toBe('true');
-    expect(item('delete')?.querySelector('.shortcut')?.textContent).toBe('Canc');
+    expect(item('delete')?.querySelector('.shortcut')?.textContent).toBe('Del');
     item('duplicate')!.click();
     await settle();
     expect(item('duplicate')).not.toBeNull();
@@ -159,9 +159,9 @@ describe('screen editor', () => {
     (el.querySelector('ed-palette button[data-type="section"]') as HTMLButtonElement).click();
     await settle();
     await menuCommand('edit', 'duplicate');
-    expect(outline()).toEqual(['Sezione', 'Sezione']);
+    expect(outline()).toEqual(['Section', 'Section']);
     await menuCommand('edit', 'undo');
-    expect(outline()).toEqual(['Sezione']);
+    expect(outline()).toEqual(['Section']);
     store.select(['components', 0]);
     await settle();
     await menuCommand('edit', 'delete');
@@ -171,13 +171,13 @@ describe('screen editor', () => {
     (el.querySelector('ed-menu-bar [data-menu="file"]') as HTMLButtonElement).click();
     await settle();
     expect([...el.querySelectorAll('ed-menu-bar [data-level="0"] .label')].map((l) => l.textContent)).toEqual([
-      'Nuova',
-      'Apri…',
-      'Apri da registro…',
-      'Apri esempio',
-      'Salva',
-      'Salva in registro',
-      'Registro…',
+      'New',
+      'Open…',
+      'Open from registry…',
+      'Open example',
+      'Save',
+      'Save to registry',
+      'Registry…',
     ]);
     item('open-example')!.click();
     await until(() => !!item('example:showcase-layout'), 'examples in the submenu');
@@ -201,7 +201,7 @@ describe('screen editor', () => {
     // Only the outline hides: «Outline» tab, the components stay in the column (wider than the strip).
     pin('outline').click();
     await settle();
-    expect(tabs(left)).toEqual(['Struttura']);
+    expect(tabs(left)).toEqual(['Outline']);
     expect(panel('palette').classList.contains('ed-docked')).toBe(true);
     expect(panel('outline').classList.contains('ed-floating')).toBe(true);
     expect(editor.style.getPropertyValue('--ed-left')).toBe('310px');
@@ -216,7 +216,7 @@ describe('screen editor', () => {
     await settle();
     left.dispatchEvent(new Event('pointerleave'));
     await until(() => !panel('palette').classList.contains('ed-open'), 'closing');
-    expect(tabs(left)).toEqual(['Componenti', 'Struttura']);
+    expect(tabs(left)).toEqual(['Components', 'Outline']);
     expect(editor.style.getPropertyValue('--ed-left')).toBe('30px');
     expect(left.querySelector('.splitter')).toBeNull();
 
@@ -273,7 +273,7 @@ describe('screen editor', () => {
       ([...el.querySelectorAll<HTMLElement>('.mode .ant-segmented-item')].find((i) => i.textContent?.includes(label)) as HTMLElement).click();
       await settle();
     };
-    await mode('Navigazione');
+    await mode('Navigation');
     const nav = el.querySelector('ed-navigation-editor') as HTMLElement;
     expect([...nav.querySelectorAll('[data-dock-pin]')].map((p) => p.getAttribute('data-dock-pin'))).toEqual(['outline', 'inspector']);
     (nav.querySelector('[data-dock-pin="outline"]') as HTMLButtonElement).click();
@@ -281,7 +281,7 @@ describe('screen editor', () => {
     const left = nav.querySelector('ed-dock-side.left') as HTMLElement;
     const outline = nav.querySelector('[data-dock-panel="outline"]') as HTMLElement;
     expect(nav.style.getPropertyValue('--ed-left')).toBe('30px');
-    expect([...left.querySelectorAll('.strip .tab')].map((t) => t.textContent?.trim())).toEqual(['Struttura']);
+    expect([...left.querySelectorAll('.strip .tab')].map((t) => t.textContent?.trim())).toEqual(['Outline']);
     left.dispatchEvent(new Event('pointerleave'));
     await until(() => !outline.classList.contains('ed-open'), 'closing in navigation');
     left.dispatchEvent(new Event('pointerenter'));
@@ -289,29 +289,29 @@ describe('screen editor', () => {
     await until(() => outline.classList.contains('ed-open'), 'opening in navigation');
 
     // Theme: the properties; hidden here, they are hidden in the screen too. The outline hidden in navigation is hidden there too.
-    await mode('Tema');
+    await mode('Theme');
     const theme = el.querySelector('ed-theme-editor') as HTMLElement;
     (theme.querySelector('[data-dock-pin="inspector"]') as HTMLButtonElement).click();
     await settle();
     expect(theme.style.getPropertyValue('--ed-right')).toBe('30px');
-    expect([...theme.querySelectorAll('ed-dock-side.right .strip .tab')].map((t) => t.textContent?.trim())).toEqual(['Proprietà']);
-    await mode('Schermata');
-    expect([...el.querySelectorAll('ed-dock-side.left .strip .tab')].map((t) => t.textContent?.trim())).toEqual(['Struttura']);
-    expect([...el.querySelectorAll('ed-dock-side.right .strip .tab')].map((t) => t.textContent?.trim())).toEqual(['Proprietà']);
+    expect([...theme.querySelectorAll('ed-dock-side.right .strip .tab')].map((t) => t.textContent?.trim())).toEqual(['Properties']);
+    await mode('Screen');
+    expect([...el.querySelectorAll('ed-dock-side.left .strip .tab')].map((t) => t.textContent?.trim())).toEqual(['Outline']);
+    expect([...el.querySelectorAll('ed-dock-side.right .strip .tab')].map((t) => t.textContent?.trim())).toEqual(['Properties']);
     expect((el.querySelector('.editor') as HTMLElement).style.getPropertyValue('--ed-right')).toBe('30px');
   });
 
   it('palette: the search filters while typing, Enter adds the first one found, Esc clears', async () => {
     const search = el.querySelector('[data-palette-search]') as HTMLInputElement;
-    type(search, 'griglia');
+    type(search, 'grid');
     await settle();
     expect([...el.querySelectorAll('ed-palette button[data-type]')].map((b) => b.getAttribute('data-type'))).toEqual(['grid']);
     search.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
     await settle();
-    expect(outline()).toEqual(['Griglia']);
+    expect(outline()).toEqual(['Grid']);
     type(search, 'zzz');
     await settle();
-    expect(el.querySelector('ed-palette .none')?.textContent).toContain('Nessun componente');
+    expect(el.querySelector('ed-palette .none')?.textContent).toContain('No component');
     search.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     await settle();
     expect(el.querySelectorAll('ed-palette button[data-type]').length).toBeGreaterThan(30);
@@ -328,31 +328,31 @@ describe('screen editor', () => {
     store.select([]);
     await settle();
     await add('alert');
-    expect(outline()).toEqual(['Sezione', 'Box (riga o colonna)', 'Testo', 'Messaggio']);
+    expect(outline()).toEqual(['Section', 'Box (row or column)', 'Text', 'Message']);
     // Closing and opening a branch; collapse and expand all.
     const twisty = () => el.querySelector('ed-outline .twisty') as HTMLButtonElement;
     expect(twisty().getAttribute('aria-expanded')).toBe('true');
     twisty().click();
     await settle();
-    expect(outline()).toEqual(['Sezione', 'Messaggio']);
+    expect(outline()).toEqual(['Section', 'Message']);
     (el.querySelector('[data-outline="expand"]') as HTMLButtonElement).click();
     await settle();
     (el.querySelector('[data-outline="collapse"]') as HTMLButtonElement).click();
     await settle();
-    expect(outline()).toEqual(['Sezione', 'Messaggio']);
+    expect(outline()).toEqual(['Section', 'Message']);
     // Selecting a node inside a closed branch opens it again.
     store.select(['components', 0, 'components', 0, 'components', 0]);
     await settle();
-    expect(outline()).toEqual(['Sezione', 'Box (riga o colonna)', 'Testo', 'Messaggio']);
+    expect(outline()).toEqual(['Section', 'Box (row or column)', 'Text', 'Message']);
     // Search: the nodes found with the branches containing them.
     const search = el.querySelector('ed-outline .search') as HTMLInputElement;
     type(search, 'text');
     await settle();
-    expect(outline()).toEqual(['Sezione', 'Box (riga o colonna)', 'Testo']);
-    expect(el.querySelector('ed-outline .line.match .label')?.textContent).toBe('Testo');
+    expect(outline()).toEqual(['Section', 'Box (row or column)', 'Text']);
+    expect(el.querySelector('ed-outline .line.match .label')?.textContent).toBe('Text');
     type(search, 'niente');
     await settle();
-    expect(el.querySelector('ed-outline .empty')?.textContent).toContain('Nessun nodo');
+    expect(el.querySelector('ed-outline .empty')?.textContent).toContain('No node');
     type(search, '');
     await settle();
     // Context menu from the keyboard (Shift+F10) on the text: «Wrap in a grid».
@@ -370,7 +370,7 @@ describe('screen editor', () => {
     (document.activeElement as HTMLButtonElement).click();
     await settle();
     expect(el.querySelector('ed-context-menu')).toBeNull();
-    expect(outline()).toEqual(['Sezione', 'Box (riga o colonna)', 'Griglia', 'Testo', 'Messaggio']);
+    expect(outline()).toEqual(['Section', 'Box (row or column)', 'Grid', 'Text', 'Message']);
     expect(store.selection()).toEqual(['components', 0, 'components', 0, 'components', 0]);
     // Right click on the message: Esc closes without doing anything; «Select the container» goes up.
     const line = el.querySelector('ed-outline .row[data-path="components/1"]')!.parentElement as HTMLElement;
@@ -402,8 +402,8 @@ describe('screen editor', () => {
     await settle();
     expect([...el.querySelectorAll('ed-outline .line.selected .row')].map((r) => r.getAttribute('data-path'))).toEqual(['components/0', 'components/2']);
     expect(el.querySelector('ed-outline .tools')).toBeNull();
-    expect(el.querySelector('ed-inspector .multi')?.textContent).toContain('2 nodi selezionati');
-    expect(row(0).textContent).toContain('selezionato insieme ad altri');
+    expect(el.querySelector('ed-inspector .multi')?.textContent).toContain('2 nodes selected');
+    expect(row(0).textContent).toContain('selected together with others');
     // Shift+click: range from the first one chosen.
     row(1).click();
     row(3).dispatchEvent(new MouseEvent('click', { bubbles: true, shiftKey: true }));
@@ -417,37 +417,37 @@ describe('screen editor', () => {
     row(2).parentElement!.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
     await settle();
     expect([...el.querySelectorAll('ed-context-menu .item .label')].map((l) => l.textContent)).toEqual([
-      'Avvolgi 2 nodi in una sezione',
-      'Avvolgi 2 nodi in un box',
-      'Avvolgi 2 nodi in una griglia',
-      'Elimina 2 nodi',
+      'Wrap 2 nodes in a section',
+      'Wrap 2 nodes in a box',
+      'Wrap 2 nodes in a grid',
+      'Delete 2 nodes',
     ]);
     (el.querySelector('ed-context-menu [data-item="wrap-box"]') as HTMLButtonElement).click();
     await settle();
-    expect(outline()).toEqual(['Testo', 'Box (riga o colonna)', 'Messaggio', 'Pulsante', 'Testo']);
+    expect(outline()).toEqual(['Text', 'Box (row or column)', 'Message', 'Button', 'Text']);
     // Delete on a selection of several nodes deletes them all.
     store.select(['components', 0]);
     store.toggleSelect(['components', 2]);
     await settle();
     document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete', bubbles: true }));
     await settle();
-    expect(outline()).toEqual(['Box (riga o colonna)', 'Messaggio', 'Pulsante']);
+    expect(outline()).toEqual(['Box (row or column)', 'Message', 'Button']);
     expect(store.issues()).toEqual([]);
   });
 
   it('translations: the default language is changed from the panel and reaches the preview', async () => {
     tab(3);
     await settle();
-    (el.querySelector('ed-texts [data-language="en"] .make-default') as HTMLButtonElement).click();
+    (el.querySelector('ed-texts [data-language="it"] .make-default') as HTMLButtonElement).click();
     await settle();
-    expect(store.defaultLanguage()).toBe('en');
-    expect([...el.querySelectorAll('ed-texts .language .name')].map((n) => n.textContent)).toEqual(['Inglese', 'Italiano']);
-    expect(el.querySelector('ed-texts [data-language="en"] .default')?.textContent).toBe('predefinita');
-    expect(el.querySelector('ed-texts [data-language="en"] .remove')).toBeNull();
-    expect(el.querySelector('ed-texts [data-language="it"] .remove')).not.toBeNull();
+    expect(store.defaultLanguage()).toBe('it');
+    expect([...el.querySelectorAll('ed-texts .language .name')].map((n) => n.textContent)).toEqual(['Italian', 'English']);
+    expect(el.querySelector('ed-texts [data-language="it"] .default')?.textContent).toBe('default');
+    expect(el.querySelector('ed-texts [data-language="it"] .remove')).toBeNull();
+    expect(el.querySelector('ed-texts [data-language="en"] .remove')).not.toBeNull();
     tab(0);
     await settle();
-    await untilState('ed-preview', (st) => st.defaultLocale === 'en', 'default language in the preview');
+    await untilState('ed-preview', (st) => st.defaultLocale === 'it', 'default language in the preview');
   });
 
   it('data sources imported from OpenAPI (springdoc): read from the address, choice of the operations, sample data', async () => {
@@ -482,7 +482,7 @@ describe('screen editor', () => {
     type(url, 'javascript:alert(1)');
     url.form!.dispatchEvent(new Event('submit', { cancelable: true }));
     await settle();
-    expect(document.querySelector('ed-openapi-import .error')?.textContent).toContain('Indirizzo non valido');
+    expect(document.querySelector('ed-openapi-import .error')?.textContent).toContain('Invalid address');
     expect(requested).toEqual(['/swagger-ui.html']);
     type(url, '/v3/api-docs');
     url.form!.dispatchEvent(new Event('submit', { cancelable: true }));
@@ -492,7 +492,7 @@ describe('screen editor', () => {
     expect(importButton().disabled).toBe(true);
     ([...document.querySelectorAll<HTMLButtonElement>('ed-openapi-import .bulk button')][0]).click();
     await settle();
-    expect(importButton().textContent).toContain('Importa 2 data source');
+    expect(importButton().textContent).toContain('Import 2 data sources');
     importButton().click();
     await until(() => getAt(store.doc(), ['dataSources', 'listCustomers']) !== undefined, 'import');
     expect(getAt(store.doc(), ['dataSources', 'listCustomers'])).toEqual({ type: 'rest', method: 'GET', url: '/api/customers' });
@@ -510,28 +510,28 @@ describe('screen editor', () => {
     (el.querySelector('ed-palette button[data-type="table"]') as HTMLButtonElement).click();
     await settle();
     const crumbs = () => [...el.querySelectorAll('ed-inspector .crumbs li')].map((li) => li.textContent?.trim());
-    expect(crumbs()).toEqual(['Schermata', 'Sezione', 'Tabella']);
-    expect(el.querySelector('ed-inspector .crumbs [aria-current="location"]')?.textContent).toBe('Tabella');
+    expect(crumbs()).toEqual(['Screen', 'Section', 'Table']);
+    expect(el.querySelector('ed-inspector .crumbs [aria-current="location"]')?.textContent).toBe('Table');
     const filter = el.querySelector('[data-prop-filter]') as HTMLInputElement;
     type(filter, 'sour');
     await settle();
     expect([...el.querySelectorAll('ed-inspector ed-fields > .prop')].map((p) => p.getAttribute('data-prop'))).toEqual(['source']);
     type(filter, 'xyz');
     await settle();
-    expect(el.querySelector('ed-inspector .empty')?.textContent).toContain('Nessuna proprietà');
+    expect(el.querySelector('ed-inspector .empty')?.textContent).toContain('No property');
     // A click on the container in the path selects it; the filter starts empty again.
-    ([...el.querySelectorAll<HTMLButtonElement>('ed-inspector .crumbs button')].find((b) => b.textContent === 'Sezione') as HTMLButtonElement).click();
+    ([...el.querySelectorAll<HTMLButtonElement>('ed-inspector .crumbs button')].find((b) => b.textContent === 'Section') as HTMLButtonElement).click();
     await settle();
     expect(store.selection()).toEqual(['components', 0]);
     expect((el.querySelector('[data-prop-filter]') as HTMLInputElement).value).toBe('');
-    expect(crumbs()).toEqual(['Schermata', 'Sezione']);
+    expect(crumbs()).toEqual(['Screen', 'Section']);
   });
 
   it('View menu (sides, problems, view) and Help (shortcuts, also with F1; information)', async () => {
     (el.querySelector('ed-menu-bar [data-menu="view"]') as HTMLButtonElement).click();
     await settle();
     const item = (id: string) => el.querySelector(`ed-menu-bar [data-item="${id}"]`) as HTMLButtonElement;
-    expect([...el.querySelectorAll('ed-menu-bar [data-item^="pin-"] .label')].map((l) => l.textContent)).toEqual(['«Componenti» fissato', '«Struttura» fissato', '«Proprietà» fissato']);
+    expect([...el.querySelectorAll('ed-menu-bar [data-item^="pin-"] .label')].map((l) => l.textContent)).toEqual(['“Components” pinned', '“Outline” pinned', '“Properties” pinned']);
     expect([item('pin-palette').getAttribute('role'), item('pin-palette').getAttribute('aria-checked')]).toEqual(['menuitemcheckbox', 'true']);
     expect([item('view-preview').getAttribute('role'), item('view-preview').getAttribute('aria-checked')]).toEqual(['menuitemradio', 'true']);
     item('pin-inspector').click();
@@ -549,8 +549,8 @@ describe('screen editor', () => {
     // F1 opens the shortcuts.
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'F1', bubbles: true }));
     await until(() => !!document.querySelector('.shortcuts dt'), 'shortcuts');
-    expect([...document.querySelectorAll('.shortcuts h3')].map((h) => h.textContent)).toEqual(['Generali', 'Struttura (fuori dai campi di testo)', 'Barra dei menu', 'Pannelli e anteprima']);
-    expect([...document.querySelectorAll('.shortcuts kbd')].map((k) => k.textContent)).toContain('Maiusc+F10');
+    expect([...document.querySelectorAll('.shortcuts h3')].map((h) => h.textContent)).toEqual(['General', 'Outline (outside text fields)', 'Menu bar', 'Panels and preview']);
+    expect([...document.querySelectorAll('.shortcuts kbd')].map((k) => k.textContent)).toContain('Shift+F10');
     await menuCommand('help', 'about');
     await until(() => !!document.querySelector('.about lc-quadrava-wordmark'), 'information');
   });
@@ -587,37 +587,37 @@ describe('screen editor', () => {
     code.value = 'Klingon';
     code.form!.dispatchEvent(new Event('submit', { cancelable: true }));
     await settle();
-    expect(el.querySelector('ed-texts .error')?.textContent).toContain('Lingua non riconosciuta');
+    expect(el.querySelector('ed-texts .error')?.textContent).toContain('Language not recognised');
     // The suggestions have the name in the editor's language; typing the name is enough.
     code.focus();
     code.dispatchEvent(new Event('focusin', { bubbles: true }));
     await until(() => document.querySelectorAll('nz-auto-option[data-language-option]').length > 0, 'language suggestions');
     const suggestions = [...document.querySelectorAll('nz-auto-option[data-language-option]')].map((o) => o.textContent?.trim());
-    expect(suggestions).toContain('Francese (fr)');
-    expect(suggestions).not.toContain('Italiano (it)');
-    code.value = 'francese';
+    expect(suggestions).toContain('French (fr)');
+    expect(suggestions).not.toContain('Italian (it)');
+    code.value = 'french';
     code.dispatchEvent(new Event('input'));
     code.form!.dispatchEvent(new Event('submit', { cancelable: true }));
     await settle();
-    expect([...el.querySelectorAll('ed-texts th.locale')].map((th) => th.textContent?.trim().split(' ')[0])).toEqual(['IT', 'EN', 'FR']);
-    expect([...el.querySelectorAll('ed-texts .language .name')].map((n) => n.textContent)).toEqual(['Italiano', 'Inglese', 'Francese']);
+    expect([...el.querySelectorAll('ed-texts th.locale')].map((th) => th.textContent?.trim().split(' ')[0])).toEqual(['EN', 'IT', 'FR']);
+    expect([...el.querySelectorAll('ed-texts .language .name')].map((n) => n.textContent)).toEqual(['English', 'Italian', 'French']);
     const fr = el.querySelector('ed-texts input[aria-label$=" fr"]') as HTMLInputElement;
     expect(fr.getAttribute('aria-invalid')).toBe('true');
     fr.value = 'Nouveau texte';
     fr.dispatchEvent(new Event('change'));
     await settle();
-    expect(store.translations()['fr']).toEqual({ 'new_screen.nuovo_testo': 'Nouveau texte' });
+    expect(store.translations()['fr']).toEqual({ 'new_screen.new_text': 'Nouveau texte' });
     // The preview in French.
     tab(0);
     await settle();
-    expect(el.querySelector('ed-preview nz-select.language')?.getAttribute('aria-label')).toBe('Lingua dell’anteprima');
-    await untilState('ed-preview', (st) => st.locale === 'it' && !!st.translations['fr'], 'French translations in the preview');
+    expect(el.querySelector('ed-preview nz-select.language')?.getAttribute('aria-label')).toBe('Preview language');
+    await untilState('ed-preview', (st) => st.locale === 'en' && !!st.translations['fr'], 'French translations in the preview');
     // Once the added language is chosen, the preview uses it; removed, it goes back to the editor's.
     const preview = fixture.debugElement.query(By.directive(PreviewComponent)).componentInstance as unknown as { chooseLocale(l: string): void };
     preview.chooseLocale('fr');
     await untilState('ed-preview', (st) => st.locale === 'fr', 'preview in French');
     store.removeLanguage('fr');
-    await untilState('ed-preview', (st) => st.locale === 'it', 'Italian again');
+    await untilState('ed-preview', (st) => st.locale === 'en', 'English again');
   });
 
   it('an error shows in the properties, in the list of problems and in the outline; the preview stays at the last valid version', async () => {
@@ -625,14 +625,14 @@ describe('screen editor', () => {
     await untilState('ed-preview', (st) => getAt(screenOf(st), ['components', 0, 'type']) === 'text', 'text in the preview');
     type(el.querySelector('#prop-text') as HTMLTextAreaElement, '{{ 1 + }}');
     await settle();
-    expect(el.querySelector('.status')?.textContent).toContain('Errori: 1');
+    expect(el.querySelector('.status')?.textContent).toContain('Errors: 1');
     expect(el.querySelector('ed-inspector .prop.invalid .issue')).not.toBeNull();
     expect(el.querySelector('ed-outline .mark.error')).not.toBeNull();
     expect(el.querySelector('ed-preview nz-alert')).not.toBeNull();
     // The iframe keeps the last valid version.
     await new Promise((r) => setTimeout(r, 300));
     const last = await untilState('ed-preview', () => true, 'state');
-    expect(getAt(screenOf(last), ['components', 0, 'text'])).toBe('Nuovo testo');
+    expect(getAt(screenOf(last), ['components', 0, 'text'])).toBe('New text');
     store.select([]);
     await settle();
     (el.querySelector('ed-issues button') as HTMLButtonElement).click();
@@ -694,18 +694,18 @@ describe('screen editor', () => {
     (el.querySelector('ed-palette button[data-type="table"]') as HTMLButtonElement).click();
     await settle();
     const columns = (): HTMLElement => el.querySelector('ed-inspector [data-prop="columns"]') as HTMLElement;
-    expect([...columns().querySelectorAll('.summary')].map((s) => s.textContent?.trim())).toEqual(['Id (id)', 'Descrizione (description)']);
+    expect([...columns().querySelectorAll('.summary')].map((s) => s.textContent?.trim())).toEqual(['Id (id)', 'Description (description)']);
     // The second column is opened and its format changed.
     (columns().querySelectorAll('.item-toggle')[1] as HTMLButtonElement).click();
     await settle();
-    type(columns().querySelector('#prop-columns-1-label') as HTMLInputElement, 'Note');
+    type(columns().querySelector('#prop-columns-1-label') as HTMLInputElement, 'Notes');
     await settle();
-    expect(getAt(store.doc(), ['components', 0, 'columns', 1, 'label'])).toBe('Note');
+    expect(getAt(store.doc(), ['components', 0, 'columns', 1, 'label'])).toBe('Notes');
     // A new column at the end, then moved to the top.
     (columns().querySelector(':scope > .list > button') as HTMLButtonElement).click();
     await settle();
-    expect(getAt(store.doc(), ['components', 0, 'columns', 2])).toEqual({ field: 'field3', label: 'Descrizione' });
-    const up = columns().querySelectorAll(':scope > .list > .items > .item')[2].querySelector('button[aria-label^="Sposta su"]') as HTMLButtonElement;
+    expect(getAt(store.doc(), ['components', 0, 'columns', 2])).toEqual({ field: 'field3', label: 'Description' });
+    const up = columns().querySelectorAll(':scope > .list > .items > .item')[2].querySelector('button[aria-label^="Move up"]') as HTMLButtonElement;
     up.click();
     await settle();
     expect(getAt(store.doc(), ['components', 0, 'columns', 1, 'field'])).toBe('field3');
@@ -719,7 +719,7 @@ describe('screen editor', () => {
     (el.querySelector('ed-palette button[data-type="button"]') as HTMLButtonElement).click();
     await settle();
     const steps = el.querySelector('ed-inspector [data-prop="onClick"]') as HTMLElement;
-    expect(steps.querySelector('.summary')?.textContent?.trim()).toBe('toast: Fatto');
+    expect(steps.querySelector('.summary')?.textContent?.trim()).toBe('toast: Done');
     (steps.querySelector('button[nz-dropdown]') as HTMLButtonElement).click();
     await until(() => document.querySelectorAll('.ant-dropdown-menu-item').length === 12, 'step variants');
     ([...document.querySelectorAll<HTMLElement>('.ant-dropdown-menu-item')].find((i) => i.textContent?.includes('refresh')) as HTMLElement).click();
@@ -781,27 +781,27 @@ describe('screen editor', () => {
     // Selection mode and log.
     // Parameters, Log, Select and Reload: icon only, the name for screen readers, aligned on the right.
     const selectButton = el.querySelector('ed-preview .bar button[data-command="select"]') as HTMLButtonElement;
-    expect([selectButton.getAttribute('aria-label'), selectButton.textContent?.trim()]).toEqual(['Seleziona', '']);
-    expect(el.querySelector('ed-preview .bar button[data-command="reload"]')?.getAttribute('aria-label')).toBe('Ricarica');
+    expect([selectButton.getAttribute('aria-label'), selectButton.textContent?.trim()]).toEqual(['Select', '']);
+    expect(el.querySelector('ed-preview .bar button[data-command="reload"]')?.getAttribute('aria-label')).toBe('Reload');
     expect([...el.querySelectorAll('ed-preview .bar .actions button')].map((b) => [b.getAttribute('data-command'), b.querySelector('.anticon') !== null])).toEqual([
       ['params', true],
       ['log', true],
       ['select', true],
       ['reload', true],
     ]);
-    expect(el.querySelector('ed-preview .bar button[data-command="params"]')?.getAttribute('aria-label')).toBe('Parametri');
+    expect(el.querySelector('ed-preview .bar button[data-command="params"]')?.getAttribute('aria-label')).toBe('Parameters');
     selectButton.click();
     await untilState('ed-preview', (st) => st.selectMode, 'selection mode');
     await fromFrame('ed-preview', { type: 'lc-preview:event', event: { kind: 'request', text: 'GET /api/list' } });
     const logButton = el.querySelector('ed-preview .bar button[data-command="log"]') as HTMLButtonElement;
-    expect(logButton.getAttribute('aria-label')).toBe('Registro (1)');
+    expect(logButton.getAttribute('aria-label')).toBe('Log (1)');
     expect(logButton.querySelector('.count')?.textContent).toBe('1');
     // Widths: icons only, with the name (and the pixels) for screen readers.
     const widths = [...el.querySelectorAll<HTMLButtonElement>('ed-preview .widths button')];
     expect(widths.map((b) => [b.getAttribute('aria-label'), b.getAttribute('aria-pressed'), b.textContent?.trim()])).toEqual([
       ['Desktop', 'true', ''],
       ['Tablet (768 px)', 'false', ''],
-      ['Telefono (375 px)', 'false', ''],
+      ['Phone (375 px)', 'false', ''],
     ]);
     widths[1].click();
     await settle();
@@ -828,7 +828,7 @@ describe('screen editor', () => {
     store.setTranslation('en', 'x.y', 'new');
     tab(3);
     await until(() => !!el.querySelector('ed-texts .head-actions'), 'texts panel');
-    ([...el.querySelectorAll<HTMLButtonElement>('ed-texts .head-actions button')].find((b) => b.textContent?.includes('Salva nel registro')) as HTMLButtonElement).click();
+    ([...el.querySelectorAll<HTMLButtonElement>('ed-texts .head-actions button')].find((b) => b.textContent?.includes('Save to the registry')) as HTMLButtonElement).click();
     await until(() => calls.filter((c) => c.method === 'PUT').length === 2, 'publications');
     const saves = calls.filter((c) => c.method === 'POST');
     expect(saves.map((c) => [c.url, c.ifMatch])).toEqual([
@@ -844,37 +844,37 @@ describe('screen editor', () => {
     localStorage.removeItem('lc.editor.registry');
   });
 
-  it('texts: a plain text becomes translatable, the English translation applies at once in the preview', async () => {
+  it('texts: a plain text becomes translatable, the Italian translation applies at once in the preview', async () => {
     (el.querySelector('ed-palette button[data-type="alert"]') as HTMLButtonElement).click();
     await settle();
-    expect(el.querySelectorAll('.center .ant-tabs-tab')[3].textContent?.trim()).toBe('Testi (2)');
+    expect(el.querySelectorAll('.center .ant-tabs-tab')[3].textContent?.trim()).toBe('Texts (2)');
     tab(3);
     await until(() => !!el.querySelector('ed-texts tbody tr'), 'list of texts');
-    const row = (): HTMLElement => [...el.querySelectorAll<HTMLElement>('ed-texts tbody tr')].find((r) => r.textContent?.includes('Messaggio'))!;
+    const row = (): HTMLElement => [...el.querySelectorAll<HTMLElement>('ed-texts tbody tr')].find((r) => r.textContent?.includes('Message'))!;
     (row().querySelector('button.convert') as HTMLButtonElement).click();
     await settle();
-    expect(getAt(store.doc(), ['components', 0, 'text'])).toBe("{{ t('new_screen.messaggio_per_l_utente', 'Messaggio per l’utente') }}");
-    const english = row().querySelector('input[aria-label$=" en"]') as HTMLInputElement;
-    expect(english.getAttribute('aria-invalid')).toBe('true');
-    english.value = 'Message for the user';
-    english.dispatchEvent(new Event('change'));
+    expect(getAt(store.doc(), ['components', 0, 'text'])).toBe("{{ t('new_screen.message_for_the_user', 'Message for the user') }}");
+    const italian = row().querySelector('input[aria-label$=" it"]') as HTMLInputElement;
+    expect(italian.getAttribute('aria-invalid')).toBe('true');
+    italian.value = 'Messaggio per l’utente';
+    italian.dispatchEvent(new Event('change'));
     await settle();
-    expect(row().querySelector('input[aria-label$=" en"]')?.getAttribute('aria-invalid')).toBeNull();
-    TestBed.inject(I18n).setLocale('en');
+    expect(row().querySelector('input[aria-label$=" it"]')?.getAttribute('aria-invalid')).toBeNull();
+    TestBed.inject(I18n).setLocale('it');
     tab(0);
-    await untilState('ed-preview', (st) => st.locale === 'en' && st.translations['en']?.['new_screen.messaggio_per_l_utente'] === 'Message for the user', 'translation to the preview');
+    await untilState('ed-preview', (st) => st.locale === 'it' && st.translations['it']?.['new_screen.message_for_the_user'] === 'Messaggio per l’utente', 'translation to the preview');
   });
 
   it('navigation: outline, fields from the schema, real menu with a simulated profile', async () => {
-    ([...el.querySelectorAll<HTMLElement>('.mode .ant-segmented-item')].find((i) => i.textContent?.includes('Navigazione')) as HTMLElement).click();
+    ([...el.querySelectorAll<HTMLElement>('.mode .ant-segmented-item')].find((i) => i.textContent?.includes('Navigation')) as HTMLElement).click();
     await until(() => !!el.querySelector('ed-navigation-editor'), 'navigation editor');
     const nav = TestBed.inject(NavigationStore);
     const menu = (st: PreviewState): string => JSON.stringify(st.navigation);
-    await untilState('ed-navigation-editor', (st) => menu(st).includes('Nuova voce') && !st.screen, 'menu in the preview');
+    await untilState('ed-navigation-editor', (st) => menu(st).includes('New item') && !st.screen, 'menu in the preview');
     // An item requiring a permission.
     nav.select(['areas', 0, 'items', 0]);
     await settle();
-    expect(el.querySelector('ed-navigation-editor .kind')?.textContent).toBe('Voce');
+    expect(el.querySelector('ed-navigation-editor .kind')?.textContent).toBe('Item');
     type(el.querySelector('ed-navigation-editor #prop-label') as HTMLInputElement, 'Orders');
     type(el.querySelector('ed-navigation-editor #prop-requires') as HTMLInputElement, 'orders.order.read');
     await untilState('ed-navigation-editor', (st) => menu(st).includes('Orders') && st.granted === null, 'new label in the menu');
@@ -884,19 +884,19 @@ describe('screen editor', () => {
     (el.querySelector('ed-navigation-editor .permissions input') as HTMLInputElement).click();
     await untilState('ed-navigation-editor', (st) => Array.isArray(st.granted) && !st.granted.includes('orders.order.read'), 'profile without the permission');
     // The group is added from the outline bar; Ctrl+Z applies to the navigation.
-    ([...el.querySelectorAll<HTMLButtonElement>('ed-navigation-editor .add button')].find((b) => b.textContent?.includes('Gruppo')) as HTMLButtonElement).click();
+    ([...el.querySelectorAll<HTMLButtonElement>('ed-navigation-editor .add button')].find((b) => b.textContent?.includes('Group')) as HTMLButtonElement).click();
     await settle();
     expect(nav.target()).toEqual({ kind: 'group', level: 1 });
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true }));
     await settle();
     expect(getAt(nav.doc(), ['areas', 0, 'items'])).toHaveLength(1);
     // Problems of the navigation at the bottom: the initial item opens a screen that is not among the known ones.
-    expect(el.querySelector('.bottom')?.textContent).toContain('Schermata «new-screen» non trovata tra quelle note');
+    expect(el.querySelector('.bottom')?.textContent).toContain('Screen “new-screen” is not among the known screens');
   });
 
   it('theme: tokens are changed from the fields and reach the preview with the screen being edited; with errors the last valid one stays', async () => {
     (el.querySelector('ed-palette button[data-type="alert"]') as HTMLButtonElement).click();
-    ([...el.querySelectorAll<HTMLElement>('.mode .ant-segmented-item')].find((i) => i.textContent?.includes('Tema')) as HTMLElement).click();
+    ([...el.querySelectorAll<HTMLElement>('.mode .ant-segmented-item')].find((i) => i.textContent?.includes('Theme')) as HTMLElement).click();
     await untilState('ed-theme-editor', (st) => st.theme?.tokens.colors.primary === '#1f5fbf' && getAt(screenOf(st), ['components', 0, 'type']) === 'alert', 'theme and screen');
     const primary = el.querySelector('ed-theme-editor #prop-tokens-colors-primary') as HTMLInputElement;
     expect(primary.previousElementSibling?.getAttribute('type')).toBe('color');
@@ -906,7 +906,7 @@ describe('screen editor', () => {
     expect(document.documentElement.style.getPropertyValue('--lc-color-primary')).not.toBe('#aa3300');
     type(primary, 'red');
     await settle();
-    expect(el.querySelector('.status')?.textContent).toContain('Errori: 1');
+    expect(el.querySelector('.status')?.textContent).toContain('Errors: 1');
     const last = await untilState('ed-theme-editor', () => true, 'state');
     expect(last.theme?.tokens.colors.primary).toBe('#aa3300');
   });
@@ -947,23 +947,23 @@ describe('screen editor', () => {
     await settle();
     expect(panel.textContent).toContain('screen / new-screen');
     const button = (label: string): HTMLButtonElement => [...panel.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.includes(label))!;
-    button('Salva versione').click();
+    button('Save version').click();
     await until(() => !!panel.querySelector('ol li .hash'), 'history');
     // The reads (registry check, screens of the application) start first; here the save counts.
     expect(calls.filter((c) => c.method === 'POST').slice(0, 1)).toEqual([{ url: '/registry/apps/orders/documents/screen/new-screen/versions', method: 'POST' }]);
     expect(panel.querySelector('ol li')?.textContent).toContain('a1b2c3d4e5');
     expect(panel.querySelector('ol li nz-tag')?.textContent?.trim()).toBe('development');
     // Publishing asks for confirmation.
-    button('Pubblica in development').click();
+    button('Publish to development').click();
     await until(() => !!document.querySelector('.ant-modal-confirm, .ant-modal'), 'confirmation');
-    ([...document.querySelectorAll<HTMLButtonElement>('.ant-modal button')].find((b) => b.textContent?.includes('Conferma')) as HTMLButtonElement).click();
+    ([...document.querySelectorAll<HTMLButtonElement>('.ant-modal button')].find((b) => b.textContent?.includes('Confirm')) as HTMLButtonElement).click();
     await until(() => calls.some((c) => c.method === 'PUT'), 'publication');
     expect(calls.find((c) => c.method === 'PUT')?.url).toBe('/registry/apps/orders/documents/screen/new-screen/published?env=development');
     // With errors saving is blocked.
     store.setValue(['screen'], 'Not Valid');
     await settle();
-    expect(button('Salva versione').disabled).toBe(true);
-    expect(panel.textContent).toContain('Correggi gli errori');
+    expect(button('Save version').disabled).toBe(true);
+    expect(panel.textContent).toContain('Fix the errors');
   });
 
   it('registry: review, comparison with the open document, conflicting save and validation errors', async () => {
@@ -1003,34 +1003,34 @@ describe('screen editor', () => {
       // Closed dialogs stay in the DOM: the last one opened counts.
       const last = () => [...document.querySelectorAll<HTMLElement>('.ant-modal')].at(-1);
       await until(() => !!last()?.querySelector('button'), 'confirmation');
-      ([...last()!.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.includes('Conferma')) as HTMLButtonElement).click();
+      ([...last()!.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.includes('Confirm')) as HTMLButtonElement).click();
     };
 
     // History: the version is a draft; review is requested, then it is rejected with a note.
-    button('Storico').click();
-    await until(() => panel.textContent!.includes('bozza'), 'draft state');
-    button('Chiedi revisione').click();
-    await until(() => panel.textContent!.includes('in revisione'), 'in review');
+    button('History').click();
+    await until(() => panel.textContent!.includes('draft'), 'draft state');
+    button('Request review').click();
+    await until(() => panel.textContent!.includes('in review'), 'in review');
     type(panel.querySelector('#registry-note') as HTMLInputElement, 'Title to review');
     await settle();
-    button('Respingi').click();
-    await until(() => panel.textContent!.includes('respinta') && panel.textContent!.includes('Decisa da luisa'), 'rejected with a note');
+    button('Reject').click();
+    await until(() => panel.textContent!.includes('rejected') && panel.textContent!.includes('Decided by luisa'), 'rejected with a note');
     expect(JSON.parse(calls.filter((c) => c.url.endsWith('/review')).at(-1)!.body!)).toEqual({ action: 'reject', note: 'Title to review' });
 
     // Comparison: the saved version against the open document.
-    button('Confronta').click();
+    button('Compare').click();
     await until(() => !!panel.querySelector('.diff li'), 'differences');
     expect(panel.querySelector('.diff')?.textContent).toContain('/title');
     expect(panel.querySelector('.diff')?.textContent).toContain('"Old title"');
 
     // Once that version is opened, saving says where it starts from; if someone else saved, confirmation is asked.
-    button('Apri').click();
+    button('Open').click();
     await confirm();
     await until(() => store.doc() !== null && (store.doc() as { title?: string }).title === 'Old title', 'version opened');
     store.setValue(['title'], 'New title');
     await settle();
-    button('Salva versione').click();
-    await until(() => [...document.querySelectorAll('.ant-modal')].some((m) => m.textContent?.includes('luisa ha salvato')), 'conflict warning');
+    button('Save version').click();
+    await until(() => [...document.querySelectorAll('.ant-modal')].some((m) => m.textContent?.includes('luisa saved')), 'conflict warning');
     expect(calls.filter((c) => c.method === 'POST' && c.url.endsWith('/versions')).at(-1)?.ifMatch).toBe('"a1b2c3d4e5f6"');
     conflict = false;
     await confirm();
@@ -1040,7 +1040,7 @@ describe('screen editor', () => {
     // The registry validation errors are shown point by point.
     store.setValue(['title'], 'Broken');
     await settle();
-    button('Salva versione').click();
+    button('Save version').click();
     await until(() => !!panel.querySelector('.issues li'), 'registry errors');
     expect(panel.querySelector('.issues li')?.textContent).toContain('/components/0/type');
   });
@@ -1069,13 +1069,13 @@ describe('screen editor', () => {
     // The screens of the application in the registry are added to the examples among the known ones.
     await until(() => store.knownScreens().includes('registry-only'), 'registry screens');
     const button = (label: string): HTMLButtonElement => [...panel.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.trim().startsWith(label))!;
-    button('Storico').click();
+    button('History').click();
     await until(() => !!panel.querySelector('ol li .hash'), 'history');
-    button('Pubblica in production').click();
+    button('Publish to production').click();
     const last = () => [...document.querySelectorAll<HTMLElement>('.ant-modal')].at(-1);
-    await until(() => !!last()?.textContent?.includes('Pubblicare comunque'), 'confirmation with the missing screens');
+    await until(() => !!last()?.textContent?.includes('Publish anyway'), 'confirmation with the missing screens');
     expect(last()?.textContent).toContain('order-list');
-    ([...last()!.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.includes('Conferma')) as HTMLButtonElement).click();
+    ([...last()!.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.includes('Confirm')) as HTMLButtonElement).click();
     await until(() => !!panel.querySelector('.issues li'), 'missing screens in the panel');
     expect(panel.querySelector('.issues li')?.textContent).toContain('/actions/back/0/navigate');
     expect(panel.querySelector('.issues li')?.textContent).toContain('order-list');
@@ -1093,7 +1093,7 @@ describe('screen editor', () => {
     const panel = document.querySelector('ed-registry-panel') as HTMLElement;
     type(panel.querySelector('#registry-app') as HTMLInputElement, 'orders');
     await settle();
-    ([...panel.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.includes('Storico')) as HTMLButtonElement).click();
+    ([...panel.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.includes('History')) as HTMLButtonElement).click();
     await until(() => !!panel.querySelector('.login'), 'sign-in request');
     ([...panel.querySelectorAll<HTMLButtonElement>('.login button')][0]).click();
     expect(redirects).toEqual(['/bff/login?return=' + encodeURIComponent(location.href)]);
@@ -1102,8 +1102,8 @@ describe('screen editor', () => {
   it('opens an example, and deletes the selected node from the keyboard', async () => {
     store.load(layout as never);
     await until(() => outline().length > 5, 'outline of the example');
-    expect(outline()).toContain('Schede');
-    expect(outline()).toContain('Scheda');
+    expect(outline()).toContain('Tabs');
+    expect(outline()).toContain('Tab');
     expect(store.issues()).toEqual([]);
     store.select(['components', 0]);
     await settle();
@@ -1115,7 +1115,7 @@ describe('screen editor', () => {
 
   it('File menu without registry: «Open from registry…» and «Save to registry» off with the reason; «Save» and Ctrl+S on the file', async () => {
     (el.querySelector('ed-menu-bar [data-menu="file"]') as HTMLButtonElement).click();
-    await until(() => el.querySelector('ed-menu-bar [data-item="save-registry"]')?.getAttribute('title')?.includes('non disponibile') ?? false, 'registry absent');
+    await until(() => el.querySelector('ed-menu-bar [data-item="save-registry"]')?.getAttribute('title')?.includes('not available') ?? false, 'registry absent');
     for (const id of ['open-registry', 'save-registry']) {
       expect(el.querySelector(`ed-menu-bar [data-item="${id}"]`)?.getAttribute('aria-disabled')).toBe('true');
     }
@@ -1126,7 +1126,7 @@ describe('screen editor', () => {
     expect(el.querySelector('[data-unsaved]')).toBeNull();
     store.setValue(['title'], 'Order list');
     await settle();
-    expect(el.querySelector('[data-unsaved]')?.textContent).toContain('Modifiche non salvate');
+    expect(el.querySelector('[data-unsaved]')?.textContent).toContain('Unsaved changes');
     // Ctrl+S: the first save asks where (name proposed from the identifier), the second rewrites the same file.
     const written: string[] = [];
     const picker = vi.fn(async () => ({
@@ -1182,11 +1182,11 @@ describe('screen editor', () => {
     (dialog.querySelector('input[type="radio"]') as HTMLInputElement).dispatchEvent(new Event('change'));
     await settle();
     const select = dialog.querySelector('#registry-open-version') as HTMLSelectElement;
-    expect([...select.options].map((o) => o.textContent?.trim())).toEqual(['Ultima versione (cccccccccc)', 'Pubblicata in development (aaaaaaaaaa)']);
+    expect([...select.options].map((o) => o.textContent?.trim())).toEqual(['Latest version (cccccccccc)', 'Published in development (aaaaaaaaaa)']);
     select.value = 'env:development';
     select.dispatchEvent(new Event('change'));
     await settle();
-    ([...dialog.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.trim() === 'Apri') as HTMLButtonElement).click();
+    ([...dialog.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.trim() === 'Open') as HTMLButtonElement).click();
     await until(() => (store.doc() as { screen?: string }).screen === 'order-list', 'version opened');
     expect(calls.some((c) => c.url === '/registry/apps/orders/documents/screen/order-list/versions/aaaaaaaaaaaa')).toBe(true);
     expect(el.querySelector('[data-unsaved]')).toBeNull();

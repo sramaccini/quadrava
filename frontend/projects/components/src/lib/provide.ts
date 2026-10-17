@@ -97,7 +97,7 @@ export function provideLowcodeComponents(extra: ComponentCatalog = {}): (Provide
     { provide: Confirmation, useExisting: DialogConfirmation },
     { provide: FormDialog, useExisting: DialogForm },
     provideNzIcons(Object.values(ICON_TYPES).map((i) => i.icon)),
-    provideNzI18n(ITALIAN),
+    provideNzI18n(ENGLISH),
     provideNzDateFnsAdapter(),
     importProvidersFrom(NzModalModule),
     provideNzThemeBridge(),

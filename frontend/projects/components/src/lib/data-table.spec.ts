@@ -23,7 +23,7 @@ describe('datatable', () => {
         { field: 'data', label: 'Date', format: 'date', sortable: true, filter: 'date' },
         { field: 'account', label: 'Account', filter: 'select', groupable: true, sortable: true },
         { field: 'category', label: 'Category', filter: 'select', groupable: true },
-        { field: 'note', label: 'Note', filter: 'text' },
+        { field: 'note', label: 'Notes', filter: 'text' },
         { field: 'amount', label: 'Amount', format: 'currency', sortable: true, filter: 'number', aggregate: 'sum' },
       ],
       ...extra,
@@ -36,7 +36,7 @@ describe('datatable', () => {
   const header = (h: ScreenHarness, text: string): HTMLElement => [...h.el.querySelectorAll<HTMLElement>('lc-data-table th')].find((th) => plain(th.textContent).startsWith(text))!;
   const openFilter = async (h: ScreenHarness, column: string): Promise<HTMLElement> => {
     (header(h, column).querySelector('nz-filter-trigger .ant-dropdown-trigger, nz-filter-trigger span') as HTMLElement).click();
-    const panel = (): HTMLElement | undefined => [...document.querySelectorAll<HTMLElement>('.ant-dropdown .filter-panel')].find((p) => p.getAttribute('aria-label') === 'Filtra ' + column);
+    const panel = (): HTMLElement | undefined => [...document.querySelectorAll<HTMLElement>('.ant-dropdown .filter-panel')].find((p) => p.getAttribute('aria-label') === 'Filter ' + column);
     await h.until(() => !!panel(), 'filter open');
     return panel()!;
   };
@@ -44,23 +44,23 @@ describe('datatable', () => {
   it('rows, count, grand total and in-page sorting', async () => {
     const h = await render();
     await h.until(() => bodyRows(h).length === 5, 'rows');
-    expect(count(h)).toBe('5 di 5 righe');
-    expect(plain(h.el.querySelector('lc-data-table tfoot')?.textContent)).toContain('3594,50 €');
+    expect(count(h)).toBe('5 of 5 rows');
+    expect(plain(h.el.querySelector('lc-data-table tfoot')?.textContent)).toContain('€3,594.50');
     header(h, 'Amount').click();
     await h.settle();
-    expect(bodyRows(h).map((r) => r[4])).toEqual(['-1200,00 €', '-90,00 €', '-35,50 €', '120,00 €', '4800,00 €']);
+    expect(bodyRows(h).map((r) => r[4])).toEqual(['-€1,200.00', '-€90.00', '-€35.50', '€120.00', '€4,800.00']);
   });
 
   it('filters from the header: text, choice and range; the button clears them all', async () => {
     const h = await render();
     await h.until(() => bodyRows(h).length === 5, 'rows');
-    const text = await openFilter(h, 'Note');
+    const text = await openFilter(h, 'Notes');
     const input = text.querySelector('input') as HTMLInputElement;
     input.value = 'counter';
     input.dispatchEvent(new Event('input'));
     await h.until(() => bodyRows(h).length === 1, 'text filter (after the pause)');
     expect(bodyRows(h).map((r) => r[3])).toEqual(['Counter sale']);
-    expect(header(h, 'Note').querySelector('nz-filter-trigger .active, nz-filter-trigger .ant-table-filter-trigger.active')).not.toBeNull();
+    expect(header(h, 'Notes').querySelector('nz-filter-trigger .active, nz-filter-trigger .ant-table-filter-trigger.active')).not.toBeNull();
     input.value = '';
     input.dispatchEvent(new Event('input'));
     await h.until(() => bodyRows(h).length === 5, 'text filter removed');
@@ -69,17 +69,17 @@ describe('datatable', () => {
     expect(options.map((o) => plain(o.textContent))).toEqual(['Bank', 'Cash']);
     (options[1].querySelector('input') as HTMLInputElement).click();
     await h.settle();
-    expect(count(h)).toBe('2 di 5 righe');
-    expect(plain(h.el.querySelector('lc-data-table tfoot')?.textContent)).toContain('84,50 €');
+    expect(count(h)).toBe('2 of 5 rows');
+    expect(plain(h.el.querySelector('lc-data-table tfoot')?.textContent)).toContain('€84.50');
     const number = await openFilter(h, 'Amount');
     const [from] = [...number.querySelectorAll<HTMLInputElement>('input')];
     from.value = '0';
     from.dispatchEvent(new Event('input'));
     await h.settle();
     expect(bodyRows(h).map((r) => r[3])).toEqual(['Counter sale']);
-    ([...h.el.querySelectorAll('lc-data-table .toolbar button')].find((b) => plain(b.textContent).includes('Azzera i filtri')) as HTMLButtonElement).click();
+    ([...h.el.querySelectorAll('lc-data-table .toolbar button')].find((b) => plain(b.textContent).includes('Clear filters')) as HTMLButtonElement).click();
     await h.settle();
-    expect(count(h)).toBe('5 di 5 righe');
+    expect(count(h)).toBe('5 of 5 rows');
   });
 
   it('groups on two levels with count and totals; groups close; the grouping can be changed', async () => {
@@ -88,7 +88,7 @@ describe('datatable', () => {
     const groups = (): string[] => [...h.el.querySelectorAll('lc-data-table tr.group-row')].map((tr) => plain(tr.querySelector('.group-label')?.textContent));
     expect(groups()).toEqual(['Account: Bank (3)', 'Category: Rent (1)', 'Category: Sales (1)', 'Category: Supplies (1)', 'Account: Cash (2)', 'Category: Sales (1)', 'Category: Supplies (1)']);
     const banca = h.el.querySelector('lc-data-table tr.group-row') as HTMLElement;
-    expect(plain(banca.querySelectorAll('td')[4].textContent)).toBe('3510,00 €');
+    expect(plain(banca.querySelectorAll('td')[4].textContent)).toBe('€3,510.00');
     const toggle = banca.querySelector('button.toggle') as HTMLButtonElement;
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
     toggle.click();
@@ -126,15 +126,15 @@ describe('datatable', () => {
       const h = await renderScreen({ components: [table({ groupBy: ['account', 'category'] })], dataSources, respond: () => many });
       await h.until(() => bodyRows(h).length === 10, 'first page');
       const firstRender = performance.now() - started;
-      expect(count(h)).toBe('20000 di 20000 righe');
+      expect(count(h)).toBe('20000 of 20000 rows');
       expect(h.el.querySelectorAll('lc-data-table tbody tr')).toHaveLength(10);
       // Text filter, sorting and change of grouping over all the rows.
       const t0 = performance.now();
-      const text = await openFilter(h, 'Note');
+      const text = await openFilter(h, 'Notes');
       const input = text.querySelector('input') as HTMLInputElement;
       input.value = 'number 19';
       input.dispatchEvent(new Event('input'));
-      await h.until(() => count(h) === '1111 di 20000 righe', 'filter');
+      await h.until(() => count(h) === '1111 of 20000 rows', 'filter');
       header(h, 'Amount').click();
       await h.settle();
       const elapsed = performance.now() - t0;

@@ -20,7 +20,7 @@ describe('Section tools and code viewer', () => {
     };
     const { el, settle } = await renderScreen({ components, extraProviders: [{ provide: SectionTools, useValue: tools }] });
     const buttons = [...el.querySelectorAll<HTMLButtonElement>('lc-section .ant-card-extra button')];
-    expect(buttons.map((b) => b.getAttribute('aria-label'))).toEqual(['JSON della sezione «Sample»', 'Aiuto sui componenti della sezione «Sample»']);
+    expect(buttons.map((b) => b.getAttribute('aria-label'))).toEqual(['JSON of the «Sample» section', 'Help on the components of the «Sample» section']);
     buttons[0].click();
     buttons[1].click();
     await settle();

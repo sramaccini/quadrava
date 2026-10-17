@@ -5,7 +5,7 @@ import type { Json, JsonObject } from './doc-ops';
 import { childSlots, containerItems, definitionProperties, listItem, nodeProperties, NODE_TYPES, objectFields, ownerOf, screenProperties, targetAt, type PropertyInfo, type Variant } from './schema-info';
 import { defaultItem, emptyScreen, ensureSource, freshId, INPUT_KINDS, nodeTemplate, summaryOf, uniqueInputName, withFreshIds } from './templates';
 
-const t = (key: string): string => EDITOR_MESSAGES['it'][key] ?? key;
+const t = (key: string): string => EDITOR_MESSAGES['en'][key] ?? key;
 
 describe('reading the schema', () => {
   it('describes the properties of a node with the way to edit them', () => {
@@ -43,10 +43,10 @@ describe('reading the schema', () => {
     const fields = (listItem(nodeProperties('form').find((p) => p.name === 'fields')!) as { fields: PropertyInfo[] }).fields;
     expect(defaultItem(fields, 1, t)).toEqual({ name: 'field2', type: 'text' });
     const columns = (listItem(nodeProperties('table').find((p) => p.name === 'columns')!) as { fields: PropertyInfo[] }).fields;
-    expect(defaultItem(columns, 0, t)).toEqual({ field: 'field1', label: 'Descrizione' });
+    expect(defaultItem(columns, 0, t)).toEqual({ field: 'field1', label: 'Description' });
     // A required list with a minimum starts with one element: an action already has a step (a message).
     const actions = (listItem(nodeProperties('table').find((p) => p.name === 'rowActions')!) as { fields: PropertyInfo[] }).fields;
-    expect(defaultItem(actions, 0, t)).toEqual({ label: 'Descrizione', onClick: [{ toast: '' }] });
+    expect(defaultItem(actions, 0, t)).toEqual({ label: 'Description', onClick: [{ toast: '' }] });
     expect(summaryOf({ field: 'amount', label: "{{ t('x.amount', 'Amount') }}" })).toBe('Amount (amount)');
     expect(summaryOf({ name: 'customer', type: 'lookup' })).toBe('customer · lookup');
     expect(summaryOf({ toast: "{{ t('x.ok', 'Done') }}" }, 'toast')).toBe('toast: Done');
@@ -54,7 +54,7 @@ describe('reading the schema', () => {
 
   it('recognises nodes, tabs and steps and finds the element containing a path', () => {
     const doc: Json = {
-      components: [{ type: 'tabs', tabs: [{ label: 'A', components: [{ type: 'text', text: 'x' }] }] }, { type: 'wizard', steps: [{ label: 'P', components: [] }] }],
+      components: [{ type: 'tabs', tabs: [{ label: 'To', components: [{ type: 'text', text: 'x' }] }] }, { type: 'wizard', steps: [{ label: 'P', components: [] }] }],
     };
     expect(targetAt(doc, [])).toEqual({ kind: 'screen' });
     expect(targetAt(doc, ['components', 0])).toEqual({ kind: 'node', type: 'tabs' });

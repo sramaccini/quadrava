@@ -93,7 +93,7 @@ describe('standalone fields (input)', () => {
     type(code, 'ab', 'change');
     type(broken, 'something', 'change');
     await h.until(() => h.el.querySelectorAll('.ant-form-item-explain-error').length === 3, 'errors');
-    expect([...h.el.querySelectorAll('.ant-form-item-explain-error')].map((e) => plain(e.textContent))).toEqual(['Campo obbligatorio', 'Three characters', 'Not valid']);
+    expect([...h.el.querySelectorAll('.ant-form-item-explain-error')].map((e) => plain(e.textContent))).toEqual(['Required field', 'Three characters', 'Not valid']);
     expect(name.getAttribute('aria-invalid')).toBe('true');
     type(code, 'abc', 'change');
     await h.until(() => h.el.querySelectorAll('.ant-form-item-explain-error').length === 2, 'corrected');
@@ -103,7 +103,7 @@ describe('standalone fields (input)', () => {
     const h = await renderScreen({
       components: [
         { type: 'input', field: { name: 'active', type: 'switch', label: 'Active' } },
-        { type: 'input', readOnlyIf: '{{ !state.active }}', field: { name: 'note', type: 'textarea', label: 'Note' } },
+        { type: 'input', readOnlyIf: '{{ !state.active }}', field: { name: 'note', type: 'textarea', label: 'Notes' } },
         { type: 'input', field: { name: 'code', type: 'text', label: 'Code', readOnlyIf: '{{ true }}' } },
         { type: 'input', enabledIf: '{{ state.active }}', field: { name: 'data', type: 'date', label: 'Date' } },
       ],
@@ -124,7 +124,7 @@ describe('standalone fields (input)', () => {
           type: 'section',
           layout: 'row',
           components: [
-            { type: 'input', field: { name: 'a', type: 'text', label: 'A' } },
+            { type: 'input', field: { name: 'a', type: 'text', label: 'To' } },
             { type: 'input', field: { name: 'b', type: 'text', label: 'B' } },
           ],
         },
@@ -147,9 +147,9 @@ describe('standalone fields (input)', () => {
     const send = h.el.querySelector('lc-button button') as HTMLButtonElement;
     send.click();
     await h.until(() => h.toasts.length === 1, 'warning');
-    expect(h.toasts).toEqual(['Controlla i campi evidenziati']);
+    expect(h.toasts).toEqual(['Check the highlighted fields']);
     // Only the field of the group shows the error (code is empty: the rule does not apply to empty fields).
-    expect([...h.el.querySelectorAll('.ant-form-item-explain-error')].map((e) => plain(e.textContent))).toEqual(['Campo obbligatorio']);
+    expect([...h.el.querySelectorAll('.ant-form-item-explain-error')].map((e) => plain(e.textContent))).toEqual(['Required field']);
     type(customer, 'Smith', 'change');
     type(code, 'ab', 'change');
     await h.settle();

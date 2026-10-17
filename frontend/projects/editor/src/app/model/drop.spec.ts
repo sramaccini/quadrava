@@ -6,7 +6,7 @@ describe('dragging in the outline', () => {
     components: [
       { type: 'text', text: 'a' },
       { type: 'section', components: [{ type: 'text', text: 'b' }] },
-      { type: 'tabs', tabs: [{ label: 'A', components: [] }] },
+      { type: 'tabs', tabs: [{ label: 'To', components: [] }] },
     ],
   };
 

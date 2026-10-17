@@ -35,10 +35,10 @@ describe('file upload', () => {
     const h = await renderScreen({ components: [form('store')], dataSources, respond: (r) => (r.url === '/api/attachments' ? { id: 42 } : {}) });
     choose(h, new File(['x'], 'note.txt', { type: 'text/plain' }));
     await h.until(() => !!error(h), 'type rejected');
-    expect(error(h)).toBe('Tipo di file non ammesso (ammessi: .pdf,image/*)');
+    expect(error(h)).toBe('File type not allowed (allowed: .pdf,image/*)');
     choose(h, new File(['x'.repeat(2048)], 'large.pdf', { type: 'application/pdf' }));
-    await h.until(() => error(h).startsWith('File troppo grande'), 'size rejected');
-    expect(error(h)).toBe('File troppo grande (massimo 1 KB)');
+    await h.until(() => error(h).startsWith('File too large'), 'size rejected');
+    expect(error(h)).toBe('File too large (maximum 1 KB)');
     expect(h.requests).toEqual([]);
     choose(h, new File(['test'], 'ok.pdf', { type: 'application/pdf' }));
     await h.until(() => plain(h.el.querySelector('lc-file-field .name')?.textContent) === 'ok.pdf', 'file uploaded');
@@ -56,18 +56,18 @@ describe('file upload', () => {
     const h = await renderScreen({ components: [form()], dataSources });
     choose(h, new File(['abc'], 'photo.png', { type: 'image/png' }));
     await h.until(() => !!h.el.querySelector('lc-file-field .name'), 'file chosen');
-    expect(plain(h.el.querySelector('lc-file-field button')?.textContent)).toBe('Sostituisci');
+    expect(plain(h.el.querySelector('lc-file-field button')?.textContent)).toBe('Replace');
     save(h);
     await h.until(() => h.requests.length === 1, 'saving');
     expect(h.requests[0].body).toEqual({ attachment: { name: 'photo.png', type: 'image/png', size: 3, content: btoa('abc') } });
     const remove = h.el.querySelector('lc-file-field button[aria-label]') as HTMLButtonElement;
-    expect(remove.getAttribute('aria-label')).toBe('Togli il file photo.png');
+    expect(remove.getAttribute('aria-label')).toBe('Remove the file photo.png');
     remove.click();
     await h.settle();
     expect(h.el.querySelector('lc-file-field .name')).toBeNull();
     save(h);
     await h.settle();
-    expect(plain(h.el.querySelector('.ant-form-item-explain-error')?.textContent)).toBe('Campo obbligatorio');
+    expect(plain(h.el.querySelector('.ant-form-item-explain-error')?.textContent)).toBe('Required field');
     expect(h.requests).toHaveLength(1);
   });
 
@@ -80,8 +80,8 @@ describe('file upload', () => {
     const big = new File(['x'], 'large.pdf', { type: 'application/pdf' });
     Object.defineProperty(big, 'size', { value: 11 * 1024 * 1024 });
     choose(h, big);
-    await h.until(() => error(h).startsWith('File troppo grande'), 'base64 limit');
-    expect(error(h)).toBe('File troppo grande (massimo 10 MB)');
+    await h.until(() => error(h).startsWith('File too large'), 'base64 limit');
+    expect(error(h)).toBe('File too large (maximum 10 MB)');
     choose(h, new File(['abc'], 'small.pdf', { type: 'application/pdf' }));
     await h.until(() => h.requests.length === 1, 'sending');
     expect(h.requests[0].body).toEqual({ name: 'small.pdf', type: 'application/pdf', size: 3, content: btoa('abc') });

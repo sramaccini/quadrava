@@ -23,7 +23,8 @@ import { parseMarkdown } from 'core';
     blockquote { padding: 0.1em 0 0.1em 0.9em; border-left: 3px solid var(--lc-color-border, #d0d7de); color: var(--lc-color-muted, #5d6b7a); }
     code { padding: 0 0.3em; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 0.92em;
       background: color-mix(in srgb, var(--lc-color-muted, #5d6b7a) 12%, transparent); }
-    a { color: var(--lc-color-primary, #1f5fbf); }
+    /* Underlined: a link must not be told apart by its colour alone. */
+    a { color: var(--lc-color-primary, #1f5fbf); text-decoration: underline; }
     :host(.inline) p, :host(.inline) ul, :host(.inline) ol, :host(.inline) blockquote, :host(.inline) h3, :host(.inline) h4, :host(.inline) h5 { margin: 0; }
   `,
   host: { '[class.inline]': 'inline()' },

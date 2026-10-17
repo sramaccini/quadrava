@@ -147,7 +147,7 @@ describe('ScreenComponent + standard catalogue', () => {
     permissions.set(new Set());
     requests.length = 0;
     await settle(fixture);
-    expect(el.querySelector('[role=alert]')?.textContent).toContain('Non hai i permessi');
+    expect(el.querySelector('[role=alert]')?.textContent).toContain('You do not have permission');
     expect(requests).toHaveLength(0);
   });
 });

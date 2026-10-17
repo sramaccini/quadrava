@@ -4,7 +4,7 @@ List of the components of the Quadrava JSON language, with the specification of 
 
 Rules common to all components, new ones included:
 
-- texts go through `{{ }}` and the translation catalogue (`t('key', 'fallback')`); Quadrava's own strings are `lc.*` keys in Italian and English;
+- texts go through `{{ }}` and the translation catalogue (`t('key', 'fallback')`); Quadrava's own strings are `lc.*` keys in English and Italian;
 - no HTML from data or translations: values are always shown as text;
 - expressions are **fail-closed**: if a condition cannot be evaluated, the component is hidden or disabled;
 - `visibleIf`, `hiddenIf`, `tooltip` apply to every node (the `lc-node` container applies them); `grow`, `span` and `region` apply to every node inside a layout container (§ 2.21);

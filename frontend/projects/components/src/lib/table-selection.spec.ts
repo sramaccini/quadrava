@@ -32,12 +32,12 @@ describe('row selection and bulk actions', () => {
     await h.until(() => columnTexts(h.el, 1).length === 3, 'rows');
     // 1 checkbox in the header + 3 in the rows
     expect(boxes(h.el)).toHaveLength(4);
-    expect(plain(h.el.querySelector('.bulk .count')?.textContent)).toBe('Nessuna riga selezionata');
+    expect(plain(h.el.querySelector('.bulk .count')?.textContent)).toBe('No rows selected');
     expect(bulkButton(h.el).disabled).toBe(true);
     boxes(h.el)[1].click();
     boxes(h.el)[3].click();
     await h.settle();
-    expect(plain(h.el.querySelector('.bulk .count')?.textContent)).toBe('2 righe selezionate');
+    expect(plain(h.el.querySelector('.bulk .count')?.textContent)).toBe('2 rows selected');
     expect(plain(bulkButton(h.el).textContent)).toBe('Send 2');
     expect(bulkButton(h.el).disabled).toBe(false);
     expect(h.el.querySelectorAll('tr.ant-table-row-selected')).toHaveLength(2);
@@ -51,12 +51,12 @@ describe('row selection and bulk actions', () => {
     await h.until(() => columnTexts(h.el, 1).length === 3, 'rows');
     boxes(h.el)[0].click();
     await h.settle();
-    expect(plain(h.el.querySelector('.bulk .count')?.textContent)).toBe('3 righe selezionate');
+    expect(plain(h.el.querySelector('.bulk .count')?.textContent)).toBe('3 rows selected');
     // F-2 is not a draft: the action stays disabled.
     expect(bulkButton(h.el).disabled).toBe(true);
     boxes(h.el)[0].click();
     await h.settle();
-    expect(plain(h.el.querySelector('.bulk .count')?.textContent)).toBe('Nessuna riga selezionata');
+    expect(plain(h.el.querySelector('.bulk .count')?.textContent)).toBe('No rows selected');
   });
 
   it('keys of rows that are no longer there leave the selection', async () => {
@@ -70,11 +70,11 @@ describe('row selection and bulk actions', () => {
     boxes(h.el)[1].click();
     boxes(h.el)[2].click();
     await h.settle();
-    expect(plain(h.el.querySelector('.bulk .count')?.textContent)).toBe('2 righe selezionate');
+    expect(plain(h.el.querySelector('.bulk .count')?.textContent)).toBe('2 rows selected');
     data = rows.slice(1);
     ([...h.el.querySelectorAll('button')].find((b) => b.textContent?.includes('Reload')) as HTMLButtonElement).click();
     await h.until(() => columnTexts(h.el, 1).length === 2, 'rows reloaded');
     await h.settle();
-    expect(plain(h.el.querySelector('.bulk .count')?.textContent)).toBe('1 riga selezionata');
+    expect(plain(h.el.querySelector('.bulk .count')?.textContent)).toBe('1 row selected');
   });
 });

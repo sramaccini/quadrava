@@ -27,7 +27,7 @@ The project is published as open source: **everything is in English**. Italian s
 | User-facing texts (platform, editor, demo) | English and Italian catalogues (`messages.ts`, `examples/i18n/en.json`, `it.json`) |
 | Commit messages | English |
 
-The move from Italian was completed in October 2026: what remains in Italian is the Italian catalogue and the tests that check it.
+The move from Italian was completed in October 2026: what remains in Italian is the Italian catalogue and the tests that check it. The default language is English (`I18n`, formats `en-GB`); the tests run in English unless they check the Italian translation.
 
 Documents explain things simply, with figures and practical examples. New content goes into the relevant sections, not into isolated comparison paragraphs. File names in `docs/` are in English.
 

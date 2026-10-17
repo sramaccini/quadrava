@@ -191,11 +191,11 @@ Every text is a string that may contain `{{ … }}` expressions, and every compo
 
 The lookup order is: active language, default language, the fallback written in the JSON, the key itself. Messages use a subset of ICU (`{n}`, `plural`, `select`). Expressions also offer `fmtCurrency(v, 'EUR')`, `fmtNumber(v)`, `fmtDate(v)` and `plural(n, 'one', '{n} many')`, all following the active language, and `user.locale` holds the language code.
 
-Quadrava's own strings (`lc.*`) ship in Italian and English; an application can override any of them. Menu labels, validation messages and the "required field" message are translated the same way.
+Quadrava's own strings (`lc.*`) ship in English (the default language) and Italian; an application can override any of them. Menu labels, validation messages and the "required field" message are translated the same way.
 
 Values that come from the service (statuses, types) keep their original value and are translated only for display: a column takes `"valueKey": "values.status"` (the text shown is `t('values.status.<value>')`, with the value itself as fallback; badge colours stay bound to the original value) and a select field takes `"optionKey": "values.type"`.
 
-The demo remembers the chosen language and starts from the browser language when it is supported. `validate:examples` checks that every language has the same keys and that every key used with `t()` exists, and a runtime test checks that no text in the example screens is left untranslated.
+The demo remembers the chosen language and starts from the browser language when it is supported, otherwise from English. `validate:examples` checks that every language has the same keys and that every key used with `t()` exists, and a runtime test checks that no text in the example screens is left untranslated.
 
 ## Repository layout
 
@@ -296,7 +296,7 @@ Open an example (*File → Apri esempio*) or start a new screen. Details, shortc
 
 * **Data source tab.** Defines the services and the sample data the preview returns. It also imports data sources from an OpenAPI 3 or Swagger 2 document (for example springdoc's `/v3/api-docs` in Spring Boot, or a file): operations are picked from a list grouped by tag and become data sources with path parameters, required query parameters, a `{{ form }}` body and sample data built from the response schema.
 * **Testi tab.** Lists every user-facing text and turns plain texts into translation keys with one click. It edits the translations (applied to the preview at once), exports them, or saves them to the registry (merged into the latest catalogue version) and publishes them.
-* **Languages.** Translations are not limited to Italian and English: languages are added in the *Testi* tab from a list with their names (or imported from files), any of them can become the default language of the fallback texts, and the preview can switch to any of them.
+* **Languages.** Translations are not limited to Italian and English: languages are added in the *Texts* tab from a list with their names (or imported from files), any of them can become the default language of the fallback texts, and the preview can switch to any of them.
 
 ### Navigation and theme
 

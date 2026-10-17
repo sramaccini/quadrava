@@ -57,7 +57,7 @@ export class ExpressionEngine {
    * A value that cannot be formatted (null, non-numeric text) becomes empty text: presentation does not make the screen fail.
    */
   private registerPresentation(): void {
-    const locale = (): string => this.i18n?.locale() ?? 'it-IT';
+    const locale = (): string => this.i18n?.locale() ?? 'en-GB';
     const translate = (key: string, fallback: string | undefined, params: unknown): string => {
       const plain = toParams(params);
       return this.i18n ? this.i18n.translate(key, fallback, plain) : formatMessage(fallback ?? key, plain, locale());

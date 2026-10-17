@@ -61,7 +61,7 @@ describe('dialog with a form (dialog step)', () => {
     await h.until(() => h.requests.length === 1, 'first submission');
     await h.settle();
     expect(dialog()?.querySelector('textarea')).not.toBeNull();
-    expect(h.toasts).toEqual(['Operazione non riuscita']);
+    expect(h.toasts).toEqual(['Operation failed']);
     fail = false;
     dialogButton('Save the note').click();
     await h.until(() => h.toasts.includes('Done'), 'sequence completed');
@@ -72,7 +72,7 @@ describe('dialog with a form (dialog step)', () => {
   it('Cancel closes the dialog and stops the sequence', async () => {
     const h = await renderScreen({ components: [button], dataSources });
     await open(h);
-    dialogButton('Annulla').click();
+    dialogButton('Cancel').click();
     await h.settle();
     expect(h.requests).toEqual([]);
     expect(h.toasts).toEqual([]);

@@ -146,7 +146,7 @@ describe('checkNavigation', () => {
   });
 });
 
-describe('NavigationRuntime: etichette tradotte', () => {
+describe('NavigationRuntime: translated labels', () => {
   it('evaluates t() in the labels and follows the language change', () => {
     const i18n = new I18n();
     i18n.addMessages('it', { 'nav.a': 'Alfa' });
@@ -162,9 +162,9 @@ describe('NavigationRuntime: etichette tradotte', () => {
       i18n,
     });
     expect(nav.areas()[0].label).toBe('Area');
-    expect(nav.areas()[0].items[0].label).toBe('Alfa');
-    i18n.setLocale('en');
     expect(nav.areas()[0].items[0].label).toBe('Alpha');
-    expect(nav.trail('u', 's')).toEqual(['Area', 'Alpha']);
+    i18n.setLocale('it');
+    expect(nav.areas()[0].items[0].label).toBe('Alfa');
+    expect(nav.trail('u', 's')).toEqual(['Area', 'Alfa']);
   });
 });

@@ -15,7 +15,7 @@ const screen: ScreenDefinition = {
 
 describe('CSV', () => {
   it('semicolons, BOM, quotes when needed and neutralised formulas', () => {
-    const csv = toCsv(['Number', 'Note'], [
+    const csv = toCsv(['Number', 'Notes'], [
       ['FT-1', 'semplice'],
       ['FT-2', 'con; punto e virgola'],
       ['FT-3', 'con "virgolette"'],
@@ -25,7 +25,7 @@ describe('CSV', () => {
     ]);
     expect(csv.charCodeAt(0)).toBe(0xfeff);
     expect(csv.slice(1).split('\r\n')).toEqual([
-      'Number;Note',
+      'Number;Notes',
       'FT-1;semplice',
       'FT-2;"con; punto e virgola"',
       'FT-3;"con ""virgolette"""',

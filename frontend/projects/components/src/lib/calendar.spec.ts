@@ -43,9 +43,9 @@ describe('calendar', () => {
     const h = await renderScreen({ components: [calendar], dataSources, respond: events });
     expect(h.requests[0].query).toEqual({ month: month });
     await h.until(() => eventButtons(h).length > 0, 'events');
-    // Day 10 has three events: two visible and «+1 altri».
+    // Day 10 has three events: two visible and «+1 more».
     expect(eventButtons(h).map((b) => plain(b.textContent))).toEqual(['Invoice A', 'Invoice B', 'Meeting']);
-    expect(plain(h.el.querySelector('lc-calendar .more')?.textContent)).toBe('+1 altri');
+    expect(plain(h.el.querySelector('lc-calendar .more')?.textContent)).toBe('+1 more');
     expect((eventButtons(h)[0].querySelector('.dot') as HTMLElement).style.background).toContain('--lc-color-danger');
     expect(eventButtons(h)[0].getAttribute('aria-label')).toMatch(/^Invoice A, 10 /);
     eventButtons(h)[1].click();
@@ -57,10 +57,10 @@ describe('calendar', () => {
     const h = await renderScreen({ components: [calendar], dataSources, respond: events });
     const title = (): string => plain(h.el.querySelector('lc-calendar .header h3')?.textContent);
     const first = title();
-    (h.el.querySelector('lc-calendar .header button[aria-label="Mese successivo"]') as HTMLButtonElement).click();
+    (h.el.querySelector('lc-calendar .header button[aria-label="Next month"]') as HTMLButtonElement).click();
     await h.until(() => h.requests.at(-1)?.query?.['month'] === nextMonth, 'next month');
     expect(title()).not.toBe(first);
-    ([...h.el.querySelectorAll<HTMLButtonElement>('lc-calendar .header button')].find((b) => plain(b.textContent) === 'Oggi'))!.click();
+    ([...h.el.querySelectorAll<HTMLButtonElement>('lc-calendar .header button')].find((b) => plain(b.textContent) === 'Today'))!.click();
     await h.until(() => h.requests.at(-1)?.query?.['month'] === month, 'current month');
     expect(title()).toBe(first);
   });

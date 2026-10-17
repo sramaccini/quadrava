@@ -167,7 +167,7 @@ describe('SidebarComponent', () => {
     permissions.set(new Set());
     await flush(fixture);
     expect(el.querySelector('nav')).toBeNull();
-    expect(el.textContent).toContain('Nessuna funzione disponibile');
+    expect(el.textContent).toContain('No functions available');
   });
 
   it('collapsed it shows only the icons and can be opened again', async () => {
@@ -238,7 +238,7 @@ describe('SidebarComponent', () => {
       input.value = 'zzz';
       input.dispatchEvent(new Event('input'));
       await flush(fixture);
-      expect(text(el.querySelector('.results [role="status"]'))).toBe('Nessuna voce trovata.');
+      expect(text(el.querySelector('.results [role="status"]'))).toBe('No matching items.');
       key(input, 'Escape');
       await flush(fixture);
       expect(el.querySelector('.results')).toBeNull();
@@ -250,10 +250,10 @@ describe('SidebarComponent', () => {
       await flush(fixture);
       const drafts = [...el.querySelectorAll('a.leaf')].find((a) => a.textContent?.includes('Drafts'))!;
       expect(text(drafts.querySelector('.badge'))).toBe('3');
-      expect(text(drafts.querySelector('.visually-hidden'))).toBe(', 3 da gestire');
+      expect(text(drafts.querySelector('.visually-hidden'))).toBe(', 3 to handle');
       fixture.componentRef.setInput('collapsed', true);
       await flush(fixture);
-      expect(drafts.getAttribute('aria-label')).toBe('Drafts, 3 da gestire');
+      expect(drafts.getAttribute('aria-label')).toBe('Drafts, 3 to handle');
     });
 
     it('group titles are reachable from the keyboard and say whether they are open; arrows, Home/End, right and left', async () => {
@@ -288,7 +288,7 @@ describe('SidebarComponent', () => {
     await flush(fixture);
     const title = () => el.querySelector('li[data-group="new"] > .ant-menu-submenu-title') as HTMLElement;
     expect(title().getAttribute('data-lc-badge')).toBe('5');
-    expect(title().getAttribute('aria-label')).toBe('New invoice, 5 da gestire');
+    expect(title().getAttribute('aria-label')).toBe('New invoice, 5 to handle');
     title().click();
     await flush(fixture);
     expect(title().getAttribute('data-lc-badge')).toBeNull();

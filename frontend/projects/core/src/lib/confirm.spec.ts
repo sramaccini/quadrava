@@ -25,7 +25,7 @@ describe('confirm step', () => {
   });
   afterEach(() => rt.destroy());
 
-  const steps = [{ confirm: "Approvare l'ordine {{row.numero}}?" }, { call: 'approva', args: { id: '{{row.id}}' } }, { toast: 'Fatto' }] as const;
+  const steps = [{ confirm: "Approvare l'ordine {{row.numero}}?" }, { call: 'approva', args: { id: '{{row.id}}' } }, { toast: 'Done' }] as const;
   const scope = { row: { id: 7, numero: 'ORD-0007' } };
 
   it('if the user confirms, it shows the text with the values and goes on', async () => {
@@ -33,7 +33,7 @@ describe('confirm step', () => {
     expect(await runSteps(rt, [...steps], scope)).toBe(true);
     expect(fakes.confirmations).toEqual(["Approvare l'ordine ORD-0007?"]);
     expect(fakes.requests).toHaveLength(1);
-    expect(fakes.toasts.map((t) => t.message)).toEqual(['Fatto']);
+    expect(fakes.toasts.map((t) => t.message)).toEqual(['Done']);
   });
 
   it('if the user gives up, it stops the sequence without calls and without error messages', async () => {

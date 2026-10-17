@@ -19,6 +19,8 @@ describe('language and translations in the components', () => {
       ],
     });
     i18n = TestBed.inject(I18n);
+    // Starts in Italian, so that every test sees the switch to English.
+    i18n.setLocale('it');
     i18n.addMessages('it', { 'x.save': 'Salva', 'x.number': 'Numero', 'x.name': 'Nome', 'x.help': 'Aiuto' });
     i18n.addMessages('en', { 'x.save': 'Save', 'x.number': 'Number', 'x.name': 'Name', 'x.help': 'Help' });
     const fixture = TestBed.createComponent(ScreenComponent);

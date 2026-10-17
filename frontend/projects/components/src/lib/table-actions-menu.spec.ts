@@ -33,7 +33,7 @@ describe('row actions menu', () => {
     const h = await renderScreen({ components: [table({ rowActionsInline: 1 })], dataSources, respond: () => rows });
     await h.until(() => columnTexts(h.el, 0).length === 1, 'rows');
     expect(inlineButtons(h)).toEqual(['Open']);
-    expect(moreButton(h)?.getAttribute('aria-label')).toBe('Altre azioni');
+    expect(moreButton(h)?.getAttribute('aria-label')).toBe('More actions');
     moreButton(h)!.click();
     await h.until(() => menuItems().length === 2, 'menu open');
     expect(menuItems().map((i) => plain(i.textContent))).toEqual(['Duplicate', 'Delete']);

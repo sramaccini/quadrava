@@ -41,7 +41,7 @@ const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
  * Turns a value of the row into the text to show. It never throws: a value that cannot be
  * formatted (invalid date, non-numeric amount) is shown as it is, and `null` or `undefined` become empty text.
  */
-export function formatValue(value: unknown, spec: FormatSpec, locale = 'it-IT', labels: FormatLabels = { yes: 'Sì', no: 'No' }): FormattedValue {
+export function formatValue(value: unknown, spec: FormatSpec, locale = 'en-GB', labels: FormatLabels = { yes: 'Yes', no: 'No' }): FormattedValue {
   if (value === null || value === undefined) return { text: '' };
   try {
     switch (spec.format) {

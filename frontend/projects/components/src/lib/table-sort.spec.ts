@@ -33,14 +33,14 @@ describe('table sorting', () => {
     const table: NodeDefinition = {
       type: 'table',
       source: 'data',
-      columns: [{ field: 'number', label: 'Number', sortable: true }, { field: 'amount', label: 'Amount', sortable: true }, { field: 'note', label: 'Note' }],
+      columns: [{ field: 'number', label: 'Number', sortable: true }, { field: 'amount', label: 'Amount', sortable: true }, { field: 'note', label: 'Notes' }],
     };
     const h = await renderScreen({ components: [table], dataSources: { data: { type: 'rest', method: 'GET', url: '/api/data' } }, respond: () => rows });
     await h.until(() => columnTexts(h.el, 0).length === 3, 'rows');
     expect(columnTexts(h.el, 0)).toEqual(['B-2', 'A-10', 'A-9']);
     const number = header(h.el, 'Number');
     expect(number.getAttribute('aria-sort')).toBe('none');
-    expect(header(h.el, 'Note').getAttribute('aria-sort')).toBeNull();
+    expect(header(h.el, 'Notes').getAttribute('aria-sort')).toBeNull();
     clickSorter(number);
     await h.settle();
     expect(columnTexts(h.el, 0)).toEqual(['A-9', 'A-10', 'B-2']);

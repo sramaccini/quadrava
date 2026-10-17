@@ -132,7 +132,7 @@ describe('schema of the new components', () => {
   describe('repeatable rows', () => {
     const form = (fields: unknown[]) => screen([{ type: 'form', fields }]);
     it('accepts rows with simple fields and limits', () => {
-      expect(issuesOf(form([{ name: 'r', type: 'repeater', minRows: 1, maxRows: 5, addLabel: 'Aggiungi', fields: [{ name: 'a', type: 'text', required: true }, { name: 'b', type: 'switch' }] }]))).toEqual([]);
+      expect(issuesOf(form([{ name: 'r', type: 'repeater', minRows: 1, maxRows: 5, addLabel: 'Add', fields: [{ name: 'a', type: 'text', required: true }, { name: 'b', type: 'switch' }] }]))).toEqual([]);
     });
     it('rejects rows without fields, non-simple fields and out-of-range limits', () => {
       expect(issuesOf(form([{ name: 'r', type: 'repeater' }])).length).toBeGreaterThan(0);
@@ -144,9 +144,9 @@ describe('schema of the new components', () => {
   });
 
   describe('dialog step', () => {
-    const button = (onClick: unknown[]) => screen([{ type: 'button', label: 'Apri', onClick }]);
+    const button = (onClick: unknown[]) => screen([{ type: 'button', label: 'Open', onClick }]);
     it('accepts a window with title, fields, initial values and submit steps', () => {
-      expect(issuesOf(button([{ dialog: { title: 'Note', fields: [{ name: 'text', type: 'textarea' }], initial: { text: '{{ row.note }}' }, columns: 2, submitLabel: 'Save', onSubmit: [{ call: 'save' }] } }, { refresh: 'x' }]))).toEqual([]);
+      expect(issuesOf(button([{ dialog: { title: 'Notes', fields: [{ name: 'text', type: 'textarea' }], initial: { text: '{{ row.note }}' }, columns: 2, submitLabel: 'Save', onSubmit: [{ call: 'save' }] } }, { refresh: 'x' }]))).toEqual([]);
     });
     it('rejects windows without title, fields or submit, or with foreign properties', () => {
       expect(issuesOf(button([{ dialog: { fields: [{ name: 'a', type: 'text' }], onSubmit: [{ toast: 'x' }] } }])).length).toBeGreaterThan(0);
@@ -158,25 +158,25 @@ describe('schema of the new components', () => {
 
   describe('indicators', () => {
     it('accepts indicators from a field or from an expression', () => {
-      expect(issuesOf(screen([{ type: 'stats', source: 'r', items: [{ label: 'A', field: 'a', format: 'currency', tone: 'success', caption: 'x' }, { label: 'B', value: '{{ row.a / 2 }}' }] }]))).toEqual([]);
+      expect(issuesOf(screen([{ type: 'stats', source: 'r', items: [{ label: 'To', field: 'a', format: 'currency', tone: 'success', caption: 'x' }, { label: 'B', value: '{{ row.a / 2 }}' }] }]))).toEqual([]);
     });
     it('rejects indicators without a value, too many indicators or foreign properties', () => {
-      expect(issuesOf(screen([{ type: 'stats', items: [{ label: 'A' }] }])).length).toBeGreaterThan(0);
+      expect(issuesOf(screen([{ type: 'stats', items: [{ label: 'To' }] }])).length).toBeGreaterThan(0);
       expect(issuesOf(screen([{ type: 'stats', items: [] }])).length).toBeGreaterThan(0);
       expect(issuesOf(screen([{ type: 'stats', items: Array.from({ length: 9 }, (_, i) => ({ label: String(i), field: 'a' })) }])).length).toBeGreaterThan(0);
-      expect(issuesOf(screen([{ type: 'stats', items: [{ label: 'A', field: 'a', icona: 'x' }] }])).length).toBeGreaterThan(0);
+      expect(issuesOf(screen([{ type: 'stats', items: [{ label: 'To', field: 'a', icona: 'x' }] }])).length).toBeGreaterThan(0);
     });
   });
 
   describe('wizard', () => {
     const step = (label: string) => ({ label, components: [{ type: 'text', text: label }] });
     it('accepts from 2 to 10 steps with state, conditions and labels', () => {
-      expect(issuesOf(screen([{ type: 'wizard', bind: 'state.passo', nextLabel: 'Avanti', steps: [{ ...step('A'), nextIf: '{{ true }}', description: 'x' }, step('B')] }]))).toEqual([]);
+      expect(issuesOf(screen([{ type: 'wizard', bind: 'state.passo', nextLabel: 'Next', steps: [{ ...step('To'), nextIf: '{{ true }}', description: 'x' }, step('B')] }]))).toEqual([]);
     });
     it('rejects a single step, steps without content or with foreign properties', () => {
-      expect(issuesOf(screen([{ type: 'wizard', steps: [step('A')] }])).length).toBeGreaterThan(0);
-      expect(issuesOf(screen([{ type: 'wizard', steps: [{ label: 'A' }, step('B')] }])).length).toBeGreaterThan(0);
-      expect(issuesOf(screen([{ type: 'wizard', steps: [{ ...step('A'), icona: 'x' }, step('B')] }])).length).toBeGreaterThan(0);
+      expect(issuesOf(screen([{ type: 'wizard', steps: [step('To')] }])).length).toBeGreaterThan(0);
+      expect(issuesOf(screen([{ type: 'wizard', steps: [{ label: 'To' }, step('B')] }])).length).toBeGreaterThan(0);
+      expect(issuesOf(screen([{ type: 'wizard', steps: [{ ...step('To'), icona: 'x' }, step('B')] }])).length).toBeGreaterThan(0);
     });
   });
 
@@ -205,7 +205,7 @@ describe('schema of the new components', () => {
   describe('charts', () => {
     const chart = (extra: Record<string, unknown>) => screen([{ type: 'chart', kind: 'bar', source: 's', categoryField: 'c', series: [{ field: 'v' }], ...extra }]);
     it('accepts bars, lines and pies with formats and coloured series', () => {
-      expect(issuesOf(chart({ categoryFormat: 'month', format: 'currency', currency: 'EUR', height: 300, series: [{ field: 'a', label: 'A', tone: 'success' }, { field: 'b' }] }))).toEqual([]);
+      expect(issuesOf(chart({ categoryFormat: 'month', format: 'currency', currency: 'EUR', height: 300, series: [{ field: 'a', label: 'To', tone: 'success' }, { field: 'b' }] }))).toEqual([]);
       expect(issuesOf(chart({ kind: 'pie', categoryKey: 'values.status' }))).toEqual([]);
       expect(issuesOf(chart({ stacked: true, rightFormat: 'percent', series: [{ field: 'a' }, { field: 'm', kind: 'line', axis: 'right' }] }))).toEqual([]);
       expect(issuesOf(chart({ series: [{ field: 'm', axis: 'top' }] })).length).toBeGreaterThan(0);
@@ -247,7 +247,7 @@ describe('schema of the new components', () => {
   });
 
   describe('standalone field (input) and row section', () => {
-    const input = (extra: Record<string, unknown>) => screen([{ type: 'input', field: { name: 'nome', type: 'text', label: 'Nome' }, ...extra }]);
+    const input = (extra: Record<string, unknown>) => screen([{ type: 'input', field: { name: 'nome', type: 'text', label: 'Name' }, ...extra }]);
 
     it('accepts a field with state, initial value and steps on change', () => {
       expect(issuesOf(input({}))).toEqual([]);
@@ -295,7 +295,7 @@ describe('schema of the new components', () => {
       expect(issuesOf(screen([{ type: 'link', label: 'Doc', href: 'https://example.com/doc' }]))).toEqual([]);
       expect(issuesOf(screen([{ type: 'progress', value: '{{ 3 }}', max: 4, kind: 'circle', tone: 'success' }]))).toEqual([]);
       expect(issuesOf(screen([{ type: 'timeline', source: 's', dateField: 'd', labelField: 'l', toneField: 't', tones: { ko: 'danger' }, order: 'asc' }]))).toEqual([]);
-      expect(issuesOf(screen([{ type: 'kanban', source: 's', columnField: 'stato', titleField: 't', columns: [{ value: 'a', label: 'A', tone: 'primary' }], moveIf: '{{ true }}', onMove: [{ refresh: 's' }] }]))).toEqual([]);
+      expect(issuesOf(screen([{ type: 'kanban', source: 's', columnField: 'stato', titleField: 't', columns: [{ value: 'a', label: 'To', tone: 'primary' }], moveIf: '{{ true }}', onMove: [{ refresh: 's' }] }]))).toEqual([]);
     });
 
     it('rejects images without alternative text, ambiguous or dangerous links, missing columns', () => {

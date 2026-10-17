@@ -42,13 +42,13 @@ describe('charts', () => {
     // 3 incoming + 2 outgoing (one value is missing)
     const bars = [...h.el.querySelectorAll('lc-chart rect.mark')];
     expect(bars).toHaveLength(5);
-    expect(plain(bars[0].querySelector('title')?.textContent)).toBe('gen 26 · Incoming: 1200,00 €');
+    expect(plain(bars[0].querySelector('title')?.textContent)).toBe('Jan 26 · Incoming: €1,200.00');
     expect(bars[3].getAttribute('fill')).toContain('--lc-color-danger');
     expect(h.el.querySelector('lc-chart svg')?.getAttribute('aria-hidden')).toBe('true');
     expect([...h.el.querySelectorAll('lc-chart .legend li')].map((li) => plain(li.textContent))).toEqual(['Incoming', 'Outgoing']);
     const table = h.el.querySelector('lc-chart table') as HTMLTableElement;
     expect(plain(table.caption?.textContent)).toBe('Sales by month');
-    expect([...table.tBodies[0].rows].map((r) => [...r.cells].map((c) => plain(c.textContent)).join(' | '))).toEqual(['gen 26 | 1200,00 € | 800,00 €', 'feb 26 | 1500,00 € | —', 'mar 26 | 900,00 € | 1100,00 €']);
+    expect([...table.tBodies[0].rows].map((r) => [...r.cells].map((c) => plain(c.textContent)).join(' | '))).toEqual(['Jan 26 | €1,200.00 | €800.00', 'Feb 26 | €1,500.00 | —', 'Mar 26 | €900.00 | €1,100.00']);
     // Taller bars start higher: the scale is consistent.
     const height = (i: number): number => Number(bars[i].getAttribute('height'));
     expect(height(1)).toBeGreaterThan(height(0));
@@ -64,9 +64,9 @@ describe('charts', () => {
   it('pie: slices of the first series, total in the centre and legend of the categories', async () => {
     const h = await render('pie');
     await h.until(() => h.el.querySelectorAll('lc-chart path.mark').length === 3, 'slices');
-    expect(plain(h.el.querySelector('lc-chart text.total')?.textContent)).toBe('3600,00 €');
-    expect(plain(h.el.querySelector('lc-chart path.mark title')?.textContent)).toBe('gen 26: 1200,00 € (33,3%)');
-    expect([...h.el.querySelectorAll('lc-chart .legend li')].map((li) => plain(li.textContent))).toEqual(['gen 26', 'feb 26', 'mar 26']);
+    expect(plain(h.el.querySelector('lc-chart text.total')?.textContent)).toBe('€3,600.00');
+    expect(plain(h.el.querySelector('lc-chart path.mark title')?.textContent)).toBe('Jan 26: €1,200.00 (33.3%)');
+    expect([...h.el.querySelectorAll('lc-chart .legend li')].map((li) => plain(li.textContent))).toEqual(['Jan 26', 'Feb 26', 'Mar 26']);
   });
 
   describe('stacked, dual axis, combined', () => {
@@ -83,7 +83,7 @@ describe('charts', () => {
     const rect = (el: Element): { y: number; h: number; x: number } => ({ x: Number(el.getAttribute('x')), y: Number(el.getAttribute('y')), h: Number(el.getAttribute('height')) });
 
     it('stacked bars: one column per category, pieces one on top of the other and negatives downwards', async () => {
-      const h = await renderWith({ stacked: true, series: [{ field: 'a', label: 'A' }, { field: 'b', label: 'B' }] });
+      const h = await renderWith({ stacked: true, series: [{ field: 'a', label: 'To' }, { field: 'b', label: 'B' }] });
       await h.until(() => h.el.querySelectorAll('lc-chart rect.mark').length === 4, 'bars');
       const [a1, b1, a2, b2] = [...h.el.querySelectorAll('lc-chart rect.mark')].map(rect);
       // Same column for the two series of the same category.
@@ -93,7 +93,7 @@ describe('charts', () => {
       // B negative in the second month starts from zero and goes down: it begins where A ends (starting from zero).
       expect(Math.abs(b2.y - (a2.y + a2.h))).toBeLessThan(0.01);
       // The scale includes the stacked sum (100 + 50) and the negative.
-      expect([...h.el.querySelectorAll('lc-chart text.axis')].map((t) => plain(t.textContent))).toContain('-100 €');
+      expect([...h.el.querySelectorAll('lc-chart text.axis')].map((t) => plain(t.textContent))).toContain('-€100');
     });
 
     it('combined chart with right axis: bars in euro and a line in percent', async () => {
@@ -106,9 +106,9 @@ describe('charts', () => {
       const right = [...h.el.querySelectorAll('lc-chart text.axis.right')].map((t) => plain(t.textContent));
       expect(right[0]).toBe('0 %');
       expect(right.at(-1)).toMatch(/^\d+ %$/);
-      expect([...h.el.querySelectorAll('lc-chart .legend li')].map((li) => plain(li.textContent))).toEqual(['Revenue', 'Margin (asse destro)']);
-      expect(plain(h.el.querySelector('lc-chart circle title')?.textContent)).toBe('gen 26 · Margin: 12,5 %');
-      expect([...(h.el.querySelector('lc-chart table') as HTMLTableElement).tBodies[0].rows[0].cells].map((c) => plain(c.textContent))).toEqual(['gen 26', '100,00 €', '12,5 %']);
+      expect([...h.el.querySelectorAll('lc-chart .legend li')].map((li) => plain(li.textContent))).toEqual(['Revenue', 'Margin (right axis)']);
+      expect(plain(h.el.querySelector('lc-chart circle title')?.textContent)).toBe('Jan 26 · Margin: 12.5 %');
+      expect([...(h.el.querySelector('lc-chart table') as HTMLTableElement).tBodies[0].rows[0].cells].map((c) => plain(c.textContent))).toEqual(['Jan 26', '€100.00', '12.5 %']);
     });
   });
 });

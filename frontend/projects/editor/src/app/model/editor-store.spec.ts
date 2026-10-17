@@ -11,7 +11,7 @@ describe('EditorStore', () => {
 
   beforeEach(() => {
     localStorage.clear();
-    TestBed.inject(I18n).addMessages('it', EDITOR_MESSAGES['it']);
+    TestBed.inject(I18n).addMessages('en', EDITOR_MESSAGES['en']);
     store = TestBed.inject(EditorStore);
     store.newScreen();
   });
@@ -79,7 +79,7 @@ describe('EditorStore', () => {
     store.addNode('tabs');
     store.addContainerItem(['components', 0]);
     expect(store.selection()).toEqual(['components', 0, 'tabs', 2]);
-    expect(getIn(store.doc(), ['components', 0, 'tabs', 2, 'label'])).toBe('Scheda 3');
+    expect(getIn(store.doc(), ['components', 0, 'tabs', 2, 'label'])).toBe('Tab 3');
     store.addNode('text');
     expect(store.selection()).toEqual(['components', 0, 'tabs', 2, 'components', 0]);
     store.remove(['components', 0, 'tabs', 2, 'components', 0]);
@@ -98,11 +98,11 @@ describe('EditorStore', () => {
     store.setValue(['components', 0, 'text'], 'ok');
     store.duplicate(['components', 0]);
     store.setValue(['components', 1, 'id'], 'text-1');
-    expect(store.issues()).toContainEqual(expect.objectContaining({ pointer: '/components/1/id', message: 'Identificativo «text-1» ripetuto', severity: 'error' }));
+    expect(store.issues()).toContainEqual(expect.objectContaining({ pointer: '/components/1/id', message: 'Identifier “text-1” is repeated', severity: 'error' }));
     store.setValue(['components', 1, 'id'], undefined);
     store.addNode('table');
     store.removeSource('list');
-    expect(store.issues()).toEqual([expect.objectContaining({ pointer: '/components/2/source', severity: 'warning', message: 'Data source «list» non definito' })]);
+    expect(store.issues()).toEqual([expect.objectContaining({ pointer: '/components/2/source', severity: 'warning', message: 'Data source “list” is not defined' })]);
     // Warnings do not prevent the preview.
     expect(store.definition()).not.toBeNull();
   });
@@ -127,65 +127,65 @@ describe('EditorStore', () => {
     // The screen title and the new text are plain texts.
     expect(store.textsToFix()).toBe(2);
     const key = store.makeTranslatable(['components', 0, 'text']);
-    expect(key).toBe('new_screen.nuovo_testo');
-    expect(getIn(store.doc(), ['components', 0, 'text'])).toBe("{{ t('new_screen.nuovo_testo', 'Nuovo testo') }}");
-    expect(store.translations()).toEqual({ it: { 'new_screen.nuovo_testo': 'Nuovo testo' } });
-    // English is missing.
+    expect(key).toBe('new_screen.new_text');
+    expect(getIn(store.doc(), ['components', 0, 'text'])).toBe("{{ t('new_screen.new_text', 'New text') }}");
+    expect(store.translations()).toEqual({ en: { 'new_screen.new_text': 'New text' } });
+    // Italian is missing.
     expect(store.textsToFix()).toBe(2);
-    store.setTranslation('en', key!, 'New text');
+    store.setTranslation('it', key!, 'Nuovo testo');
     expect(store.textsToFix()).toBe(1);
-    expect(TestBed.inject(I18n).raw(key!, 'en')).toBe('New text');
+    expect(TestBed.inject(I18n).raw(key!, 'it')).toBe('Nuovo testo');
     // A second equal text gets a different key.
     store.duplicate(['components', 0]);
-    store.setValue(['components', 1, 'text'], 'Nuovo testo');
-    expect(store.makeTranslatable(['components', 1, 'text'])).toBe('new_screen.nuovo_testo_2');
+    store.setValue(['components', 1, 'text'], 'New text');
+    expect(store.makeTranslatable(['components', 1, 'text'])).toBe('new_screen.new_text_2');
     expect(store.issues()).toEqual([]);
   });
 
   it('translation languages: they are added (valid codes), count among the missing ones, are imported and removed', () => {
-    expect(store.languages()).toEqual(['it', 'en']);
+    expect(store.languages()).toEqual(['en', 'it']);
     expect(store.addLanguage('FR')).toBe(false);
     expect(store.addLanguage('francese')).toBe(false);
-    expect(store.addLanguage('en')).toBe(false);
+    expect(store.addLanguage('it')).toBe(false);
     expect(store.addLanguage('fr')).toBe(true);
     expect(store.addLanguage('pt-BR')).toBe(true);
     store.addNode('text');
     const key = store.makeTranslatable(['components', 0, 'text'])!;
-    const entry = { path: ['components', 0, 'text'], property: 'text', value: '', kind: 'key' as const, key, fallback: 'Nuovo testo' };
-    expect(store.missingLocales(entry)).toEqual(['en', 'fr', 'pt-BR']);
+    const entry = { path: ['components', 0, 'text'], property: 'text', value: '', kind: 'key' as const, key, fallback: 'New text' };
+    expect(store.missingLocales(entry)).toEqual(['it', 'fr', 'pt-BR']);
 
     // Import: the format of «Export translations»; a new language is added.
     expect(store.importTranslations({ fr: { [key]: 'Nouveau texte' }, de: { [key]: 'Neuer Text' } })).toBe(2);
-    expect(store.languages()).toEqual(['it', 'en', 'fr', 'pt-BR', 'de']);
-    expect(store.missingLocales(entry)).toEqual(['en', 'pt-BR']);
+    expect(store.languages()).toEqual(['en', 'it', 'fr', 'pt-BR', 'de']);
+    expect(store.missingLocales(entry)).toEqual(['it', 'pt-BR']);
     expect(TestBed.inject(I18n).raw(key, 'de')).toBe('Neuer Text');
     expect(store.importTranslations({ FR: { a: 'b' } })).toBeNull();
     expect(store.importTranslations({ fr: { a: 1 } })).toBeNull();
     expect(store.importTranslations(['x'])).toBeNull();
 
     // The default one cannot be removed; removing a language loses its translations written here.
-    expect(store.removeLanguage('it')).toBe(false);
+    expect(store.removeLanguage('en')).toBe(false);
     expect(store.removeLanguage('de')).toBe(true);
     expect(store.languages()).not.toContain('de');
     expect(store.translations()['de']).toBeUndefined();
     TestBed.tick();
-    expect(JSON.parse(localStorage.getItem('lc.editor.draft')!).languages).toEqual(['it', 'en', 'fr', 'pt-BR']);
+    expect(JSON.parse(localStorage.getItem('lc.editor.draft')!).languages).toEqual(['en', 'it', 'fr', 'pt-BR']);
   });
 
   it('default language: it is changed among the present languages; it applies to fallbacks, «Make translatable» and the languages to remove', () => {
-    expect(store.defaultLanguage()).toBe('it');
+    expect(store.defaultLanguage()).toBe('en');
     expect(store.setDefaultLanguage('fr')).toBe(false);
-    expect(store.setDefaultLanguage('en')).toBe(true);
-    expect(store.languages()).toEqual(['en', 'it']);
+    expect(store.setDefaultLanguage('it')).toBe(true);
+    expect(store.languages()).toEqual(['it', 'en']);
     store.addNode('text');
     const key = store.makeTranslatable(['components', 0, 'text'])!;
-    expect(store.translations()).toEqual({ en: { [key]: 'Nuovo testo' } });
-    const entry = { path: ['components', 0, 'text'], property: 'text', value: '', kind: 'key' as const, key, fallback: 'Nuovo testo' };
-    expect(store.missingLocales(entry)).toEqual(['it']);
-    expect(store.removeLanguage('en')).toBe(false);
-    expect(store.removeLanguage('it')).toBe(true);
+    expect(store.translations()).toEqual({ it: { [key]: 'New text' } });
+    const entry = { path: ['components', 0, 'text'], property: 'text', value: '', kind: 'key' as const, key, fallback: 'New text' };
+    expect(store.missingLocales(entry)).toEqual(['en']);
+    expect(store.removeLanguage('it')).toBe(false);
+    expect(store.removeLanguage('en')).toBe(true);
     TestBed.tick();
-    expect(JSON.parse(localStorage.getItem('lc.editor.draft')!).defaultLanguage).toBe('en');
+    expect(JSON.parse(localStorage.getItem('lc.editor.draft')!).defaultLanguage).toBe('it');
   });
 
   it('selection of several sibling nodes: Ctrl adds and removes, Shift a range; they are wrapped or deleted together', () => {

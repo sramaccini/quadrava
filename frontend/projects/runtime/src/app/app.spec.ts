@@ -37,8 +37,8 @@ describe('App (demo)', () => {
   afterAll(() => restoreViewport());
 
   beforeEach(() => {
-    // Demo language fixed: jsdom declares an English browser.
-    localStorage.setItem('lc.language', 'it');
+    // Demo language fixed, whatever the browser declares.
+    localStorage.setItem('lc.language', 'en');
     vi.stubGlobal('fetch', async (url: string) => {
       const body = files[url];
       return body ? { ok: true, status: 200, json: async () => body } : { ok: false, status: 404, json: async () => ({}) };
@@ -162,7 +162,7 @@ describe('App (demo)', () => {
     (el.querySelector('lc-user-menu button.trigger') as HTMLButtonElement).click();
     await until(fixture, () => document.querySelectorAll('.ant-dropdown li[nz-menu-item]').length > 0, 'user menu');
     const items = [...document.querySelectorAll<HTMLElement>('.ant-dropdown li[nz-menu-item]')];
-    expect(items.at(-1)?.textContent?.trim()).toBe('Esci');
+    expect(items.at(-1)?.textContent?.trim()).toBe('Sign out');
     items.at(-1)!.click();
     await until(fixture, () => !!el.querySelector('.signed-out'), 'session ended');
     expect(el.querySelector('lc-sidebar')).toBeNull();
@@ -240,7 +240,7 @@ describe('App (demo)', () => {
     await until(fixture, () => rows(el) > 0, 'invoice list');
     await TestBed.inject(Router).navigateByUrl('/expense-review/expense-list?status=to-review');
     await until(fixture, () => !!el.querySelector('main [role=alert]'), 'refusal');
-    expect(el.querySelector('main')?.textContent).toContain('Non hai i permessi');
+    expect(el.querySelector('main')?.textContent).toContain('You do not have permission');
     expect(rows(el)).toBe(0);
   });
 
@@ -250,7 +250,7 @@ describe('App (demo)', () => {
     await TestBed.inject(Router).navigateByUrl('/invoice-lookup/missing-screen');
     await until(fixture, () => !!el.querySelector('main [role=alert]'), 'error');
     const text = el.querySelector('main [role=alert]')?.textContent ?? '';
-    expect(text).toContain('La schermata richiesta non esiste o non è disponibile.');
+    expect(text).toContain('The requested screen does not exist or is not available.');
     expect(text).not.toContain('404');
     expect(TestBed.inject(DemoDiagnostics).events()).toContainEqual({ screen: 'missing-screen', source: 'screen loading', error: 'HTTP 404' });
   });
@@ -260,7 +260,7 @@ describe('App (demo)', () => {
     try {
       const { fixture, el } = await start();
       await until(fixture, () => !!el.querySelector('[role=alert]'), 'error');
-      expect(el.querySelector('[role=alert]')?.textContent).toContain('Non è stato possibile caricare il menu.');
+      expect(el.querySelector('[role=alert]')?.textContent).toContain('The menu could not be loaded.');
       expect(TestBed.inject(DemoDiagnostics).events()).toContainEqual({ screen: 'navigation', source: 'navigation loading', error: 'HTTP 404' });
     } finally {
       files['examples/navigation.json'] = navigationDoc;
