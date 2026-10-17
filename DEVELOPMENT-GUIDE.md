@@ -53,12 +53,13 @@ editor  ──► components ──► core   (the preview renders screens with 
 | `npm run publish:examples` | Publishes every example screen, the navigation, every theme and every language catalogue (as `messages` documents) to a registry (`--registry`, `--app`, `--env`, `--token`) |
 | `npm run schema:sync` / `schema:check` | Regenerate / verify the generated schema constants and the precompiled validators (`validators.generated.ts`, Ajv standalone) |
 | `npm run schema:docs` / `schema:docs:check` | Regenerate / verify `docs/schema-reference.md` from the schema descriptions |
+| `npm run notices` / `notices:check` | Regenerate / verify `THIRD-PARTY-NOTICES.md` (the packages shipped in the bundles, with their licences); run it after changing the dependencies. The file is copied into the runtime and editor builds |
 | `npm run conformance:registry` / `conformance:authz` / `conformance:telemetry` | Conformance kits: check a service over HTTP against its contract (`--registry`, `--authz`, `--telemetry` for the address; `--user`/`--password` or `--token`; `--reviewer-user` for the registry, `--other-user` for authorization). Shared helpers in `tools/conformance-lib.mjs` |
 | `npm run validate:examples` | Validates every JSON in `examples/` against the schemas |
 | `npx ng build runtime` | Production build (budgets: warning 2.5 MB, error 4 MB initial) |
 | `npm run e2e` | Playwright end-to-end tests (`e2e/`, including the axe-core accessibility check of every showcase screen) in Chromium against the demo; starts `ng serve runtime` on port 4300 (`E2E_PORT` to change it) unless a server is already running there. Needs `npm run demo:prepare` and, once, `npx playwright install chromium` |
 
-Before opening a pull request, all of these must pass: `schema:check`, `schema:docs:check`, `validate:examples`, `build:libs`, `test:libs`, runtime and editor tests, production builds, `npm run e2e`. CI (`.github/workflows/ci.yml`) runs the same checks on every push to `main` and every pull request, in three jobs: `frontend`, `e2e` and `java` (`mvn -B verify`). When the e2e job fails, the Playwright report and traces are uploaded as the `playwright-report` artifact (open a trace with `npx playwright show-trace <trace.zip>`).
+Before opening a pull request, all of these must pass: `schema:check`, `schema:docs:check`, `validate:examples`, `notices:check`, `build:libs`, `test:libs`, runtime and editor tests, production builds, `npm run e2e`. CI (`.github/workflows/ci.yml`) runs the same checks on every push to `main` and every pull request, in three jobs: `frontend`, `e2e` and `java` (`mvn -B verify`). When the e2e job fails, the Playwright report and traces are uploaded as the `playwright-report` artifact (open a trace with `npx playwright show-trace <trace.zip>`).
 
 ## 4. Adding or changing a component
 

@@ -31,6 +31,7 @@ jobs:
       - run: npm run schema:check
       - run: npm run schema:docs:check
       - run: npm run validate:examples
+      - run: npm run notices:check
       - run: npm run build:libs
       - run: node tools/copy-examples.mjs
       - run: npx ng test schema --watch=false

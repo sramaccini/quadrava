@@ -12,4 +12,5 @@ Quadrava uses third-party software under their own licences, among them
 Angular (MIT), NG-ZORRO and the Ant Design packages (MIT), cel-js (MIT),
 date-fns (MIT), tslib (0BSD), RxJS (Apache-2.0), the Sora typeface (SIL Open
 Font License 1.1), Spring Boot (Apache-2.0) and Keycloak (Apache-2.0).
-Their licence texts are in the respective packages.
+The packages shipped in the browser bundles, with their licence texts, are listed in
+frontend/THIRD-PARTY-NOTICES.md (generated: npm run notices).

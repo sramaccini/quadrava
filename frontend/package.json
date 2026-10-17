@@ -25,6 +25,8 @@
     "stack": "node tools/stack.mjs",
     "schema:docs": "node tools/schema-docs.mjs",
     "schema:docs:check": "node tools/schema-docs.mjs --check",
+    "notices": "node tools/third-party-notices.mjs",
+    "notices:check": "node tools/third-party-notices.mjs --check",
     "conformance:registry": "node tools/conformance-registry.mjs",
     "conformance:authz": "node tools/conformance-authz.mjs",
     "conformance:telemetry": "node tools/conformance-telemetry.mjs"

@@ -426,4 +426,4 @@ Also without Keycloak, with the registry's `no-auth` profile and file storage.
 
 ## License
 
-Quadrava is open source under the [Mozilla Public License 2.0](LICENSE): it can be used, also inside closed commercial products, and changes to Quadrava's own files are shared under the same licence. Attributions are in [NOTICE](NOTICE). The name and the logos are not covered by the licence: see [TRADEMARKS.md](TRADEMARKS.md). Contributions are accepted under the [CLA](CLA.md), as described in [CONTRIBUTING.md](CONTRIBUTING.md).
+Quadrava is open source under the [Mozilla Public License 2.0](LICENSE): it can be used, also inside closed commercial products, and changes to Quadrava's own files are shared under the same licence. Attributions are in [NOTICE](NOTICE), and the third-party packages shipped in the bundles, with their licences, in [frontend/THIRD-PARTY-NOTICES.md](frontend/THIRD-PARTY-NOTICES.md). The name and the logos are not covered by the licence: see [TRADEMARKS.md](TRADEMARKS.md). Contributions are accepted under the [CLA](CLA.md), as described in [CONTRIBUTING.md](CONTRIBUTING.md).

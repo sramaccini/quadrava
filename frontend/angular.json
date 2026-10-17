@@ -28,6 +28,10 @@
               {
                 "glob": "**/*",
                 "input": "projects/runtime/public"
+              },
+              {
+                "glob": "THIRD-PARTY-NOTICES.md",
+                "input": "."
               }
             ],
             "styles": [
@@ -76,6 +80,10 @@
                   "glob": "runtime-config.json",
                   "input": "projects/runtime/config/registry",
                   "output": "/"
+                },
+                {
+                  "glob": "THIRD-PARTY-NOTICES.md",
+                  "input": "."
                 }
               ]
             },
@@ -92,6 +100,10 @@
                   "glob": "runtime-config.json",
                   "input": "projects/runtime/config/bff",
                   "output": "/"
+                },
+                {
+                  "glob": "THIRD-PARTY-NOTICES.md",
+                  "input": "."
                 }
               ]
             }
@@ -144,6 +156,10 @@
               {
                 "glob": "**/*",
                 "input": "projects/editor/public"
+              },
+              {
+                "glob": "THIRD-PARTY-NOTICES.md",
+                "input": "."
               }
             ],
             "styles": [

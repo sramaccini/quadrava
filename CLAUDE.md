@@ -54,7 +54,7 @@ Documents explain things simply, with figures and practical examples. New conten
 Run the checks affected by the change, and all of them before a pull request:
 
 1. `npm run schema:check` and `npm run schema:docs:check` (if a schema changed: first `schema:sync` and `schema:docs`);
-2. `npm run validate:examples`;
+2. `npm run validate:examples`, and `npm run notices:check` (after changing dependencies: `npm run notices`);
 3. `npm run build:libs`;
 4. tests of the projects touched (before a PR: `npm run test:libs` plus runtime and editor);
 5. for the UI: a check in the browser on the demo (port 4300, `.claude/launch.json`) and, if needed, `npm run e2e`;
