@@ -14,6 +14,25 @@ export interface DataSourceDefinition {
   paging?: 'server' | 'none';
 }
 
+/** Reference to a data source of the project (`<document>/<name>`); `params` and `body` replace those of the referenced one. */
+export interface DataSourceReference {
+  ref: string;
+  params?: Record<string, unknown>;
+  body?: Record<string, unknown> | Expression;
+}
+
+/** A data source of a screen: defined in the screen or referred to in the project. */
+export type DataSourceEntry = DataSourceDefinition | DataSourceReference;
+
+/** Data sources of a project shared by its screens (`datasources.schema.json`). */
+export interface DataSourcesDefinition {
+  schemaVersion: string;
+  /** Identifier of the document: the first part of the references. */
+  datasources: string;
+  description?: string;
+  sources: Record<string, DataSourceDefinition>;
+}
+
 export interface CallStep {
   call: string;
   args?: Record<string, unknown>;
@@ -507,7 +526,8 @@ export interface ScreenDefinition {
   title?: string;
   description?: string;
   requires?: string;
-  dataSources?: Record<string, DataSourceDefinition>;
+  /** Data sources by name; a reference is replaced by the referenced definition when the screen is loaded (`resolveDataSources`). */
+  dataSources?: Record<string, DataSourceEntry>;
   /** Named sequences of steps, called by the `run` step. */
   actions?: Record<string, Step | Step[]>;
   components: NodeDefinition[];
@@ -618,4 +638,19 @@ export interface MessagesDefinition {
   messages: string;
   /** Key → text. */
   texts: Record<string, string>;
+}
+
+/** Manifest of a project (`project.json`): the configuration of an application. Aligned with schemas/project.schema.json. */
+export interface ProjectDefinition {
+  schemaVersion: string;
+  /** Identifier of the project (kebab-case). */
+  project: string;
+  name: string;
+  description?: string;
+  /** Languages of the application; one translation catalogue each. */
+  languages: string[];
+  /** Language of the fallback texts written in the screens. */
+  defaultLanguage: string;
+  /** Themes the user can choose, the first one initial (all those of the project if missing). */
+  themes?: string[];
 }

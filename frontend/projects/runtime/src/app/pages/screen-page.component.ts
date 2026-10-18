@@ -2,14 +2,17 @@ import { ChangeDetectionStrategy, Component, computed, inject, resource } from '
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { ExpressionEngine } from 'expressions';
-import { DefinitionSource, I18n, RuntimeDiagnostics, ScreenComponent, checkScreenExpressions } from 'core';
+import { DefinitionSource, I18n, RuntimeDiagnostics, ScreenComponent, checkScreenExpressions, loadDataSources } from 'core';
 import { NavigationService } from '../navigation.service';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { validateScreen, type ScreenDefinition } from 'schema';
 
 type Loaded = { ok: true; definition: ScreenDefinition } | { ok: false; issues: string[] } | { ok: false; failed: 'lc.screenNotFound' | 'lc.screenLoadFailed' };
 
-/** Router page: loads (from the definition source) the screen named in the URL, validates it and shows it with the query parameters. */
+/**
+ * Router page: loads (from the definition source) the screen named in the URL, validates it, resolves its references to the
+ * data sources of the application and shows it with the query parameters.
+ */
 @Component({
   selector: 'lc-screen-page',
   imports: [ScreenComponent, NzAlertModule],
@@ -78,7 +81,10 @@ export class ScreenPage {
       if (!result.valid) return { ok: false, issues: result.issues.map((i) => `${i.path} ${i.message}`) };
       const problems = checkScreenExpressions(result.value, new ExpressionEngine({ can: () => false }));
       if (problems.length) return { ok: false, issues: problems.map((p) => `${p.path}: ${p.message}`) };
-      return { ok: true, definition: result.value };
+      // References that do not resolve leave their data source out (fail-closed): the screen opens, the detail goes to the reports.
+      const resolved = await loadDataSources(result.value, this.definitions);
+      for (const issue of resolved.issues) this.diagnostics?.report({ screen: name, source: issue.path, error: issue.message });
+      return { ok: true, definition: resolved.screen };
     },
   });
 }

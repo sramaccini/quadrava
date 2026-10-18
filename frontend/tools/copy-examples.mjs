@@ -1,21 +1,26 @@
-// Copies the examples (../examples) into the public folders of the runtime and editor apps, so the apps load them over HTTP.
-// It also writes examples/index.json with the list of screens and examples/themes/index.json with the list of themes,
-// which the editor offers to open.
-import { cpSync, rmSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+// Copies the example project (../examples) into the public folders of the runtime and editor apps, so the apps load it over
+// HTTP. It also writes examples/index.json with the list of screens, examples/themes/index.json with the list of themes and
+// examples/files.json with every JSON file of the project (the editor opens the demo project from it).
+import { cpSync, rmSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const source = join(here, '../../examples');
-const screens = readdirSync(source)
-  .filter((file) => file.endsWith('.json'))
-  .filter((file) => 'screen' in JSON.parse(readFileSync(join(source, file), 'utf8')))
-  .map((file) => file.replace(/\.json$/, ''))
-  .sort();
-const themes = readdirSync(join(source, 'themes'))
-  .filter((file) => file.endsWith('.json'))
-  .map((file) => file.replace(/\.json$/, ''))
-  .sort();
+const names = (dir) =>
+  readdirSync(join(source, dir))
+    .filter((file) => file.endsWith('.json'))
+    .map((file) => file.replace(/\.json$/, ''))
+    .sort();
+const screens = names('screens');
+const themes = names('themes');
+/** The JSON files of the project, with their path from its folder (the images and the other assets are not resources). */
+const files = (dir = '') =>
+  readdirSync(join(source, dir), { withFileTypes: true }).flatMap((entry) => {
+    const path = dir ? `${dir}/${entry.name}` : entry.name;
+    return entry.isDirectory() ? files(path) : entry.name.endsWith('.json') ? [path] : [];
+  });
+const projectFiles = files().sort();
 
 for (const app of ['runtime', 'editor']) {
   const target = join(here, `../projects/${app}/public/examples`);
@@ -24,5 +29,6 @@ for (const app of ['runtime', 'editor']) {
   cpSync(source, target, { recursive: true, dereference: true });
   writeFileSync(join(target, 'index.json'), JSON.stringify(screens, null, 2) + '\n');
   writeFileSync(join(target, 'themes', 'index.json'), JSON.stringify(themes, null, 2) + '\n');
+  writeFileSync(join(target, 'files.json'), JSON.stringify(projectFiles, null, 2) + '\n');
   console.log(`Examples copied to projects/${app}/public/examples`);
 }

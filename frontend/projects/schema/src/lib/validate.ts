@@ -1,5 +1,5 @@
-import { messagesValidator, navigationValidator, screenValidator, themeValidator } from './validators.generated';
-import type { MessagesDefinition, NavigationDefinition, ScreenDefinition, ThemeDefinition } from './types';
+import { datasourcesValidator, messagesValidator, navigationValidator, projectValidator, screenValidator, themeValidator } from './validators.generated';
+import type { DataSourcesDefinition, MessagesDefinition, NavigationDefinition, ProjectDefinition, ScreenDefinition, ThemeDefinition } from './types';
 
 export interface ValidationIssue {
   /** Position in the document, for example `/components/0/columns`. */
@@ -38,6 +38,16 @@ export function validateNavigation(document: unknown): ValidationResult<Navigati
 /** Validates a translation catalogue (one language) against the catalogue schema. Does not throw. */
 export function validateMessages(document: unknown): ValidationResult<MessagesDefinition> {
   return run<MessagesDefinition>(messagesValidator, document);
+}
+
+/** Validates a data sources document (data sources of a project shared by its screens). Does not throw. */
+export function validateDataSources(document: unknown): ValidationResult<DataSourcesDefinition> {
+  return run<DataSourcesDefinition>(datasourcesValidator, document);
+}
+
+/** Validates the manifest of a project (project.json). Does not throw. */
+export function validateProject(document: unknown): ValidationResult<ProjectDefinition> {
+  return run<ProjectDefinition>(projectValidator, document);
 }
 
 function run<T>(validator: ValidateFunction, document: unknown): ValidationResult<T> {

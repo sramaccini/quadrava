@@ -7,6 +7,7 @@ export * from './lib/ports';
 export * from './lib/format';
 export * from './lib/i18n';
 export * from './lib/screen-runtime';
+export * from './lib/data-source-loading';
 export * from './lib/csv';
 export * from './lib/markdown';
 export * from './lib/action-engine';

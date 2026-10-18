@@ -21,7 +21,10 @@ class SchemaValidationTest {
     @Test
     void everyExampleIsValidInTheRegistryToo() throws IOException {
         int checked = 0;
-        try (Stream<Path> files = Stream.concat(Files.list(EXAMPLES), Files.list(EXAMPLES.resolve("themes")))) {
+        // The example project: screens/, themes/ and navigation.json.
+        try (Stream<Path> files = Stream.concat(
+                Stream.concat(Files.list(EXAMPLES.resolve("screens")), Files.list(EXAMPLES.resolve("themes"))),
+                Stream.of(EXAMPLES.resolve("navigation.json")))) {
             for (Path file : files.filter(f -> f.toString().endsWith(".json") && !f.getFileName().toString().equals("index.json")).toList()) {
                 String content = Files.readString(file, StandardCharsets.UTF_8);
                 Kind kind = file.getFileName().toString().equals("navigation.json") ? Kind.NAVIGATION

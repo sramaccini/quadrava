@@ -1,12 +1,12 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import navigationDoc from '../../public/examples/navigation.json';
-import invoices from '../../public/examples/invoice-list.json';
-import base from '../../public/examples/showcase-basics.json';
-import form from '../../public/examples/showcase-form.json';
-import tables from '../../public/examples/showcase-tables.json';
-import layout from '../../public/examples/showcase-layout.json';
-import detail from '../../public/examples/order-detail.json';
+import invoices from '../../public/examples/screens/invoice-list.json';
+import base from '../../public/examples/screens/showcase-basics.json';
+import form from '../../public/examples/screens/showcase-form.json';
+import tables from '../../public/examples/screens/showcase-tables.json';
+import layout from '../../public/examples/screens/showcase-layout.json';
+import detail from '../../public/examples/screens/order-detail.json';
 import light from '../../public/examples/themes/light.json';
 import dark from '../../public/examples/themes/dark.json';
 import { DemoDiagnostics } from '../demo/demo-ports';
@@ -22,12 +22,12 @@ describe('Component showcase', () => {
   const files: Record<string, unknown> = {
     'examples/navigation.json': navigationDoc,
     // The initial destination, which opens before going to the showcase screen.
-    'examples/invoice-list.json': invoices,
-    'examples/showcase-basics.json': base,
-    'examples/showcase-form.json': form,
-    'examples/showcase-tables.json': tables,
-    'examples/showcase-layout.json': layout,
-    'examples/order-detail.json': detail,
+    'examples/screens/invoice-list.json': invoices,
+    'examples/screens/showcase-basics.json': base,
+    'examples/screens/showcase-form.json': form,
+    'examples/screens/showcase-tables.json': tables,
+    'examples/screens/showcase-layout.json': layout,
+    'examples/screens/order-detail.json': detail,
     'examples/i18n/it.json': catalogIt,
     'examples/i18n/en.json': catalogEn,
     'examples/themes/light.json': light,

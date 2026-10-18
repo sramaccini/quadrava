@@ -1,6 +1,6 @@
 import { effect, Injector, signal, computed, untracked, type EffectRef } from '@angular/core';
 import { ExpressionEngine, parseTemplate } from 'expressions';
-import type { DialogStep, InputNode, NodeDefinition, ScreenDefinition, Step } from 'schema';
+import { inlineDataSource, type DialogStep, type InputNode, type NodeDefinition, type ScreenDefinition, type Step } from 'schema';
 import {
   Authorization,
   Confirmation,
@@ -97,7 +97,8 @@ export class ScreenRuntime {
     );
     // The declared filters exist in the state from the start (null): the data sources that use them do not fail on the first load.
     this.seedFilters(definition.components);
-    const reads = Object.entries(definition.dataSources ?? {}).filter(([, source]) => source.method === 'GET');
+    // A reference not resolved (`resolveDataSources`) is not a data source: fail-closed.
+    const reads = Object.entries(definition.dataSources ?? {}).filter(([, source]) => inlineDataSource(source)?.method === 'GET');
     for (const [name] of reads) this.pendingFirstLoad.add(name);
     this.openSpan = this.startSpan('screen.open', { 'lowcode.datasources': reads.length });
     if (reads.length === 0) this.openSpan?.end(true);
@@ -361,9 +362,9 @@ export class ScreenRuntime {
    * component repeats its requests.
    */
   async refresh(name: string, trace?: SpanContext): Promise<CallResult> {
-    const source = this.definition.dataSources?.[name];
+    const source = inlineDataSource(this.definition.dataSources?.[name]);
     if (!source) {
-      const error = `data source sconosciuto: ${name}`;
+      const error = `unknown data source: ${name}`;
       this.report(`refresh ${name}`, error);
       return { ok: false, error };
     }
@@ -455,8 +456,8 @@ export class ScreenRuntime {
   }
 
   private build(name: string, args: Record<string, unknown>, scope: Scope = {}): Built {
-    const source = this.definition.dataSources?.[name];
-    if (!source) return { ok: false, error: `data source sconosciuto: ${name}` };
+    const source = inlineDataSource(this.definition.dataSources?.[name]);
+    if (!source) return { ok: false, error: `unknown data source: ${name}` };
     // Arguments take precedence over the variables of the point the call starts from (row, form).
     // Variables of the components that query a data source, always present and null until needed: `search` and
     // `lookupKey` (lookup fields), `request` (page, sorting, filters and groups of a serverDataTable).

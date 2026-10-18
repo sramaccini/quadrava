@@ -384,11 +384,48 @@
 
 ## Data sources
 
+A REST call to a service of the application, through the BFF (relative address on the same origin).
+
 | Property | Type | Description |
 | --- | --- | --- |
-| `type` * | `"rest"` |  |
-| `method` * | `GET`, `POST`, `PUT`, `PATCH`, `DELETE` |  |
-| `url` * | text |  |
+| `type` * | `"rest"` | Kind of data source: rest. |
+| `method` * | `GET`, `POST`, `PUT`, `PATCH`, `DELETE` | HTTP method: GET reads (when the screen opens and with refresh), the others write (with call). |
+| `url` * | text | Address of the service, relative to the same origin (for example /api/orders); it can hold expressions. |
 | `params` | object | Query parameters (GET, DELETE). |
 | `body` |  | Request body (POST, PUT, PATCH): an object with expressions or a single expression, for example {{form}}. If missing, params is used. |
-| `paging` | `server`, `none` |  |
+| `paging` | `server`, `none` | server: the table asks the service for one page at a time (page, size, sort, filters); none (default): all the rows at once. |
+
+### Reference to a data source of the project
+
+Reference to a data source of the project: the identifier of the data sources document and the name of the data source in it. params and body, if present, replace those of the referenced data source (params key by key).
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `ref` * | text | Document and name of the data source, separated by a slash: orders/list. |
+| `params` | object | Query parameters added to those of the referenced data source (same name: this one wins). |
+| `body` |  | Request body that replaces the one of the referenced data source: an object with expressions or a single expression. |
+
+### Data sources document (`datasources.schema.json`)
+
+Data sources of a project, shared by its screens: one document holds one or more of them (for example all the calls of the orders service). A screen uses one with a reference such as {"ref": "orders/list"} in its dataSources.
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `schemaVersion` * | `"1.0"` | Version of the format. |
+| `datasources` * | text | Identifier of the document (kebab-case): the first part of the references, orders in orders/list. |
+| `description` | text | What these data sources are for, for whoever chooses them in the editor. |
+| `sources` * | object | The data sources, by name: the second part of the references, list in orders/list. |
+
+## Project manifest (`project.schema.json`)
+
+Manifest of a Quadrava project (project.json): the configuration of an application. Its resources sit next to it, one file each: screens/, datasources/, themes/, i18n/ and navigation.json.
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `schemaVersion` * | `"1.0"` | Version of the format. |
+| `project` * | text | Identifier of the project (kebab-case); it is also the application in the registry when the project is published. |
+| `name` * | text | Name of the application, shown in the editor. |
+| `description` | text | What the application is for. |
+| `languages` * | list of text | Languages of the application (codes such as en, it, pt-BR): one translation catalogue each in i18n/. |
+| `defaultLanguage` * | text | Language of the fallback texts written in the screens; one of languages. |
+| `themes` | list of text | Themes the user can choose, in order: the first one is the initial one (all those in themes/ if missing). |

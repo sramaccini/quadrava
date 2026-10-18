@@ -6,19 +6,13 @@
   "requires": "orders.order.read",
   "dataSources": {
     "orders": {
-      "type": "rest",
-      "method": "GET",
-      "url": "/api/orders",
+      "ref": "orders/list",
       "params": {
-        "status": "{{state.filters.status}}",
-        "page": "{{state.page}}"
-      },
-      "paging": "server"
+        "status": "{{state.filters.status}}"
+      }
     },
     "approveOrder": {
-      "type": "rest",
-      "method": "POST",
-      "url": "/api/orders/{{id}}/approve"
+      "ref": "orders/approve"
     }
   },
   "components": [

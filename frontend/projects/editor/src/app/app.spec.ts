@@ -1,7 +1,7 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { vi } from 'vitest';
-import layout from '../../public/examples/showcase-layout.json';
+import layout from '../../public/examples/screens/showcase-layout.json';
 import { Confirmation, I18n, Notifier } from 'core';
 import { App } from './app';
 import { appConfig } from './app.config';
@@ -13,7 +13,7 @@ import { EDITOR_REDIRECT } from './model/registry-client';
 import { PreviewComponent } from './preview/preview.component';
 import { isToPreview, type PreviewState } from './preview/protocol';
 
-const FILES: Record<string, unknown> = { 'examples/index.json': ['showcase-layout'], 'examples/showcase-layout.json': layout };
+const FILES: Record<string, unknown> = { 'examples/index.json': ['showcase-layout'], 'examples/screens/showcase-layout.json': layout };
 
 describe('screen editor', () => {
   let fixture: ComponentFixture<App>;

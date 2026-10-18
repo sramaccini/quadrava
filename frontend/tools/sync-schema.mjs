@@ -16,6 +16,8 @@ const schemas = [
   { name: 'theme', constant: 'THEME_SCHEMA' },
   { name: 'navigation', constant: 'NAVIGATION_SCHEMA' },
   { name: 'messages', constant: 'MESSAGES_SCHEMA' },
+  { name: 'datasources', constant: 'DATASOURCES_SCHEMA' },
+  { name: 'project', constant: 'PROJECT_SCHEMA' },
 ];
 const check = process.argv.includes('--check');
 let misaligned = 0;

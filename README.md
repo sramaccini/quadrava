@@ -162,6 +162,15 @@ Plain text keeps its line breaks. Labels (fields, columns, buttons, menu) delibe
 * `print`: the browser print dialog; the print stylesheet hides menu, header and buttons;
 * `export`: downloads the rows of a GET data source as CSV (semicolon separator and UTF-8 BOM for Excel; cells starting with `=`, `+`, `-` or `@` are neutralised against formula injection).
 
+**Data sources shared by the screens.** A data source can be defined in the screen, as above, or in a **data sources document** of the project (`datasources/orders.json`, one or more data sources per file, schema `datasources.schema.json`) and referred to by name; `params` and `body` of the reference adjust it for the screen. The runtime loads the documents referred to when the screen opens; a reference that does not resolve leaves its data source out and is reported (fail-closed). This is how the demo's `order-list` and `order-detail` share the calls of the orders service:
+
+```json
+"dataSources": {
+  "orders": { "ref": "orders/list", "params": { "status": "{{state.filters.status}}" } },
+  "approveOrder": { "ref": "orders/approve" }
+}
+```
+
 GET data sources reload by themselves only when their resolved request (URL and parameters) changes; `refresh` on a non-GET source only notifies the components that query it themselves (such as the server data table).
 
 **Expressions** are written in [CEL](https://github.com/google/cel-spec) inside `{{ ... }}` and see these variables: `user`, `state`, `params`, `row`, `form`, `value`, and the function `can('domain.resource.action')`. Visibility (`visibleIf`, `hiddenIf`), read-only (`readOnlyIf`), enablement (`enabledIf`) and permissions (`requires`) all use them.
@@ -204,7 +213,7 @@ The demo remembers the chosen language and starts from the browser language when
 | `contracts/` | OpenAPI 3.1: `authz.yaml`, `telemetry.yaml`, `registry.yaml` |
 | `reference/` | Spring Boot (Maven multi-module): `bff`, `registry`, `authz`, `telemetry` |
 | `idp/` | Keycloak for local development (Docker Compose and sample realm) |
-| `examples/` | Reference JSON applications used by validation and tests |
+| `examples/` | The demo **project**: `project.json` (manifest: name, languages, themes), `screens/`, `datasources/`, `navigation.json`, `themes/`, `i18n/`; used by the demo, validation and tests |
 | `docs/` | Documentation entry point and architecture decision records |
 | `assets/brand/` | Quadrava brand: icons, logos, colours and usage rules (`assets/brand/README.md`) |
 
@@ -212,7 +221,7 @@ Frontend libraries, from the bottom up:
 
 | Library | Responsibility |
 | --- | --- |
-| `schema` | JSON Schemas (screen, theme, navigation) with generated TypeScript constants, Ajv validators, TypeScript types |
+| `schema` | JSON Schemas (screen, data sources, navigation, theme, translation catalogue, project manifest) with generated TypeScript constants, Ajv validators, TypeScript types, the resolution of the data source references |
 | `expressions` | CEL evaluator (cel-js) with Quadrava's operators and an isolated environment |
 | `core` | Interpreter: screen runtime, action engine, formatting, navigation runtime, theme service, the abstract **ports**, and the screen shell |
 | `components` | The standard component catalogue built on NG-ZORRO, the side menu, the confirmation dialog, the notifier, and the theme bridge |

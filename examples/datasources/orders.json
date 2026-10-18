@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "1.0",
+  "datasources": "orders",
+  "description": "Calls of the orders service, shared by the order list and the order detail.",
+  "sources": {
+    "list": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/orders",
+      "params": {
+        "page": "{{state.page}}"
+      },
+      "paging": "server"
+    },
+    "get": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/orders/{{params.id}}"
+    },
+    "save": {
+      "type": "rest",
+      "method": "PUT",
+      "url": "/api/orders/{{params.id}}",
+      "body": "{{form}}"
+    },
+    "approve": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/orders/{{id}}/approve"
+    }
+  }
+}

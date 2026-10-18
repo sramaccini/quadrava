@@ -2,16 +2,16 @@ import { vi } from 'vitest';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import navigationDoc from '../../public/examples/navigation.json';
-import fattureElenco from '../../public/examples/invoice-list.json';
-import tabelleAvanzate from '../../public/examples/showcase-advanced-tables.json';
-import fields from '../../public/examples/showcase-fields.json';
-import input from '../../public/examples/showcase-input.json';
-import containers from '../../public/examples/showcase-containers.json';
-import tasks from '../../public/examples/showcase-tasks.json';
-import layout from '../../public/examples/showcase-layout.json';
-import dashboard from '../../public/examples/showcase-dashboard.json';
-import views from '../../public/examples/showcase-views.json';
-import datatable from '../../public/examples/showcase-datatable.json';
+import fattureElenco from '../../public/examples/screens/invoice-list.json';
+import tabelleAvanzate from '../../public/examples/screens/showcase-advanced-tables.json';
+import fields from '../../public/examples/screens/showcase-fields.json';
+import input from '../../public/examples/screens/showcase-input.json';
+import containers from '../../public/examples/screens/showcase-containers.json';
+import tasks from '../../public/examples/screens/showcase-tasks.json';
+import layout from '../../public/examples/screens/showcase-layout.json';
+import dashboard from '../../public/examples/screens/showcase-dashboard.json';
+import views from '../../public/examples/screens/showcase-views.json';
+import datatable from '../../public/examples/screens/showcase-datatable.json';
 import light from '../../public/examples/themes/light.json';
 import catalogIt from '../../public/examples/i18n/it.json';
 import catalogEn from '../../public/examples/i18n/en.json';
@@ -23,16 +23,16 @@ import { appConfig } from './app.config';
 export const SHOWCASE_FILES: Record<string, unknown> = {
   'examples/navigation.json': navigationDoc,
   // The initial destination, which opens before going to the showcase screen.
-  'examples/invoice-list.json': fattureElenco,
-  'examples/showcase-advanced-tables.json': tabelleAvanzate,
-  'examples/showcase-fields.json': fields,
-  'examples/showcase-input.json': input,
-  'examples/showcase-containers.json': containers,
-  'examples/showcase-tasks.json': tasks,
-  'examples/showcase-layout.json': layout,
-  'examples/showcase-dashboard.json': dashboard,
-  'examples/showcase-views.json': views,
-  'examples/showcase-datatable.json': datatable,
+  'examples/screens/invoice-list.json': fattureElenco,
+  'examples/screens/showcase-advanced-tables.json': tabelleAvanzate,
+  'examples/screens/showcase-fields.json': fields,
+  'examples/screens/showcase-input.json': input,
+  'examples/screens/showcase-containers.json': containers,
+  'examples/screens/showcase-tasks.json': tasks,
+  'examples/screens/showcase-layout.json': layout,
+  'examples/screens/showcase-dashboard.json': dashboard,
+  'examples/screens/showcase-views.json': views,
+  'examples/screens/showcase-datatable.json': datatable,
   'examples/i18n/it.json': catalogIt,
   'examples/i18n/en.json': catalogEn,
   'examples/themes/light.json': light,

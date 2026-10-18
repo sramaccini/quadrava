@@ -110,13 +110,15 @@ export abstract class FormDialog {
 }
 
 /**
- * Source of the definitions: screens, navigation and themes. In production the registry (the documents published in an
+ * Source of the definitions: screens, data sources, navigation and themes. In production the registry (the documents published in an
  * environment), in the demo the example files. It returns the JSON as it is: whoever uses it validates it. It throws
  * if the document is not there or cannot be loaded; the error has `status` (HTTP code, 0 if the source does not answer)
  * when the source knows it, so whoever shows the error can tell a missing document from a failure.
  */
 export abstract class DefinitionSource {
   abstract screen(id: string): Promise<unknown>;
+  /** A data sources document of the application (the screens refer to its data sources with `ref`). */
+  abstract dataSources(id: string): Promise<unknown>;
   abstract navigation(): Promise<unknown>;
   abstract theme(id: string): Promise<unknown>;
   /** Themes the user can choose from; the first one is the initial one. */

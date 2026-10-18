@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "1.0",
+  "project": "demo",
+  "name": "Quadrava demo",
+  "description": "Orders, invoices, expenses and the showcase of the components.",
+  "languages": ["en", "it"],
+  "defaultLanguage": "en",
+  "themes": ["light", "classic", "dark"]
+}

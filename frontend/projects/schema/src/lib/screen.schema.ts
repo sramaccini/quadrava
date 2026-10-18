@@ -30,8 +30,12 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
     },
     "dataSources": {
       "type": "object",
+      "description": "Data sources of the screen, by name (the name used in source, call and refresh). Each one is defined here or refers to a data source of the project (a data sources document) with ref.",
+      "propertyNames": {
+        "pattern": "^[A-Za-z][A-Za-z0-9_]*$"
+      },
       "additionalProperties": {
-        "$ref": "#/$defs/dataSource"
+        "$ref": "#/$defs/dataSourceEntry"
       }
     },
     "actions": {
@@ -82,7 +86,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
       "additionalProperties": false,
       "properties": {
         "type": {
-          "const": "rest"
+          "const": "rest",
+          "description": "Kind of data source: rest."
         },
         "method": {
           "enum": [
@@ -91,10 +96,12 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
             "PUT",
             "PATCH",
             "DELETE"
-          ]
+          ],
+          "description": "HTTP method: GET reads (when the screen opens and with refresh), the others write (with call)."
         },
         "url": {
-          "type": "string"
+          "type": "string",
+          "description": "Address of the service, relative to the same origin (for example /api/orders); it can hold expressions."
         },
         "params": {
           "type": "object",
@@ -115,6 +122,56 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
           "enum": [
             "server",
             "none"
+          ],
+          "description": "server: the table asks the service for one page at a time (page, size, sort, filters); none (default): all the rows at once."
+        }
+      },
+      "description": "A REST call to a service of the application, through the BFF (relative address on the same origin)."
+    },
+    "dataSourceEntry": {
+      "description": "A data source of the screen: defined here, or a reference to one of the project ({\"ref\": \"orders/list\"}).",
+      "if": {
+        "type": "object",
+        "properties": {
+          "ref": true
+        },
+        "required": [
+          "ref"
+        ]
+      },
+      "then": {
+        "$ref": "#/$defs/dataSourceRef"
+      },
+      "else": {
+        "$ref": "#/$defs/dataSource"
+      }
+    },
+    "dataSourceRef": {
+      "type": "object",
+      "description": "Reference to a data source of the project: the identifier of the data sources document and the name of the data source in it. params and body, if present, replace those of the referenced data source (params key by key).",
+      "required": [
+        "ref"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "ref": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*/[A-Za-z][A-Za-z0-9_]*$",
+          "description": "Document and name of the data source, separated by a slash: orders/list."
+        },
+        "params": {
+          "type": "object",
+          "description": "Query parameters added to those of the referenced data source (same name: this one wins)."
+        },
+        "body": {
+          "description": "Request body that replaces the one of the referenced data source: an object with expressions or a single expression.",
+          "oneOf": [
+            {
+              "type": "object"
+            },
+            {
+              "$ref": "#/$defs/expression"
+            }
           ]
         }
       }

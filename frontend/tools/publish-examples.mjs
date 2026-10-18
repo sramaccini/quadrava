@@ -1,5 +1,5 @@
-// Publishes the examples (../examples) into a registry: every screen, the navigation, every theme and every translation
-// catalogue as separate documents (contracts/registry.yaml 0.5). Used to try the runtime that loads from the registry.
+// Publishes the example project (../examples) into a registry: every screen, every data sources document, the navigation,
+// every theme and every translation catalogue as separate documents (contracts/registry.yaml 0.6). Used to try the runtime that loads from the registry.
 //
 //   node tools/publish-examples.mjs [--registry http://localhost:8081] [--app demo] [--env development]
 //                                   [--token <JWT> | --user <user> --password <password> [--issuer <realm>]]
@@ -39,11 +39,17 @@ const examples = join(here, '../../examples');
 const read = (file) => JSON.parse(readFileSync(file, 'utf8'));
 
 const documents = [];
-for (const file of readdirSync(examples).filter((f) => f.endsWith('.json'))) {
-  const doc = read(join(examples, file));
-  if (typeof doc.screen === 'string') documents.push({ kind: 'screen', id: doc.screen, doc });
-  else if (typeof doc.navigation === 'string') documents.push({ kind: 'navigation', id: doc.navigation, doc });
+// The data sources first: the screens refer to them.
+for (const file of readdirSync(join(examples, 'datasources')).filter((f) => f.endsWith('.json'))) {
+  const doc = read(join(examples, 'datasources', file));
+  documents.push({ kind: 'datasources', id: doc.datasources, doc });
 }
+for (const file of readdirSync(join(examples, 'screens')).filter((f) => f.endsWith('.json'))) {
+  const doc = read(join(examples, 'screens', file));
+  documents.push({ kind: 'screen', id: doc.screen, doc });
+}
+const navigation = read(join(examples, 'navigation.json'));
+documents.push({ kind: 'navigation', id: navigation.navigation, doc: navigation });
 for (const file of readdirSync(join(examples, 'themes')).filter((f) => f.endsWith('.json'))) {
   const doc = read(join(examples, 'themes', file));
   documents.push({ kind: 'theme', id: doc.theme, doc });

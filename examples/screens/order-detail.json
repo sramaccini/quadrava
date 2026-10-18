@@ -5,15 +5,10 @@
   "requires": "orders.order.read",
   "dataSources": {
     "order": {
-      "type": "rest",
-      "method": "GET",
-      "url": "/api/orders/{{params.id}}"
+      "ref": "orders/get"
     },
     "saveOrder": {
-      "type": "rest",
-      "method": "PUT",
-      "url": "/api/orders/{{params.id}}",
-      "body": "{{form}}"
+      "ref": "orders/save"
     }
   },
   "components": [

@@ -360,7 +360,9 @@ export class App {
 
   protected async openExample(name: string): Promise<void> {
     try {
-      const response = await fetch(`examples/${name.split('/').map(encodeURIComponent).join('/')}.json`);
+      // The screens of the example project are in screens/.
+      const path = name === 'navigation' || name.startsWith('themes/') ? name : `screens/${name}`;
+      const response = await fetch(`examples/${path.split('/').map(encodeURIComponent).join('/')}.json`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const doc = (await response.json()) as Json;
       const kind = documentKind(doc);

@@ -1,14 +1,15 @@
 import { Location } from '@angular/common';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import detail from '../../public/examples/order-detail.json';
-import list from '../../public/examples/order-list.json';
+import detail from '../../public/examples/screens/order-detail.json';
+import list from '../../public/examples/screens/order-list.json';
 import navigationDoc from '../../public/examples/navigation.json';
-import invoices from '../../public/examples/invoice-list.json';
-import newInvoice from '../../public/examples/invoice-new.json';
-import newPackage from '../../public/examples/package-new.json';
-import packages from '../../public/examples/package-list.json';
-import expenses from '../../public/examples/expense-list.json';
+import invoices from '../../public/examples/screens/invoice-list.json';
+import newInvoice from '../../public/examples/screens/invoice-new.json';
+import newPackage from '../../public/examples/screens/package-new.json';
+import packages from '../../public/examples/screens/package-list.json';
+import expenses from '../../public/examples/screens/expense-list.json';
+import ordersSources from '../../public/examples/datasources/orders.json';
 import light from '../../public/examples/themes/light.json';
 import dark from '../../public/examples/themes/dark.json';
 import { DemoDiagnostics } from '../demo/demo-ports';
@@ -21,13 +22,14 @@ import { appConfig } from './app.config';
 describe('App (demo)', () => {
   const files: Record<string, unknown> = {
     'examples/navigation.json': navigationDoc,
-    'examples/order-list.json': list,
-    'examples/order-detail.json': detail,
-    'examples/invoice-list.json': invoices,
-    'examples/invoice-new.json': newInvoice,
-    'examples/package-new.json': newPackage,
-    'examples/package-list.json': packages,
-    'examples/expense-list.json': expenses,
+    'examples/screens/order-list.json': list,
+    'examples/screens/order-detail.json': detail,
+    'examples/datasources/orders.json': ordersSources,
+    'examples/screens/invoice-list.json': invoices,
+    'examples/screens/invoice-new.json': newInvoice,
+    'examples/screens/package-new.json': newPackage,
+    'examples/screens/package-list.json': packages,
+    'examples/screens/expense-list.json': expenses,
     'examples/themes/light.json': light,
     'examples/themes/dark.json': dark,
   };

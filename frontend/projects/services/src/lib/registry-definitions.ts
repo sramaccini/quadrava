@@ -27,7 +27,7 @@ export class DefinitionLoadError extends Error {
 }
 
 /**
- * Definitions from the registry (contracts/registry.yaml 0.5): every screen, the navigation, every theme and the catalogue of every language are separate
+ * Definitions from the registry (contracts/registry.yaml 0.6): every screen, every data sources document, the navigation, every theme and the catalogue of every language are separate
  * documents, and the runtime loads the version published in the configured environment. Responses are remembered with their
  * ETag: when the same document is loaded again the registry answers 304 and the copy already downloaded is reused.
  */
@@ -39,6 +39,10 @@ export class RegistryDefinitions extends DefinitionSource {
 
   screen(id: string): Promise<unknown> {
     return this.published('screen', id);
+  }
+
+  dataSources(id: string): Promise<unknown> {
+    return this.published('datasources', id);
   }
 
   navigation(): Promise<unknown> {
@@ -59,7 +63,7 @@ export class RegistryDefinitions extends DefinitionSource {
     return doc && typeof doc === 'object' ? doc.texts : null;
   }
 
-  private async published(kind: 'screen' | 'navigation' | 'theme' | 'messages', id: string): Promise<unknown> {
+  private async published(kind: 'screen' | 'datasources' | 'navigation' | 'theme' | 'messages', id: string): Promise<unknown> {
     const base = (this.config.base ?? '/registry').replace(/\/+$/, '');
     const url = `${base}/apps/${encodeURIComponent(this.config.app)}/documents/${kind}/${encodeURIComponent(id)}/published`;
     const cached = this.cache.get(url);

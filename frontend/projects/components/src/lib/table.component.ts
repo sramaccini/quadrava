@@ -7,7 +7,7 @@ import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
-import type { ActionDefinition, ColumnDefinition, SortSpec, Step, TableColumnDefinition, TableNode } from 'schema';
+import { inlineDataSource, type ActionDefinition, type ColumnDefinition, type SortSpec, type Step, type TableColumnDefinition, type TableNode } from 'schema';
 import { RowActionsComponent } from './row-actions.component';
 import { TONE_COLORS } from './shared';
 import { aggregate, asSort, sortRows, type Row } from './table-data';
@@ -223,7 +223,7 @@ export class TableComponent {
     const items = (data as { items?: unknown } | null)?.items;
     return Array.isArray(items) ? (items as Row[]) : [];
   });
-  protected readonly paged = computed(() => this.runtime().definition.dataSources?.[this.node().source]?.paging === 'server');
+  protected readonly paged = computed(() => inlineDataSource(this.runtime().definition.dataSources?.[this.node().source])?.paging === 'server');
   /** Sorting without shared state (no `sort.bind`): it starts from `sort.default`. */
   private readonly localSort = linkedSignal<SortSpec | null>(() => this.node().sort?.default ?? null);
   /** Current sorting: from the screen state if there is `sort.bind`, otherwise local. */

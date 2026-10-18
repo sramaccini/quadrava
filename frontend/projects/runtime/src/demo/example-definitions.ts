@@ -1,11 +1,15 @@
 import { Injectable } from '@angular/core';
 import { DefinitionSource } from 'core';
 
-/** Definitions of the demo: the files of `examples/` copied into the public folder (tools/copy-examples.mjs). */
+/** Definitions of the demo: the files of the example project `examples/` copied into the public folder (tools/copy-examples.mjs). */
 @Injectable({ providedIn: 'root' })
 export class ExampleDefinitions extends DefinitionSource {
   screen(id: string): Promise<unknown> {
-    return this.load(`examples/${encodeURIComponent(id)}.json`);
+    return this.load(`examples/screens/${encodeURIComponent(id)}.json`);
+  }
+
+  dataSources(id: string): Promise<unknown> {
+    return this.load(`examples/datasources/${encodeURIComponent(id)}.json`);
   }
 
   navigation(): Promise<unknown> {
