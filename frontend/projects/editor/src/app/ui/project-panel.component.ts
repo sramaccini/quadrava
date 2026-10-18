@@ -4,7 +4,6 @@ import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import { Project, type ProjectResource, type ResourceKind } from '../model/project';
-import { SavedDocuments } from '../model/saved-documents';
 import { Workspace } from '../model/workspace';
 import { DockPinComponent } from './dock-pin.component';
 import { KIND_ICONS } from './document-window.component';
@@ -16,6 +15,7 @@ const GROUPS: { kind: ResourceKind; creatable: boolean }[] = [
   { kind: 'datasources', creatable: true },
   { kind: 'navigation', creatable: true },
   { kind: 'theme', creatable: true },
+  { kind: 'messages', creatable: true },
 ];
 
 interface Item {
@@ -118,7 +118,6 @@ export class ProjectPanelComponent {
   protected readonly project = inject(Project);
   protected readonly i18n = inject(I18n);
   private readonly workspace = inject(Workspace);
-  private readonly saved = inject(SavedDocuments);
   private readonly notifier = inject(Notifier);
   /** «+» on a group: the application asks for the name and creates the resource. */
   readonly create = output<ResourceKind>();
@@ -144,7 +143,7 @@ export class ProjectPanelComponent {
             resource,
             label: kind === 'project' ? this.i18n.t('ed.project.settings') : kind === 'navigation' ? this.i18n.t('ed.project.group.navigation') : resource.id,
             open: !!win,
-            unsaved: !!win && !this.saved.isSaved(win.id, win.state.doc()),
+            unsaved: !!win && this.workspace.isUnsaved(win),
             severity: !win ? null : errors ? 'error' : win.state.issues().length ? 'warning' : null,
           };
         }),

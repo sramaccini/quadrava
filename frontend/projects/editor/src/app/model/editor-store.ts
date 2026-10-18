@@ -5,7 +5,7 @@ import { splitReference, validateScreen, type ScreenDefinition } from 'schema';
 import { fromPointer, getIn, insertAt, isObject, moveBy, moveTo, removeAt, samePath, setIn, startsWith, toPointer, type Json, type JsonObject, type Path } from './doc-ops';
 import { DataSourceList, SOURCE_NAME } from './datasources-store';
 import { DOCUMENT_ID, DocumentState, readDraft, writeDraft, type EditorIssue } from './document-state';
-import { KnownDataSources, KnownScreens, NodeClipboard } from './shared-state';
+import { KnownDataSources, KnownScreens, KnownTranslations, NodeClipboard } from './shared-state';
 import { childSlots, ownerOf, targetAt } from './schema-info';
 import { emptyScreen, ensureSource, freshId, nodeTemplate, uniqueInputName, usedIds, withFreshIds } from './templates';
 import { collectTexts, makeKey, translatable, usedKeys, type TextEntry } from './texts';
@@ -73,6 +73,11 @@ export class EditorStore extends DocumentState implements DataSourceList {
   /** The document as a valid screen, or null if it has errors (the preview then shows the last valid version). */
   readonly definition = computed<ScreenDefinition | null>(() => (this.errorCount() === 0 ? (this.doc() as unknown as ScreenDefinition) : null));
   readonly target = computed(() => targetAt(this.doc(), this.selection()));
+  /**
+   * Languages and catalogues of the project (null without a project). With a project the languages are those of the
+   * project, the texts come from its catalogues and the translations written here go into them when the screen is saved.
+   */
+  private readonly projectTexts = inject(KnownTranslations).project;
   /** Data sources documents of the project, to check the references of the data sources (null without a project). */
   private readonly projectSources = inject(KnownDataSources).documents;
   /** Known screens (project, registry, open documents), suggested in the `navigate` steps. */
@@ -88,6 +93,13 @@ export class EditorStore extends DocumentState implements DataSourceList {
     this.doc.set(this.draft?.doc ?? emptyScreen((k) => this.t(k)));
     // The translations of the draft apply at once in the preview.
     for (const [locale, messages] of Object.entries(this.translations())) this.i18n.addMessages(locale, messages);
+    // With a project, its languages and its default language.
+    effect(() => {
+      const project = this.projectTexts();
+      if (!project) return;
+      this.languages.set(mergeLanguages([project.defaultLanguage], project.languages));
+      this.defaultLanguage.set(project.defaultLanguage);
+    });
     effect(() => {
       const draft: Draft = { doc: this.doc(), samples: this.samples(), translations: this.translations(), languages: this.languages(), defaultLanguage: this.defaultLanguage() };
       writeDraft(this.id, draft);
@@ -405,14 +417,14 @@ export class EditorStore extends DocumentState implements DataSourceList {
   /** Adds a language for the translations. Returns false if the code is not valid or the language is already there. */
   addLanguage(code: string): boolean {
     const locale = code.trim();
-    if (!LANGUAGE_CODE.test(locale) || this.languages().includes(locale)) return false;
+    if (this.projectTexts() || !LANGUAGE_CODE.test(locale) || this.languages().includes(locale)) return false;
     this.languages.update((all) => [...all, locale]);
     return true;
   }
 
   /** Makes one of the languages the default (it goes to the top of the list). */
   setDefaultLanguage(locale: string): boolean {
-    if (!this.languages().includes(locale)) return false;
+    if (this.projectTexts() || !this.languages().includes(locale)) return false;
     this.defaultLanguage.set(locale);
     this.languages.update((all) => [locale, ...all.filter((l) => l !== locale)]);
     return true;
@@ -420,7 +432,7 @@ export class EditorStore extends DocumentState implements DataSourceList {
 
   /** Removes a language and the translations written in the editor for it (the default one stays). */
   removeLanguage(locale: string): boolean {
-    if (locale === this.defaultLanguage() || !this.languages().includes(locale)) return false;
+    if (this.projectTexts() || locale === this.defaultLanguage() || !this.languages().includes(locale)) return false;
     this.languages.update((all) => all.filter((l) => l !== locale));
     this.translations.update(({ [locale]: _removed, ...rest }) => rest);
     return true;
@@ -440,6 +452,8 @@ export class EditorStore extends DocumentState implements DataSourceList {
     if (!valid || !entries.length) return null;
     let count = 0;
     for (const [locale, texts] of entries as [string, Record<string, string>][]) {
+      // With a project only its languages are taken (they are added in the settings of the project).
+      if (this.projectTexts() && !this.languages().includes(locale)) continue;
       if (!this.languages().includes(locale)) this.languages.update((all) => [...all, locale]);
       this.translations.update((all) => ({ ...all, [locale]: { ...all[locale], ...texts } }));
       const nonEmpty = Object.fromEntries(Object.entries(texts).filter(([, t]) => t));
@@ -455,10 +469,14 @@ export class EditorStore extends DocumentState implements DataSourceList {
     return collectTexts(this.doc()).filter((e) => e.kind === 'plain' || this.missingLocales(e).length).length;
   });
 
-  /** The text of a key in a language: the one written in the editor, otherwise the catalogue's. */
+  /** The text of a key in a language: the one written in the editor, otherwise the catalogue's (the project's, with a project). */
   translation(locale: string, key: string): string | undefined {
-    return this.translations()[locale]?.[key] ?? this.i18n.raw(key, locale);
+    const project = this.projectTexts();
+    return this.translations()[locale]?.[key] ?? (project ? project.catalogues[locale]?.[key] : this.i18n.raw(key, locale));
   }
+
+  /** Translations written here and not yet in the catalogues of the project (they go there when the screen is saved). */
+  readonly pendingTranslations = computed(() => Object.values(this.translations()).some((texts) => Object.keys(texts).length > 0));
 
   setTranslation(locale: string, key: string, text: string): void {
     this.translations.update((all) => ({ ...all, [locale]: { ...all[locale], [key]: text } }));

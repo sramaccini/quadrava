@@ -26,7 +26,7 @@
         <span class="name">{{ nameOf(locale) }}</span> <code>{{ locale }}</code>
         @if (locale === defaultLocale()) {
           <span class="default">{{ i18n.t('ed.texts.defaultLanguage') }}</span>
-        } @else {
+        } @else if (!inProject()) {
           <button
             type="button"
             class="make-default"
@@ -42,6 +42,9 @@
         }
       </span>
     }
+    @if (inProject()) {
+      <span class="project-note">{{ i18n.t('ed.texts.inProject') }}</span>
+    } @else {
     <form class="add-language" (submit)="$event.preventDefault(); addLanguage(code)">
       <input
         #code
@@ -69,6 +72,7 @@
         <span class="error" role="alert">{{ languageError() }}</span>
       }
     </form>
+    }
   </div>
   <table>
     <thead>

@@ -48,7 +48,7 @@ export class ProjectCommands {
 
   /** Closes the project and its windows; with unsaved changes it asks first. Their drafts stay for the next time. */
   async close(): Promise<boolean> {
-    const unsaved = this.workspace.windows().filter((w) => !this.saved.isSaved(w.id, w.state.doc()));
+    const unsaved = this.workspace.windows().filter((w) => this.workspace.isUnsaved(w));
     if (unsaved.length && !(await this.confirmation.confirm(this.t('ed.project.closeUnsaved', { n: unsaved.length })))) return false;
     this.workspace.detach();
     this.project.close();
@@ -167,6 +167,7 @@ export class ProjectCommands {
     if (!this.project.isOpen()) return this.export(win);
     try {
       const resource = await this.workspace.saveToProject(win);
+      if (resource.kind === 'project') await this.ensureCatalogues();
       const errors = win.state.errorCount();
       this.notifier.toast(errors ? this.t('ed.savedWithErrors', { name: resource.path, n: errors }) : this.t('ed.savedFile', { name: resource.path }));
       return true;
@@ -179,7 +180,7 @@ export class ProjectCommands {
   /** Saves every window with unsaved changes; stops at the first failure. */
   async saveAll(): Promise<void> {
     for (const win of this.workspace.windows()) {
-      if (!this.saved.isSaved(win.id, win.state.doc()) && !(await this.save(win))) return;
+      if (this.workspace.isUnsaved(win) && !(await this.save(win))) return;
     }
   }
 
@@ -196,6 +197,13 @@ export class ProjectCommands {
     } catch (e) {
       this.fail('ed.saveFailed', e);
       return false;
+    }
+  }
+
+  /** Every language of the project has its catalogue: the missing ones are created empty. */
+  private async ensureCatalogues(): Promise<void> {
+    for (const language of this.project.manifest()?.languages ?? []) {
+      if (!this.project.has('messages', language)) await this.project.write({ kind: 'messages', id: language, path: resourcePath('messages', language) }, {});
     }
   }
 

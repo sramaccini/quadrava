@@ -5,8 +5,9 @@ import { DataSourceList, DataSourcesStore } from './datasources-store';
 import { DOCUMENT_ID, DocumentState, draftKey } from './document-state';
 import { EditorStore } from './editor-store';
 import { FileAccess } from './file-access';
+import { MessagesStore } from './messages-store';
 import { NavigationStore } from './navigation-store';
-import { Project, RESOURCE_ID, documentId, resourceAt, resourcePath, type ProjectResource } from './project';
+import { Project, RESOURCE_ID, documentId, resourceAt, resourcePath, textsOf, type ProjectResource } from './project';
 import { ProjectStore } from './project-store';
 import { RegistrySession } from './registry-session';
 import { SavedDocuments, type EditorKind } from './saved-documents';
@@ -14,13 +15,14 @@ import { ThemeStore } from './theme-store';
 import { cascadeBounds, clampBounds, isBounds, tileBounds, type Area, type Bounds } from './window-layout';
 
 export const WORKSPACE_KEY = 'lc.editor.workspace';
-const KINDS: EditorKind[] = ['project', 'screen', 'datasources', 'navigation', 'theme'];
+const KINDS: EditorKind[] = ['project', 'screen', 'datasources', 'navigation', 'theme', 'messages'];
 const STORES: Record<EditorKind, Type<DocumentState>> = {
   project: ProjectStore,
   screen: EditorStore,
   datasources: DataSourcesStore,
   navigation: NavigationStore,
   theme: ThemeStore,
+  messages: MessagesStore,
 };
 /** Identifier of a window: `d` and letters or digits (it names the draft in the browser storage). */
 const WINDOW_ID = /^d[0-9a-z]+$/;
@@ -37,10 +39,13 @@ export function documentProviders(kind: EditorKind, id: string): Provider[] {
   return providers;
 }
 
-/** Kind of a document read from a file: from its identifier property (`screen`, `datasources`, `navigation`, `theme`, `project`). */
+/**
+ * Kind of a document read from a file: from its identifier property (`screen`, `datasources`, `navigation`, `theme`,
+ * `project`). Catalogues have none (they are key → text): they are recognised from their file.
+ */
 export function documentKind(doc: Json): EditorKind | null {
   if (!isObject(doc)) return null;
-  return KINDS.find((kind) => typeof doc[kind] === 'string') ?? null;
+  return KINDS.find((kind) => kind !== 'messages' && typeof doc[kind] === 'string') ?? null;
 }
 
 /** Drafts of the editor before the workspace (one document per kind), opened in windows the first time. */
@@ -108,6 +113,24 @@ export class Workspace {
       const resource = resourceAt(win.path() ?? '');
       const definition = win.injector.get(DataSourcesStore).definition();
       if (resource && definition) all[resource.id] = definition;
+    }
+    return all;
+  });
+
+  /**
+   * The translation catalogues of the project as the screens see them: those saved, with the changes of the windows open on
+   * them and the translations written in the screens and not saved yet.
+   */
+  readonly catalogues = computed<Record<string, Record<string, string>>>(() => {
+    const all = { ...this.project.catalogues() };
+    for (const win of this.windows()) {
+      if (win.kind !== 'messages') continue;
+      const resource = resourceAt(win.path() ?? '');
+      if (resource) all[resource.id] = textsOf(win.state.doc());
+    }
+    for (const win of this.windows()) {
+      if (win.kind !== 'screen') continue;
+      for (const [locale, texts] of Object.entries(win.injector.get(EditorStore).translations())) all[locale] = { ...all[locale], ...texts };
     }
     return all;
   });
@@ -192,7 +215,8 @@ export class Workspace {
    */
   async saveToProject(win: DocumentWindow): Promise<ProjectResource> {
     const doc = win.state.doc();
-    const id = documentId(win.kind, doc);
+    // A catalogue is named by its file (its language), not by its content.
+    const id = win.kind === 'messages' ? (resourceAt(win.path() ?? '')?.id ?? null) : documentId(win.kind, doc);
     if (!id) throw new Error('the document has no valid identifier');
     const resource: ProjectResource = { kind: win.kind, id, path: resourcePath(win.kind, id) };
     const previous = win.path();
@@ -206,7 +230,33 @@ export class Workspace {
     }
     win.path.set(resource.path);
     this.saved.markSaved(win.id, doc);
+    if (win.kind === 'screen') await this.saveTranslations(win.injector.get(EditorStore));
     return resource;
+  }
+
+  /**
+   * The translations written in a screen go into the catalogues of the project: into the window of the catalogue, if open
+   * (to be saved with it), otherwise into its file. Languages without a catalogue get one.
+   */
+  private async saveTranslations(store: EditorStore): Promise<void> {
+    for (const [locale, texts] of Object.entries(store.translations())) {
+      if (!Object.keys(texts).length) continue;
+      const path = resourcePath('messages', locale);
+      const open = this.windowOf(path);
+      if (open) {
+        open.state.apply({ ...(isObject(open.state.doc()) ? (open.state.doc() as Record<string, Json>) : {}), ...texts });
+        continue;
+      }
+      const current = this.project.has('messages', locale) ? textsOf(await this.project.read(path)) : {};
+      await this.project.write({ kind: 'messages', id: locale, path }, { ...current, ...texts });
+    }
+    store.translations.set({});
+  }
+
+  /** The document of a window differs from the one saved (for a screen, also translations not yet in the project). */
+  isUnsaved(win: DocumentWindow): boolean {
+    if (!this.saved.isSaved(win.id, win.state.doc())) return true;
+    return win.kind === 'screen' && this.project.isOpen() && win.injector.get(EditorStore).pendingTranslations();
   }
 
   /** Closes a window: its store, draft, file and registry version are forgotten. The next one in the stack becomes active. */
@@ -317,6 +367,7 @@ export class Workspace {
 
   /** Name of the document of a window: its identifier in the JSON (screen, data sources, navigation, theme, project), if valid. */
   name(win: DocumentWindow): string | null {
+    if (win.kind === 'messages') return resourceAt(win.path() ?? '')?.id ?? null;
     const doc = win.state.doc();
     const id = isObject(doc) ? doc[win.kind === 'project' ? 'name' : win.kind] : null;
     return typeof id === 'string' && (win.kind === 'project' ? id.trim() !== '' : RESOURCE_ID.test(id)) ? id : null;
@@ -343,6 +394,7 @@ export class Workspace {
 
   private create(id: string, kind: EditorKind, path: string | null, bounds: Bounds, maximized: boolean, minimized: boolean): DocumentWindow {
     const injector = createEnvironmentInjector(documentProviders(kind, id), this.parent, `document ${id}`);
+    if (kind === 'messages') injector.get(MessagesStore).language.set(resourceAt(path ?? '')?.id ?? '');
     return {
       id,
       kind,

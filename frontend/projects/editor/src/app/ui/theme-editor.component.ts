@@ -4,7 +4,7 @@ import { NzTabsModule } from 'ng-zorro-antd/tabs';
 import { resolveDataSources, type ThemeDefinition } from 'schema';
 import { EditorStore } from '../model/editor-store';
 import { NavigationStore } from '../model/navigation-store';
-import { KnownDataSources } from '../model/shared-state';
+import { KnownDataSources, KnownTranslations } from '../model/shared-state';
 import { ThemeStore } from '../model/theme-store';
 import { Workspace } from '../model/workspace';
 import { PreviewFrameComponent } from '../preview/preview-frame.component';
@@ -45,6 +45,7 @@ export class ThemeEditorComponent {
   protected readonly store = inject(ThemeStore);
   private readonly workspace = inject(Workspace);
   private readonly projectSources = inject(KnownDataSources).documents;
+  private readonly projectTexts = inject(KnownTranslations).project;
   protected readonly i18n = inject(I18n);
   protected readonly view = signal<'preview' | 'json'>('preview');
 
@@ -65,8 +66,8 @@ export class ThemeEditorComponent {
       theme: this.theme(),
       samples: screens?.samples() ?? {},
       locale: this.i18n.locale(),
-      translations: screens?.translations() ?? {},
-      defaultLocale: screens?.defaultLanguage() ?? 'en',
+      translations: this.projectTexts()?.catalogues ?? screens?.translations() ?? {},
+      defaultLocale: this.projectTexts()?.defaultLanguage ?? screens?.defaultLanguage() ?? 'en',
     });
   });
 }

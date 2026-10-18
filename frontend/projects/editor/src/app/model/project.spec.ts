@@ -8,8 +8,9 @@ import { EditorStore } from './editor-store';
 import { Project, resourceAt, resourcePath } from './project';
 import { ProjectCommands } from './project-commands';
 import { MemoryFolder } from './project-folder';
+import { MessagesStore } from './messages-store';
 import { ProjectStore } from './project-store';
-import { KnownDataSources } from './shared-state';
+import { KnownDataSources, KnownTranslations } from './shared-state';
 import { Workspace, documentProviders } from './workspace';
 
 const MANIFEST = JSON.stringify({ schemaVersion: '1.0', project: 'shop', name: 'Shop', languages: ['en', 'it'], defaultLanguage: 'en', themes: ['light'] });
@@ -155,5 +156,31 @@ describe('Project', () => {
       ['/defaultLanguage', 'error'],
       ['/themes/1', 'warning'],
     ]);
+  });
+
+  it('a catalogue: plain texts with valid keys; the keys of the default language without a text are flagged', () => {
+    TestBed.inject(KnownTranslations).project.set({ languages: ['en', 'it'], defaultLanguage: 'en', catalogues: { en: { 'a.one': 'One', 'a.two': 'Two' } } });
+    const store = createEnvironmentInjector(documentProviders('messages', 'd4'), TestBed.inject(EnvironmentInjector)).get(MessagesStore);
+    store.language.set('it');
+    store.load({ 'a.one': 'Uno' });
+    expect(store.issues().map((i) => [i.pointer, i.severity])).toEqual([['/a.two', 'warning']]);
+    store.setValue(['bad key'], 'x');
+    expect(store.errorCount()).toBeGreaterThan(0);
+    // The default language is the reference: nothing is missing there.
+    store.language.set('en');
+    store.load({ 'a.one': 'One' });
+    expect(store.issues()).toEqual([]);
+  });
+
+  it('saving the settings creates the catalogues of the languages added', async () => {
+    const folder = new MemoryFolder('shop', { 'project.json': MANIFEST, 'i18n/en.json': '{}' });
+    const commands = TestBed.inject(ProjectCommands);
+    await commands.open(folder);
+    const settings = await TestBed.inject(Workspace).openResource({ kind: 'project', id: 'project', path: 'project.json' });
+    settings.state.setValue(['languages'], ['en', 'it', 'fr']);
+    expect(await commands.save(settings)).toBe(true);
+    expect(JSON.parse(folder.files.get('project.json')!).languages).toEqual(['en', 'it', 'fr']);
+    expect([...folder.files.keys()].filter((p) => p.startsWith('i18n/')).sort()).toEqual(['i18n/en.json', 'i18n/fr.json', 'i18n/it.json']);
+    expect(TestBed.inject(Project).catalogues()['fr']).toEqual({});
   });
 });

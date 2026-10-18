@@ -53,7 +53,7 @@
     } @else {
       <aside class="left no-panels">{{ i18n.t('ed.dock.none') }}</aside>
     }
-    @if (active(); as win) {
+    @if (rightTabs().length && active(); as win) {
       <ed-dock-side side="right" [width]="320" [panels]="rightTabs()">
         <ng-container *ngTemplateOutlet="rightPanels; context: { $implicit: win.kind }; injector: win.injector" />
       </ed-dock-side>

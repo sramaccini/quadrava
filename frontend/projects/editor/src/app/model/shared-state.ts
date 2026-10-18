@@ -28,3 +28,21 @@ export class NodeClipboard {
 export class KnownDataSources {
   readonly documents = signal<Record<string, DataSourcesDefinition> | null>(null);
 }
+
+/** Languages and translation catalogues of the open project, as the screens use them. */
+export interface ProjectTexts {
+  languages: string[];
+  defaultLanguage: string;
+  /** Language → key → text: the catalogues saved, with the changes of the windows open on them. */
+  catalogues: Record<string, Record<string, string>>;
+}
+
+/**
+ * The translations of the open project (null without a project: the screens keep their translations in their draft and the
+ * editor's catalogue). With a project the screens read the texts of its catalogues, and the translations written in a
+ * screen go into them when the screen is saved.
+ */
+@Injectable({ providedIn: 'root' })
+export class KnownTranslations {
+  readonly project = signal<ProjectTexts | null>(null);
+}

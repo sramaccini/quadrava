@@ -3,10 +3,11 @@ import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterNextRe
 import { I18n } from 'core';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzIconModule } from 'ng-zorro-antd/icon';
-import { SavedDocuments, type EditorKind } from '../model/saved-documents';
+import type { EditorKind } from '../model/saved-documents';
 import { Workspace, type DocumentWindow } from '../model/workspace';
 import { DocumentWindowComponent, KIND_ICONS } from './document-window.component';
 import { DataSourcesEditorComponent } from './datasources-editor.component';
+import { MessagesEditorComponent } from './messages-editor.component';
 import { NavigationEditorComponent } from './navigation-editor.component';
 import { ProjectEditorComponent } from './project-editor.component';
 import { ScreenEditorComponent } from './screen-editor.component';
@@ -34,6 +35,7 @@ const CREATABLE: EditorKind[] = ['screen', 'datasources', 'navigation', 'theme']
     NgTemplateOutlet,
     DataSourcesEditorComponent,
     DocumentWindowComponent,
+    MessagesEditorComponent,
     NavigationEditorComponent,
     ProjectEditorComponent,
     ScreenEditorComponent,
@@ -125,6 +127,9 @@ const CREATABLE: EditorKind[] = ['screen', 'datasources', 'navigation', 'theme']
         @case ('project') {
           <ed-project-editor />
         }
+        @case ('messages') {
+          <ed-messages-editor />
+        }
       }
     </ng-template>
   `,
@@ -132,7 +137,6 @@ const CREATABLE: EditorKind[] = ['screen', 'datasources', 'navigation', 'theme']
 export class WorkspaceComponent {
   protected readonly workspace = inject(Workspace);
   protected readonly i18n = inject(I18n);
-  private readonly saved = inject(SavedDocuments);
   /** The close button of a window (the application asks for confirmation if there are unsaved changes). */
   readonly closing = output<DocumentWindow>();
   readonly command = output<WorkspaceCommand>();
@@ -159,6 +163,6 @@ export class WorkspaceComponent {
   }
 
   protected unsaved(win: DocumentWindow): boolean {
-    return !this.saved.isSaved(win.id, win.state.doc());
+    return this.workspace.isUnsaved(win);
   }
 }

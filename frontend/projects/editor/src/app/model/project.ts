@@ -62,6 +62,8 @@ export class Project {
   readonly resources = signal<ProjectResource[]>([]);
   /** Data sources documents saved in the project (the valid ones), by identifier. */
   readonly dataSources = signal<Record<string, DataSourcesDefinition>>({});
+  /** Translation catalogues saved in the project: language → key → text. */
+  readonly catalogues = signal<Record<string, Record<string, string>>>({});
   readonly isOpen = computed(() => this.folder() !== null);
   /** Identity of the project in the browser storage (the windows of every project are remembered apart). */
   readonly key = computed(() => {
@@ -98,6 +100,7 @@ export class Project {
     this.manifest.set(null);
     this.resources.set([]);
     this.dataSources.set({});
+    this.catalogues.set({});
   }
 
   /** Reads again the list of the resources (and the data sources documents) from the folder. */
@@ -115,6 +118,15 @@ export class Project {
       }
     }
     this.dataSources.set(sources);
+    const catalogues: Record<string, Record<string, string>> = {};
+    for (const resource of resources.filter((r) => r.kind === 'messages')) {
+      try {
+        catalogues[resource.id] = textsOf(JSON.parse(await folder.read(resource.path)));
+      } catch {
+        catalogues[resource.id] = {};
+      }
+    }
+    this.catalogues.set(catalogues);
   }
 
   /** The content of a resource file, as JSON. */
@@ -134,6 +146,7 @@ export class Project {
       const result = validateProject(doc);
       if (result.valid) this.manifest.set(result.value);
     }
+    if (resource.kind === 'messages') this.catalogues.update((all) => ({ ...all, [resource.id]: textsOf(doc) }));
     if (resource.kind === 'datasources') {
       const result = validateDataSources(doc);
       this.dataSources.update(({ [resource.id]: _old, ...rest }) => (result.valid ? { ...rest, [resource.id]: result.value } : rest));
@@ -146,6 +159,7 @@ export class Project {
     await this.requireFolder().remove(resource.path);
     this.resources.update((list) => list.filter((r) => r.path !== resource.path));
     if (resource.kind === 'datasources') this.dataSources.update(({ [resource.id]: _gone, ...rest }) => rest);
+    if (resource.kind === 'messages') this.catalogues.update(({ [resource.id]: _gone, ...rest }) => rest);
   }
 
   private requireFolder(): ProjectFolder {
@@ -159,6 +173,12 @@ const ORDER: ResourceKind[] = ['project', 'screen', 'datasources', 'navigation',
 
 function compareResources(a: ProjectResource, b: ProjectResource): number {
   return ORDER.indexOf(a.kind) - ORDER.indexOf(b.kind) || a.id.localeCompare(b.id);
+}
+
+/** The texts of a catalogue file (key → text); what is not a text is left out. */
+export function textsOf(doc: unknown): Record<string, string> {
+  if (!isObject(doc as Json)) return {};
+  return Object.fromEntries(Object.entries(doc as Record<string, unknown>).filter((e): e is [string, string] => typeof e[1] === 'string'));
 }
 
 /** The identifier written in a document of the kind (`screen`, `datasources`, `theme`…), if valid. */

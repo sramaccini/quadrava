@@ -13,7 +13,7 @@ import { resolveDataSources, type ScreenDefinition } from 'schema';
 import { getIn, isObject, type Json } from '../model/doc-ops';
 import { EditorStore } from '../model/editor-store';
 import { ThemeStore } from '../model/theme-store';
-import { KnownDataSources } from '../model/shared-state';
+import { KnownDataSources, KnownTranslations } from '../model/shared-state';
 import { Workspace } from '../model/workspace';
 import { JsonFieldComponent } from '../ui/json-field.component';
 import { PreviewFrameComponent } from './preview-frame.component';
@@ -46,6 +46,8 @@ export class PreviewComponent {
   protected readonly store = inject(EditorStore);
   private readonly workspace = inject(Workspace);
   private readonly projectSources = inject(KnownDataSources).documents;
+  /** With a project the preview uses its catalogues (which include the translations written in the screens). */
+  private readonly projectTexts = inject(KnownTranslations).project;
   protected readonly log = inject(PreviewLog);
   protected readonly i18n = inject(I18n);
 
@@ -99,7 +101,7 @@ export class PreviewComponent {
       params: this.params(),
       locale: this.locale(),
       defaultLocale: this.store.defaultLanguage(),
-      translations: this.store.translations(),
+      translations: this.projectTexts()?.catalogues ?? this.store.translations(),
       selectedId: this.selectedId(),
       selectMode: this.selectMode(),
       version: this.version(),

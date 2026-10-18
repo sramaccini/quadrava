@@ -21,7 +21,7 @@ import { ProjectLibrary } from './model/project-library';
 import { documentRef, type DocumentKind } from './model/registry-client';
 import { RegistrySession, type RegistryRef } from './model/registry-session';
 import { SavedDocuments, type EditorKind } from './model/saved-documents';
-import { KnownDataSources, KnownScreens } from './model/shared-state';
+import { KnownDataSources, KnownScreens, KnownTranslations } from './model/shared-state';
 import { Workspace, type DocumentWindow } from './model/workspace';
 import { Dock, type DockPanel } from './ui/dock';
 import { DockPanelDirective } from './ui/dock-panel.directive';
@@ -54,6 +54,7 @@ const KIND_PANELS: Record<EditorKind, DockPanel[]> = {
   datasources: ['inspector'],
   navigation: ['outline', 'inspector'],
   theme: ['inspector'],
+  messages: [],
 };
 const PANEL_TABS: Record<DockPanel, { label: string; icon: string }> = {
   project: { label: 'ed.project.panel', icon: 'folder' },
@@ -165,7 +166,7 @@ export class App {
   /** The document of the active window has changes not saved (to the project, to a file or in the registry). */
   protected readonly unsaved = computed(() => {
     const win = this.active();
-    return !!win && !this.saved.isSaved(win.id, win.state.doc());
+    return !!win && this.workspace.isUnsaved(win);
   });
   protected readonly warningCount = computed(() => {
     const state = this.active()?.state;
@@ -206,7 +207,7 @@ export class App {
   /** The active window, when its document is a registry document (the project settings are not). */
   protected readonly registryTarget = computed(() => {
     const win = this.active();
-    return win && win.kind !== 'project' ? { win, kind: win.kind as DocumentKind } : null;
+    return win && win.kind !== 'project' && win.kind !== 'messages' ? { win, kind: win.kind as DocumentKind } : null;
   });
   /** Dialog asking for the application before «Save to registry». */
   protected readonly showRegistryTarget = signal(false);
@@ -222,7 +223,7 @@ export class App {
     // The registry items are off when the registry is not there (as in the demo editor), with the reason in the tooltip.
     const noRegistry = !this.registry.usable();
     const registryHint = this.registry.status() === 'checking' ? t('ed.menu.registryChecking') : noRegistry ? t('ed.menu.registryUnavailable') : undefined;
-    const registryDocument = !!win && win.kind !== 'project';
+    const registryDocument = !!win && win.kind !== 'project' && win.kind !== 'messages';
     const file: MenuItem[] = [
       { id: 'new-project', label: t('ed.menu.newProject'), run: () => void this.start({ kind: 'new' }) },
       ...(this.library.canUseDisk() ? [{ id: 'open-project', label: t('ed.menu.openProject'), run: () => void this.openDiskProject() }] : []),
@@ -377,6 +378,12 @@ export class App {
     // The data sources of the project, for the references of the screens (not checked without a project).
     const sources = inject(KnownDataSources);
     effect(() => sources.documents.set(this.project.isOpen() ? this.workspace.dataSources() : null));
+    // Languages and catalogues of the project, for the texts of the screens and their previews.
+    const texts = inject(KnownTranslations);
+    effect(() => {
+      const manifest = this.project.manifest();
+      texts.project.set(manifest ? { languages: manifest.languages, defaultLanguage: manifest.defaultLanguage, catalogues: this.workspace.catalogues() } : null);
+    });
     effect(() => (document.documentElement.lang = this.i18n.locale()));
     // The last project kept in the browser opens again by itself; one on disk needs a click (the browser asks for permission).
     if (this.library.last()?.location === 'browser') void this.reopenLast(true);
@@ -399,6 +406,11 @@ export class App {
   protected newResource(kind: EditorKind | ResourceKind): void {
     if (kind === 'screen' || kind === 'datasources' || kind === 'theme') this.askNew(kind);
     else if (kind === 'navigation') void this.commands.createResource('navigation');
+    else if (kind === 'messages') {
+      // A catalogue per language of the project: languages are added in the settings, which create their catalogues.
+      void this.workspace.openResource({ kind: 'project', id: 'project', path: 'project.json' });
+      this.notifier.toast(this.i18n.t('ed.messages.addInSettings'));
+    }
   }
 
   protected async created(value: NewResource): Promise<void> {
@@ -523,7 +535,7 @@ export class App {
 
   /** Closes a window, asking for confirmation if its document has unsaved changes. */
   protected async closeWindow(win: DocumentWindow): Promise<boolean> {
-    if (!this.saved.isSaved(win.id, win.state.doc())) {
+    if (this.workspace.isUnsaved(win)) {
       this.workspace.focus(win.id);
       if (!(await this.confirmation.confirm(this.i18n.t('ed.confirmClose', { name: windowTitle(this.i18n, this.workspace, win) })))) return false;
     }

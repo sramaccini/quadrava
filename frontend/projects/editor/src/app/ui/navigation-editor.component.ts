@@ -8,6 +8,7 @@ import { NzSwitchModule } from 'ng-zorro-antd/switch';
 import { NzTabsModule } from 'ng-zorro-antd/tabs';
 import { EditorStore } from '../model/editor-store';
 import { NavigationStore } from '../model/navigation-store';
+import { KnownTranslations } from '../model/shared-state';
 import { ThemeStore } from '../model/theme-store';
 import { Workspace } from '../model/workspace';
 import { PreviewFrameComponent } from '../preview/preview-frame.component';
@@ -30,6 +31,7 @@ export class NavigationEditorComponent {
   protected readonly store = inject(NavigationStore);
   protected readonly i18n = inject(I18n);
   private readonly workspace = inject(Workspace);
+  private readonly projectTexts = inject(KnownTranslations).project;
 
   protected readonly view = signal<'preview' | 'json'>('preview');
 
@@ -49,8 +51,8 @@ export class NavigationEditorComponent {
       theme: this.workspace.latest('theme', ThemeStore)?.definition() ?? null,
       granted: granted ? [...granted] : null,
       locale: this.i18n.locale(),
-      translations: screens?.translations() ?? {},
-      defaultLocale: screens?.defaultLanguage() ?? 'en',
+      translations: this.projectTexts()?.catalogues ?? screens?.translations() ?? {},
+      defaultLocale: this.projectTexts()?.defaultLanguage ?? screens?.defaultLanguage() ?? 'en',
     });
   });
 

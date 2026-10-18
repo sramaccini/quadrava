@@ -143,6 +143,13 @@ describe('screen editor', () => {
     await until(() => workspace.active()?.kind === kind, 'new resource open');
   }
 
+  /** Closes the project and opens a new screen outside it (the languages are then those of the screen's draft). */
+  async function withoutProject(): Promise<void> {
+    await TestBed.inject(ProjectCommands).close();
+    store = workspace.open('screen').injector.get(EditorStore);
+    await settle();
+  }
+
   /** Like menuCommand, but for a registry item: waits until the registry check (when the menu opens) enables it. */
   async function registryCommand(item: string): Promise<void> {
     (el.querySelector('ed-menu-bar [data-menu="file"]') as HTMLButtonElement).click();
@@ -473,6 +480,37 @@ describe('screen editor', () => {
     expect(el.querySelector('.bottom')?.textContent).toContain('The data source orders/missing is not in the project');
   });
 
+  it('translations with a project: its languages and catalogues; the texts written in a screen go into them when it is saved', async () => {
+    folder.files.set('i18n/en.json', JSON.stringify({ 'greet.hello': 'Hello' }));
+    folder.files.set('i18n/it.json', JSON.stringify({}));
+    await TestBed.inject(Project).refresh();
+    (el.querySelector('ed-palette button[data-type="text"]') as HTMLButtonElement).click();
+    await settle();
+    store.setValue(['components', 0, 'text'], "{{ t('greet.hello', 'Hi') }}");
+    tab(3);
+    await settle();
+    // The languages are those of the project, managed in its settings; the texts come from its catalogues.
+    expect(el.querySelector('ed-texts [data-add-language]')).toBeNull();
+    expect(el.querySelector('ed-texts .project-note')).not.toBeNull();
+    expect(store.translation('en', 'greet.hello')).toBe('Hello');
+    expect(store.missingLocales({ key: 'greet.hello', fallback: 'Hi' } as never)).toEqual(['it']);
+    store.setTranslation('it', 'greet.hello', 'Ciao');
+    await settle();
+    expect(el.querySelector('ed-document-window [data-unsaved]')).not.toBeNull();
+    // The preview uses the catalogues of the project, with the translation not saved yet.
+    await untilState('ed-preview', (st) => st.translations['it']?.['greet.hello'] === 'Ciao' && st.translations['en']?.['greet.hello'] === 'Hello', 'catalogues in the preview');
+    await menuCommand('file', 'save');
+    await until(() => JSON.parse(folder.files.get('i18n/it.json')!)['greet.hello'] === 'Ciao', 'translation saved in the catalogue');
+    expect(store.translations()).toEqual({});
+    expect(store.translation('it', 'greet.hello')).toBe('Ciao');
+    // The catalogue opens in its window: the keys with the text of the default language next to them.
+    (el.querySelector('ed-project-panel [data-resource="i18n/it.json"]') as HTMLButtonElement).click();
+    await until(() => workspace.active()?.kind === 'messages', 'catalogue open');
+    const catalogue = el.querySelector('ed-messages-editor') as HTMLElement;
+    expect((catalogue.querySelector('[data-text="greet.hello"]') as HTMLTextAreaElement).value).toBe('Ciao');
+    expect(catalogue.querySelector('td.reference')?.textContent).toBe('Hello');
+  });
+
   it('palette: the search filters while typing, Enter adds the first one found, Esc clears', async () => {
     const search = el.querySelector('[data-palette-search]') as HTMLInputElement;
     type(search, 'grid');
@@ -608,6 +646,7 @@ describe('screen editor', () => {
   });
 
   it('translations: the default language is changed from the panel and reaches the preview', async () => {
+    await withoutProject();
     tab(3);
     await settle();
     (el.querySelector('ed-texts [data-language="it"] .make-default') as HTMLButtonElement).click();
@@ -750,6 +789,7 @@ describe('screen editor', () => {
   });
 
   it('translations: a language is added (with the code checked), has its column and the preview can use it', async () => {
+    await withoutProject();
     (el.querySelector('ed-palette button[data-type="text"]') as HTMLButtonElement).click();
     await settle();
     store.makeTranslatable(['components', 0, 'text']);

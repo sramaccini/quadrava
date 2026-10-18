@@ -42,3 +42,5 @@ input.missing { border-color: var(--lc-color-warning, #d48806); }
 .add-language { display: inline-flex; align-items: center; gap: 4px; margin-left: 6px; }
 .add-language input { width: 200px; }
 .error { color: var(--lc-color-danger); font-size: 12px; }
+
+.project-note { font-size: 12px; color: var(--lc-color-muted); }

@@ -9,6 +9,7 @@ import { NzTagModule } from 'ng-zorro-antd/tag';
 import { getIn, isObject, type Path } from '../model/doc-ops';
 import { EditorStore, LANGUAGE_CODE } from '../model/editor-store';
 import { SUGGESTED_LANGUAGES, languageFromInput, languageName } from '../model/languages';
+import { KnownTranslations } from '../model/shared-state';
 import { ownerOf, targetAt } from '../model/schema-info';
 import { fallbackText } from '../model/templates';
 import { collectTexts, translatable, usedKeys, type TextEntry } from '../model/texts';
@@ -43,6 +44,9 @@ export class TextsComponent {
   /** Languages of the translations (one column each). */
   protected readonly locales = computed(() => this.store.languages());
   protected readonly defaultLocale = computed(() => this.store.defaultLanguage());
+  /** With a project the languages are those of the project (managed in its settings) and the texts go into its catalogues. */
+  protected readonly inProject = computed(() => this.projectTexts() !== null);
+  private readonly projectTexts = inject(KnownTranslations).project;
   /** Languages offered (those not yet present), with the name in the editor's language. */
   protected readonly suggestions = computed(() => {
     const ui = this.i18n.locale();
