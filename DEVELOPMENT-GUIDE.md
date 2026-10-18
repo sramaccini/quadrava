@@ -33,7 +33,7 @@ editor  ──► components ──► core   (the preview renders screens with 
 * `components`: everything that depends on NG-ZORRO (standard components, side menu, user menu, confirmation dialog, notifier, theme bridge).
 * `services`: production implementations of the ports.
 * `runtime`: the demo application; wiring only, plus `demo/` fakes.
-* `editor`: **Quadrava Studio**, the visual editor for screens, navigation and themes. `model/` holds pure, tested logic (immutable document operations, the `SchemaReader`, templates, drop positions, `DocumentState` with its stores `EditorStore`, `NavigationStore` and `ThemeStore`); `ui/` the panels; `preview/` the live preview and its fake ports. The property panel is generated from `screen.schema.json` (`model/schema-info.ts`): do not hand-write per-component forms. See `docs/editor.md`.
+* `editor`: **Quadrava Studio**, the visual editor for screens, navigation and themes. `model/` holds pure, tested logic (immutable document operations, the `SchemaReader`, templates, drop positions, `DocumentState` with its stores `EditorStore`, `NavigationStore` and `ThemeStore`, one per open window, created by `Workspace` in an injector of the window); `ui/` the workspace, the windows and the panels; `preview/` the live preview and its fake ports. The property panel is generated from `screen.schema.json` (`model/schema-info.ts`): do not hand-write per-component forms. See `docs/editor.md`.
 
 ## 3. Daily commands
 
@@ -57,7 +57,7 @@ editor  ──► components ──► core   (the preview renders screens with 
 | `npm run conformance:registry` / `conformance:authz` / `conformance:telemetry` | Conformance kits: check a service over HTTP against its contract (`--registry`, `--authz`, `--telemetry` for the address; `--user`/`--password` or `--token`; `--reviewer-user` for the registry, `--other-user` for authorization). Shared helpers in `tools/conformance-lib.mjs` |
 | `npm run validate:examples` | Validates every JSON in `examples/` against the schemas |
 | `npx ng build runtime` | Production build (budgets: warning 2.5 MB, error 4 MB initial) |
-| `npm run e2e` | Playwright end-to-end tests (`e2e/`, including the axe-core accessibility check of every showcase screen) in Chromium against the demo; starts `ng serve runtime` on port 4300 (`E2E_PORT` to change it) unless a server is already running there. Needs `npm run demo:prepare` and, once, `npx playwright install chromium` |
+| `npm run e2e` | Playwright end-to-end tests (`e2e/`, including the axe-core accessibility check of every showcase screen) in Chromium against the demo and Studio; starts `ng serve runtime` on port 4300 and `ng serve editor` on port 4301 (`E2E_PORT` and `E2E_EDITOR_PORT` to change them) unless a server is already running there. Needs `npm run demo:prepare` and, once, `npx playwright install chromium` |
 
 Before opening a pull request, all of these must pass: `schema:check`, `schema:docs:check`, `validate:examples`, `notices:check`, `build:libs`, `test:libs`, runtime and editor tests, production builds, `npm run e2e`. CI (`.github/workflows/ci.yml`) runs the same checks on every push to `main` and every pull request, in three jobs: `frontend`, `e2e` and `java` (`mvn -B verify`). When the e2e job fails, the Playwright report and traces are uploaded as the `playwright-report` artifact (open a trace with `npx playwright show-trace <trace.zip>`).
 
@@ -164,7 +164,7 @@ Vitest runs in jsdom through `ng test`. Conventions:
 
 ### End-to-end tests (Playwright)
 
-What jsdom cannot see (layout, real NG-ZORRO overlays, attributes as the browser applies them) is tested with Playwright in `frontend/e2e/`, against the demo with its in-browser fake back end (`playwright.config.ts`).
+What jsdom cannot see (layout, real NG-ZORRO overlays, attributes as the browser applies them) is tested with Playwright in `frontend/e2e/`, against the demo with its in-browser fake back end and against Studio (moving and resizing its windows; `playwright.config.ts`).
 
 * One `*.spec.ts` per showcase screen; open it by URL (`/showcase/<screen>`) after fixing the language with `page.addInitScript(() => localStorage.setItem('lc.language', 'it'))`.
 * Prefer user-facing locators: `getByLabel` (field labels are `<label for>`; for `nz-select` and `nz-switch` they point at the control), `getByRole`, the visible text of `nz-option-item`. Use `data-region`, `data-node-id` and `data-node-type` when there is no accessible name.
@@ -208,7 +208,7 @@ Real focus handling and the dark theme are not covered yet (the application shel
 * `DataClient.request(request, { signal })`: the runtime aborts a GET that a newer one supersedes (and all of them when the screen is left); writes are never aborted. Identical concurrent `query` GETs share one call. A custom `DataClient` should honour the signal.
 * The expression engine caches compiled CEL and parsed templates (2000 entries, least recently used evicted): evaluating the same text again costs no parsing.
 * NG-ZORRO parts with fixed or too light colours (tag text, select placeholders and arrows, waiting steps, out-of-month calendar days) are overridden by a stylesheet the theme bridge adds (`NZ_CONTRAST_CSS`); tag text colours are computed from the theme to reach 4.5:1. Group titles of the side menu get `tabindex`, `role` and `aria-expanded` after every render, and `nz-tree`'s hidden input and icons leave the accessibility tree: NG-ZORRO does not provide them.
-* The editor preview talks to the editor only through messages (`preview/protocol.ts`): `drop` (a palette component), `move` (an existing component dragged in *Seleziona* mode) and `resize` (`span` or `grow` from the handle, computed by the pure `preview/resize.ts`) are validated and applied by the editor with the outline's rules.
+* The editor preview talks to the editor only through messages (`preview/protocol.ts`): `drop` (a palette component), `move` (an existing component dragged in *Select* mode) and `resize` (`span` or `grow` from the handle, computed by the pure `preview/resize.ts`) are validated and applied by the editor with the outline's rules.
 * The editor bootstraps lazily: `main.ts` imports either the editor app or the preview app (`?preview`), so the iframe does not download the editor UI.
 * Steps `validate`, `print` and `export` live in `core/action-engine.ts`; standalone fields register their check with `ScreenRuntime.registerValidator(group, check)` while they are on screen.
 * `DefinitionSource.messages(locale)` returns a catalogue (key → text): the demo reads `examples/i18n`, the registry the published `messages` document. A new language needs its catalogue in both places (`publish:examples` publishes the files).

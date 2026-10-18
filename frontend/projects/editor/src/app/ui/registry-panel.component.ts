@@ -196,9 +196,10 @@ export class RegistryPanelComponent {
   private readonly saved = inject(SavedDocuments);
   protected readonly i18n = inject(I18n);
 
-  /** The open document and its type. */
-  readonly state = input.required<DocumentState & { load(doc: Json): void }>();
+  /** The active document: its state, its type and its identifier in the workspace. */
+  readonly state = input.required<DocumentState>();
   readonly kind = input.required<DocumentKind>();
+  readonly document = input.required<string>();
 
   protected readonly appId = this.session.appId;
   protected readonly env = this.session.env;
@@ -222,12 +223,13 @@ export class RegistryPanelComponent {
   /** The open document; it changes only if type or identifier change, not at every change of the content. */
   protected readonly ref = computed(() => documentRef(this.kind(), this.state().doc()), { equal: (a, b) => a?.kind === b?.kind && a?.id === b?.id });
   /** Version the open document starts from (opened or just saved): the registry uses it for concurrent changes. */
-  protected readonly basedOn = computed(() => this.session.basedOn(this.ref()));
+  protected readonly basedOn = computed(() => this.session.basedOn(this.document(), this.ref()));
   protected readonly canSave = computed(() => !!this.ref() && !!this.appId() && this.state().errorCount() === 0 && !this.busy());
 
   constructor() {
     // Changing document, the history shown no longer applies.
     effect(() => {
+      this.document();
       this.ref();
       this.kind();
       this.loaded.set(false);
@@ -271,7 +273,7 @@ export class RegistryPanelComponent {
   protected async save(): Promise<void> {
     if (!this.canSave()) return;
     const doc = this.state().doc();
-    if (await this.session.save(this.kind(), doc)) this.markSaved(doc);
+    if (await this.session.save(this.document(), this.kind(), doc)) this.markSaved(doc);
     await this.refresh();
   }
 
@@ -301,7 +303,7 @@ export class RegistryPanelComponent {
     if (!ref || !(await this.confirmation.confirm(this.i18n.t('ed.confirmReplace')))) return;
     await this.run(async () => {
       this.state().load(await this.client.version(this.appId(), ref.kind, ref.id, version.hash));
-      this.session.setOrigin(ref, version.hash);
+      this.session.setOrigin(this.document(), ref, version.hash);
       this.markSaved(this.state().doc());
       this.notifier.toast(this.i18n.t('ed.opened', { name: `${ref.id} @ ${version.hash.slice(0, 10)}` }));
     });
@@ -346,7 +348,7 @@ export class RegistryPanelComponent {
   /** The document saved or opened from the registry has no changes to save (only the kinds with an editor mode). */
   private markSaved(doc: Json): void {
     const kind = this.kind();
-    if (kind !== 'messages') this.saved.markSaved(kind, doc);
+    if (kind !== 'messages') this.saved.markSaved(this.document(), doc);
   }
 
   /** Runs an operation reporting errors in an understandable way, without technical details of the service. */

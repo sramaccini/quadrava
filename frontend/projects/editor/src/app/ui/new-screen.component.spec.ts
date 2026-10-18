@@ -1,8 +1,10 @@
+import { EnvironmentInjector, createEnvironmentInjector } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { I18n } from 'core';
 import { EDITOR_MESSAGES } from '../messages';
 import { EditorStore } from '../model/editor-store';
 import { screenIdFrom } from '../model/templates';
+import { documentProviders } from '../model/workspace';
 import { NewScreenComponent, type NewScreen } from './new-screen.component';
 
 describe('identifier from the title', () => {
@@ -70,7 +72,7 @@ describe('«New screen» dialog', () => {
   });
 
   it('the new screen has the chosen title and identifier and is valid', () => {
-    const store = TestBed.inject(EditorStore);
+    const store = createEnvironmentInjector(documentProviders('screen', 'd1'), TestBed.inject(EnvironmentInjector)).get(EditorStore);
     store.newScreen('Order list', 'order-list');
     expect(store.doc()).toMatchObject({ screen: 'order-list', title: 'Order list', components: [] });
     expect(store.issues()).toEqual([]);

@@ -1,4 +1,4 @@
-import { computed, signal } from '@angular/core';
+import { InjectionToken, computed, signal } from '@angular/core';
 import { setIn, toPointer, type Json, type Path } from './doc-ops';
 
 /** A problem of the document, linked to the selectable element containing it. */
@@ -12,14 +12,45 @@ export interface EditorIssue {
   severity: 'error' | 'warning';
 }
 
+/**
+ * Identifier of the open document (one per window of the workspace): its draft in the browser is kept under it, so
+ * several documents of the same kind do not overwrite each other.
+ */
+export const DOCUMENT_ID = new InjectionToken<string>('DOCUMENT_ID');
+
+/** Key of the draft of a document in the browser storage. */
+export function draftKey(id: string): string {
+  return `lc.editor.doc.${id}`;
+}
+
+/** The draft of a document saved in the browser, or null. */
+export function readDraft(id: string): unknown {
+  try {
+    const raw = localStorage.getItem(draftKey(id));
+    return raw ? (JSON.parse(raw) as unknown) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Saves the draft of a document in the browser (storage full or not available: it stays only in memory). */
+export function writeDraft(id: string, draft: unknown): void {
+  try {
+    localStorage.setItem(draftKey(id), JSON.stringify(draft));
+  } catch {
+    // Storage full or not available: the draft stays only in memory.
+  }
+}
+
 const HISTORY_LIMIT = 200;
 /** Changes to the same property closer than this become a single undo step (one types letter by letter). */
 const COALESCE_MS = 1000;
 
 /**
- * A document edited in the editor (a screen, the navigation): the JSON, the selected element, the history
+ * A document edited in the editor (a screen, the navigation, a theme): the JSON, the selected element, the history
  * for undo and redo and the problems found. Every kind of document says which elements are selected and how it is
- * checked. The fields generated from the schema (`ed-fields`) work on this class, whatever the document.
+ * checked. The fields generated from the schema (`ed-fields`) work on this class, whatever the document. Every window
+ * of the workspace has its own instance (see `Workspace`).
  */
 export abstract class DocumentState {
   readonly doc = signal<Json>(null);
@@ -41,6 +72,9 @@ export abstract class DocumentState {
   protected abstract selectable(doc: Json, path: Path): boolean;
   /** The nearest selectable element containing the path. */
   abstract ownerOf(doc: Json, path: Path): Path;
+
+  /** Opens a document (file, example, registry version): clears history and selection. */
+  abstract load(doc: Json): void;
 
   /** Values suggested while typing a text property (data sources, screens, icons…). */
   suggestions(_property: string): string[] {

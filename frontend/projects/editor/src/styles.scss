@@ -106,3 +106,7 @@ ed-dock-side .ed-floating.ed-open { opacity: 1; visibility: visible; pointer-eve
 .ed-code-property { color: var(--ed-code-property); }
 .ed-code-operator { color: var(--ed-code-operator); }
 .ed-code > textarea::placeholder { color: var(--lc-color-muted); }
+
+/* A document window being moved or resized: the preview iframes do not take the pointer, the text is not selected. */
+body.ed-window-dragging { user-select: none; }
+body.ed-window-dragging iframe { pointer-events: none; }

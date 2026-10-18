@@ -272,17 +272,18 @@ cd frontend
 npm run start:editor         # builds the libraries, copies the examples, serves on http://localhost:4201
 ```
 
-Open an example (*File → Apri esempio*) or start a new screen. Details, shortcuts and limits are in [docs/editor.md](docs/editor.md).
+Studio starts with an empty workspace: open an example (*File → Open example*) or create a document (*File → New → Screen, Navigation or Theme*). Details, shortcuts and limits are in [docs/editor.md](docs/editor.md).
 
 ### Workspace
 
-* **Menu bar.** A desktop-style menu bar offers *File* (new, open a file, open from the registry, open example, save to file with Ctrl+S, save to the registry, registry panel; an «Unsaved changes» tag tells when the document differs from the last save), *Edit* (undo, redo, cut, copy, paste, duplicate, delete, move, with their shortcuts), *View* (pinned sides, problems panel, central view) and *Help* (every keyboard shortcut, also F1). It is fully keyboard operable; the switch between screen, navigation and theme sits on the right.
-* **Panels.** As in classic IDEs, in every mode each panel (components, outline, properties) can be unpinned on its own: it becomes a vertical tab on the edge strip while the other panels of the side keep the column, slides over the preview on hover and closes again when the pointer leaves (not while a field inside has the focus). The sides can be resized by dragging their inner edge.
+* **Multi-document windows.** As in an IDE, every screen, navigation or theme opens in its own window inside the workspace: windows can be moved, resized, maximized, minimized to the bar of the open documents, tiled or cascaded, and Ctrl+F6 moves between them. The side panels, the toolbar and the problems follow the window in front; the open windows and their drafts come back when the page is reloaded.
+* **Menu bar.** A desktop-style menu bar offers *File* (new screen, navigation or theme, open a file, open from the registry, open example, save to file with Ctrl+S, save to the registry, registry panel, close; an «Unsaved changes» tag tells when the document differs from the last save), *Edit* (undo, redo, cut, copy, paste, duplicate, delete, move, with their shortcuts), *View* (pinned sides, problems panel, central view), *Window* (arrangement and list of the windows) and *Help* (every keyboard shortcut, also F1). It is fully keyboard operable.
+* **Panels.** As in classic IDEs, for every kind of document each panel (components, outline, properties) can be unpinned on its own: it becomes a vertical tab on the edge strip while the other panels of the side keep the column, slides over the preview on hover and closes again when the pointer leaves (not while a field inside has the focus). The sides can be resized by dragging their inner edge.
 * **Palette.** Adds components with a click or by dragging them into the outline or straight onto the preview (before, after or inside the component under the pointer). It has a search box.
 * **Outline.** Selects, reorders, duplicates, cuts and pastes nodes. It has a search box, collapsible branches, multiple selection of sibling nodes (Ctrl+click, Shift+click) and a context menu (right click or Shift+F10) that can also wrap one or several nodes in a new section, box or grid.
 * **Property panel.** Generated from `screen.schema.json`, so columns, form fields, actions and steps are edited item by item. It shows the path of the selected element and filters properties by name. Inside `{{ }}` it completes variables and functions while typing (arrows, Enter or Tab, Escape).
 * **Syntax highlighting.** JSON is highlighted in the *JSON* tab and in JSON fields (with `{{ }}` expressions marked inside strings), and so are the property text areas that accept expressions (titles, texts, conditions): functions, variables, properties, strings, numbers and operators inside `{{ }}`.
-* **Problems and saving.** Problems (schema, CEL expressions, duplicate ids, missing data sources) are listed at the bottom; the draft is saved in the browser; *Esporta* downloads the JSON.
+* **Problems and saving.** Problems (schema, CEL expressions, duplicate ids, missing data sources) are listed at the bottom; the draft of every open document is saved in the browser; *File → Save* writes the JSON to a file.
 
 ### Preview
 

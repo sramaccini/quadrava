@@ -2,12 +2,13 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { vi } from 'vitest';
 import layout from '../../public/examples/showcase-layout.json';
-import { I18n } from 'core';
+import { Confirmation, I18n, Notifier } from 'core';
 import { App } from './app';
 import { appConfig } from './app.config';
 import { EditorStore } from './model/editor-store';
 import { getIn as getAt, type Json } from './model/doc-ops';
 import { NavigationStore } from './model/navigation-store';
+import { Workspace } from './model/workspace';
 import { EDITOR_REDIRECT } from './model/registry-client';
 import { PreviewComponent } from './preview/preview.component';
 import { isToPreview, type PreviewState } from './preview/protocol';
@@ -18,6 +19,7 @@ describe('screen editor', () => {
   let fixture: ComponentFixture<App>;
   let el: HTMLElement;
   let store: EditorStore;
+  let workspace: Workspace;
   /** Page changes requested by the editor (BFF login). */
   let redirects: string[];
 
@@ -32,7 +34,9 @@ describe('screen editor', () => {
     TestBed.configureTestingModule({ providers: [...appConfig.providers, { provide: EDITOR_REDIRECT, useValue: (url: string) => redirects.push(url) }] });
     fixture = TestBed.createComponent(App);
     el = fixture.nativeElement as HTMLElement;
-    store = TestBed.inject(EditorStore);
+    workspace = TestBed.inject(Workspace);
+    // Most of the tests work on a screen: it opens in the first window, as with File › New › Screen.
+    store = workspace.open('screen').injector.get(EditorStore);
     await settle();
   });
 
@@ -105,6 +109,16 @@ describe('screen editor', () => {
     await settle();
   }
 
+  /** A command of a submenu (File › New › Navigation): opens the menu, the submenu and clicks the item. */
+  async function subCommand(menu: string, item: string, child: string): Promise<void> {
+    (el.querySelector(`ed-menu-bar [data-menu="${menu}"]`) as HTMLButtonElement).click();
+    await settle();
+    (el.querySelector(`ed-menu-bar [data-item="${item}"]`) as HTMLButtonElement).click();
+    await settle();
+    (el.querySelector(`ed-menu-bar [data-item="${child}"]`) as HTMLButtonElement).click();
+    await settle();
+  }
+
   /** Like menuCommand, but for a registry item: waits until the registry check (when the menu opens) enables it. */
   async function registryCommand(item: string): Promise<void> {
     (el.querySelector('ed-menu-bar [data-menu="file"]') as HTMLButtonElement).click();
@@ -139,7 +153,7 @@ describe('screen editor', () => {
 
   it('menu bar: Edit acts on the selection, File opens an example from the submenu', async () => {
     const bar = el.querySelector('ed-menu-bar [role="menubar"]') as HTMLElement;
-    expect([...bar.querySelectorAll(':scope > li > [role="menuitem"]')].map((b) => b.textContent?.trim())).toEqual(['File', 'Edit', 'View', 'Help']);
+    expect([...bar.querySelectorAll(':scope > li > [role="menuitem"]')].map((b) => b.textContent?.trim())).toEqual(['File', 'Edit', 'View', 'Window', 'Help']);
     const item = (id: string) => el.querySelector(`ed-menu-bar [data-item="${id}"]`) as HTMLButtonElement | null;
 
     // Without a selection the selection commands are off and do nothing.
@@ -173,17 +187,25 @@ describe('screen editor', () => {
     expect([...el.querySelectorAll('ed-menu-bar [data-level="0"] .label')].map((l) => l.textContent)).toEqual([
       'New',
       'Open…',
-      'Open from registry…',
+      'Open from registry',
       'Open example',
       'Save',
       'Save to registry',
       'Registry…',
+      'Close',
+      'Close all',
     ]);
+    item('new')!.click();
+    await settle();
+    expect([...el.querySelectorAll('ed-menu-bar [data-level="1"] .label')].map((l) => l.textContent)).toEqual(['Screen…', 'Navigation', 'Theme']);
     item('open-example')!.click();
     await until(() => !!item('example:showcase-layout'), 'examples in the submenu');
-    // The document is back to the starting one (undo and delete): nothing to lose, hence no confirmation.
+    expect(item('example:navigation')).not.toBeNull();
+    // The example opens in a new window, in front; the screen open before stays as it was.
     item('example:showcase-layout')!.click();
-    await until(() => (store.doc() as { screen?: string }).screen === 'showcase-layout', 'example opened');
+    await until(() => workspace.windows().length === 2, 'example opened');
+    expect(workspace.name(workspace.active()!)).toBe('showcase-layout');
+    expect(store.doc()).toMatchObject({ screen: 'new-screen', components: [] });
     expect(item('open-example')).toBeNull();
   });
 
@@ -268,19 +290,18 @@ describe('screen editor', () => {
     expect(JSON.parse(localStorage.getItem('lc.editor.dock')!)).toEqual({ pins: { palette: true, outline: true, inspector: true } });
   });
 
-  it('hidden panels also in navigation and theme; the choice applies to the panel in all modes', async () => {
-    const mode = async (label: string) => {
-      ([...el.querySelectorAll<HTMLElement>('.mode .ant-segmented-item')].find((i) => i.textContent?.includes(label)) as HTMLElement).click();
-      await settle();
-    };
-    await mode('Navigation');
-    const nav = el.querySelector('ed-navigation-editor') as HTMLElement;
-    expect([...nav.querySelectorAll('[data-dock-pin]')].map((p) => p.getAttribute('data-dock-pin'))).toEqual(['outline', 'inspector']);
-    (nav.querySelector('[data-dock-pin="outline"]') as HTMLButtonElement).click();
+  it('the side panels follow the active window: each kind has its own; a hidden panel is hidden for all the kinds', async () => {
+    await subCommand('file', 'new', 'new-navigation');
+    expect(workspace.active()?.kind).toBe('navigation');
+    expect(el.querySelector('ed-palette')).toBeNull();
+    expect(el.querySelector('ed-outline')).toBeNull();
+    expect([...el.querySelectorAll('[data-dock-pin]')].map((p) => p.getAttribute('data-dock-pin'))).toEqual(['outline', 'inspector']);
+    (el.querySelector('ed-nav-outline [data-dock-pin="outline"]') as HTMLButtonElement).click();
     await settle();
-    const left = nav.querySelector('ed-dock-side.left') as HTMLElement;
-    const outline = nav.querySelector('[data-dock-panel="outline"]') as HTMLElement;
-    expect(nav.style.getPropertyValue('--ed-left')).toBe('30px');
+    const editor = el.querySelector('.editor') as HTMLElement;
+    const left = el.querySelector('ed-dock-side.left') as HTMLElement;
+    const outline = el.querySelector('ed-nav-outline') as HTMLElement;
+    expect(editor.style.getPropertyValue('--ed-left')).toBe('30px');
     expect([...left.querySelectorAll('.strip .tab')].map((t) => t.textContent?.trim())).toEqual(['Outline']);
     left.dispatchEvent(new Event('pointerleave'));
     await until(() => !outline.classList.contains('ed-open'), 'closing in navigation');
@@ -288,17 +309,103 @@ describe('screen editor', () => {
     left.querySelector('.tab')!.dispatchEvent(new Event('pointerenter'));
     await until(() => outline.classList.contains('ed-open'), 'opening in navigation');
 
-    // Theme: the properties; hidden here, they are hidden in the screen too. The outline hidden in navigation is hidden there too.
-    await mode('Theme');
-    const theme = el.querySelector('ed-theme-editor') as HTMLElement;
-    (theme.querySelector('[data-dock-pin="inspector"]') as HTMLButtonElement).click();
+    // Theme: only the properties; the left column stays (the windows do not move), with a note.
+    await subCommand('file', 'new', 'new-theme');
+    expect(el.querySelector('ed-nav-outline')).toBeNull();
+    expect(el.querySelector('.left.no-panels')?.textContent).toContain('No panels');
+    (el.querySelector('ed-theme-inspector [data-dock-pin="inspector"]') as HTMLButtonElement).click();
     await settle();
-    expect(theme.style.getPropertyValue('--ed-right')).toBe('30px');
-    expect([...theme.querySelectorAll('ed-dock-side.right .strip .tab')].map((t) => t.textContent?.trim())).toEqual(['Properties']);
-    await mode('Screen');
+    expect(editor.style.getPropertyValue('--ed-right')).toBe('30px');
+    expect([...el.querySelectorAll('ed-dock-side.right .strip .tab')].map((t) => t.textContent?.trim())).toEqual(['Properties']);
+
+    // Back to the screen (its button in the bar of the workspace): its panels, with the choices made in the other kinds.
+    (el.querySelector(`ed-workspace [data-task="${workspace.windows()[0].id}"]`) as HTMLButtonElement).click();
+    await settle();
+    expect(workspace.active()?.kind).toBe('screen');
+    expect(el.querySelector('ed-palette')).not.toBeNull();
     expect([...el.querySelectorAll('ed-dock-side.left .strip .tab')].map((t) => t.textContent?.trim())).toEqual(['Outline']);
     expect([...el.querySelectorAll('ed-dock-side.right .strip .tab')].map((t) => t.textContent?.trim())).toEqual(['Properties']);
-    expect((el.querySelector('.editor') as HTMLElement).style.getPropertyValue('--ed-right')).toBe('30px');
+  });
+
+  it('two screens in two windows: palette, outline, properties and problems show the one in front', async () => {
+    store.addNode('section');
+    const other = workspace.open('screen', { schemaVersion: '1.0', screen: 'second', components: [{ id: 'note', type: 'alert', text: 'Hi', tone: 'nope' }] });
+    await settle();
+    expect(el.querySelectorAll('ed-document-window')).toHaveLength(2);
+    expect(outline()).toEqual(['Message']);
+    expect(el.querySelector('.bottom')?.textContent).toContain('(1)');
+    expect(el.querySelector('.status')?.textContent).toContain('Errors: 1');
+    // The palette adds to the screen in front.
+    other.state.select([]);
+    (el.querySelector('ed-palette button[data-type="text"]') as HTMLButtonElement).click();
+    await settle();
+    expect(getAt(other.state.doc(), ['components', 1, 'type'])).toBe('text');
+    // A click in the other window brings it in front: the panels follow it.
+    const first = el.querySelector(`ed-document-window[data-window="${workspace.windows()[0].id}"]`) as HTMLElement;
+    first.dispatchEvent(new Event('pointerdown'));
+    await settle();
+    expect(workspace.active()?.id).toBe(workspace.windows()[0].id);
+    expect(outline()).toEqual(['Section']);
+    expect(el.querySelector('ed-inspector .kind')?.textContent).toBe('Section');
+    expect(el.querySelector('.status')?.textContent).toContain('Valid');
+    // Ctrl+F6 goes to the next window; the Window menu lists them.
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'F6', ctrlKey: true, bubbles: true }));
+    await settle();
+    expect(workspace.active()).toBe(other);
+    (el.querySelector('ed-menu-bar [data-menu="window"]') as HTMLButtonElement).click();
+    await settle();
+    expect([...el.querySelectorAll('ed-menu-bar [data-item^="window-"]')].map((i) => [i.querySelector('.label')?.textContent, i.getAttribute('aria-checked')])).toEqual([
+      ['new-screen — Screen', 'false'],
+      ['second — Screen', 'true'],
+    ]);
+    document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    await settle();
+  });
+
+  it('windows: maximized, minimized to the bar and restored, closed asking first when there are unsaved changes', async () => {
+    const confirm = vi.spyOn(TestBed.inject(Confirmation), 'confirm');
+    const win = () => el.querySelector('ed-document-window') as HTMLElement;
+    (win().querySelector('[data-control="maximize"]') as HTMLButtonElement).click();
+    await settle();
+    expect(win().classList.contains('maximized')).toBe(true);
+    expect(win().querySelector('[data-control="maximize"]')?.getAttribute('aria-label')).toBe('Restore');
+    (win().querySelector('.caption') as HTMLElement).dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    await settle();
+    expect(win().classList.contains('maximized')).toBe(false);
+    // Arrows on the title move the window, Shift+arrows resize it.
+    const before = workspace.active()!.bounds();
+    (win().querySelector('.caption') as HTMLElement).dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    (win().querySelector('.caption') as HTMLElement).dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', shiftKey: true, bubbles: true }));
+    await settle();
+    expect(workspace.active()!.bounds()).toEqual({ ...before, x: before.x + 16, height: before.height + 16 });
+    (win().querySelector('[data-control="minimize"]') as HTMLButtonElement).click();
+    await settle();
+    expect(win().classList.contains('minimized')).toBe(true);
+    expect(workspace.active()).toBeNull();
+    expect(el.querySelector('ed-palette')).toBeNull();
+    const task = el.querySelector('ed-workspace .task') as HTMLButtonElement;
+    expect([task.textContent?.trim(), task.getAttribute('aria-pressed')]).toEqual(['new-screen — Screen', 'false']);
+    task.click();
+    await settle();
+    expect(win().classList.contains('minimized')).toBe(false);
+    expect(el.querySelector('ed-palette')).not.toBeNull();
+    // A change: the title bar shows it, and closing asks first.
+    store.addNode('alert');
+    await settle();
+    expect(win().querySelector('[data-unsaved]')).not.toBeNull();
+    confirm.mockResolvedValueOnce(false);
+    (win().querySelector('[data-control="close"]') as HTMLButtonElement).click();
+    await settle();
+    expect(confirm).toHaveBeenCalledWith('«new-screen — Screen» has unsaved changes. Close it anyway?');
+    expect(workspace.windows()).toHaveLength(1);
+    confirm.mockResolvedValueOnce(true);
+    await menuCommand('file', 'close');
+    await until(() => !workspace.windows().length, 'closed');
+    // Empty workspace: the invitation to create or open a document.
+    expect(el.querySelector('ed-workspace .empty h2')?.textContent).toBe('No document open');
+    (el.querySelector('ed-workspace [data-new="theme"]') as HTMLButtonElement).click();
+    await settle();
+    expect(workspace.active()?.kind).toBe('theme');
   });
 
   it('palette: the search filters while typing, Enter adds the first one found, Esc clears', async () => {
@@ -549,7 +656,7 @@ describe('screen editor', () => {
     // F1 opens the shortcuts.
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'F1', bubbles: true }));
     await until(() => !!document.querySelector('.shortcuts dt'), 'shortcuts');
-    expect([...document.querySelectorAll('.shortcuts h3')].map((h) => h.textContent)).toEqual(['General', 'Outline (outside text fields)', 'Menu bar', 'Panels and preview']);
+    expect([...document.querySelectorAll('.shortcuts h3')].map((h) => h.textContent)).toEqual(['General', 'Windows', 'Outline (outside text fields)', 'Menu bar', 'Panels and preview']);
     expect([...document.querySelectorAll('.shortcuts kbd')].map((k) => k.textContent)).toContain('Shift+F10');
     await menuCommand('help', 'about');
     await until(() => !!document.querySelector('.about lc-quadrava-wordmark'), 'information');
@@ -866,17 +973,17 @@ describe('screen editor', () => {
   });
 
   it('navigation: outline, fields from the schema, real menu with a simulated profile', async () => {
-    ([...el.querySelectorAll<HTMLElement>('.mode .ant-segmented-item')].find((i) => i.textContent?.includes('Navigation')) as HTMLElement).click();
+    await subCommand('file', 'new', 'new-navigation');
     await until(() => !!el.querySelector('ed-navigation-editor'), 'navigation editor');
-    const nav = TestBed.inject(NavigationStore);
+    const nav = workspace.active()!.injector.get(NavigationStore);
     const menu = (st: PreviewState): string => JSON.stringify(st.navigation);
     await untilState('ed-navigation-editor', (st) => menu(st).includes('New item') && !st.screen, 'menu in the preview');
     // An item requiring a permission.
     nav.select(['areas', 0, 'items', 0]);
     await settle();
-    expect(el.querySelector('ed-navigation-editor .kind')?.textContent).toBe('Item');
-    type(el.querySelector('ed-navigation-editor #prop-label') as HTMLInputElement, 'Orders');
-    type(el.querySelector('ed-navigation-editor #prop-requires') as HTMLInputElement, 'orders.order.read');
+    expect(el.querySelector('ed-nav-inspector .kind')?.textContent).toBe('Item');
+    type(el.querySelector('ed-nav-inspector #prop-label') as HTMLInputElement, 'Orders');
+    type(el.querySelector('ed-nav-inspector #prop-requires') as HTMLInputElement, 'orders.order.read');
     await untilState('ed-navigation-editor', (st) => menu(st).includes('Orders') && st.granted === null, 'new label in the menu');
     // Profile without the permission: the item disappears.
     (el.querySelector('ed-navigation-editor .profile nz-switch') as HTMLElement).click();
@@ -884,26 +991,33 @@ describe('screen editor', () => {
     (el.querySelector('ed-navigation-editor .permissions input') as HTMLInputElement).click();
     await untilState('ed-navigation-editor', (st) => Array.isArray(st.granted) && !st.granted.includes('orders.order.read'), 'profile without the permission');
     // The group is added from the outline bar; Ctrl+Z applies to the navigation.
-    ([...el.querySelectorAll<HTMLButtonElement>('ed-navigation-editor .add button')].find((b) => b.textContent?.includes('Group')) as HTMLButtonElement).click();
+    ([...el.querySelectorAll<HTMLButtonElement>('ed-nav-outline .add button')].find((b) => b.textContent?.includes('Group')) as HTMLButtonElement).click();
     await settle();
     expect(nav.target()).toEqual({ kind: 'group', level: 1 });
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true }));
     await settle();
     expect(getAt(nav.doc(), ['areas', 0, 'items'])).toHaveLength(1);
-    // Problems of the navigation at the bottom: the initial item opens a screen that is not among the known ones.
-    expect(el.querySelector('.bottom')?.textContent).toContain('Screen “new-screen” is not among the known screens');
+    // The initial item opens «new-screen», the screen open in the other window: a known screen.
+    expect(el.querySelector('.bottom')?.textContent).toContain('Problems (0)');
+    // Problems of the navigation at the bottom: an item opening a screen that is not among the known ones.
+    nav.setValue(['areas', 0, 'items', 0, 'screen'], 'missing-screen');
+    await settle();
+    expect(el.querySelector('.bottom')?.textContent).toContain('Screen “missing-screen” is not among the known screens');
   });
 
-  it('theme: tokens are changed from the fields and reach the preview with the screen being edited; with errors the last valid one stays', async () => {
+  it('theme: tokens are changed from the fields and reach the preview with the screen of the other window; with errors the last valid one stays', async () => {
     (el.querySelector('ed-palette button[data-type="alert"]') as HTMLButtonElement).click();
-    ([...el.querySelectorAll<HTMLElement>('.mode .ant-segmented-item')].find((i) => i.textContent?.includes('Theme')) as HTMLElement).click();
+    await settle();
+    await subCommand('file', 'new', 'new-theme');
     await untilState('ed-theme-editor', (st) => st.theme?.tokens.colors.primary === '#1f5fbf' && getAt(screenOf(st), ['components', 0, 'type']) === 'alert', 'theme and screen');
-    const primary = el.querySelector('ed-theme-editor #prop-tokens-colors-primary') as HTMLInputElement;
+    const primary = el.querySelector('ed-theme-inspector #prop-tokens-colors-primary') as HTMLInputElement;
     expect(primary.previousElementSibling?.getAttribute('type')).toBe('color');
     type(primary, '#aa3300');
     await untilState('ed-theme-editor', (st) => st.theme?.tokens.colors.primary === '#aa3300', 'new colour');
     // The editor does not change: the theme applies only in the iframe.
     expect(document.documentElement.style.getPropertyValue('--lc-color-primary')).not.toBe('#aa3300');
+    // The preview of the screen, in the other window, uses the theme of the theme window.
+    await untilState('ed-preview', (st) => st.theme?.tokens.colors.primary === '#aa3300', 'theme in the screen preview');
     type(primary, 'red');
     await settle();
     expect(el.querySelector('.status')?.textContent).toContain('Errors: 1');
@@ -1146,11 +1260,18 @@ describe('screen editor', () => {
     await until(() => written.length === 2, 'second save');
     expect(picker).toHaveBeenCalledTimes(1);
     expect(JSON.parse(written[1])).toMatchObject({ title: 'Open order list' });
-    // Without unsaved changes, opening an example does not ask for confirmation.
-    await menuCommand('file', 'open-example');
-    await until(() => !!el.querySelector('ed-menu-bar [data-item="example:showcase-layout"]'), 'examples');
-    (el.querySelector('ed-menu-bar [data-item="example:showcase-layout"]') as HTMLButtonElement).click();
-    await until(() => (store.doc() as { screen?: string }).screen === 'showcase-layout', 'example opened without confirmation');
+    // «Open…» reads a file and opens it in a window of its kind; a file that is not a document is refused.
+    const open = (name: string, text: string) =>
+      vi.stubGlobal('showOpenFilePicker', async () => [{ name, getFile: async () => new File([text], name), createWritable: async () => ({ write: async () => undefined, close: async () => undefined }) }]);
+    open('menu.json', JSON.stringify({ schemaVersion: '1.0', navigation: 'app', areas: [] }));
+    await menuCommand('file', 'open');
+    await until(() => workspace.active()?.kind === 'navigation', 'navigation opened');
+    expect(workspace.name(workspace.active()!)).toBe('app');
+    const toast = vi.spyOn(TestBed.inject(Notifier), 'toast');
+    open('texts.json', JSON.stringify({ en: { a: 'A' } }));
+    document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'o', ctrlKey: true, bubbles: true }));
+    await until(() => toast.mock.calls.some(([m]) => m.includes('not a screen, a navigation or a theme')), 'refused');
+    expect(workspace.windows()).toHaveLength(2);
   });
 
   it('File menu with the registry: «Open from registry…» chooses application, document and version; «Save to registry» starts from there', async () => {
@@ -1172,6 +1293,7 @@ describe('screen editor', () => {
       return body ? json(body) : json({}, 404);
     });
     await registryCommand('open-registry');
+    (el.querySelector('ed-menu-bar [data-item="open-registry-screen"]') as HTMLButtonElement).click();
     await until(() => !!document.querySelector('ed-registry-open #registry-open-app'), 'registry dialog');
     const dialog = document.querySelector('ed-registry-open') as HTMLElement;
     type(dialog.querySelector('#registry-open-app') as HTMLInputElement, 'orders');
@@ -1187,11 +1309,12 @@ describe('screen editor', () => {
     select.dispatchEvent(new Event('change'));
     await settle();
     ([...dialog.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.trim() === 'Open') as HTMLButtonElement).click();
-    await until(() => (store.doc() as { screen?: string }).screen === 'order-list', 'version opened');
+    // The version opens in a new window.
+    await until(() => workspace.windows().length === 2 && workspace.name(workspace.active()!) === 'order-list', 'version opened');
     expect(calls.some((c) => c.url === '/registry/apps/orders/documents/screen/order-list/versions/aaaaaaaaaaaa')).toBe(true);
     expect(el.querySelector('[data-unsaved]')).toBeNull();
     // Save to registry: a new version, giving the one it started from.
-    store.setValue(['title'], 'Open orders');
+    workspace.active()!.injector.get(EditorStore).setValue(['title'], 'Open orders');
     await settle();
     await registryCommand('save-registry');
     await until(() => calls.some((c) => c.method === 'POST'), 'save to the registry');

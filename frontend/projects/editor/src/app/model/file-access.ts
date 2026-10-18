@@ -1,7 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import { Injectable, inject } from '@angular/core';
 import type { Json } from './doc-ops';
-import type { EditorKind } from './saved-documents';
 
 /** The parts of the File System Access API used here (Chrome and Edge; Firefox and Safari do not offer it). */
 interface WritableFile {
@@ -33,30 +32,30 @@ export interface OpenedFile {
 /**
  * JSON files of the documents. Where the browser allows it, «Open…» and the first «Save» keep the reference to the file, and
  * the following saves rewrite that file without asking; otherwise «Open…» uses the file picker and «Save»
- * downloads the file every time. One reference per kind of document; it is lost when reloading the page.
+ * downloads the file every time. One reference per open document (by its identifier); it is lost when reloading the page.
  */
 @Injectable({ providedIn: 'root' })
 export class FileAccess {
   private readonly document = inject(DOCUMENT);
-  private readonly handles: Partial<Record<EditorKind, FileHandle>> = {};
+  private readonly handles: Partial<Record<string, FileHandle>> = {};
 
   /** The browser can rewrite a file chosen by the user. */
   canWriteFiles(): boolean {
     return typeof this.pickers().showSaveFilePicker === 'function';
   }
 
-  /** The file the next «Save» of that kind goes to, if there is one. */
-  fileName(kind: EditorKind): string | null {
-    return this.handles[kind]?.name ?? null;
+  /** The file the next «Save» of that document goes to, if there is one. */
+  fileName(id: string): string | null {
+    return this.handles[id]?.name ?? null;
   }
 
   /** Forgets the file (new document, example, registry version): the next «Save» asks where to save. */
-  forget(kind: EditorKind): void {
-    delete this.handles[kind];
+  forget(id: string): void {
+    delete this.handles[id];
   }
 
-  /** Asks for a JSON file and reads it; null if the user cancels. Throws an error if the file is not JSON. */
-  async open(kind: EditorKind): Promise<OpenedFile | null> {
+  /** Asks for a JSON file for the document `id` and reads it; null if the user cancels. Throws an error if the file is not JSON. */
+  async open(id: string): Promise<OpenedFile | null> {
     const picker = this.pickers().showOpenFilePicker;
     if (picker) {
       let handle: FileHandle | undefined;
@@ -69,13 +68,13 @@ export class FileAccess {
       if (!handle) return null;
       const file = await handle.getFile();
       const doc = JSON.parse(await file.text()) as Json;
-      this.handles[kind] = handle;
+      this.handles[id] = handle;
       return { name: file.name, doc };
     }
     const file = await this.chooseFile();
     if (!file) return null;
     const doc = JSON.parse(await file.text()) as Json;
-    this.forget(kind);
+    this.forget(id);
     return { name: file.name, doc };
   }
 
@@ -83,14 +82,14 @@ export class FileAccess {
    * Saves the document as JSON: in the file already chosen, or in a new one to choose (proposing `suggestedName`), or
    * downloading it where the browser does not allow writing files. Returns the name of the file, null if the user cancels.
    */
-  async save(kind: EditorKind, doc: Json, suggestedName: string): Promise<string | null> {
+  async save(id: string, doc: Json, suggestedName: string): Promise<string | null> {
     const blob = new Blob([JSON.stringify(doc, null, 2) + '\n'], { type: 'application/json' });
     const picker = this.pickers().showSaveFilePicker;
     if (!picker) {
       this.download(blob, suggestedName);
       return suggestedName;
     }
-    let handle = this.handles[kind];
+    let handle = this.handles[id];
     if (!handle) {
       try {
         handle = await picker({ suggestedName, types: JSON_TYPES });
@@ -102,7 +101,7 @@ export class FileAccess {
     const writable = await handle.createWritable();
     await writable.write(blob);
     await writable.close();
-    this.handles[kind] = handle;
+    this.handles[id] = handle;
     return handle.name;
   }
 

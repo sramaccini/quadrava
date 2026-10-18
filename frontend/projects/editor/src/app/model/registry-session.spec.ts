@@ -54,13 +54,13 @@ describe('RegistrySession', () => {
     });
     const session = TestBed.inject(RegistrySession);
     session.appId.set('orders');
-    session.setOrigin({ kind: 'screen', id: 'list' }, 'aaaaaaaaaaaa');
-    expect(session.basedOn({ kind: 'screen', id: 'other' })).toBeNull();
-    expect(session.basedOn({ kind: 'screen', id: 'list' })).toBe('aaaaaaaaaaaa');
-    const version = await session.save('screen', { schemaVersion: '1.0', screen: 'list', components: [] });
+    session.setOrigin('d1', { kind: 'screen', id: 'list' }, 'aaaaaaaaaaaa');
+    expect(session.basedOn('d1', { kind: 'screen', id: 'other' })).toBeNull();
+    expect(session.basedOn('d1', { kind: 'screen', id: 'list' })).toBe('aaaaaaaaaaaa');
+    const version = await session.save('d1', 'screen', { schemaVersion: '1.0', screen: 'list', components: [] });
     expect(version?.hash).toBe('bbbbbbbbbbbb');
     expect(calls.at(-1)?.ifMatch).toContain('aaaaaaaaaaaa');
-    expect(session.basedOn({ kind: 'screen', id: 'list' })).toBe('bbbbbbbbbbbb');
+    expect(session.basedOn('d1', { kind: 'screen', id: 'list' })).toBe('bbbbbbbbbbbb');
     expect(toasts.at(-1)).toContain('bbbbbbbbbb');
   });
 
@@ -78,7 +78,7 @@ describe('RegistrySession', () => {
     await session.check();
     TestBed.tick();
     await vi.waitFor(() => expect(session.screens()).toEqual(['order-list']));
-    await session.save('screen', { schemaVersion: '1.0', screen: 'order-detail', components: [] });
+    await session.save('d1', 'screen', { schemaVersion: '1.0', screen: 'order-detail', components: [] });
     expect(session.screens()).toEqual(['order-list', 'order-detail']);
     session.appId.set('');
     TestBed.tick();
@@ -90,10 +90,10 @@ describe('RegistrySession', () => {
     vi.stubGlobal('fetch', async (url: string) => (url.endsWith('/apps') ? respond(200, []) : answer));
     const session = TestBed.inject(RegistrySession);
     session.appId.set('orders');
-    expect(await session.save('screen', { screen: 'list' })).toBeNull();
+    expect(await session.save('d1', 'screen', { screen: 'list' })).toBeNull();
     expect(session.issues()).toEqual([{ path: '/title', message: 'missing' }]);
     answer = respond(401);
-    expect(await session.save('screen', { screen: 'list' })).toBeNull();
+    expect(await session.save('d1', 'screen', { screen: 'list' })).toBeNull();
     expect(session.status()).toBe('login');
   });
 });

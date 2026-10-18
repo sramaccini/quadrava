@@ -1,10 +1,11 @@
-import { Injectable, computed, effect, inject, signal } from '@angular/core';
+import { Injectable, computed, effect, inject } from '@angular/core';
 import { ICON_TYPES } from 'components';
 import { I18n, checkScreenExpressions } from 'core';
 import { ExpressionEngine } from 'expressions';
 import { NAVIGATION_SCHEMA, validateNavigation, type NavigationDefinition } from 'schema';
 import { fromPointer, getIn, insertAt, isObject, moveBy, removeAt, samePath, toPointer, type Json, type JsonObject, type Path } from './doc-ops';
-import { DocumentState, type EditorIssue } from './document-state';
+import { DOCUMENT_ID, DocumentState, readDraft, writeDraft, type EditorIssue } from './document-state';
+import { KnownScreens } from './shared-state';
 import { SchemaReader, type PropertyInfo, type Schema } from './schema-info';
 
 /**
@@ -80,16 +81,16 @@ function leafTemplate(id: string, t: Translate, screen = 'new-screen'): JsonObje
   return { id, label: t('ed.nav.newLeaf'), screen };
 }
 
-const DRAFT_KEY = 'lc.editor.navigation';
-
-@Injectable({ providedIn: 'root' })
+/** The navigation open in a window of the workspace (one store per window; the draft under `DOCUMENT_ID`). */
+@Injectable()
 export class NavigationStore extends DocumentState {
   private readonly i18n = inject(I18n);
   private readonly engine = new ExpressionEngine({ can: () => true });
   private readonly t = (key: string, params: Record<string, unknown> = {}): string => this.i18n.t(key, params);
 
-  /** Known screens (the examples): suggested for the items and checked. */
-  readonly knownScreens = signal<string[]>([]);
+  private readonly id = inject(DOCUMENT_ID);
+  /** Known screens (examples, registry, open documents): suggested for the items and checked. */
+  readonly knownScreens = inject(KnownScreens).names;
   readonly target = computed(() => navTargetAt(this.doc(), this.selection()));
   /** The navigation as a valid definition, or null if it has errors. */
   readonly definition = computed<NavigationDefinition | null>(() => (this.errorCount() === 0 ? (this.doc() as unknown as NavigationDefinition) : null));
@@ -109,14 +110,8 @@ export class NavigationStore extends DocumentState {
 
   constructor() {
     super();
-    this.doc.set(readDraft() ?? emptyNavigation((k) => this.t(k)));
-    effect(() => {
-      try {
-        localStorage.setItem(DRAFT_KEY, JSON.stringify(this.doc()));
-      } catch {
-        // Storage not available: the draft stays in memory.
-      }
-    });
+    this.doc.set(objectDraft(readDraft(this.id)) ?? emptyNavigation((k) => this.t(k)));
+    effect(() => writeDraft(this.id, this.doc()));
   }
 
   protected selectable(doc: Json, path: Path): boolean {
@@ -138,7 +133,7 @@ export class NavigationStore extends DocumentState {
     return [];
   }
 
-  load(doc: Json): void {
+  override load(doc: Json): void {
     this.reset(doc);
   }
 
@@ -274,12 +269,6 @@ export class NavigationStore extends DocumentState {
   }
 }
 
-function readDraft(): Json | null {
-  try {
-    const raw = localStorage.getItem(DRAFT_KEY);
-    const parsed = raw ? (JSON.parse(raw) as Json) : null;
-    return isObject(parsed) ? parsed : null;
-  } catch {
-    return null;
-  }
+function objectDraft(value: unknown): Json | null {
+  return isObject(value as Json) ? (value as Json) : null;
 }

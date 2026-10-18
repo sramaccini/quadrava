@@ -4,12 +4,14 @@ import navigation from '../../../../runtime/public/examples/navigation.json';
 import { EDITOR_MESSAGES } from '../messages';
 import { getIn, type Json } from './doc-ops';
 import { canAddGroup, navProperties, navTargetAt, NavigationStore } from './navigation-store';
+import { documentProviders } from './workspace';
 
 describe('NavigationStore', () => {
   let store: NavigationStore;
 
   beforeEach(() => {
     localStorage.clear();
+    TestBed.configureTestingModule({ providers: documentProviders('navigation', 'd1') });
     TestBed.inject(I18n).addMessages('en', EDITOR_MESSAGES['en']);
     store = TestBed.inject(NavigationStore);
     store.newNavigation();

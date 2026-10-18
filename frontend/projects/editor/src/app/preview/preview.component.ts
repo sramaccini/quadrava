@@ -13,6 +13,7 @@ import type { ScreenDefinition } from 'schema';
 import { getIn, isObject, type Json } from '../model/doc-ops';
 import { EditorStore } from '../model/editor-store';
 import { ThemeStore } from '../model/theme-store';
+import { Workspace } from '../model/workspace';
 import { JsonFieldComponent } from '../ui/json-field.component';
 import { PreviewFrameComponent } from './preview-frame.component';
 import { PreviewLog } from './preview-log';
@@ -27,20 +28,22 @@ const WIDTH_ICONS: Record<string, string> = { desktop: 'desktop', tablet: 'table
 
 /**
  * Live preview of the screen: the bar (width, permissions, parameters, log, selection, reload) is
- * in the editor, the drawing in the isolated iframe (see `ed-preview-frame`), with the theme being edited. If the document has
- * errors the last valid version stays, with a warning. A component chosen in the preview is selected in the
+ * in the editor, the drawing in the isolated iframe (see `ed-preview-frame`), with the theme of the theme window used last. If
+ * the document has errors the last valid version stays, with a warning. A component chosen in the preview is selected in the
  * outline; the node selected in the outline is highlighted in the preview.
  */
 @Component({
   selector: 'ed-preview',
   imports: [FormsModule, JsonFieldComponent, PreviewFrameComponent, NzAlertModule, NzButtonModule, NzIconModule, NzSelectModule, NzSwitchModule, NzTooltipModule],
+  // Every preview (one per screen window) has its own log.
+  providers: [PreviewLog],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './preview.component.scss',
   templateUrl: './preview.component.html',
 })
 export class PreviewComponent {
   protected readonly store = inject(EditorStore);
-  private readonly theme = inject(ThemeStore);
+  private readonly workspace = inject(Workspace);
   protected readonly log = inject(PreviewLog);
   protected readonly i18n = inject(I18n);
 
@@ -81,7 +84,7 @@ export class PreviewComponent {
   protected readonly state = computed<PreviewState>(() =>
     previewState({
       screen: this.shown(),
-      theme: this.theme.definition(),
+      theme: this.workspace.latest('theme', ThemeStore)?.definition() ?? null,
       granted: this.grantAll() ? null : [],
       samples: this.store.samples(),
       params: this.params(),

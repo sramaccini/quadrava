@@ -1,32 +1,33 @@
-<div class="editor" [style.--ed-left.px]="dock.columnWidth('left', leftPanels, 280)" [style.--ed-right.px]="dock.columnWidth('right', rightPanels, 320)">
+<div class="editor" [style.--ed-left.px]="leftColumn()" [style.--ed-right.px]="rightColumn()">
   <header class="toolbar">
     <h1 class="brand"><lc-quadrava-wordmark icon="brand/quadrava-studio-icon-small.svg" product="Studio" /></h1>
-    <!-- Menu as in desktop applications: File (new, open, save, to a file and to the registry), Edit, View, Help. -->
+    <!-- Menu as in desktop applications: File (new, open, save, to a file and to the registry), Edit, View, Window, Help. -->
     <ed-menu-bar [menus]="menus()" [label]="i18n.t('ed.menu.bar')" (opened)="$event === 'file' && registry.check()" />
     <div class="group">
-      <button nz-button nzType="text" nzSize="small" type="button" [disabled]="!active().canUndo()" (click)="active().undo()" [attr.aria-label]="i18n.t('ed.undo')" [nz-tooltip]="i18n.t('ed.undo')">
+      <button nz-button nzType="text" nzSize="small" type="button" [disabled]="!active()?.state.canUndo()" (click)="active()?.state.undo()" [attr.aria-label]="i18n.t('ed.undo')" [nz-tooltip]="i18n.t('ed.undo')">
         <span nz-icon nzType="undo"></span>
       </button>
-      <button nz-button nzType="text" nzSize="small" type="button" [disabled]="!active().canRedo()" (click)="active().redo()" [attr.aria-label]="i18n.t('ed.redo')" [nz-tooltip]="i18n.t('ed.redo')">
+      <button nz-button nzType="text" nzSize="small" type="button" [disabled]="!active()?.state.canRedo()" (click)="active()?.state.redo()" [attr.aria-label]="i18n.t('ed.redo')" [nz-tooltip]="i18n.t('ed.redo')">
         <span nz-icon nzType="redo"></span>
       </button>
     </div>
-    <!-- On the right, together even when the bar wraps: status, what is being edited, language. -->
+    <!-- On the right, together even when the bar wraps: status of the active document, language. -->
     <div class="end">
       <div class="status" role="status">
-        @if (active().errorCount()) {
-          <nz-tag nzColor="error">{{ i18n.t('ed.errors', { n: active().errorCount() }) }}</nz-tag>
-        } @else {
-          <nz-tag nzColor="success">{{ i18n.t('ed.valid') }}</nz-tag>
-        }
-        @if (warningCount()) {
-          <nz-tag nzColor="warning">{{ i18n.t('ed.warnings', { n: warningCount() }) }}</nz-tag>
-        }
-        @if (unsaved()) {
-          <nz-tag data-unsaved>{{ i18n.t('ed.unsaved') }}</nz-tag>
+        @if (active(); as win) {
+          @if (win.state.errorCount()) {
+            <nz-tag nzColor="error">{{ i18n.t('ed.errors', { n: win.state.errorCount() }) }}</nz-tag>
+          } @else {
+            <nz-tag nzColor="success">{{ i18n.t('ed.valid') }}</nz-tag>
+          }
+          @if (warningCount()) {
+            <nz-tag nzColor="warning">{{ i18n.t('ed.warnings', { n: warningCount() }) }}</nz-tag>
+          }
+          @if (unsaved()) {
+            <nz-tag data-unsaved>{{ i18n.t('ed.unsaved') }}</nz-tag>
+          }
         }
       </div>
-      <nz-segmented class="mode" nzSize="small" [nzOptions]="modeOptions()" [ngModel]="mode()" (ngModelChange)="mode.set($event)" [attr.aria-label]="i18n.t('ed.mode.label')" />
       <nz-select class="language" nzSize="small" [ngModel]="i18n.locale()" (ngModelChange)="i18n.setLocale($event)" [attr.aria-label]="i18n.t('ed.language')">
         @for (l of languages; track l) {
           <nz-option [nzValue]="l" [nzLabel]="l.toUpperCase()" />
@@ -35,46 +36,47 @@
     </div>
   </header>
 
-  @if (mode() === 'navigation') {
-    <ed-navigation-editor class="nav-workspace" />
-  } @else if (mode() === 'theme') {
-    <ed-theme-editor class="nav-workspace" />
+  <!-- The side panels show the document of the active window: they are created again with its injector when it changes. -->
+  @if (active(); as win) {
+    @if (leftTabs().length) {
+      <ed-dock-side side="left" [width]="280" [panels]="leftTabs()">
+        <ng-container *ngTemplateOutlet="leftPanels; context: { $implicit: win.kind }; injector: win.injector" />
+      </ed-dock-side>
+    } @else {
+      <aside class="left no-panels">{{ i18n.t('ed.dock.none') }}</aside>
+    }
+    <ed-dock-side side="right" [width]="320" [panels]="rightTabs()">
+      <ng-container *ngTemplateOutlet="rightPanels; context: { $implicit: win.kind }; injector: win.injector" />
+    </ed-dock-side>
   } @else {
-  <ed-dock-side side="left" [width]="280" [panels]="[{ id: 'palette', label: i18n.t('ed.palette'), icon: 'appstore' }, { id: 'outline', label: i18n.t('ed.outline'), icon: 'apartment' }]">
-    <ed-palette edDockPanel="palette" />
-    <ed-outline edDockPanel="outline" />
-  </ed-dock-side>
-
-  <main class="center">
-    <div class="ed-tabs-box">
-    <nz-tabs nzType="card" nzTabPosition="bottom" nzSize="small" [nzSelectedIndex]="viewIndex()" (nzSelectedIndexChange)="setView($event)" [nzAnimated]="false">
-      <nz-tab [nzTitle]="i18n.t('ed.tabs.preview')"></nz-tab>
-      <nz-tab [nzTitle]="i18n.t('ed.tabs.json')"></nz-tab>
-      <nz-tab [nzTitle]="i18n.t('ed.tabs.sources')"></nz-tab>
-      <nz-tab [nzTitle]="store.textsToFix() ? i18n.t('ed.tabs.textsTodo', { n: store.textsToFix() }) : i18n.t('ed.tabs.texts')"></nz-tab>
-    </nz-tabs>
-    <div class="view">
-      <!-- The preview stays alive (hidden) in the other views: its iframe does not reload at every change. -->
-      <div class="pane" [class.off]="store.view() !== 'preview'"><ed-preview /></div>
-      @switch (store.view()) {
-        @case ('json') {
-          <ed-json-view />
-        }
-        @case ('sources') {
-          <ed-data-sources />
-        }
-        @case ('texts') {
-          <ed-texts />
-        }
-      }
-    </div>
-    </div>
-    </main>
-
-  <ed-dock-side side="right" [width]="320" [panels]="[{ id: 'inspector', label: i18n.t('ed.inspector'), icon: 'control' }]">
-    <ed-inspector edDockPanel="inspector" />
-  </ed-dock-side>
+    <aside class="left no-panels">{{ i18n.t('ed.dock.none') }}</aside>
+    <aside class="right no-panels">{{ i18n.t('ed.dock.none') }}</aside>
   }
+  <ng-template #leftPanels let-kind>
+    @if (kind === 'screen') {
+      <ed-palette edDockPanel="palette" />
+      <ed-outline edDockPanel="outline" />
+    } @else if (kind === 'navigation') {
+      <ed-nav-outline edDockPanel="outline" />
+    }
+  </ng-template>
+  <ng-template #rightPanels let-kind>
+    @switch (kind) {
+      @case ('screen') {
+        <ed-inspector edDockPanel="inspector" />
+      }
+      @case ('navigation') {
+        <ed-nav-inspector edDockPanel="inspector" />
+      }
+      @case ('theme') {
+        <ed-theme-inspector edDockPanel="inspector" />
+      }
+    }
+  </ng-template>
+
+  <main class="center" [attr.aria-label]="i18n.t('ed.workspace.label')">
+    <ed-workspace (closing)="closeWindow($event)" (command)="command($event)" />
+  </main>
 
   <!-- Help: keyboard shortcuts (also F1) and information. -->
   <nz-modal [nzVisible]="showShortcuts()" [nzTitle]="i18n.t('ed.menu.shortcuts')" [nzFooter]="null" [nzWidth]="560" (nzOnCancel)="showShortcuts.set(false)">
@@ -99,10 +101,10 @@
       }
     </ng-container>
   </nz-modal>
-  <nz-modal [nzVisible]="showRegistryOpen()" [nzTitle]="i18n.t('ed.openRegistry.title')" [nzFooter]="null" [nzWidth]="520" (nzOnCancel)="showRegistryOpen.set(false)">
+  <nz-modal [nzVisible]="registryKind() !== null" [nzTitle]="i18n.t('ed.openRegistry.title')" [nzFooter]="null" [nzWidth]="520" (nzOnCancel)="registryKind.set(null)">
     <ng-container *nzModalContent>
-      @if (showRegistryOpen()) {
-        <ed-registry-open [kind]="mode()" (opened)="openedFromRegistry($event)" (cancelled)="showRegistryOpen.set(false)" />
+      @if (registryKind()) {
+        <ed-registry-open [kind]="registryKind()!" (opened)="openedFromRegistry($event)" (cancelled)="registryKind.set(null)" />
       }
     </ng-container>
   </nz-modal>
@@ -124,16 +126,18 @@
 
   <nz-drawer [nzVisible]="showRegistry()" [nzTitle]="i18n.t('ed.registry.title')" [nzWidth]="380" (nzOnClose)="showRegistry.set(false)">
     <ng-container *nzDrawerContent>
-      <ed-registry-panel [state]="loadable()" [kind]="mode()" />
+      @if (active(); as win) {
+        <ed-registry-panel [state]="win.state" [kind]="win.kind" [document]="win.id" />
+      }
     </ng-container>
   </nz-drawer>
 
   <footer class="bottom">
     <button type="button" class="issues-toggle" (click)="showIssues.set(!showIssues())" [attr.aria-expanded]="showIssues()">
-      {{ i18n.t('ed.issues') }} ({{ active().issues().length }})
+      {{ i18n.t('ed.issues') }} ({{ active()?.state.issues().length ?? 0 }})
     </button>
-    @if (showIssues()) {
-      <ed-issues [state]="active()" />
+    @if (showIssues() && active(); as win) {
+      <ed-issues [state]="win.state" />
     }
   </footer>
 </div>

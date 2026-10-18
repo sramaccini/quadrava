@@ -1,8 +1,8 @@
 import { Injectable, signal } from '@angular/core';
 import type { PreviewEvent } from './protocol';
 
-/** Registro dell'anteprima, lato editor: richieste, navigazioni e segnalazioni arrivate dall'iframe. */
-@Injectable({ providedIn: 'root' })
+/** Log of a preview, on the editor side: requests, navigations and reports from its iframe (one per preview). */
+@Injectable()
 export class PreviewLog {
   readonly events = signal<PreviewEvent[]>([]);
 

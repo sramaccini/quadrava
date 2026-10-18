@@ -1,0 +1,18 @@
+<section class="inspector ed-panel" [attr.aria-label]="i18n.t('ed.inspector')">
+  <h2 class="ed-panel-title"><span nz-icon nzType="control" aria-hidden="true"></span>{{ i18n.t('ed.inspector') }}<ed-dock-pin panel="inspector" /></h2>
+  <div class="ed-panel-body">
+  @if (store.target()) {
+    <p class="kind">{{ heading() }}</p>
+    @if (generalIssues().length) {
+      <ul class="issues" role="alert">
+        @for (message of generalIssues(); track $index) {
+          <li>{{ message }}</li>
+        }
+      </ul>
+    }
+    <ed-fields [path]="store.selection()" [fields]="properties()" />
+  } @else {
+    <p class="empty">{{ i18n.t('ed.noSelection') }}</p>
+  }
+  </div>
+</section>

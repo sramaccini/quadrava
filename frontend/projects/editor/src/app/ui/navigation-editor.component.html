@@ -1,61 +1,4 @@
-<ed-dock-side side="left" [width]="280" [panels]="[{ id: 'outline', label: i18n.t('ed.outline'), icon: 'apartment' }]">
-  <nav class="outline ed-panel" edDockPanel="outline" [attr.aria-label]="i18n.t('ed.outline')">
-    <h2 class="ed-panel-title"><span nz-icon nzType="apartment" aria-hidden="true"></span>{{ i18n.t('ed.outline') }}<ed-dock-pin panel="outline" /></h2>
-    <div class="ed-panel-body">
-    <div class="add" role="toolbar" [attr.aria-label]="i18n.t('ed.nav.add')">
-      <button nz-button nzSize="small" type="button" (click)="store.addArea()"><span nz-icon nzType="plus"></span>{{ i18n.t('ed.nav.kind.area') }}</button>
-      <button nz-button nzSize="small" type="button" [disabled]="!canAddGroup()" (click)="store.addItem('group')"><span nz-icon nzType="plus"></span>{{ i18n.t('ed.nav.kind.group') }}</button>
-      <button nz-button nzSize="small" type="button" [disabled]="!canAddLeaf()" (click)="store.addItem('leaf')"><span nz-icon nzType="plus"></span>{{ i18n.t('ed.nav.kind.leaf') }}</button>
-    </div>
-    <button type="button" class="row root" [class.selected]="isSelected([])" [attr.aria-current]="isSelected([]) ? 'true' : null" (click)="store.select([])">
-      <span class="label">{{ i18n.t('ed.nav.kind.root') }}</span>
-      @if (rootSeverity(); as s) {
-        <span class="mark" [class]="s" [attr.title]="i18n.t('ed.has.' + s)" [attr.aria-label]="i18n.t('ed.has.' + s)"></span>
-      }
-    </button>
-    <ng-container [ngTemplateOutlet]="branch" [ngTemplateOutletContext]="{ $implicit: items(), level: 1 }" />
-    </div>
-  </nav>
-</ed-dock-side>
-
-<ng-template #branch let-items let-level="level">
-  <ul class="branch">
-    @for (item of items; track item.path.join('/')) {
-      <li>
-        <div class="line" [class.selected]="isSelected(item.path)" [class.ancestor]="containsSelection(item.path)" [style.--level]="level">
-          <button type="button" class="row" [attr.aria-current]="isSelected(item.path) ? 'true' : null" (click)="store.select(item.path)" [attr.data-path]="item.path.join('/')">
-            <span class="label">{{ item.label }}</span>
-            <span class="detail">{{ item.detail }}</span>
-            @if (item.severity; as s) {
-              <span class="mark" [class]="s" [attr.title]="i18n.t('ed.has.' + s)" [attr.aria-label]="i18n.t('ed.has.' + s)"></span>
-            }
-          </button>
-          @if (isSelected(item.path)) {
-            <span class="tools">
-              <button nz-button nzType="text" nzSize="small" type="button" [disabled]="item.first" (click)="store.move(item.path, -1)" [attr.aria-label]="i18n.t('ed.moveUp')" [nz-tooltip]="i18n.t('ed.moveUp')">
-                <span nz-icon nzType="arrow-up"></span>
-              </button>
-              <button nz-button nzType="text" nzSize="small" type="button" [disabled]="item.last" (click)="store.move(item.path, 1)" [attr.aria-label]="i18n.t('ed.moveDown')" [nz-tooltip]="i18n.t('ed.moveDown')">
-                <span nz-icon nzType="arrow-down"></span>
-              </button>
-              <button nz-button nzType="text" nzSize="small" type="button" (click)="store.duplicate(item.path)" [attr.aria-label]="i18n.t('ed.duplicate')" [nz-tooltip]="i18n.t('ed.duplicate')">
-                <span nz-icon nzType="copy"></span>
-              </button>
-              <button nz-button nzType="text" nzSize="small" nzDanger type="button" (click)="store.remove(item.path)" [attr.aria-label]="i18n.t('ed.delete')" [nz-tooltip]="i18n.t('ed.delete')">
-                <span nz-icon nzType="delete"></span>
-              </button>
-            </span>
-          }
-        </div>
-        @if (item.children.length) {
-          <ng-container [ngTemplateOutlet]="branch" [ngTemplateOutletContext]="{ $implicit: item.children, level: level + 1 }" />
-        }
-      </li>
-    }
-  </ul>
-</ng-template>
-
-<main class="center">
+<div class="center">
     <div class="ed-tabs-box">
   <nz-tabs nzType="card" nzTabPosition="bottom" nzSize="small" [nzSelectedIndex]="view() === 'json' ? 1 : 0" (nzSelectedIndexChange)="setView($event)" [nzAnimated]="false">
     <nz-tab [nzTitle]="i18n.t('ed.nav.preview')"></nz-tab>
@@ -95,25 +38,4 @@
     </div>
   </div>
   </div>
-    </main>
-
-<ed-dock-side side="right" [width]="320" [panels]="[{ id: 'inspector', label: i18n.t('ed.inspector'), icon: 'control' }]">
-  <section class="inspector ed-panel" edDockPanel="inspector" [attr.aria-label]="i18n.t('ed.inspector')">
-    <h2 class="ed-panel-title"><span nz-icon nzType="control" aria-hidden="true"></span>{{ i18n.t('ed.inspector') }}<ed-dock-pin panel="inspector" /></h2>
-    <div class="ed-panel-body">
-    @if (store.target()) {
-      <p class="kind">{{ heading() }}</p>
-      @if (generalIssues().length) {
-        <ul class="issues" role="alert">
-          @for (message of generalIssues(); track $index) {
-            <li>{{ message }}</li>
-          }
-        </ul>
-      }
-      <ed-fields [path]="store.selection()" [fields]="properties()" />
-    } @else {
-      <p class="empty">{{ i18n.t('ed.noSelection') }}</p>
-    }
     </div>
-  </section>
-</ed-dock-side>

@@ -5,6 +5,8 @@ import {
   AppstoreOutline,
   ArrowDownOutline,
   ArrowUpOutline,
+  BgColorsOutline,
+  BorderOutline,
   CloseCircleOutline,
   ControlOutline,
   CopyOutline,
@@ -12,8 +14,10 @@ import {
   DesktopOutline,
   DownloadOutline,
   DownOutline,
+  FolderOpenOutline,
   IdcardOutline,
   LayoutOutline,
+  MinusOutline,
   MinusSquareOutline,
   MobileOutline,
   PlusOutline,
@@ -26,6 +30,7 @@ import {
   ReloadOutline,
   ScissorOutline,
   SelectOutline,
+  ShrinkOutline,
   SlidersOutline,
   StarOutline,
   TabletOutline,
@@ -37,8 +42,6 @@ import { ICON_TYPES, NzNotifier, provideLowcodeComponents } from 'components';
 import { I18n, Notifier } from 'core';
 import { provideNzIcons } from 'ng-zorro-antd/icon';
 import { EDITOR_MESSAGES } from './messages';
-import { DocumentState } from './model/document-state';
-import { EditorStore } from './model/editor-store';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -52,6 +55,8 @@ export const appConfig: ApplicationConfig = {
       AppstoreOutline,
       ArrowDownOutline,
       ArrowUpOutline,
+      BgColorsOutline,
+      BorderOutline,
       CloseCircleOutline,
       ControlOutline,
       CopyOutline,
@@ -59,8 +64,10 @@ export const appConfig: ApplicationConfig = {
       DesktopOutline,
       DownloadOutline,
       DownOutline,
+      FolderOpenOutline,
       IdcardOutline,
       LayoutOutline,
+      MinusOutline,
       MinusSquareOutline,
       MobileOutline,
       PlusOutline,
@@ -73,6 +80,7 @@ export const appConfig: ApplicationConfig = {
       ReloadOutline,
       ScissorOutline,
       SelectOutline,
+      ShrinkOutline,
       SlidersOutline,
       StarOutline,
       TabletOutline,
@@ -84,8 +92,6 @@ export const appConfig: ApplicationConfig = {
       const i18n = inject(I18n);
       for (const [locale, messages] of Object.entries(EDITOR_MESSAGES)) i18n.addMessages(locale, messages);
     }),
-    // The fields generated from the schema work on the screen; the navigation editor redirects them to its own document.
-    { provide: DocumentState, useExisting: EditorStore },
     // The runtime ports serve only the preview, which runs in its iframe (preview-config.ts).
     { provide: Notifier, useExisting: NzNotifier },
   ],

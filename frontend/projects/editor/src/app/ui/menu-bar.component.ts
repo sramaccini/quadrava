@@ -281,7 +281,8 @@ export class MenuBarComponent {
     event.stopPropagation();
     if (item.disabled) return;
     if (item.children) {
-      this.sub.set(this.sub() === item.id ? null : item.id);
+      // Opens it, also when hovering has already opened it (as in desktop menus: the click does not close it again).
+      this.sub.set(item.id);
       return;
     }
     const back = this.returnFocus;

@@ -1,3 +1,4 @@
+import { EnvironmentInjector, createEnvironmentInjector } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { I18n } from 'core';
 import { EDITOR_MESSAGES } from '../messages';
@@ -5,12 +6,14 @@ import { getIn, type Json } from './doc-ops';
 import { EditorStore } from './editor-store';
 import { listItem, nodeProperties } from './schema-info';
 import { defaultItem } from './templates';
+import { documentProviders } from './workspace';
 
 describe('EditorStore', () => {
   let store: EditorStore;
 
   beforeEach(() => {
     localStorage.clear();
+    TestBed.configureTestingModule({ providers: documentProviders('screen', 'd1') });
     TestBed.inject(I18n).addMessages('en', EDITOR_MESSAGES['en']);
     store = TestBed.inject(EditorStore);
     store.newScreen();
@@ -169,7 +172,7 @@ describe('EditorStore', () => {
     expect(store.languages()).not.toContain('de');
     expect(store.translations()['de']).toBeUndefined();
     TestBed.tick();
-    expect(JSON.parse(localStorage.getItem('lc.editor.draft')!).languages).toEqual(['en', 'it', 'fr', 'pt-BR']);
+    expect(JSON.parse(localStorage.getItem('lc.editor.doc.d1')!).languages).toEqual(['en', 'it', 'fr', 'pt-BR']);
   });
 
   it('default language: it is changed among the present languages; it applies to fallbacks, «Make translatable» and the languages to remove', () => {
@@ -185,7 +188,7 @@ describe('EditorStore', () => {
     expect(store.removeLanguage('it')).toBe(false);
     expect(store.removeLanguage('en')).toBe(true);
     TestBed.tick();
-    expect(JSON.parse(localStorage.getItem('lc.editor.draft')!).defaultLanguage).toBe('it');
+    expect(JSON.parse(localStorage.getItem('lc.editor.doc.d1')!).defaultLanguage).toBe('it');
   });
 
   it('selection of several sibling nodes: Ctrl adds and removes, Shift a range; they are wrapped or deleted together', () => {
@@ -273,7 +276,19 @@ describe('EditorStore', () => {
     it('saves the draft in the browser and takes it back', () => {
     store.addNode('alert');
     TestBed.tick();
-    const saved = JSON.parse(localStorage.getItem('lc.editor.draft')!);
+    const saved = JSON.parse(localStorage.getItem('lc.editor.doc.d1')!);
     expect(saved.doc.components[0].type).toBe('alert');
+  });
+
+  it('every open document has its own store and draft; the copied node is shared', () => {
+    const other = createEnvironmentInjector(documentProviders('screen', 'd2'), TestBed.inject(EnvironmentInjector)).get(EditorStore);
+    store.addNode('alert');
+    store.copy(['components', 0]);
+    expect(other.doc()).toMatchObject({ components: [] });
+    other.paste();
+    TestBed.tick();
+    expect(getIn(other.doc(), ['components', 0, 'type'])).toBe('alert');
+    expect(JSON.parse(localStorage.getItem('lc.editor.doc.d2')!).doc.components[0].type).toBe('alert');
+    expect(JSON.parse(localStorage.getItem('lc.editor.doc.d1')!).doc.components.length).toBe(1);
   });
 });

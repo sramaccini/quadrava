@@ -27,7 +27,7 @@ export interface RegistryRef {
 
 /**
  * State of the registry shared by the File menu and the Registry panel: application and environment chosen (remembered in the
- * browser), availability of the registry, screens of the application, version the open document starts from,
+ * browser), availability of the registry, screens of the application, version every open document starts from,
  * saving of a version.
  *
  * Availability comes from `GET /registry/apps`: 200 = reachable, 401 = sign-in through the BFF needed,
@@ -52,8 +52,11 @@ export class RegistrySession {
   readonly busy = signal(false);
   /** Screens of the application chosen in the registry (empty without registry or without application). */
   readonly screens = signal<string[]>([]);
-  /** Version the open document starts from (opened or just saved): the registry uses it for concurrent changes. */
-  private readonly origin = signal<(RegistryRef & { hash: string }) | null>(null);
+  /**
+   * Version every open document starts from (opened or just saved), by the identifier of the document: the registry uses it for
+   * concurrent changes.
+   */
+  private readonly origins = signal<Record<string, RegistryRef & { hash: string }>>({});
 
   constructor() {
     effect(() => {
@@ -106,30 +109,32 @@ export class RegistrySession {
     this.redirect(loginUrl(globalThis.location.href));
   }
 
-  /** Hash of the version the given document starts from, if it is the one opened from the registry or saved last. */
-  basedOn(ref: RegistryRef | null): string | null {
-    const origin = this.origin();
+  /** Hash of the version the document `doc` (identifier) starts from, if `ref` is the one opened from the registry or saved last. */
+  basedOn(doc: string, ref: RegistryRef | null): string | null {
+    const origin = this.origins()[doc];
     return ref && origin && origin.kind === ref.kind && origin.id === ref.id ? origin.hash : null;
   }
 
-  setOrigin(ref: RegistryRef | null, hash: string | null): void {
-    this.origin.set(ref && hash ? { ...ref, hash } : null);
+  /** The version the document `doc` starts from (null: none, for a new document, a file or an example). */
+  setOrigin(doc: string, ref: RegistryRef | null, hash: string | null): void {
+    const { [doc]: _previous, ...rest } = this.origins();
+    this.origins.set(ref && hash ? { ...rest, [doc]: { ...ref, hash } } : rest);
   }
 
   /**
-   * Saves the document as a new version in the chosen application. Returns the saved version, or null if it was not
+   * Saves the document `doc` (identifier of the open document) as a new version in the chosen application. Returns the saved version, or null if it was not
    * saved: errors reported here (with the validation problems in `issues`), concurrent changes not
    * confirmed, document without a valid identifier.
    */
-  async save(kind: DocumentKind, doc: Json): Promise<DocumentVersion | null> {
-    const ref = documentRef(kind, doc);
+  async save(doc: string, kind: DocumentKind, content: Json): Promise<DocumentVersion | null> {
+    const ref = documentRef(kind, content);
     const appId = this.appId();
     if (!ref || !appId) return null;
     this.issues.set([]);
     this.busy.set(true);
     try {
-      const version = await this.client.save(appId, ref.kind, ref.id, doc, this.basedOn(ref));
-      this.setOrigin(ref, version.hash);
+      const version = await this.client.save(appId, ref.kind, ref.id, content, this.basedOn(doc, ref));
+      this.setOrigin(doc, ref, version.hash);
       this.status.set('available');
       if (ref.kind === 'screen' && !this.screens().includes(ref.id)) this.screens.update((s) => [...s, ref.id]);
       this.notifier.toast(this.i18n.t('ed.registry.saved', { hash: version.hash.slice(0, 10) }));
@@ -139,8 +144,8 @@ export class RegistrySession {
         this.busy.set(false);
         // Someone saved after the version one started from: save anyway only if the author confirms.
         if (!(await this.confirmation.confirm(this.i18n.t('ed.registry.conflict', { author: e.latestAuthor ?? '?' })))) return null;
-        this.setOrigin(null, null);
-        return this.save(kind, doc);
+        this.setOrigin(doc, null, null);
+        return this.save(doc, kind, content);
       }
       if (e instanceof RegistryError && e.status === 400 && e.issues.length) {
         this.issues.set(e.issues);

@@ -1,6 +1,6 @@
 # Quadrava Studio (visual editor)
 
-Quadrava Studio, the visual editor of Quadrava (`frontend/projects/editor`), edits **screens**, **navigation** (areas and menus) and the **theme**; a selector in the toolbar switches between them. For screens it produces the same JSON the runtime reads: its users compose the screen with palette, structure and property panel, and immediately see the result drawn by the real runtime. There is no intermediate format: what is exported goes into `examples/` (or is published in the registry) as it is.
+Quadrava Studio, the visual editor of Quadrava (`frontend/projects/editor`), edits **screens**, **navigations** (areas and menus) and **themes**, each one in its own window inside a workspace, as in an IDE: several documents can be open at once, of any kind (§ 1b). For screens it produces the same JSON the runtime reads: its users compose the screen with palette, structure and property panel, and immediately see the result drawn by the real runtime. There is no intermediate format: what is exported goes into `examples/` (or is published in the registry) as it is.
 
 Start it with `cd frontend && npm run start:editor` (port 4201; it builds the libraries and copies the examples).
 
@@ -10,43 +10,47 @@ The editor's interface is in English, with an Italian translation; the labels be
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│ ▣ Quadrava Studio  File  Edit  ↶ ↷  Validate [Screen|Navigation|Theme]     EN │
+│ ▣ Quadrava Studio  File Edit View Window Help  ↶ ↷        Valid  Unsaved  EN │
 ├───────────────┬──────────────────────────────────────────┬───────────────────┤
-│ COMPONENTS    │ [Desktop|Tablet|Phone] [Permissions] …   │ PROPERTIES        │
-│ Section Text  │                                          │ Table             │
-│ Table …       │ ┌──────────────────────────────────────┐ │ id     table-1    │
-│               │ │  the screen, drawn by the runtime    │ │ source list ▾     │
-│ STRUCTURE     │ │  ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐  (node       │ │ columns           │
-│ Screen        │ │  │  selected node      │  highlighted)│ │  ▸ Id (id)        │
-│  Section      │ │  └ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘              │ │  ▾ Description    │
-│   Table ↑↓⧉✂🗑 │ └──────────────────────────────────────┘ │     field …       │
-│               │ Preview ▔JSON▔ Data sources ▔Texts▔      │                   │
+│ COMPONENTS    │ ┌ orders — Screen ──────────── _ □ × ┐   │ PROPERTIES        │
+│ Section Text  │ │ [Desktop|Tablet|Phone] …           │─┐ │ Table             │
+│ Table …       │ │ ┌────────────────────────────────┐ │ │ │ id     table-1    │
+│               │ │ │ the screen, drawn by the       │ │ │ │ source list ▾     │
+│ STRUCTURE     │ │ │ runtime (node highlighted)     │ │ │ │ columns           │
+│ Screen        │ │ └────────────────────────────────┘ │ │ │  ▸ Id (id)        │
+│  Section      │ │ Preview ▔JSON▔ Data sources ▔Texts▔│ │ │  ▾ Description    │
+│   Table ↑↓⧉✂🗑│ └────────────────────────────────────┘ │ │     field …       │
+│               │   └ app — Navigation ──────────────────┘ │                   │
+│               │ [orders — Screen] [app — Navigation]     │                   │
 ├───────────────┴──────────────────────────────────────────┴───────────────────┤
 │ Problems (0)                                                                 │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
+The side panels (components, structure, properties) and the problems always show the document of the **window in front**.
+
 At the top left is the **Quadrava Studio** logotype (icon and name; the Studio icon in the browser tab), then a **menu bar** as in desktop applications:
 
-- **File**: New, Open… (Ctrl+O), Open from registry…, Open example ▸ (submenu with the examples of the current mode), Save (Ctrl+S), Save to registry, Registry…. Every command works on the document of the current mode (screen, navigation or theme):
-  - **New**: for screens it opens a window that asks for the **title** and the **identifier** (`screen`): the identifier is derived from the title (kebab-case, without accents, up to 60 characters) until you edit it, and «Create» stays disabled while the title is missing or the identifier is not valid. For navigation and theme it creates the starting document.
-  - **Open…**: a `.json` file from the computer. In browsers that allow writing files (Chrome, Edge) the editor keeps a reference to the file, so the next «Save» rewrites that same file. A file that is not JSON shows an error and leaves the open document as it is.
+- **File**: New ▸ (Screen…, Navigation, Theme), Open… (Ctrl+O), Open from registry ▸ (Screen…, Navigation…, Theme…), Open example ▸ (the demo's screens, navigation and themes), Save (Ctrl+S), Save to registry, Registry…, Close, Close all. The open commands open the document in a **new window**; the others work on the document of the active window:
+  - **New**: a screen first asks for the **title** and the **identifier** (`screen`): the identifier is derived from the title (kebab-case, without accents, up to 60 characters) until you edit it, and «Create» stays disabled while the title is missing or the identifier is not valid. Navigation and theme open at once with the starting document.
+  - **Open…**: a `.json` file from the computer, in a window of its kind, recognised from the document's identifier property (`screen`, `navigation` or `theme`; any other file is refused with a message). In browsers that allow writing files (Chrome, Edge) the editor keeps a reference to the file, so the next «Save» of that window rewrites that same file. A file that is not JSON shows an error and opens nothing.
   - **Save**: the document as indented JSON. The first time it asks where to save, proposing `<identifier>.json`; afterwards it rewrites the same file without asking. Firefox and Safari cannot rewrite a file: there «Save» downloads the file every time. A document with errors is saved anyway (it is work in progress), and the message says how many errors there are.
   - **Save to registry**: a new version of the document in the registry application, as «Save version» in the Registry panel does: blocked while the document has errors, with the concurrent-change check (If-Match, starting from the version opened or last saved) and the registry's validation problems listed point by point in the Registry panel. If no application has been chosen yet, a small window asks for it (the list comes from the registry, a new name can be typed).
-  - **Open from registry…**: a window with the application, its documents of the current kind (with the review status of the latest version and the environments where it is published) and the version to open: the latest or the one published in an environment. A later «Save to registry» starts from that version.
+  - **Open from registry ▸**: a window with the application, its documents of the chosen kind (with the review status of the latest version and the environments where it is published) and the version to open: the latest or the one published in an environment. A later «Save to registry» starts from that version.
   - The two registry commands are enabled when `GET /registry/apps` answers (checked at start-up and every time the File menu opens); without a registry, as in the demo editor (`npm run start:editor`), they are disabled and the tooltip says why. If the registry asks for authentication (401), they go through the BFF login and come back to the editor.
-  - Next to the document status the tag **«Unsaved changes»** appears while the document differs from the last one saved (to file or to the registry), opened or created. New, Open… and the open commands ask for confirmation only when there are unsaved changes.
-- **Edit**: Undo, Redo; for screens Cut, Copy, Paste; Duplicate, Delete, Move up, Move down (in navigation too). Every item shows its shortcut; those that cannot be used (nothing to undo, no node selected, empty clipboard) are disabled.
-- **View**: the pinned state of «Components», «Structure» and «Properties» (the panels of the mode) and «Problems panel» (items with a check mark); for screens, the central view (Preview, JSON, Data sources, Texts), as single-choice items.
+  - Next to the document status the tag **«Unsaved changes»** appears while the document of the active window differs from the last one saved (to file or to the registry), opened or created; the window's title bar shows a dot. **Close** asks for confirmation only when there are unsaved changes; «Close all» closes the windows one by one and stops at the first one you keep.
+- **Edit**: Undo, Redo; for screens Cut, Copy, Paste; Duplicate, Delete, Move up, Move down (in navigation too). Every item shows its shortcut; those that cannot be used (nothing to undo, no node selected, empty clipboard) are disabled. The clipboard is shared: a node copied in one screen can be pasted into another.
+- **View**: the pinned state of the panels of the active document («Components», «Structure», «Properties») and «Problems panel» (items with a check mark); for screens, the central view (Preview, JSON, Data sources, Texts), as single-choice items.
+- **Window**: Cascade, Tile, Minimize, Maximize, Next window (Ctrl+F6), Previous window (Ctrl+Shift+F6) and the list of the open windows (the active one marked): § 1b.
 - **Help**: «Keyboard shortcuts» (also **F1**), a window with all the shortcuts by group, and «About Quadrava Studio».
 
-A click opens and closes a menu and, with a menu open, moving over another title switches menu; a click outside closes it. From the keyboard (WAI-ARIA «menubar» pattern): Tab reaches the bar, left and right arrows move between menus, down (or Enter, Space) opens it and moves through the items skipping disabled ones, Home and End, right enters a submenu and left leaves it, Esc closes and returns focus to the title. After a command focus goes back where it was. Next to the menus are the undo and redo icons; on the right the document status, the **Screen / Navigation / Theme** selector and the language, which stay together even when the bar wraps.
+A click opens and closes a menu and, with a menu open, moving over another title switches menu; a click outside closes it. An item with a submenu opens it on hover or on click. From the keyboard (WAI-ARIA «menubar» pattern): Tab reaches the bar, left and right arrows move between menus, down (or Enter, Space) opens it and moves through the items skipping disabled ones, Home and End, right enters a submenu and left leaves it, Esc closes and returns focus to the title. After a command focus goes back where it was. Next to the menus are the undo and redo icons; on the right the status of the active document and the language, which stay together even when the bar wraps.
 
-In the central area the tabs (Preview, JSON, Data sources, Texts) sit below the content like folder tabs: the content is a panel with its own border, the active tab (white) joins it and the others (grey) stay outside, so the edge of the content is clear; the same in navigation and theme. Components, structure and properties are in **separate panels**, each with its title on a dark grey bar with white text (the editor's colours, not those of the theme being edited) preceded by an icon: blocks for components, a tree for the structure, sliders for properties, a badge for the simulated profile, and each scrolls on its own; the same applies to structure, simulated profile and properties in navigation and to the theme's properties. Below 1100 px components and structure sit side by side above the preview and properties go below.
+In every window the tabs (Preview, JSON, Data sources, Texts for a screen; Menu preview and JSON for a navigation; Theme preview and JSON for a theme) sit below the content like folder tabs: the content is a panel with its own border, the active tab (white) joins it and the others (grey) stay outside, so the edge of the content is clear. Components, structure and properties are in **separate panels**, each with its title on a dark grey bar with white text (the editor's colours, not those of the theme being edited) preceded by an icon: blocks for components, a tree for the structure, sliders for properties, a badge for the simulated profile, and each scrolls on its own; the same applies to structure, simulated profile and properties in navigation and to the theme's properties. Below 1100 px components and structure sit side by side above the preview and properties go below.
 
 **Auto-hide panels**, like IDE windows (Visual Studio, Eclipse): every panel has its own pin in the title bar (Components and Structure on the left, Properties on the right).
 
-- **Unpinning a panel:** it becomes a vertical tab on the strip along its side, and the other panels on that side stay in the column and take its space (with only Structure hidden, Components fill the whole column). If all the panels on a side are hidden only the strip remains and the central area takes the space. This works in all three modes (Structure and Properties in navigation, Properties in the theme) and the choice is per panel, the same in all modes.
+- **Unpinning a panel:** it becomes a vertical tab on the strip along its side, and the other panels on that side stay in the column and take its space (with only Structure hidden, Components fill the whole column). If all the panels on a side are hidden only the strip remains and the workspace takes the space. This works for every kind of document (Structure and Properties in navigation, Properties in the theme) and the choice is per panel, the same for all the kinds.
 - **Opening:** hovering a tab (150 ms: a quick pass opens nothing), a click or Enter opens **only that panel**, over the central area and over the other panels on that side, with a shadow; moving onto the other tab opens the other one.
 - **Closing:** it closes 400 ms after the mouse has left the side. It does not close while focus is in one of its fields (a property is being typed): in that case it closes when focus moves elsewhere.
 - **Esc:** closes the panel and returns focus to its tab.
@@ -77,7 +81,19 @@ In the central area the tabs (Preview, JSON, Data sources, Texts) sit below the 
 
 - **Registry.** «File → Registry…» opens a panel for the open document (screen, navigation or theme), which in the registry is a document of its own (`contracts/registry.yaml` 0.5): you give application and environment (remembered in the browser; «development» to begin with); «Save version» sends the document (blocked if it has errors or if the identifier is invalid) stating the version it started from: if someone else saved in the meantime, the panel says so and asks whether to save anyway; if the registry rejects the document, schema errors are listed one by one. «History» lists the versions, newest first, with their **review status** (draft, in review, approved, rejected, with who decided and the note) and the environments where each one is published; every version can be reopened, **compared** with the open document (differences by path), sent for review, approved or rejected (reviewers only, never the author: the registry decides) or published in the given environment (with confirmation; testing and production accept only approved versions). Before publishing a screen or the navigation, the panel asks the registry which screens the version refers to that are not published in that environment: the confirmation lists them («… refers to screens not published in the production environment: order-list. Publish anyway?»). In testing and production the registry rejects a navigation with missing screens: the panel lists them with their position in the document (see architecture § 10). Service errors are shown as short messages (registry unreachable, permissions, not found, rejected with the Problem's title), never with technical details. Calls go to `/registry` on the same origin and the BFF forwards them, with the user's token: writes send back the CSRF token from the `XSRF-TOKEN` cookie (if the cookie was not there yet, the first write gets 403 and is retried once). Without a session the panel shows «Sign in», which goes through the BFF login and returns to the editor. In development without Keycloak: `npm run start:editor:registry` talks directly to the reference registry started with the `no-auth` profile.
 
-The draft (document, sample data and translations written in the editor) saves itself in the browser on every change and is restored on reopening; it stays in that browser only, so the real copy is the one saved with «Save» or «Save to registry». «File → Open example» offers the screens in `examples/` (the `examples/index.json` list is written by `tools/copy-examples.mjs`).
+The draft of every open document (document, sample data and translations written in the editor) saves itself in the browser on every change and is restored on reopening; it stays in that browser only, so the real copy is the one saved with «Save» or «Save to registry». «File → Open example» offers the screens in `examples/` (the `examples/index.json` list is written by `tools/copy-examples.mjs`), the demo's navigation and its themes.
+
+## 1b. Workspace and windows
+
+Studio starts with an **empty workspace**: no editor, an invitation to create (Screen…, Navigation, Theme) or open a document. Every document opens in its **own window** inside the workspace, with the editor of its kind only: preview, JSON, data sources and texts for a screen; menu preview with the simulated profile and JSON for a navigation; theme preview and JSON for a theme. Several documents can be open at once, also of the same kind.
+
+- **Active window.** A click (or the focus) inside a window brings it in front. The menus, the toolbar (undo, redo, status), the shortcuts, the problems at the bottom and the **side panels** work on its document: changing window, palette, structure and properties are created again for the new document. A kind without panels on a side (a theme has no structure) leaves the column with a short note, so the windows do not move.
+- **Moving and resizing.** Drag the title bar to move a window, its edges or corners to resize it; windows stay whole inside the workspace and are not smaller than 360 × 220 px. A double click on the title, or its button, **maximizes** the window over the whole workspace (and restores it); while one window is maximized, new ones open maximized too. From the keyboard, on the title: arrows move by 16 px, Shift+arrows resize, Enter maximizes or restores.
+- **Minimizing.** The window goes to the bottom of the stack and the next one becomes active. The **bar of the open documents** below the workspace has a button per window (the active one pressed, the minimized ones in italics): a click brings it in front, or minimizes it if it is already in front.
+- **Window menu.** Cascade, Tile (side by side, filling the workspace), Minimize, Maximize, Next and Previous window (**Ctrl+F6**, **Ctrl+Shift+F6**: the window in front goes to the bottom), and the list of the windows.
+- **Closing.** The × on the title bar, File › Close or Close all; with unsaved changes a confirmation names the document. A closed document leaves nothing in the browser (draft, saved state, file and registry version are forgotten).
+- **Between documents.** The previews use the other windows: a screen is drawn with the theme of the theme window used last (the demo's light one if there is none, or if it has errors); a theme draws the screen and the menu of the screen and navigation windows used last; a navigation takes the translations of the screen used last. The screens open in the workspace are **known screens** (suggested and checked in navigations and in `navigate` steps), together with the examples and those of the registry application.
+- **Memory.** The windows (kind, position, size, maximized or minimized), their order and the active one are remembered in the browser (`lc.editor.workspace`), each document under its own draft (`lc.editor.doc.<id>`): reloading the page gives back the same workspace. The drafts of earlier versions of the editor (one per kind) open in windows the first time.
 
 ## 2. Property panel generated from the schema
 
@@ -126,26 +142,29 @@ To link drawing and structure, `lc-node` exposes `data-node-id` and `data-node-t
 
 ## 3b. Navigation
 
-«Navigation» mode: the `navigation.json` document (areas, groups, subgroups, items).
+A navigation window: the `navigation.json` document (areas, groups, subgroups, items).
 
 - **Structure** on the left, with «+ Area», «+ Group», «+ Item»: a new element goes inside the selected area or group, or next to the selected item; groups stop at the second level, as the schema requires. Move, duplicate (new ids), delete as for screens.
 - **Properties** on the right, generated from `navigation.schema.json` with the same panel as screens: `screen` suggests the known screens, `icon` the icons of the built-in set, `requires` the permissions already used, `default` the areas.
-- **Menu preview** in the centre: the real menu (`lc-sidebar` with `NavigationRuntime`) and a **simulated profile**. With «All permissions» off you choose which permissions the user has (those mentioned by the menu's `requires`) and see what appears for them. A click on an item does not navigate: it shows which screen it would open.
+- **Menu preview** in the window: the real menu (`lc-sidebar` with `NavigationRuntime`) and a **simulated profile**. With «All permissions» off you choose which permissions the user has (those mentioned by the menu's `requires`) and see what appears for them. A click on an item does not navigate: it shows which screen it would open.
 - **Problems**: schema, expressions, ids repeated among siblings (errors), unknown screens and a default area that does not exist (warnings).
 
 The navigation draft is saved in the browser like the screen's; «Open example» opens the demo's navigation, «Save» writes `<navigation>.json`.
 
 ## 3c. Theme
 
-«Theme» mode: a file from `examples/themes/` (design tokens). The panel on the right shows all the tokens, group by group (colours, typography, shape, density, layout of side bar, header, page), generated from `theme.schema.json`; colours have a picker next to the text (`#rrggbb`; `rgb()` and `hsl()` are typed in the text). The preview draws **the screen and the menu open in the other modes** with the theme, in its iframe: dark themes are complete (NG-ZORRO's surfaces too) and the editor stays as it is. The screen and menu previews also use the theme being edited (the demo's light one, if the theme has errors from the start). With errors the preview stays at the last valid theme. «Open example» lists the demo's themes (`examples/themes/index.json`, written by `tools/copy-examples.mjs`).
+A theme window: a file from `examples/themes/` (design tokens). The panel on the right shows all the tokens, group by group (colours, typography, shape, density, layout of side bar, header, page), generated from `theme.schema.json`; colours have a picker next to the text (`#rrggbb`; `rgb()` and `hsl()` are typed in the text). The preview draws **the screen and the menu of the screen and navigation windows used last** with the theme, in its iframe: dark themes are complete (NG-ZORRO's surfaces too) and the editor stays as it is. The screen and menu previews also use the theme of the theme window used last (the demo's light one, if there is none or it has errors). With errors the preview stays at the last valid theme. «Open example» lists the demo's themes (`examples/themes/index.json`, written by `tools/copy-examples.mjs`).
 
 ## 4. Shortcuts
 
 | Keys | Action |
 | --- | --- |
 | F1 | keyboard shortcuts |
-| Tab to the menu bar, then arrows | opens the File, Edit, View and Help menus (see above) |
-| Ctrl+S / Ctrl+O | save to file / open a file (inside fields too; not with a window open) |
+| Tab to the menu bar, then arrows | opens the File, Edit, View, Window and Help menus (see above) |
+| Ctrl+S / Ctrl+O | save the active document to file / open a file in a new window (inside fields too; not with a dialog open) |
+| Ctrl+F6 / Ctrl+Shift+F6 | next / previous window |
+| arrows / Shift+arrows on the title of a window | move / resize the window |
+| Enter on the title of a window (or double click) | maximize / restore |
 | Ctrl+Z / Ctrl+Y (or Ctrl+Shift+Z) | undo / redo (inside fields too: rapid changes to the same property are a single step) |
 | Del | deletes the selected node |
 | Ctrl+D | duplicate |
@@ -166,18 +185,23 @@ editor/src/app/
   model/      doc-ops (pure operations on the document), schema-info (SchemaReader: reading a schema),
               document-state (document, selection, history, problems: shared by all documents),
               editor-store (the screen), navigation-store (the navigation), theme-store (the theme),
+              workspace (the open windows, each with the injector of its document), window-layout (geometry of the windows),
+              shared-state (known screens and clipboard, shared by the documents), saved-documents, file-access,
               templates (templates, initial values, summaries), drop (drag and drop), texts (texts and keys), registry-client (registry client)
-  ui/         menu-bar (menu bar), context-menu (context menu), code-highlight (syntax highlighting of JSON and of texts with expressions), dock, dock-side, dock-panel and dock-pin (auto-hide panels one by one, in all modes), palette, outline, inspector, fields (recursive fields), json-field, json-view,
-              data-sources, texts, issues, navigation-editor, theme-editor, registry-panel
+  ui/         workspace (the area of the windows and the bar of the open documents), document-window (a window: title bar, move, resize),
+              screen-editor, navigation-editor, theme-editor (the editor inside a window of each kind),
+              menu-bar (menu bar), context-menu (context menu), code-highlight (syntax highlighting of JSON and of texts with expressions), dock, dock-side, dock-panel and dock-pin (auto-hide panels one by one, for all the kinds), palette, outline, inspector, nav-outline, nav-inspector, theme-inspector (the side panels of each kind), fields (recursive fields), json-field, json-view,
+              data-sources, texts, issues, registry-panel
   preview/    protocol (messages), preview-frame (the iframe, editor side), preview (the screen preview
               bar), preview-log (log); inside the iframe: preview-app, preview-config, preview-ports
-  app.*       shell, toolbar, shortcuts
+  app.*       shell, menus, toolbar, side panels of the active window, shortcuts
   messages.ts editor strings (ed.* keys, it and en)
 ```
 
 - The document is **immutable**: every operation returns a copy that shares the untouched parts, so the history (200 steps) is cheap.
-- `DocumentState` holds the document, the selection (a path such as `['components', 0, 'tabs', 1]`), the history and the computed problems (`computed`); `EditorStore` (the screen, with sample data and translations) and `NavigationStore` extend it. `ed-fields` and the JSON view work on `DocumentState`: the navigation editor redirects them to its own document with a provider.
-- Tests: document operations, schema reading (every type has a valid template), editor state, drag and drop, preview ports; the preview inside the iframe driven through its messages (drawing, sample data, selection, tabs, menu and profile, dark theme, foreign messages ignored); an overall test that uses the real interface and checks the states sent to the iframe (in jsdom the iframe does not load the application: the test simulates its «ready»).
+- `DocumentState` holds the document, the selection (a path such as `['components', 0, 'tabs', 1]`), the history and the computed problems (`computed`); `EditorStore` (the screen, with sample data and translations), `NavigationStore` and `ThemeStore` extend it. They are not singletons: `Workspace` creates an **injector per window** (`createEnvironmentInjector` with `documentProviders(kind, id)`: the identifier `DOCUMENT_ID`, the store, the store as `DocumentState`). The editor of the window and, for the active window, the side panels are drawn with that injector (`ngTemplateOutlet` with `injector`), so palette, outline, inspector, `ed-fields` and the JSON view keep injecting their store and get the one of their document. Closing a window destroys its injector (and the store's effects). See ADR-13 in the architecture.
+- The windows keep their order in the page (`Workspace.windows`); the stacking order is a separate list (`order`, used for the z-index), so bringing a window in front never moves its preview iframe in the page, which would reload it.
+- Tests: document operations, schema reading (every type has a valid template), editor state, workspace (open, focus, minimize, cycle, close, restore, drafts of earlier versions) and window geometry, drag and drop, preview ports; the preview inside the iframe driven through its messages (drawing, sample data, selection, tabs, menu and profile, dark theme, foreign messages ignored); an overall test that uses the real interface and checks the states sent to the iframe (in jsdom the iframe does not load the application: the test simulates its «ready»); in the browser (Playwright, `e2e/editor-windows.spec.ts`) windows moved, resized and maximized with the mouse, and an accessibility check of the workspace.
 
 ## 6. Limits and next steps
 
@@ -186,6 +210,8 @@ editor/src/app/
 - **Preview.** In «Select» mode components are dragged to move them and the selected one in a grid or a box has a handle for `span` or `grow`; the sides of the border can be resized only in the runtime (in the editor with `westWidth` and `eastWidth`).
 - **Comparison.** Between a registry version and the open document; to compare two versions, open one and compare it with the other.
 - **Preview and wizards.** Selecting a node in a later step of a wizard does not go to that step (steps are passed only through their conditions).
-- **Width.** Below 1100 px the panels stack; the editor is designed for desktop screens.
+- **Width.** Below 1100 px the panels stack; the editor is designed for desktop screens. A window is never smaller than 360 × 220 px.
+- **Translations between windows.** Translations written in a screen apply at once to the previews of all the windows (the catalogue of the editor is one); they are saved with the draft of that screen.
+- **Toolbar.** The inner search field of the language select has no label of its own (NG-ZORRO): the accessibility check of the workspace leaves it out.
 
 **Decisions (13 October 2026).** ADR-08 accepted: preview in an isolated iframe (implemented). ADR-09 amended: the history keeps immutable versions of the document instead of JSON Patch operations; patches will be derived by difference when diffs between versions and locks are needed. Registry: one document per screen, one for the navigation, one per theme.

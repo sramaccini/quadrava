@@ -20,7 +20,6 @@ export interface NewScreen {
   imports: [FormsModule, NzButtonModule, NzInputModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
-    .replace { margin: 0 0 16px; color: var(--lc-color-muted); }
     .field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
     .hint { font-size: 12px; color: var(--lc-color-muted); }
     .error { font-size: 12px; color: var(--lc-color-danger); }
@@ -28,7 +27,6 @@ export interface NewScreen {
   `,
   template: `
     <form ngNoForm (submit)="$event.preventDefault(); submit()">
-      <p class="replace">{{ i18n.t('ed.newScreen.replace') }}</p>
       <div class="field">
         <label for="new-screen-title">{{ i18n.t('ed.newScreen.name') }}</label>
         <input #titleInput nz-input id="new-screen-title" maxlength="200" [ngModel]="title()" (ngModelChange)="title.set($event)" />

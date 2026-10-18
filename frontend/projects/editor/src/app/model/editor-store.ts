@@ -3,7 +3,8 @@ import { I18n, checkScreenExpressions } from 'core';
 import { ExpressionEngine } from 'expressions';
 import { validateScreen, type ScreenDefinition } from 'schema';
 import { fromPointer, getIn, insertAt, isObject, moveBy, moveTo, removeAt, samePath, setIn, startsWith, toPointer, type Json, type JsonObject, type Path } from './doc-ops';
-import { DocumentState, type EditorIssue } from './document-state';
+import { DOCUMENT_ID, DocumentState, readDraft, writeDraft, type EditorIssue } from './document-state';
+import { KnownScreens, NodeClipboard } from './shared-state';
 import { childSlots, ownerOf, targetAt } from './schema-info';
 import { emptyScreen, ensureSource, freshId, nodeTemplate, uniqueInputName, usedIds, withFreshIds } from './templates';
 import { collectTexts, makeKey, translatable, usedKeys, type TextEntry } from './texts';
@@ -29,7 +30,6 @@ export const EDITOR_LOCALES = ['en', 'it'];
 /** Code of a language: two or three lower-case letters, with an optional country variant (`pt-BR`). */
 export const LANGUAGE_CODE = /^[a-z]{2,3}(-[A-Z]{2})?$/;
 
-const DRAFT_KEY = 'lc.editor.draft';
 /** Properties placing a node in its container: when it is wrapped they move to the new container. */
 const WRAP_PLACEMENT = ['region', 'span', 'grow'];
 /** Name of a data source: it is written in expressions and steps, so a simple identifier. */
@@ -38,15 +38,16 @@ export const SOURCE_NAME = /^[A-Za-z][A-Za-z0-9_]*$/;
 /**
  * State of the editor: the screen document, the selected element, the history for undo and redo,
  * the problems found (schema, expressions, references) and the sample data of the preview. The draft saves itself
- * in the browser at every change.
+ * in the browser at every change, under the identifier of the document (`DOCUMENT_ID`): every window has its own store.
  */
-@Injectable({ providedIn: 'root' })
+@Injectable()
 export class EditorStore extends DocumentState {
   private readonly i18n = inject(I18n);
   private readonly engine = new ExpressionEngine({ can: () => true });
   private readonly t = (key: string, params: Record<string, unknown> = {}): string => this.i18n.t(key, params);
 
-  private readonly draft = readDraft();
+  private readonly id = inject(DOCUMENT_ID);
+  private readonly draft = screenDraft(readDraft(this.id));
   /** Central view of the editor: preview, JSON or data sources. */
   readonly view = signal<'preview' | 'json' | 'sources' | 'texts'>('preview');
   /** Fake responses for data sources, used only by the preview. */
@@ -71,8 +72,8 @@ export class EditorStore extends DocumentState {
   /** The document as a valid screen, or null if it has errors (the preview then shows the last valid version). */
   readonly definition = computed<ScreenDefinition | null>(() => (this.errorCount() === 0 ? (this.doc() as unknown as ScreenDefinition) : null));
   readonly target = computed(() => targetAt(this.doc(), this.selection()));
-  /** Known screens (the examples), suggested in the `navigate` steps. */
-  readonly knownScreens = signal<string[]>([]);
+  /** Known screens (examples, registry, open documents), suggested in the `navigate` steps. */
+  readonly knownScreens = inject(KnownScreens).names;
   /** Names of the data sources of the screen. */
   readonly sourceNames = computed(() => {
     const sources = getIn(this.doc(), ['dataSources']);
@@ -86,11 +87,7 @@ export class EditorStore extends DocumentState {
     for (const [locale, messages] of Object.entries(this.translations())) this.i18n.addMessages(locale, messages);
     effect(() => {
       const draft: Draft = { doc: this.doc(), samples: this.samples(), translations: this.translations(), languages: this.languages(), defaultLanguage: this.defaultLanguage() };
-      try {
-        localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
-      } catch {
-        // Storage full or not available: the draft stays only in memory.
-      }
+      writeDraft(this.id, draft);
     });
   }
 
@@ -329,8 +326,8 @@ export class EditorStore extends DocumentState {
     this.apply(setIn(doc, path, wrapper), { select: path });
   }
 
-  /** Node copied or cut, to paste at the insertion point (also in another container). */
-  readonly clipboard = signal<Json | null>(null);
+  /** Node copied or cut, to paste at the insertion point (also in another container or in another open screen). */
+  readonly clipboard = inject(NodeClipboard).node;
 
   copy(path: Path): void {
     if (targetAt(this.doc(), path)?.kind !== 'node') return;
@@ -510,7 +507,7 @@ export class EditorStore extends DocumentState {
   }
 
   /** Opens a document (file, example, new screen): clears history and selection. */
-  load(doc: Json, samples: Record<string, Json> = {}): void {
+  override load(doc: Json, samples: Record<string, Json> = {}): void {
     this.reset(doc);
     this.samples.set(samples);
     this.translations.set({});
@@ -561,19 +558,15 @@ export class EditorStore extends DocumentState {
   }
 }
 
-function readDraft(): Draft | null {
-  try {
-    const raw = localStorage.getItem(DRAFT_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as Draft;
-    if (!isObject(parsed as unknown as Json) || parsed.doc === undefined) return null;
-    const translations = isObject(parsed.translations as unknown as Json) ? parsed.translations : {};
-    const languages = Array.isArray(parsed.languages) ? parsed.languages.filter((l) => typeof l === 'string' && LANGUAGE_CODE.test(l)) : undefined;
-    const defaultLanguage = typeof parsed.defaultLanguage === 'string' ? parsed.defaultLanguage : undefined;
-    return { doc: parsed.doc, samples: isObject(parsed.samples) ? parsed.samples : {}, translations, languages, defaultLanguage };
-  } catch {
-    return null;
-  }
+/** The draft read from the browser, if it has the expected shape. */
+function screenDraft(value: unknown): Draft | null {
+  if (!isObject(value as Json)) return null;
+  const parsed = value as Draft;
+  if (parsed.doc === undefined) return null;
+  const translations = isObject(parsed.translations as unknown as Json) ? parsed.translations : {};
+  const languages = Array.isArray(parsed.languages) ? parsed.languages.filter((l) => typeof l === 'string' && LANGUAGE_CODE.test(l)) : undefined;
+  const defaultLanguage = typeof parsed.defaultLanguage === 'string' ? parsed.defaultLanguage : undefined;
+  return { doc: parsed.doc, samples: isObject(parsed.samples) ? parsed.samples : {}, translations, languages, defaultLanguage };
 }
 
 /** Languages without repetitions, in order: first the given ones, then the others. */
