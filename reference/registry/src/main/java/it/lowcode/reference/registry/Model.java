@@ -23,6 +23,8 @@ public final class Model {
         SCREEN("screen"),
         NAVIGATION("navigation"),
         THEME("theme"),
+        /** Data sources shared by the screens of the application (the screens refer to them with {@code ref}). */
+        DATASOURCES("datasources"),
         /** Translation catalogue of one language: the identifier is the language (it, en, pt-br). */
         MESSAGES("messages");
 
@@ -103,7 +105,14 @@ public final class Model {
     /** A reference to another screen: identifier and position in the document (JSON Pointer). */
     public record ScreenReference(String screen, String path) {}
 
-    /** References of a version and those missing in the environment ({@code env} null = existence check). */
+    /** A reference of a screen to a data sources document: identifier and position in the screen (JSON Pointer). */
+    public record DataSourcesReference(String datasources, String path) {}
+
+    /**
+     * References of a version and those missing in the environment ({@code env} null = existence check). The data sources
+     * documents referred to are listed for screens only.
+     */
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record ReferenceReport(String env, List<ScreenReference> references, List<ScreenReference> missing) {}
+    public record ReferenceReport(String env, List<ScreenReference> references, List<ScreenReference> missing,
+                                  List<DataSourcesReference> dataSources, List<DataSourcesReference> missingDataSources) {}
 }

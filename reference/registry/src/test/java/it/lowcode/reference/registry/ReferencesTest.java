@@ -2,6 +2,7 @@ package it.lowcode.reference.registry;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import it.lowcode.reference.registry.Model.DataSourcesReference;
 import it.lowcode.reference.registry.Model.Kind;
 import it.lowcode.reference.registry.Model.ScreenReference;
 import org.junit.jupiter.api.Test;
@@ -33,6 +34,19 @@ class ReferencesTest {
         assertThat(References.of(Kind.SCREEN, "order-list", screen)).containsExactly(
                 new ScreenReference("order-detail", "/components/0/screen"),
                 new ScreenReference("order-new", "/actions/open/0/navigate"));
+    }
+
+    @Test
+    void aScreenCitesTheDataSourcesDocumentsOfItsReferences() {
+        String screen = """
+                {"schemaVersion":"1.0","screen":"order-list","dataSources":{
+                  "orders":{"ref":"orders/list","params":{"status":"open"}},
+                  "local":{"type":"rest","method":"GET","url":"/api/local"},
+                  "approve":{"ref":"orders/approve"}},"components":[]}""";
+        assertThat(References.dataSourcesOf(Kind.SCREEN, screen)).containsExactly(
+                new DataSourcesReference("orders", "/dataSources/orders/ref"),
+                new DataSourcesReference("orders", "/dataSources/approve/ref"));
+        assertThat(References.dataSourcesOf(Kind.NAVIGATION, screen)).isEmpty();
     }
 
     @Test

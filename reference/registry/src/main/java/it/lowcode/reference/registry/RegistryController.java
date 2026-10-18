@@ -1,5 +1,6 @@
 package it.lowcode.reference.registry;
 
+import it.lowcode.reference.registry.Model.DataSourcesReference;
 import it.lowcode.reference.registry.Model.DocumentKey;
 import it.lowcode.reference.registry.Model.DocumentVersion;
 import it.lowcode.reference.registry.Model.Issue;
@@ -212,6 +213,16 @@ public class RegistryController {
                     return ResponseEntity.status(HttpStatus.CONFLICT).body(problem);
                 }
             }
+            // A screen whose data sources documents are not published in the environment would open without its data.
+            if (key.get().kind() == Kind.SCREEN) {
+                List<DataSourcesReference> missing = references(key.get(), request.hash(), env).missingDataSources();
+                if (!missing.isEmpty()) {
+                    ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+                    problem.setTitle("The screen uses data sources not published in the «" + env + "» environment");
+                    problem.setProperty("missingDataSources", missing);
+                    return ResponseEntity.status(HttpStatus.CONFLICT).body(problem);
+                }
+            }
         }
         store.publish(key.get(), env, request.hash());
         return ResponseEntity.noContent().build();
@@ -230,14 +241,29 @@ public class RegistryController {
         return ResponseEntity.ok(references(key.get(), hash, env));
     }
 
-    /** Screens cited by the version; missing are those not published in the environment (or with no versions, if env is null). */
+    /**
+     * Screens and data sources documents cited by the version; missing are those not published in the environment (or with
+     * no versions, if env is null).
+     */
     private ReferenceReport references(DocumentKey key, String hash, String env) {
-        List<ScreenReference> all = References.of(key.kind(), key.documentId(), store.content(key, hash).orElseThrow());
-        List<ScreenReference> missing = all.stream().filter(r -> {
-            DocumentKey target = new DocumentKey(key.appId(), Kind.SCREEN, r.screen());
-            return env == null ? store.latest(target).isEmpty() : store.publishedHash(target, env).isEmpty();
-        }).toList();
-        return new ReferenceReport(env, all, missing);
+        String content = store.content(key, hash).orElseThrow();
+        List<ScreenReference> all = References.of(key.kind(), key.documentId(), content);
+        List<ScreenReference> missing = all.stream()
+                .filter(r -> absent(new DocumentKey(key.appId(), Kind.SCREEN, r.screen()), env))
+                .toList();
+        if (key.kind() != Kind.SCREEN) {
+            return new ReferenceReport(env, all, missing, null, null);
+        }
+        List<DataSourcesReference> sources = References.dataSourcesOf(key.kind(), content);
+        List<DataSourcesReference> missingSources = sources.stream()
+                .filter(r -> absent(new DocumentKey(key.appId(), Kind.DATASOURCES, r.datasources()), env))
+                .toList();
+        return new ReferenceReport(env, all, missing, sources, missingSources);
+    }
+
+    /** The document has no version published in the environment (or no version at all, if env is null). */
+    private boolean absent(DocumentKey target, String env) {
+        return env == null ? store.latest(target).isEmpty() : store.publishedHash(target, env).isEmpty();
     }
 
     private static Optional<DocumentKey> key(String appId, String kind, String documentId) {

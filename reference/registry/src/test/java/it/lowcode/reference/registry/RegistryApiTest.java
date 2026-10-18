@@ -182,4 +182,49 @@ class RegistryApiTest {
         mvc.perform(get(nav + "/versions/inesistente/references").with(user("mario"))).andExpect(status().isNotFound());
         mvc.perform(get(nav + "/versions/" + navHash + "/references").param("env", "Prod!").with(user("mario"))).andExpect(status().isBadRequest());
     }
+
+    @Test
+    void aScreenIsPublishedInProductionOnlyWithItsDataSources() throws Exception {
+        String sources = "/registry/apps/demo/documents/datasources/invoices";
+        String document = """
+                {"schemaVersion":"1.0","datasources":"invoices","sources":{"list":{"type":"rest","method":"GET","url":"/api/invoices"}}}""";
+        String screen = """
+                {"schemaVersion":"1.0","screen":"invoice-list","dataSources":{"invoices":{"ref":"invoices/list"}},
+                 "components":[{"type":"table","source":"invoices","columns":[{"field":"number"}]}]}""";
+        String screenHash = save(screen, user("mario", "operator"));
+        // The data sources document is validated against its schema (which uses the data source of the screen schema).
+        mvc.perform(post(sources + "/versions").with(user("mario", "operator")).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"schemaVersion\":\"1.0\",\"datasources\":\"invoices\",\"sources\":{\"list\":{\"url\":\"/api\"}}}"))
+                .andExpect(status().isBadRequest());
+        mvc.perform(get(BASE + "/versions/" + screenHash + "/references").with(user("mario")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.dataSources.length()").value(1))
+                .andExpect(jsonPath("$.dataSources[0].datasources").value("invoices"))
+                .andExpect(jsonPath("$.dataSources[0].path").value("/dataSources/invoices/ref"))
+                .andExpect(jsonPath("$.missingDataSources.length()").value(1));
+        review(screenHash, "request", user("mario", "operator"), 200);
+        review(screenHash, "approve", user("luisa", "manager"), 200);
+        mvc.perform(put(BASE + "/published").param("env", "production").with(user("mario", "operator"))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"hash\":\"" + screenHash + "\"}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.missingDataSources[0].datasources").value("invoices"));
+
+        // Once the data sources are approved and published there, the screen is published too.
+        String sourcesHash = (String) json.readValue(mvc.perform(post(sources + "/versions").with(user("mario", "operator"))
+                        .contentType(MediaType.APPLICATION_JSON).content(document))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString(), Map.class).get("hash");
+        for (String[] step : new String[][] {{"request", "mario", "operator"}, {"approve", "luisa", "manager"}}) {
+            mvc.perform(post(sources + "/versions/" + sourcesHash + "/review").with(user(step[1], step[2]))
+                    .contentType(MediaType.APPLICATION_JSON).content("{\"action\":\"" + step[0] + "\"}")).andExpect(status().isOk());
+        }
+        mvc.perform(put(sources + "/published").param("env", "production").with(user("mario", "operator"))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"hash\":\"" + sourcesHash + "\"}"))
+                .andExpect(status().isNoContent());
+        mvc.perform(put(BASE + "/published").param("env", "production").with(user("mario", "operator"))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"hash\":\"" + screenHash + "\"}"))
+                .andExpect(status().isNoContent());
+        mvc.perform(get(sources + "/published").param("env", "production").with(user("mario")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sources.list.url").value("/api/invoices"));
+    }
 }

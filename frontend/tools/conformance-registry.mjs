@@ -1,4 +1,4 @@
-// Conformance kit for the registry contract (contracts/registry.yaml 0.5): checks from the outside, over HTTP, that a
+// Conformance kit for the registry contract (contracts/registry.yaml 0.6): checks from the outside, over HTTP, that a
 // registry (the reference one or a customer's) behaves as the contract describes.
 //
 //   node tools/conformance-registry.mjs --registry http://localhost:8081
@@ -157,6 +157,39 @@ await check(`approved navigation with missing screens: in ${protectedEnv} 409 wi
   const r = await call('PUT', `${nav}/published?env=${protectedEnv}`, { body: { hash: menuHash } });
   expect(r.status === 409 && isProblem(r), `expected 409 in Problem format, got ${r.status}`);
   expect(Array.isArray(r.json?.missingReferences) && r.json.missingReferences.some((m) => m.screen === 'absent'), 'the Problem must list missingReferences');
+}, { skip: !reviewer });
+
+// 0.6: data sources documents and the references of the screens to them.
+const sourcesDoc = { schemaVersion: '1.0', datasources: 'probes', sources: { list: { type: 'rest', method: 'GET', url: '/api/probes' } } };
+const user = { schemaVersion: '1.0', screen: 'probe-user', dataSources: { probes: { ref: 'probes/list' } }, components: [{ type: 'text', text: 'Probe' }] };
+let userHash = null;
+
+await check('data sources: a valid document is saved, an incomplete data source is rejected with 400', async () => {
+  const bad = await call('POST', `/registry/apps/${app}/documents/datasources/probes/versions`, { body: { ...sourcesDoc, sources: { list: { url: '/api' } } } });
+  expect(bad.status === 400 && isProblem(bad), `expected 400 in Problem format, got ${bad.status}`);
+  const s = await call('POST', `/registry/apps/${app}/documents/screen/probe-user/versions`, { body: user });
+  expect(s.status === 201, `save of the screen: expected 201, got ${s.status}`);
+  userHash = s.json?.hash;
+});
+
+await check('references: a screen lists the data sources documents it uses and those missing', async () => {
+  const r = await call('GET', `/registry/apps/${app}/documents/screen/probe-user/versions/${userHash}/references`);
+  expect(r.status === 200 && Array.isArray(r.json?.dataSources) && Array.isArray(r.json?.missingDataSources), `expected 200 with dataSources and missingDataSources, got ${r.status}`);
+  expect(r.json.dataSources[0]?.datasources === 'probes' && r.json.dataSources[0]?.path === '/dataSources/probes/ref', `unexpected dataSources ${JSON.stringify(r.json.dataSources)}`);
+  expect(r.json.missingDataSources.length === 1, 'the document not saved yet must be missing');
+  const saved = await call('POST', `/registry/apps/${app}/documents/datasources/probes/versions`, { body: sourcesDoc });
+  expect(saved.status === 201, `save of the data sources: expected 201, got ${saved.status}`);
+  const again = await call('GET', `/registry/apps/${app}/documents/screen/probe-user/versions/${userHash}/references`);
+  expect(again.json?.missingDataSources?.length === 0, 'once saved, the document is no longer missing');
+});
+
+await check(`approved screen with unpublished data sources: in ${protectedEnv} 409 with missingDataSources`, async () => {
+  await call('POST', `/registry/apps/${app}/documents/screen/probe-user/versions/${userHash}/review`, { body: { action: 'request' } });
+  const a = await call('POST', `/registry/apps/${app}/documents/screen/probe-user/versions/${userHash}/review`, { body: { action: 'approve' }, token: reviewer });
+  expect(a.status === 200, `approval: expected 200, got ${a.status}`);
+  const r = await call('PUT', `/registry/apps/${app}/documents/screen/probe-user/published?env=${protectedEnv}`, { body: { hash: userHash } });
+  expect(r.status === 409 && isProblem(r), `expected 409 in Problem format, got ${r.status}`);
+  expect(Array.isArray(r.json?.missingDataSources) && r.json.missingDataSources.some((m) => m.datasources === 'probes'), 'the Problem must list missingDataSources');
 }, { skip: !reviewer });
 
 report(`Conformance with the registry contract (${registry}, application ${app})`);

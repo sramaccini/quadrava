@@ -37,6 +37,20 @@ class SchemaValidationTest {
     }
 
     @Test
+    void theExampleDataSourcesAreValidInTheRegistryToo() throws IOException {
+        try (Stream<Path> files = Files.list(EXAMPLES.resolve("datasources"))) {
+            List<Path> documents = files.filter(f -> f.toString().endsWith(".json")).toList();
+            assertThat(documents).isNotEmpty();
+            for (Path file : documents) {
+                assertThat(validation.validate(Kind.DATASOURCES, Files.readString(file, StandardCharsets.UTF_8))).as(file.toString()).isEmpty();
+            }
+        }
+        // The data sources use the definition of the screen schema: an incomplete one is rejected.
+        assertThat(validation.validate(Kind.DATASOURCES, """
+                {"schemaVersion":"1.0","datasources":"x","sources":{"list":{"url":"/api"}}}""")).isNotEmpty();
+    }
+
+    @Test
     void theExampleCataloguesAreValidMessagesDocuments() throws IOException {
         for (String locale : List.of("it", "en")) {
             String texts = Files.readString(EXAMPLES.resolve("i18n").resolve(locale + ".json"), StandardCharsets.UTF_8);

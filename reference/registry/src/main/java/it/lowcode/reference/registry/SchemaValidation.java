@@ -20,8 +20,10 @@ import java.util.Map;
 import org.springframework.stereotype.Component;
 
 /**
- * Validates the documents against the schema of their kind (screen, navigation, theme, messages). The schemas are the
- * same as the front end's ({@code frontend/projects/schema/src/lib/schemas}, copied into the jar by the build): one source.
+ * Validates the documents against the schema of their kind (screen, datasources, navigation, theme, messages). The schemas are
+ * the same as the front end's ({@code frontend/projects/schema/src/lib/schemas}, copied into the jar by the build): one source.
+ * References between schemas ({@code datasources} uses the data source of {@code screen}) are read from the jar, never
+ * from the network.
  *
  * <p>CEL expressions are not checked here (the editor and the runtime do it, fail-closed): a real implementation can add
  * the check with a server-side CEL library.
@@ -32,11 +34,15 @@ public class SchemaValidation {
     /** Maximum number of errors returned: beyond that the document needs reworking anyway. */
     static final int MAX_ISSUES = 20;
 
+    /** Base of the {@code $id} of the schemas. */
+    static final String SCHEMA_BASE = "https://lowcode.example/schemas/";
+
     private final ObjectMapper json = new ObjectMapper();
     private final Map<Kind, JsonSchema> schemas = new EnumMap<>(Kind.class);
 
     public SchemaValidation() {
-        JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012);
+        JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012,
+                builder -> builder.schemaMappers(mappers -> mappers.mapPrefix(SCHEMA_BASE, "classpath:schemas/")));
         SchemaValidatorsConfig config = SchemaValidatorsConfig.builder().locale(Locale.ENGLISH).build();
         for (Kind kind : Kind.values()) {
             try (InputStream in = getClass().getResourceAsStream("/schemas/" + kind.value() + ".schema.json")) {

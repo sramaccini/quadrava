@@ -1,13 +1,14 @@
 openapi: 3.1.0
 info:
   title: Quadrava - Registry contract
-  version: 0.5.0
+  version: 0.6.0
   description: >
-    Registry of the application definitions. An application is made of separate documents: every screen, the
-    navigation and every theme are documents of their own, with their own versions and publications.
+    Registry of the application definitions. An application is made of separate documents: every screen, every data
+    sources document, the navigation and every theme are documents of their own, with their own versions and publications.
     Versions are immutable and identified by the hash of their content; publishing means pointing an environment at a
     version of a document. The registry validates the content against the schema of the document kind
-    (screen.schema.json, navigation.schema.json, theme.schema.json, messages.schema.json) and rejects invalid documents.
+    (screen.schema.json, datasources.schema.json, navigation.schema.json, theme.schema.json, messages.schema.json) and
+    rejects invalid documents.
 
     0.3: translation catalogues as documents (kind messages, one document per language); review of versions (draft →
     in review → approved or rejected, with the four-eyes principle), protected environments where only approved
@@ -22,6 +23,11 @@ info:
 
     0.5 (not compatible with 0.4): English values. Review states draft, in-review, approved, rejected; actions
     request, approve, reject; sample environments development, testing, production.
+
+    0.6 (compatible with 0.5): data sources as documents of their own (kind datasources, schema datasources.schema.json),
+    shared by the screens, which refer to them with {"ref": "orders/list"}. `getReferences` also lists, for screens, the
+    data sources documents referred to and those missing in the environment; in the protected environments a screen is
+    published only if its data sources documents are published there (otherwise 409 with `missingDataSources`).
   license:
     name: Mozilla Public License 2.0
     identifier: MPL-2.0
@@ -185,7 +191,8 @@ paths:
       description: >
         References by identifier to other screens: `screen` of the navigation items, `navigate` steps and `link`
         nodes with `screen` in screens. A reference of a screen to itself does not count, nor does a value with an
-        expression ({{ }}). Themes and catalogues have no references.
+        expression ({{ }}). For screens, also the data sources documents referred to by `ref` in `dataSources`
+        (`dataSources` and `missingDataSources`). Themes, data sources and catalogues have no references.
       responses:
         '200':
           description: References of the version.
@@ -248,8 +255,9 @@ paths:
       description: >
         In the protected environments (usually testing and production) only approved versions are published (otherwise
         409) and a navigation is published only if the screens it cites are already published in the same environment
-        (otherwise 409 with `missingReferences`). In the other environments publishing succeeds anyway: the missing
-        references are read beforehand with `getReferences`.
+        (otherwise 409 with `missingReferences`); a screen is published there only if the data sources documents it refers to
+        are published in the same environment (otherwise 409 with `missingDataSources`). In the other environments
+        publishing succeeds anyway: the missing references are read beforehand with `getReferences`.
       requestBody:
         required: true
         content:
@@ -262,8 +270,8 @@ paths:
         '403': { $ref: '#/components/responses/Problem' }
         '409':
           description: >
-            Protected environment and version not approved, or navigation with screens not published in the
-            environment (`missingReferences`).
+            Protected environment and version not approved, navigation with screens not published in the environment
+            (`missingReferences`) or screen with data sources not published there (`missingDataSources`).
           content:
             application/problem+json:
               schema: { $ref: '#/components/schemas/Problem' }
@@ -297,8 +305,10 @@ components:
   schemas:
     DocumentKind:
       type: string
-      enum: [screen, navigation, theme, messages]
-      description: Document kind, which decides the validation schema (messages = translation catalogue of one language, schema messages.schema.json).
+      enum: [screen, datasources, navigation, theme, messages]
+      description: >
+        Document kind, which decides the validation schema (datasources = data sources shared by the screens, schema
+        datasources.schema.json; messages = translation catalogue of one language, schema messages.schema.json).
     AppSummary:
       type: object
       required: [id, name]
@@ -322,7 +332,8 @@ components:
     DocumentContent:
       type: object
       description: >
-        The JSON document (a screen, the navigation, a theme or a catalogue), validated against the schema of its kind.
+        The JSON document (a screen, a data sources document, the navigation, a theme or a catalogue), validated against
+        the schema of its kind.
       required: [schemaVersion]
       properties:
         schemaVersion: { type: string }
@@ -353,6 +364,12 @@ components:
       properties:
         screen: { type: string, description: Identifier of the cited screen. }
         path: { type: string, description: Position of the reference in the document (JSON Pointer). }
+    DataSourcesReference:
+      type: object
+      required: [datasources, path]
+      properties:
+        datasources: { type: string, description: Identifier of the data sources document referred to (orders in orders/list). }
+        path: { type: string, description: 'Position of the reference in the screen (JSON Pointer), for example /dataSources/orders/ref.' }
     ReferenceReport:
       type: object
       required: [references, missing]
@@ -366,6 +383,14 @@ components:
           type: array
           description: The references to screens not published in the environment (or that do not exist, without an environment).
           items: { $ref: '#/components/schemas/ScreenReference' }
+        dataSources:
+          type: array
+          description: Screens only. The references to data sources documents, in document order.
+          items: { $ref: '#/components/schemas/DataSourcesReference' }
+        missingDataSources:
+          type: array
+          description: Screens only. The references to data sources documents not published in the environment (or that do not exist).
+          items: { $ref: '#/components/schemas/DataSourcesReference' }
     PublishRequest:
       type: object
       required: [hash]
@@ -389,9 +414,13 @@ components:
             properties:
               path: { type: string }
               message: { type: string }
-        latest: { type: string, description: With 412, hash of the latest version. }
-        latestAuthor: { type: string, description: With 412, author of the latest version. }
+        latest: { type: string, description: 'With 412, hash of the latest version.' }
+        latestAuthor: { type: string, description: 'With 412, author of the latest version.' }
         missingReferences:
           type: array
           description: With 409 on publication, the screens cited and not published in the environment.
           items: { $ref: '#/components/schemas/ScreenReference' }
+        missingDataSources:
+          type: array
+          description: With 409 on the publication of a screen, the data sources documents not published in the environment.
+          items: { $ref: '#/components/schemas/DataSourcesReference' }

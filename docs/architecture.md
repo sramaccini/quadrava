@@ -232,14 +232,15 @@ The registry is a REST service that stores application definitions. Every versio
 
 **Environments.** Development, testing and production point to different versions of the same application; promotion from one environment to the next is an explicit, tracked operation.
 
-**Cross-document references.** Screens and navigation are separate documents, linked only by identifier: a navigation item opens a screen (`"screen": "invoice-list"`), a step `{ "navigate": "order-detail" }` or a `link` node with `screen` leads from one screen to another. The registry reads these references from each version (`GET …/versions/{hash}/references?env=…`, contract 0.5) and says which screens are missing in an environment, that is, have no version published there (without `env`: do not exist in the application at all). References to the screen itself and values with an expression (`{{ }}`) are not checked. What happens at publication:
+**Cross-document references.** Screens, data sources and navigation are separate documents, linked only by identifier: a navigation item opens a screen (`"screen": "invoice-list"`), a step `{ "navigate": "order-detail" }` or a `link` node with `screen` leads from one screen to another, and a screen uses a data source of a data sources document with `{ "ref": "orders/list" }`. The registry reads these references from each version (`GET …/versions/{hash}/references?env=…`, contract 0.6) and says which screens are missing in an environment, that is, have no version published there (without `env`: do not exist in the application at all). References to the screen itself and values with an expression (`{{ }}`) are not checked. What happens at publication:
 
 | Publishing… | in a non-protected environment (development) | in a protected environment (testing, production) |
 | --- | --- | --- |
 | a navigation citing unpublished screens | published; the editor warns before confirming | rejected with 409 and `missingReferences` (screen and JSON Pointer of each item) |
 | a screen leading to unpublished screens | published; the editor warns before confirming | published; the editor warns before confirming |
+| a screen using unpublished data sources documents | published (the references that do not resolve leave their data source out) | rejected with 409 and `missingDataSources` (document and JSON Pointer of each reference) |
 
-Screens are only warned about because links between screens often form cycles (a list opens the detail, the detail goes back to the list): rejecting them would make it impossible to publish either one first. The practical order in a protected environment is therefore: screens first, then the navigation. Example of a rejection:
+Links between screens are only warned about because they often form cycles (a list opens the detail, the detail goes back to the list): rejecting them would make it impossible to publish either one first. The practical order in a protected environment is therefore: screens first, then the navigation. Example of a rejection:
 
 ```json
 { "title": "The navigation cites screens not published in the «production» environment", "status": 409,
