@@ -36,21 +36,30 @@
     </div>
   </header>
 
-  <!-- The side panels show the document of the active window: they are created again with its injector when it changes. -->
-  @if (active(); as win) {
+  @if (working()) {
+    <!--
+      The project panel is the project's; the other side panels show the document of the active window: they are created
+      again with its injector when it changes.
+    -->
     @if (leftTabs().length) {
       <ed-dock-side side="left" [width]="280" [panels]="leftTabs()">
-        <ng-container *ngTemplateOutlet="leftPanels; context: { $implicit: win.kind }; injector: win.injector" />
+        @if (project.isOpen()) {
+          <ed-project-panel edDockPanel="project" (create)="newResource($event)" (remove)="deleteResource($event)" />
+        }
+        @if (active(); as win) {
+          <ng-container *ngTemplateOutlet="leftPanels; context: { $implicit: win.kind }; injector: win.injector" />
+        }
       </ed-dock-side>
     } @else {
       <aside class="left no-panels">{{ i18n.t('ed.dock.none') }}</aside>
     }
-    <ed-dock-side side="right" [width]="320" [panels]="rightTabs()">
-      <ng-container *ngTemplateOutlet="rightPanels; context: { $implicit: win.kind }; injector: win.injector" />
-    </ed-dock-side>
-  } @else {
-    <aside class="left no-panels">{{ i18n.t('ed.dock.none') }}</aside>
-    <aside class="right no-panels">{{ i18n.t('ed.dock.none') }}</aside>
+    @if (active(); as win) {
+      <ed-dock-side side="right" [width]="320" [panels]="rightTabs()">
+        <ng-container *ngTemplateOutlet="rightPanels; context: { $implicit: win.kind }; injector: win.injector" />
+      </ed-dock-side>
+    } @else {
+      <aside class="right no-panels">{{ i18n.t('ed.dock.none') }}</aside>
+    }
   }
   <ng-template #leftPanels let-kind>
     @if (kind === 'screen') {
@@ -71,11 +80,21 @@
       @case ('theme') {
         <ed-theme-inspector edDockPanel="inspector" />
       }
+      @case ('datasources') {
+        <ed-document-inspector edDockPanel="inspector" kind="datasources" />
+      }
+      @case ('project') {
+        <ed-document-inspector edDockPanel="inspector" kind="project" />
+      }
     }
   </ng-template>
 
   <main class="center" [attr.aria-label]="i18n.t('ed.workspace.label')">
-    <ed-workspace (closing)="closeWindow($event)" (command)="command($event)" />
+    @if (working()) {
+      <ed-workspace (closing)="closeWindow($event)" (command)="command($event)" />
+    } @else {
+      <ed-start-page (command)="start($event)" />
+    }
   </main>
 
   <!-- Help: keyboard shortcuts (also F1) and information. -->
@@ -94,10 +113,10 @@
       </div>
     </ng-container>
   </nz-modal>
-  <nz-modal [nzVisible]="showNewScreen()" [nzTitle]="i18n.t('ed.newScreen.title')" [nzFooter]="null" [nzWidth]="440" (nzOnCancel)="showNewScreen.set(false)">
+  <nz-modal [nzVisible]="creating() !== null" [nzTitle]="i18n.t('ed.newResource.title.' + (creating() ?? 'screen'))" [nzFooter]="null" [nzWidth]="440" (nzOnCancel)="creating.set(null)">
     <ng-container *nzModalContent>
-      @if (showNewScreen()) {
-        <ed-new-screen (created)="createScreen($event)" (cancelled)="showNewScreen.set(false)" />
+      @if (creating(); as kind) {
+        <ed-new-screen [kind]="kind" [used]="usedIds()" [locations]="kind === 'project' ? projectLocations() : []" (created)="created($event)" (cancelled)="creating.set(null)" />
       }
     </ng-container>
   </nz-modal>
@@ -126,8 +145,8 @@
 
   <nz-drawer [nzVisible]="showRegistry()" [nzTitle]="i18n.t('ed.registry.title')" [nzWidth]="380" (nzOnClose)="showRegistry.set(false)">
     <ng-container *nzDrawerContent>
-      @if (active(); as win) {
-        <ed-registry-panel [state]="win.state" [kind]="win.kind" [document]="win.id" />
+      @if (registryTarget(); as target) {
+        <ed-registry-panel [state]="target.win.state" [kind]="target.kind" [document]="target.win.id" />
       }
     </ng-container>
   </nz-drawer>

@@ -1,9 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, signal } from '@angular/core';
 import { I18n } from 'core';
 import { NzTabsModule } from 'ng-zorro-antd/tabs';
-import type { ThemeDefinition } from 'schema';
+import { resolveDataSources, type ThemeDefinition } from 'schema';
 import { EditorStore } from '../model/editor-store';
 import { NavigationStore } from '../model/navigation-store';
+import { KnownDataSources } from '../model/shared-state';
 import { ThemeStore } from '../model/theme-store';
 import { Workspace } from '../model/workspace';
 import { PreviewFrameComponent } from '../preview/preview-frame.component';
@@ -43,6 +44,7 @@ import { JsonViewComponent } from './json-view.component';
 export class ThemeEditorComponent {
   protected readonly store = inject(ThemeStore);
   private readonly workspace = inject(Workspace);
+  private readonly projectSources = inject(KnownDataSources).documents;
   protected readonly i18n = inject(I18n);
   protected readonly view = signal<'preview' | 'json'>('preview');
 
@@ -55,8 +57,10 @@ export class ThemeEditorComponent {
   /** The screen and the menu open in the other windows, with the theme being edited. */
   protected readonly state = computed<PreviewState>(() => {
     const screens = this.workspace.latest('screen', EditorStore);
+    const screen = screens?.definition() ?? null;
+    const documents = this.projectSources();
     return previewState({
-      screen: screens?.definition() ?? null,
+      screen: screen && documents ? resolveDataSources(screen, documents).screen : screen,
       navigation: this.workspace.latest('navigation', NavigationStore)?.definition() ?? null,
       theme: this.theme(),
       samples: screens?.samples() ?? {},

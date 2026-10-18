@@ -1,10 +1,11 @@
 import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import { I18n, checkScreenExpressions } from 'core';
 import { ExpressionEngine } from 'expressions';
-import { validateScreen, type ScreenDefinition } from 'schema';
+import { splitReference, validateScreen, type ScreenDefinition } from 'schema';
 import { fromPointer, getIn, insertAt, isObject, moveBy, moveTo, removeAt, samePath, setIn, startsWith, toPointer, type Json, type JsonObject, type Path } from './doc-ops';
+import { DataSourceList, SOURCE_NAME } from './datasources-store';
 import { DOCUMENT_ID, DocumentState, readDraft, writeDraft, type EditorIssue } from './document-state';
-import { KnownScreens, NodeClipboard } from './shared-state';
+import { KnownDataSources, KnownScreens, NodeClipboard } from './shared-state';
 import { childSlots, ownerOf, targetAt } from './schema-info';
 import { emptyScreen, ensureSource, freshId, nodeTemplate, uniqueInputName, usedIds, withFreshIds } from './templates';
 import { collectTexts, makeKey, translatable, usedKeys, type TextEntry } from './texts';
@@ -32,8 +33,7 @@ export const LANGUAGE_CODE = /^[a-z]{2,3}(-[A-Z]{2})?$/;
 
 /** Properties placing a node in its container: when it is wrapped they move to the new container. */
 const WRAP_PLACEMENT = ['region', 'span', 'grow'];
-/** Name of a data source: it is written in expressions and steps, so a simple identifier. */
-export const SOURCE_NAME = /^[A-Za-z][A-Za-z0-9_]*$/;
+export { SOURCE_NAME } from './datasources-store';
 
 /**
  * State of the editor: the screen document, the selected element, the history for undo and redo,
@@ -41,7 +41,8 @@ export const SOURCE_NAME = /^[A-Za-z][A-Za-z0-9_]*$/;
  * in the browser at every change, under the identifier of the document (`DOCUMENT_ID`): every window has its own store.
  */
 @Injectable()
-export class EditorStore extends DocumentState {
+export class EditorStore extends DocumentState implements DataSourceList {
+  readonly listPath: Path = ['dataSources'];
   private readonly i18n = inject(I18n);
   private readonly engine = new ExpressionEngine({ can: () => true });
   private readonly t = (key: string, params: Record<string, unknown> = {}): string => this.i18n.t(key, params);
@@ -72,7 +73,9 @@ export class EditorStore extends DocumentState {
   /** The document as a valid screen, or null if it has errors (the preview then shows the last valid version). */
   readonly definition = computed<ScreenDefinition | null>(() => (this.errorCount() === 0 ? (this.doc() as unknown as ScreenDefinition) : null));
   readonly target = computed(() => targetAt(this.doc(), this.selection()));
-  /** Known screens (examples, registry, open documents), suggested in the `navigate` steps. */
+  /** Data sources documents of the project, to check the references of the data sources (null without a project). */
+  private readonly projectSources = inject(KnownDataSources).documents;
+  /** Known screens (project, registry, open documents), suggested in the `navigate` steps. */
   readonly knownScreens = inject(KnownScreens).names;
   /** Names of the data sources of the screen. */
   readonly sourceNames = computed(() => {
@@ -526,7 +529,23 @@ export class EditorStore extends DocumentState {
     if (!result.valid) result.issues.forEach((i) => add(i.path, i.message, 'error'));
     checkScreenExpressions(doc, this.engine).forEach((p) => add(p.path, p.message, 'error'));
     this.checkReferences(doc, add);
+    this.checkProjectSources(doc, add);
     return issues;
+  }
+
+  /** References to the data sources of the project that do not resolve: the runtime would leave them out. */
+  private checkProjectSources(doc: Json, add: (pointer: string, message: string, severity: EditorIssue['severity']) => void): void {
+    const documents = this.projectSources();
+    const sources = getIn(doc, ['dataSources']);
+    if (!documents || !isObject(sources)) return;
+    for (const [name, entry] of Object.entries(sources)) {
+      const ref = isObject(entry) ? entry['ref'] : undefined;
+      if (typeof ref !== 'string') continue;
+      const [document, source] = splitReference(ref);
+      const pointer = toPointer(['dataSources', name, 'ref']);
+      if (!documents[document]) add(pointer, this.t('ed.issue.unknownDataSources', { document }), 'warning');
+      else if (!documents[document].sources[source]) add(pointer, this.t('ed.issue.unknownProjectSource', { ref }), 'warning');
+    }
   }
 
   /** Checks the schema does not do: data sources that do not exist and repeated identifiers. */

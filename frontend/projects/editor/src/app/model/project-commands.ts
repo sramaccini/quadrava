@@ -1,0 +1,224 @@
+import { Injectable, inject } from '@angular/core';
+import { Confirmation, I18n, Notifier } from 'core';
+import { isObject, type Json, type JsonObject } from './doc-ops';
+import { emptyDataSources } from './datasources-store';
+import { FileAccess } from './file-access';
+import { emptyNavigation } from './navigation-store';
+import { Project, documentId, newManifest, resourcePath, type ProjectResource } from './project';
+import type { ProjectFolder } from './project-folder';
+import { ProjectLibrary } from './project-library';
+import { SavedDocuments, type EditorKind } from './saved-documents';
+import { emptyScreen } from './templates';
+import { emptyTheme } from './theme-store';
+import { Workspace, documentKind, type DocumentWindow } from './workspace';
+
+/** Name of the demo project in the browser. */
+export const DEMO_PROJECT = 'demo';
+
+/**
+ * The commands of Studio on projects and their resources: create, open and close a project (with its windows), create,
+ * import, save and delete resources. They report the outcome with a message and ask for confirmation before losing changes.
+ */
+@Injectable({ providedIn: 'root' })
+export class ProjectCommands {
+  private readonly project = inject(Project);
+  private readonly library = inject(ProjectLibrary);
+  private readonly workspace = inject(Workspace);
+  private readonly saved = inject(SavedDocuments);
+  private readonly files = inject(FileAccess);
+  private readonly confirmation = inject(Confirmation);
+  private readonly notifier = inject(Notifier);
+  private readonly i18n = inject(I18n);
+  private readonly t = (key: string, params: Record<string, unknown> = {}): string => this.i18n.t(key, params);
+
+  /** Opens the project in a folder (closing the one open, if the user agrees) and restores its windows. */
+  async open(folder: ProjectFolder): Promise<boolean> {
+    if (this.project.isOpen() && !(await this.close())) return false;
+    try {
+      await this.project.open(folder);
+    } catch (e) {
+      this.fail('ed.project.openFailed', e);
+      return false;
+    }
+    await this.library.remember(folder);
+    this.workspace.attach(this.project.key()!);
+    this.notifier.toast(this.t('ed.project.opened', { name: this.project.manifest()?.name ?? folder.name }));
+    return true;
+  }
+
+  /** Closes the project and its windows; with unsaved changes it asks first. Their drafts stay for the next time. */
+  async close(): Promise<boolean> {
+    const unsaved = this.workspace.windows().filter((w) => !this.saved.isSaved(w.id, w.state.doc()));
+    if (unsaved.length && !(await this.confirmation.confirm(this.t('ed.project.closeUnsaved', { n: unsaved.length })))) return false;
+    this.workspace.detach();
+    this.project.close();
+    return true;
+  }
+
+  /** Creates a project (on disk, in a folder the user chooses, or in the browser) and opens it. */
+  async create(name: string, id: string, location: 'disk' | 'browser'): Promise<boolean> {
+    let folder: ProjectFolder | null;
+    if (location === 'disk') {
+      folder = await this.library.chooseDiskFolder();
+    } else {
+      await this.library.refresh();
+      if (this.library.browserProjects().includes(id)) {
+        this.notifier.toast(this.t('ed.project.exists', { name: id }), 'error');
+        return false;
+      }
+      folder = await this.library.browserFolder(id, true);
+    }
+    if (!folder) return false;
+    if (this.project.isOpen() && !(await this.close())) return false;
+    try {
+      await this.project.create(folder, newManifest(id, name), emptyNavigation(this.t));
+    } catch (e) {
+      this.fail('ed.project.createFailed', e);
+      return false;
+    }
+    await this.library.refresh().catch(() => undefined);
+    return this.open(folder);
+  }
+
+  /** Opens the demo project kept in the browser, copying it there from the examples the first time. */
+  async openDemo(): Promise<boolean> {
+    const folder = await this.library.browserFolder(DEMO_PROJECT, true);
+    if (!folder) return false;
+    try {
+      if (!(await folder.list()).includes('project.json')) {
+        const response = await fetch('examples/files.json');
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        for (const path of (await response.json()) as string[]) {
+          const file = await fetch(`examples/${path.split('/').map(encodeURIComponent).join('/')}`);
+          if (file.ok) await folder.write(path, await file.text());
+        }
+      }
+    } catch (e) {
+      this.fail('ed.project.openFailed', e);
+      return false;
+    }
+    await this.library.refresh().catch(() => undefined);
+    return this.open(folder);
+  }
+
+  /** Creates a resource of the project with its starting content and opens it (the navigation: only one, opened if there). */
+  async createResource(kind: EditorKind, title = '', id = ''): Promise<DocumentWindow | null> {
+    if (kind === 'navigation' && this.project.has('navigation', 'navigation')) {
+      return this.workspace.openResource({ kind, id: 'navigation', path: resourcePath('navigation', 'navigation') });
+    }
+    const doc = this.starting(kind, title, id);
+    const resource: ProjectResource = { kind, id: kind === 'navigation' ? 'navigation' : id, path: resourcePath(kind, id) };
+    try {
+      await this.project.write(resource, doc);
+      return await this.workspace.openResource(resource);
+    } catch (e) {
+      this.fail('ed.saveFailed', e);
+      return null;
+    }
+  }
+
+  /** Deletes a resource after a confirmation, closing its window. */
+  async deleteResource(resource: ProjectResource, label: string): Promise<boolean> {
+    if (!(await this.confirmation.confirm(this.t('ed.project.confirmDelete', { name: label })))) return false;
+    const open = this.workspace.windowOf(resource.path);
+    if (open) this.workspace.close(open.id);
+    try {
+      await this.project.remove(resource);
+      this.notifier.toast(this.t('ed.project.deleted', { name: label }));
+      return true;
+    } catch (e) {
+      this.fail('ed.saveFailed', e);
+      return false;
+    }
+  }
+
+  /**
+   * Imports a document (a file, an example, a registry version) into the project: it is written as the resource of its kind
+   * and identifier (asking first if one is already there) and opened. Returns its window, or null if not imported.
+   */
+  async importDocument(doc: Json, from: string): Promise<DocumentWindow | null> {
+    const kind = documentKind(doc);
+    const id = kind && kind !== 'project' ? documentId(kind, doc) : null;
+    if (!kind || kind === 'project' || !id) {
+      this.notifier.toast(this.t('ed.loadFailed', { e: this.t('ed.unknownKind') }), 'error');
+      return null;
+    }
+    const resource: ProjectResource = { kind, id: kind === 'navigation' ? 'navigation' : id, path: resourcePath(kind, id) };
+    if (this.project.resources().some((r) => r.path === resource.path) && !(await this.confirmation.confirm(this.t('ed.import.replace', { path: resource.path })))) return null;
+    try {
+      await this.project.write(resource, doc);
+    } catch (e) {
+      this.fail('ed.saveFailed', e);
+      return null;
+    }
+    const open = this.workspace.windowOf(resource.path);
+    if (open) {
+      open.state.load(doc);
+      this.saved.markSaved(open.id, doc);
+      this.workspace.focus(open.id);
+    }
+    const win = open ?? (await this.workspace.openResource(resource));
+    this.notifier.toast(this.t('ed.imported', { name: from, path: resource.path }));
+    return win;
+  }
+
+  /** Saves a window in its resource of the project (or, outside a project, to a file). */
+  async save(win: DocumentWindow): Promise<boolean> {
+    if (!this.project.isOpen()) return this.export(win);
+    try {
+      const resource = await this.workspace.saveToProject(win);
+      const errors = win.state.errorCount();
+      this.notifier.toast(errors ? this.t('ed.savedWithErrors', { name: resource.path, n: errors }) : this.t('ed.savedFile', { name: resource.path }));
+      return true;
+    } catch (e) {
+      this.fail('ed.saveFailed', e);
+      return false;
+    }
+  }
+
+  /** Saves every window with unsaved changes; stops at the first failure. */
+  async saveAll(): Promise<void> {
+    for (const win of this.workspace.windows()) {
+      if (!this.saved.isSaved(win.id, win.state.doc()) && !(await this.save(win))) return;
+    }
+  }
+
+  /** The document of a window as a JSON file outside the project (downloaded, or written where the browser allows it). */
+  async export(win: DocumentWindow): Promise<boolean> {
+    const doc = win.state.doc();
+    const name = this.workspace.name(win) ?? win.kind;
+    try {
+      const file = await this.files.save(win.id, doc, `${win.kind === 'project' ? 'project' : name}.json`);
+      if (!file) return false;
+      if (!this.project.isOpen()) this.saved.markSaved(win.id, doc);
+      this.notifier.toast(this.t('ed.savedFile', { name: file }));
+      return true;
+    } catch (e) {
+      this.fail('ed.saveFailed', e);
+      return false;
+    }
+  }
+
+  /** The starting content of a new resource. */
+  private starting(kind: EditorKind, title: string, id: string): Json {
+    switch (kind) {
+      case 'screen':
+        return emptyScreen(this.t, title, id);
+      case 'datasources':
+        return { ...emptyDataSources(id), ...(title ? { description: title } : {}) };
+      case 'theme': {
+        const theme: JsonObject = { ...emptyTheme(), theme: id };
+        if (title) theme['label'] = title;
+        return theme;
+      }
+      case 'navigation':
+        return emptyNavigation(this.t);
+      default:
+        return isObject(this.project.manifest() as unknown as Json) ? (this.project.manifest() as unknown as Json) : {};
+    }
+  }
+
+  private fail(key: string, e: unknown): void {
+    this.notifier.toast(this.t(key, { e: e instanceof Error ? e.message : String(e) }), 'error');
+  }
+}

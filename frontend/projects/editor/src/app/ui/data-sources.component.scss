@@ -16,3 +16,11 @@ label { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-siz
 nz-select { width: 100%; }
 
 .head-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* A data source referring to one of the project: a coloured edge and the call it points to. */
+.source.linked { border-left: 3px solid var(--lc-color-primary); }
+.target { align-self: center; margin: 0; font-size: 12px; color: var(--lc-color-muted); }
+.action, .remove { align-self: flex-end; }
+.move { display: flex; flex-direction: column; gap: 4px; }
+.move label { font-family: var(--lc-font-family); font-weight: 400; margin-top: 8px; }
+.actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }

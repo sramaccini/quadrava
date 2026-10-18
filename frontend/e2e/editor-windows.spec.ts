@@ -2,8 +2,9 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
 /**
- * Quadrava Studio as a multi-document workspace: windows created from File › New, moved and resized with the mouse inside
- * the area, maximized; the side panels follow the window in front.
+ * Quadrava Studio as a multi-document workspace on a project: a project created in the browser, resources created from
+ * File › New and the project panel, windows moved and resized with the mouse inside the area, maximized; the side panels
+ * follow the window in front.
  */
 const editor = `http://localhost:${Number(process.env['E2E_EDITOR_PORT'] ?? 4301)}`;
 
@@ -13,19 +14,33 @@ async function box(locator: Locator): Promise<{ x: number; y: number; width: num
   return found;
 }
 
-async function newDocument(page: Page, kind: 'Navigation' | 'Theme'): Promise<void> {
+async function newDocument(page: Page, kind: 'Navigation' | 'Theme', name?: string): Promise<void> {
   await page.getByRole('menuitem', { name: 'File' }).click();
-  await page.getByRole('menuitem', { name: 'New' }).click();
+  await page.getByRole('menuitem', { name: 'New', exact: true }).click();
   await page.getByRole('menuitem', { name: kind, exact: true }).click();
+  if (name) {
+    await page.getByLabel('Name of the theme').fill(name);
+    await page.getByRole('button', { name: 'Create' }).click();
+  }
 }
 
 test.describe('Studio: document windows', () => {
   test.beforeEach(async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(editor);
-    await page.evaluate(() => localStorage.clear());
+    await page.evaluate(async () => {
+      localStorage.clear();
+      const root = await navigator.storage.getDirectory();
+      await root.removeEntry('quadrava-projects', { recursive: true }).catch(() => undefined);
+    });
     await page.reload();
+    // No project yet: the start page. A new project kept in the browser.
+    await page.getByRole('button', { name: 'New project…' }).click();
+    await page.getByLabel('Name of the application').fill('E2E shop');
+    await page.getByRole('radio', { name: /In the browser/ }).check();
+    await page.getByRole('button', { name: 'Create' }).click();
     await expect(page.getByRole('heading', { name: 'No document open' })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Project' })).toBeVisible();
   });
 
   test('new documents open in windows that move, resize and maximize; the panels follow the window in front', async ({ page }) => {
@@ -36,8 +51,8 @@ test.describe('Studio: document windows', () => {
     await expect(screen).toBeVisible();
     await expect(page.getByRole('navigation', { name: 'Outline' })).toBeVisible();
 
-    await newDocument(page, 'Theme');
-    const theme = page.getByRole('region', { name: 'new-theme — Theme' });
+    await newDocument(page, 'Theme', 'Ocean');
+    const theme = page.getByRole('region', { name: 'ocean — Theme' });
     await expect(theme).toBeVisible();
     await expect(page.getByRole('navigation', { name: 'Outline' })).toHaveCount(0);
     await expect(page.getByText('Colours are written as')).toBeVisible();
@@ -83,14 +98,14 @@ test.describe('Studio: document windows', () => {
     expect([Math.round(full.width), Math.round(full.height)]).toEqual([Math.round(area.width), Math.round(area.height)]);
 
     // The theme window, from the bar of the workspace: its properties come back.
-    await page.getByRole('list', { name: 'Open documents' }).getByRole('button', { name: 'new-theme — Theme' }).click();
+    await page.getByRole('list', { name: 'Open documents' }).getByRole('button', { name: 'ocean — Theme' }).click();
     await expect(page.getByText('Colours are written as')).toBeVisible();
   });
 
   test('the workspace with windows has no serious accessibility violations', async ({ page }) => {
     await newDocument(page, 'Navigation');
-    await newDocument(page, 'Theme');
-    await expect(page.getByRole('region', { name: 'new-theme — Theme' })).toBeVisible();
+    await newDocument(page, 'Theme', 'Ocean');
+    await expect(page.getByRole('region', { name: 'ocean — Theme' })).toBeVisible();
     // Excluded: the previews (their own pages, checked on the runtime) and the language select of the toolbar, whose inner
     // search input has no label (a known limit, see HANDOFF).
     const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).exclude('iframe').exclude('.language').analyze();

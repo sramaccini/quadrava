@@ -10,7 +10,7 @@ describe('Dock: pinned or hidden panels', () => {
     expect([dock.pinned.palette(), dock.pinned.outline(), dock.pinned.inspector()]).toEqual([false, false, true]);
     expect(dock.width('left', 280)).toBe(330);
     TestBed.tick();
-    expect(JSON.parse(localStorage.getItem('lc.editor.dock')!)).toEqual({ pins: { palette: false, outline: false, inspector: true }, leftWidth: 330 });
+    expect(JSON.parse(localStorage.getItem('lc.editor.dock')!)).toEqual({ pins: { project: false, palette: false, outline: false, inspector: true }, leftWidth: 330 });
   });
 
   it('width of the column: the pinned panels, plus the strip if one is hidden; the per-panel choice wins', () => {

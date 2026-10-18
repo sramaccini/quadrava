@@ -33,7 +33,7 @@ editor  ──► components ──► core   (the preview renders screens with 
 * `components`: everything that depends on NG-ZORRO (standard components, side menu, user menu, confirmation dialog, notifier, theme bridge).
 * `services`: production implementations of the ports.
 * `runtime`: the demo application; wiring only, plus `demo/` fakes.
-* `editor`: **Quadrava Studio**, the visual editor for screens, navigation and themes. `model/` holds pure, tested logic (immutable document operations, the `SchemaReader`, templates, drop positions, `DocumentState` with its stores `EditorStore`, `NavigationStore` and `ThemeStore`, one per open window, created by `Workspace` in an injector of the window); `ui/` the workspace, the windows and the panels; `preview/` the live preview and its fake ports. The property panel is generated from `screen.schema.json` (`model/schema-info.ts`): do not hand-write per-component forms. See `docs/editor.md`.
+* `editor`: **Quadrava Studio**, the visual editor for screens, navigation and themes. `model/` holds pure, tested logic (immutable document operations, the `SchemaReader`, templates, drop positions, `DocumentState` with its stores `EditorStore`, `DataSourcesStore`, `NavigationStore`, `ThemeStore` and `ProjectStore`, one per open window, created by `Workspace` in an injector of the window; `Project`, `ProjectFolder` and `ProjectCommands` for the project on disk or in the browser); `ui/` the start page, the project panel, the workspace, the windows and the panels; `preview/` the live preview and its fake ports. The property panel is generated from `screen.schema.json` (`model/schema-info.ts`): do not hand-write per-component forms. See `docs/editor.md`.
 
 ## 3. Daily commands
 

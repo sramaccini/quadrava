@@ -30,7 +30,7 @@ export function csrfToken(cookies: string): string | null {
   return null;
 }
 
-export type DocumentKind = 'screen' | 'navigation' | 'theme' | 'messages';
+export type DocumentKind = 'screen' | 'datasources' | 'navigation' | 'theme' | 'messages';
 
 /** Application and environment of the registry chosen in the editor (remembered in the browser), shared by the panels. */
 export interface RegistrySettings {

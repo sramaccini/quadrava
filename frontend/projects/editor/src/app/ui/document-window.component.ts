@@ -4,10 +4,18 @@ import { I18n } from 'core';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import { resizeBounds, type Bounds, type Edge } from '../model/window-layout';
+import type { ResourceKind } from '../model/project';
 import { Workspace, type DocumentWindow } from '../model/workspace';
 
 /** Icon of every kind of document (title bar of the window, bar of the workspace). */
-export const KIND_ICONS: Record<DocumentWindow['kind'], string> = { screen: 'layout', navigation: 'menu', theme: 'bg-colors' };
+export const KIND_ICONS: Record<ResourceKind, string> = {
+  project: 'setting',
+  screen: 'layout',
+  datasources: 'database',
+  navigation: 'menu',
+  theme: 'bg-colors',
+  messages: 'global',
+};
 /** Step of the movements and resizings from the keyboard. */
 const KEY_STEP = 16;
 const EDGES: Edge[] = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];

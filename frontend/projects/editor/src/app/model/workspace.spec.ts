@@ -7,6 +7,8 @@ import { EditorStore } from './editor-store';
 import { RegistrySession } from './registry-session';
 import { SavedDocuments } from './saved-documents';
 import { ThemeStore } from './theme-store';
+import { Project } from './project';
+import { MemoryFolder } from './project-folder';
 import { WORKSPACE_KEY, Workspace, documentKind } from './workspace';
 
 describe('Workspace', () => {
@@ -119,8 +121,9 @@ describe('Workspace', () => {
     expect(b.bounds().x + b.bounds().width).toBeLessThanOrEqual(700);
   });
 
-  it('restores the windows, their documents and the active one at the next visit', () => {
+  it('restores the windows of a project, their documents and the active one at the next visit; another project has its own', () => {
     const first = TestBed.inject(Workspace);
+    first.attach('browser:orders');
     const a = first.open('screen', { schemaVersion: '1.0', screen: 'orders', components: [] });
     const b = first.open('theme');
     first.minimize(b.id);
@@ -128,6 +131,8 @@ describe('Workspace', () => {
     a.injector.get(EditorStore).addNode('alert');
     TestBed.tick();
     const second = reload();
+    expect(second.windows()).toEqual([]);
+    second.attach('browser:orders');
     TestBed.tick();
     expect(second.windows().map((w) => [w.id, w.kind, w.minimized()])).toEqual([
       [a.id, 'screen', false],
@@ -139,18 +144,74 @@ describe('Workspace', () => {
     expect(restored.injector.get(EditorStore).doc()).toMatchObject({ screen: 'orders', components: [{ type: 'alert' }] });
     // The change made before the reload is still to save; new identifiers do not reuse the old ones.
     expect(TestBed.inject(SavedDocuments).isSaved(restored.id, restored.state.doc())).toBe(false);
-    expect(second.open('navigation').id).toBe('d3');
+    expect([a.id, b.id]).not.toContain(second.open('navigation').id);
+    // Another project: its own windows (none yet); back to the first one, its windows again.
+    TestBed.tick();
+    second.attach('browser:invoices');
+    expect(second.windows()).toEqual([]);
+    second.attach('browser:orders');
+    expect(second.windows().map((w) => w.kind)).toEqual(['screen', 'theme', 'navigation']);
+  });
+
+  it('a window of a resource is saved in its file; a new identifier renames the file, an identifier in use is refused', async () => {
+    const project = TestBed.inject(Project);
+    const folder = new MemoryFolder('p', {
+      'project.json': JSON.stringify({ schemaVersion: '1.0', project: 'p', name: 'P', languages: ['en'], defaultLanguage: 'en' }),
+      'screens/orders.json': JSON.stringify({ schemaVersion: '1.0', screen: 'orders', components: [] }),
+      'screens/taken.json': JSON.stringify({ schemaVersion: '1.0', screen: 'taken', components: [] }),
+    });
+    await project.open(folder);
+    const workspace = TestBed.inject(Workspace);
+    workspace.attach(project.key()!);
+    const win = await workspace.openResource({ kind: 'screen', id: 'orders', path: 'screens/orders.json' });
+    expect(await workspace.openResource({ kind: 'screen', id: 'orders', path: 'screens/orders.json' })).toBe(win);
+    const store = win.injector.get(EditorStore);
+    store.setValue(['title'], 'Orders');
+    await workspace.saveToProject(win);
+    expect(JSON.parse(folder.files.get('screens/orders.json')!).title).toBe('Orders');
+    expect(TestBed.inject(SavedDocuments).isSaved(win.id, store.doc())).toBe(true);
+    store.setValue(['screen'], 'taken');
+    await expect(workspace.saveToProject(win)).rejects.toThrow('a resource «taken» already exists in the project');
+    store.setValue(['screen'], 'order-list');
+    await workspace.saveToProject(win);
+    expect([...folder.files.keys()].filter((p) => p.startsWith('screens/')).sort()).toEqual(['screens/order-list.json', 'screens/taken.json']);
+    expect(win.path()).toBe('screens/order-list.json');
+    expect(project.resources().map((r) => r.id)).toEqual(['project', 'order-list', 'taken']);
+  });
+
+  it('the data sources of the project as the screens see them: saved, with the changes of the open windows', async () => {
+    const project = TestBed.inject(Project);
+    const folder = new MemoryFolder('p', {
+      'project.json': JSON.stringify({ schemaVersion: '1.0', project: 'p', name: 'P', languages: ['en'], defaultLanguage: 'en' }),
+      'datasources/orders.json': JSON.stringify({ schemaVersion: '1.0', datasources: 'orders', sources: { list: { type: 'rest', method: 'GET', url: '/api/orders' } } }),
+    });
+    await project.open(folder);
+    const workspace = TestBed.inject(Workspace);
+    workspace.attach(project.key()!);
+    expect(workspace.dataSources()['orders'].sources['list'].url).toBe('/api/orders');
+    const win = await workspace.openResource({ kind: 'datasources', id: 'orders', path: 'datasources/orders.json' });
+    win.state.setValue(['sources', 'list', 'url'], '/api/v2/orders');
+    expect(workspace.dataSources()['orders'].sources['list'].url).toBe('/api/v2/orders');
+    // Not valid: the saved version counts.
+    win.state.setValue(['sources', 'list', 'method'], 'FETCH');
+    expect(workspace.dataSources()['orders'].sources['list'].url).toBe('/api/orders');
   });
 
   it('the drafts of the editor before the workspace open in windows at the first start', () => {
     localStorage.setItem('lc.editor.draft', JSON.stringify({ doc: { schemaVersion: '1.0', screen: 'kept', components: [] }, samples: {}, translations: {} }));
     localStorage.setItem('lc.editor.mode', 'screen');
     const workspace = reload();
-    expect(workspace.windows().map((w) => [w.kind, workspace.name(w)])).toEqual([['screen', 'kept']]);
+    workspace.attach('browser:first');
+    expect(workspace.windows().map((w) => [w.kind, workspace.name(w), w.path()])).toEqual([['screen', 'kept', null]]);
     expect(localStorage.getItem('lc.editor.draft')).toBeNull();
     expect(localStorage.getItem('lc.editor.mode')).toBeNull();
     TestBed.tick();
-    expect(JSON.parse(localStorage.getItem(WORKSPACE_KEY)!).windows).toHaveLength(1);
+    expect(JSON.parse(localStorage.getItem(`${WORKSPACE_KEY}:browser:first`)!).windows).toHaveLength(1);
+    // The windows of the workspace without projects (the previous version) go to the first project opened, once.
+    localStorage.setItem(WORKSPACE_KEY, localStorage.getItem(`${WORKSPACE_KEY}:browser:first`)!);
+    workspace.attach('browser:second');
+    expect(workspace.windows()).toHaveLength(1);
+    expect(localStorage.getItem(WORKSPACE_KEY)).toBeNull();
   });
 
   it('recognises the kind of a document from its identifier property', () => {

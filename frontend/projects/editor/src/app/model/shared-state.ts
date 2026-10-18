@@ -1,4 +1,5 @@
 import { Injectable, signal } from '@angular/core';
+import type { DataSourcesDefinition } from 'schema';
 import type { Json } from './doc-ops';
 
 /**
@@ -17,4 +18,13 @@ export class KnownScreens {
 @Injectable({ providedIn: 'root' })
 export class NodeClipboard {
   readonly node = signal<Json | null>(null);
+}
+
+/**
+ * The data sources documents of the open project, as the screens see them (saved, with the changes of the windows open on
+ * them): the screens check and resolve their references with these. Null without a project: references are not checked.
+ */
+@Injectable({ providedIn: 'root' })
+export class KnownDataSources {
+  readonly documents = signal<Record<string, DataSourcesDefinition> | null>(null);
 }

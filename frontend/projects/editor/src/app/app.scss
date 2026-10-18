@@ -26,7 +26,10 @@
 .right ed-inspector, .right ed-nav-inspector, .right ed-theme-inspector, .left ed-nav-outline { flex: 1 1 0; }
 /* The workspace with the document windows. */
 .center { grid-area: center; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
-.center ed-workspace { flex: 1; }
+.center ed-workspace, .center ed-start-page { flex: 1; }
+.left ed-project-panel { flex: 0 1 auto; max-height: 40%; min-height: 120px; }
+/* Only the project panel on the left (no document open, or one without panels there): it takes the whole column. */
+.left:not(:has(ed-palette.ed-docked, ed-outline.ed-docked, ed-nav-outline.ed-docked)) ed-project-panel { flex: 1 1 0; max-height: none; }
 .bottom { grid-area: bottom; max-height: 180px; overflow: auto; border-top: 1px solid var(--lc-color-border); background: var(--lc-color-surface); }
 .issues-toggle {
   display: block; width: 100%; padding: 4px 12px; border: 0; background: none; color: var(--lc-color-muted);

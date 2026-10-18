@@ -3,8 +3,8 @@ import type { Json } from './doc-ops';
 
 export const SAVED_KEY = 'lc.editor.saved';
 
-/** Kind of editor document: each one has its own editor. */
-export type EditorKind = 'screen' | 'navigation' | 'theme';
+/** Kind of editor document (a resource of the project): each one has its own editor. */
+export type EditorKind = 'project' | 'screen' | 'datasources' | 'navigation' | 'theme';
 
 /**
  * The last saved content of every open document (to a file or in the registry, or just opened or created), by the

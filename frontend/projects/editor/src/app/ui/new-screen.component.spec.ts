@@ -5,7 +5,7 @@ import { EDITOR_MESSAGES } from '../messages';
 import { EditorStore } from '../model/editor-store';
 import { screenIdFrom } from '../model/templates';
 import { documentProviders } from '../model/workspace';
-import { NewScreenComponent, type NewScreen } from './new-screen.component';
+import { NewScreenComponent, type NewResource } from './new-screen.component';
 
 describe('identifier from the title', () => {
   it('kebab-case without accents or symbols', () => {
@@ -25,7 +25,7 @@ describe('identifier from the title', () => {
 describe('«New screen» dialog', () => {
   let fixture: ComponentFixture<NewScreenComponent>;
   let el: HTMLElement;
-  let created: NewScreen[];
+  let created: NewResource[];
 
   beforeEach(async () => {
     TestBed.inject(I18n).addMessages('en', EDITOR_MESSAGES['en']);
@@ -55,7 +55,7 @@ describe('«New screen» dialog', () => {
     await type('new-screen-title', 'Order list');
     expect(input('new-screen-id').value).toBe('order-list');
     el.querySelector('form')!.dispatchEvent(new Event('submit', { cancelable: true }));
-    expect(created).toEqual([{ title: 'Order list', screen: 'order-list' }]);
+    expect(created).toEqual([{ title: 'Order list', id: 'order-list' }]);
   });
 
   it('an identifier typed by hand stays, an invalid one turns «Create» off and says so', async () => {
@@ -69,6 +69,26 @@ describe('«New screen» dialog', () => {
     expect(el.textContent).toContain(EDITOR_MESSAGES['en']['ed.newScreen.idInvalid']);
     await type('new-screen-id', '');
     expect(input('new-screen-id').value).toBe('list-of-the-orders');
+  });
+
+  it('an identifier already used by another resource turns «Create» off', async () => {
+    fixture.componentRef.setInput('used', ['order-list']);
+    await type('new-screen-title', 'Order list');
+    expect(create().disabled).toBe(true);
+    expect(el.textContent).toContain(EDITOR_MESSAGES['en']['ed.newResource.taken']);
+    await type('new-screen-id', 'order-list-2');
+    expect(create().disabled).toBe(false);
+  });
+
+  it('a project asks where it goes, proposing the first place', async () => {
+    fixture.componentRef.setInput('kind', 'project');
+    fixture.componentRef.setInput('locations', ['disk', 'browser']);
+    await type('new-screen-title', 'Invoicing');
+    expect(el.querySelectorAll('[nz-radio]').length).toBe(2);
+    (el.querySelectorAll<HTMLInputElement>('[nz-radio] input')[1]).click();
+    fixture.detectChanges();
+    el.querySelector('form')!.dispatchEvent(new Event('submit', { cancelable: true }));
+    expect(created).toEqual([{ title: 'Invoicing', id: 'invoicing', location: 'browser' }]);
   });
 
   it('the new screen has the chosen title and identifier and is valid', () => {

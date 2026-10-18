@@ -9,10 +9,11 @@ import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzSelectModule } from 'ng-zorro-antd/select';
 import { NzSwitchModule } from 'ng-zorro-antd/switch';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
-import type { ScreenDefinition } from 'schema';
+import { resolveDataSources, type ScreenDefinition } from 'schema';
 import { getIn, isObject, type Json } from '../model/doc-ops';
 import { EditorStore } from '../model/editor-store';
 import { ThemeStore } from '../model/theme-store';
+import { KnownDataSources } from '../model/shared-state';
 import { Workspace } from '../model/workspace';
 import { JsonFieldComponent } from '../ui/json-field.component';
 import { PreviewFrameComponent } from './preview-frame.component';
@@ -44,6 +45,7 @@ const WIDTH_ICONS: Record<string, string> = { desktop: 'desktop', tablet: 'table
 export class PreviewComponent {
   protected readonly store = inject(EditorStore);
   private readonly workspace = inject(Workspace);
+  private readonly projectSources = inject(KnownDataSources).documents;
   protected readonly log = inject(PreviewLog);
   protected readonly i18n = inject(I18n);
 
@@ -80,10 +82,17 @@ export class PreviewComponent {
     return isObject(value) && typeof value['id'] === 'string' ? value['id'] : null;
   });
 
+  /** The drawn definition with the references to the data sources of the project resolved (those that do not resolve are left out). */
+  private readonly resolved = computed(() => {
+    const shown = this.shown();
+    const documents = this.projectSources();
+    return shown && documents ? resolveDataSources(shown, documents).screen : shown;
+  });
+
   /** What the iframe draws. */
   protected readonly state = computed<PreviewState>(() =>
     previewState({
-      screen: this.shown(),
+      screen: this.resolved(),
       theme: this.workspace.latest('theme', ThemeStore)?.definition() ?? null,
       granted: this.grantAll() ? null : [],
       samples: this.store.samples(),

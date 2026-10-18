@@ -1,11 +1,11 @@
 import { DestroyRef, Injectable, effect, inject, signal, type WritableSignal } from '@angular/core';
 
 export type DockSide = 'left' | 'right';
-/** The panels that are pinned or hidden: components and outline on the left, properties on the right. */
-export type DockPanel = 'palette' | 'outline' | 'inspector';
+/** The panels that are pinned or hidden: project, components and outline on the left, properties on the right. */
+export type DockPanel = 'project' | 'palette' | 'outline' | 'inspector';
 
-/** Side of every panel (in all modes: the outline of the navigation is the same «Outline»). */
-export const PANEL_SIDE: Record<DockPanel, DockSide> = { palette: 'left', outline: 'left', inspector: 'right' };
+/** Side of every panel (for every kind of document: the outline of the navigation is the same «Outline»). */
+export const PANEL_SIDE: Record<DockPanel, DockSide> = { project: 'left', palette: 'left', outline: 'left', inspector: 'right' };
 const PANELS = Object.keys(PANEL_SIDE) as DockPanel[];
 
 const STORAGE_KEY = 'lc.editor.dock';
