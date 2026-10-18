@@ -35,7 +35,7 @@ From `frontend/`:
 - **Full stack with Keycloak step by step** (Docker Desktop running): `cd idp && docker compose up -d`; in `reference/` `mvn -q package -DskipTests` and `java -jar <module>/target/*.jar` for registry (with `--lowcode.registry.storage-dir=<folder>` to keep the data), authz, telemetry, bff; in `frontend/` `npm run demo-api` (8084), `npm run publish:examples -- --user administrator --password administrator`, then `npm run start:runtime:bff` (4200) and `start:editor:bff` (4201). The origins allowed by the BFF are 4200 and 4201.
 - tests per project: `npx ng test <schema|expressions|core|components|services|runtime|editor> --watch=false`
 
-Test status (all green, 18 October 2026, in English): schema 71, expressions 42, core 88, components 181, services 34, runtime 86, editor 146 (**648**); Java 43 (authz 7, bff 8, registry 22, telemetry 6); Playwright 20 (12 of them for accessibility on the showcase, 2 for the rich text editor, 2 for the Studio windows); conformance kits: registry 20/20 (4 skipped without tokens), authorization 11/11, telemetry 6/6. Production builds: runtime 2.46 MB initial (422 kB transferred), editor 825 kB initial (preview and editor load separately).
+Test status (all green, 18 October 2026, in English): schema 76, expressions 42, core 90, components 181, services 34, runtime 86, editor 161 (**670**); Java 46 (authz 7, bff 8, registry 25, telemetry 6); Playwright 20 (12 of them for accessibility on the showcase, 2 for the rich text editor, 2 for Studio: project, windows and accessibility); conformance kits: registry 20/20 (4 skipped without tokens; the checks of contract 0.6 added and not yet run against a live registry), authorization 11/11, telemetry 6/6. Production builds: runtime 2.61 MB initial (443 kB transferred), editor 825 kB initial (preview and editor load separately). `mvn verify` fails at the repackaging of the registry jar while a registry started from `target/` is running (the file is locked on Windows): stop the stack first, or `-Dspring-boot.repackage.skip=true`.
 
 ## 4. Architecture in brief
 
@@ -106,6 +106,7 @@ The main ones are in the DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In short:
 3. Local data after the October renames: recreate Keycloak (`cd idp && docker compose down && docker compose up -d`) and delete `data/registry` (old review states, roles, identifiers and permissions).
 4. Conformance kits in CI against the reference services (today they are run by hand, for example after `npm run stack`).
 5. Editor: comparison between two registry versions; border side widths from the preview.
+5b. Projects: export and import of a whole project kept in the browser (zip or folder); publish a whole project to the registry (every resource, data sources before the screens); let the runtime demo read `project.json` (languages and themes are still listed in its code); «Save to the registry and publish» of the «Texts» panel from the catalogues of the project; run the conformance kit of contract 0.6 against the reference registry.
 6. e2e in Firefox and WebKit.
 7. CEL in `validate:examples` and, eventually, in the registry.
 8. Bring the project documents (architecture § 9, functional specification, guidelines) up to date with the October status.
