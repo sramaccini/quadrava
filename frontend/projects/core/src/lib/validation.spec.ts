@@ -2,7 +2,7 @@ import { Injector } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import type { FieldDefinition } from 'schema';
 import { Fakes } from './testing';
-import { checkField, compileRule, fieldRules, formRules, inputHints, isRequired, transformValue, uniqueCellErrors, type ValidationEnv } from './validation';
+import { checkField, checkScreenPatterns, compileRule, fieldRules, formRules, inputHints, isRequired, transformValue, uniqueCellErrors, type ValidationEnv } from './validation';
 import { ValidatorRegistry } from './validators';
 
 describe('validation engine', () => {
@@ -180,3 +180,12 @@ describe('validation engine', () => {
 function jasmineLike(expected: Record<string, unknown>): unknown {
   return expect.objectContaining(expected);
 }
+
+describe('checkScreenPatterns', () => {
+  it('reports the patterns of fields and rules that do not compile, with their path', () => {
+    const screen = {
+      components: [{ type: 'form', fields: [{ name: 'a', type: 'text', pattern: '[A-Z]+', messages: { pattern: 'Capitals (A-Z' } }, { name: 'b', type: 'text', pattern: '(', validation: [{ pattern: '\\q' }] }] }],
+    };
+    expect(checkScreenPatterns(screen).map((i) => i.path)).toEqual(['/components/0/fields/1/pattern', '/components/0/fields/1/validation/0/pattern']);
+  });
+});

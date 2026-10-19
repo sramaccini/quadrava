@@ -2,7 +2,7 @@ import type { FieldDefinition, FlatConstraint, FormValidationRule, TextTransform
 import type { I18n } from './i18n';
 import type { ScreenRuntime } from './screen-runtime';
 import type { Scope } from './types';
-import { duplicateRows, InvalidValidatorParams, isEmptyValue, type ValidatorDescriptor, type ValidatorRegistry } from './validators';
+import { compilePattern, duplicateRows, InvalidValidatorParams, isEmptyValue, type ValidatorDescriptor, type ValidatorRegistry } from './validators';
 
 /**
  * Validation engine (ADR-15): the flat constraints of a field, its `validate` rule and its `validation` list become one
@@ -237,3 +237,25 @@ export function uniqueCellErrors(field: FieldDefinition, rows: unknown, env: Val
   return errors;
 }
 
+
+/**
+ * Static check of the `pattern` constraints of a screen (fields and validation rules): the ones that do not compile with
+ * the `u` flag, or are too long. Used by the editor; it runs nothing.
+ */
+export function checkScreenPatterns(document: unknown): { path: string; message: string }[] {
+  const issues: { path: string; message: string }[] = [];
+  const walk = (value: unknown, path: string): void => {
+    if (Array.isArray(value)) {
+      value.forEach((v, i) => walk(v, `${path}/${i}`));
+    } else if (value !== null && typeof value === 'object') {
+      for (const [key, v] of Object.entries(value)) {
+        // messages.pattern is the text of the message, not an expression.
+        if (key === 'messages') continue;
+        if (key === 'pattern' && typeof v === 'string' && !compilePattern(v)) issues.push({ path: `${path}/pattern`, message: 'the pattern is not a valid regular expression (Unicode, at most 500 characters)' });
+        else walk(v, `${path}/${key}`);
+      }
+    }
+  };
+  walk(document, '');
+  return issues;
+}
