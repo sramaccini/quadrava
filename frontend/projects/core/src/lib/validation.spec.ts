@@ -189,3 +189,14 @@ describe('checkScreenPatterns', () => {
     expect(checkScreenPatterns(screen).map((i) => i.path)).toEqual(['/components/0/fields/1/pattern', '/components/0/fields/1/validation/0/pattern']);
   });
 });
+
+describe('malformed definitions (being written in the editor)', () => {
+  it('give no rules or fail closed, never throw', () => {
+    expect(fieldRules('text' as unknown as FieldDefinition)).toEqual([]);
+    expect(fieldRules({ name: 'a', type: 'text', validation: 'x' } as unknown as FieldDefinition)).toEqual([]);
+    expect(fieldRules({ name: 'a', type: 'text', validation: [null] } as unknown as FieldDefinition).map((r) => r.name)).toEqual(['unknown']);
+    expect(formRules('x' as never).size).toBe(0);
+    expect(formRules([null, { sameAs: 'a', fields: 'b' }] as never).size).toBe(0);
+    expect(transformValue({ name: 'a', type: 'text', transform: 'trim' } as unknown as FieldDefinition, ' a ')).toBe(' a ');
+  });
+});

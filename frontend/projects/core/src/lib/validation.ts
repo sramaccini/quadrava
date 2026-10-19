@@ -56,6 +56,8 @@ function hasExpression(value: unknown): boolean {
 
 /** A rule of a `validation` list. */
 export function compileRule(rule: ValidationRule): CompiledRule {
+  // A rule that is not an object (a definition still being written in the editor) names no validator: fail-closed.
+  if (rule === null || typeof rule !== 'object' || Array.isArray(rule)) return { name: 'unknown', params: {}, dynamic: false, severity: 'error' };
   const base = { message: rule.message, when: rule.when, severity: rule.severity === 'warning' ? ('warning' as const) : ('error' as const) };
   if (rule.rule !== undefined) return { name: 'rule', rule: rule.rule, params: {}, dynamic: false, ...base };
   const rest = Object.fromEntries(Object.entries(rule).filter(([key]) => !META.has(key)));
@@ -79,6 +81,8 @@ const fieldCache = new WeakMap<FieldDefinition, readonly CompiledRule[]>();
 
 /** The rules of a field, in order: flat constraints, `validate`, `validation`. Compiled once per definition. */
 export function fieldRules(field: FieldDefinition): readonly CompiledRule[] {
+  // A definition that is not an object (being written in the editor) has no rules; the schema reports it.
+  if (field === null || typeof field !== 'object') return [];
   let rules = fieldCache.get(field);
   if (rules) return rules;
   const list: CompiledRule[] = [];
@@ -95,7 +99,7 @@ export function fieldRules(field: FieldDefinition): readonly CompiledRule[] {
   if (field.integer) add('integer', 'integer', {});
   for (const key of ['minDate', 'maxDate'] as const) if (field[key] !== undefined) add(key, key, { [key]: field[key] });
   if (field.validate) list.push({ name: 'rule', rule: field.validate.rule, message: field.validate.message, params: {}, dynamic: false, severity: 'error' });
-  for (const rule of field.validation ?? []) list.push(compileRule(rule));
+  if (Array.isArray(field.validation)) for (const rule of field.validation) list.push(compileRule(rule));
   rules = list;
   fieldCache.set(field, rules);
   return rules;
@@ -105,13 +109,14 @@ const formCache = new WeakMap<readonly FormValidationRule[], ReadonlyMap<string,
 
 /** The rules of a form across its fields, by the field they check (`fields`, or the fields of `atLeastOne`). */
 export function formRules(rules: readonly FormValidationRule[] | undefined): ReadonlyMap<string, readonly CompiledRule[]> {
-  if (!rules) return new Map();
+  if (!Array.isArray(rules)) return new Map();
   let byField = formCache.get(rules);
   if (byField) return byField;
   const map = new Map<string, CompiledRule[]>();
   for (const rule of rules) {
     const compiled = compileRule(rule);
-    for (const target of rule.fields ?? rule.atLeastOne ?? []) map.set(target, [...(map.get(target) ?? []), compiled]);
+    const targets = rule?.fields ?? rule?.atLeastOne;
+    for (const target of Array.isArray(targets) ? targets : []) map.set(String(target), [...(map.get(String(target)) ?? []), compiled]);
   }
   byField = map;
   formCache.set(rules, byField);
@@ -127,7 +132,7 @@ const TRANSFORMS: Record<TextTransform, (text: string) => string> = {
 
 /** The value after the `transform` of the field (texts only; the rest as it is). */
 export function transformValue(field: FieldDefinition, value: unknown): unknown {
-  if (typeof value !== 'string' || !field.transform?.length) return value;
+  if (typeof value !== 'string' || !Array.isArray(field?.transform)) return value;
   return field.transform.reduce((text, name) => TRANSFORMS[name]?.(text) ?? text, value);
 }
 
