@@ -634,6 +634,8 @@ export interface ThemeColors {
   border: string;
   danger?: string;
   success?: string;
+  /** Warnings that do not block (#ad6800 if absent). */
+  warning?: string;
 }
 
 export interface ThemeLayout {

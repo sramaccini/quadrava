@@ -84,6 +84,10 @@ export const THEME_SCHEMA: Record<string, unknown> = {
             },
             "success": {
               "$ref": "#/$defs/color"
+            },
+            "warning": {
+              "$ref": "#/$defs/color",
+              "description": "Colour of warnings that do not block (validation warnings, password strength «fair») (#ad6800 if absent). Keep a contrast of at least 4.5:1 with the surface."
             }
           },
           "additionalProperties": false

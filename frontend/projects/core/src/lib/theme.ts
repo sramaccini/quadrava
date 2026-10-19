@@ -17,6 +17,7 @@ export function themeToCssVars(theme: ThemeDefinition): Record<string, string> {
     '--lc-color-border': colors.border,
     '--lc-color-danger': colors.danger ?? '#c62828',
     '--lc-color-success': colors.success ?? '#2e7d32',
+    '--lc-color-warning': colors.warning ?? '#ad6800',
     '--lc-font-family': typography?.fontFamily ?? 'system-ui, sans-serif',
     '--lc-font-size': `${typography?.baseSize ?? 15}px`,
     '--lc-radius': `${shape?.radius ?? 6}px`,

@@ -13,7 +13,8 @@
       "mutedText": "#9aa8b8",
       "border": "#2e3a49",
       "danger": "#ff6b6b",
-      "success": "#5fd38d"
+      "success": "#5fd38d",
+      "warning": "#e8b04b"
     },
     "typography": {
       "fontFamily": "Segoe UI, Roboto, Arial, sans-serif",

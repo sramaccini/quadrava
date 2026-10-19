@@ -50,7 +50,7 @@ export function readable(base: string, background: string): string {
   return toward;
 }
 
-/** NG-ZORRO CSS variables (`--ant-*`) derived from the theme colours: primary, success, error. Pure function. */
+/** NG-ZORRO CSS variables (`--ant-*`) derived from the theme colours: primary, success, warning, error. Pure function. */
 export function themeToNzVars(theme: ThemeDefinition): Record<string, string> {
   const { colors } = theme.tokens;
   const dark = theme.mode === 'dark';
@@ -74,6 +74,7 @@ export function themeToNzVars(theme: ThemeDefinition): Record<string, string> {
   };
   family('primary', colors.primary);
   family('success', colors.success ?? '#2e7d32');
+  family('warning', colors.warning ?? '#ad6800');
   family('error', colors.danger ?? '#c62828');
   vars['--ant-info-color'] = colors.primary;
   return vars;
