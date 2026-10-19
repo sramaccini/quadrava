@@ -106,9 +106,8 @@ test.describe('Studio: document windows', () => {
     await newDocument(page, 'Navigation');
     await newDocument(page, 'Theme', 'Ocean');
     await expect(page.getByRole('region', { name: 'ocean — Theme' })).toBeVisible();
-    // Excluded: the previews (their own pages, checked on the runtime) and the language select of the toolbar, whose inner
-    // search input has no label (a known limit, see HANDOFF).
-    const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).exclude('iframe').exclude('.language').analyze();
+    // Excluded: the previews (their own pages, checked on the runtime).
+    const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).exclude('iframe').analyze();
     const serious = results.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');
     const report = serious.map((v) => `${v.id} (${v.impact}): ${v.help}\n  ${v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join('\n  ')}`);
     expect(report, report.join('\n')).toEqual([]);

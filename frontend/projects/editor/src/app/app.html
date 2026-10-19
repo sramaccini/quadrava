@@ -28,7 +28,9 @@
           }
         }
       </div>
-      <nz-select class="language" nzSize="small" [ngModel]="i18n.locale()" (ngModelChange)="i18n.setLocale($event)" [attr.aria-label]="i18n.t('ed.language')">
+      <!-- The label names the inner field of the select too (nzId), which screen readers and axe read. -->
+      <label class="visually-hidden" for="ed-language">{{ i18n.t('ed.language') }}</label>
+      <nz-select class="language" nzSize="small" nzId="ed-language" [ngModel]="i18n.locale()" (ngModelChange)="i18n.setLocale($event)" [attr.aria-label]="i18n.t('ed.language')">
         @for (l of languages; track l) {
           <nz-option [nzValue]="l" [nzLabel]="l.toUpperCase()" />
         }
