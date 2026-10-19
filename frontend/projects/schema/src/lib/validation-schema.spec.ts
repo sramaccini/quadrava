@@ -70,4 +70,18 @@ describe('validation in the screen schema', () => {
   it('a form rule must name the fields it checks, except atLeastOne', () => {
     expect(issuesOf(form([{ name: 'a', type: 'date' }], { validation: [{ after: 'a' }] })).length).toBeGreaterThan(0);
   });
+
+  it('points at the wrong properties of a rule, shared ones (message, severity, fields) included', () => {
+    const paths = (doc: unknown) => [...new Set(issuesOf(doc))].sort();
+    expect(paths(form([{ name: 'a', type: 'text', validation: [{ minLength: -1, severity: 'fatal', extra: 1 }] }]))).toEqual([
+      '/components/0/fields/0/validation/0',
+      '/components/0/fields/0/validation/0/minLength',
+      '/components/0/fields/0/validation/0/severity',
+    ]);
+    expect(paths(form([{ name: 'a', type: 'date' }], { validation: [{ after: 'a', fields: [], message: 3 }] }))).toEqual([
+      '/components/0/validation/0',
+      '/components/0/validation/0/fields',
+      '/components/0/validation/0/message',
+    ]);
+  });
 });

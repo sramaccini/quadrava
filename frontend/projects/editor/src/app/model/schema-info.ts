@@ -134,7 +134,7 @@ export class SchemaReader {
   private itemShapeOf(items: Schema): ItemShape | null {
     const options = this.alternatives(items);
     if (options) {
-      const shapes = options.map((option) => this.shapeOf(option));
+      const shapes = options.map((option) => this.variantShapeOf(option));
       if (shapes.some((shape) => !shape)) return null;
       // The key of a variant: the first required property that not all variants have
       // (`call`, `toast`… for steps; `screen` or `children` for menu items).
@@ -147,6 +147,22 @@ export class SchemaReader {
     }
     const shape = this.shapeOf(items);
     return shape?.closed ? { fields: this.describe(shape.properties, shape.required) } : null;
+  }
+
+  /**
+   * The shape of a variant. A variant that takes the properties it shares with the others from a definition (the
+   * validation rules: message, when…) names them with `true`, in its own order: they keep the schema of the definition.
+   */
+  private variantShapeOf(option: Schema): Shape | null {
+    const shape = this.shapeOf(option);
+    const own = option['properties'] as Record<string, Schema> | undefined;
+    const ref = option['$ref'];
+    if (!shape || !isObject(own as Json) || typeof ref !== 'string') return shape;
+    const base = this.shapeOf({ $ref: ref })?.properties ?? {};
+    const properties: Record<string, Schema> = {};
+    for (const [name, schema] of Object.entries(own!)) properties[name] = (schema as unknown) === true ? (base[name] ?? schema) : schema;
+    for (const [name, schema] of Object.entries(shape.properties)) properties[name] ??= schema;
+    return { ...shape, properties };
   }
 
   /** The fields of a property of kind `object`. */

@@ -98,7 +98,9 @@ for (const variant of defs.fieldRule.oneOf) {
   out.push('');
   out.push(`### \`${key}\``);
   out.push('');
-  out.push(table(variant.properties, variant.required));
+  // The properties shared by the rules (message, when, severity) are named with `true`: their schema is in ruleOptions.
+  const properties = Object.fromEntries(Object.entries(variant.properties).map(([name, schema]) => [name, schema === true ? defs.ruleOptions.properties[name] : schema]));
+  out.push(table(properties, variant.required));
 }
 out.push('');
 out.push('## Data sources');

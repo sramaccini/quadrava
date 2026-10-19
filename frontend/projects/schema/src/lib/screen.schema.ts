@@ -2867,43 +2867,53 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
         }
       }
     },
+    "ruleOptions": {
+      "description": "Properties shared by the validation rules of fields and forms: each rule names them with true and takes their schema from here.",
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string",
+          "description": "Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}."
+        },
+        "when": {
+          "$ref": "#/$defs/expression",
+          "description": "Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies."
+        },
+        "severity": {
+          "enum": [
+            "error",
+            "warning"
+          ],
+          "description": "error: blocks sending (default); warning: the message is shown but does not block."
+        }
+      }
+    },
     "fieldRule": {
       "description": "Validation rule of a field, named by its key ({ \"minLength\": 3 }, { \"format\": \"iban\" }, { \"rule\": \"{{…}}\" }, { \"use\": \"staffNumber\" } for a validator of the application).",
       "oneOf": [
         {
           "type": "object",
+          "$ref": "#/$defs/ruleOptions",
           "required": [
             "required"
           ],
-          "additionalProperties": false,
           "properties": {
             "required": {
               "const": true,
               "description": "The field must be filled in; with when, only while the condition holds (conditional required)."
             },
-            "message": {
-              "type": "string",
-              "description": "Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}."
-            },
-            "when": {
-              "$ref": "#/$defs/expression",
-              "description": "Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies."
-            },
-            "severity": {
-              "enum": [
-                "error",
-                "warning"
-              ],
-              "description": "error: blocks sending (default); warning: the message is shown but does not block."
-            }
-          }
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
         },
         {
           "type": "object",
+          "$ref": "#/$defs/ruleOptions",
           "required": [
             "minLength"
           ],
-          "additionalProperties": false,
           "properties": {
             "minLength": {
               "type": "integer",
@@ -2911,29 +2921,18 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
               "maximum": 100000,
               "description": "For text, textarea and richtext: minimum number of characters."
             },
-            "message": {
-              "type": "string",
-              "description": "Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}."
-            },
-            "when": {
-              "$ref": "#/$defs/expression",
-              "description": "Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies."
-            },
-            "severity": {
-              "enum": [
-                "error",
-                "warning"
-              ],
-              "description": "error: blocks sending (default); warning: the message is shown but does not block."
-            }
-          }
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
         },
         {
           "type": "object",
+          "$ref": "#/$defs/ruleOptions",
           "required": [
             "maxLength"
           ],
-          "additionalProperties": false,
           "properties": {
             "maxLength": {
               "type": "integer",
@@ -2941,29 +2940,18 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
               "maximum": 100000,
               "description": "For text, textarea and richtext: maximum number of characters."
             },
-            "message": {
-              "type": "string",
-              "description": "Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}."
-            },
-            "when": {
-              "$ref": "#/$defs/expression",
-              "description": "Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies."
-            },
-            "severity": {
-              "enum": [
-                "error",
-                "warning"
-              ],
-              "description": "error: blocks sending (default); warning: the message is shown but does not block."
-            }
-          }
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
         },
         {
           "type": "object",
+          "$ref": "#/$defs/ruleOptions",
           "required": [
             "pattern"
           ],
-          "additionalProperties": false,
           "properties": {
             "pattern": {
               "type": "string",
@@ -2971,29 +2959,18 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
               "maxLength": 500,
               "description": "For text and textarea: regular expression (JavaScript syntax, Unicode) that the whole value must match, as in the HTML pattern attribute (no need for ^ and $). Values longer than 1000 characters never match."
             },
-            "message": {
-              "type": "string",
-              "description": "Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}."
-            },
-            "when": {
-              "$ref": "#/$defs/expression",
-              "description": "Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies."
-            },
-            "severity": {
-              "enum": [
-                "error",
-                "warning"
-              ],
-              "description": "error: blocks sending (default); warning: the message is shown but does not block."
-            }
-          }
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
         },
         {
           "type": "object",
+          "$ref": "#/$defs/ruleOptions",
           "required": [
             "format"
           ],
-          "additionalProperties": false,
           "properties": {
             "format": {
               "enum": [
@@ -3016,114 +2993,70 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
               "pattern": "^([A-Z]{2}|\\{\\{[\\s\\S]+\\}\\})$",
               "description": "For the national formats: ISO 3166 two-letter country code (IT, DE…) or an expression that gives it, for example {{form.country}}. Required by taxCode, companyId and postalCode; optional for vatNumber."
             },
-            "message": {
-              "type": "string",
-              "description": "Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}."
-            },
-            "when": {
-              "$ref": "#/$defs/expression",
-              "description": "Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies."
-            },
-            "severity": {
-              "enum": [
-                "error",
-                "warning"
-              ],
-              "description": "error: blocks sending (default); warning: the message is shown but does not block."
-            }
-          }
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
         },
         {
           "type": "object",
+          "$ref": "#/$defs/ruleOptions",
           "required": [
             "min"
           ],
-          "additionalProperties": false,
           "properties": {
             "min": {
               "type": "number",
               "description": "For number: smallest value allowed."
             },
-            "message": {
-              "type": "string",
-              "description": "Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}."
-            },
-            "when": {
-              "$ref": "#/$defs/expression",
-              "description": "Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies."
-            },
-            "severity": {
-              "enum": [
-                "error",
-                "warning"
-              ],
-              "description": "error: blocks sending (default); warning: the message is shown but does not block."
-            }
-          }
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
         },
         {
           "type": "object",
+          "$ref": "#/$defs/ruleOptions",
           "required": [
             "max"
           ],
-          "additionalProperties": false,
           "properties": {
             "max": {
               "type": "number",
               "description": "For number: largest value allowed."
             },
-            "message": {
-              "type": "string",
-              "description": "Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}."
-            },
-            "when": {
-              "$ref": "#/$defs/expression",
-              "description": "Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies."
-            },
-            "severity": {
-              "enum": [
-                "error",
-                "warning"
-              ],
-              "description": "error: blocks sending (default); warning: the message is shown but does not block."
-            }
-          }
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
         },
         {
           "type": "object",
+          "$ref": "#/$defs/ruleOptions",
           "required": [
             "step"
           ],
-          "additionalProperties": false,
           "properties": {
             "step": {
               "type": "number",
               "exclusiveMinimum": 0,
               "description": "For number: the value must be a multiple of step, counted from min (from 0 without min); it is also the step of the arrows of the box."
             },
-            "message": {
-              "type": "string",
-              "description": "Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}."
-            },
-            "when": {
-              "$ref": "#/$defs/expression",
-              "description": "Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies."
-            },
-            "severity": {
-              "enum": [
-                "error",
-                "warning"
-              ],
-              "description": "error: blocks sending (default); warning: the message is shown but does not block."
-            }
-          }
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
         },
         {
           "type": "object",
+          "$ref": "#/$defs/ruleOptions",
           "required": [
             "decimals"
           ],
-          "additionalProperties": false,
           "properties": {
             "decimals": {
               "type": "integer",
@@ -3131,144 +3064,89 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
               "maximum": 10,
               "description": "For number: maximum number of decimal places."
             },
-            "message": {
-              "type": "string",
-              "description": "Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}."
-            },
-            "when": {
-              "$ref": "#/$defs/expression",
-              "description": "Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies."
-            },
-            "severity": {
-              "enum": [
-                "error",
-                "warning"
-              ],
-              "description": "error: blocks sending (default); warning: the message is shown but does not block."
-            }
-          }
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
         },
         {
           "type": "object",
+          "$ref": "#/$defs/ruleOptions",
           "required": [
             "integer"
           ],
-          "additionalProperties": false,
           "properties": {
             "integer": {
               "const": true,
               "description": "For number: whole numbers only."
             },
-            "message": {
-              "type": "string",
-              "description": "Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}."
-            },
-            "when": {
-              "$ref": "#/$defs/expression",
-              "description": "Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies."
-            },
-            "severity": {
-              "enum": [
-                "error",
-                "warning"
-              ],
-              "description": "error: blocks sending (default); warning: the message is shown but does not block."
-            }
-          }
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
         },
         {
           "type": "object",
+          "$ref": "#/$defs/ruleOptions",
           "required": [
             "minDate"
           ],
-          "additionalProperties": false,
           "properties": {
             "minDate": {
               "type": "string",
               "pattern": "^\\d{4}-\\d{2}-\\d{2}(T\\d{2}:\\d{2})?$",
               "description": "For date and datetime: earliest date allowed, as YYYY-MM-DD (or YYYY-MM-DDTHH:mm). Earlier days cannot be chosen in the calendar."
             },
-            "message": {
-              "type": "string",
-              "description": "Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}."
-            },
-            "when": {
-              "$ref": "#/$defs/expression",
-              "description": "Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies."
-            },
-            "severity": {
-              "enum": [
-                "error",
-                "warning"
-              ],
-              "description": "error: blocks sending (default); warning: the message is shown but does not block."
-            }
-          }
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
         },
         {
           "type": "object",
+          "$ref": "#/$defs/ruleOptions",
           "required": [
             "maxDate"
           ],
-          "additionalProperties": false,
           "properties": {
             "maxDate": {
               "type": "string",
               "pattern": "^\\d{4}-\\d{2}-\\d{2}(T\\d{2}:\\d{2})?$",
               "description": "For date and datetime: latest date allowed, as YYYY-MM-DD (or YYYY-MM-DDTHH:mm). Later days cannot be chosen in the calendar."
             },
-            "message": {
-              "type": "string",
-              "description": "Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}."
-            },
-            "when": {
-              "$ref": "#/$defs/expression",
-              "description": "Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies."
-            },
-            "severity": {
-              "enum": [
-                "error",
-                "warning"
-              ],
-              "description": "error: blocks sending (default); warning: the message is shown but does not block."
-            }
-          }
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
         },
         {
           "type": "object",
+          "$ref": "#/$defs/ruleOptions",
           "required": [
             "sameAs"
           ],
-          "additionalProperties": false,
           "properties": {
             "sameAs": {
               "type": "string",
               "pattern": "^[a-zA-Z][A-Za-z0-9]*$",
               "description": "The value must be equal to that of this other field (a confirmation of an email or a code)."
             },
-            "message": {
-              "type": "string",
-              "description": "Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}."
-            },
-            "when": {
-              "$ref": "#/$defs/expression",
-              "description": "Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies."
-            },
-            "severity": {
-              "enum": [
-                "error",
-                "warning"
-              ],
-              "description": "error: blocks sending (default); warning: the message is shown but does not block."
-            }
-          }
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
         },
         {
           "type": "object",
+          "$ref": "#/$defs/ruleOptions",
           "required": [
             "after"
           ],
-          "additionalProperties": false,
           "properties": {
             "after": {
               "type": "string",
@@ -3279,29 +3157,18 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
               "type": "boolean",
               "description": "The same date is allowed too."
             },
-            "message": {
-              "type": "string",
-              "description": "Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}."
-            },
-            "when": {
-              "$ref": "#/$defs/expression",
-              "description": "Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies."
-            },
-            "severity": {
-              "enum": [
-                "error",
-                "warning"
-              ],
-              "description": "error: blocks sending (default); warning: the message is shown but does not block."
-            }
-          }
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
         },
         {
           "type": "object",
+          "$ref": "#/$defs/ruleOptions",
           "required": [
             "before"
           ],
-          "additionalProperties": false,
           "properties": {
             "before": {
               "type": "string",
@@ -3312,29 +3179,18 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
               "type": "boolean",
               "description": "The same date is allowed too."
             },
-            "message": {
-              "type": "string",
-              "description": "Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}."
-            },
-            "when": {
-              "$ref": "#/$defs/expression",
-              "description": "Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies."
-            },
-            "severity": {
-              "enum": [
-                "error",
-                "warning"
-              ],
-              "description": "error: blocks sending (default); warning: the message is shown but does not block."
-            }
-          }
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
         },
         {
           "type": "object",
+          "$ref": "#/$defs/ruleOptions",
           "required": [
             "atLeastOne"
           ],
-          "additionalProperties": false,
           "properties": {
             "atLeastOne": {
               "type": "array",
@@ -3346,86 +3202,53 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
               },
               "description": "At least one of these fields (or this field) must be filled in. On the form, the message goes to all of them unless fields says otherwise."
             },
-            "message": {
-              "type": "string",
-              "description": "Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}."
-            },
-            "when": {
-              "$ref": "#/$defs/expression",
-              "description": "Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies."
-            },
-            "severity": {
-              "enum": [
-                "error",
-                "warning"
-              ],
-              "description": "error: blocks sending (default); warning: the message is shown but does not block."
-            }
-          }
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
         },
         {
           "type": "object",
+          "$ref": "#/$defs/ruleOptions",
           "required": [
             "unique"
           ],
-          "additionalProperties": false,
           "properties": {
             "unique": {
               "type": "string",
               "pattern": "^[a-zA-Z][A-Za-z0-9]*$",
               "description": "For repeater: name of the column whose values must not repeat across rows; the repeated cells are marked."
             },
-            "message": {
-              "type": "string",
-              "description": "Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}."
-            },
-            "when": {
-              "$ref": "#/$defs/expression",
-              "description": "Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies."
-            },
-            "severity": {
-              "enum": [
-                "error",
-                "warning"
-              ],
-              "description": "error: blocks sending (default); warning: the message is shown but does not block."
-            }
-          }
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
         },
         {
           "type": "object",
+          "$ref": "#/$defs/ruleOptions",
           "required": [
             "rule"
           ],
-          "additionalProperties": false,
           "properties": {
             "rule": {
               "$ref": "#/$defs/expression",
               "description": "CEL condition that must be true; it sees the field in value, the form in form and the row of a repeater in item."
             },
-            "message": {
-              "type": "string",
-              "description": "Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}."
-            },
-            "when": {
-              "$ref": "#/$defs/expression",
-              "description": "Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies."
-            },
-            "severity": {
-              "enum": [
-                "error",
-                "warning"
-              ],
-              "description": "error: blocks sending (default); warning: the message is shown but does not block."
-            }
-          }
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
         },
         {
           "type": "object",
+          "$ref": "#/$defs/ruleOptions",
           "required": [
             "use"
           ],
-          "additionalProperties": false,
           "properties": {
             "use": {
               "type": "string",
@@ -3436,74 +3259,60 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
               "type": "object",
               "description": "Parameters of the validator."
             },
-            "message": {
-              "type": "string",
-              "description": "Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}."
-            },
-            "when": {
-              "$ref": "#/$defs/expression",
-              "description": "Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies."
-            },
-            "severity": {
-              "enum": [
-                "error",
-                "warning"
-              ],
-              "description": "error: blocks sending (default); warning: the message is shown but does not block."
-            }
-          }
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
         }
       ]
+    },
+    "formRuleOptions": {
+      "description": "Properties shared by the validation rules of forms (those of ruleOptions plus fields).",
+      "type": "object",
+      "$ref": "#/$defs/ruleOptions",
+      "properties": {
+        "fields": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 10,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-zA-Z][A-Za-z0-9]*$"
+          },
+          "description": "Fields of the form the rule checks and the message goes to. Required, except for atLeastOne (its own fields if absent)."
+        }
+      }
     },
     "formRule": {
       "description": "Validation rule of a form across its fields: like the rules of a field, plus fields, the fields it checks.",
       "oneOf": [
         {
           "type": "object",
+          "$ref": "#/$defs/formRuleOptions",
           "required": [
             "required",
             "fields"
           ],
-          "additionalProperties": false,
           "properties": {
             "required": {
               "const": true,
               "description": "The field must be filled in; with when, only while the condition holds (conditional required)."
             },
-            "fields": {
-              "type": "array",
-              "minItems": 1,
-              "maxItems": 10,
-              "items": {
-                "type": "string",
-                "pattern": "^[a-zA-Z][A-Za-z0-9]*$"
-              },
-              "description": "Fields of the form the rule checks and the message goes to. Required, except for atLeastOne (its own fields if absent)."
-            },
-            "message": {
-              "type": "string",
-              "description": "Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}."
-            },
-            "when": {
-              "$ref": "#/$defs/expression",
-              "description": "Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies."
-            },
-            "severity": {
-              "enum": [
-                "error",
-                "warning"
-              ],
-              "description": "error: blocks sending (default); warning: the message is shown but does not block."
-            }
-          }
+            "fields": true,
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
         },
         {
           "type": "object",
+          "$ref": "#/$defs/formRuleOptions",
           "required": [
             "minLength",
             "fields"
           ],
-          "additionalProperties": false,
           "properties": {
             "minLength": {
               "type": "integer",
@@ -3511,40 +3320,20 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
               "maximum": 100000,
               "description": "For text, textarea and richtext: minimum number of characters."
             },
-            "fields": {
-              "type": "array",
-              "minItems": 1,
-              "maxItems": 10,
-              "items": {
-                "type": "string",
-                "pattern": "^[a-zA-Z][A-Za-z0-9]*$"
-              },
-              "description": "Fields of the form the rule checks and the message goes to. Required, except for atLeastOne (its own fields if absent)."
-            },
-            "message": {
-              "type": "string",
-              "description": "Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}."
-            },
-            "when": {
-              "$ref": "#/$defs/expression",
-              "description": "Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies."
-            },
-            "severity": {
-              "enum": [
-                "error",
-                "warning"
-              ],
-              "description": "error: blocks sending (default); warning: the message is shown but does not block."
-            }
-          }
+            "fields": true,
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
         },
         {
           "type": "object",
+          "$ref": "#/$defs/formRuleOptions",
           "required": [
             "maxLength",
             "fields"
           ],
-          "additionalProperties": false,
           "properties": {
             "maxLength": {
               "type": "integer",
@@ -3552,40 +3341,20 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
               "maximum": 100000,
               "description": "For text, textarea and richtext: maximum number of characters."
             },
-            "fields": {
-              "type": "array",
-              "minItems": 1,
-              "maxItems": 10,
-              "items": {
-                "type": "string",
-                "pattern": "^[a-zA-Z][A-Za-z0-9]*$"
-              },
-              "description": "Fields of the form the rule checks and the message goes to. Required, except for atLeastOne (its own fields if absent)."
-            },
-            "message": {
-              "type": "string",
-              "description": "Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}."
-            },
-            "when": {
-              "$ref": "#/$defs/expression",
-              "description": "Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies."
-            },
-            "severity": {
-              "enum": [
-                "error",
-                "warning"
-              ],
-              "description": "error: blocks sending (default); warning: the message is shown but does not block."
-            }
-          }
+            "fields": true,
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
         },
         {
           "type": "object",
+          "$ref": "#/$defs/formRuleOptions",
           "required": [
             "pattern",
             "fields"
           ],
-          "additionalProperties": false,
           "properties": {
             "pattern": {
               "type": "string",
@@ -3593,40 +3362,20 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
               "maxLength": 500,
               "description": "For text and textarea: regular expression (JavaScript syntax, Unicode) that the whole value must match, as in the HTML pattern attribute (no need for ^ and $). Values longer than 1000 characters never match."
             },
-            "fields": {
-              "type": "array",
-              "minItems": 1,
-              "maxItems": 10,
-              "items": {
-                "type": "string",
-                "pattern": "^[a-zA-Z][A-Za-z0-9]*$"
-              },
-              "description": "Fields of the form the rule checks and the message goes to. Required, except for atLeastOne (its own fields if absent)."
-            },
-            "message": {
-              "type": "string",
-              "description": "Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}."
-            },
-            "when": {
-              "$ref": "#/$defs/expression",
-              "description": "Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies."
-            },
-            "severity": {
-              "enum": [
-                "error",
-                "warning"
-              ],
-              "description": "error: blocks sending (default); warning: the message is shown but does not block."
-            }
-          }
+            "fields": true,
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
         },
         {
           "type": "object",
+          "$ref": "#/$defs/formRuleOptions",
           "required": [
             "format",
             "fields"
           ],
-          "additionalProperties": false,
           "properties": {
             "format": {
               "enum": [
@@ -3649,158 +3398,78 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
               "pattern": "^([A-Z]{2}|\\{\\{[\\s\\S]+\\}\\})$",
               "description": "For the national formats: ISO 3166 two-letter country code (IT, DE…) or an expression that gives it, for example {{form.country}}. Required by taxCode, companyId and postalCode; optional for vatNumber."
             },
-            "fields": {
-              "type": "array",
-              "minItems": 1,
-              "maxItems": 10,
-              "items": {
-                "type": "string",
-                "pattern": "^[a-zA-Z][A-Za-z0-9]*$"
-              },
-              "description": "Fields of the form the rule checks and the message goes to. Required, except for atLeastOne (its own fields if absent)."
-            },
-            "message": {
-              "type": "string",
-              "description": "Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}."
-            },
-            "when": {
-              "$ref": "#/$defs/expression",
-              "description": "Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies."
-            },
-            "severity": {
-              "enum": [
-                "error",
-                "warning"
-              ],
-              "description": "error: blocks sending (default); warning: the message is shown but does not block."
-            }
-          }
+            "fields": true,
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
         },
         {
           "type": "object",
+          "$ref": "#/$defs/formRuleOptions",
           "required": [
             "min",
             "fields"
           ],
-          "additionalProperties": false,
           "properties": {
             "min": {
               "type": "number",
               "description": "For number: smallest value allowed."
             },
-            "fields": {
-              "type": "array",
-              "minItems": 1,
-              "maxItems": 10,
-              "items": {
-                "type": "string",
-                "pattern": "^[a-zA-Z][A-Za-z0-9]*$"
-              },
-              "description": "Fields of the form the rule checks and the message goes to. Required, except for atLeastOne (its own fields if absent)."
-            },
-            "message": {
-              "type": "string",
-              "description": "Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}."
-            },
-            "when": {
-              "$ref": "#/$defs/expression",
-              "description": "Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies."
-            },
-            "severity": {
-              "enum": [
-                "error",
-                "warning"
-              ],
-              "description": "error: blocks sending (default); warning: the message is shown but does not block."
-            }
-          }
+            "fields": true,
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
         },
         {
           "type": "object",
+          "$ref": "#/$defs/formRuleOptions",
           "required": [
             "max",
             "fields"
           ],
-          "additionalProperties": false,
           "properties": {
             "max": {
               "type": "number",
               "description": "For number: largest value allowed."
             },
-            "fields": {
-              "type": "array",
-              "minItems": 1,
-              "maxItems": 10,
-              "items": {
-                "type": "string",
-                "pattern": "^[a-zA-Z][A-Za-z0-9]*$"
-              },
-              "description": "Fields of the form the rule checks and the message goes to. Required, except for atLeastOne (its own fields if absent)."
-            },
-            "message": {
-              "type": "string",
-              "description": "Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}."
-            },
-            "when": {
-              "$ref": "#/$defs/expression",
-              "description": "Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies."
-            },
-            "severity": {
-              "enum": [
-                "error",
-                "warning"
-              ],
-              "description": "error: blocks sending (default); warning: the message is shown but does not block."
-            }
-          }
+            "fields": true,
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
         },
         {
           "type": "object",
+          "$ref": "#/$defs/formRuleOptions",
           "required": [
             "step",
             "fields"
           ],
-          "additionalProperties": false,
           "properties": {
             "step": {
               "type": "number",
               "exclusiveMinimum": 0,
               "description": "For number: the value must be a multiple of step, counted from min (from 0 without min); it is also the step of the arrows of the box."
             },
-            "fields": {
-              "type": "array",
-              "minItems": 1,
-              "maxItems": 10,
-              "items": {
-                "type": "string",
-                "pattern": "^[a-zA-Z][A-Za-z0-9]*$"
-              },
-              "description": "Fields of the form the rule checks and the message goes to. Required, except for atLeastOne (its own fields if absent)."
-            },
-            "message": {
-              "type": "string",
-              "description": "Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}."
-            },
-            "when": {
-              "$ref": "#/$defs/expression",
-              "description": "Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies."
-            },
-            "severity": {
-              "enum": [
-                "error",
-                "warning"
-              ],
-              "description": "error: blocks sending (default); warning: the message is shown but does not block."
-            }
-          }
+            "fields": true,
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
         },
         {
           "type": "object",
+          "$ref": "#/$defs/formRuleOptions",
           "required": [
             "decimals",
             "fields"
           ],
-          "additionalProperties": false,
           "properties": {
             "decimals": {
               "type": "integer",
@@ -3808,199 +3477,99 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
               "maximum": 10,
               "description": "For number: maximum number of decimal places."
             },
-            "fields": {
-              "type": "array",
-              "minItems": 1,
-              "maxItems": 10,
-              "items": {
-                "type": "string",
-                "pattern": "^[a-zA-Z][A-Za-z0-9]*$"
-              },
-              "description": "Fields of the form the rule checks and the message goes to. Required, except for atLeastOne (its own fields if absent)."
-            },
-            "message": {
-              "type": "string",
-              "description": "Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}."
-            },
-            "when": {
-              "$ref": "#/$defs/expression",
-              "description": "Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies."
-            },
-            "severity": {
-              "enum": [
-                "error",
-                "warning"
-              ],
-              "description": "error: blocks sending (default); warning: the message is shown but does not block."
-            }
-          }
+            "fields": true,
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
         },
         {
           "type": "object",
+          "$ref": "#/$defs/formRuleOptions",
           "required": [
             "integer",
             "fields"
           ],
-          "additionalProperties": false,
           "properties": {
             "integer": {
               "const": true,
               "description": "For number: whole numbers only."
             },
-            "fields": {
-              "type": "array",
-              "minItems": 1,
-              "maxItems": 10,
-              "items": {
-                "type": "string",
-                "pattern": "^[a-zA-Z][A-Za-z0-9]*$"
-              },
-              "description": "Fields of the form the rule checks and the message goes to. Required, except for atLeastOne (its own fields if absent)."
-            },
-            "message": {
-              "type": "string",
-              "description": "Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}."
-            },
-            "when": {
-              "$ref": "#/$defs/expression",
-              "description": "Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies."
-            },
-            "severity": {
-              "enum": [
-                "error",
-                "warning"
-              ],
-              "description": "error: blocks sending (default); warning: the message is shown but does not block."
-            }
-          }
+            "fields": true,
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
         },
         {
           "type": "object",
+          "$ref": "#/$defs/formRuleOptions",
           "required": [
             "minDate",
             "fields"
           ],
-          "additionalProperties": false,
           "properties": {
             "minDate": {
               "type": "string",
               "pattern": "^\\d{4}-\\d{2}-\\d{2}(T\\d{2}:\\d{2})?$",
               "description": "For date and datetime: earliest date allowed, as YYYY-MM-DD (or YYYY-MM-DDTHH:mm). Earlier days cannot be chosen in the calendar."
             },
-            "fields": {
-              "type": "array",
-              "minItems": 1,
-              "maxItems": 10,
-              "items": {
-                "type": "string",
-                "pattern": "^[a-zA-Z][A-Za-z0-9]*$"
-              },
-              "description": "Fields of the form the rule checks and the message goes to. Required, except for atLeastOne (its own fields if absent)."
-            },
-            "message": {
-              "type": "string",
-              "description": "Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}."
-            },
-            "when": {
-              "$ref": "#/$defs/expression",
-              "description": "Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies."
-            },
-            "severity": {
-              "enum": [
-                "error",
-                "warning"
-              ],
-              "description": "error: blocks sending (default); warning: the message is shown but does not block."
-            }
-          }
+            "fields": true,
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
         },
         {
           "type": "object",
+          "$ref": "#/$defs/formRuleOptions",
           "required": [
             "maxDate",
             "fields"
           ],
-          "additionalProperties": false,
           "properties": {
             "maxDate": {
               "type": "string",
               "pattern": "^\\d{4}-\\d{2}-\\d{2}(T\\d{2}:\\d{2})?$",
               "description": "For date and datetime: latest date allowed, as YYYY-MM-DD (or YYYY-MM-DDTHH:mm). Later days cannot be chosen in the calendar."
             },
-            "fields": {
-              "type": "array",
-              "minItems": 1,
-              "maxItems": 10,
-              "items": {
-                "type": "string",
-                "pattern": "^[a-zA-Z][A-Za-z0-9]*$"
-              },
-              "description": "Fields of the form the rule checks and the message goes to. Required, except for atLeastOne (its own fields if absent)."
-            },
-            "message": {
-              "type": "string",
-              "description": "Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}."
-            },
-            "when": {
-              "$ref": "#/$defs/expression",
-              "description": "Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies."
-            },
-            "severity": {
-              "enum": [
-                "error",
-                "warning"
-              ],
-              "description": "error: blocks sending (default); warning: the message is shown but does not block."
-            }
-          }
+            "fields": true,
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
         },
         {
           "type": "object",
+          "$ref": "#/$defs/formRuleOptions",
           "required": [
             "sameAs",
             "fields"
           ],
-          "additionalProperties": false,
           "properties": {
             "sameAs": {
               "type": "string",
               "pattern": "^[a-zA-Z][A-Za-z0-9]*$",
               "description": "The value must be equal to that of this other field (a confirmation of an email or a code)."
             },
-            "fields": {
-              "type": "array",
-              "minItems": 1,
-              "maxItems": 10,
-              "items": {
-                "type": "string",
-                "pattern": "^[a-zA-Z][A-Za-z0-9]*$"
-              },
-              "description": "Fields of the form the rule checks and the message goes to. Required, except for atLeastOne (its own fields if absent)."
-            },
-            "message": {
-              "type": "string",
-              "description": "Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}."
-            },
-            "when": {
-              "$ref": "#/$defs/expression",
-              "description": "Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies."
-            },
-            "severity": {
-              "enum": [
-                "error",
-                "warning"
-              ],
-              "description": "error: blocks sending (default); warning: the message is shown but does not block."
-            }
-          }
+            "fields": true,
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
         },
         {
           "type": "object",
+          "$ref": "#/$defs/formRuleOptions",
           "required": [
             "after",
             "fields"
           ],
-          "additionalProperties": false,
           "properties": {
             "after": {
               "type": "string",
@@ -4011,40 +3580,20 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
               "type": "boolean",
               "description": "The same date is allowed too."
             },
-            "fields": {
-              "type": "array",
-              "minItems": 1,
-              "maxItems": 10,
-              "items": {
-                "type": "string",
-                "pattern": "^[a-zA-Z][A-Za-z0-9]*$"
-              },
-              "description": "Fields of the form the rule checks and the message goes to. Required, except for atLeastOne (its own fields if absent)."
-            },
-            "message": {
-              "type": "string",
-              "description": "Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}."
-            },
-            "when": {
-              "$ref": "#/$defs/expression",
-              "description": "Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies."
-            },
-            "severity": {
-              "enum": [
-                "error",
-                "warning"
-              ],
-              "description": "error: blocks sending (default); warning: the message is shown but does not block."
-            }
-          }
+            "fields": true,
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
         },
         {
           "type": "object",
+          "$ref": "#/$defs/formRuleOptions",
           "required": [
             "before",
             "fields"
           ],
-          "additionalProperties": false,
           "properties": {
             "before": {
               "type": "string",
@@ -4055,39 +3604,19 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
               "type": "boolean",
               "description": "The same date is allowed too."
             },
-            "fields": {
-              "type": "array",
-              "minItems": 1,
-              "maxItems": 10,
-              "items": {
-                "type": "string",
-                "pattern": "^[a-zA-Z][A-Za-z0-9]*$"
-              },
-              "description": "Fields of the form the rule checks and the message goes to. Required, except for atLeastOne (its own fields if absent)."
-            },
-            "message": {
-              "type": "string",
-              "description": "Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}."
-            },
-            "when": {
-              "$ref": "#/$defs/expression",
-              "description": "Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies."
-            },
-            "severity": {
-              "enum": [
-                "error",
-                "warning"
-              ],
-              "description": "error: blocks sending (default); warning: the message is shown but does not block."
-            }
-          }
+            "fields": true,
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
         },
         {
           "type": "object",
+          "$ref": "#/$defs/formRuleOptions",
           "required": [
             "atLeastOne"
           ],
-          "additionalProperties": false,
           "properties": {
             "atLeastOne": {
               "type": "array",
@@ -4099,119 +3628,59 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
               },
               "description": "At least one of these fields (or this field) must be filled in. On the form, the message goes to all of them unless fields says otherwise."
             },
-            "fields": {
-              "type": "array",
-              "minItems": 1,
-              "maxItems": 10,
-              "items": {
-                "type": "string",
-                "pattern": "^[a-zA-Z][A-Za-z0-9]*$"
-              },
-              "description": "Fields of the form the rule checks and the message goes to. Required, except for atLeastOne (its own fields if absent)."
-            },
-            "message": {
-              "type": "string",
-              "description": "Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}."
-            },
-            "when": {
-              "$ref": "#/$defs/expression",
-              "description": "Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies."
-            },
-            "severity": {
-              "enum": [
-                "error",
-                "warning"
-              ],
-              "description": "error: blocks sending (default); warning: the message is shown but does not block."
-            }
-          }
+            "fields": true,
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
         },
         {
           "type": "object",
+          "$ref": "#/$defs/formRuleOptions",
           "required": [
             "unique",
             "fields"
           ],
-          "additionalProperties": false,
           "properties": {
             "unique": {
               "type": "string",
               "pattern": "^[a-zA-Z][A-Za-z0-9]*$",
               "description": "For repeater: name of the column whose values must not repeat across rows; the repeated cells are marked."
             },
-            "fields": {
-              "type": "array",
-              "minItems": 1,
-              "maxItems": 10,
-              "items": {
-                "type": "string",
-                "pattern": "^[a-zA-Z][A-Za-z0-9]*$"
-              },
-              "description": "Fields of the form the rule checks and the message goes to. Required, except for atLeastOne (its own fields if absent)."
-            },
-            "message": {
-              "type": "string",
-              "description": "Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}."
-            },
-            "when": {
-              "$ref": "#/$defs/expression",
-              "description": "Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies."
-            },
-            "severity": {
-              "enum": [
-                "error",
-                "warning"
-              ],
-              "description": "error: blocks sending (default); warning: the message is shown but does not block."
-            }
-          }
+            "fields": true,
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
         },
         {
           "type": "object",
+          "$ref": "#/$defs/formRuleOptions",
           "required": [
             "rule",
             "fields"
           ],
-          "additionalProperties": false,
           "properties": {
             "rule": {
               "$ref": "#/$defs/expression",
               "description": "CEL condition that must be true; it sees the field in value, the form in form and the row of a repeater in item."
             },
-            "fields": {
-              "type": "array",
-              "minItems": 1,
-              "maxItems": 10,
-              "items": {
-                "type": "string",
-                "pattern": "^[a-zA-Z][A-Za-z0-9]*$"
-              },
-              "description": "Fields of the form the rule checks and the message goes to. Required, except for atLeastOne (its own fields if absent)."
-            },
-            "message": {
-              "type": "string",
-              "description": "Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}."
-            },
-            "when": {
-              "$ref": "#/$defs/expression",
-              "description": "Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies."
-            },
-            "severity": {
-              "enum": [
-                "error",
-                "warning"
-              ],
-              "description": "error: blocks sending (default); warning: the message is shown but does not block."
-            }
-          }
+            "fields": true,
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
         },
         {
           "type": "object",
+          "$ref": "#/$defs/formRuleOptions",
           "required": [
             "use",
             "fields"
           ],
-          "additionalProperties": false,
           "properties": {
             "use": {
               "type": "string",
@@ -4222,32 +3691,12 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
               "type": "object",
               "description": "Parameters of the validator."
             },
-            "fields": {
-              "type": "array",
-              "minItems": 1,
-              "maxItems": 10,
-              "items": {
-                "type": "string",
-                "pattern": "^[a-zA-Z][A-Za-z0-9]*$"
-              },
-              "description": "Fields of the form the rule checks and the message goes to. Required, except for atLeastOne (its own fields if absent)."
-            },
-            "message": {
-              "type": "string",
-              "description": "Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}."
-            },
-            "when": {
-              "$ref": "#/$defs/expression",
-              "description": "Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies."
-            },
-            "severity": {
-              "enum": [
-                "error",
-                "warning"
-              ],
-              "description": "error: blocks sending (default); warning: the message is shown but does not block."
-            }
-          }
+            "fields": true,
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
         }
       ]
     }
