@@ -1,6 +1,6 @@
 # HANDOFF — Quadrava
 
-Project status, conventions and next steps, for picking the work up locally. Last updated: 16 October 2026, after the move of the whole project to English, the rename to Quadrava and the MPL-2.0 licence.
+Project status, conventions and next steps, for picking the work up locally. Last updated: 19 October 2026, after phase 1 of declarative field validation (ADR-15).
 
 ## 1. What it is
 
@@ -27,7 +27,7 @@ From `frontend/`:
 - `npm run schema:sync` — regenerates the `*.schema.ts` files and the precompiled validators (`validators.generated.ts`) from the JSON schemas; `schema:docs` regenerates `docs/schema-reference.md`
 - `npm run conformance:registry` / `conformance:authz` / `conformance:telemetry` — conformance kits of the services against the contracts (see README)
 - `npm run e2e` — Playwright (standalone fields, border layout, axe accessibility on the whole showcase, Studio windows; it starts the runtime on 4300 and the editor on 4301)
-- `npm run validate:examples` — validates the examples (schema + translation keys)
+- `npm run validate:examples` — validates the examples (schema, translation keys, patterns of the fields)
 - `npm run demo:prepare` / `npm run start:runtime` — copies `examples/` into `projects/runtime/public/examples` and starts the demo (port 4200). The dev server does **not** reload `dist`: restart it after changing libraries or examples.
 - `npm run start:editor` — Quadrava Studio (visual editor) on port 4201 (it also prepares the examples, with `examples/index.json`).
 - Local registry without Keycloak: `java -jar reference/registry/target/lowcode-registry-0.1.0-SNAPSHOT.jar --spring.profiles.active=no-auth`, then `npm run publish:examples`, then `npm run start:runtime:registry` / `start:editor:registry`.
@@ -35,7 +35,7 @@ From `frontend/`:
 - **Full stack with Keycloak step by step** (Docker Desktop running): `cd idp && docker compose up -d`; in `reference/` `mvn -q package -DskipTests` and `java -jar <module>/target/*.jar` for registry (with `--lowcode.registry.storage-dir=<folder>` to keep the data), authz, telemetry, bff; in `frontend/` `npm run demo-api` (8084), `npm run publish:examples -- --user administrator --password administrator`, then `npm run start:runtime:bff` (4200) and `start:editor:bff` (4201). The origins allowed by the BFF are 4200 and 4201.
 - tests per project: `npx ng test <schema|expressions|core|components|services|runtime|editor> --watch=false`
 
-Test status (all green, 19 October 2026, in English): schema 76, expressions 42, core 90, components 181, services 34, runtime 87, editor 167 (**677**); Java 46 (authz 7, bff 8, registry 25, telemetry 6), `mvn verify` complete; Playwright 20 (12 of them for accessibility on the showcase, 2 for the rich text editor, 2 for Studio: project, windows and accessibility of the whole workspace); conformance kits: registry 23/23 against the reference registry with the no-auth profile (contract 0.6; 5 checks need tokens and are skipped there: run them with --user/--reviewer-user against the stack), authorization 11/11, telemetry 6/6. Production builds: runtime 2.61 MB initial (443 kB transferred), editor 825 kB initial (preview and editor load separately). `mvn verify` fails at the repackaging of the registry jar while a registry started from `target/` is running (the file is locked on Windows): stop the stack first.
+Test status (all green, 19 October 2026, in English): schema 83, expressions 46, core 166, components 190, services 34, runtime 92, editor 178 (**789**); Java 46 (authz 7, bff 8, registry 25, telemetry 6), `mvn verify` complete; Playwright 21 (13 of them for accessibility on the showcase, 2 for the rich text editor, 2 for Studio: project, windows and accessibility of the whole workspace); conformance kits: registry 23/23 against the reference registry with the no-auth profile (contract 0.6; 5 checks need tokens and are skipped there: run them with --user/--reviewer-user against the stack), authorization 11/11, telemetry 6/6. Production builds: runtime 2.84 MB initial (457 kB transferred; declarative validation added 230 kB raw and 14 kB transferred, almost all of it the precompiled schema validator of the 19 rule variants, compiled for every place a field appears), editor 825 kB initial (preview and editor load separately). `mvn verify` fails at the repackaging of the registry jar while a registry started from `target/` is running (the file is locked on Windows): stop the stack first.
 
 ## 4. Architecture in brief
 
@@ -44,7 +44,8 @@ Libraries (`frontend/projects/`): `schema` (JSON Schema + types), `expressions` 
 - Ports (abstract classes used as DI tokens): Authorization, UserProvider, DataClient (with `{ signal }` to cancel superseded reads, `source` and `trace` for the HTTP span), ScreenNavigator, Notifier, RuntimeDiagnostics, **RuntimeTracer** (optional; `HttpTracer` in `services` sends OTLP spans to `/telemetry/v1/traces`), Confirmation, **FormDialog** (`dialog` step), DefinitionSource (screens, navigation, themes and **catalogues** `messages(language)`).
 - Nodes: section (also `layout: "row"`), **box, grid, border** (layout containers; children declare `grow`, `span`, `region`; border with resizable sides), **input** (standalone field bound to the state, with a validation `group`), text, **image, link**, button, filterBar, table, **dataTable**, **serverDataTable**, form, tabs, detail, alert, **stats, progress, timeline, kanban**, **wizard**, **tree**, **calendar**, **chart**. Steps: set, call, refresh, navigate, toast, confirm, **dialog, validate, print, export** (CSV).
 - Brand: the product is called **Quadrava**, the editor **Quadrava Studio** (`assets/brand/`, brand README). Logotype `lc-quadrava-wordmark` (text in Sora from `@fontsource/sora`, not the SVGs with `<text>`), in the demo's side bar through the `lcBrand` slot and at the top left in the editor; favicon in both. Technical identifiers (realm `lowcode`, Java packages, `lc-` prefixes) stay as they are.
-- Fields: text, number, select, checkbox, date, **textarea, datetime, radio, switch, multiselect, lookup, file, repeater, richtext**. Formats: **number**, currency, percent, date, datetime, boolean, badge, markdown.
+- Fields: text, number, select, checkbox, date, **textarea, datetime, radio, switch, multiselect, lookup, file, repeater, richtext**.
+- **Validation (19 October 2026, ADR-15, catalogue § 2.29).** Validators are pure descriptors in `core` (`validators.ts`, `formats.ts`): `STANDARD_VALIDATORS` plus those of the application (`provideValidators`), in the root `ValidatorRegistry`. The engine (`validation.ts`) compiles the flat constraints of a field (`minLength`, `pattern`, `format` + `country`, `min`, `step`, `minDate`…, `transform`, `messages`), `validate` and the keyed `validation` list (with `when`, `severity`, `message`), plus the form's `validation` across fields, into one list; `form`, `input`, `filterBar` and `repeater` use it through `checkValue` (`components/field-validation.ts`). Warnings do not block; fail-closed with one diagnostic per broken rule, never values. National formats with check digits for IT, DE, FR, ES, NL, BE, AT, PT (PL, SE for VAT and postal codes). CEL: `isValid(name, value[, params])`. Messages: `{x, date}` placeholder. Formats: **number**, currency, percent, date, datetime, boolean, badge, markdown.
 - Formatted text: `format: markdown` on text, alert and detail fields (restricted Markdown: `core/src/lib/markdown.ts`, drawn by `lc-markdown` without HTML); `richtext` editor (`lc-rich-text-editor`, contenteditable + browser commands, value in Markdown). Labels deliberately stay plain text. Catalogue § 2.26.
 - Table: sorting (in the page or server-side with `sort.bind`), selection + bulk actions, action menu (`rowActionsInline`), expandable rows, clickable cells, totals row (`aggregate`).
 - `lc-node` applies `visibleIf/hiddenIf` and `tooltip`, and exposes `data-node-id`/`data-node-type` (for the editor and tests). Permissions `domain.resource.action`; expressions **fail-closed**.
@@ -55,7 +56,7 @@ Libraries (`frontend/projects/`): `schema` (JSON Schema + types), `expressions` 
 
 ## 5. Component catalogue
 
-`docs/component-catalogue.md`: specification of every component added (up to § 2.28), common rules and **known limits** (§ 3); `docs/schema-reference.md`: all the properties, generated from the schema. The demo showcase has twelve screens (`examples/showcase-*.json`): basics, form, tasks and progress, layout containers, standalone fields, fields and forms, tables, advanced tables, datatable, layout (tabs, detail, messages), dashboard, views.
+`docs/component-catalogue.md`: specification of every component added (up to § 2.29, declarative validation), common rules and **known limits** (§ 3); `docs/schema-reference.md`: all the properties, generated from the schema. The demo showcase has thirteen screens (`examples/showcase-*.json`): basics, form, tasks and progress, layout containers, standalone fields, fields and forms, validation, tables, advanced tables, datatable, layout (tabs, detail, messages), dashboard, views.
 
 ## 5b. Quadrava Studio (visual editor)
 
@@ -76,7 +77,8 @@ The main ones are in the DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In short:
 - Icons must be registered in `ICON_TYPES`. Arrays and dates in `ngModel` must be computed once per value (`computed`), otherwise NG0103.
 - Date picker language: `NzDateAdapter.setLocale`. Sorting one column makes `nz-table` reset the others.
 - Ajv strict: `type: object` next to `properties`, properties declared next to the `required` of `if/then`/`anyOf`.
-- Scripts with regular expressions: write them in a file, not in a shell heredoc (double backslashes get lost).
+- Scripts with regular expressions: write them in a file, not in a shell heredoc (double backslashes get lost). The same goes for `node -e` and for template literals in generator scripts: check the result for `\d` that became `d`.
+- NG-ZORRO animates a form message out: right after a change the old text is still in the DOM; tests wait for the new one (`until`).
 - CEL: `has(state.x)` for keys that do not exist yet; `dyn(...)` in mixed parameter maps of `t()`; `{n, number}` for numbers in messages.
 - In tests: `stubViewportHeight` + wait for the options of `nz-select`; `Element.scrollTo` stubbed; closed dialogs stay in the DOM.
 - `provideNzIcons` is not cumulative: a second call replaces the icons of `provideLowcodeComponents` (the editor repeats them).
@@ -95,7 +97,7 @@ The main ones are in the DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In short:
 - e2e in Chromium only; the automatic accessibility check does not replace manual testing.
 - Editor: on the preview components can be added, moved and resized (span, grow); the border's sides can be resized only in the runtime; comparison is between a version and the open document, not between two versions. Translations written in a screen apply to the previews of all the windows (one editor catalogue).
 - `validate:examples` does not check CEL expressions (the `i18n-examples.spec.ts` test does).
-- Component limits: catalogue § 3.
+- Component limits: catalogue § 3 (validation: absolute dates only, no async checks, no field errors from the services, no rules across standalone `input` fields).
 - Project documents in `docs/` (functional specification, architecture, implementation guidelines, dynamic texts and i18n): they stop at 11–12 October; the most recent detail is in the catalogue, in `docs/editor.md` and in the code.
 
 ## 8. Next steps (in the suggested order)
@@ -108,6 +110,9 @@ The main ones are in the DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In short:
 6. e2e in Firefox and WebKit.
 7. CEL in `validate:examples` and, eventually, in the registry.
 8. Bring the project documents (architecture § 9, functional specification, guidelines) up to date with the October status.
+9. Validation, phase 2 (ADR-15): a `password` field type with show/hide and a strength meter of our own (light algorithm, no zxcvbn); asynchronous validators through a data source (for example a staff number already used, checked while typing), debounced and cancelled when superseded, with a busy state on the field.
+10. Size of the precompiled schema validators (`validators.generated.ts`, 775 kB of source): the field definition is compiled in three contexts and the rules of fields and forms repeat their variants; sharing the variants between field and form rules, or loading the validators lazily, would bring the runtime back towards its 2.5 MB budget.
+11. Validation, phase 3: relative dates (`minDate: "today"`, «in 30 days»), `minItems` / `maxItems` for multiple selections, field errors returned by the services in Problem responses (contract first: `errors[].field`), rules across the standalone fields of a validation group.
 
 ## 8b. What was missing and proposed optimisations (13 October 2026)
 

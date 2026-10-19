@@ -43,7 +43,7 @@ Rules common to all components, new ones included:
 
 ## 2. Added in October 2026
 
-Built in this order, one per commit, each with tests (schema, component and showcase) and an example in the demo showcase: «Advanced tables» (1–5), «Fields and forms» (6–11), «Tabs, detail and messages» (12), «Dashboard» (13, 17), «Procedures and views» (14–16), «Data table» (18, 19), «Standalone fields» (20, 22), «Layout containers» (21, 22), «Tasks and progress» (23, 24); the menu (25) is visible in all of them.
+Built in this order, one per commit, each with tests (schema, component and showcase) and an example in the demo showcase: «Advanced tables» (1–5), «Fields and forms» (6–11), «Tabs, detail and messages» (12), «Dashboard» (13, 17), «Procedures and views» (14–16), «Data table» (18, 19), «Standalone fields» (20, 22), «Layout containers» (21, 22), «Tasks and progress» (23, 24), «Validation» (26); the menu (25) is visible in all of them.
 
 | # | Component | Area | Status |
 | --- | --- | --- | --- |
@@ -72,6 +72,7 @@ Built in this order, one per commit, each with tests (schema, component and show
 | 23 | Image, link, progress | visualisation | done |
 | 24 | Timeline and kanban | visualisation | done |
 | 25 | Menu: search, counters, keyboard | shell | done |
+| 26 | Declarative validation: constraints, formats, rules across fields, warnings | fields | done |
 
 ### 2.1 Column sorting
 
@@ -316,7 +317,7 @@ A field used on its own, outside forms and filters: text box, number, drop-down,
 - `bind` is the path in the state; if missing it is `state.<field name>`. The runtime creates the state **before** the first load of the data sources: `default`, otherwise false for checkbox and switch and null for the others.
 - Free text (text, number, text area) is written to the state when leaving the field or on Enter, so data sources are not reloaded on every keystroke; the other types on every choice. A cleared field is `null`; numbers arrive as numbers.
 - `onChange`: steps run after every change, with the new value in `value`.
-- `required` and `validate` errors after the first change. The node also accepts `enabledIf` and `readOnlyIf`, which add to those of the field.
+- `required`, constraints and rules (§ 2.29) give their errors and warnings after the first change. The node also accepts `enabledIf` and `readOnlyIf`, which add to those of the field.
 - In the editor palette every type is an item of the «Fields» group (Text box, Drop-down list…); names of new fields are not repeated within the screen.
 
 To put several fields side by side: a `section` with `layout: "row"` (200 to 360 px wide each, wrapping when space runs out) or a `box` or a `grid` (§ 2.21).
@@ -483,6 +484,71 @@ Table, data table and server data table share the same footer (`lc-table-footer`
 
 In the showcase «Aggiorna» is in the first table of «Filtri e tabelle» and in the three tables of «Datatable».
 
+### 2.29 Declarative validation
+
+Fields are checked by rules written in the JSON (ADR-15): the common cases as properties of the field, the others in a `validation` list. The same rules apply in forms, standalone fields, filter bars and the rows of repeaters; the messages are translated (`lc.validation.*`) and appear after the first save (after the first change for standalone fields).
+
+```json
+{ "name": "code", "type": "text", "required": true, "minLength": 3, "maxLength": 10, "pattern": "[A-Z0-9-]+", "transform": ["trim", "uppercase"],
+  "messages": { "pattern": "{{ t('product.codePattern', 'Use capitals, digits and dashes only') }}" } }
+{ "name": "quantity", "type": "number", "min": 1, "max": 999, "integer": true }
+{ "name": "vat", "type": "text", "format": "vatNumber", "country": "{{form.country}}", "transform": ["removeSpaces", "uppercase"] }
+```
+
+| Field type | Flat properties |
+| --- | --- |
+| text, textarea | `minLength`, `maxLength`, `pattern` (the whole value, Unicode), `format` (+ `country`), `transform` (`trim`, `uppercase`, `lowercase`, `removeSpaces`: applied when leaving the field and before sending) |
+| richtext | `minLength`, `maxLength` |
+| number | `min`, `max`, `step` (from `min`), `decimals`, `integer` |
+| date, datetime | `minDate`, `maxDate` (days outside cannot be chosen in the calendar) |
+| all | `required`, `validate` (one CEL rule, as before), `messages` (a text per constraint) |
+
+**Formats.** `email`, `url` (http and https), `phone` (international, 6 to 15 digits), `iban` (country length and check digits), `bic`, `uuid`, `alphanumeric`; national ones with `country` fixed or from an expression: `vatNumber` (IT, DE, FR, ES, NL, BE, AT, PT, PL, SE; without a country the prefix decides), `taxCode` (IT codice fiscale with omocodia, ES NIF/NIE, PT NIF, NL BSN), `companyId` (IT partita IVA, FR SIREN/SIRET, ES CIF, PT NIPC, BE enterprise number, NL KvK), `postalCode` (the ten countries of `vatNumber`). Check digits are verified where an algorithm is published. A format also sets the keyboard and autocomplete of the text box (email, telephone, postal code).
+
+**Rules.** `validation` is a list of rules, each named by its key like the steps of an action, with an optional `message`, `when` (CEL condition: the rule applies only while it is true) and `severity` (`warning` shows the message in orange without blocking):
+
+```json
+"validation": [
+  { "required": true, "when": "{{form.customerType == 'business'}}" },
+  { "format": "vatNumber" },
+  { "max": 20, "severity": "warning", "message": "{{ t('order.bigDiscount', 'Above 20% the discount needs approval') }}" },
+  { "rule": "{{value != form.referrer}}", "message": "{{ t('order.notYourself', 'Not yourself') }}" },
+  { "use": "staffNumber" }
+]
+```
+
+The keys are those of the flat properties plus `sameAs` (equal to another field), `after` / `before` (date after or before another field, `inclusive` to allow the same day), `atLeastOne` (this field or one of the listed ones), `unique` (on a repeater: the column whose values must not repeat across rows), `rule` (CEL) and `use` (a validator of the application, with `params`). A conditional `required` also puts the asterisk on the label while its condition holds.
+
+**Across fields.** The form has its own `validation` list; each rule names the fields it checks and that receive the message (`fields`; `atLeastOne` by default its own fields):
+
+```json
+"validation": [
+  { "sameAs": "email", "fields": ["emailConfirm"] },
+  { "atLeastOne": ["phone", "mobile"] },
+  { "after": "start", "fields": ["end"], "inclusive": true }
+]
+```
+
+In the rows of a repeater the rules of a cell compare it with the other cells of the same row (and see the row in `item`).
+
+**In expressions.** `isValid(name, value[, params])` runs a validator anywhere, for example `{{ isValid('iban', state.iban) }}` or `{{ isValid('vatNumber', form.vat, {'country': 'DE'}) }}`.
+
+**Validators of the application.** A validator is a pure function registered by name:
+
+```ts
+provideValidators({
+  name: 'staffNumber',
+  appliesTo: ['text'],
+  validate: (value) => (/^S\d{6}$/.test(String(value)) ? null : {}),
+}),
+```
+
+Its message is `lc.validation.staffNumber` (or `messageKey`) in the application's catalogues; one with the name of a built-in validator replaces it.
+
+**Order and fail-closed.** Flat constraints first, then `validate`, then `validation`: the first error wins, a warning shows only without errors, and every rule except `required` and `atLeastOne` passes on an empty field. An unknown validator, a rule on the wrong field type, invalid parameters or a pattern that does not compile make the field invalid and are reported once to the diagnostics, never with the value; the editor and `validate:examples` report patterns that do not compile. In the filter bar an empty filter still means «all», and a value that breaks its rules is not searched for.
+
+In the showcase: «Validazione» (Validation).
+
 ## 3. Implementation notes and known limits
 
 - **Loading data sources.** A GET data source reloads by itself only if the resolved request (URL and parameters) changes. A state change that does not touch the request (a selection, a wizard step, a chosen node) does not trigger new calls; to reload anyway, use the `refresh` step.
@@ -493,7 +559,8 @@ In the showcase «Aggiorna» is in the first table of «Filtri e tabelle» and i
 - **Data table.** Works on the loaded rows (tested up to 50,000 rows in the functions and 20,000 in the component); beyond that, `serverDataTable`.
 - **Server data table.** No row selection or expandable rows; open groups are not remembered between visits to the screen. The `refresh` step on a non-GET data source calls nothing: it only notifies the components that query it themselves.
 - **Charts.** No zoom, filled areas or more than two axes.
-- **Standalone fields.** To block an action until the fields are valid, use the `validate` step (§ 2.22); as always, the real check belongs to the service.
+- **Standalone fields.** To block an action until the fields are valid, use the `validate` step (§ 2.22); as always, the real check belongs to the service. Rules across fields (§ 2.29) exist only in forms.
+- **Validation.** Dates are absolute (no «today» or «in 30 days»); no limits on the number of choices of a multiple selection; no asynchronous checks (a code already used, checked on a service) and no field errors returned by the services; patterns are tested on values up to 1000 characters. The front end is not a boundary: every rule that matters is repeated by the service.
 - **Layout containers.** Widths chosen with the dividers last for the visit to the screen (they are not remembered); no grid cells spanning several rows; fixed stacking thresholds (600 px grid, 768 px border).
 - **Kanban.** No reordering of cards within a column and no per-column limits; a move waits for the service's response (no optimistic update).
 - **Formatted text.** No tables, images, colours or HTML; three levels of headings and lists. The editor uses the browser's editing commands: the result is always normalised to the restricted Markdown, but rendering while typing may vary slightly between browsers.
