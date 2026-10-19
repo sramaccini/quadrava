@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { I18n, inputHints, transformValue, type ScreenRuntime, type Scope } from 'core';
+import { I18n, inputHints, passwordStrength, resolveDateLimit, transformValue, type ScreenRuntime, type Scope } from 'core';
+import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzCheckboxModule } from 'ng-zorro-antd/checkbox';
 import { NzDatePickerModule } from 'ng-zorro-antd/date-picker';
 import { NzInputModule } from 'ng-zorro-antd/input';
@@ -9,6 +10,7 @@ import { NzSelectModule } from 'ng-zorro-antd/select';
 import { NzSwitchModule } from 'ng-zorro-antd/switch';
 import type { FieldDefinition } from 'schema';
 import { FileFieldComponent } from './file-field.component';
+import { IconComponent } from './icon.component';
 import { LookupComponent } from './lookup.component';
 import { RepeaterComponent } from './repeater.component';
 import { RichTextEditorComponent } from './rich-text-editor.component';
@@ -21,15 +23,26 @@ import { parseIsoDate, parseIsoDateTime, toIsoDate, toIsoDateTime } from './shar
  * in the radio buttons, and checkboxes or switches turned off emit `null` (no filter) instead of `false`.
  * The validation of the field shows here too: the keyboard and autocomplete of its format, the limits of numbers
  * (`min`, `max`, `step`) and of dates (days out of `minDate` / `maxDate` cannot be chosen); its `transform` is applied
- * when leaving the field.
+ * when leaving the field. A password field has a button that shows its text and, for a new password, a strength meter
+ * (segments and text, announced politely); the estimate never sends the password anywhere.
  */
 @Component({
   selector: 'lc-field-control',
-  imports: [FormsModule, LookupComponent, FileFieldComponent, RepeaterComponent, RichTextEditorComponent, NzInputModule, NzSelectModule, NzCheckboxModule, NzDatePickerModule, NzRadioModule, NzSwitchModule],
+  imports: [FormsModule, LookupComponent, FileFieldComponent, IconComponent, RepeaterComponent, RichTextEditorComponent, NzButtonModule, NzInputModule, NzSelectModule, NzCheckboxModule, NzDatePickerModule, NzRadioModule, NzSwitchModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: block; }
     nz-select, nz-date-picker { width: 100%; }
+    .password { position: relative; }
+    .password input { padding-right: 40px; }
+    .password .reveal { position: absolute; right: 2px; top: 50%; transform: translateY(-50%); }
+    .strength { margin-top: 6px; }
+    .bars { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+    .bars span { height: 4px; border-radius: 2px; background: var(--lc-color-border, #d9d9d9); }
+    .bars[data-score='0'] span.on, .bars[data-score='1'] span.on { background: var(--lc-color-danger, #c62828); }
+    .bars[data-score='2'] span.on { background: var(--lc-color-warning, #ad6800); }
+    .bars[data-score='3'] span.on, .bars[data-score='4'] span.on { background: var(--lc-color-success, #2e7d32); }
+    .level, .advice { margin: 4px 0 0; font-size: 12px; color: var(--lc-color-muted, #5d6b7a); }
   `,
   template: `
     @let f = field();
@@ -96,7 +109,7 @@ import { parseIsoDate, parseIsoDateTime, toIsoDate, toIsoDateTime } from './shar
         <nz-switch [nzId]="inputId()" [nzDisabled]="disabled()" [ngModel]="value() === true" (ngModelChange)="toggled($event)" />
       }
       @case ('repeater') {
-        <lc-repeater [field]="f" [runtime]="runtime()" [scope]="scope()" [value]="value()" [disabled]="disabled()" [submitted]="submitted()" [summary]="summary()" [labelId]="labelId()" (valueChange)="valueChange.emit($event)" />
+        <lc-repeater [field]="f" [runtime]="runtime()" [scope]="scope()" [value]="value()" [disabled]="disabled()" [submitted]="submitted()" [summary]="summary()" [labelId]="labelId()" [serverErrors]="cellErrors()" (valueChange)="valueChange.emit($event)" />
       }
       @case ('file') {
         <lc-file-field [inputId]="inputId()" [field]="f" [runtime]="runtime()" [scope]="scope()" [value]="value()" [disabled]="disabled()" (valueChange)="valueChange.emit($event)" />
@@ -110,6 +123,54 @@ import { parseIsoDate, parseIsoDateTime, toIsoDate, toIsoDateTime } from './shar
             <nz-option [nzValue]="option" [nzLabel]="optionLabel(option)" />
           }
         </nz-select>
+      }
+      @case ('password') {
+        <div class="password">
+          <input
+            nz-input
+            [id]="inputId()"
+            [type]="revealed() ? 'text' : 'password'"
+            [value]="text()"
+            [readonly]="disabled()"
+            [attr.autocomplete]="f.newPassword ? 'new-password' : 'current-password'"
+            autocapitalize="off"
+            spellcheck="false"
+            [attr.aria-invalid]="invalid()"
+            [attr.aria-describedby]="f.newPassword ? inputId() + '-strength' : null"
+            (input)="typed($any($event.target).value, 'input')"
+            (change)="typed($any($event.target).value, 'change')"
+          />
+          <button
+            nz-button
+            nzType="text"
+            nzSize="small"
+            type="button"
+            class="reveal"
+            [disabled]="disabled()"
+            [attr.aria-label]="i18n.t(revealed() ? 'lc.password.hide' : 'lc.password.show')"
+            [attr.aria-pressed]="revealed()"
+            [attr.aria-controls]="inputId()"
+            (click)="revealed.set(!revealed())"
+          >
+            <lc-icon [name]="revealed() ? 'password-hide' : 'password-show'" />
+          </button>
+        </div>
+        @if (f.newPassword) {
+          @let s = strength();
+          <div class="strength" [id]="inputId() + '-strength'" aria-live="polite">
+            <div class="bars" aria-hidden="true" [attr.data-score]="s.score">
+              @for (segment of [0, 1, 2, 3]; track segment) {
+                <span [class.on]="text() !== '' && segment <= s.score"></span>
+              }
+            </div>
+            @if (text()) {
+              <p class="level">{{ i18n.t('lc.strength.label', { level: i18n.t('lc.strength.' + s.score) }) }}</p>
+              @if (s.score < 4 && s.hints.length) {
+                <p class="advice">{{ i18n.t('lc.strength.hint.' + s.hints[0]) }}</p>
+              }
+            }
+          </div>
+        }
       }
       @default {
         <input
@@ -144,6 +205,8 @@ export class FieldControlComponent {
   /** For repeatable rows: errors of the cells visible after the first submit, and summary. */
   readonly submitted = input(false);
   readonly summary = input<string | null>(null);
+  /** For repeatable rows: errors of the cells returned by the service (`row/column` → message). */
+  readonly cellErrors = input<Record<string, string>>({});
   /** Free text is emitted at every character (`input`) or only when leaving the field / with Enter (`change`). */
   readonly commitOn = input<'input' | 'change'>('input');
   /** `form`: field of a form; `filter`: search criterion, where empty means «all». */
@@ -152,7 +215,9 @@ export class FieldControlComponent {
   readonly placeholder = input('—');
   readonly valueChange = output<unknown>();
 
-  private readonly i18n = inject(I18n);
+  protected readonly i18n = inject(I18n);
+  /** The text of a password field is shown. */
+  protected readonly revealed = signal(false);
 
   /** Dates and lists computed once per value: a new object at every render would make the control rewrite itself continuously (NG0103). */
   protected readonly date = computed(() => (this.field().type === 'date' ? parseIsoDate(this.value()) : parseIsoDateTime(this.value())));
@@ -170,8 +235,9 @@ export class FieldControlComponent {
   protected readonly outOfRange = computed(() => {
     const { minDate, maxDate } = this.field();
     if (!minDate && !maxDate) return undefined;
-    const min = minDate?.slice(0, 10);
-    const max = maxDate?.slice(0, 10);
+    // Relative limits (today, today+30d) are resolved once per field: the calendar of a day.
+    const min = resolveDateLimit(minDate)?.slice(0, 10);
+    const max = resolveDateLimit(maxDate)?.slice(0, 10);
     return (date: Date): boolean => {
       const day = toIsoDate(date);
       return day !== null && ((min !== undefined && day < min) || (max !== undefined && day > max));
@@ -180,6 +246,12 @@ export class FieldControlComponent {
   protected readonly text = computed(() => {
     const value = this.value();
     return value === null || value === undefined ? '' : String(value);
+  });
+  /** Strength of a new password; the other fields of the form (a name, an e-mail) make it weaker when they are inside it. */
+  protected readonly strength = computed(() => {
+    const form = this.scope()['form'];
+    const others = form !== null && typeof form === 'object' ? Object.entries(form).filter(([name, v]) => name !== this.field().name && typeof v === 'string').map(([, v]) => v as string) : [];
+    return passwordStrength(this.text(), others);
   });
 
   /** Label of an option: translated with `optionKey` (`<prefix>.<value>`), otherwise the value itself. */

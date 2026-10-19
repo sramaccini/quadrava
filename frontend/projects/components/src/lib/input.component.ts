@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, input, OnInit, signal } from '@angular/core';
-import { I18n, initialInputValue, inputPath, isRequired, NO_PROBLEM, runSteps, type ScreenRuntime, type Scope } from 'core';
+import { I18n, initialInputValue, inputPath, isRequired, NO_PROBLEM, RemoteChecks, runSteps, type ScreenRuntime, type Scope } from 'core';
 import { NzFormModule } from 'ng-zorro-antd/form';
 import type { InputNode } from 'schema';
 import { FieldControlComponent } from './field-control.component';
@@ -29,7 +29,12 @@ import { nextId } from './shared';
           <nz-form-label [nzFor]="id" [id]="id + '-label'" [nzRequired]="required()" [nzTooltipTitle]="f.tooltip ? runtime().text(f.tooltip, scope()) : undefined" [nzTooltipIcon]="'question-circle'">{{ runtime().text(f.label, scope()) || f.name }}</nz-form-label>
         }
         @let p = problem();
-        <nz-form-control [nzValidateStatus]="f.type === 'repeater' ? '' : p.error ? 'error' : p.warning ? 'warning' : ''" [nzErrorTip]="p.error ?? undefined" [nzWarningTip]="p.warning ?? undefined">
+        <nz-form-control
+          [nzValidateStatus]="f.type === 'repeater' ? '' : p.error ? 'error' : p.pending ? 'validating' : p.warning ? 'warning' : ''"
+          [nzHasFeedback]="!!p.pending"
+          [nzErrorTip]="p.error ?? undefined"
+          [nzWarningTip]="p.warning ?? undefined"
+        >
           <lc-field-control
             [field]="f"
             [runtime]="runtime()"
@@ -68,13 +73,18 @@ export class InputComponent implements OnInit {
     return !runtime.isEnabled(node, this.scope()) || runtime.isReadOnly(node, this.scope()) || runtime.isReadOnly(node.field, this.scope());
   });
 
+  private readonly remote = computed(() => new RemoteChecks(this.runtime()));
   private readonly env = computed(() => {
     const field = this.node().field;
-    return validationEnv(this.runtime(), this.i18n, this.scope(), { [field.name]: this.value() }, [field]);
+    return validationEnv(this.runtime(), this.i18n, this.scope(), { [field.name]: this.value() }, [field], this.remote());
   });
   protected readonly required = computed(() => isRequired(this.node().field, this.env()));
   private readonly check = computed(() => checkValue(this.node().field, this.value(), this.env()));
-  protected readonly problem = computed(() => (this.touched() ? this.check() : NO_PROBLEM));
+  /** After the first change; a remote check (running or done) as soon as it is known. */
+  protected readonly problem = computed(() => {
+    const check = this.check();
+    return this.touched() || check.pending || check.remote ? check : NO_PROBLEM;
+  });
 
   ngOnInit(): void {
     // Usually the state has already been prepared by the runtime; here for fields in windows or added later.
@@ -82,9 +92,11 @@ export class InputComponent implements OnInit {
     // The validate step checks the fields of the group (`default` if not given) while the field is on the screen.
     const unregister = this.runtime().registerValidator(this.node().group ?? 'default', () => {
       this.touched.set(true);
-      return this.check().error === null;
+      // A value still being checked on the service is not valid yet.
+      return this.check().error === null && !this.check().pending;
     });
     this.destroyRef.onDestroy(unregister);
+    this.destroyRef.onDestroy(() => this.remote().destroy());
   }
 
   protected async change(raw: unknown): Promise<void> {

@@ -21,9 +21,9 @@ import { nextId } from './shared';
   `,
   template: `
     <form nz-form ngNoForm nzLayout="inline" role="search" (submit)="$event.preventDefault()">
-      <!-- A file is not a search criterion: it is not shown in the filter bar. -->
+      <!-- A file or a password is not a search criterion: it is not shown in the filter bar. -->
       @for (field of fields(); track field.name) {
-        @if (field.type !== 'file' && runtime().isVisible(field, scope())) {
+        @if (field.type !== 'file' && field.type !== 'password' && runtime().isVisible(field, scope())) {
           <nz-form-item>
             @if (field.type !== 'checkbox') {
               <nz-form-label [nzFor]="id + field.name" [nzTooltipTitle]="field.tooltip ? runtime().text(field.tooltip, scope()) : undefined" [nzTooltipIcon]="'question-circle'">{{ runtime().text(field.label, scope()) || field.name }}</nz-form-label>

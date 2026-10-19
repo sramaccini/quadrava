@@ -43,6 +43,8 @@ import {
   VerticalLeftOutline,
   VerticalRightOutline,
   CopyOutline,
+  EyeInvisibleOutline,
+  EyeOutline,
 } from '@ant-design/icons-angular/icons';
 import type { IconDefinition } from '@ant-design/icons-angular';
 import { NzIconModule } from 'ng-zorro-antd/icon';
@@ -86,6 +88,9 @@ export const ICON_TYPES: Record<string, { type: string; icon: IconDefinition }> 
   first: { type: 'vertical-right', icon: VerticalRightOutline },
   last: { type: 'vertical-left', icon: VerticalLeftOutline },
   copy: { type: 'copy', icon: CopyOutline },
+  // Show and hide the text of a password field.
+  'password-show': { type: 'eye', icon: EyeOutline },
+  'password-hide': { type: 'eye-invisible', icon: EyeInvisibleOutline },
   // Toolbar of the formatted-text editor.
   'rich-bold': { type: 'bold', icon: BoldOutline },
   'rich-italic': { type: 'italic', icon: ItalicOutline },

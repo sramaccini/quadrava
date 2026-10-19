@@ -67,7 +67,7 @@ type Row = Record<string, unknown>;
                   <td [class.wide]="sub.type === 'lookup' || sub.type === 'file'">
                     @let cellId = id + i + '-' + sub.name;
                     @let cell = submitted() ? checks()[i]?.[sub.name] : null;
-                    @let err = cell?.error;
+                    @let err = serverErrors()[i + '/' + sub.name] ?? cell?.error;
                     @switch (sub.type) {
                       @case ('select') {
                         <nz-select [nzId]="cellId" nzAllowClear nzPlaceHolder="—" [nzDisabled]="disabled()" [nzStatus]="err ? 'error' : ''" [ngModel]="row[sub.name] ?? null" (ngModelChange)="set(i, sub, $event)">
@@ -140,6 +140,8 @@ export class RepeaterComponent {
   readonly submitted = input(false);
   /** Overall message of the field (missing or invalid rows), shown under the rows. */
   readonly summary = input<string | null>(null);
+  /** Errors of the cells returned by the service (`row/column` → message), shown until the rows change. */
+  readonly serverErrors = input<Record<string, string>>({});
   /** Id of the label of the field, to give the group a name. */
   readonly labelId = input<string | null>(null);
   readonly valueChange = output<Row[]>();

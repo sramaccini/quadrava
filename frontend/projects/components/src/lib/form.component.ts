@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
-import { formRules, I18n, isRequired, NO_PROBLEM, runSteps, transformValue, type FieldCheck, type ScreenRuntime, type Scope } from 'core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, input, output, signal, untracked } from '@angular/core';
+import { codeMessage, formRules, I18n, isRequired, NO_PROBLEM, pointerSegments, RemoteChecks, runSteps, transformValue, type FieldCheck, type FieldError, type ScreenRuntime, type Scope } from 'core';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzFormModule } from 'ng-zorro-antd/form';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
@@ -11,7 +11,9 @@ import { nextId } from './shared';
 /**
  * Form: initial values come from the `source` data source (if it returns an object); actions receive `form` in the scope.
  * The fields are checked with their rules and with the rules of the form across fields (`validation`) after the first
- * submit attempt: errors block the actions, warnings only inform.
+ * submit attempt: errors block the actions, warnings only inform. Remote rules run while the user types, their outcome
+ * shows as soon as it is known, and the form waits for those in progress before sending. Field errors returned by the
+ * service (Problem with `errors`) go to their fields, or to the cells of a repeater, until those change.
  */
 @Component({
   selector: 'lc-form',
@@ -41,7 +43,12 @@ import { nextId } from './shared';
               <nz-form-label [nzFor]="id + field.name" [id]="id + field.name + '-label'" [nzRequired]="required(field)" [nzTooltipTitle]="field.tooltip ? runtime().text(field.tooltip, fieldScope()) : undefined" [nzTooltipIcon]="'question-circle'">{{ runtime().text(field.label, fieldScope()) || field.name }}</nz-form-label>
             }
             @let problem = shown(field);
-            <nz-form-control [nzValidateStatus]="field.type === 'repeater' ? '' : problem.error ? 'error' : problem.warning ? 'warning' : ''" [nzErrorTip]="problem.error ?? undefined" [nzWarningTip]="problem.warning ?? undefined">
+            <nz-form-control
+              [nzValidateStatus]="field.type === 'repeater' ? '' : problem.error ? 'error' : problem.pending ? 'validating' : problem.warning ? 'warning' : ''"
+              [nzHasFeedback]="!!problem.pending"
+              [nzErrorTip]="problem.error ?? undefined"
+              [nzWarningTip]="problem.warning ?? undefined"
+            >
               <lc-field-control
                 [field]="field"
                 [runtime]="runtime()"
@@ -53,6 +60,7 @@ import { nextId } from './shared';
                 [invalid]="!!problem.error"
                 [submitted]="submitted()"
                 [summary]="problem.error ?? problem.warning"
+                [cellErrors]="cellErrors()[field.name] ?? {}"
                 (valueChange)="set(field, $event)"
               />
             </nz-form-control>
@@ -108,9 +116,15 @@ export class FormComponent {
 
   /** Rules of the form across fields, by the field they check. */
   private readonly crossRules = computed(() => formRules(this.node().validation));
-  private readonly env = computed(() => validationEnv(this.runtime(), this.i18n, this.fieldScope(), this.values(), this.node().fields));
+  /** Remote checks of the fields, one set per runtime. */
+  private readonly remote = computed(() => new RemoteChecks(this.runtime()));
+  private readonly env = computed(() => validationEnv(this.runtime(), this.i18n, this.fieldScope(), this.values(), this.node().fields, this.remote()));
+  /** Messages of the field errors returned by the service, by field, and by cell (`row/column`) for repeaters. */
+  protected readonly serverErrors = signal<Record<string, string>>({});
+  protected readonly cellErrors = signal<Record<string, Record<string, string>>>({});
 
   constructor() {
+    inject(DestroyRef).onDestroy(() => this.remote().destroy());
     // Initial values declared in the form (once), then those of the data source when it arrives.
     effect(() => {
       const initial = this.node().initial;
@@ -151,6 +165,9 @@ export class FormComponent {
   protected set(field: FieldDefinition, raw: unknown): void {
     const value = field.type === 'number' && raw !== '' && raw !== null ? Number(raw) : raw;
     this.values.update((current) => ({ ...current, [field.name]: value }));
+    // A field changed by the user is no longer the one the service rejected.
+    if (field.name in this.serverErrors()) this.serverErrors.update(({ [field.name]: _, ...rest }) => rest);
+    if (field.name in this.cellErrors()) this.cellErrors.update(({ [field.name]: _, ...rest }) => rest);
   }
 
   /** The asterisk of the label: required, or required now by a conditional rule. */
@@ -158,9 +175,15 @@ export class FormComponent {
     return isRequired(field, this.env(), this.crossRules().get(field.name));
   }
 
-  /** Error or warning of the field, shown only after the first submit attempt. */
+  /**
+   * Error or warning of the field: after the first submit attempt; a remote check (running or done) as soon as it is
+   * known; an error of the service until the field changes.
+   */
   protected shown(field: FieldDefinition): FieldCheck {
-    return this.submitted() ? this.check(field) : NO_PROBLEM;
+    const server = this.serverErrors()[field.name];
+    if (server) return { error: server, warning: null };
+    const check = this.check(field);
+    return this.submitted() || check.pending || check.remote ? check : NO_PROBLEM;
   }
 
   private check(field: FieldDefinition): FieldCheck {
@@ -172,16 +195,49 @@ export class FormComponent {
     return field ? transformValue(field, value) : value;
   }
 
+  /** Places the field errors of the service on the fields (and the cells of repeaters); returns how many it placed. */
+  private placeServerErrors(errors: readonly FieldError[]): number {
+    const fields: Record<string, string> = {};
+    const cells: Record<string, Record<string, string>> = {};
+    let placed = 0;
+    for (const { path, code, params } of errors) {
+      const [name, row, column, ...rest] = pointerSegments(path);
+      const field = this.node().fields.find((f) => f.name === name);
+      if (!field || rest.length) continue;
+      const message = codeMessage(this.i18n, code, params);
+      if (field.type === 'repeater' && row !== undefined && column !== undefined && /^\d+$/.test(row)) {
+        cells[name] = { ...cells[name], [`${row}/${column}`]: message };
+      } else if (row === undefined) {
+        fields[name] = message;
+      } else {
+        continue;
+      }
+      placed++;
+    }
+    this.serverErrors.set(fields);
+    this.cellErrors.set(cells);
+    return placed;
+  }
+
   protected async run(action: ActionDefinition): Promise<void> {
     if (this.busy()) return;
     this.submitted.set(true);
+    this.serverErrors.set({});
+    this.cellErrors.set({});
     // The steps receive the values as they are checked: after `transform` (usually already applied when leaving the field).
     this.values.update((values) => Object.fromEntries(Object.entries(values).map(([name, value]) => [name, this.transform(name, value)])));
-    const visible = this.node().fields.filter((f) => this.runtime().isVisible(f, this.fieldScope()));
-    if (visible.some((f) => this.check(f).error !== null)) return;
     this.busy.set(true);
     try {
-      this.completed.emit(await runSteps(this.runtime(), action.onClick, this.fieldScope()));
+      // The remote checks still waiting for their pause start now, and the form waits for their outcome (a value changed
+      // just before the click is scheduled by the check itself: one more round).
+      const visible = this.node().fields.filter((f) => this.runtime().isVisible(f, this.fieldScope()));
+      let checks = visible.map((f) => this.check(f));
+      for (let round = 0; round < 3 && checks.some((c) => c.pending); round++) {
+        await this.remote().settle();
+        checks = visible.map((f) => this.check(f));
+      }
+      if (checks.some((c) => c.error !== null || c.pending)) return;
+      this.completed.emit(await runSteps(this.runtime(), action.onClick, this.fieldScope(), { onFieldErrors: (errors) => this.placeServerErrors(errors) }));
     } finally {
       this.busy.set(false);
     }

@@ -1,13 +1,15 @@
-import { checkField, uniqueCellErrors, type CompiledRule, type FieldCheck, type I18n, type ScreenRuntime, type Scope, type ValidationEnv } from 'core';
+import { checkField, uniqueCellErrors, type CompiledRule, type FieldCheck, type I18n, type RemoteChecks, type ScreenRuntime, type Scope, type ValidationEnv } from 'core';
 import type { FieldDefinition } from 'schema';
 
 /**
  * Where fields are checked: the runtime, the scope of the expressions, the values next to the field (the form, or the
- * row of a repeater) and the labels of `fields`, used by the messages of the rules across fields.
+ * row of a repeater) and the labels of `fields`, used by the messages of the rules across fields. `remote`: the remote
+ * checks of the component (forms and standalone fields).
  */
-export function validationEnv(runtime: ScreenRuntime, i18n: I18n, scope: Scope, values: Record<string, unknown>, fields: readonly FieldDefinition[]): ValidationEnv {
+export function validationEnv(runtime: ScreenRuntime, i18n: I18n, scope: Scope, values: Record<string, unknown>, fields: readonly FieldDefinition[], remote?: RemoteChecks): ValidationEnv {
   return {
     runtime,
+    remote,
     i18n,
     scope,
     values,
