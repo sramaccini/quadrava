@@ -360,7 +360,7 @@
 | Property | Type | Description |
 | --- | --- | --- |
 | `name` * | text |  |
-| `type` * | `text`, `number`, `select`, `checkbox`, `date`, `textarea`, `datetime`, `radio`, `switch`, `multiselect`, `lookup`, `file`, `repeater`, `richtext` | Field type. textarea: multi-line text (`rows`); datetime: date and time YYYY-MM-DDTHH:mm (local time); radio: choice among `options`; switch: on/off toggle; multiselect: list of values from `options`. lookup: value chosen among the rows of a data source searched while typing (`lookup`). file: a file chosen by the user (`accept`, `maxSizeKb`, `upload`). repeater: list of rows, each with the fields of `fields` (`minRows`, `maxRows`, `addLabel`). richtext: formatted text written with a toolbar (bold, italic, headings, lists, quotes, links); the value is restricted Markdown, never HTML (`rows` for the height). |
+| `type` * | `text`, `number`, `select`, `checkbox`, `date`, `textarea`, `datetime`, `radio`, `switch`, `multiselect`, `lookup`, `file`, `repeater`, `richtext`, `password` | Field type. textarea: multi-line text (`rows`); datetime: date and time YYYY-MM-DDTHH:mm (local time); radio: choice among `options`; switch: on/off toggle; multiselect: list of values from `options`. lookup: value chosen among the rows of a data source searched while typing (`lookup`). file: a file chosen by the user (`accept`, `maxSizeKb`, `upload`). repeater: list of rows, each with the fields of `fields` (`minRows`, `maxRows`, `addLabel`). richtext: formatted text written with a toolbar (bold, italic, headings, lists, quotes, links); the value is restricted Markdown, never HTML (`rows` for the height). password: masked text with a button that shows it; with newPassword a strength meter (`minStrength`). |
 | `label` | text |  |
 | `required` | yes/no |  |
 | `options` | list of text |  |
@@ -379,8 +379,12 @@
 | `step` | number | For number: the value must be a multiple of step, counted from min (from 0 without min); it is also the step of the arrows of the box. |
 | `decimals` | integer 0–10 | For number: maximum number of decimal places. |
 | `integer` | yes/no | For number: whole numbers only. |
-| `minDate` | text | For date and datetime: earliest date allowed, as YYYY-MM-DD (or YYYY-MM-DDTHH:mm). Earlier days cannot be chosen in the calendar. |
-| `maxDate` | text | For date and datetime: latest date allowed, as YYYY-MM-DD (or YYYY-MM-DDTHH:mm). Later days cannot be chosen in the calendar. |
+| `minDate` | text | For date and datetime: earliest date allowed: YYYY-MM-DD (or YYYY-MM-DDTHH:mm), or relative to the day: today, today+30d, today-18y (units d, w, m, y). Earlier days cannot be chosen in the calendar. |
+| `maxDate` | text | For date and datetime: latest date allowed: YYYY-MM-DD (or YYYY-MM-DDTHH:mm), or relative to the day: today, today+30d, today-18y (units d, w, m, y). Later days cannot be chosen in the calendar. |
+| `newPassword` | yes/no | For password: a new password (registration, change): shows the strength meter and lets the browser propose a generated one. Without it the browser fills in the saved one. |
+| `minStrength` | integer 0–4 | For password: minimum strength, from 0 (very weak) to 4 (strong). The estimate counts length and kinds of characters, and discounts repetitions, sequences, years, common words and the values of the other fields. |
+| `minItems` | integer 1–100 | For multiselect: minimum number of choices (an empty choice is left to required). |
+| `maxItems` | integer 1–100 | For multiselect: maximum number of choices. |
 | `transform` | list of `trim`, `uppercase`, `lowercase`, `removeSpaces` | For text and textarea: changes applied to the value, in order, when the user leaves the field and before checking and sending it (never while typing). trim: spaces at the ends; uppercase / lowercase; removeSpaces: every space. For example ["removeSpaces", "uppercase"] for an IBAN. |
 | `messages` | object | Messages that replace the standard ones, by constraint (required, minLength, format…). Plain text or with {{ }}, for example {{t('order.qtyTooHigh')}}. |
 | `validation` | list of fieldRule | Advanced validation: rules checked in order after the flat constraints, each with an optional message, condition (when) and severity (a warning does not block). For example [{ "format": "vatNumber", "country": "{{form.country}}" }, { "required": true, "when": "{{form.company}}" }]. |
@@ -497,7 +501,7 @@ Validation rule of a field, named by its key ({ "minLength": 3 }, { "format": "i
 
 | Property | Type | Description |
 | --- | --- | --- |
-| `minDate` * | text | For date and datetime: earliest date allowed, as YYYY-MM-DD (or YYYY-MM-DDTHH:mm). Earlier days cannot be chosen in the calendar. |
+| `minDate` * | text | For date and datetime: earliest date allowed: YYYY-MM-DD (or YYYY-MM-DDTHH:mm), or relative to the day: today, today+30d, today-18y (units d, w, m, y). Earlier days cannot be chosen in the calendar. |
 | `message` | text | Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}. |
 | `when` | expression | Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies. |
 | `severity` | `error`, `warning` | error: blocks sending (default); warning: the message is shown but does not block. |
@@ -506,7 +510,34 @@ Validation rule of a field, named by its key ({ "minLength": 3 }, { "format": "i
 
 | Property | Type | Description |
 | --- | --- | --- |
-| `maxDate` * | text | For date and datetime: latest date allowed, as YYYY-MM-DD (or YYYY-MM-DDTHH:mm). Later days cannot be chosen in the calendar. |
+| `maxDate` * | text | For date and datetime: latest date allowed: YYYY-MM-DD (or YYYY-MM-DDTHH:mm), or relative to the day: today, today+30d, today-18y (units d, w, m, y). Later days cannot be chosen in the calendar. |
+| `message` | text | Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}. |
+| `when` | expression | Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies. |
+| `severity` | `error`, `warning` | error: blocks sending (default); warning: the message is shown but does not block. |
+
+### `minStrength`
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `minStrength` * | integer 0–4 | For password: minimum strength, from 0 (very weak) to 4 (strong). The estimate counts length and kinds of characters, and discounts repetitions, sequences, years, common words and the values of the other fields. |
+| `message` | text | Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}. |
+| `when` | expression | Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies. |
+| `severity` | `error`, `warning` | error: blocks sending (default); warning: the message is shown but does not block. |
+
+### `minItems`
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `minItems` * | integer 1–100 | For multiselect: minimum number of choices (an empty choice is left to required). |
+| `message` | text | Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}. |
+| `when` | expression | Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies. |
+| `severity` | `error`, `warning` | error: blocks sending (default); warning: the message is shown but does not block. |
+
+### `maxItems`
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `maxItems` * | integer 1–100 | For multiselect: maximum number of choices. |
 | `message` | text | Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}. |
 | `when` | expression | Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies. |
 | `severity` | `error`, `warning` | error: blocks sending (default); warning: the message is shown but does not block. |
@@ -573,6 +604,16 @@ Validation rule of a field, named by its key ({ "minLength": 3 }, { "format": "i
 | --- | --- | --- |
 | `use` * | text | Name of a validator registered by the application (provideValidators). |
 | `params` | object | Parameters of the validator. |
+| `message` | text | Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}. |
+| `when` | expression | Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies. |
+| `severity` | `error`, `warning` | error: blocks sending (default); warning: the message is shown but does not block. |
+
+### `remote`
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `remote` * | text | Data source that checks the value on a service; it sees the value in value (for example "params": { "code": "{{ value }}" }) and answers true / false or { "valid": false, "code": "taken" }. It runs when the user stops typing and every other rule passes; a newer value cancels it. |
+| `debounce` | integer 100–3000 | Milliseconds without typing before the check starts (400 if absent). |
 | `message` | text | Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}. |
 | `when` | expression | Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies. |
 | `severity` | `error`, `warning` | error: blocks sending (default); warning: the message is shown but does not block. |

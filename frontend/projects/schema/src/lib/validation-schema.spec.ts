@@ -67,6 +67,23 @@ describe('validation in the screen schema', () => {
     expect(issuesOf(doc)).toEqual([]);
   });
 
+  it('password fields, relative dates, limits of a multiple choice and remote rules', () => {
+    const doc = form([
+      { name: 'pw', type: 'password', newPassword: true, minStrength: 3, minLength: 10, pattern: '.*\\d.*', messages: { minStrength: 'Stronger' } },
+      { name: 'birth', type: 'date', maxDate: 'today-18y', minDate: '1900-01-01' },
+      { name: 'meeting', type: 'datetime', minDate: 'today', maxDate: 'today+6m' },
+      { name: 'tags', type: 'multiselect', options: ['a', 'b', 'c'], minItems: 1, maxItems: 2 },
+      { name: 'staff', type: 'text', validation: [{ remote: 'checkStaff', debounce: 300, message: 'Taken' }, { minStrength: 2 }] },
+    ]);
+    expect(issuesOf(doc)).toEqual([]);
+    expect(issuesOf(form([{ name: 'a', type: 'text', newPassword: true }])).length).toBeGreaterThan(0);
+    expect(issuesOf(form([{ name: 'a', type: 'select', options: ['x'], minItems: 1 }])).length).toBeGreaterThan(0);
+    expect(issuesOf(form([{ name: 'a', type: 'date', minDate: 'tomorrow' }])).length).toBeGreaterThan(0);
+    expect(issuesOf(form([{ name: 'a', type: 'password', format: 'email' }])).length).toBeGreaterThan(0);
+    // Remote rules check one field: not across fields.
+    expect(issuesOf(form([{ name: 'a', type: 'text' }], { validation: [{ remote: 'x', fields: ['a'] }] })).length).toBeGreaterThan(0);
+  });
+
   it('a form rule must name the fields it checks, except atLeastOne', () => {
     expect(issuesOf(form([{ name: 'a', type: 'date' }], { validation: [{ after: 'a' }] })).length).toBeGreaterThan(0);
   });

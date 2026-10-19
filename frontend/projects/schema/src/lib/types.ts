@@ -112,7 +112,7 @@ export interface ActionDefinition {
 
 export interface FieldDefinition {
   name: string;
-  type: 'text' | 'number' | 'select' | 'checkbox' | 'date' | 'textarea' | 'datetime' | 'radio' | 'switch' | 'multiselect' | 'lookup' | 'file' | 'repeater' | 'richtext';
+  type: 'text' | 'number' | 'select' | 'checkbox' | 'date' | 'textarea' | 'datetime' | 'radio' | 'switch' | 'multiselect' | 'lookup' | 'file' | 'repeater' | 'richtext' | 'password';
   /** For `repeater`: the fields of every row (simple types only). */
   fields?: FieldDefinition[];
   /** For `repeater`: minimum and maximum rows. */
@@ -163,9 +163,15 @@ export interface FieldDefinition {
   step?: number;
   decimals?: number;
   integer?: boolean;
-  /** For date and datetime: earliest and latest date (YYYY-MM-DD or YYYY-MM-DDTHH:mm). */
+  /** For date and datetime: earliest and latest date (YYYY-MM-DD, YYYY-MM-DDTHH:mm, or today, today+30d, today-18y). */
   minDate?: string;
   maxDate?: string;
+  /** For password: a new password (strength meter, autocomplete new-password) and its minimum strength (0–4). */
+  newPassword?: boolean;
+  minStrength?: number;
+  /** For multiselect: minimum and maximum number of choices. */
+  minItems?: number;
+  maxItems?: number;
   /** Messages that replace the standard ones, by constraint. */
   messages?: Partial<Record<FlatConstraint, string>>;
   /** Advanced validation: rules checked in order after the flat constraints. */
@@ -177,7 +183,7 @@ export type ValidationFormat = 'email' | 'url' | 'phone' | 'iban' | 'bic' | 'uui
 /** Changes applied to a text before it is checked and sent. */
 export type TextTransform = 'trim' | 'uppercase' | 'lowercase' | 'removeSpaces';
 /** Constraints that can be written as flat properties of a field (and whose message `messages` can replace). */
-export type FlatConstraint = 'required' | 'minLength' | 'maxLength' | 'pattern' | 'format' | 'min' | 'max' | 'step' | 'decimals' | 'integer' | 'minDate' | 'maxDate';
+export type FlatConstraint = 'required' | 'minLength' | 'maxLength' | 'pattern' | 'format' | 'min' | 'max' | 'step' | 'decimals' | 'integer' | 'minDate' | 'maxDate' | 'minStrength' | 'minItems' | 'maxItems';
 
 /**
  * Rule of a validation list, named by its key (exactly one of `required` … `use`), with an optional message,
@@ -197,6 +203,9 @@ export interface ValidationRule {
   integer?: true;
   minDate?: string;
   maxDate?: string;
+  minStrength?: number;
+  minItems?: number;
+  maxItems?: number;
   /** Equal to another field. */
   sameAs?: string;
   /** Date after / before that of another field (`inclusive`: the same date is allowed). */
@@ -212,6 +221,9 @@ export interface ValidationRule {
   /** Validator registered by the application, with its parameters. */
   use?: string;
   params?: Record<string, unknown>;
+  /** Data source that checks the value on a service, after `debounce` ms without typing (400 if absent). */
+  remote?: string;
+  debounce?: number;
   message?: string;
   /** The rule applies only while this condition is true. */
   when?: Expression;

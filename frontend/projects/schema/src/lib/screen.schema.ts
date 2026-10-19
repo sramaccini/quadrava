@@ -425,9 +425,10 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
             "lookup",
             "file",
             "repeater",
-            "richtext"
+            "richtext",
+            "password"
           ],
-          "description": "Field type. textarea: multi-line text (`rows`); datetime: date and time YYYY-MM-DDTHH:mm (local time); radio: choice among `options`; switch: on/off toggle; multiselect: list of values from `options`. lookup: value chosen among the rows of a data source searched while typing (`lookup`). file: a file chosen by the user (`accept`, `maxSizeKb`, `upload`). repeater: list of rows, each with the fields of `fields` (`minRows`, `maxRows`, `addLabel`). richtext: formatted text written with a toolbar (bold, italic, headings, lists, quotes, links); the value is restricted Markdown, never HTML (`rows` for the height)."
+          "description": "Field type. textarea: multi-line text (`rows`); datetime: date and time YYYY-MM-DDTHH:mm (local time); radio: choice among `options`; switch: on/off toggle; multiselect: list of values from `options`. lookup: value chosen among the rows of a data source searched while typing (`lookup`). file: a file chosen by the user (`accept`, `maxSizeKb`, `upload`). repeater: list of rows, each with the fields of `fields` (`minRows`, `maxRows`, `addLabel`). richtext: formatted text written with a toolbar (bold, italic, headings, lists, quotes, links); the value is restricted Markdown, never HTML (`rows` for the height). password: masked text with a button that shows it; with newPassword a strength meter (`minStrength`)."
         },
         "label": {
           "type": "string"
@@ -537,13 +538,35 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
         },
         "minDate": {
           "type": "string",
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}(T\\d{2}:\\d{2})?$",
-          "description": "For date and datetime: earliest date allowed, as YYYY-MM-DD (or YYYY-MM-DDTHH:mm). Earlier days cannot be chosen in the calendar."
+          "pattern": "^(\\d{4}-\\d{2}-\\d{2}(T\\d{2}:\\d{2})?|today([+-]\\d{1,4}[dwmy])?)$",
+          "description": "For date and datetime: earliest date allowed: YYYY-MM-DD (or YYYY-MM-DDTHH:mm), or relative to the day: today, today+30d, today-18y (units d, w, m, y). Earlier days cannot be chosen in the calendar."
         },
         "maxDate": {
           "type": "string",
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}(T\\d{2}:\\d{2})?$",
-          "description": "For date and datetime: latest date allowed, as YYYY-MM-DD (or YYYY-MM-DDTHH:mm). Later days cannot be chosen in the calendar."
+          "pattern": "^(\\d{4}-\\d{2}-\\d{2}(T\\d{2}:\\d{2})?|today([+-]\\d{1,4}[dwmy])?)$",
+          "description": "For date and datetime: latest date allowed: YYYY-MM-DD (or YYYY-MM-DDTHH:mm), or relative to the day: today, today+30d, today-18y (units d, w, m, y). Later days cannot be chosen in the calendar."
+        },
+        "newPassword": {
+          "type": "boolean",
+          "description": "For password: a new password (registration, change): shows the strength meter and lets the browser propose a generated one. Without it the browser fills in the saved one."
+        },
+        "minStrength": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4,
+          "description": "For password: minimum strength, from 0 (very weak) to 4 (strong). The estimate counts length and kinds of characters, and discounts repetitions, sequences, years, common words and the values of the other fields."
+        },
+        "minItems": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "description": "For multiselect: minimum number of choices (an empty choice is left to required)."
+        },
+        "maxItems": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "description": "For multiselect: maximum number of choices."
         },
         "transform": {
           "type": "array",
@@ -612,6 +635,18 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
             "maxDate": {
               "type": "string",
               "description": "Message when the maxDate constraint is not met."
+            },
+            "minStrength": {
+              "type": "string",
+              "description": "Message when the minStrength constraint is not met."
+            },
+            "minItems": {
+              "type": "string",
+              "description": "Message when the minItems constraint is not met."
+            },
+            "maxItems": {
+              "type": "string",
+              "description": "Message when the maxItems constraint is not met."
             }
           }
         },
@@ -795,7 +830,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                   "enum": [
                     "text",
                     "textarea",
-                    "richtext"
+                    "richtext",
+                    "password"
                   ]
                 }
               }
@@ -829,7 +865,6 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
           },
           "then": {
             "properties": {
-              "pattern": false,
               "format": false,
               "country": false,
               "transform": false
@@ -905,6 +940,73 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
             ],
             "properties": {
               "country": true
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "not": {
+                  "enum": [
+                    "text",
+                    "textarea",
+                    "password"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "properties": {
+              "pattern": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "not": {
+                  "enum": [
+                    "password"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "properties": {
+              "newPassword": false,
+              "minStrength": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "not": {
+                  "enum": [
+                    "multiselect"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "properties": {
+              "minItems": false,
+              "maxItems": false
             }
           }
         }
@@ -3096,8 +3198,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
           "properties": {
             "minDate": {
               "type": "string",
-              "pattern": "^\\d{4}-\\d{2}-\\d{2}(T\\d{2}:\\d{2})?$",
-              "description": "For date and datetime: earliest date allowed, as YYYY-MM-DD (or YYYY-MM-DDTHH:mm). Earlier days cannot be chosen in the calendar."
+              "pattern": "^(\\d{4}-\\d{2}-\\d{2}(T\\d{2}:\\d{2})?|today([+-]\\d{1,4}[dwmy])?)$",
+              "description": "For date and datetime: earliest date allowed: YYYY-MM-DD (or YYYY-MM-DDTHH:mm), or relative to the day: today, today+30d, today-18y (units d, w, m, y). Earlier days cannot be chosen in the calendar."
             },
             "message": true,
             "when": true,
@@ -3114,8 +3216,65 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
           "properties": {
             "maxDate": {
               "type": "string",
-              "pattern": "^\\d{4}-\\d{2}-\\d{2}(T\\d{2}:\\d{2})?$",
-              "description": "For date and datetime: latest date allowed, as YYYY-MM-DD (or YYYY-MM-DDTHH:mm). Later days cannot be chosen in the calendar."
+              "pattern": "^(\\d{4}-\\d{2}-\\d{2}(T\\d{2}:\\d{2})?|today([+-]\\d{1,4}[dwmy])?)$",
+              "description": "For date and datetime: latest date allowed: YYYY-MM-DD (or YYYY-MM-DDTHH:mm), or relative to the day: today, today+30d, today-18y (units d, w, m, y). Later days cannot be chosen in the calendar."
+            },
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "$ref": "#/$defs/ruleOptions",
+          "required": [
+            "minStrength"
+          ],
+          "properties": {
+            "minStrength": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 4,
+              "description": "For password: minimum strength, from 0 (very weak) to 4 (strong). The estimate counts length and kinds of characters, and discounts repetitions, sequences, years, common words and the values of the other fields."
+            },
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "$ref": "#/$defs/ruleOptions",
+          "required": [
+            "minItems"
+          ],
+          "properties": {
+            "minItems": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "description": "For multiselect: minimum number of choices (an empty choice is left to required)."
+            },
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "$ref": "#/$defs/ruleOptions",
+          "required": [
+            "maxItems"
+          ],
+          "properties": {
+            "maxItems": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "description": "For multiselect: maximum number of choices."
             },
             "message": true,
             "when": true,
@@ -3258,6 +3417,30 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
             "params": {
               "type": "object",
               "description": "Parameters of the validator."
+            },
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "$ref": "#/$defs/ruleOptions",
+          "required": [
+            "remote"
+          ],
+          "properties": {
+            "remote": {
+              "type": "string",
+              "pattern": "^[a-zA-Z][A-Za-z0-9]*$",
+              "description": "Data source that checks the value on a service; it sees the value in value (for example \"params\": { \"code\": \"{{ value }}\" }) and answers true / false or { \"valid\": false, \"code\": \"taken\" }. It runs when the user stops typing and every other rule passes; a newer value cancels it."
+            },
+            "debounce": {
+              "type": "integer",
+              "minimum": 100,
+              "maximum": 3000,
+              "description": "Milliseconds without typing before the check starts (400 if absent)."
             },
             "message": true,
             "when": true,
@@ -3513,8 +3696,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
           "properties": {
             "minDate": {
               "type": "string",
-              "pattern": "^\\d{4}-\\d{2}-\\d{2}(T\\d{2}:\\d{2})?$",
-              "description": "For date and datetime: earliest date allowed, as YYYY-MM-DD (or YYYY-MM-DDTHH:mm). Earlier days cannot be chosen in the calendar."
+              "pattern": "^(\\d{4}-\\d{2}-\\d{2}(T\\d{2}:\\d{2})?|today([+-]\\d{1,4}[dwmy])?)$",
+              "description": "For date and datetime: earliest date allowed: YYYY-MM-DD (or YYYY-MM-DDTHH:mm), or relative to the day: today, today+30d, today-18y (units d, w, m, y). Earlier days cannot be chosen in the calendar."
             },
             "fields": true,
             "message": true,
@@ -3533,8 +3716,71 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
           "properties": {
             "maxDate": {
               "type": "string",
-              "pattern": "^\\d{4}-\\d{2}-\\d{2}(T\\d{2}:\\d{2})?$",
-              "description": "For date and datetime: latest date allowed, as YYYY-MM-DD (or YYYY-MM-DDTHH:mm). Later days cannot be chosen in the calendar."
+              "pattern": "^(\\d{4}-\\d{2}-\\d{2}(T\\d{2}:\\d{2})?|today([+-]\\d{1,4}[dwmy])?)$",
+              "description": "For date and datetime: latest date allowed: YYYY-MM-DD (or YYYY-MM-DDTHH:mm), or relative to the day: today, today+30d, today-18y (units d, w, m, y). Later days cannot be chosen in the calendar."
+            },
+            "fields": true,
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "$ref": "#/$defs/formRuleOptions",
+          "required": [
+            "minStrength",
+            "fields"
+          ],
+          "properties": {
+            "minStrength": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 4,
+              "description": "For password: minimum strength, from 0 (very weak) to 4 (strong). The estimate counts length and kinds of characters, and discounts repetitions, sequences, years, common words and the values of the other fields."
+            },
+            "fields": true,
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "$ref": "#/$defs/formRuleOptions",
+          "required": [
+            "minItems",
+            "fields"
+          ],
+          "properties": {
+            "minItems": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "description": "For multiselect: minimum number of choices (an empty choice is left to required)."
+            },
+            "fields": true,
+            "message": true,
+            "when": true,
+            "severity": true
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "$ref": "#/$defs/formRuleOptions",
+          "required": [
+            "maxItems",
+            "fields"
+          ],
+          "properties": {
+            "maxItems": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "description": "For multiselect: maximum number of choices."
             },
             "fields": true,
             "message": true,
