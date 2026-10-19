@@ -9,11 +9,12 @@ import type {
   ExpressionErrorHandler,
   ExpressionI18n,
   PermissionChecker,
+  ValueValidator,
 } from './types';
 
 /**
  * Evaluator of the expressions of the language (CEL). Principles:
- * - no access to network, DOM or arbitrary code: the only exposed functions are `can(permission)` and the presentation ones (`t`, `fmt*`, `plural`), without side effects;
+ * - no access to network, DOM or arbitrary code: the only exposed functions are `can(permission)`, `isValid(name, value[, params])` and the presentation ones (`t`, `fmt*`, `plural`), without side effects;
  * - structural limits on the expression (depth, nodes, arguments);
  * - it never throws: it returns an outcome, and conditions fail "closed" (fallback value).
  */
@@ -21,6 +22,7 @@ export class ExpressionEngine {
   private readonly env: Environment;
   private readonly onError?: ExpressionErrorHandler;
   private readonly i18n?: ExpressionI18n;
+  private readonly validate?: ValueValidator;
   /** Expressions already compiled and templates already split, by text: the same conditions are evaluated at every render. */
   private readonly compiled = new BoundedCache<string, CompiledExpression>(CACHE_SIZE);
   private readonly templates = new BoundedCache<string, Segments>(CACHE_SIZE);
@@ -31,11 +33,13 @@ export class ExpressionEngine {
   ) {
     this.onError = options.onError;
     this.i18n = options.i18n;
+    this.validate = options.validate;
     this.env = new Environment({
       unlistedVariablesAreDyn: true,
       limits: { maxAstNodes: 1000, maxDepth: 32, maxListElements: 100, maxMapEntries: 100, maxCallArguments: 8 },
     }).registerFunction('can(string): bool', (permission: string) => this.permissions.can(permission));
     this.registerPresentation();
+    this.registerValidation();
     // Numbers coming from JSON (state, rows, form) are "double" for CEL, while literals such as 1 are "int":
     // without these rules `state.page + 1` would be an error. The result is a decimal number.
     const arithmetic: Record<string, (a: number, b: number) => number> = {
@@ -94,6 +98,21 @@ export class ExpressionEngine {
         const text = new Intl.PluralRules(locale()).select(n) === 'one' ? one : other;
         return text.replaceAll('{n}', new Intl.NumberFormat(locale()).format(n));
       });
+  }
+
+  /**
+   * `isValid(name, value)` and `isValid(name, value, params)`: the check of a registered validator, for example
+   * `isValid('iban', form.iban)` or `isValid('vatNumber', form.vat, {'country': 'DE'})`. The signature is fixed, so the
+   * static check accepts any validator name; an unknown one is an error when the expression runs.
+   */
+  private registerValidation(): void {
+    const check = (name: string, value: unknown, params: unknown): boolean => {
+      if (!this.validate) throw new Error('isValid: no validators available');
+      return this.validate(name, toPlain(value), toParams(params));
+    };
+    this.env
+      .registerFunction('isValid(string, dyn): bool', (name: string, value: unknown) => check(name, value, {}))
+      .registerFunction('isValid(string, dyn, dyn): bool', (name: string, value: unknown, params: unknown) => check(name, value, params));
   }
 
   /** Evaluates a "bare" CEL expression, without double braces. */

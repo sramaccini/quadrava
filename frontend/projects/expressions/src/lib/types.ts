@@ -46,7 +46,15 @@ export interface ExpressionEngineOptions {
   onError?: ExpressionErrorHandler;
   /** If absent, `t()` returns the fallback text (or the key) and formats use `en-GB`. */
   i18n?: ExpressionI18n;
+  /** Implementation of `isValid(name, value[, params])`. If absent, `isValid` is an evaluation error (fail-closed). */
+  validate?: ValueValidator;
 }
+
+/**
+ * Check of a value with a registered validator: true if valid. It throws for an unknown validator or invalid
+ * parameters (the expression fails, so the condition is false). In the runtime it is the validator registry.
+ */
+export type ValueValidator = (name: string, value: unknown, params: Record<string, unknown>) => boolean;
 
 /** Internationalisation hook: the active language and the lookup of translations. In the runtime it is the core `I18n` service. */
 export interface ExpressionI18n {

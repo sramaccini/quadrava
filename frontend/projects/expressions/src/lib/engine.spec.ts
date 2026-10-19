@@ -240,3 +240,37 @@ describe('expression cache', () => {
     expect(cache.get('c')).toBe(3);
   });
 });
+
+describe('isValid', () => {
+  const calls: { name: string; value: unknown; params: Record<string, unknown> }[] = [];
+  const validating = new ExpressionEngine(
+    { can: () => false },
+    {
+      onError: (e) => errors.push(e),
+      validate: (name, value, params) => {
+        calls.push({ name, value, params });
+        if (name === 'even') return typeof value === 'number' && value % 2 === 0;
+        if (name === 'longer') return typeof value === 'string' && value.length > Number(params['than']);
+        throw new Error(`unknown validator ${name}`);
+      },
+    },
+  );
+
+  beforeEach(() => (calls.length = 0));
+
+  it('asks the validator, with plain values and parameters', () => {
+    expect(validating.evaluate("isValid('even', form.n)", { form: { n: 4 } })).toEqual({ ok: true, value: true });
+    expect(validating.evaluate("isValid('longer', 'abc', {'than': 2})")).toEqual({ ok: true, value: true });
+    expect(calls[1]).toEqual({ name: 'longer', value: 'abc', params: { than: 2 } });
+  });
+
+  it('is an error for an unknown validator, so a condition fails closed', () => {
+    expect(validating.evaluateCondition("{{isValid('nope', 1)}}", {}, { whenMissing: true })).toBe(false);
+    expect(errors.at(-1)?.error).toContain('unknown validator nope');
+  });
+
+  it('is an error without validators, and the static check accepts it anyway', () => {
+    expect(engine.evaluate("isValid('iban', 'x')").ok).toBe(false);
+    expect(engine.check("isValid('anything', form.x, {'country': 'DE'})")).toEqual({ valid: true });
+  });
+});
