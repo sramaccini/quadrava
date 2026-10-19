@@ -125,7 +125,7 @@ export class EditorStore extends DocumentState implements DataSourceList {
    * named sequences.
    */
   override suggestions(property: string): string[] {
-    if (['source', 'call', 'refresh'].includes(property)) return this.sourceNames();
+    if (['source', 'call', 'refresh', 'remote'].includes(property)) return this.sourceNames();
     if (property === 'navigate') return this.knownScreens();
     if (property === 'run') return this.actionNames();
     return [];
@@ -580,7 +580,8 @@ export class EditorStore extends DocumentState implements DataSourceList {
       if (typeof value['type'] === 'string' && typeof value['source'] === 'string' && !names.has(value['source'])) {
         add(toPointer([...path, 'source']), this.t('ed.issue.unknownSource', { name: value['source'] }), 'warning');
       }
-      for (const [key, step] of [['call', value['call']], ['refresh', value['refresh']]] as const) {
+      // Steps that call a data source, and the remote rules of fields that ask one.
+      for (const [key, step] of [['call', value['call']], ['refresh', value['refresh']], ['remote', value['remote']]] as const) {
         if (typeof step === 'string' && !names.has(step)) add(toPointer([...path, key]), this.t('ed.issue.unknownSource', { name: step }), 'warning');
       }
       if (typeof value['run'] === 'string' && !actions.has(value['run'])) {

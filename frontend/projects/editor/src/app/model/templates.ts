@@ -22,12 +22,12 @@ export const TEMPLATE_SOURCES: Record<string, { name: string; method: 'GET' | 'P
 };
 
 /** Field types the palette offers as standalone `input` components (item `input.<type>`). */
-export const INPUT_KINDS = ['text', 'textarea', 'richtext', 'number', 'select', 'multiselect', 'radio', 'checkbox', 'switch', 'date', 'datetime', 'lookup', 'file'] as const;
+export const INPUT_KINDS = ['text', 'textarea', 'richtext', 'password', 'number', 'select', 'multiselect', 'radio', 'checkbox', 'switch', 'date', 'datetime', 'lookup', 'file'] as const;
 
 /** Initial name of the field of an `input`, by type (made unique in the screen by `uniqueInputName`). */
 const INPUT_NAMES: Record<string, string> = {
   text: 'text', textarea: 'notes', number: 'number', select: 'choice', multiselect: 'choices', radio: 'option',
-  checkbox: 'confirmed', switch: 'active', date: 'date', datetime: 'moment', lookup: 'customer', file: 'attachment', richtext: 'description',
+  checkbox: 'confirmed', switch: 'active', date: 'date', datetime: 'moment', lookup: 'customer', file: 'attachment', richtext: 'description', password: 'password',
 };
 
 /** The starting field of an `input` of the given type. */

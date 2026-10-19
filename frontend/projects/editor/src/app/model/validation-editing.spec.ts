@@ -29,10 +29,11 @@ describe('editing validation', () => {
   });
 
   it('the rules of fields and forms are variants recognised by their key, each with a label in both languages', () => {
-    const keys = ['required', 'minLength', 'maxLength', 'pattern', 'format', 'min', 'max', 'step', 'decimals', 'integer', 'minDate', 'maxDate', 'sameAs', 'after', 'before', 'atLeastOne', 'unique', 'rule', 'use'];
-    expect(fieldRules.map((v) => v.key)).toEqual(keys);
+    const keys = ['required', 'minLength', 'maxLength', 'pattern', 'format', 'min', 'max', 'step', 'decimals', 'integer', 'minDate', 'maxDate', 'minStrength', 'minItems', 'maxItems', 'sameAs', 'after', 'before', 'atLeastOne', 'unique', 'rule', 'use'];
+    // Remote rules check one field: only in the rules of fields.
+    expect(fieldRules.map((v) => v.key)).toEqual([...keys, 'remote']);
     expect(formRules.map((v) => v.key)).toEqual(keys);
-    for (const key of keys) {
+    for (const key of [...keys, 'remote']) {
       expect(EDITOR_MESSAGES['en'][`ed.variant.${key}`], key).toBeTruthy();
       expect(EDITOR_MESSAGES['it'][`ed.variant.${key}`], key).toBeTruthy();
     }
@@ -72,6 +73,17 @@ describe('editing validation', () => {
       TestBed.configureTestingModule({ providers: documentProviders('screen', 'd1') });
       TestBed.inject(I18n).addMessages('en', EDITOR_MESSAGES['en']);
       store = TestBed.inject(EditorStore);
+    });
+
+    it('a remote rule names a data source of the screen', () => {
+      store.load({
+        schemaVersion: '1.0',
+        screen: 'v',
+        dataSources: { checkStaff: { type: 'rest', method: 'GET', url: '/api/staff/check' } },
+        components: [{ type: 'form', fields: [{ name: 'a', type: 'text', validation: [{ remote: 'checkStaff' }] }, { name: 'b', type: 'text', validation: [{ remote: 'nope' }] }] }],
+      });
+      expect(store.issues().map((i) => `${i.severity} ${i.pointer}`)).toEqual(['warning /components/0/fields/1/validation/0/remote']);
+      expect(store.suggestions('remote')).toEqual(['checkStaff']);
     });
 
     it('a pattern that does not compile, and a constraint on the wrong field type, are reported on the field', () => {
