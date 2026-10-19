@@ -161,6 +161,18 @@ describe('preview (inside the iframe)', () => {
     await deliver({ screen, selectMode: false });
     document.body.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'z', ctrlKey: true }));
     expect(sent.filter((m) => m.type === 'lc-preview:key')).toHaveLength(3);
+    // Except Esc with a component chosen (Alt+click), when the screen did not use it to close something.
+    const esc = () => document.body.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'Escape' }));
+    esc();
+    expect(sent.filter((m) => m.type === 'lc-preview:key')).toHaveLength(3);
+    await deliver({ screen, selectMode: false, selectedId: 'button-1' });
+    esc();
+    expect(sent.filter((m) => m.type === 'lc-preview:key')).toHaveLength(4);
+    const used = (event: Event) => event.preventDefault();
+    document.body.addEventListener('keydown', used);
+    esc();
+    document.body.removeEventListener('keydown', used);
+    expect(sent.filter((m) => m.type === 'lc-preview:key')).toHaveLength(4);
   });
 
   it('a component dragged from the palette onto the drawing: indicator and drop message to the editor', async () => {

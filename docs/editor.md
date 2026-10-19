@@ -195,7 +195,7 @@ A theme window: a file of `themes/` in the project (design tokens). The panel on
 | Enter on the title of a window (or double click) | maximize / restore |
 | Ctrl+Z / Ctrl+Y (or Ctrl+Shift+Z) | undo / redo (inside fields too: rapid changes to the same property are a single step) |
 | Del | deletes the selected node |
-| Esc | deselects everything (after closing an open menu, panel or suggestion list) |
+| Esc | deselects everything (after closing an open menu, panel or suggestion list); in the preview outside «Select» mode too, when the screen does not use it |
 | Ctrl+D | duplicate |
 | Ctrl+C / Ctrl+X / Ctrl+V | copy / cut / paste at the insertion point |
 | Alt+↑ / Alt+↓ | move up / down |

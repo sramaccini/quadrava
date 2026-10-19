@@ -188,6 +188,15 @@ export class PreviewApp {
     const listener = (event: Event): void => this.guard(event);
     for (const type of GUARDED_EVENTS) document.addEventListener(type, listener, true);
     inject(DestroyRef).onDestroy(() => GUARDED_EVENTS.forEach((type) => document.removeEventListener(type, listener, true)));
+    // Outside selection mode the keys belong to the screen being tried; only an Esc that the screen did not use (to close a
+    // drop-down, a dialog…) goes to the editor, to deselect the component chosen with Alt+click.
+    const escape = (event: KeyboardEvent): void => {
+      const state = this.state();
+      if (event.key !== 'Escape' || event.defaultPrevented || state?.selectMode || !state?.selectedId) return;
+      this.channel.send({ type: 'lc-preview:key', key: 'Escape', ctrl: false, shift: false, alt: false });
+    };
+    document.addEventListener('keydown', escape);
+    inject(DestroyRef).onDestroy(() => document.removeEventListener('keydown', escape));
 
     this.channel.send({ type: 'lc-preview:ready' });
 
