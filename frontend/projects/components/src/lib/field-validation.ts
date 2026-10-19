@@ -12,7 +12,7 @@ export function validationEnv(runtime: ScreenRuntime, i18n: I18n, scope: Scope, 
     scope,
     values,
     label: (name) => {
-      const field = fields.find((f) => f.name === name);
+      const field = Array.isArray(fields) ? fields.find((f) => f?.name === name) : undefined;
       return field ? runtime.text(field.label, scope) || field.name : name;
     },
   };
@@ -30,7 +30,7 @@ export function repeaterRows(value: unknown): Record<string, unknown>[] {
 export function repeaterCellChecks(field: FieldDefinition, value: unknown, env: ValidationEnv): Record<string, FieldCheck>[] {
   const rows = repeaterRows(value);
   const repeated = uniqueCellErrors(field, rows, env);
-  const fields = field.fields ?? [];
+  const fields = Array.isArray(field.fields) ? field.fields : [];
   return rows.map((item, i) => {
     const cellEnv = validationEnv(env.runtime, env.i18n, { ...env.scope, item }, item, fields);
     const checks: Record<string, FieldCheck> = {};
