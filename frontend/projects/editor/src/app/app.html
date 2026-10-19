@@ -134,6 +134,22 @@
       }
     </ng-container>
   </nz-modal>
+  <nz-modal [nzVisible]="publishReport() !== null" [nzTitle]="i18n.t('ed.publish.title')" [nzFooter]="null" [nzWidth]="520" (nzOnCancel)="publishReport.set(null)">
+    <ng-container *nzModalContent>
+      @if (publishReport(); as report) {
+        <div class="publish-report" data-publish-report>
+          <p>{{ i18n.t('ed.publish.summary', { saved: report.saved.length, published: report.published.length, env: registry.env() }) }}</p>
+          @if (report.failed.length) {
+            <ul role="alert">
+              @for (failure of report.failed; track failure.path) {
+                <li><code>{{ failure.path }}</code>: {{ failure.status === 409 ? i18n.t('ed.publish.notApproved') : failure.reason || i18n.t('ed.registry.unreachable') }}</li>
+              }
+            </ul>
+          }
+        </div>
+      }
+    </ng-container>
+  </nz-modal>
   <nz-modal [nzVisible]="showAbout()" [nzTitle]="i18n.t('ed.menu.about')" [nzFooter]="null" [nzWidth]="420" (nzOnCancel)="showAbout.set(false)">
     <ng-container *nzModalContent>
       <div class="about">

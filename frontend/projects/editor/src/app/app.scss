@@ -61,3 +61,5 @@
 }
 ::ng-deep .about { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; --qv-wordmark-size: 22px; }
 ::ng-deep .about p { margin: 0; }
+::ng-deep .publish-report p { margin: 0 0 8px; }
+::ng-deep .publish-report ul { margin: 0; padding-left: 18px; font-size: 13px; color: var(--lc-color-danger); }

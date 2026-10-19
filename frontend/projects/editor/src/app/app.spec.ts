@@ -229,6 +229,7 @@ describe('screen editor', () => {
       'Save all',
       'Export…',
       'Save to registry',
+      'Publish project to registry…',
       'Registry…',
       'Close',
       'Close all',
@@ -1023,6 +1024,8 @@ describe('screen editor', () => {
     expect((el.querySelector('ed-preview iframe') as HTMLIFrameElement).style.width).toBe('768px');
   });
   it('texts: the translations are saved in the registry merged with the existing catalogue and published', async () => {
+    // Outside a project (with a project its catalogues are published as they are).
+    await withoutProject();
     localStorage.setItem('lc.editor.registry', JSON.stringify({ appId: 'demo', env: 'development' }));
     const calls: { url: string; method: string; body?: string; ifMatch?: string }[] = [];
     vi.stubGlobal('fetch', async (url: string, init: RequestInit = {}) => {

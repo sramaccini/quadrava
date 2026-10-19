@@ -18,6 +18,7 @@ import { NavigationStore } from './model/navigation-store';
 import { Project, type ProjectResource, type ResourceKind } from './model/project';
 import { ProjectCommands } from './model/project-commands';
 import { ProjectLibrary } from './model/project-library';
+import { ProjectPublisher, type PublishReport } from './model/project-publisher';
 import { documentRef, type DocumentKind } from './model/registry-client';
 import { RegistrySession, type RegistryRef } from './model/registry-session';
 import { SavedDocuments, type EditorKind } from './model/saved-documents';
@@ -209,6 +210,11 @@ export class App {
     const win = this.active();
     return win && win.kind !== 'project' && win.kind !== 'messages' ? { win, kind: win.kind as DocumentKind } : null;
   });
+  /** Outcome of the last publication of the project (shown in a dialog). */
+  protected readonly publishReport = signal<PublishReport | null>(null);
+  /** «Publish project» waits for the choice of the application. */
+  private publishAfterChoice = false;
+  private readonly publisher = inject(ProjectPublisher);
   /** Dialog asking for the application before «Save to registry». */
   protected readonly showRegistryTarget = signal(false);
   /** Shortcuts shown in the help, by group (texts in the `ed.keys.*` messages). */
@@ -257,6 +263,7 @@ export class App {
       { id: 'save-all', label: t('ed.menu.saveAll'), disabled: !this.workspace.windows().length, run: () => void this.commands.saveAll() },
       { id: 'export', label: t('ed.menu.export'), disabled: !win, run: () => win && void this.commands.export(win) },
       { id: 'save-registry', label: t('ed.menu.saveRegistry'), disabled: noRegistry || !registryDocument, hint: registryHint, run: () => void this.saveToRegistry() },
+      { id: 'publish-project', label: t('ed.menu.publishProject'), disabled: noRegistry || !open, hint: registryHint, run: () => void this.publishProject() },
       { id: 'registry', label: t('ed.menu.registry'), separator: true, disabled: !registryDocument, run: () => this.showRegistry.set(true) },
       { id: 'close', label: t('ed.menu.close'), separator: true, disabled: !win, run: () => win && void this.closeWindow(win) },
       { id: 'close-all', label: t('ed.menu.closeAll'), disabled: !this.workspace.windows().length, run: () => void this.closeAll() },
@@ -540,7 +547,34 @@ export class App {
   protected async chooseRegistryApp(appId: string): Promise<void> {
     this.showRegistryTarget.set(false);
     this.registry.appId.set(appId);
-    await this.saveToRegistry();
+    if (this.publishAfterChoice) {
+      this.publishAfterChoice = false;
+      await this.publishProject();
+    } else await this.saveToRegistry();
+  }
+
+  /**
+   * «Publish project»: every resource saved in the project becomes a new version in the chosen application of the registry and
+   * is published in its environment (data sources first, the navigation last). Unsaved changes of the windows are not published:
+   * the confirmation says so. The outcome, resource by resource, is shown at the end.
+   */
+  protected async publishProject(): Promise<void> {
+    if ((await this.registry.check()) === 'login') return this.registry.login();
+    if (this.registry.status() !== 'available' || !this.project.isOpen()) return;
+    if (!this.registry.appId()) {
+      this.publishAfterChoice = true;
+      return this.showRegistryTarget.set(true);
+    }
+    const appId = this.registry.appId();
+    const env = this.registry.env();
+    const unsaved = this.workspace.windows().filter((w) => this.workspace.isUnsaved(w)).length;
+    const question = this.i18n.t('ed.publish.confirm', { name: this.project.manifest()?.name ?? '', app: appId, env, n: unsaved });
+    if (!(await this.confirmation.confirm(question))) return;
+    try {
+      this.publishReport.set(await this.publisher.publish(appId, env));
+    } catch (e) {
+      this.registry.report(e);
+    }
   }
 
   /** Closes a window, asking for confirmation if its document has unsaved changes. */

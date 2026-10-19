@@ -105,7 +105,7 @@ The main ones are in the DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In short:
 3. Local data after the October renames: recreate Keycloak (`cd idp && docker compose down && docker compose up -d`) and delete `data/registry` (old review states, roles, identifiers and permissions).
 4. Conformance kits in CI against the reference services (today they are run by hand, for example after `npm run stack`).
 5. Editor: comparison between two registry versions; border side widths from the preview.
-5b. Projects: publish a whole project to the registry (every resource, data sources before the screens); «Save to the registry and publish» of the «Texts» panel from the catalogues of the project; run the conformance kit of contract 0.6 against the reference registry.
+5b. Projects: review several versions at once in the Registry panel (after «Publish project» in a protected environment every resource waits for its own approval).
 6. e2e in Firefox and WebKit.
 7. CEL in `validate:examples` and, eventually, in the registry.
 8. Bring the project documents (architecture § 9, functional specification, guidelines) up to date with the October status.

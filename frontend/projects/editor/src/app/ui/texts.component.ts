@@ -129,12 +129,16 @@ export class TextsComponent {
    * Saves in the registry the translations written in the editor and publishes them in the chosen environment: for every language it starts
    * from the last version of the catalogue (`messages` document), adds or replaces the changed keys and
    * saves a new version, giving the starting one (if someone saved in the meantime the registry refuses and
-   * it tries again). The other keys of the catalogue stay as they were.
+   * it tries again). The other keys of the catalogue stay as they were. With a project its catalogues are published as
+   * they are (with the translations of this screen not saved yet): the project is the source of the texts.
    */
   protected async saveToRegistry(): Promise<void> {
     this.registry = readRegistrySettings();
     const { appId, env } = this.registry;
-    const changed = Object.entries(this.store.translations()).filter(([locale, texts]) => this.locales().includes(locale) && Object.keys(texts).length > 0);
+    const project = this.projectTexts();
+    const changed = project
+      ? project.languages.map((locale): [string, Record<string, string>] => [locale, project.catalogues[locale] ?? {}]).filter(([, texts]) => Object.keys(texts).length > 0)
+      : Object.entries(this.store.translations()).filter(([locale, texts]) => this.locales().includes(locale) && Object.keys(texts).length > 0);
     if (!appId || changed.length === 0) {
       this.notifier.toast(this.i18n.t(appId ? 'ed.texts.nothingToSave' : 'ed.texts.registryHint'));
       return;
@@ -145,7 +149,7 @@ export class TextsComponent {
       for (const [locale, texts] of changed) {
         const latest = (await this.client.versions(appId, 'messages', locale))[0];
         const current = latest ? ((await this.client.version(appId, 'messages', locale, latest.hash)) as { texts?: Record<string, string> }) : null;
-        const merged = { ...(current?.texts ?? {}), ...texts };
+        const merged = project ? texts : { ...(current?.texts ?? {}), ...texts };
         const saved = await this.client.save(appId, 'messages', locale, { schemaVersion: '1.0', messages: locale, texts: merged }, latest?.hash);
         await this.client.publish(appId, 'messages', locale, env, saved.hash);
         done.push(locale);
