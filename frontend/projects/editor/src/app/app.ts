@@ -39,6 +39,7 @@ import { PaletteComponent } from './ui/palette.component';
 import { ProjectPanelComponent } from './ui/project-panel.component';
 import { RegistryOpenComponent, type RegistryDocument } from './ui/registry-open.component';
 import { RegistryPanelComponent } from './ui/registry-panel.component';
+import { RegistryReviewComponent } from './ui/registry-review.component';
 import { RegistryTargetComponent } from './ui/registry-target.component';
 import { SCREEN_VIEWS } from './ui/screen-editor.component';
 import { StartPageComponent, type StartCommand } from './ui/start-page.component';
@@ -128,6 +129,7 @@ const SHORTCUTS: { group: string; keys: [string, string][] }[] = [
     ProjectPanelComponent,
     RegistryOpenComponent,
     RegistryPanelComponent,
+    RegistryReviewComponent,
     RegistryTargetComponent,
     StartPageComponent,
     ThemeInspectorComponent,
@@ -210,6 +212,8 @@ export class App {
     const win = this.active();
     return win && win.kind !== 'project' && win.kind !== 'messages' ? { win, kind: win.kind as DocumentKind } : null;
   });
+  /** The dialog reviewing several documents of the registry at once. */
+  protected readonly showReview = signal(false);
   /** Outcome of the last publication of the project (shown in a dialog). */
   protected readonly publishReport = signal<PublishReport | null>(null);
   /** «Publish project» waits for the choice of the application. */
@@ -265,6 +269,7 @@ export class App {
       { id: 'save-registry', label: t('ed.menu.saveRegistry'), disabled: noRegistry || !registryDocument, hint: registryHint, run: () => void this.saveToRegistry() },
       { id: 'publish-project', label: t('ed.menu.publishProject'), disabled: noRegistry || !open, hint: registryHint, run: () => void this.publishProject() },
       { id: 'registry', label: t('ed.menu.registry'), separator: true, disabled: !registryDocument, run: () => this.showRegistry.set(true) },
+      { id: 'review', label: t('ed.menu.review'), disabled: noRegistry, hint: registryHint, run: () => void this.openReview() },
       { id: 'close', label: t('ed.menu.close'), separator: true, disabled: !win, run: () => win && void this.closeWindow(win) },
       { id: 'close-all', label: t('ed.menu.closeAll'), disabled: !this.workspace.windows().length, run: () => void this.closeAll() },
     ];
@@ -542,6 +547,15 @@ export class App {
     if (await this.registry.save(win.id, win.kind as DocumentKind, doc)) this.saved.markSaved(win.id, doc);
     // The validation problems of the registry are read, point by point, in the Registry panel.
     else if (this.registry.issues().length) this.showRegistry.set(true);
+  }
+
+  /** «Review versions…»: the documents of the application waiting for a step, to review or publish several at once. */
+  protected async openReview(): Promise<void> {
+    if ((await this.registry.check()) === 'login') return this.registry.login();
+    if (this.registry.status() !== 'available') return;
+    if (!this.registry.appId()) return this.notifier.toast(this.i18n.t('ed.review.noApp'), 'error');
+    this.publishReport.set(null);
+    this.showReview.set(true);
   }
 
   protected async chooseRegistryApp(appId: string): Promise<void> {

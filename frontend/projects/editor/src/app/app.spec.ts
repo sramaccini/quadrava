@@ -231,6 +231,7 @@ describe('screen editor', () => {
       'Save to registry',
       'Publish project to registry…',
       'Registry…',
+      'Review versions in registry…',
       'Close',
       'Close all',
     ]);

@@ -147,8 +147,18 @@
                 <li><code>{{ failure.path }}</code>: {{ failure.status === 409 ? i18n.t('ed.publish.notApproved') : failure.reason || i18n.t('ed.registry.unreachable') }}</li>
               }
             </ul>
+            @if (report.failed.some((f) => f.status === 409)) {
+              <p><button nz-button nzType="primary" nzSize="small" type="button" data-open-review (click)="openReview()">{{ i18n.t('ed.publish.review') }}</button></p>
+            }
           }
         </div>
+      }
+    </ng-container>
+  </nz-modal>
+  <nz-modal [nzVisible]="showReview()" [nzTitle]="i18n.t('ed.review.title')" [nzFooter]="null" [nzWidth]="760" (nzOnCancel)="showReview.set(false)">
+    <ng-container *nzModalContent>
+      @if (showReview()) {
+        <ed-registry-review />
       }
     </ng-container>
   </nz-modal>
