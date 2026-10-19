@@ -1,0 +1,90 @@
+openapi: 3.1.0
+info:
+  title: Quadrava - Errors of application services
+  version: 0.1.0
+  description: >
+    How an application back end reports a failed request to the front end. Every error is a Problem (RFC 9457) with
+    `application/problem+json`. When the data of a request is not valid (400 or 422), `errors` lists the problems field
+    by field, so that the form that sent the data shows each message next to its field.
+
+    The front end never shows `title`, `detail` or `message`: they are for developers and logs, and can contain internal
+    details or be in another language. It shows the translation of `code` instead: the key `validation.<code>` of the
+    application's catalogues, then the platform's `lc.validation.<code>` (the codes of the built-in validators, such as
+    `required`, `maxLength`, `email`, `vatNumber`), then a generic «Invalid value».
+
+    Field errors carry no values entered by the user and no personal data: `params` are the limits of the rule
+    (`{"max": 50}`), never what was sent.
+  license:
+    name: Mozilla Public License 2.0
+    identifier: MPL-2.0
+paths: {}
+components:
+  responses:
+    InvalidData:
+      description: The data of the request is not valid; `errors` says where and why.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+          example:
+            type: about:blank
+            title: Invalid data
+            status: 422
+            errors:
+              - path: /staffNumber
+                code: taken
+              - path: /lines/1/quantity
+                code: max
+                params: { max: 50 }
+  schemas:
+    Problem:
+      type: object
+      description: Error in RFC 9457 format.
+      required: [title, status]
+      properties:
+        type:
+          type: string
+          description: URI that identifies the kind of problem (about:blank if there is none).
+        title:
+          type: string
+          description: Short summary for developers. Not shown to the user.
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+          description: HTTP status of the response.
+        detail:
+          type: string
+          description: Explanation for developers. Not shown to the user.
+        correlationId:
+          type: string
+          description: Identifier of the request in the logs and traces of the back end.
+        errors:
+          type: array
+          maxItems: 50
+          description: Problems of the data, one per field. The front end reads at most 50 of them.
+          items: { $ref: '#/components/schemas/FieldError' }
+    FieldError:
+      type: object
+      description: Problem of one field of the data sent.
+      required: [path, code]
+      properties:
+        path:
+          type: string
+          maxLength: 200
+          pattern: '^(/([^/~]|~[01])*)+$'
+          description: >
+            JSON Pointer (RFC 6901) to the value in the request body, for example /email or /lines/0/code for a cell of
+            a list of rows.
+        code:
+          type: string
+          pattern: '^[A-Za-z][A-Za-z0-9_.-]{0,63}$'
+          description: Reason of the problem, translated by the front end (required, maxLength, taken, …).
+        params:
+          type: object
+          maxProperties: 10
+          description: Values of the message of the code (limits, counts), only texts, numbers and booleans.
+          additionalProperties:
+            type: [string, number, boolean]
+        message:
+          type: string
+          description: Text for developers. Not shown to the user.
