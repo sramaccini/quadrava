@@ -13,6 +13,7 @@ import { QuadravaWordmarkComponent } from 'components';
 import { validateTheme } from 'schema';
 import type { Json } from './model/doc-ops';
 import { EditorStore } from './model/editor-store';
+import { runScreenShortcut } from './model/screen-shortcuts';
 import { FileAccess } from './model/file-access';
 import { NavigationStore } from './model/navigation-store';
 import { Project, type ProjectResource, type ResourceKind } from './model/project';
@@ -94,6 +95,7 @@ const SHORTCUTS: { group: string; keys: [string, string][] }[] = [
     group: 'ed.keys.panels',
     keys: [
       ['ed.keys.k.pick', 'ed.keys.pick'],
+      ['ed.keys.k.previewMenu', 'ed.keys.previewMenu'],
       ['ed.keys.k.enter', 'ed.keys.paletteFirst'],
       ['Esc', 'ed.keys.clearSearch'],
       ['Esc', 'ed.keys.closeSide'],
@@ -625,19 +627,7 @@ export class App {
     if (isEditable(event.target) || dialog) return;
     if (win.kind === 'navigation') return this.navigationKey(event, win.injector.get(NavigationStore), ctrl, key);
     if (win.kind !== 'screen') return;
-    const store = win.injector.get(EditorStore);
-    const selection = store.selection();
-    if (!selection.length) {
-      if (ctrl && key === 'v') this.handled(event, () => store.paste());
-      return;
-    }
-    if (key === 'delete') this.handled(event, () => (store.multi().length > 1 ? store.removeMany(store.multi()) : store.remove(selection)));
-    else if (ctrl && key === 'd') this.handled(event, () => store.duplicate(selection));
-    else if (ctrl && key === 'c') this.handled(event, () => store.copy(selection));
-    else if (ctrl && key === 'x') this.handled(event, () => store.cut(selection));
-    else if (ctrl && key === 'v') this.handled(event, () => store.paste());
-    else if (event.altKey && key === 'arrowup') this.handled(event, () => store.move(selection, -1));
-    else if (event.altKey && key === 'arrowdown') this.handled(event, () => store.move(selection, 1));
+    if (runScreenShortcut(win.injector.get(EditorStore), { key: event.key, ctrl, shift: event.shiftKey, alt: event.altKey })) event.preventDefault();
   }
 
   /** In the navigation: delete, duplicate, move (copy and paste apply only to the nodes of screens). */

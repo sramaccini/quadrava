@@ -135,6 +135,32 @@ describe('preview (inside the iframe)', () => {
     expect(document.activeElement).toBe(input);
   });
 
+  it('in selection mode the editing shortcuts and the right click go to the editor', async () => {
+    await deliver({ screen, selectMode: true });
+    await until(() => !!el.querySelector('lc-node[data-node-id="button-1"] button'), 'button-1');
+    const undo = new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'z', ctrlKey: true });
+    document.body.dispatchEvent(undo);
+    expect(undo.defaultPrevented).toBe(true);
+    document.body.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'Delete' }));
+    // Other keys are not shortcuts: they are not sent.
+    document.body.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'a' }));
+    expect(sent.filter((m) => m.type === 'lc-preview:key')).toEqual([
+      { type: 'lc-preview:key', key: 'z', ctrl: true, shift: false, alt: false },
+      { type: 'lc-preview:key', key: 'Delete', ctrl: false, shift: false, alt: false },
+    ]);
+    const right = new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 30, clientY: 40 });
+    el.querySelector('lc-node[data-node-id="button-1"] button')!.dispatchEvent(right);
+    expect(right.defaultPrevented).toBe(true);
+    expect(sent.slice(-2)).toEqual([
+      { type: 'lc-preview:select', id: 'button-1' },
+      { type: 'lc-preview:context', id: 'button-1', x: 30, y: 40 },
+    ]);
+    // Outside selection mode the keys belong to the screen being tried.
+    await deliver({ screen, selectMode: false });
+    document.body.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'z', ctrlKey: true }));
+    expect(sent.filter((m) => m.type === 'lc-preview:key')).toHaveLength(2);
+  });
+
   it('a component dragged from the palette onto the drawing: indicator and drop message to the editor', async () => {
     await deliver({ screen });
     await until(() => !!el.querySelector('lc-node[data-node-id="button-1"]'), 'button-1');

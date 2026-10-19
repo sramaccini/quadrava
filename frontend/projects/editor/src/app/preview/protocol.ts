@@ -67,7 +67,11 @@ export type FromPreview =
   /** A component already there dragged on the drawing (selection mode): move it relative to `targetId`. */
   | { type: 'lc-preview:move'; id: string; targetId: string | null; zone: DropZone }
   /** Handle of the selected component: new value of `span` (grid) or `grow` (box). */
-  | { type: 'lc-preview:resize'; id: string; property: ResizeProperty; value: number };
+  | { type: 'lc-preview:resize'; id: string; property: ResizeProperty; value: number }
+  /** An editing shortcut pressed in selection mode (undo, copy, paste, delete…): the editor runs it. */
+  | { type: 'lc-preview:key'; key: string; ctrl: boolean; shift: boolean; alt: boolean }
+  /** Right click on component `id` in selection mode, at `x`, `y` of the preview's viewport: the editor opens its menu. */
+  | { type: 'lc-preview:context'; id: string; x: number; y: number };
 
 export function isToPreview(data: unknown): data is ToPreview {
   return typeof data === 'object' && data !== null && (data as ToPreview).type === 'lc-preview:state' && typeof (data as ToPreview).state === 'object';
@@ -84,6 +88,12 @@ export function isFromPreview(data: unknown): data is FromPreview {
   }
   if (message.type === 'lc-preview:resize') {
     return typeof message.id === 'string' && ['span', 'grow'].includes(message.property) && Number.isInteger(message.value) && message.value >= 1 && message.value <= 12;
+  }
+  if (message.type === 'lc-preview:key') {
+    return typeof message.key === 'string' && message.key.length <= 20 && [message.ctrl, message.shift, message.alt].every((flag) => typeof flag === 'boolean');
+  }
+  if (message.type === 'lc-preview:context') {
+    return typeof message.id === 'string' && Number.isFinite(message.x) && Number.isFinite(message.y);
   }
   if (message.type === 'lc-preview:drop') {
     return (

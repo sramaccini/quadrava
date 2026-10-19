@@ -7,8 +7,9 @@ import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import { getIn, isObject, samePath, startsWith, type Json, type Path } from '../model/doc-ops';
 import { dropPoint, zoneAt, type DropZone } from '../model/drop';
 import { EditorStore } from '../model/editor-store';
-import { childSlots, containerItems, ownerOf, targetAt } from '../model/schema-info';
+import { childSlots, containerItems, targetAt } from '../model/schema-info';
 import { ContextMenuComponent } from './context-menu.component';
+import { nodeMenuItems } from './node-menu';
 import { DockPinComponent } from './dock-pin.component';
 import type { MenuItem } from './menu-bar.component';
 import { DRAG_NODE, DRAG_TYPE } from './palette.component';
@@ -27,8 +28,6 @@ export interface OutlineItem {
   detail: string;
   severity: 'error' | 'warning' | null;
   children: OutlineItem[];
-  /** Node with tabs or steps: they can be added. */
-  canAddItem: boolean;
   first: boolean;
   last: boolean;
 }
@@ -197,48 +196,9 @@ export class OutlineComponent {
     });
   }
 
-  /** Context menu items for a row: the outline commands, «Wrap in…» and the container. */
+  /** Context menu items for a row: the same as in the preview (see `nodeMenuItems`). */
   protected menuItems(item: OutlineItem): MenuItem[] {
-    const t = (key: string) => this.i18n.t(key);
-    if (this.inMulti(item.path)) {
-      const paths = this.store.multi();
-      const n = { n: paths.length };
-      return [
-        { id: 'wrap-section', label: this.i18n.t('ed.ctx.wrapManySection', n), run: () => this.store.wrapMany(paths, 'section') },
-        { id: 'wrap-box', label: this.i18n.t('ed.ctx.wrapManyBox', n), run: () => this.store.wrapMany(paths, 'box') },
-        { id: 'wrap-grid', label: this.i18n.t('ed.ctx.wrapManyGrid', n), run: () => this.store.wrapMany(paths, 'grid') },
-        { id: 'delete', label: this.i18n.t('ed.ctx.deleteMany', n), shortcut: t('ed.key.delete'), separator: true, run: () => this.store.removeMany(paths) },
-      ];
-    }
-    const path = item.path;
-    const node = item.kind === 'node';
-    const items: MenuItem[] = [];
-    if (node) {
-      items.push(
-        { id: 'cut', label: t('ed.menu.cut'), shortcut: 'Ctrl+X', run: () => this.store.cut(path) },
-        { id: 'copy', label: t('ed.menu.copy'), shortcut: 'Ctrl+C', run: () => this.store.copy(path) },
-        { id: 'paste', label: t('ed.menu.paste'), shortcut: 'Ctrl+V', disabled: !this.store.clipboard(), run: () => this.store.paste() },
-      );
-    }
-    items.push(
-      { id: 'duplicate', label: t('ed.menu.duplicate'), shortcut: 'Ctrl+D', separator: node, run: () => this.store.duplicate(path) },
-      { id: 'delete', label: t('ed.menu.delete'), shortcut: t('ed.key.delete'), run: () => this.store.remove(path) },
-      { id: 'move-up', label: t('ed.menu.moveUp'), shortcut: 'Alt+↑', separator: true, disabled: item.first, run: () => this.store.move(path, -1) },
-      { id: 'move-down', label: t('ed.menu.moveDown'), shortcut: 'Alt+↓', disabled: item.last, run: () => this.store.move(path, 1) },
-    );
-    if (item.canAddItem) {
-      items.push({ id: 'add-item', label: t(item.type === 'tabs' ? 'ed.addTab' : 'ed.addStep'), run: () => this.store.addContainerItem(path) });
-    }
-    if (node) {
-      items.push(
-        { id: 'wrap-section', label: t('ed.ctx.wrapSection'), separator: true, run: () => this.store.wrap(path, 'section') },
-        { id: 'wrap-box', label: t('ed.ctx.wrapBox'), run: () => this.store.wrap(path, 'box') },
-        { id: 'wrap-grid', label: t('ed.ctx.wrapGrid'), run: () => this.store.wrap(path, 'grid') },
-      );
-    }
-    const parent = ownerOf(this.store.doc(), path.slice(0, -1));
-    items.push({ id: 'select-parent', label: t('ed.ctx.selectParent'), separator: true, run: () => this.store.select(parent) });
-    return items;
+    return nodeMenuItems(this.store, this.i18n, item.path);
   }
 
   /** Keys of the branches containing the path. */
@@ -282,7 +242,6 @@ export class OutlineComponent {
       detail,
       severity: this.severityOf(path),
       children,
-      canAddItem: type === 'tabs' || type === 'wizard',
       first,
       last,
     };

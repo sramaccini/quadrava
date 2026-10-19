@@ -982,6 +982,39 @@ describe('screen editor', () => {
     expect(getAt(store.doc(), ['components', 0, 'components', 0, 'span'])).toBe(2);
   });
 
+  it('from the preview: the editing shortcuts and the context menu of the component work as in the outline', async () => {
+    (el.querySelector('ed-palette button[data-type="button"]') as HTMLButtonElement).click();
+    store.select([]);
+    (el.querySelector('ed-palette button[data-type="alert"]') as HTMLButtonElement).click();
+    await untilState('ed-preview', (st) => !!st.screen, 'preview');
+    const types = () => (store.doc() as { components: { type: string }[] }).components.map((c) => c.type);
+    // Right click on the button: it is selected and its menu opens; Delete removes it.
+    await fromFrame('ed-preview', { type: 'lc-preview:select', id: 'button-1' });
+    await fromFrame('ed-preview', { type: 'lc-preview:context', id: 'button-1', x: 20, y: 30 });
+    expect(store.selection()).toEqual(['components', 0]);
+    const menu = el.querySelector('ed-preview ed-context-menu [role="menu"]') as HTMLElement;
+    expect(menu).not.toBeNull();
+    expect(menu.querySelector('[data-item="delete"]')).not.toBeNull();
+    (menu.querySelector('[data-item="delete"]') as HTMLButtonElement).click();
+    await settle();
+    expect(types()).toEqual(['alert']);
+    expect(el.querySelector('ed-preview ed-context-menu')).toBeNull();
+    // Ctrl+Z pressed in the preview brings it back; copy and paste duplicate the alert; Ctrl+Y redoes.
+    await fromFrame('ed-preview', { type: 'lc-preview:key', key: 'z', ctrl: true, shift: false, alt: false });
+    expect(types()).toEqual(['button', 'alert']);
+    store.select(['components', 1]);
+    await fromFrame('ed-preview', { type: 'lc-preview:key', key: 'c', ctrl: true, shift: false, alt: false });
+    await fromFrame('ed-preview', { type: 'lc-preview:key', key: 'v', ctrl: true, shift: false, alt: false });
+    expect(types()).toEqual(['button', 'alert', 'alert']);
+    await fromFrame('ed-preview', { type: 'lc-preview:key', key: 'z', ctrl: true, shift: false, alt: false });
+    await fromFrame('ed-preview', { type: 'lc-preview:key', key: 'y', ctrl: true, shift: false, alt: false });
+    expect(types()).toEqual(['button', 'alert', 'alert']);
+    // Delete from the preview on the selected component.
+    store.select(['components', 2]);
+    await fromFrame('ed-preview', { type: 'lc-preview:key', key: 'Delete', ctrl: false, shift: false, alt: false });
+    expect(types()).toHaveLength(2);
+  });
+
   it('from the preview to the outline: the component chosen in the iframe is selected; only the messages of its own iframe count', async () => {
     (el.querySelector('ed-palette button[data-type="button"]') as HTMLButtonElement).click();
     store.select([]);

@@ -121,5 +121,19 @@
 }
 
 <div class="stage">
-  <ed-preview-frame [state]="state()" [width]="frameWidth()" (selected)="picked($event)" (dropped)="dropped($event)" (moved)="moved($event)" (resized)="resized($event)" (logged)="log.add($event)" />
+  <ed-preview-frame
+    [state]="state()"
+    [width]="frameWidth()"
+    (selected)="picked($event)"
+    (dropped)="dropped($event)"
+    (moved)="moved($event)"
+    (resized)="resized($event)"
+    (keyed)="keyed($event)"
+    (contextMenu)="openMenu($event)"
+    (logged)="log.add($event)"
+  />
 </div>
+
+@if (menu(); as m) {
+  <ed-context-menu [items]="m.items" [x]="m.x" [y]="m.y" [label]="m.label" (closed)="menu.set(null)" />
+}

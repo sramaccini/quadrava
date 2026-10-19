@@ -5,6 +5,7 @@ import { validateTheme, type ThemeDefinition } from 'schema';
 import { PreviewChannel, PreviewSession } from './preview-ports';
 import { NODE_DRAG_TYPE, PALETTE_DRAG_TYPE, type DropZone, type ResizeProperty } from './protocol';
 import { resizeValue } from './resize';
+import { isScreenShortcut } from '../model/screen-shortcuts';
 
 /** Components containing others: a drop in the centre puts it inside. */
 const CONTAINERS = new Set(['section', 'box', 'grid', 'border', 'tabs', 'wizard']);
@@ -343,9 +344,11 @@ export class PreviewApp {
    * before the components (no select or date picker opens, no input takes the cursor, no tooltip or menu appears, no button
    * acts) and a component is chosen when the pointer is released on it, so disabled ones (which receive no click) can be
    * chosen too. The pointer and mouse presses keep their default action, so components can still be dragged to move them.
-   * Outside selection mode only Alt+click chooses a component.
+   * The editing shortcuts (undo, copy, paste, delete…) go to the editor, which runs them as in its own page; a right click
+   * chooses the component and asks the editor for its menu. Outside selection mode only Alt+click chooses a component.
    */
   private guard(event: Event): void {
+    if (this.state()?.selectMode && event.type === 'keydown' && this.forwardKey(event as KeyboardEvent)) return;
     const target = event.target instanceof Element ? event.target : null;
     if (!target?.closest('.frame')) return;
     const node = target.closest('lc-node[data-node-id]');
@@ -371,9 +374,24 @@ export class PreviewApp {
     }
     // A click without a press before it (from the keyboard or a script) chooses too.
     if (event.type === 'click' && id && !(this.picked?.id === id && Date.now() - this.picked.at < 600)) this.pick(id);
+    if (event.type === 'contextmenu' && id) {
+      const mouse = event as MouseEvent;
+      this.pick(id);
+      this.channel.send({ type: 'lc-preview:context', id, x: mouse.clientX, y: mouse.clientY });
+    }
     if (event.type === 'focusin' && target instanceof HTMLElement) target.blur();
     if (event.cancelable && !KEEP_DEFAULT.has(event.type)) event.preventDefault();
     event.stopPropagation();
+  }
+
+  /** Sends an editing shortcut to the editor (the focus is never in the drawing in selection mode, so it has no other use). */
+  private forwardKey(event: KeyboardEvent): boolean {
+    const stroke = { key: event.key, ctrl: event.ctrlKey || event.metaKey, shift: event.shiftKey, alt: event.altKey };
+    if (!isScreenShortcut(stroke)) return false;
+    event.preventDefault();
+    event.stopPropagation();
+    this.channel.send({ type: 'lc-preview:key', ...stroke });
+    return true;
   }
 
   private pick(id: string): void {

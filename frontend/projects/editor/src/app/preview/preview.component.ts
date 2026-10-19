@@ -12,10 +12,14 @@ import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import { resolveDataSources, type ScreenDefinition } from 'schema';
 import { getIn, isObject, type Json } from '../model/doc-ops';
 import { EditorStore } from '../model/editor-store';
+import { runScreenShortcut, type KeyStroke } from '../model/screen-shortcuts';
 import { ThemeStore } from '../model/theme-store';
 import { KnownDataSources, KnownTranslations } from '../model/shared-state';
 import { Workspace } from '../model/workspace';
+import { ContextMenuComponent } from '../ui/context-menu.component';
 import { JsonFieldComponent } from '../ui/json-field.component';
+import type { MenuItem } from '../ui/menu-bar.component';
+import { nodeMenuItems } from '../ui/node-menu';
 import { PreviewFrameComponent } from './preview-frame.component';
 import { PreviewLog } from './preview-log';
 import { previewState, type PreviewState } from './protocol';
@@ -35,7 +39,7 @@ const WIDTH_ICONS: Record<string, string> = { desktop: 'desktop', tablet: 'table
  */
 @Component({
   selector: 'ed-preview',
-  imports: [FormsModule, JsonFieldComponent, PreviewFrameComponent, NzAlertModule, NzButtonModule, NzIconModule, NzSelectModule, NzSwitchModule, NzTooltipModule],
+  imports: [FormsModule, ContextMenuComponent, JsonFieldComponent, PreviewFrameComponent, NzAlertModule, NzButtonModule, NzIconModule, NzSelectModule, NzSwitchModule, NzTooltipModule],
   // Every preview (one per screen window) has its own log.
   providers: [PreviewLog],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -78,6 +82,8 @@ export class PreviewComponent {
   protected readonly stale = computed(() => this.store.definition() === null && this.shown() !== null);
   /** In selection mode every click selects the component instead of activating it. */
   protected readonly selectMode = signal(false);
+  /** Menu of a component opened with the right click in the drawing (the same as in the outline). */
+  protected readonly menu = signal<{ items: MenuItem[]; label: string; x: number; y: number } | null>(null);
   /** Identifier of the selected node, to highlight in the drawing. */
   private readonly selectedId = computed(() => {
     const value = getIn(this.store.doc(), this.store.selection());
@@ -150,8 +156,23 @@ export class PreviewComponent {
 
   /** A component chosen in the preview: it is selected in the outline. */
   protected picked(id: string): void {
+    // A click in the iframe does not reach the editor's page, where the menu listens for clicks outside it.
+    this.menu.set(null);
     const path = this.store.pathOfId(id);
     if (path) this.store.select(path);
+  }
+
+  /** An editing shortcut pressed in the drawing: the same as in the page of the editor. */
+  protected keyed(stroke: KeyStroke): void {
+    runScreenShortcut(this.store, stroke);
+  }
+
+  /** Right click on a component of the drawing (already selected by the preview): its menu at that point. */
+  protected openMenu(event: { id: string; x: number; y: number }): void {
+    const path = this.store.pathOfId(event.id);
+    if (!path) return;
+    this.store.select(path);
+    this.menu.set({ items: nodeMenuItems(this.store, this.i18n, path), label: event.id, x: event.x, y: event.y });
   }
 
   protected chooseLocale(locale: string): void {

@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, computed, effect, inject, input, output, signal, viewChild } from '@angular/core';
 import { I18n } from 'core';
+import type { KeyStroke } from '../model/screen-shortcuts';
 import { isFromPreview, type DropZone, type PreviewEvent, type PreviewState, type ResizeProperty, type ToPreview } from './protocol';
 
 /**
@@ -53,6 +54,10 @@ export class PreviewFrameComponent {
   readonly moved = output<{ id: string; targetId: string | null; zone: DropZone }>();
   /** A component resized with the handle. */
   readonly resized = output<{ id: string; property: ResizeProperty; value: number }>();
+  /** An editing shortcut pressed in the preview in selection mode. */
+  readonly keyed = output<KeyStroke>();
+  /** Right click on a component in selection mode: its id and the point, in the coordinates of the editor's page. */
+  readonly contextMenu = output<{ id: string; x: number; y: number }>();
 
   private readonly frame = viewChild.required<ElementRef<HTMLIFrameElement>>('frame');
   private readonly ready = signal(false);
@@ -79,6 +84,8 @@ export class PreviewFrameComponent {
       else if (message.type === 'lc-preview:drop') this.dropped.emit({ kind: message.kind, targetId: message.targetId, zone: message.zone });
       else if (message.type === 'lc-preview:move') this.moved.emit({ id: message.id, targetId: message.targetId, zone: message.zone });
       else if (message.type === 'lc-preview:resize') this.resized.emit({ id: message.id, property: message.property, value: message.value });
+      else if (message.type === 'lc-preview:key') this.keyed.emit({ key: message.key, ctrl: message.ctrl, shift: message.shift, alt: message.alt });
+      else if (message.type === 'lc-preview:context') this.contextMenu.emit({ id: message.id, ...this.toPage(message.x, message.y) });
       else this.logged.emit(message.event);
     };
     window.addEventListener('message', listener);
@@ -96,6 +103,14 @@ export class PreviewFrameComponent {
       this.state();
       if (this.ready()) this.post();
     });
+  }
+
+  /** From the viewport of the iframe to that of the page: the iframe's position, and its reduction when scaled. */
+  private toPage(x: number, y: number): { x: number; y: number } {
+    const frame = this.frame().nativeElement;
+    const rect = frame.getBoundingClientRect();
+    const ratio = frame.offsetWidth ? rect.width / frame.offsetWidth : 1;
+    return { x: rect.left + x * ratio, y: rect.top + y * ratio };
   }
 
   private post(): void {
