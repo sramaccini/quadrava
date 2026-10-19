@@ -71,6 +71,7 @@
 | `fields` * | list of field | Fields of the form, in order. The values are read as `form` in expressions. |
 | `actions` | list of action | Buttons under the fields: on click the form checks the visible fields and, if they are valid, runs the steps, which see the values in `form`. |
 | `columns` | integer 1–4 | Columns of the field grid (1 if absent). With little space the form goes back to one column. |
+| `validation` | list of formRule | Rules across fields, checked with those of the fields: each says the fields it checks (fields), and the message goes to them. For example [{ "after": "start", "fields": ["end"] }, { "sameAs": "email", "fields": ["emailConfirm"] }, { "atLeastOne": ["phone", "email"] }]. |
 
 ### `tabs`
 
@@ -367,7 +368,22 @@
 | `visibleIf` | expression | CEL expression in double braces, for example {{can('orders.order.approve') && row.status == 'sent'}}. Available variables: user, state, params, row, form, value. Available function: can(permission). |
 | `hiddenIf` | expression | CEL expression in double braces, for example {{can('orders.order.approve') && row.status == 'sent'}}. Available variables: user, state, params, row, form, value. Available function: can(permission). |
 | `readOnlyIf` | expression | CEL expression in double braces, for example {{can('orders.order.approve') && row.status == 'sent'}}. Available variables: user, state, params, row, form, value. Available function: can(permission). |
-| `validate` | object |  |
+| `validate` | object | CEL rule of the field: rule must be true, otherwise message is shown. For several rules, warnings or conditions use validation. |
+| `minLength` | integer 0–100000 | For text, textarea and richtext: minimum number of characters. |
+| `maxLength` | integer 1–100000 | For text, textarea and richtext: maximum number of characters. |
+| `pattern` | text | For text and textarea: regular expression (JavaScript syntax, Unicode) that the whole value must match, as in the HTML pattern attribute (no need for ^ and $). Values longer than 1000 characters never match. |
+| `format` | `email`, `url`, `phone`, `iban`, `bic`, `uuid`, `alphanumeric`, `vatNumber`, `taxCode`, `companyId`, `postalCode` | For text: expected format. email; url (http or https); phone (international, 6 to 15 digits, with + spaces dashes dots and brackets); iban (length of the country and check digits); bic; uuid; alphanumeric (letters A-Z and digits only); vatNumber (VAT number with its national check: IT, DE, FR, ES, NL, BE, AT, PT, PL, SE; without country the prefix of the number decides); taxCode (personal tax number: IT codice fiscale, ES NIF/NIE, PT NIF, NL BSN); companyId (IT partita IVA, FR SIREN/SIRET, ES CIF, PT NIPC, BE enterprise number, NL KvK); postalCode (IT, DE, FR, ES, NL, BE, AT, PT, PL, SE). The text box also gets the right keyboard and autocomplete. |
+| `country` | text | For the national formats: ISO 3166 two-letter country code (IT, DE…) or an expression that gives it, for example {{form.country}}. Required by taxCode, companyId and postalCode; optional for vatNumber. |
+| `min` | number | For number: smallest value allowed. |
+| `max` | number | For number: largest value allowed. |
+| `step` | number | For number: the value must be a multiple of step, counted from min (from 0 without min); it is also the step of the arrows of the box. |
+| `decimals` | integer 0–10 | For number: maximum number of decimal places. |
+| `integer` | yes/no | For number: whole numbers only. |
+| `minDate` | text | For date and datetime: earliest date allowed, as YYYY-MM-DD (or YYYY-MM-DDTHH:mm). Earlier days cannot be chosen in the calendar. |
+| `maxDate` | text | For date and datetime: latest date allowed, as YYYY-MM-DD (or YYYY-MM-DDTHH:mm). Later days cannot be chosen in the calendar. |
+| `transform` | list of `trim`, `uppercase`, `lowercase`, `removeSpaces` | For text and textarea: changes applied to the value, in order, when the user leaves the field and before checking and sending it (never while typing). trim: spaces at the ends; uppercase / lowercase; removeSpaces: every space. For example ["removeSpaces", "uppercase"] for an IBAN. |
+| `messages` | object | Messages that replace the standard ones, by constraint (required, minLength, format…). Plain text or with {{ }}, for example {{t('order.qtyTooHigh')}}. |
+| `validation` | list of fieldRule | Advanced validation: rules checked in order after the flat constraints, each with an optional message, condition (when) and severity (a warning does not block). For example [{ "format": "vatNumber", "country": "{{form.country}}" }, { "required": true, "when": "{{form.company}}" }]. |
 | `tooltip` | text | Help text shown on mouse hover or with the focus. Text only (never HTML); it can contain {{ }}. |
 | `optionKey` | text | Prefix of the translation keys for the option labels: the label of an option is t('<prefix>.<value>'), with the value as a fallback. |
 | `rows` | integer 2–20 | Visible rows of a textarea field (4 if absent). |
@@ -381,6 +397,185 @@
 | `maxRows` | integer 1–200 | For type repeater: maximum rows (50 if absent). |
 | `addLabel` | text | For type repeater: text of the button that adds a row. |
 | `uploadAs` | `multipart`, `base64` | For type file with upload: multipart (the file travels as a file, `file` variable with name, type and size; default) or base64 (the content in `file.content` inside the JSON body). |
+
+## Validation rules (`validation` of fields and forms)
+
+Validation rule of a field, named by its key ({ "minLength": 3 }, { "format": "iban" }, { "rule": "{{…}}" }, { "use": "staffNumber" } for a validator of the application). Validation rule of a form across its fields: like the rules of a field, plus fields, the fields it checks.
+
+### `required`
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `required` * | `true` | The field must be filled in; with when, only while the condition holds (conditional required). |
+| `message` | text | Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}. |
+| `when` | expression | Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies. |
+| `severity` | `error`, `warning` | error: blocks sending (default); warning: the message is shown but does not block. |
+
+### `minLength`
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `minLength` * | integer 0–100000 | For text, textarea and richtext: minimum number of characters. |
+| `message` | text | Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}. |
+| `when` | expression | Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies. |
+| `severity` | `error`, `warning` | error: blocks sending (default); warning: the message is shown but does not block. |
+
+### `maxLength`
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `maxLength` * | integer 1–100000 | For text, textarea and richtext: maximum number of characters. |
+| `message` | text | Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}. |
+| `when` | expression | Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies. |
+| `severity` | `error`, `warning` | error: blocks sending (default); warning: the message is shown but does not block. |
+
+### `pattern`
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `pattern` * | text | For text and textarea: regular expression (JavaScript syntax, Unicode) that the whole value must match, as in the HTML pattern attribute (no need for ^ and $). Values longer than 1000 characters never match. |
+| `message` | text | Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}. |
+| `when` | expression | Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies. |
+| `severity` | `error`, `warning` | error: blocks sending (default); warning: the message is shown but does not block. |
+
+### `format`
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `format` * | `email`, `url`, `phone`, `iban`, `bic`, `uuid`, `alphanumeric`, `vatNumber`, `taxCode`, `companyId`, `postalCode` | For text: expected format. email; url (http or https); phone (international, 6 to 15 digits, with + spaces dashes dots and brackets); iban (length of the country and check digits); bic; uuid; alphanumeric (letters A-Z and digits only); vatNumber (VAT number with its national check: IT, DE, FR, ES, NL, BE, AT, PT, PL, SE; without country the prefix of the number decides); taxCode (personal tax number: IT codice fiscale, ES NIF/NIE, PT NIF, NL BSN); companyId (IT partita IVA, FR SIREN/SIRET, ES CIF, PT NIPC, BE enterprise number, NL KvK); postalCode (IT, DE, FR, ES, NL, BE, AT, PT, PL, SE). The text box also gets the right keyboard and autocomplete. |
+| `country` | text | For the national formats: ISO 3166 two-letter country code (IT, DE…) or an expression that gives it, for example {{form.country}}. Required by taxCode, companyId and postalCode; optional for vatNumber. |
+| `message` | text | Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}. |
+| `when` | expression | Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies. |
+| `severity` | `error`, `warning` | error: blocks sending (default); warning: the message is shown but does not block. |
+
+### `min`
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `min` * | number | For number: smallest value allowed. |
+| `message` | text | Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}. |
+| `when` | expression | Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies. |
+| `severity` | `error`, `warning` | error: blocks sending (default); warning: the message is shown but does not block. |
+
+### `max`
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `max` * | number | For number: largest value allowed. |
+| `message` | text | Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}. |
+| `when` | expression | Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies. |
+| `severity` | `error`, `warning` | error: blocks sending (default); warning: the message is shown but does not block. |
+
+### `step`
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `step` * | number | For number: the value must be a multiple of step, counted from min (from 0 without min); it is also the step of the arrows of the box. |
+| `message` | text | Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}. |
+| `when` | expression | Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies. |
+| `severity` | `error`, `warning` | error: blocks sending (default); warning: the message is shown but does not block. |
+
+### `decimals`
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `decimals` * | integer 0–10 | For number: maximum number of decimal places. |
+| `message` | text | Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}. |
+| `when` | expression | Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies. |
+| `severity` | `error`, `warning` | error: blocks sending (default); warning: the message is shown but does not block. |
+
+### `integer`
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `integer` * | `true` | For number: whole numbers only. |
+| `message` | text | Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}. |
+| `when` | expression | Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies. |
+| `severity` | `error`, `warning` | error: blocks sending (default); warning: the message is shown but does not block. |
+
+### `minDate`
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `minDate` * | text | For date and datetime: earliest date allowed, as YYYY-MM-DD (or YYYY-MM-DDTHH:mm). Earlier days cannot be chosen in the calendar. |
+| `message` | text | Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}. |
+| `when` | expression | Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies. |
+| `severity` | `error`, `warning` | error: blocks sending (default); warning: the message is shown but does not block. |
+
+### `maxDate`
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `maxDate` * | text | For date and datetime: latest date allowed, as YYYY-MM-DD (or YYYY-MM-DDTHH:mm). Later days cannot be chosen in the calendar. |
+| `message` | text | Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}. |
+| `when` | expression | Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies. |
+| `severity` | `error`, `warning` | error: blocks sending (default); warning: the message is shown but does not block. |
+
+### `sameAs`
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `sameAs` * | text | The value must be equal to that of this other field (a confirmation of an email or a code). |
+| `message` | text | Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}. |
+| `when` | expression | Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies. |
+| `severity` | `error`, `warning` | error: blocks sending (default); warning: the message is shown but does not block. |
+
+### `after`
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `after` * | text | For date and datetime: the date must come after that of this other field (an end after a start). Ignored while the other field is empty. |
+| `inclusive` | yes/no | The same date is allowed too. |
+| `message` | text | Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}. |
+| `when` | expression | Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies. |
+| `severity` | `error`, `warning` | error: blocks sending (default); warning: the message is shown but does not block. |
+
+### `before`
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `before` * | text | For date and datetime: the date must come before that of this other field. Ignored while the other field is empty. |
+| `inclusive` | yes/no | The same date is allowed too. |
+| `message` | text | Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}. |
+| `when` | expression | Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies. |
+| `severity` | `error`, `warning` | error: blocks sending (default); warning: the message is shown but does not block. |
+
+### `atLeastOne`
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `atLeastOne` * | list of text | At least one of these fields (or this field) must be filled in. On the form, the message goes to all of them unless fields says otherwise. |
+| `message` | text | Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}. |
+| `when` | expression | Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies. |
+| `severity` | `error`, `warning` | error: blocks sending (default); warning: the message is shown but does not block. |
+
+### `unique`
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `unique` * | text | For repeater: name of the column whose values must not repeat across rows; the repeated cells are marked. |
+| `message` | text | Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}. |
+| `when` | expression | Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies. |
+| `severity` | `error`, `warning` | error: blocks sending (default); warning: the message is shown but does not block. |
+
+### `rule`
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `rule` * | expression | CEL condition that must be true; it sees the field in value, the form in form and the row of a repeater in item. |
+| `message` | text | Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}. |
+| `when` | expression | Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies. |
+| `severity` | `error`, `warning` | error: blocks sending (default); warning: the message is shown but does not block. |
+
+### `use`
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `use` * | text | Name of a validator registered by the application (provideValidators). |
+| `params` | object | Parameters of the validator. |
+| `message` | text | Message shown when the rule is not met (the standard one of the rule if absent). Plain text or with {{ }}. |
+| `when` | expression | Condition under which the rule applies (always if absent). If it cannot be evaluated the rule applies. |
+| `severity` | `error`, `warning` | error: blocks sending (default); warning: the message is shown but does not block. |
 
 ## Data sources
 

@@ -90,6 +90,17 @@ out.push('## Fields (forms, filters, standalone fields)');
 out.push('');
 out.push(table(defs.field.properties, defs.field.required));
 out.push('');
+out.push('## Validation rules (`validation` of fields and forms)');
+out.push('');
+out.push(cell(`${defs.fieldRule.description} ${defs.formRule.description}`));
+for (const variant of defs.fieldRule.oneOf) {
+  const key = variant.required[0];
+  out.push('');
+  out.push(`### \`${key}\``);
+  out.push('');
+  out.push(table(variant.properties, variant.required));
+}
+out.push('');
 out.push('## Data sources');
 out.push('');
 out.push(cell(defs.dataSource.description));

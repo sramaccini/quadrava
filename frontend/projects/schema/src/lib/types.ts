@@ -146,6 +146,82 @@ export interface FieldDefinition {
   hiddenIf?: Expression;
   readOnlyIf?: Expression;
   validate?: { rule: Expression; message: string };
+  /** For text, textarea and richtext: number of characters allowed. */
+  minLength?: number;
+  maxLength?: number;
+  /** For text and textarea: regular expression the whole value must match (Unicode, as the HTML `pattern` attribute). */
+  pattern?: string;
+  /** For text and textarea: expected format (built-in validator). */
+  format?: ValidationFormat;
+  /** For the national formats: ISO country code or an expression that gives it. */
+  country?: string;
+  /** For text and textarea: changes applied when leaving the field and before checking and sending. */
+  transform?: TextTransform[];
+  /** For number: limits, multiple of `step` (from `min`), maximum decimal places, whole numbers only. */
+  min?: number;
+  max?: number;
+  step?: number;
+  decimals?: number;
+  integer?: boolean;
+  /** For date and datetime: earliest and latest date (YYYY-MM-DD or YYYY-MM-DDTHH:mm). */
+  minDate?: string;
+  maxDate?: string;
+  /** Messages that replace the standard ones, by constraint. */
+  messages?: Partial<Record<FlatConstraint, string>>;
+  /** Advanced validation: rules checked in order after the flat constraints. */
+  validation?: ValidationRule[];
+}
+
+/** Formats of the built-in validators (`format`). */
+export type ValidationFormat = 'email' | 'url' | 'phone' | 'iban' | 'bic' | 'uuid' | 'alphanumeric' | 'vatNumber' | 'taxCode' | 'companyId' | 'postalCode';
+/** Changes applied to a text before it is checked and sent. */
+export type TextTransform = 'trim' | 'uppercase' | 'lowercase' | 'removeSpaces';
+/** Constraints that can be written as flat properties of a field (and whose message `messages` can replace). */
+export type FlatConstraint = 'required' | 'minLength' | 'maxLength' | 'pattern' | 'format' | 'min' | 'max' | 'step' | 'decimals' | 'integer' | 'minDate' | 'maxDate';
+
+/**
+ * Rule of a validation list, named by its key (exactly one of `required` … `use`), with an optional message,
+ * condition and severity. The schema keeps the variants apart; here they share one shape.
+ */
+export interface ValidationRule {
+  required?: true;
+  minLength?: number;
+  maxLength?: number;
+  pattern?: string;
+  format?: ValidationFormat;
+  country?: string;
+  min?: number;
+  max?: number;
+  step?: number;
+  decimals?: number;
+  integer?: true;
+  minDate?: string;
+  maxDate?: string;
+  /** Equal to another field. */
+  sameAs?: string;
+  /** Date after / before that of another field (`inclusive`: the same date is allowed). */
+  after?: string;
+  before?: string;
+  inclusive?: boolean;
+  /** At least one of these fields (or this one) is filled in. */
+  atLeastOne?: string[];
+  /** For repeater: column whose values must not repeat across rows. */
+  unique?: string;
+  /** CEL condition that must be true. */
+  rule?: Expression;
+  /** Validator registered by the application, with its parameters. */
+  use?: string;
+  params?: Record<string, unknown>;
+  message?: string;
+  /** The rule applies only while this condition is true. */
+  when?: Expression;
+  /** `warning` shows the message without blocking (`error` if absent). */
+  severity?: 'error' | 'warning';
+}
+
+/** Rule of a form across its fields: `fields` are those it checks and that receive the message. */
+export interface FormValidationRule extends ValidationRule {
+  fields?: string[];
 }
 
 export type Tone = 'neutral' | 'primary' | 'success' | 'danger';
@@ -255,6 +331,8 @@ export interface FormNode extends NodeBase {
   actions?: ActionDefinition[];
   /** Columns of the field grid (1 if absent). */
   columns?: number;
+  /** Rules across fields, checked with those of the fields. */
+  validation?: FormValidationRule[];
 }
 
 export interface TabDefinition {
