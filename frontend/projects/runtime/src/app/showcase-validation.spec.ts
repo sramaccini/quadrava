@@ -25,7 +25,7 @@ describe('Showcase: validation', () => {
     [...form.querySelectorAll<HTMLButtonElement>('button')].find((b) => plainText(b.textContent) === 'Save')!.click();
     await s.settle();
   };
-  const toast = (): string => plainText(document.querySelector('.ant-message-notice')?.textContent);
+  const toast = (): string => [...document.querySelectorAll('.ant-message-notice')].map((n) => plainText(n.textContent)).join(' | ');
 
   it('simple constraints: messages after saving, upper case when leaving the field', async () => {
     const s = await openShowcase('/showcase/showcase-validation');
@@ -82,6 +82,30 @@ describe('Showcase: validation', () => {
     type(form, 'Mobile', '+39 333 123 4567');
     await save(s, form);
     await s.until(() => toast().includes('All fields are valid'), 'saved with a warning');
+    expect(TestBed.inject(DemoDiagnostics).events()).toEqual([]);
+  });
+
+  it('staff: the staff number checked on the service, the password strength, the errors of the service', { timeout: 20000 }, async () => {
+    const s = await openShowcase('/showcase/showcase-validation');
+    const form = formOf(s, 4);
+    type(form, 'Staff number', 's000001');
+    await s.until(() => message(form, 'Staff number') === 'This staff number is already used', 'checked on the service');
+    expect((item(form, 'Staff number').querySelector('input') as HTMLInputElement).value).toBe('S000001');
+    type(form, 'Password', 'Password1');
+    await s.settle();
+    expect(plainText(item(form, 'Password').querySelector('.strength .level')?.textContent)).toBe('Password strength: very weak');
+    type(form, 'Staff number', 'S000777');
+    type(form, 'Full name', 'Ada Example');
+    type(form, 'Email', 'ada@example.org');
+    type(form, 'Password', 'Xr7$mQ2v!kL9pW');
+    type(form, 'Confirm password', 'Xr7$mQ2v!kL9pW');
+    await save(s, form);
+    // The service accepts the number but not the domain of the e-mail: the error goes to its field.
+    await s.until(() => message(form, 'Email') === 'E-mail addresses of this domain are not accepted', 'error of the service');
+    expect(message(form, 'Staff number')).toBe('');
+    type(form, 'Email', 'ada@example.com');
+    await save(s, form);
+    await s.until(() => toast().includes('Staff member saved'), 'saved');
     expect(TestBed.inject(DemoDiagnostics).events()).toEqual([]);
   });
 

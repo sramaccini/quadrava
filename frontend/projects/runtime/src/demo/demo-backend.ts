@@ -69,6 +69,8 @@ export class DemoBackend {
   ].map((entry, i) => ({ id: i + 1, name: entry.split('|')[0], city: entry.split('|')[1] }));
   private attachments = 0;
   private reports = 0;
+  /** Staff numbers already used (validation showcase). */
+  private readonly staffNumbers = new Set(['S000001', 'S123456']);
   /** Tasks of the showcase kanban: the status changes with /api/tasks/{id}/move. */
   private readonly tasks: { id: number; title: string; who: string; status: string }[] = [
     { id: 1, title: 'Quote for Smith Ltd', who: 'Anna', status: 'to-do' },
@@ -139,6 +141,23 @@ export class DemoBackend {
       if (!order || order.status !== 'submitted') throw new Error('409');
       order.status = 'approved';
       return {};
+    }
+    // Staff numbers already used (made up): the remote rule of the validation showcase asks here while the user types.
+    if (path === '/api/showcase/staff/check' && req.method === 'GET') {
+      return { valid: !this.staffNumbers.has(String(req.query?.['number'] ?? '').toUpperCase()), code: 'staffNumberTaken' };
+    }
+    // Saving repeats the checks of the screen, as every service must, plus one of its own (a blocked e-mail domain): the
+    // problems come back as field errors in the Problem (contracts/problem.yaml).
+    if (path === '/api/showcase/staff' && req.method === 'POST') {
+      const body = (req.body ?? {}) as Record<string, unknown>;
+      const number = String(body['staffNumber'] ?? '').toUpperCase();
+      const errors: { path: string; code: string }[] = [];
+      if (!/^S\d{6}$/.test(number)) errors.push({ path: '/staffNumber', code: 'pattern' });
+      else if (this.staffNumbers.has(number)) errors.push({ path: '/staffNumber', code: 'staffNumberTaken' });
+      if (String(body['email'] ?? '').toLowerCase().endsWith('@example.org')) errors.push({ path: '/email', code: 'emailDomainBlocked' });
+      if (errors.length) throw Object.assign(new Error('422'), { status: 422, fieldErrors: errors });
+      this.staffNumbers.add(number);
+      return { staffNumber: number };
     }
     // A report returns its protocol number (the following steps read it with `as`).
     if (path === '/api/showcase/flag' && req.method === 'POST') return { protocol: `PR-${String(++this.reports).padStart(4, '0')}`, receipt: true };

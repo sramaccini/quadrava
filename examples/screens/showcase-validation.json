@@ -9,6 +9,20 @@
       "method": "POST",
       "url": "/api/showcase/flag",
       "body": "{{form}}"
+    },
+    "checkStaff": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/showcase/staff/check",
+      "params": {
+        "number": "{{ value }}"
+      }
+    },
+    "saveStaff": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/showcase/staff",
+      "body": "{{form}}"
     }
   },
   "components": [
@@ -394,6 +408,118 @@
                 },
                 {
                   "toast": "{{ t('showcase_validation.data_valid', 'All fields are valid: data submitted') }}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "section-staff",
+      "type": "section",
+      "title": "{{ t('showcase_validation.staff_title', 'Passwords, checks on the service and its errors') }}",
+      "components": [
+        {
+          "id": "staff-intro",
+          "type": "text",
+          "text": "{{ t('showcase_validation.staff_intro', 'The staff number is checked on the service while you type (S000001 and S123456 are already used). The password shows its strength. When saving, the service checks again and can reject a field: an address at example.org comes back as an error on the e-mail.') }}"
+        },
+        {
+          "id": "form-staff",
+          "type": "form",
+          "columns": 2,
+          "fields": [
+            {
+              "name": "staffNumber",
+              "type": "text",
+              "label": "{{ t('showcase_validation.staff_number', 'Staff number') }}",
+              "tooltip": "{{ t('showcase_validation.staff_number_help', 'S followed by six digits.') }}",
+              "required": true,
+              "pattern": "S\\d{6}",
+              "transform": [
+                "trim",
+                "uppercase"
+              ],
+              "messages": {
+                "pattern": "{{ t('showcase_validation.staff_number_pattern', 'S followed by six digits, for example S000123') }}"
+              },
+              "validation": [
+                {
+                  "remote": "checkStaff"
+                }
+              ]
+            },
+            {
+              "name": "fullName",
+              "type": "text",
+              "label": "{{ t('showcase_validation.full_name', 'Full name') }}",
+              "required": true,
+              "maxLength": 80
+            },
+            {
+              "name": "email",
+              "type": "text",
+              "label": "{{ t('showcase_validation.email', 'Email') }}",
+              "required": true,
+              "format": "email",
+              "transform": [
+                "trim",
+                "lowercase"
+              ]
+            },
+            {
+              "name": "startDate",
+              "type": "date",
+              "label": "{{ t('showcase_validation.start_date', 'Start date (within six months)') }}",
+              "minDate": "today",
+              "maxDate": "today+6m"
+            },
+            {
+              "name": "password",
+              "type": "password",
+              "label": "{{ t('showcase_validation.password', 'Password') }}",
+              "required": true,
+              "newPassword": true,
+              "minLength": 10,
+              "minStrength": 3
+            },
+            {
+              "name": "passwordConfirm",
+              "type": "password",
+              "label": "{{ t('showcase_validation.password_confirm', 'Confirm password') }}",
+              "required": true,
+              "validation": [
+                {
+                  "sameAs": "password",
+                  "message": "{{ t('showcase_validation.passwords_differ', 'The two passwords are different') }}"
+                }
+              ]
+            },
+            {
+              "name": "skills",
+              "type": "multiselect",
+              "label": "{{ t('showcase_validation.skills', 'Skills (up to three)') }}",
+              "options": [
+                "accounting",
+                "sales",
+                "logistics",
+                "support",
+                "it"
+              ],
+              "optionKey": "values.skill",
+              "maxItems": 3
+            }
+          ],
+          "actions": [
+            {
+              "label": "{{ t('showcase_validation.save', 'Save') }}",
+              "onClick": [
+                {
+                  "call": "saveStaff"
+                },
+                {
+                  "toast": "{{ t('showcase_validation.staff_saved', 'Staff member saved') }}"
                 }
               ]
             }

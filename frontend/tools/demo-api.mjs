@@ -5,7 +5,8 @@
 //
 // Every request must carry a valid Keycloak token (Authorization: Bearer, added by the BFF): RS256 signature checked
 // with the keys published by the realm, issuer and expiry. With --no-auth the check is off (warning in the log). Back-end
-// errors come back as Problem (RFC 9457) with the status only, never with details.
+// errors come back as Problem (RFC 9457) with the status only, never with details; invalid data also with the field errors
+// (paths and codes, contracts/problem.yaml).
 import { readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { createPublicKey, createVerify } from 'node:crypto';
@@ -135,7 +136,10 @@ createServer(async (req, res) => {
     send(res, 200, result);
   } catch (e) {
     const status = Number(e instanceof Error ? e.message : NaN);
-    if (status >= 400 && status < 600) problem(res, status, 'Request failed');
+    // Invalid data: the field errors of the back end (paths and codes, contracts/problem.yaml).
+    const fieldErrors = Array.isArray(e?.fieldErrors) ? e.fieldErrors : [];
+    if (status >= 400 && status < 600 && fieldErrors.length) send(res, status, { title: 'Invalid data', status, errors: fieldErrors });
+    else if (status >= 400 && status < 600) problem(res, status, 'Request failed');
     else {
       console.error('[demo-api]', e instanceof Error ? e.message : e);
       problem(res, 500, 'Internal error');
