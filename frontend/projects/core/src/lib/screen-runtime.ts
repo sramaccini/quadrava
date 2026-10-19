@@ -456,9 +456,10 @@ export class ScreenRuntime {
       // Cancelled because outdated: not an error to report or to show.
       if (controller?.signal.aborted) return { ok: false, error: 'annullata' };
       const error = e instanceof Error ? e.message : String(e);
-      this.report(`data source ${name}`, error);
-      if (this.sequence.get(name) === seq) this.setSource(name, { status: 'error', data: null, error: this.systemText('lc.loadFailed', 'Loading failed') });
       const fieldErrors = fieldErrorsOf(e);
+      // Data rejected field by field is an answer for the user, not a technical problem: it is not reported.
+      if (!fieldErrors.length) this.report(`data source ${name}`, error);
+      if (this.sequence.get(name) === seq) this.setSource(name, { status: 'error', data: null, error: this.systemText('lc.loadFailed', 'Loading failed') });
       return fieldErrors.length ? { ok: false, error, status: statusOf(e), fieldErrors } : { ok: false, error, status: statusOf(e) };
     } finally {
       if (controller && this.inflight.get(name) === controller) this.inflight.delete(name);

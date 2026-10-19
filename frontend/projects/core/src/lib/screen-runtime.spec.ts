@@ -239,6 +239,9 @@ describe('runSteps', () => {
     const received: unknown[] = [];
     await runSteps(rt, [{ call: 'approve', args: { id: 1 } }], {}, { onFieldErrors: (errors) => (received.push(...errors), errors.length) });
     expect(received).toEqual([{ path: '/email', code: 'taken' }]);
+    // Rejected data is shown to the user, not reported as a technical problem.
+    await Promise.resolve();
+    expect(fakes.reports).toEqual([]);
     expect(fakes.toasts).toEqual([{ message: 'Check the highlighted fields', kind: 'info' }]);
     await runSteps(rt, [{ call: 'approve', args: { id: 1 }, onError: { toast: '{{ string(error.fields) }} fields' } }], {}, { onFieldErrors: () => 1 });
     expect(fakes.toasts.at(-1)?.message).toBe('1 fields');
