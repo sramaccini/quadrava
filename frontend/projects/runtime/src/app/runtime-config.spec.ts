@@ -8,7 +8,8 @@ import { ExampleDefinitions } from '../demo/example-definitions';
 import { appConfigFor } from './app.config';
 import { NavigationService } from './navigation.service';
 import { BffShellSession, ShellSession } from './shell-session';
-import { DEFAULT_RUNTIME_CONFIG, loadRuntimeConfig, type RuntimeConfig } from './runtime-config';
+import project from '../../public/examples/project.json';
+import { DEFAULT_APPLICATION_SETTINGS, DEFAULT_RUNTIME_CONFIG, loadApplicationSettings, loadRuntimeConfig, type RuntimeConfig } from './runtime-config';
 
 const registry: RuntimeConfig = { definitions: { source: 'registry', app: 'demo', env: 'development', navigation: 'invoicing', themes: ['light', 'dark'] } };
 
@@ -27,6 +28,22 @@ describe('runtime configuration: where the definitions come from', () => {
     expect(await loadRuntimeConfig()).toEqual(DEFAULT_RUNTIME_CONFIG);
     serve(registry);
     expect(await loadRuntimeConfig()).toEqual(registry);
+  });
+
+  it('settings of the application: from the demo project, or the languages of the registry configuration', async () => {
+    serve(project);
+    expect(await loadApplicationSettings(DEFAULT_RUNTIME_CONFIG)).toEqual({ languages: ['en', 'it'], defaultLanguage: 'en', themes: ['light', 'classic', 'dark'] });
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    serve({ ...project, languages: [] });
+    expect(await loadApplicationSettings(DEFAULT_RUNTIME_CONFIG)).toEqual(DEFAULT_APPLICATION_SETTINGS);
+    serve({}, false);
+    expect(await loadApplicationSettings(DEFAULT_RUNTIME_CONFIG)).toEqual(DEFAULT_APPLICATION_SETTINGS);
+    const withLanguages: RuntimeConfig = { definitions: { ...registry.definitions, languages: ['it', 'fr'], defaultLanguage: 'fr' } as RuntimeConfig['definitions'] };
+    expect(await loadApplicationSettings(withLanguages)).toEqual({ languages: ['it', 'fr'], defaultLanguage: 'fr' });
+    expect(await loadApplicationSettings(registry)).toEqual(DEFAULT_APPLICATION_SETTINGS);
+    // The demo offers the themes of its project.
+    TestBed.configureTestingModule({ providers: appConfigFor(DEFAULT_RUNTIME_CONFIG, { languages: ['en'], defaultLanguage: 'en', themes: ['dark'] }).providers });
+    expect(TestBed.inject(DefinitionSource).themes()).toEqual(['dark']);
   });
 
   it('demo: the definitions are the examples', () => {

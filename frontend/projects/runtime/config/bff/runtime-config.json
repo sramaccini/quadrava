@@ -8,7 +8,12 @@
       "light",
       "classic",
       "dark"
-    ]
+    ],
+    "languages": [
+      "en",
+      "it"
+    ],
+    "defaultLanguage": "en"
   },
   "services": {
     "source": "bff",

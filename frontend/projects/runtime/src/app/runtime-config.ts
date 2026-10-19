@@ -1,3 +1,5 @@
+import { InjectionToken } from '@angular/core';
+import { validateProject } from 'schema';
 import type { RegistryDefinitionsConfig } from 'services';
 
 /**
@@ -6,7 +8,11 @@ import type { RegistryDefinitionsConfig } from 'services';
  * BFF). The `registry` and `bff` configurations of angular.json use the files of `projects/runtime/config/`.
  */
 export interface RuntimeConfig {
-  definitions: { source: 'examples' } | ({ source: 'registry' } & RegistryDefinitionsConfig);
+  /**
+   * With the registry, `languages` and `defaultLanguage` say the languages of the application (from its project, which the
+   * registry does not hold); with the examples they come from `examples/project.json`.
+   */
+  definitions: { source: 'examples' } | ({ source: 'registry'; languages?: string[]; defaultLanguage?: string } & RegistryDefinitionsConfig);
   /**
    * Ports of the runtime: `demo` (fake profiles, data and reports in the browser) or `bff` (session, permissions,
    * data and telemetry through the BFF, `services` library). When missing: demo.
@@ -15,6 +21,44 @@ export interface RuntimeConfig {
 }
 
 export const DEFAULT_RUNTIME_CONFIG: RuntimeConfig = { definitions: { source: 'examples' } };
+
+/** Settings of the application the runtime shows: its languages (the first one offered when the browser's is not among them) and, from the project, its themes. */
+export interface ApplicationSettings {
+  languages: string[];
+  defaultLanguage: string;
+  /** Themes the user can choose, the first one initial (from the project; the definition source decides when missing). */
+  themes?: string[];
+}
+
+export const DEFAULT_APPLICATION_SETTINGS: ApplicationSettings = { languages: ['en', 'it'], defaultLanguage: 'en' };
+export const APPLICATION_SETTINGS = new InjectionToken<ApplicationSettings>('APPLICATION_SETTINGS', { factory: () => DEFAULT_APPLICATION_SETTINGS });
+
+/**
+ * The settings of the application: with the examples, the manifest of the demo project (`examples/project.json`); with the
+ * registry, the languages of the configuration. Missing or invalid: English and Italian, as before projects.
+ */
+export async function loadApplicationSettings(config: RuntimeConfig, url = 'examples/project.json'): Promise<ApplicationSettings> {
+  if (config.definitions.source === 'registry') {
+    const { languages, defaultLanguage } = config.definitions;
+    if (Array.isArray(languages) && languages.length && languages.every((l) => typeof l === 'string')) {
+      return { languages, defaultLanguage: typeof defaultLanguage === 'string' && languages.includes(defaultLanguage) ? defaultLanguage : languages[0] };
+    }
+    return DEFAULT_APPLICATION_SETTINGS;
+  }
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return DEFAULT_APPLICATION_SETTINGS;
+    const result = validateProject(await response.json());
+    if (!result.valid) {
+      console.warn('[project] examples/project.json is not valid: using the default languages');
+      return DEFAULT_APPLICATION_SETTINGS;
+    }
+    const { languages, defaultLanguage, themes } = result.value;
+    return { languages, defaultLanguage: languages.includes(defaultLanguage) ? defaultLanguage : languages[0], ...(themes?.length ? { themes } : {}) };
+  } catch {
+    return DEFAULT_APPLICATION_SETTINGS;
+  }
+}
 
 /** Reads the configuration; if it is missing or invalid the examples are used (the demo always works). */
 export async function loadRuntimeConfig(url = 'runtime-config.json'): Promise<RuntimeConfig> {

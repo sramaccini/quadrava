@@ -12,11 +12,11 @@ import { NzSelectModule } from 'ng-zorro-antd/select';
 import { DefinitionSource, I18n, ThemeService, loadCatalogs, type VisibleLeaf } from 'core';
 import { validateTheme } from 'schema';
 import { NavigationService } from './navigation.service';
+import { APPLICATION_SETTINGS, type ApplicationSettings } from './runtime-config';
 import { ShellSession } from './shell-session';
 import { DemoNetwork, NETWORK_SPEEDS, type NetworkSpeed } from '../demo/demo-ports';
 
 /** Languages of the demo: each has its `examples/i18n/<language>.json`. */
-const LANGUAGES = ['en', 'it'];
 
 const LANGUAGE_KEY = 'lc.language';
 
@@ -47,16 +47,16 @@ function viewportSignal(destroyRef: DestroyRef) {
   return current.asReadonly();
 }
 
-/** Initial language: the last one chosen, otherwise the browser's if supported, otherwise English. */
-function initialLanguage(): string {
+/** Initial language: the last one chosen, otherwise the browser's if the application has it, otherwise its default one. */
+function initialLanguage(settings: ApplicationSettings): string {
   try {
     const stored = localStorage.getItem(LANGUAGE_KEY);
-    if (stored && LANGUAGES.includes(stored)) return stored;
+    if (stored && settings.languages.includes(stored)) return stored;
   } catch {
     // see above
   }
-  const browser = (typeof navigator === 'undefined' ? '' : navigator.language).slice(0, 2);
-  return LANGUAGES.includes(browser) ? browser : 'en';
+  const browser = typeof navigator === 'undefined' ? '' : navigator.language;
+  return [browser, browser.slice(0, 2)].find((l) => settings.languages.includes(l)) ?? settings.defaultLanguage;
 }
 
 /** Shell of the application: top bar (profile and theme of the demo), side menu, content and notifications. */
@@ -72,7 +72,9 @@ export class App {
   protected readonly navigation = inject(NavigationService);
   private readonly themeService = inject(ThemeService);
   protected readonly i18n = inject(I18n);
-  protected readonly languages = LANGUAGES;
+  private readonly settings = inject(APPLICATION_SETTINGS);
+  /** Languages of the application (from its project). */
+  protected readonly languages = this.settings.languages;
 
   protected readonly profiles = this.session.profiles;
   /** Simulated network: only in the demo with the back end in the browser (where there are profiles to choose). */
@@ -100,8 +102,8 @@ export class App {
 
   constructor() {
     // The catalogues come from the same source as the definitions: the demo files or the versions published in the registry.
-    void loadCatalogs(this.i18n, LANGUAGES, (l) => this.definitions.messages(l)).then((problems) => problems.forEach((p) => console.warn('[i18n]', p)));
-    this.i18n.setLocale(initialLanguage());
+    void loadCatalogs(this.i18n, this.languages, (l) => this.definitions.messages(l)).then((problems) => problems.forEach((p) => console.warn('[i18n]', p)));
+    this.i18n.setLocale(initialLanguage(this.settings));
     effect(() => {
       const locale = this.i18n.locale();
       document.documentElement.lang = locale;

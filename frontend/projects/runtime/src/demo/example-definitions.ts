@@ -1,9 +1,12 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { DefinitionSource } from 'core';
+import { APPLICATION_SETTINGS } from '../app/runtime-config';
 
 /** Definitions of the demo: the files of the example project `examples/` copied into the public folder (tools/copy-examples.mjs). */
 @Injectable({ providedIn: 'root' })
 export class ExampleDefinitions extends DefinitionSource {
+  private readonly settings = inject(APPLICATION_SETTINGS);
+
   screen(id: string): Promise<unknown> {
     return this.load(`examples/screens/${encodeURIComponent(id)}.json`);
   }
@@ -20,8 +23,9 @@ export class ExampleDefinitions extends DefinitionSource {
     return this.load(`examples/themes/${encodeURIComponent(id)}.json`);
   }
 
+  /** The themes of the demo project (`examples/project.json`). */
   themes(): string[] {
-    return ['light', 'classic', 'dark'];
+    return this.settings.themes ?? ['light', 'classic', 'dark'];
   }
 
   /** In the demo the catalogues are the files `examples/i18n/<language>.json` (key → text). */

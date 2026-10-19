@@ -134,6 +134,8 @@ Everything external to the interpreter is an abstract class used as a DI token: 
 * Components that query a source themselves should watch `ScreenRuntime.refreshCount()[source]`: the `refresh` step increments it for every source, and on non-GET sources that is all it does (it returns `{ ok: true, data: null }`).
 * Data source expressions always see `search`, `lookupKey` and `request` (null until a component sets them).
 
+**Settings of the application.** Before starting, the runtime also reads the languages and the themes of the application: from `examples/project.json` with the examples (the manifest of the demo project), from `languages` and `defaultLanguage` of `definitions` with the registry (which does not hold the project); without them, English and Italian (`loadApplicationSettings`, token `APPLICATION_SETTINGS`). The initial language is the last one chosen, otherwise the browser's if the application has it, otherwise its default one.
+
 **Choosing the implementations.** The runtime chooses them at start-up from `runtime-config.json`: without `services` it plugs in the demo fakes and `DemoShellSession` (profile selector); with `services: { source: 'bff', appId }` it calls `provideLowcodeServices` and uses `BffShellSession` (user name, permission count, logout). In a `provideAppInitializer` callback call every `inject()` before the first `await`: afterwards the injection context is gone (NG0203) and the app does not start.
 
 **Adding a port.** Declare the abstract class in `core`, inject it where needed, provide a fake in `runtime/demo`, and a real implementation in `services` (or `components` when it is UI). Components must depend on the abstraction only.

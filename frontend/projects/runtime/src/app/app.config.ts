@@ -9,13 +9,13 @@ import { ExampleDefinitions } from '../demo/example-definitions';
 import { routes } from './app.routes';
 import { RouterNavigator } from './navigation.service';
 import { ShowcaseTools } from './showcase/showcase-tools';
-import { DEFAULT_RUNTIME_CONFIG, type RuntimeConfig } from './runtime-config';
+import { APPLICATION_SETTINGS, DEFAULT_APPLICATION_SETTINGS, DEFAULT_RUNTIME_CONFIG, type ApplicationSettings, type RuntimeConfig } from './runtime-config';
 import { BffShellSession, DemoShellSession, ShellSession } from './shell-session';
 
 /** Where screens, navigation and themes come from: the demo examples or the versions published in the registry. */
 function definitions(config: RuntimeConfig): Provider[] {
   if (config.definitions.source === 'registry') {
-    const { source: _, ...registry } = config.definitions;
+    const { source: _, languages: _languages, defaultLanguage: _default, ...registry } = config.definitions;
     return provideRegistryDefinitions(registry);
   }
   return [{ provide: DefinitionSource, useExisting: ExampleDefinitions }];
@@ -39,10 +39,11 @@ function ports(config: RuntimeConfig): (Provider | EnvironmentProviders)[] {
   ];
 }
 
-export function appConfigFor(config: RuntimeConfig): ApplicationConfig {
+export function appConfigFor(config: RuntimeConfig, settings: ApplicationSettings = DEFAULT_APPLICATION_SETTINGS): ApplicationConfig {
   return {
     providers: [
       provideBrowserGlobalErrorListeners(),
+      { provide: APPLICATION_SETTINGS, useValue: settings },
       provideRouter(routes),
       provideLowcodeComponents(),
       ...definitions(config),
