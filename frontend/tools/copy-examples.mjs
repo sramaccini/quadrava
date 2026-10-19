@@ -24,7 +24,8 @@ const projectFiles = files().sort();
 
 for (const app of ['runtime', 'editor']) {
   const target = join(here, `../projects/${app}/public/examples`);
-  rmSync(target, { recursive: true, force: true });
+  // On Windows a dev server still running can hold the folder for a moment: a few retries before giving up.
+  rmSync(target, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });
   mkdirSync(target, { recursive: true });
   cpSync(source, target, { recursive: true, dereference: true });
   writeFileSync(join(target, 'index.json'), JSON.stringify(screens, null, 2) + '\n');
