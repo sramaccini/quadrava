@@ -500,7 +500,9 @@ Fields are checked by rules written in the JSON (ADR-15): the common cases as pr
 | text, textarea | `minLength`, `maxLength`, `pattern` (the whole value, Unicode), `format` (+ `country`), `transform` (`trim`, `uppercase`, `lowercase`, `removeSpaces`: applied when leaving the field and before sending) |
 | richtext | `minLength`, `maxLength` |
 | number | `min`, `max`, `step` (from `min`), `decimals`, `integer` |
-| date, datetime | `minDate`, `maxDate` (days outside cannot be chosen in the calendar) |
+| date, datetime | `minDate`, `maxDate`: a date, or relative to the day (`today`, `today+30d`, `today-18y`; units d, w, m, y); days outside cannot be chosen in the calendar |
+| password | `minLength`, `maxLength`, `pattern`, `newPassword` (strength meter), `minStrength` (0–4) |
+| multiselect | `minItems`, `maxItems` |
 | all | `required`, `validate` (one CEL rule, as before), `messages` (a text per constraint) |
 
 **Formats.** `email`, `url` (http and https), `phone` (international, 6 to 15 digits), `iban` (country length and check digits), `bic`, `uuid`, `alphanumeric`; national ones with `country` fixed or from an expression: `vatNumber` (IT, DE, FR, ES, NL, BE, AT, PT, PL, SE; without a country the prefix decides), `taxCode` (IT codice fiscale with omocodia, ES NIF/NIE, PT NIF, NL BSN), `companyId` (IT partita IVA, FR SIREN/SIRET, ES CIF, PT NIPC, BE enterprise number, NL KvK), `postalCode` (the ten countries of `vatNumber`). Check digits are verified where an algorithm is published. A format also sets the keyboard and autocomplete of the text box (email, telephone, postal code).
@@ -531,6 +533,25 @@ The keys are those of the flat properties plus `sameAs` (equal to another field)
 
 In the rows of a repeater the rules of a cell compare it with the other cells of the same row (and see the row in `item`).
 
+**Passwords.** `"type": "password"` is a masked box with a button that shows the text (its label says «Show the password» / «Hide the password», `aria-pressed`). With `newPassword: true` it gets `autocomplete="new-password"` and a strength meter: four segments and the level in words (very weak … strong), with the first hint («Avoid common words and passwords»), announced politely by screen readers; `minStrength` blocks a weaker one. The estimate is ours and light (ADR-15): it discounts repetitions, sequences and keyboard rows, years, common words and passwords (also `p4ssw0rd`) and the values of the text fields of the form (a name, an e-mail); never other passwords, so a confirmation (`{ "sameAs": "password" }`) does not weaken it. The password never leaves the browser for the estimate. Not in repeaters nor in filter bars.
+
+```json
+{ "name": "password", "type": "password", "required": true, "newPassword": true, "minLength": 10, "minStrength": 3 }
+{ "name": "passwordConfirm", "type": "password", "validation": [{ "sameAs": "password" }] }
+```
+
+**Checks on a service (remote rules).** `{ "remote": "<data source>" }` asks a service whether the value is valid, for example whether a staff number is already used:
+
+```json
+"dataSources": { "checkStaff": { "type": "rest", "method": "GET", "url": "/api/staff/check", "params": { "number": "{{ value }}" } } },
+…
+{ "name": "staffNumber", "type": "text", "pattern": "S\\d{6}", "validation": [{ "remote": "checkStaff", "debounce": 400 }] }
+```
+
+The data source sees the value in `value` (and the form in `form`) and answers `true` / `false` or `{ "valid": false, "code": "staffNumberTaken" }`. The check starts `debounce` ms (400 if absent) after the user stops typing and only when every other rule of the field passes; a newer value cancels the request in progress, and a value already checked is not asked again. While it runs the field shows a spinner; its outcome appears as soon as it is known, before the first save too; the form waits for the checks in progress before sending. The message: the rule's own, otherwise the `code` translated (`validation.<code>` in the application's catalogue, then `lc.validation.<code>`), otherwise «Value not accepted». A check that fails (network, error, another kind of answer) does not pass («The value could not be checked: try again»). The data sources of remote rules do not load when the screen opens. Remote rules work in forms and standalone fields (a field still being checked does not pass the `validate` step), not in the rows of a repeater nor in filters.
+
+**Errors of the services.** When a `call` fails with a Problem that lists field errors (`contracts/problem.yaml`: `{ "errors": [{ "path": "/email", "code": "emailDomainBlocked" }] }`, `path` a JSON Pointer into the body sent, `/lines/0/code` for a cell of a repeater), the form shows each message on its field until that field changes, and the default message of the failure becomes «Check the highlighted fields»; `onError` sees how many were shown in `error.fields`. Codes are translated as above; the text written by the service is never shown, and such a rejection is not reported to the diagnostics (it is an answer for the user).
+
 **In expressions.** `isValid(name, value[, params])` runs a validator anywhere, for example `{{ isValid('iban', state.iban) }}` or `{{ isValid('vatNumber', form.vat, {'country': 'DE'}) }}`.
 
 **Validators of the application.** A validator is a pure function registered by name:
@@ -547,7 +568,7 @@ Its message is `lc.validation.staffNumber` (or `messageKey`) in the application'
 
 **Order and fail-closed.** Flat constraints first, then `validate`, then `validation`: the first error wins, a warning shows only without errors, and every rule except `required` and `atLeastOne` passes on an empty field. An unknown validator, a rule on the wrong field type, invalid parameters or a pattern that does not compile make the field invalid and are reported once to the diagnostics, never with the value; the editor and `validate:examples` report patterns that do not compile. In the filter bar an empty filter still means «all», and a value that breaks its rules is not searched for.
 
-In the showcase: «Validazione» (Validation).
+In the showcase: «Validazione» (Validation), also with a staff form for passwords, the check of a staff number on the service and the errors returned by it.
 
 ## 3. Implementation notes and known limits
 
@@ -560,7 +581,7 @@ In the showcase: «Validazione» (Validation).
 - **Server data table.** No row selection or expandable rows; open groups are not remembered between visits to the screen. The `refresh` step on a non-GET data source calls nothing: it only notifies the components that query it themselves.
 - **Charts.** No zoom, filled areas or more than two axes.
 - **Standalone fields.** To block an action until the fields are valid, use the `validate` step (§ 2.22); as always, the real check belongs to the service. Rules across fields (§ 2.29) exist only in forms.
-- **Validation.** Dates are absolute (no «today» or «in 30 days»); no limits on the number of choices of a multiple selection; no asynchronous checks (a code already used, checked on a service) and no field errors returned by the services; patterns are tested on values up to 1000 characters. The front end is not a boundary: every rule that matters is repeated by the service.
+- **Validation.** Relative dates are counted on the local day (no time of day); remote rules only in forms and standalone fields, not in the rows of a repeater nor in filters; field errors of the services go to the fields of the form that ran the `call` (not to standalone fields), and the cells of repeaters are reached only one level down (`/lines/0/code`); no rules across the standalone fields of a validation group; patterns are tested on values up to 1000 characters; the password strength is an estimate, not a check against leaked passwords. The front end is not a boundary: every rule that matters is repeated by the service.
 - **Layout containers.** Widths chosen with the dividers last for the visit to the screen (they are not remembered); no grid cells spanning several rows; fixed stacking thresholds (600 px grid, 768 px border).
 - **Kanban.** No reordering of cards within a column and no per-column limits; a move waits for the service's response (no optimistic update).
 - **Formatted text.** No tables, images, colours or HTML; three levels of headings and lists. The editor uses the browser's editing commands: the result is always normalised to the restricted Markdown, but rendering while typing may vary slightly between browsers.
