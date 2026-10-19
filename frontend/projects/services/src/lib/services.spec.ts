@@ -221,6 +221,20 @@ describe('HttpDataClient', () => {
     expect(err.status).toBe(500);
     expect(err.correlationId).toBe('abc-123');
     expect(err.message).not.toContain('SQL');
+    expect(err.fieldErrors).toEqual([]);
+  });
+
+  it('keeps the field errors of a Problem (paths and codes only), never their messages', async () => {
+    const { http } = setup();
+    const p = TestBed.inject(HttpDataClient).request({ method: 'POST', url: '/api/staff', body: {} });
+    http.expectOne('/api/staff').flush(
+      { title: 'Invalid data', status: 422, errors: [{ path: '/staffNumber', code: 'taken', message: 'duplicate key in table staff' }, { path: 'x', code: 'y' }] },
+      { status: 422, statusText: 'Unprocessable Content' },
+    );
+    const err = (await p.catch((e: unknown) => e)) as DataError;
+    expect(err.status).toBe(422);
+    expect(err.fieldErrors).toEqual([{ path: '/staffNumber', code: 'taken' }]);
+    expect(JSON.stringify(err)).not.toContain('duplicate key');
   });
 });
 

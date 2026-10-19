@@ -1,6 +1,6 @@
 import { HttpClient, HttpContext, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { DataClient, type DataRequest, type DataRequestOptions } from 'core';
+import { DataClient, fieldErrorsOf, type DataRequest, type DataRequestOptions } from 'core';
 import { DataError } from './errors';
 import { LOWCODE_TRACE } from './interceptor';
 import { isSameOriginRelative } from './trace';
@@ -68,7 +68,7 @@ export class HttpDataClient extends DataClient {
       if (e instanceof HttpErrorResponse) {
         const problem = e.error as { correlationId?: unknown } | null;
         const fromBody = typeof problem?.correlationId === 'string' ? problem.correlationId : undefined;
-        throw new DataError(e.status, fromBody ?? e.headers?.get('X-Correlation-Id') ?? undefined);
+        throw new DataError(e.status, fromBody ?? e.headers?.get('X-Correlation-Id') ?? undefined, fieldErrorsOf(e.error));
       }
       throw new DataError(0);
     }
