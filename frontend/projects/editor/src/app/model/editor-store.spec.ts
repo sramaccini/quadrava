@@ -103,6 +103,12 @@ describe('EditorStore', () => {
     store.setValue(['components', 1, 'id'], 'text-1');
     expect(store.issues()).toContainEqual(expect.objectContaining({ pointer: '/components/1/id', message: 'Identifier “text-1” is repeated', severity: 'error' }));
     store.setValue(['components', 1, 'id'], undefined);
+    // An `id` in the arguments of steps is a value, not an identifier: the same one in two buttons is not repeated.
+    store.setValue(['components', 0, 'onClick'], [{ call: 'save', args: { id: '{{ row.id }}' } }]);
+    store.setValue(['components', 1, 'onClick'], [{ call: 'save', args: { id: '{{ row.id }}' } }]);
+    expect(store.issues().filter((i) => i.message.includes('repeated'))).toEqual([]);
+    store.setValue(['components', 0, 'onClick'], undefined);
+    store.setValue(['components', 1, 'onClick'], undefined);
     store.addNode('table');
     store.removeSource('list');
     expect(store.issues()).toEqual([expect.objectContaining({ pointer: '/components/2/source', severity: 'warning', message: 'Data source “list” is not defined' })]);

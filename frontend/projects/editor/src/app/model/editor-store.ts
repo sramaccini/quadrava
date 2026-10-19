@@ -585,7 +585,9 @@ export class EditorStore extends DocumentState implements DataSourceList {
       if (typeof value['run'] === 'string' && !actions.has(value['run'])) {
         add(toPointer([...path, 'run']), this.t('ed.issue.unknownAction', { name: value['run'] }), 'warning');
       }
-      if (typeof value['id'] === 'string' && path.at(-2) !== 'dataSources') {
+      // Only the identifiers of the elements of the screen (nodes, tabs, steps): an `id` elsewhere (the `args` of a step,
+      // a parameter) is a value, which may repeat.
+      if (typeof value['id'] === 'string' && targetAt(doc, path) !== null) {
         if (seen.has(value['id'])) add(toPointer([...path, 'id']), this.t('ed.issue.duplicateId', { id: value['id'] }), 'error');
         seen.add(value['id']);
       }
