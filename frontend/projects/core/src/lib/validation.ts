@@ -49,6 +49,8 @@ export interface ValidationEnv {
   label(name: string): string;
   /** Remote checks of the component (forms and standalone fields); without them a remote rule fails closed. */
   readonly remote?: RemoteChecks;
+  /** Values of the text fields next to the checked one, for the validators that look for personal data. */
+  readonly personal?: readonly string[];
 }
 
 /** Keys of the rules named by their own constraint (`{ "minLength": 3 }`); the others are `format`, `use` and `rule`. */
@@ -206,7 +208,7 @@ function runRule(rule: CompiledRule, field: Pick<FieldDefinition, 'name' | 'type
   const params = rule.dynamic ? (env.runtime.resolveValue(rule.params, scope) as Record<string, unknown>) : rule.params;
   let failure;
   try {
-    failure = validator.validate(value, params ?? {}, { values: env.values, label: (name) => env.label(name) });
+    failure = validator.validate(value, params ?? {}, { values: env.values, label: (name) => env.label(name), personal: env.personal });
   } catch (e) {
     return misconfigured(field, rule, e instanceof InvalidValidatorParams ? `invalid parameters: ${e.message}` : 'the validator failed', env);
   }

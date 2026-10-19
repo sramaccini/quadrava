@@ -11,6 +11,11 @@ export interface ValidatorContext {
   readonly values: Readonly<Record<string, unknown>>;
   /** Readable label of a field of `values`, for the messages. */
   label(name: string): string;
+  /**
+   * Values of the text fields next to the checked one (a name, an e-mail; never other passwords, such as a
+   * confirmation), for the validators that look for personal data. Absent outside a form.
+   */
+  readonly personal?: readonly string[];
 }
 
 /** A value that does not pass: the parameters fill the message (`{min}`, `{date, date}`…). Never the value itself. */
@@ -275,7 +280,7 @@ export const STANDARD_VALIDATORS: readonly ValidatorDescriptor[] = [
     validate: (value, params, context) => {
       const min = numberParam(params, 'minStrength', (n) => Number.isInteger(n) && n >= 0 && n <= 4);
       // The other fields of the form (a name, an e-mail) make a password weaker when they are inside it.
-      const personal = Object.values(context.values).filter((v): v is string => typeof v === 'string' && v !== value);
+      const personal = context.personal ?? [];
       return passwordStrength(String(value), personal).score >= min ? null : { params: { min } };
     },
   },

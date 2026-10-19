@@ -125,11 +125,13 @@ describe('ValidatorRegistry', () => {
 });
 
 describe('validators of phases 2 and 3', () => {
-  it('minStrength: the estimate counts the other fields of the form', () => {
+  it('minStrength: the estimate counts the personal values of the text fields', () => {
     expect(run('minStrength', 'Xr7$mQ2v!kL9pW', { minStrength: 4 })).toBeNull();
     expect(run('minStrength', 'password1', { minStrength: 1 })).toEqual({ params: { min: 1 } });
     expect(run('minStrength', 'mario.rossi85', { minStrength: 2 })).toBeNull();
-    expect(run('minStrength', 'mario.rossi85', { minStrength: 2 }, { name: 'Mario Rossi' })).not.toBeNull();
+    const withPersonal = (personal: string[]) => registry.get('minStrength')!.validate('mario.rossi85', { minStrength: 2 }, { values: {}, label: (n) => n, personal });
+    expect(withPersonal(['Mario Rossi'])).not.toBeNull();
+    expect(withPersonal([])).toBeNull();
     expect(registry.get('minStrength')!.appliesTo).toEqual(['password']);
   });
 
