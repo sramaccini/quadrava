@@ -7,6 +7,7 @@ import { Authorization, Confirmation, DataClient, FormDialog, Notifier, RuntimeD
 import { I18n } from './i18n';
 import { NodeHostComponent } from './node-host.component';
 import { ScreenRuntime } from './screen-runtime';
+import { ValidatorRegistry } from './validators';
 
 /** Shows an already validated screen: creates the runtime, checks `requires` and draws the top-level components. */
 @Component({
@@ -74,6 +75,7 @@ export class ScreenComponent {
   private readonly confirmation = inject(Confirmation, { optional: true });
   private readonly formDialog = inject(FormDialog, { optional: true });
   protected readonly i18n = inject(I18n);
+  private readonly validators = inject(ValidatorRegistry);
 
   constructor() {
     effect(() => {
@@ -96,6 +98,7 @@ export class ScreenComponent {
               diagnostics: this.diagnostics,
               tracer: this.tracer,
               i18n: this.i18n,
+              validators: this.validators,
             },
             this.injector,
             params,

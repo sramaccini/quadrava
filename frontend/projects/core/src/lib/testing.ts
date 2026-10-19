@@ -19,6 +19,7 @@ import {
 } from './ports';
 import { I18n } from './i18n';
 import { ScreenRuntime } from './screen-runtime';
+import type { ValidatorRegistry } from './validators';
 
 /** Span recorded by the fake tracer: `ok` stays undefined while the span is open. */
 export interface RecordedSpan {
@@ -50,6 +51,8 @@ export class Fakes {
   respond: (request: DataRequest) => unknown = () => ({ items: [], total: 0 });
 
   readonly deps = {
+    /** Validators of the fields (the built-in ones if null). */
+    validators: null as ValidatorRegistry | null,
     authorization: { can: (p: string) => this.permissions.has(p) } as Authorization,
     userProvider: { user: () => ({ username: 'test' }) } as UserProvider,
     data: {

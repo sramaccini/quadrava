@@ -19,6 +19,7 @@ import {
 } from './ports';
 import type { I18n } from './i18n';
 import type { CallResult, DataSourceState, Scope } from './types';
+import { ValidatorRegistry } from './validators';
 
 export interface RuntimeDeps {
   authorization: Authorization;
@@ -35,6 +36,8 @@ export interface RuntimeDeps {
   formDialog?: FormDialog | null;
   /** Language and translations. If missing, the runtime's own texts use their English fallbacks and `t()` uses the fallback. */
   i18n?: I18n | null;
+  /** Validators of the fields and of `isValid()`. If missing, the built-in ones. */
+  validators?: ValidatorRegistry | null;
 }
 
 type Built = { ok: true; request: DataRequest } | { ok: false; error: string };
@@ -48,6 +51,8 @@ const IDLE: DataSourceState = { status: 'idle', data: null };
  */
 export class ScreenRuntime {
   readonly engine: ExpressionEngine;
+  /** Validators of the fields (built-in and of the application), also behind `isValid()` in expressions. */
+  readonly validatorRegistry: ValidatorRegistry;
   /** State of the screen: filters, page, selection. Read in expressions as `state`. */
   readonly state = signal<Record<string, unknown>>({ page: 0 });
   readonly dataSources = signal<Record<string, DataSourceState>>({});
@@ -79,10 +84,12 @@ export class ScreenRuntime {
     injector: Injector,
     readonly params: Record<string, unknown> = {},
   ) {
+    const validators = (this.validatorRegistry = deps.validators ?? new ValidatorRegistry());
     this.engine = new ExpressionEngine(
       { can: (permission) => deps.authorization.can(permission) },
       {
         onError: (info) => this.report(info.source, info.error),
+        validate: (name, value, params) => validators.check(name, value, params),
         i18n: deps.i18n
           ? {
               locale: () => deps.i18n!.intlLocale(),
