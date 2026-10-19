@@ -205,6 +205,8 @@ export class FieldControlComponent {
   /** For repeatable rows: errors of the cells visible after the first submit, and summary. */
   readonly submitted = input(false);
   readonly summary = input<string | null>(null);
+  /** Values of the text fields of the form, which a password should not contain (`personalValues`). */
+  readonly personal = input<readonly string[]>([]);
   /** For repeatable rows: errors of the cells returned by the service (`row/column` → message). */
   readonly cellErrors = input<Record<string, string>>({});
   /** Free text is emitted at every character (`input`) or only when leaving the field / with Enter (`change`). */
@@ -247,12 +249,8 @@ export class FieldControlComponent {
     const value = this.value();
     return value === null || value === undefined ? '' : String(value);
   });
-  /** Strength of a new password; the other fields of the form (a name, an e-mail) make it weaker when they are inside it. */
-  protected readonly strength = computed(() => {
-    const form = this.scope()['form'];
-    const others = form !== null && typeof form === 'object' ? Object.entries(form).filter(([name, v]) => name !== this.field().name && typeof v === 'string').map(([, v]) => v as string) : [];
-    return passwordStrength(this.text(), others);
-  });
+  /** Strength of a new password; the text fields of the form (a name, an e-mail) make it weaker when they are inside it. */
+  protected readonly strength = computed(() => passwordStrength(this.text(), this.personal()));
 
   /** Label of an option: translated with `optionKey` (`<prefix>.<value>`), otherwise the value itself. */
   protected optionLabel(option: string): string {

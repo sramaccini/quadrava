@@ -5,7 +5,7 @@ import { NzFormModule } from 'ng-zorro-antd/form';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import type { ActionDefinition, FieldDefinition, FormNode } from 'schema';
 import { FieldControlComponent } from './field-control.component';
-import { checkValue, repeaterRows, validationEnv } from './field-validation';
+import { checkValue, personalValues, repeaterRows, validationEnv } from './field-validation';
 import { nextId } from './shared';
 
 /**
@@ -61,6 +61,7 @@ import { nextId } from './shared';
                 [submitted]="submitted()"
                 [summary]="problem.error ?? problem.warning"
                 [cellErrors]="cellErrors()[field.name] ?? {}"
+                [personal]="personal()"
                 (valueChange)="set(field, $event)"
               />
             </nz-form-control>
@@ -119,6 +120,8 @@ export class FormComponent {
   /** Remote checks of the fields, one set per runtime. */
   private readonly remote = computed(() => new RemoteChecks(this.runtime()));
   private readonly env = computed(() => validationEnv(this.runtime(), this.i18n, this.fieldScope(), this.values(), this.node().fields, this.remote()));
+  /** Values of the text fields, which a password should not contain. */
+  protected readonly personal = computed(() => personalValues(this.node().fields, this.values()));
   /** Messages of the field errors returned by the service, by field, and by cell (`row/column`) for repeaters. */
   protected readonly serverErrors = signal<Record<string, string>>({});
   protected readonly cellErrors = signal<Record<string, Record<string, string>>>({});

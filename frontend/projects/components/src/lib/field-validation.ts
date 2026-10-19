@@ -10,6 +10,7 @@ export function validationEnv(runtime: ScreenRuntime, i18n: I18n, scope: Scope, 
   return {
     runtime,
     remote,
+    personal: personalValues(fields, values),
     i18n,
     scope,
     values,
@@ -18,6 +19,17 @@ export function validationEnv(runtime: ScreenRuntime, i18n: I18n, scope: Scope, 
       return field ? runtime.text(field.label, scope) || field.name : name;
     },
   };
+}
+
+const PERSONAL_TYPES = new Set(['text', 'textarea']);
+
+/**
+ * Values of the text fields (a name, an e-mail) that a password should not contain. Never other passwords: a
+ * confirmation being typed would make the password look weak.
+ */
+export function personalValues(fields: readonly FieldDefinition[], values: Record<string, unknown>): string[] {
+  if (!Array.isArray(fields)) return [];
+  return fields.filter((f) => PERSONAL_TYPES.has(f?.type)).map((f) => values[f.name]).filter((v): v is string => typeof v === 'string' && v.trim() !== '');
 }
 
 /** Rows of a `repeater` field: always a list of objects. */

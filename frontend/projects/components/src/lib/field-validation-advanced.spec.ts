@@ -58,6 +58,26 @@ describe('validation: passwords, remote rules, errors of the services', () => {
       expect(message(h, 'Password')).toBe('');
     });
 
+    it('a confirmation with the same text does not weaken the password; a name does', async () => {
+      const h = await renderScreen({
+        components: [
+          form([
+            { name: 'name', type: 'text', label: 'Name' },
+            { name: 'pw', type: 'password', label: 'Password', newPassword: true },
+            { name: 'confirm', type: 'password', label: 'Confirm', validation: [{ sameAs: 'pw' }] },
+          ]),
+        ],
+      });
+      const level = (): string => plain(item(h, 'Password').querySelector('.strength .level')?.textContent);
+      type(input(h, 'Password'), 'Xr7$mQ2v!kL9pW');
+      type(input(h, 'Confirm'), 'Xr7$mQ2v!kL9pW');
+      await h.settle();
+      expect(level()).toBe('Password strength: strong');
+      type(input(h, 'Name'), 'Xr7$mQ2v');
+      await h.settle();
+      expect(level()).not.toBe('Password strength: strong');
+    });
+
     it('is not shown in a filter bar', async () => {
       const h = await renderScreen({ components: [{ type: 'filterBar', bind: 'state.f', fields: [{ name: 'q', type: 'text', label: 'Text' }, { name: 'pw', type: 'password', label: 'Password' }] }] });
       expect(h.el.querySelectorAll('lc-filter-bar nz-form-item')).toHaveLength(1);
