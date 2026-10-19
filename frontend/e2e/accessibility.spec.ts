@@ -13,6 +13,7 @@ const SCREENS = [
   'showcase-containers',
   'showcase-input',
   'showcase-fields',
+  'showcase-validation',
   'showcase-tables',
   'showcase-advanced-tables',
   'showcase-datatable',

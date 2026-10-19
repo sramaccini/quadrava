@@ -1,0 +1,427 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "showcase-validation",
+  "title": "{{ t('showcase_validation.title', 'Showcase: validation') }}",
+  "requires": "showcase.components.read",
+  "dataSources": {
+    "save": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/showcase/flag",
+      "body": "{{form}}"
+    }
+  },
+  "components": [
+    {
+      "id": "title",
+      "type": "text",
+      "style": "heading",
+      "text": "{{ t('showcase_validation.heading', 'Validation') }}"
+    },
+    {
+      "id": "intro",
+      "type": "text",
+      "text": "{{ t('showcase_validation.intro', 'Rules are declared in the JSON: simple constraints as properties of the field, and lists of rules with conditions and warnings for the rest. Messages appear after the first save and follow the language.') }}"
+    },
+    {
+      "id": "section-simple",
+      "type": "section",
+      "title": "{{ t('showcase_validation.simple_constraints', 'Simple constraints') }}",
+      "components": [
+        {
+          "id": "form-simple",
+          "type": "form",
+          "columns": 2,
+          "fields": [
+            {
+              "name": "code",
+              "type": "text",
+              "label": "{{ t('showcase_validation.code', 'Product code') }}",
+              "tooltip": "{{ t('showcase_validation.code_help', '3 to 10 capitals, digits or dashes; written in lower case, it becomes upper case when you leave the field.') }}",
+              "required": true,
+              "minLength": 3,
+              "maxLength": 10,
+              "pattern": "[A-Z0-9-]+",
+              "transform": [
+                "trim",
+                "uppercase"
+              ],
+              "messages": {
+                "pattern": "{{ t('showcase_validation.code_pattern', 'Use capitals, digits and dashes only') }}"
+              }
+            },
+            {
+              "name": "email",
+              "type": "text",
+              "label": "{{ t('showcase_validation.email', 'Email') }}",
+              "format": "email"
+            },
+            {
+              "name": "website",
+              "type": "text",
+              "label": "{{ t('showcase_validation.website', 'Website') }}",
+              "format": "url"
+            },
+            {
+              "name": "phone",
+              "type": "text",
+              "label": "{{ t('showcase_validation.phone', 'Phone') }}",
+              "format": "phone"
+            },
+            {
+              "name": "quantity",
+              "type": "number",
+              "label": "{{ t('showcase_validation.quantity', 'Quantity') }}",
+              "min": 1,
+              "max": 999,
+              "integer": true
+            },
+            {
+              "name": "price",
+              "type": "number",
+              "label": "{{ t('showcase_validation.price', 'Unit price') }}",
+              "min": 0,
+              "decimals": 2
+            },
+            {
+              "name": "delivery",
+              "type": "date",
+              "label": "{{ t('showcase_validation.delivery', 'Delivery date (2026–2027)') }}",
+              "minDate": "2026-01-01",
+              "maxDate": "2027-12-31"
+            }
+          ],
+          "actions": [
+            {
+              "label": "{{ t('showcase_validation.save', 'Save') }}",
+              "onClick": [
+                {
+                  "call": "save",
+                  "onError": {
+                    "toast": "{{ t('showcase_validation.submission_failed', 'Submission failed') }}"
+                  }
+                },
+                {
+                  "toast": "{{ t('showcase_validation.data_valid', 'All fields are valid: data submitted') }}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "section-formats",
+      "type": "section",
+      "title": "{{ t('showcase_validation.formats_by_country', 'Formats by country') }}",
+      "components": [
+        {
+          "id": "formats-intro",
+          "type": "text",
+          "text": "{{ t('showcase_validation.formats_intro', 'Check digits are verified: change one digit of a valid number and it is rejected. The country comes from another field with an expression.') }}"
+        },
+        {
+          "id": "form-formats",
+          "type": "form",
+          "columns": 2,
+          "initial": {
+            "country": "IT"
+          },
+          "fields": [
+            {
+              "name": "country",
+              "type": "select",
+              "label": "{{ t('showcase_validation.country', 'Country') }}",
+              "options": [
+                "IT",
+                "DE",
+                "FR",
+                "ES",
+                "NL",
+                "BE",
+                "AT",
+                "PT"
+              ],
+              "optionKey": "values.country",
+              "required": true
+            },
+            {
+              "name": "vatNumber",
+              "type": "text",
+              "label": "{{ t('showcase_validation.vat_number', 'VAT number') }}",
+              "format": "vatNumber",
+              "country": "{{form.country}}",
+              "transform": [
+                "removeSpaces",
+                "uppercase"
+              ]
+            },
+            {
+              "name": "postalCode",
+              "type": "text",
+              "label": "{{ t('showcase_validation.postal_code', 'Postal code') }}",
+              "format": "postalCode",
+              "country": "{{form.country}}",
+              "transform": [
+                "trim",
+                "uppercase"
+              ]
+            },
+            {
+              "name": "taxCode",
+              "type": "text",
+              "label": "{{ t('showcase_validation.tax_code', 'Personal tax code') }}",
+              "tooltip": "{{ t('showcase_validation.tax_code_help', 'Italy, Spain, Portugal and the Netherlands only.') }}",
+              "visibleIf": "{{form.country in ['IT', 'ES', 'PT', 'NL']}}",
+              "format": "taxCode",
+              "country": "{{form.country}}",
+              "transform": [
+                "removeSpaces",
+                "uppercase"
+              ]
+            },
+            {
+              "name": "iban",
+              "type": "text",
+              "label": "{{ t('showcase_validation.iban', 'IBAN') }}",
+              "format": "iban",
+              "transform": [
+                "removeSpaces",
+                "uppercase"
+              ]
+            }
+          ],
+          "actions": [
+            {
+              "label": "{{ t('showcase_validation.save', 'Save') }}",
+              "onClick": [
+                {
+                  "call": "save",
+                  "onError": {
+                    "toast": "{{ t('showcase_validation.submission_failed', 'Submission failed') }}"
+                  }
+                },
+                {
+                  "toast": "{{ t('showcase_validation.data_valid', 'All fields are valid: data submitted') }}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "section-rules",
+      "type": "section",
+      "title": "{{ t('showcase_validation.rules_and_warnings', 'Rules across fields, conditions and warnings') }}",
+      "components": [
+        {
+          "id": "form-rules",
+          "type": "form",
+          "columns": 2,
+          "initial": {
+            "customerType": "private"
+          },
+          "fields": [
+            {
+              "name": "customerType",
+              "type": "select",
+              "label": "{{ t('showcase_validation.customer_type', 'Customer') }}",
+              "options": [
+                "private",
+                "business"
+              ],
+              "optionKey": "values.type",
+              "required": true
+            },
+            {
+              "name": "companyVat",
+              "type": "text",
+              "label": "{{ t('showcase_validation.company_vat', 'VAT number (required for businesses)') }}",
+              "transform": [
+                "removeSpaces",
+                "uppercase"
+              ],
+              "validation": [
+                {
+                  "required": true,
+                  "when": "{{form.customerType == 'business'}}"
+                },
+                {
+                  "format": "vatNumber"
+                }
+              ]
+            },
+            {
+              "name": "email",
+              "type": "text",
+              "label": "{{ t('showcase_validation.email', 'Email') }}",
+              "format": "email"
+            },
+            {
+              "name": "emailConfirm",
+              "type": "text",
+              "label": "{{ t('showcase_validation.email_confirm', 'Confirm email') }}"
+            },
+            {
+              "name": "phone",
+              "type": "text",
+              "label": "{{ t('showcase_validation.phone', 'Phone') }}",
+              "format": "phone"
+            },
+            {
+              "name": "mobile",
+              "type": "text",
+              "label": "{{ t('showcase_validation.mobile', 'Mobile') }}",
+              "format": "phone"
+            },
+            {
+              "name": "start",
+              "type": "date",
+              "label": "{{ t('showcase_validation.start', 'Start') }}"
+            },
+            {
+              "name": "end",
+              "type": "date",
+              "label": "{{ t('showcase_validation.end', 'End') }}"
+            },
+            {
+              "name": "discount",
+              "type": "number",
+              "label": "{{ t('showcase_validation.discount', 'Discount %') }}",
+              "min": 0,
+              "max": 50,
+              "validation": [
+                {
+                  "max": 20,
+                  "severity": "warning",
+                  "message": "{{ t('showcase_validation.discount_warning', 'Above 20% the discount needs a manager’s approval') }}"
+                }
+              ]
+            }
+          ],
+          "validation": [
+            {
+              "sameAs": "email",
+              "fields": [
+                "emailConfirm"
+              ]
+            },
+            {
+              "atLeastOne": [
+                "phone",
+                "mobile"
+              ]
+            },
+            {
+              "after": "start",
+              "fields": [
+                "end"
+              ],
+              "inclusive": true
+            }
+          ],
+          "actions": [
+            {
+              "label": "{{ t('showcase_validation.save', 'Save') }}",
+              "onClick": [
+                {
+                  "call": "save",
+                  "onError": {
+                    "toast": "{{ t('showcase_validation.submission_failed', 'Submission failed') }}"
+                  }
+                },
+                {
+                  "toast": "{{ t('showcase_validation.data_valid', 'All fields are valid: data submitted') }}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "section-rows",
+      "type": "section",
+      "title": "{{ t('showcase_validation.rows', 'Rows') }}",
+      "components": [
+        {
+          "id": "form-rows",
+          "type": "form",
+          "fields": [
+            {
+              "name": "lines",
+              "type": "repeater",
+              "label": "{{ t('showcase_validation.order_lines', 'Order lines (a product only once)') }}",
+              "minRows": 1,
+              "addLabel": "{{ t('showcase_validation.add_line', 'Add line') }}",
+              "fields": [
+                {
+                  "name": "product",
+                  "type": "text",
+                  "label": "{{ t('showcase_validation.code', 'Product code') }}",
+                  "required": true,
+                  "transform": [
+                    "trim",
+                    "uppercase"
+                  ]
+                },
+                {
+                  "name": "quantity",
+                  "type": "number",
+                  "label": "{{ t('showcase_validation.quantity', 'Quantity') }}",
+                  "required": true,
+                  "min": 1,
+                  "integer": true
+                }
+              ],
+              "validation": [
+                {
+                  "unique": "product"
+                }
+              ]
+            }
+          ],
+          "actions": [
+            {
+              "label": "{{ t('showcase_validation.save', 'Save') }}",
+              "onClick": [
+                {
+                  "call": "save",
+                  "onError": {
+                    "toast": "{{ t('showcase_validation.submission_failed', 'Submission failed') }}"
+                  }
+                },
+                {
+                  "toast": "{{ t('showcase_validation.data_valid', 'All fields are valid: data submitted') }}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "section-expressions",
+      "type": "section",
+      "title": "{{ t('showcase_validation.in_expressions', 'Validators in expressions') }}",
+      "components": [
+        {
+          "id": "iban-check",
+          "type": "input",
+          "bind": "state.ibanCheck",
+          "field": {
+            "name": "ibanCheck",
+            "type": "text",
+            "label": "{{ t('showcase_validation.iban_to_check', 'IBAN to check') }}"
+          }
+        },
+        {
+          "id": "iban-result",
+          "type": "text",
+          "text": "{{ state.ibanCheck == null ? t('showcase_validation.type_an_iban', 'Type an IBAN and leave the field.') : isValid('iban', state.ibanCheck) ? t('showcase_validation.iban_valid', 'isValid(\\'iban\\', …) is true: a valid IBAN.') : t('showcase_validation.iban_not_valid', 'isValid(\\'iban\\', …) is false: not a valid IBAN.') }}"
+        }
+      ]
+    }
+  ]
+}

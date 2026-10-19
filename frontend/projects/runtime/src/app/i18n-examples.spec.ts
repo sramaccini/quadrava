@@ -20,6 +20,7 @@ import showcaseTasks from '../../public/examples/screens/showcase-tasks.json';
 import showcaseDashboard from '../../public/examples/screens/showcase-dashboard.json';
 import showcaseViews from '../../public/examples/screens/showcase-views.json';
 import showcaseDatatable from '../../public/examples/screens/showcase-datatable.json';
+import showcaseValidation from '../../public/examples/screens/showcase-validation.json';
 import navigation from '../../public/examples/navigation.json';
 import catalogEn from '../../public/examples/i18n/en.json';
 import catalogIt from '../../public/examples/i18n/it.json';
@@ -44,6 +45,7 @@ const SCREENS: Record<string, unknown> = {
   'showcase-dashboard': showcaseDashboard,
   'showcase-views': showcaseViews,
   'showcase-datatable': showcaseDatatable,
+  'showcase-validation': showcaseValidation,
 };
 
 /** The text strings appearing in a screen (labels, titles, messages…), to check that none was left written in a single language. */

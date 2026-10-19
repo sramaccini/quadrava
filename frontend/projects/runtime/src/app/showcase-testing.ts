@@ -12,6 +12,7 @@ import layout from '../../public/examples/screens/showcase-layout.json';
 import dashboard from '../../public/examples/screens/showcase-dashboard.json';
 import views from '../../public/examples/screens/showcase-views.json';
 import datatable from '../../public/examples/screens/showcase-datatable.json';
+import validation from '../../public/examples/screens/showcase-validation.json';
 import light from '../../public/examples/themes/light.json';
 import catalogIt from '../../public/examples/i18n/it.json';
 import catalogEn from '../../public/examples/i18n/en.json';
@@ -33,6 +34,7 @@ export const SHOWCASE_FILES: Record<string, unknown> = {
   'examples/screens/showcase-dashboard.json': dashboard,
   'examples/screens/showcase-views.json': views,
   'examples/screens/showcase-datatable.json': datatable,
+  'examples/screens/showcase-validation.json': validation,
   'examples/i18n/it.json': catalogIt,
   'examples/i18n/en.json': catalogEn,
   'examples/themes/light.json': light,

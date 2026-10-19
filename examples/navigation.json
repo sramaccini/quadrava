@@ -180,6 +180,11 @@
               "screen": "showcase-fields"
             },
             {
+              "id": "showcase-validation",
+              "label": "{{ t('nav.validation', 'Validation') }}",
+              "screen": "showcase-validation"
+            },
+            {
               "id": "showcase-tables",
               "label": "{{ t('nav.filters_and_tables', 'Filters and tables') }}",
               "screen": "showcase-tables"
