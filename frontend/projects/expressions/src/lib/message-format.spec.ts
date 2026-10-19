@@ -30,4 +30,11 @@ describe('formatMessage', () => {
     expect(formatMessage('Hello {name', { name: 'x' })).toBe('Hello {name');
     expect(formatMessage('Hello {name}', { name: '<b>x</b>' })).toBe('Hello <b>x</b>');
   });
+
+  it('formats ISO dates in the language, leaving other values as the placeholder', () => {
+    expect(formatMessage('From {d, date}', { d: '2026-03-04' }, 'en-GB')).toBe('From 04/03/2026');
+    expect(formatMessage('Dal {d, date}', { d: '2026-03-04' }, 'it-IT')).toBe('Dal 04/03/26');
+    expect(formatMessage('{d, date}', { d: '2026-03-04T09:30' }, 'en-GB')).toBe('04/03/2026, 09:30');
+    expect(formatMessage('From {d, date}', { d: 'soon' }, 'en-GB')).toBe('From {d}');
+  });
 });

@@ -3,7 +3,8 @@
  * - simple placeholder: `Hello {name}`;
  * - plurals: `{n, plural, =0 {no invoices} one {# invoice} other {# invoices}}` (`#` is the formatted number);
  * - choice: `{gender, select, f {Dear Ms} other {Dear Mr}}`;
- * - number: `{amount, number}`.
+ * - number: `{amount, number}`;
+ * - date: `{day, date}`, from an ISO date (YYYY-MM-DD, with the time if there is one: YYYY-MM-DDTHH:mm).
  * Literal braces are written `\{` and `\}`. It never throws: if the message is malformed it returns the original text.
  * The result is always plain text (never HTML): the values of the placeholders are not interpreted.
  */
@@ -55,6 +56,7 @@ function renderArgument(inner: string, params: Record<string, unknown>, locale: 
   const kind = (second < 0 ? rest : rest.slice(0, second)).trim();
   const options = second < 0 ? '' : rest.slice(second + 1);
   if (kind === 'number') return typeof value === 'number' || value !== undefined ? new Intl.NumberFormat(locale).format(Number(value)) : `{${name}}`;
+  if (kind === 'date') return formatIsoDate(value, locale) ?? `{${name}}`;
   const table = parseOptions(options);
   if (kind === 'select') return render(table.get(String(value)) ?? table.get('other') ?? '', params, locale, undefined);
   if (kind === 'plural') {
@@ -64,6 +66,17 @@ function renderArgument(inner: string, params: Record<string, unknown>, locale: 
     return render(body, params, locale, new Intl.NumberFormat(locale).format(n));
   }
   throw new Error(`unknown placeholder type: ${kind}`);
+}
+
+/** Short date (and time) of an ISO text in the language; a date alone is not moved by the time zone. Null if it is not a date. */
+function formatIsoDate(value: unknown, locale: string): string | null {
+  if (typeof value !== 'string') return null;
+  const match = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?$/.exec(value);
+  if (!match) return null;
+  const [, y, m, d, hh, mm] = match;
+  const date = new Date(Number(y), Number(m) - 1, Number(d), Number(hh ?? 0), Number(mm ?? 0));
+  if (Number.isNaN(date.getTime())) return null;
+  return new Intl.DateTimeFormat(locale, hh === undefined ? { dateStyle: 'short' } : { dateStyle: 'short', timeStyle: 'short' }).format(date);
 }
 
 function parseOptions(src: string): Map<string, string> {
