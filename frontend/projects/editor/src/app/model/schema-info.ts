@@ -89,7 +89,8 @@ export class SchemaReader {
     }
     // Objects with known fields (not free maps such as `params` or `badges`): a group of fields.
     if (this.shapeOf(s)?.closed) return { kind: 'object', description, schema: s, reader: this };
-    return { kind: 'json', description };
+    // Lists of simple values (the fields of a validation rule) keep their schema: a new one starts as a list.
+    return s['type'] === 'array' ? { kind: 'json', description, schema: s } : { kind: 'json', description };
   }
 
   /** Properties of an object schema, following `$ref` (columns inherit from several definitions). */

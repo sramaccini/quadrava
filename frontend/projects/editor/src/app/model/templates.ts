@@ -204,6 +204,8 @@ const ITEM_DEFAULTS: Record<string, (index: number, t: Translate) => Json> = {
   then: (_, t) => ({ toast: t('ed.tpl.clicked') }),
   // run step: a name to replace with a sequence of actions (reported until it exists).
   run: () => 'sequence',
+  // CEL validation rule: a valid condition, to change.
+  rule: () => '{{ value != null }}',
 };
 
 /**
@@ -243,8 +245,9 @@ function defaultValue(info: PropertyInfo, index: number, t: Translate): Json {
     case 'children':
       return [];
     case 'object':
-    case 'json':
       return {};
+    case 'json':
+      return info.schema?.['type'] === 'array' ? [] : {};
     default:
       return '';
   }
@@ -255,7 +258,16 @@ export function summaryOf(item: Json, variantKey?: string): string {
   if (!isObject(item)) return typeof item === 'string' ? item : JSON.stringify(item);
   if (variantKey) {
     const value = item[variantKey];
-    const text = typeof value === 'string' ? fallbackText(value) : isObject(value) ? summaryOf(value) : '';
+    const text =
+      typeof value === 'string'
+        ? fallbackText(value)
+        : typeof value === 'number'
+          ? String(value)
+          : Array.isArray(value)
+            ? value.filter((v) => typeof v === 'string').join(', ')
+            : isObject(value)
+              ? summaryOf(value)
+              : '';
     return text ? `${variantKey}: ${text}` : variantKey;
   }
   for (const key of ['label', 'title', 'field', 'name', 'id']) {

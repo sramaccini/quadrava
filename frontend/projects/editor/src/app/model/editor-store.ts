@@ -1,5 +1,5 @@
 import { Injectable, computed, effect, inject, signal } from '@angular/core';
-import { I18n, checkScreenExpressions } from 'core';
+import { I18n, checkScreenExpressions, checkScreenPatterns } from 'core';
 import { ExpressionEngine } from 'expressions';
 import { splitReference, validateScreen, type ScreenDefinition } from 'schema';
 import { fromPointer, getIn, insertAt, isObject, moveBy, moveTo, removeAt, samePath, setIn, startsWith, toPointer, type Json, type JsonObject, type Path } from './doc-ops';
@@ -546,6 +546,7 @@ export class EditorStore extends DocumentState implements DataSourceList {
     const result = validateScreen(doc);
     if (!result.valid) result.issues.forEach((i) => add(i.path, i.message, 'error'));
     checkScreenExpressions(doc, this.engine).forEach((p) => add(p.path, p.message, 'error'));
+    checkScreenPatterns(doc).forEach((p) => add(p.path, p.message, 'error'));
     this.checkReferences(doc, add);
     this.checkProjectSources(doc, add);
     return issues;

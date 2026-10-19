@@ -26,6 +26,7 @@ const FUNCTIONS: Hint[] = [
   { label: "fmtCurrency(…, 'EUR')", insert: "fmtCurrency(, 'EUR')", kind: 'function' },
   { label: 'fmtDate(…)', insert: 'fmtDate()', kind: 'function' },
   { label: "plural(n, 'uno', 'molti')", insert: "plural(, '', '')", kind: 'function' },
+  { label: "isValid('iban', …)", insert: "isValid('', )", kind: 'function' },
 ];
 
 export function expressionHints(doc: Json, path: Path): Hint[] {
@@ -49,9 +50,10 @@ export function expressionHints(doc: Json, path: Path): Hint[] {
     if (typeof value['type'] === 'string' && TABLES.has(value['type']) && typeof next === 'string' && ROW_SCOPES.has(next)) {
       fieldsOf(value['columns'], 'field').forEach((f) => add(`row.${f}`));
     }
-    if (value['type'] === 'form' && (next === 'actions' || next === 'fields')) fieldsOf(value['fields'], 'name').forEach((f) => add(`form.${f}`));
+    if (value['type'] === 'form' && (next === 'actions' || next === 'fields' || next === 'validation')) fieldsOf(value['fields'], 'name').forEach((f) => add(`form.${f}`));
     if (next === 'dialog' && isObject(value['dialog'])) fieldsOf(value['dialog']['fields'], 'name').forEach((f) => add(`form.${f}`));
-    if (next === 'validate') add('value');
+    // In the rules of a field (and of a form, which check the fields they name): the value being checked.
+    if (next === 'validate' || next === 'validation' || next === 'messages') add('value');
   }
 
   // State and parameters already used in the document.
