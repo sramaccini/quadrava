@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { compilePattern, duplicateRows, InvalidValidatorParams, provideValidators, STANDARD_VALIDATORS, ValidatorRegistry, type ValidatorContext, type ValidatorDescriptor } from './validators';
+import { compilePattern, duplicateRows, InvalidValidatorParams, provideValidators, resolveDateLimit, STANDARD_VALIDATORS, ValidatorRegistry, type ValidatorContext, type ValidatorDescriptor } from './validators';
 
 const registry = new ValidatorRegistry();
 const context = (values: Record<string, unknown> = {}): ValidatorContext => ({ values, label: (name) => `«${name}»` });
@@ -48,7 +48,7 @@ describe('built-in validators', () => {
   it('invalid limits are an error of the definition', () => {
     expect(() => run('min', 1, { min: '1' })).toThrowError(InvalidValidatorParams);
     expect(() => run('step', 1, { step: 0 })).toThrowError(InvalidValidatorParams);
-    expect(() => run('minDate', '2026-01-01', { minDate: 'today' })).toThrowError(InvalidValidatorParams);
+    expect(() => run('minDate', '2026-01-01', { minDate: 'tomorrow' })).toThrowError(InvalidValidatorParams);
   });
 
   it('dates: limits inclusive, a day against a day and time compares the day', () => {
@@ -121,5 +121,38 @@ describe('ValidatorRegistry', () => {
     const fromDi = TestBed.inject(ValidatorRegistry);
     expect(fromDi.check('staffNumber', 'S123456')).toBe(true);
     expect(fromDi.get('iban')).toBeDefined();
+  });
+});
+
+describe('validators of phases 2 and 3', () => {
+  it('minStrength: the estimate counts the other fields of the form', () => {
+    expect(run('minStrength', 'Xr7$mQ2v!kL9pW', { minStrength: 4 })).toBeNull();
+    expect(run('minStrength', 'password1', { minStrength: 1 })).toEqual({ params: { min: 1 } });
+    expect(run('minStrength', 'mario.rossi85', { minStrength: 2 })).toBeNull();
+    expect(run('minStrength', 'mario.rossi85', { minStrength: 2 }, { name: 'Mario Rossi' })).not.toBeNull();
+    expect(registry.get('minStrength')!.appliesTo).toEqual(['password']);
+  });
+
+  it('minItems and maxItems count the choices', () => {
+    expect(run('minItems', ['a'], { minItems: 2 })).toEqual({ params: { min: 2 } });
+    expect(run('maxItems', ['a', 'b', 'c'], { maxItems: 2 })).toEqual({ params: { max: 2 } });
+    expect(run('maxItems', ['a', 'b'], { maxItems: 2 })).toBeNull();
+  });
+
+  it('relative date limits are resolved on the local day', () => {
+    const now = new Date(2026, 0, 31, 15, 0);
+    expect(resolveDateLimit('today', now)).toBe('2026-01-31');
+    expect(resolveDateLimit('today+1d', now)).toBe('2026-02-01');
+    expect(resolveDateLimit('today-2w', now)).toBe('2026-01-17');
+    expect(resolveDateLimit('today+1m', now)).toBe('2026-02-28'); // the 31st of a shorter month: its last day
+    expect(resolveDateLimit('today-18y', now)).toBe('2008-01-31');
+    expect(resolveDateLimit('2026-05-01', now)).toBe('2026-05-01');
+    expect(resolveDateLimit('tomorrow', now)).toBeNull();
+  });
+
+  it('minDate today: yesterday does not pass', () => {
+    const today = resolveDateLimit('today')!;
+    expect(run('minDate', today, { minDate: 'today' })).toBeNull();
+    expect(run('maxDate', '2999-01-01', { maxDate: 'today+30d' })).not.toBeNull();
   });
 });

@@ -19,6 +19,8 @@ import {
 } from './ports';
 import type { I18n } from './i18n';
 import type { CallResult, DataSourceState, Scope } from './types';
+import { fieldErrorsOf } from './field-errors';
+import { remoteSources } from './validation';
 import { ValidatorRegistry } from './validators';
 
 export interface RuntimeDeps {
@@ -105,7 +107,9 @@ export class ScreenRuntime {
     // The declared filters exist in the state from the start (null): the data sources that use them do not fail on the first load.
     this.seedFilters(definition.components);
     // A reference not resolved (`resolveDataSources`) is not a data source: fail-closed.
-    const reads = Object.entries(definition.dataSources ?? {}).filter(([, source]) => inlineDataSource(source)?.method === 'GET');
+    // The data sources of remote rules are asked only with a value to check.
+    const checks = remoteSources(definition.components);
+    const reads = Object.entries(definition.dataSources ?? {}).filter(([name, source]) => inlineDataSource(source)?.method === 'GET' && !checks.has(name));
     for (const [name] of reads) this.pendingFirstLoad.add(name);
     this.openSpan = this.startSpan('screen.open', { 'lowcode.datasources': reads.length });
     if (reads.length === 0) this.openSpan?.end(true);
@@ -336,17 +340,18 @@ export class ScreenRuntime {
 
   /**
    * Runs a data source and returns the response without touching its shared state (the rows shown by the other
-   * components stay the previous ones). Used for service requests, such as resolving the text of a value.
+   * components stay the previous ones). Used for service requests, such as resolving the text of a value. With
+   * `signal` the request is its own (not shared with identical ones) and can be cancelled: a cancelled one is not an error.
    */
-  async query(name: string, args: Record<string, unknown> = {}, scope: Scope = {}, trace?: SpanContext): Promise<CallResult> {
+  async query(name: string, args: Record<string, unknown> = {}, scope: Scope = {}, trace?: SpanContext, signal?: AbortSignal): Promise<CallResult> {
     const built = this.build(name, args, scope);
     if (!built.ok) {
       this.report(`call ${name}`, built.error);
       return { ok: false, error: built.error };
     }
-    const options: DataRequestOptions = { source: name, trace };
+    const options: DataRequestOptions = { source: name, trace, signal };
     try {
-      if (built.request.method !== 'GET') return { ok: true, data: await this.deps.data.request(built.request, options) };
+      if (built.request.method !== 'GET' || signal) return { ok: true, data: await this.deps.data.request(built.request, options) };
       const key = `${name} ${JSON.stringify(built.request)}`;
       let shared = this.sharedQueries.get(key);
       if (!shared) {
@@ -357,9 +362,10 @@ export class ScreenRuntime {
       }
       return { ok: true, data: await shared };
     } catch (e) {
+      if (signal?.aborted) return { ok: false, error: 'annullata' };
       const error = e instanceof Error ? e.message : String(e);
       this.report(`data source ${name}`, error);
-      return { ok: false, error };
+      return { ok: false, error, status: statusOf(e) };
     }
   }
 
@@ -452,7 +458,8 @@ export class ScreenRuntime {
       const error = e instanceof Error ? e.message : String(e);
       this.report(`data source ${name}`, error);
       if (this.sequence.get(name) === seq) this.setSource(name, { status: 'error', data: null, error: this.systemText('lc.loadFailed', 'Loading failed') });
-      return { ok: false, error, status: statusOf(e) };
+      const fieldErrors = fieldErrorsOf(e);
+      return fieldErrors.length ? { ok: false, error, status: statusOf(e), fieldErrors } : { ok: false, error, status: statusOf(e) };
     } finally {
       if (controller && this.inflight.get(name) === controller) this.inflight.delete(name);
     }

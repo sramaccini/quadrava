@@ -1,5 +1,6 @@
 import type { Step } from 'schema';
 import { csvFileName, downloadText, rowsOf, toCsv } from './csv';
+import type { FieldError } from './field-errors';
 import type { SpanContext } from './ports';
 import type { ScreenRuntime } from './screen-runtime';
 import type { Scope } from './types';
@@ -22,6 +23,16 @@ const asList = (steps: Step | Step[]): Step[] => (Array.isArray(steps) ? steps :
 interface Run {
   depth: number;
   trace?: SpanContext;
+  onFieldErrors?: StepOptions['onFieldErrors'];
+}
+
+/** Options of a sequence started by a component. */
+export interface StepOptions {
+  /**
+   * The field errors of a failed `call` (from the service's Problem), for the form that started the sequence: it shows them
+   * on its fields and returns how many it could place.
+   */
+  onFieldErrors?: (errors: readonly FieldError[]) => number;
 }
 
 const SIMPLE_KINDS = ['if', 'set', 'toast', 'confirm', 'dialog', 'validate', 'print'] as const;
@@ -48,10 +59,10 @@ export function describeSteps(steps: Step[]): string {
  * Returns true if every step succeeded. The variables added by a step (`as` of a `call`) are seen by
  * the following steps of the same sequence.
  */
-export async function runSteps(runtime: ScreenRuntime, steps: Step[], scope: Scope = {}): Promise<boolean> {
+export async function runSteps(runtime: ScreenRuntime, steps: Step[], scope: Scope = {}, options: StepOptions = {}): Promise<boolean> {
   // Every sequence started by a component is an action: a span, whose children are the HTTP calls of the steps.
   const span = runtime.startSpan('action.run', { 'lowcode.action': describeSteps(steps) });
-  const ok = await runSequence(runtime, steps, scope, { depth: 0, trace: span?.context });
+  const ok = await runSequence(runtime, steps, scope, { depth: 0, trace: span?.context, onFieldErrors: options.onFieldErrors });
   span?.end(ok);
   return ok;
 }
@@ -79,9 +90,11 @@ async function runStep(runtime: ScreenRuntime, step: Step, scope: Scope, run: Ru
     // With `as` the following steps see the response under that name.
     if (result.ok) return { ok: true, scope: step.as ? { ...scope, [step.as]: result.data } : scope };
     // The server message is not shown to the user: it could contain internal details. The onError steps
-    // see only the code (error.status).
-    const handler = step.onError === undefined ? [{ toast: genericError(runtime) }] : asList(step.onError);
-    await runSequence(runtime, handler, { ...scope, error: { status: result.status ?? 0 } }, run);
+    // see only the code (error.status) and how many field errors the form shows (error.fields).
+    const fields = result.fieldErrors?.length && run.onFieldErrors ? run.onFieldErrors(result.fieldErrors) : 0;
+    const fallback = fields ? runtime.systemText('lc.checkFields', 'Check the highlighted fields') : genericError(runtime);
+    const handler = step.onError === undefined ? [{ toast: fallback }] : asList(step.onError);
+    await runSequence(runtime, handler, { ...scope, error: { status: result.status ?? 0, fields } }, run);
     return { ok: false };
   }
   if ('if' in step) {

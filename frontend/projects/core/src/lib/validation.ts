@@ -1,5 +1,6 @@
 import type { FieldDefinition, FlatConstraint, FormValidationRule, TextTransform, ValidationRule } from 'schema';
 import type { I18n } from './i18n';
+import type { RemoteChecks } from './remote-checks';
 import type { ScreenRuntime } from './screen-runtime';
 import type { Scope } from './types';
 import { compilePattern, duplicateRows, InvalidValidatorParams, isEmptyValue, type ValidatorDescriptor, type ValidatorRegistry } from './validators';
@@ -12,7 +13,7 @@ import { compilePattern, duplicateRows, InvalidValidatorParams, isEmptyValue, ty
 
 /** A rule ready to be checked. */
 export interface CompiledRule {
-  /** Name of the validator, or `rule` for a CEL rule. */
+  /** Name of the validator, `rule` for a CEL rule, `remote` for a check on a service. */
   readonly name: string;
   readonly params: Readonly<Record<string, unknown>>;
   /** Some parameter holds an expression: they are resolved at every check. */
@@ -28,6 +29,10 @@ export interface CompiledRule {
 export interface FieldCheck {
   readonly error: string | null;
   readonly warning: string | null;
+  /** A remote check is still running: the field cannot be sent yet. */
+  readonly pending?: boolean;
+  /** The problem comes from a remote check: it is shown as soon as it is known, before the first submit too. */
+  readonly remote?: boolean;
 }
 
 export const NO_PROBLEM: FieldCheck = { error: null, warning: null };
@@ -42,10 +47,12 @@ export interface ValidationEnv {
   readonly values: Readonly<Record<string, unknown>>;
   /** Readable label of a field of `values`. */
   label(name: string): string;
+  /** Remote checks of the component (forms and standalone fields); without them a remote rule fails closed. */
+  readonly remote?: RemoteChecks;
 }
 
 /** Keys of the rules named by their own constraint (`{ "minLength": 3 }`); the others are `format`, `use` and `rule`. */
-const KEYED = ['required', 'minLength', 'maxLength', 'pattern', 'min', 'max', 'step', 'decimals', 'integer', 'minDate', 'maxDate', 'sameAs', 'after', 'before', 'atLeastOne', 'unique'];
+const KEYED = ['required', 'minLength', 'maxLength', 'pattern', 'min', 'max', 'step', 'decimals', 'integer', 'minDate', 'maxDate', 'minStrength', 'minItems', 'maxItems', 'sameAs', 'after', 'before', 'atLeastOne', 'unique', 'remote'];
 const META = new Set(['message', 'when', 'severity', 'fields']);
 
 function hasExpression(value: unknown): boolean {
@@ -97,7 +104,7 @@ export function fieldRules(field: FieldDefinition): readonly CompiledRule[] {
   if (field.step !== undefined) add('step', 'step', field.min !== undefined ? { step: field.step, min: field.min } : { step: field.step });
   if (field.decimals !== undefined) add('decimals', 'decimals', { decimals: field.decimals });
   if (field.integer) add('integer', 'integer', {});
-  for (const key of ['minDate', 'maxDate'] as const) if (field[key] !== undefined) add(key, key, { [key]: field[key] });
+  for (const key of ['minDate', 'maxDate', 'minStrength', 'minItems', 'maxItems'] as const) if (field[key] !== undefined) add(key, key, { [key]: field[key] });
   if (field.validate) list.push({ name: 'rule', rule: field.validate.rule, message: field.validate.message, params: {}, dynamic: false, severity: 'error' });
   if (Array.isArray(field.validation)) for (const rule of field.validation) list.push(compileRule(rule));
   rules = list;
@@ -155,6 +162,19 @@ function messageOf(rule: CompiledRule, key: string, params: Record<string, unkno
   return (rule.message !== undefined ? env.runtime.text(rule.message, scope) : '') || env.i18n.t(key, params);
 }
 
+/**
+ * The message of a reason given by a service (a remote check, a field error of a Problem): `validation.<code>` of the
+ * application's catalogue, then `lc.validation.<code>` of the platform, otherwise «Invalid value». Never the text of the
+ * service.
+ */
+export function codeMessage(i18n: I18n, code: string, params: Readonly<Record<string, unknown>> = {}): string {
+  for (const key of [`validation.${code}`, `lc.validation.${code}`]) {
+    const found = i18n.lookup(key, undefined, { ...params });
+    if (found.found) return found.text;
+  }
+  return i18n.t('lc.invalid');
+}
+
 /** The validator of a rule for this field, or the reason why it cannot be used. */
 function validatorFor(rule: CompiledRule, field: Pick<FieldDefinition, 'type'>, registry: ValidatorRegistry): ValidatorDescriptor | string {
   const validator = registry.get(rule.name);
@@ -172,6 +192,8 @@ function applies(rule: CompiledRule, scope: Scope, env: ValidationEnv): boolean 
 function runRule(rule: CompiledRule, field: Pick<FieldDefinition, 'name' | 'type'>, value: unknown, env: ValidationEnv): string | null {
   const scope: Scope = { ...env.scope, value };
   const empty = isEmptyValue(value);
+  // Remote rules are checked after all the others (checkRules).
+  if (rule.name === 'remote') return null;
   if (rule.name === 'rule') {
     // As before: a CEL rule checks only a filled-in field. A rule that cannot be evaluated does not pass.
     if (empty || !applies(rule, scope, env)) return null;
@@ -191,7 +213,10 @@ function runRule(rule: CompiledRule, field: Pick<FieldDefinition, 'name' | 'type
   return failure ? messageOf(rule, validator.messageKey ?? `lc.validation.${validator.name}`, failure.params ?? {}, scope, env) : null;
 }
 
-/** Checks the rules in order: the first error wins; otherwise the first warning. */
+/**
+ * Checks the rules in order: the first error wins; otherwise the first warning. Remote rules run last, only when every
+ * other rule passes: while one is running the field is `pending`.
+ */
 export function checkRules(rules: readonly CompiledRule[], field: Pick<FieldDefinition, 'name' | 'type'>, value: unknown, env: ValidationEnv): FieldCheck {
   let warning: string | null = null;
   for (const rule of rules) {
@@ -201,7 +226,24 @@ export function checkRules(rules: readonly CompiledRule[], field: Pick<FieldDefi
     if (rule.severity === 'error') return { error: problem, warning: null };
     warning = problem;
   }
-  return warning === null ? NO_PROBLEM : { error: null, warning };
+  let remoteWarning = false;
+  for (const [index, rule] of rules.entries()) {
+    if (rule.name !== 'remote' || isEmptyValue(value)) continue;
+    const scope: Scope = { ...env.scope, value };
+    if (!applies(rule, scope, env)) continue;
+    if (!env.remote) return { error: misconfigured(field, rule, 'remote rules are checked only in forms and standalone fields', env), warning: null };
+    const result = env.remote.result(`${field.name}/${index}`, rule, value, scope);
+    if (result.status === 'pending') return { error: null, warning, pending: true };
+    if (result.status === 'failed') return { error: env.i18n.t('lc.validation.remoteFailed'), warning: null, remote: true };
+    if (result.status !== 'invalid') continue;
+    const message = (rule.message !== undefined ? env.runtime.text(rule.message, scope) : '') || (result.code ? codeMessage(env.i18n, result.code, result.params) : env.i18n.t('lc.validation.remote'));
+    if (rule.severity === 'error') return { error: message, warning: null, remote: true };
+    if (warning === null) {
+      warning = message;
+      remoteWarning = true;
+    }
+  }
+  return warning === null ? NO_PROBLEM : { error: null, warning, ...(remoteWarning ? { remote: true } : {}) };
 }
 
 /** Checks a field (its value after `transform`), with the rules of the form that concern it. */
@@ -242,7 +284,6 @@ export function uniqueCellErrors(field: FieldDefinition, rows: unknown, env: Val
   return errors;
 }
 
-
 /**
  * Static check of the `pattern` constraints of a screen (fields and validation rules): the ones that do not compile with
  * the `u` flag, or are too long. Used by the editor; it runs nothing.
@@ -263,4 +304,22 @@ export function checkScreenPatterns(document: unknown): { path: string; message:
   };
   walk(document, '');
   return issues;
+}
+
+/**
+ * Data sources used by the remote rules of a screen: they are asked only with a value to check, so they do not load
+ * by themselves when the screen opens.
+ */
+export function remoteSources(document: unknown): Set<string> {
+  const names = new Set<string>();
+  const walk = (value: unknown, inRules: boolean): void => {
+    if (Array.isArray(value)) value.forEach((v) => walk(v, inRules));
+    else if (value !== null && typeof value === 'object') {
+      const remote = (value as { remote?: unknown }).remote;
+      if (inRules && typeof remote === 'string') names.add(remote);
+      for (const [key, v] of Object.entries(value)) walk(v, key === 'validation');
+    }
+  };
+  walk(document, false);
+  return names;
 }

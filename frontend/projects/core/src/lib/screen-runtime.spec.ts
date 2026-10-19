@@ -231,6 +231,36 @@ describe('runSteps', () => {
     rt.destroy();
   });
 
+  it('field errors of a Problem go to the component that started the sequence; onError sees how many it showed', async () => {
+    fakes.respond = () => {
+      throw Object.assign(new Error('422'), { status: 422, fieldErrors: [{ path: '/email', code: 'taken' }, { path: 'bad', code: 'x' }] });
+    };
+    const rt = fakes.runtime(screen, injector);
+    const received: unknown[] = [];
+    await runSteps(rt, [{ call: 'approve', args: { id: 1 } }], {}, { onFieldErrors: (errors) => (received.push(...errors), errors.length) });
+    expect(received).toEqual([{ path: '/email', code: 'taken' }]);
+    expect(fakes.toasts).toEqual([{ message: 'Check the highlighted fields', kind: 'info' }]);
+    await runSteps(rt, [{ call: 'approve', args: { id: 1 }, onError: { toast: '{{ string(error.fields) }} fields' } }], {}, { onFieldErrors: () => 1 });
+    expect(fakes.toasts.at(-1)?.message).toBe('1 fields');
+    // Without a component that shows them, the usual message.
+    await runSteps(rt, [{ call: 'approve', args: { id: 1 } }], {});
+    expect(fakes.toasts.at(-1)?.message).toBe('Operation failed');
+    rt.destroy();
+  });
+
+  it('a query with a signal is its own request and, cancelled, is not an error', async () => {
+    const rt = fakes.runtime(screen, injector);
+    const controller = new AbortController();
+    fakes.respond = () => {
+      controller.abort();
+      throw new DOMException('cancelled', 'AbortError');
+    };
+    expect(await rt.query('approve', { id: 1 }, {}, undefined, controller.signal)).toEqual({ ok: false, error: 'annullata' });
+    await Promise.resolve();
+    expect(fakes.reports).toEqual([]);
+    rt.destroy();
+  });
+
   it('navigates and sets the state', async () => {
     const rt = fakes.runtime(screen, injector);
     await runSteps(rt, [{ set: { path: 'state.selection', value: '{{row.id}}' } }, { navigate: 'order-detail', params: { id: '{{row.id}}' } }], { row: { id: 9 } });

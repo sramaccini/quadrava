@@ -1,5 +1,6 @@
 import { inject, Injectable, InjectionToken, type Provider } from '@angular/core';
 import type { FieldDefinition } from 'schema';
+import { passwordStrength } from './password-strength';
 import { FORMAT_COUNTRIES, isAlphanumeric, isBic, isCompanyId, isEmail, isIban, isPhone, isPostalCode, isTaxCode, isUrl, isUuid, isVatNumber } from './formats';
 
 export type FieldType = FieldDefinition['type'];
@@ -48,8 +49,9 @@ export function isEmptyValue(value: unknown): boolean {
 }
 
 const FAIL: ValidationFailure = {};
-const TEXT: readonly FieldType[] = ['text', 'textarea', 'richtext'];
+const TEXT: readonly FieldType[] = ['text', 'textarea', 'richtext', 'password'];
 const PLAIN_TEXT: readonly FieldType[] = ['text', 'textarea'];
+const PATTERNED: readonly FieldType[] = ['text', 'textarea', 'password'];
 const NUMBER: readonly FieldType[] = ['number'];
 const DATES: readonly FieldType[] = ['date', 'datetime'];
 
@@ -68,9 +70,41 @@ function textParam(params: Readonly<Record<string, unknown>>, name: string): str
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?$/;
 
+const RELATIVE_DATE = /^today(?:([+-])(\d{1,4})([dwmy]))?$/;
+
+/** Local day as YYYY-MM-DD. */
+function isoDay(date: Date): string {
+  const pad = (n: number): string => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+/**
+ * A date limit as an ISO date: as it is, or `today`, `today+30d`, `today-18y` (units d, w, m, y) resolved on the
+ * local day of `now`; a month or year added to the 31st ends on the last day of the month. Null if it is neither.
+ */
+export function resolveDateLimit(limit: unknown, now: Date = new Date()): string | null {
+  if (typeof limit !== 'string') return null;
+  if (ISO_DATE.test(limit)) return limit;
+  const match = RELATIVE_DATE.exec(limit);
+  if (!match) return null;
+  const amount = match[2] ? Number(match[2]) * (match[1] === '-' ? -1 : 1) : 0;
+  const unit = match[3];
+  const date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if (unit === 'd' || unit === 'w') {
+    date.setDate(date.getDate() + amount * (unit === 'w' ? 7 : 1));
+  } else if (unit === 'm' || unit === 'y') {
+    const day = date.getDate();
+    date.setDate(1);
+    date.setMonth(date.getMonth() + amount * (unit === 'y' ? 12 : 1));
+    const last = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+    date.setDate(Math.min(day, last));
+  }
+  return isoDay(date);
+}
+
 function dateParam(params: Readonly<Record<string, unknown>>, name: string): string {
-  const date = params[name];
-  if (typeof date !== 'string' || !ISO_DATE.test(date)) throw new InvalidValidatorParams(`${name} must be a date YYYY-MM-DD`);
+  const date = resolveDateLimit(params[name]);
+  if (date === null) throw new InvalidValidatorParams(`${name} must be a date YYYY-MM-DD or today±N`);
   return date;
 }
 
@@ -170,7 +204,7 @@ export const STANDARD_VALIDATORS: readonly ValidatorDescriptor[] = [
   },
   {
     name: 'pattern',
-    appliesTo: PLAIN_TEXT,
+    appliesTo: PATTERNED,
     validate: (value, params) => {
       const regex = compilePattern(textParam(params, 'pattern'));
       if (!regex) throw new InvalidValidatorParams('pattern does not compile');
@@ -233,6 +267,32 @@ export const STANDARD_VALIDATORS: readonly ValidatorDescriptor[] = [
     validate: (value, params) => {
       const date = dateParam(params, 'maxDate');
       return ISO_DATE.test(String(value)) && compareDates(String(value), date) <= 0 ? null : { params: { date } };
+    },
+  },
+  {
+    name: 'minStrength',
+    appliesTo: ['password'],
+    validate: (value, params, context) => {
+      const min = numberParam(params, 'minStrength', (n) => Number.isInteger(n) && n >= 0 && n <= 4);
+      // The other fields of the form (a name, an e-mail) make a password weaker when they are inside it.
+      const personal = Object.values(context.values).filter((v): v is string => typeof v === 'string' && v !== value);
+      return passwordStrength(String(value), personal).score >= min ? null : { params: { min } };
+    },
+  },
+  {
+    name: 'minItems',
+    appliesTo: ['multiselect'],
+    validate: (value, params) => {
+      const min = numberParam(params, 'minItems', (n) => Number.isInteger(n) && n >= 1);
+      return Array.isArray(value) && value.length >= min ? null : { params: { min } };
+    },
+  },
+  {
+    name: 'maxItems',
+    appliesTo: ['multiselect'],
+    validate: (value, params) => {
+      const max = numberParam(params, 'maxItems', (n) => Number.isInteger(n) && n >= 1);
+      return Array.isArray(value) && value.length <= max ? null : { params: { max } };
     },
   },
   {
