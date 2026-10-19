@@ -32,7 +32,7 @@ export interface DockTab {
     '[style.--ed-dock-strip.px]': 'strip',
     '(pointerenter)': 'dock.pointer(side(), true)',
     '(pointerleave)': 'dock.pointer(side(), false)',
-    '(keydown.escape)': 'escape()',
+    '(keydown.escape)': 'escape($event)',
   },
   styles: `
     :host { position: relative; display: flex; min-height: 0; overflow: hidden; }
@@ -172,9 +172,11 @@ export class DockSideComponent {
   }
 
   /** Esc closes the open panel and brings the focus back to its tab. */
-  protected escape(): void {
+  protected escape(event: Event): void {
     const open = this.dock.open();
     if (!open || PANEL_SIDE[open] !== this.side()) return;
+    // Esc closes the panel and does nothing else (it does not also deselect).
+    event.preventDefault();
     this.dock.hide();
     this.host.nativeElement.querySelector<HTMLElement>(`.tab[data-dock-tab="${open}"]`)?.focus();
   }

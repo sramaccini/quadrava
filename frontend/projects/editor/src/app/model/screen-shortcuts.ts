@@ -9,13 +9,13 @@ export interface KeyStroke {
 }
 
 /**
- * The editing shortcuts of a screen: undo and redo, cut, copy, paste, duplicate, delete, move up and down. The same in the
- * page of the editor and in the preview (which sends them to the editor in selection mode).
+ * The editing shortcuts of a screen: undo and redo, cut, copy, paste, duplicate, delete, move up and down, Esc to deselect.
+ * The same in the page of the editor and in the preview (which sends them to the editor in selection mode).
  */
 export function isScreenShortcut(stroke: KeyStroke): boolean {
   const key = stroke.key.toLowerCase();
   if (stroke.ctrl && !stroke.alt && ['z', 'y', 'c', 'x', 'v', 'd'].includes(key)) return true;
-  if (key === 'delete' && !stroke.ctrl && !stroke.alt) return true;
+  if ((key === 'delete' || key === 'escape') && !stroke.ctrl && !stroke.alt) return true;
   return stroke.alt && !stroke.ctrl && (key === 'arrowup' || key === 'arrowdown');
 }
 
@@ -40,7 +40,8 @@ export function runScreenShortcut(store: EditorStore, stroke: KeyStroke): boolea
     return true;
   }
   if (!selection.length) return false;
-  if (key === 'delete') {
+  if (key === 'escape') store.select([]);
+  else if (key === 'delete') {
     if (store.multi().length > 1) store.removeMany(store.multi());
     else store.remove(selection);
   } else if (stroke.ctrl && key === 'd') store.duplicate(selection);

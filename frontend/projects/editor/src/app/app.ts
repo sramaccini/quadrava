@@ -82,6 +82,7 @@ const SHORTCUTS: { group: string; keys: [string, string][] }[] = [
     group: 'ed.keys.outline',
     keys: [
       ['ed.keys.del', 'ed.keys.delete'],
+      ['Esc', 'ed.keys.deselect'],
       ['Ctrl+D', 'ed.keys.duplicate'],
       ['Ctrl+C · Ctrl+X · Ctrl+V', 'ed.keys.clipboard'],
       ['Alt+↑ · Alt+↓', 'ed.keys.move'],
@@ -625,6 +626,8 @@ export class App {
     if (ctrl && key === 'z' && !event.shiftKey) return this.handled(event, () => win.state.undo());
     if (ctrl && (key === 'y' || (key === 'z' && event.shiftKey))) return this.handled(event, () => win.state.redo());
     if (isEditable(event.target) || dialog) return;
+    // Esc deselects everything (after the menus, panels and completions that use it to close).
+    if (key === 'escape' && !event.defaultPrevented && win.state.selection().length) return this.handled(event, () => win.state.select([]));
     if (win.kind === 'navigation') return this.navigationKey(event, win.injector.get(NavigationStore), ctrl, key);
     if (win.kind !== 'screen') return;
     if (runScreenShortcut(win.injector.get(EditorStore), { key: event.key, ctrl, shift: event.shiftKey, alt: event.altKey })) event.preventDefault();

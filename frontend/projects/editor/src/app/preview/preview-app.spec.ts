@@ -142,11 +142,13 @@ describe('preview (inside the iframe)', () => {
     document.body.dispatchEvent(undo);
     expect(undo.defaultPrevented).toBe(true);
     document.body.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'Delete' }));
+    document.body.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'Escape' }));
     // Other keys are not shortcuts: they are not sent.
     document.body.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'a' }));
     expect(sent.filter((m) => m.type === 'lc-preview:key')).toEqual([
       { type: 'lc-preview:key', key: 'z', ctrl: true, shift: false, alt: false },
       { type: 'lc-preview:key', key: 'Delete', ctrl: false, shift: false, alt: false },
+      { type: 'lc-preview:key', key: 'Escape', ctrl: false, shift: false, alt: false },
     ]);
     const right = new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 30, clientY: 40 });
     el.querySelector('lc-node[data-node-id="button-1"] button')!.dispatchEvent(right);
@@ -158,7 +160,7 @@ describe('preview (inside the iframe)', () => {
     // Outside selection mode the keys belong to the screen being tried.
     await deliver({ screen, selectMode: false });
     document.body.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'z', ctrlKey: true }));
-    expect(sent.filter((m) => m.type === 'lc-preview:key')).toHaveLength(2);
+    expect(sent.filter((m) => m.type === 'lc-preview:key')).toHaveLength(3);
   });
 
   it('a component dragged from the palette onto the drawing: indicator and drop message to the editor', async () => {

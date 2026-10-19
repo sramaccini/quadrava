@@ -591,9 +591,17 @@ describe('screen editor', () => {
     line.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 50, clientY: 50 }));
     await settle();
     expect(store.selection()).toEqual(['components', 1]);
-    el.querySelector('ed-context-menu [role="menu"]')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    el.querySelector('ed-context-menu [role="menu"]')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
     await settle();
     expect(el.querySelector('ed-context-menu')).toBeNull();
+    expect(store.selection()).toEqual(['components', 1]);
+    // A second Esc deselects everything, multiple selections too.
+    store.toggleSelect(['components', 0]);
+    expect(store.multi()).toHaveLength(2);
+    const escape = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+    el.querySelector('ed-outline .row[data-path="components/1"]')!.dispatchEvent(escape);
+    expect(escape.defaultPrevented).toBe(true);
+    expect([store.selection(), store.multi()]).toEqual([[], []]);
     store.select(['components', 0, 'components', 0]);
     await settle();
     el.querySelector('ed-outline .row[data-path="components/0/components/0"]')!.parentElement!.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
@@ -1013,6 +1021,10 @@ describe('screen editor', () => {
     store.select(['components', 2]);
     await fromFrame('ed-preview', { type: 'lc-preview:key', key: 'Delete', ctrl: false, shift: false, alt: false });
     expect(types()).toHaveLength(2);
+    // Esc in the preview deselects.
+    store.select(['components', 0]);
+    await fromFrame('ed-preview', { type: 'lc-preview:key', key: 'Escape', ctrl: false, shift: false, alt: false });
+    expect(store.selection()).toEqual([]);
   });
 
   it('from the preview to the outline: the component chosen in the iframe is selected; only the messages of its own iframe count', async () => {
