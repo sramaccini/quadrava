@@ -1,14 +1,12 @@
 import { DOCUMENT } from '@angular/common';
 import { Injectable, inject, signal } from '@angular/core';
+import { DatabaseFolder, HANDLES, databaseProjects, deleteDatabaseProject, request } from './browser-db';
 import { DirectoryFolder, MemoryFolder, type DirectoryHandle, type ProjectFolder } from './project-folder';
 
 /** Folder of the private storage of the browser that holds the projects kept in the browser. */
 const BROWSER_ROOT = 'quadrava-projects';
 /** The last project opened, to offer it again at the next visit. */
 export const LAST_PROJECT_KEY = 'lc.editor.project';
-/** IndexedDB database and store where the handle of the last folder on disk is kept (a handle cannot go in localStorage). */
-const DB = 'quadrava-studio';
-const STORE = 'handles';
 
 /** The last project opened: in the browser (by name) or on disk (the handle, asking for permission again). */
 export type LastProject = { location: 'browser'; name: string } | { location: 'disk'; name: string };
@@ -36,12 +34,22 @@ export class ProjectLibrary {
     return typeof this.window?.showDirectoryPicker === 'function';
   }
 
-  /** The browser has a private file storage (otherwise projects live in memory, for the visit only). */
-  canUseBrowser(): boolean {
-    return typeof (navigator.storage as StorageWithDirectory | undefined)?.getDirectory === 'function';
+  /**
+   * Where the projects kept in the browser are: its private file storage, when the page can write files there; otherwise
+   * (Safari) IndexedDB; without either, in memory for the visit only.
+   */
+  browserStorage(): 'files' | 'database' | 'memory' {
+    const files = typeof (navigator.storage as StorageWithDirectory | undefined)?.getDirectory === 'function';
+    const writable = typeof FileSystemFileHandle !== 'undefined' && 'createWritable' in FileSystemFileHandle.prototype;
+    if (files && writable) return 'files';
+    return typeof indexedDB !== 'undefined' ? 'database' : 'memory';
   }
 
   async refresh(): Promise<void> {
+    if (this.browserStorage() === 'database') {
+      this.browserProjects.set(await databaseProjects().catch((): string[] => []));
+      return;
+    }
     const root = await this.browserRoot();
     const names: string[] = [];
     if (root) for await (const entry of root.values()) if (entry.kind === 'directory') names.push(entry.name);
@@ -63,6 +71,10 @@ export class ProjectLibrary {
 
   /** The folder of a project kept in the browser (created if `create`); in memory where the browser has no file storage. */
   async browserFolder(name: string, create = false): Promise<ProjectFolder | null> {
+    if (this.browserStorage() === 'database') {
+      const exists = (await databaseProjects().catch((): string[] => [])).includes(name);
+      return exists || create ? new DatabaseFolder(name) : null;
+    }
     const root = await this.browserRoot();
     if (!root) return create ? new MemoryFolder(name) : null;
     try {
@@ -74,8 +86,8 @@ export class ProjectLibrary {
 
   /** Deletes a project kept in the browser, with all its files. */
   async deleteBrowserProject(name: string): Promise<void> {
-    const root = await this.browserRoot();
-    await root?.removeEntry(name, { recursive: true });
+    if (this.browserStorage() === 'database') await deleteDatabaseProject(name);
+    else await (await this.browserRoot())?.removeEntry(name, { recursive: true });
     if (this.last()?.location === 'browser' && this.last()?.name === name) this.forgetLast();
     await this.refresh();
   }
@@ -118,6 +130,7 @@ export class ProjectLibrary {
   }
 
   private async browserRoot(): Promise<DirectoryHandle | null> {
+    if (this.browserStorage() !== 'files') return null;
     const storage = navigator.storage as StorageWithDirectory | undefined;
     if (typeof storage?.getDirectory !== 'function') return null;
     try {
@@ -137,33 +150,10 @@ function readLast(): LastProject | null {
   }
 }
 
-function database(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB, 1);
-    request.onupgradeneeded = () => request.result.createObjectStore(STORE);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
-
 async function storeHandle(handle: DirectoryHandle): Promise<void> {
-  const db = await database();
-  await new Promise<void>((resolve, reject) => {
-    const tx = db.transaction(STORE, 'readwrite');
-    tx.objectStore(STORE).put(handle, 'last');
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
-  db.close();
+  await request(HANDLES, 'readwrite', (store) => store.put(handle, 'last'));
 }
 
 async function loadHandle(): Promise<DirectoryHandle | null> {
-  const db = await database();
-  const handle = await new Promise<DirectoryHandle | null>((resolve, reject) => {
-    const request = db.transaction(STORE).objectStore(STORE).get('last');
-    request.onsuccess = () => resolve((request.result as DirectoryHandle | undefined) ?? null);
-    request.onerror = () => reject(request.error);
-  });
-  db.close();
-  return handle;
+  return ((await request(HANDLES, 'readonly', (store) => store.get('last'))) as DirectoryHandle | undefined) ?? null;
 }

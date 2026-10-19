@@ -1,15 +1,17 @@
 import { Injectable, inject } from '@angular/core';
 import { Confirmation, I18n, Notifier } from 'core';
+import { validateProject } from 'schema';
 import { isObject, type Json, type JsonObject } from './doc-ops';
 import { emptyDataSources } from './datasources-store';
 import { FileAccess } from './file-access';
 import { emptyNavigation } from './navigation-store';
 import { Project, documentId, newManifest, resourcePath, type ProjectResource } from './project';
-import type { ProjectFolder } from './project-folder';
+import { RESOURCE_PATH, type ProjectFolder } from './project-folder';
 import { ProjectLibrary } from './project-library';
 import { SavedDocuments, type EditorKind } from './saved-documents';
 import { emptyScreen } from './templates';
 import { emptyTheme } from './theme-store';
+import { createZip, readZip } from './zip';
 import { Workspace, documentKind, type DocumentWindow } from './workspace';
 
 /** Name of the demo project in the browser. */
@@ -205,6 +207,62 @@ export class ProjectCommands {
     for (const language of this.project.manifest()?.languages ?? []) {
       if (!this.project.has('messages', language)) await this.project.write({ kind: 'messages', id: language, path: resourcePath('messages', language) }, {});
     }
+  }
+
+  /** The whole project as a zip archive (its JSON files, with the project folder at the root), downloaded. */
+  async exportZip(): Promise<boolean> {
+    const folder = this.project.folder();
+    const manifest = this.project.manifest();
+    if (!folder || !manifest) return false;
+    try {
+      const files = await Promise.all((await folder.list()).map(async (path) => ({ path: `${manifest.project}/${path}`, text: await folder.read(path) })));
+      this.files.download(await createZip(files), `${manifest.project}.zip`);
+      this.notifier.toast(this.t('ed.project.exported', { name: `${manifest.project}.zip`, n: files.length }));
+      return true;
+    } catch (e) {
+      this.fail('ed.saveFailed', e);
+      return false;
+    }
+  }
+
+  /**
+   * A project from a zip archive (as `exportZip` writes it, or a zipped project folder): it goes into the browser, under the
+   * identifier of its manifest (asking before replacing a project with the same name), and opens. Only the JSON files of the
+   * project are taken.
+   */
+  async importZip(archive: Blob): Promise<boolean> {
+    let files: { path: string; text: string }[];
+    let manifest: ReturnType<typeof validateProject>;
+    try {
+      const all = await readZip(await archive.arrayBuffer());
+      // The project may be at the root of the archive or in a folder of it.
+      const root = all.map((f) => f.path).find((p) => p === 'project.json' || /^[^/]+\/project\.json$/.test(p));
+      if (!root) throw new Error(this.t('ed.project.zipNoManifest'));
+      const prefix = root.slice(0, -'project.json'.length);
+      files = all.filter((f) => f.path.startsWith(prefix)).map((f) => ({ path: f.path.slice(prefix.length), text: f.text })).filter((f) => RESOURCE_PATH.test(f.path));
+      manifest = validateProject(JSON.parse(files.find((f) => f.path === 'project.json')!.text));
+      if (!manifest.valid) throw new Error(this.t('ed.project.zipBadManifest'));
+    } catch (e) {
+      this.fail('ed.project.openFailed', e);
+      return false;
+    }
+    const id = manifest.value.project;
+    await this.library.refresh();
+    if (this.library.browserProjects().includes(id)) {
+      if (!(await this.confirmation.confirm(this.t('ed.project.zipReplace', { name: id })))) return false;
+      if (this.project.key() === `browser:${id}` && !(await this.close())) return false;
+      await this.library.deleteBrowserProject(id);
+    }
+    const folder = await this.library.browserFolder(id, true);
+    if (!folder) return false;
+    try {
+      for (const file of files) await folder.write(file.path, file.text);
+    } catch (e) {
+      this.fail('ed.project.openFailed', e);
+      return false;
+    }
+    await this.library.refresh().catch(() => undefined);
+    return this.open(folder);
   }
 
   /** The starting content of a new resource. */

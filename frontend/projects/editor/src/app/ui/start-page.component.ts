@@ -10,6 +10,7 @@ export type StartCommand =
   | { kind: 'new' }
   | { kind: 'open-disk' }
   | { kind: 'demo' }
+  | { kind: 'import-zip' }
   | { kind: 'reopen' }
   | { kind: 'open-browser'; name: string }
   | { kind: 'delete-browser'; name: string };
@@ -44,6 +45,7 @@ export type StartCommand =
           <button nz-button type="button" data-start="open-disk" (click)="command.emit({ kind: 'open-disk' })"><span nz-icon nzType="folder-open"></span>{{ i18n.t('ed.start.openDisk') }}</button>
         }
         <button nz-button type="button" data-start="demo" (click)="command.emit({ kind: 'demo' })"><span nz-icon nzType="appstore"></span>{{ i18n.t('ed.start.demo') }}</button>
+        <button nz-button type="button" data-start="import-zip" (click)="command.emit({ kind: 'import-zip' })"><span nz-icon nzType="upload"></span>{{ i18n.t('ed.menu.importProject') }}</button>
         @if (library.last(); as last) {
           <button nz-button type="button" data-start="reopen" (click)="command.emit({ kind: 'reopen' })">
             <span nz-icon nzType="history"></span>{{ i18n.t('ed.start.reopen', { name: last.name }) }}

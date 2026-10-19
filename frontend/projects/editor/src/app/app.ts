@@ -228,6 +228,8 @@ export class App {
       { id: 'new-project', label: t('ed.menu.newProject'), run: () => void this.start({ kind: 'new' }) },
       ...(this.library.canUseDisk() ? [{ id: 'open-project', label: t('ed.menu.openProject'), run: () => void this.openDiskProject() }] : []),
       { id: 'open-demo', label: t('ed.start.demo'), run: () => void this.commands.openDemo() },
+      { id: 'import-project', label: t('ed.menu.importProject'), run: () => void this.importProjectZip() },
+      { id: 'export-project', label: t('ed.menu.exportProject'), disabled: !open, run: () => void this.commands.exportZip() },
       { id: 'close-project', label: t('ed.menu.closeProject'), disabled: !open, run: () => void this.commands.close() },
       {
         id: 'new',
@@ -451,6 +453,8 @@ export class App {
       case 'demo':
         await this.commands.openDemo();
         return;
+      case 'import-zip':
+        return this.importProjectZip();
       case 'reopen':
         return this.reopenLast(false);
       case 'open-browser': {
@@ -462,6 +466,12 @@ export class App {
         if (await this.confirmation.confirm(this.i18n.t('ed.start.confirmDelete', { name: command.name }))) await this.library.deleteBrowserProject(command.name);
         return;
     }
+  }
+
+  /** «Import project (zip)…»: an archive from the computer becomes a project in the browser, and opens. */
+  private async importProjectZip(): Promise<void> {
+    const file = await this.files.chooseFile('.zip,application/zip');
+    if (file) await this.commands.importZip(file);
   }
 
   private async openDiskProject(): Promise<void> {

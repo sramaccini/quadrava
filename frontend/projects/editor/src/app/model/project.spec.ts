@@ -6,6 +6,7 @@ import { EDITOR_MESSAGES } from '../messages';
 import { DataSourcesStore } from './datasources-store';
 import { EditorStore } from './editor-store';
 import { Project, resourceAt, resourcePath } from './project';
+import { FileAccess } from './file-access';
 import { ProjectCommands } from './project-commands';
 import { MemoryFolder } from './project-folder';
 import { MessagesStore } from './messages-store';
@@ -182,5 +183,31 @@ describe('Project', () => {
     expect(JSON.parse(folder.files.get('project.json')!).languages).toEqual(['en', 'it', 'fr']);
     expect([...folder.files.keys()].filter((p) => p.startsWith('i18n/')).sort()).toEqual(['i18n/en.json', 'i18n/fr.json', 'i18n/it.json']);
     expect(TestBed.inject(Project).catalogues()['fr']).toEqual({});
+  });
+
+  it('a project goes out as a zip archive and comes back into the browser from it', async () => {
+    const folder = new MemoryFolder('shop', { 'project.json': MANIFEST, 'datasources/orders.json': ORDERS, 'i18n/en.json': '{"a":"A"}' });
+    const commands = TestBed.inject(ProjectCommands);
+    await commands.open(folder);
+    let archive: Blob | null = null;
+    let name = '';
+    vi.spyOn(TestBed.inject(FileAccess), 'download').mockImplementation((blob, file) => {
+      archive = blob;
+      name = file;
+    });
+    expect(await commands.exportZip()).toBe(true);
+    expect(name).toBe('shop.zip');
+    expect(toasts.at(-1)).toBe('Exported shop.zip: 3 files');
+    expect(await commands.close()).toBe(true);
+    // Back from the archive: a project in the browser (in memory here, where jsdom has no file storage) with the same files.
+    expect(await commands.importZip(archive!)).toBe(true);
+    const project = TestBed.inject(Project);
+    expect(project.manifest()?.name).toBe('Shop');
+    expect(project.resources().map((r) => r.path)).toEqual(['project.json', 'datasources/orders.json', 'i18n/en.json']);
+    expect(project.catalogues()['en']).toEqual({ a: 'A' });
+    // An archive without a project is refused.
+    const { createZip } = await import('./zip');
+    expect(await commands.importZip(await createZip([{ path: 'notes.json', text: '{}' }]))).toBe(false);
+    expect(toasts.at(-1)).toContain('project.json is missing');
   });
 });

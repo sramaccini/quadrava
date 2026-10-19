@@ -109,7 +109,8 @@ export class FileAccess {
     return (this.document.defaultView ?? {}) as FilePickers;
   }
 
-  private download(blob: Blob, name: string): void {
+  /** Downloads a file (an archive, a document where the browser cannot write files). */
+  download(blob: Blob, name: string): void {
     const url = URL.createObjectURL(blob);
     const link = this.document.createElement('a');
     link.href = url;
@@ -119,11 +120,11 @@ export class FileAccess {
   }
 
   /** Classic file picker: resolves with the chosen file, or null if the user closes the picker. */
-  private chooseFile(): Promise<File | null> {
+  chooseFile(accept = 'application/json,.json'): Promise<File | null> {
     return new Promise((resolve) => {
       const input = this.document.createElement('input');
       input.type = 'file';
-      input.accept = 'application/json,.json';
+      input.accept = accept;
       input.addEventListener('change', () => resolve(input.files?.[0] ?? null), { once: true });
       input.addEventListener('cancel', () => resolve(null), { once: true });
       input.click();

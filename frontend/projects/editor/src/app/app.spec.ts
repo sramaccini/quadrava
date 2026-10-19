@@ -218,6 +218,8 @@ describe('screen editor', () => {
     expect([...el.querySelectorAll('ed-menu-bar [data-level="0"] .label')].map((l) => l.textContent)).toEqual([
       'New project…',
       'Open the demo project',
+      'Import project (zip)…',
+      'Export project (zip)',
       'Close project',
       'New',
       'Import file…',
