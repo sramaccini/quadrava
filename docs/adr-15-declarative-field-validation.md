@@ -1,6 +1,6 @@
 # ADR-15: Declarative, pluggable field validation
 
-Status: Accepted (19 October 2026) · Requirement: RF-DEF-06 (declarative validation: required, format, rules across several fields)
+Status: Accepted (19 October 2026), amended the same day with phases 2 and 3 · Requirement: RF-DEF-06 (declarative validation: required, format, rules across several fields)
 
 ## Context
 
@@ -124,4 +124,37 @@ The rule list is keyed (`{ "minLength": 3 }`, not `{ "use": "minLength", "value"
 - Screens written before keep working: `required` and `validate` mean the same as before.
 - `validate` stays a single rule; several CEL rules go in `validation`.
 - A validator of the application used with `use` is not described by the schema: the editor shows its `params` as JSON.
-- Phase 2 (not part of this decision's first delivery): `password` field type with a strength meter of our own, show/hide; asynchronous validators (for example a duplicate code checked through a data source while typing, debounced and cancellable). Phase 3: relative dates, `minItems`/`maxItems` for lists, field errors returned by the services in Problem responses (contract first).
+- Phases 2 and 3 are below.
+
+## Amendment: phases 2 and 3 (19 October 2026)
+
+### Password fields
+
+A new field type `password`: a masked text box with a show/hide button (`aria-pressed`, its own label) and, with `newPassword: true`, a strength meter under it and `autocomplete="new-password"` (`current-password` otherwise). The value is always treated as sensitive. The constraints of text apply (`minLength`, `maxLength`, `pattern`), plus `minStrength` (0–4), flat or as a rule `{ "minStrength": 3 }`.
+
+Strength is our own light estimate (a pure function, `passwordStrength`), not zxcvbn: the length that counts is what is left after taking away repeated characters, sequences (`abcd`, `1234`, keyboard rows), years, common words and passwords (a short list, also written with digits for letters: `p4ssw0rd`) and the values of the other fields of the form (a name, an e-mail); that length times the bits of the character classes used gives a score from 0 (very weak) to 4 (strong), with the reasons as hints. The meter shows the score as segments **and** as text, and announces it politely to screen readers. The password never leaves the browser for the estimate.
+
+Not in a repeater nor in a filter bar.
+
+### Remote (asynchronous) rules
+
+A rule `{ "remote": "<data source>", "debounce": 400, "message"?, "when"?, "severity"? }` checks the value on a service: the data source sees the value in `value` (and the form in `form`), for example `"params": { "staffNumber": "{{ value }}" }`, and answers `true` / `false` or `{ "valid": false, "code": "taken", "params": {…} }`. The check starts when the user stops typing (`debounce` ms, 400 if absent), only when every other rule of the field passes, and a newer value cancels the request still in progress (`AbortSignal`). Results are kept per value, so going back to a value already checked asks nothing. While it runs the field shows a spinner; the form waits for the checks in progress before sending. A check that fails (network, error status, an answer of another shape) does not pass (fail-closed) with its own message. Remote rules exist in forms and standalone fields, not in the rows of a repeater nor in filters; a standalone field still being checked does not pass the `validate` step.
+
+The message: the rule's own, otherwise the `code` of the answer translated (`validation.<code>` in the application's catalogue, then `lc.validation.<code>`), otherwise `lc.validation.remote`. The text written by the service is never shown, as for every other error of the services.
+
+### Relative dates and list limits
+
+`minDate` / `maxDate` also accept `today`, `today+30d`, `today-18y` (units d, w, m, y), resolved on the local day at every check and in the calendar. `minItems` / `maxItems` limit the choices of a multiple selection (an empty selection is left to `required`).
+
+### Field errors from the services (contract first)
+
+`contracts/problem.yaml` describes the RFC 9457 Problem that application services return for invalid data (400 or 422), with `errors`: `{ "path": "/email", "code": "taken", "params"?: {…}, "message"?: "…" }`. `path` is a JSON Pointer into the request body (`/lines/0/code` for a cell of a repeater), as in the registry's validation problems; `code` is translated by the front end like the code of a remote rule; `message` is for developers and is never shown. The `services` data client reads these entries (at most 50, codes and paths of limited length, parameters only with simple values) into the error of the call; the form that ran the `call` step puts each message on its field (or cell) until that field changes, and the default message of the failure becomes «Check the highlighted fields». Entries that match no field are ignored.
+
+### Alternatives considered (amendment)
+
+| Alternative | Why not |
+| --- | --- |
+| zxcvbn | About 800 kB with its dictionaries, for a meter; a light estimate with the same principles (patterns, dictionary, personal data) is enough to guide the user, and the rule that matters is repeated by the service |
+| Remote checks as `isValid` in CEL | Expressions are synchronous and without side effects; a call belongs to the data sources |
+| Showing the message of the service | It can contain internal details and is in the language of the service: codes translated by the front end, as for every other error |
+| Field errors with the names of the fields | A JSON Pointer also reaches the cells of a repeater and is what the registry already uses |
