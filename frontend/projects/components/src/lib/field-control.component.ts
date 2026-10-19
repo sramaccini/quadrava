@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { I18n, type ScreenRuntime, type Scope } from 'core';
+import { I18n, inputHints, transformValue, type ScreenRuntime, type Scope } from 'core';
 import { NzCheckboxModule } from 'ng-zorro-antd/checkbox';
 import { NzDatePickerModule } from 'ng-zorro-antd/date-picker';
 import { NzInputModule } from 'ng-zorro-antd/input';
@@ -19,6 +19,9 @@ import { parseIsoDate, parseIsoDateTime, toIsoDate, toIsoDateTime } from './shar
  * `input` component and the filter bar. It emits the value as it comes from the control; conversions (numbers)
  * are up to the host. In the `filter` variant empty means «all»: `placeholder` text, one extra choice
  * in the radio buttons, and checkboxes or switches turned off emit `null` (no filter) instead of `false`.
+ * The validation of the field shows here too: the keyboard and autocomplete of its format, the limits of numbers
+ * (`min`, `max`, `step`) and of dates (days out of `minDate` / `maxDate` cannot be chosen); its `transform` is applied
+ * when leaving the field.
  */
 @Component({
   selector: 'lc-field-control',
@@ -44,10 +47,10 @@ import { parseIsoDate, parseIsoDateTime, toIsoDate, toIsoDateTime } from './shar
         </label>
       }
       @case ('date') {
-        <nz-date-picker [nzId]="inputId()" nzFormat="dd/MM/yyyy" [nzDisabled]="disabled()" [ngModel]="date()" (ngModelChange)="valueChange.emit(toIso($event))" />
+        <nz-date-picker [nzId]="inputId()" nzFormat="dd/MM/yyyy" [nzDisabled]="disabled()" [nzDisabledDate]="outOfRange()" [ngModel]="date()" (ngModelChange)="valueChange.emit(toIso($event))" />
       }
       @case ('datetime') {
-        <nz-date-picker [nzId]="inputId()" [nzDisabled]="disabled()" [nzShowTime]="{ nzFormat: 'HH:mm' }" nzFormat="dd/MM/yyyy HH:mm" [ngModel]="date()" (ngModelChange)="valueChange.emit(toIsoTime($event))" />
+        <nz-date-picker [nzId]="inputId()" [nzDisabled]="disabled()" [nzDisabledDate]="outOfRange()" [nzShowTime]="{ nzFormat: 'HH:mm' }" nzFormat="dd/MM/yyyy HH:mm" [ngModel]="date()" (ngModelChange)="valueChange.emit(toIsoTime($event))" />
       }
       @case ('textarea') {
         <textarea
@@ -115,7 +118,11 @@ import { parseIsoDate, parseIsoDateTime, toIsoDate, toIsoDateTime } from './shar
           [type]="f.type"
           [value]="text()"
           [readonly]="disabled()"
-          [attr.autocomplete]="f.sensitive ? 'off' : null"
+          [attr.inputmode]="hints().inputMode ?? null"
+          [attr.autocomplete]="f.sensitive ? 'off' : (hints().autocomplete ?? null)"
+          [attr.min]="f.type === 'number' ? (f.min ?? null) : null"
+          [attr.max]="f.type === 'number' ? (f.max ?? null) : null"
+          [attr.step]="f.type === 'number' ? (f.step ?? (f.integer || f.decimals === 0 ? 1 : 'any')) : null"
           [attr.aria-invalid]="invalid()"
           (input)="typed($any($event.target).value, 'input')"
           (change)="typed($any($event.target).value, 'change')"
@@ -157,6 +164,19 @@ export class FieldControlComponent {
     const value = this.value();
     return value === null || value === undefined || value === '' ? null : String(value);
   });
+  /** Keyboard and autocomplete of the text box, from the format of the field. */
+  protected readonly hints = computed(() => inputHints(this.field(), this.runtime().validatorRegistry));
+  /** Days out of `minDate` / `maxDate` (compared by day); none without limits. */
+  protected readonly outOfRange = computed(() => {
+    const { minDate, maxDate } = this.field();
+    if (!minDate && !maxDate) return undefined;
+    const min = minDate?.slice(0, 10);
+    const max = maxDate?.slice(0, 10);
+    return (date: Date): boolean => {
+      const day = toIsoDate(date);
+      return day !== null && ((min !== undefined && day < min) || (max !== undefined && day > max));
+    };
+  });
   protected readonly text = computed(() => {
     const value = this.value();
     return value === null || value === undefined ? '' : String(value);
@@ -178,8 +198,10 @@ export class FieldControlComponent {
     this.valueChange.emit(this.variant() === 'filter' && values.length === 0 ? null : values);
   }
 
+  /** Free text: at every character or when leaving the field (`commitOn`); leaving it also applies `transform`. */
   protected typed(value: string, event: 'input' | 'change'): void {
-    if (event === this.commitOn()) this.valueChange.emit(value);
+    if (event === 'change') this.valueChange.emit(transformValue(this.field(), value));
+    else if (this.commitOn() === 'input') this.valueChange.emit(value);
   }
 
   protected toIso(date: Date | null): string | null {

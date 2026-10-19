@@ -1,16 +1,16 @@
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, input, OnInit, signal } from '@angular/core';
-import { I18n, initialInputValue, inputPath, runSteps, type ScreenRuntime, type Scope } from 'core';
+import { I18n, initialInputValue, inputPath, isRequired, NO_PROBLEM, runSteps, type ScreenRuntime, type Scope } from 'core';
 import { NzFormModule } from 'ng-zorro-antd/form';
 import type { InputNode } from 'schema';
 import { FieldControlComponent } from './field-control.component';
-import { fieldError, repeaterError } from './field-validation';
+import { checkValue, validationEnv } from './field-validation';
 import { nextId } from './shared';
 
 /**
  * Standalone field (text box, drop-down list, date…) bound to the screen state: it reads and writes `bind`
  * (`state.<name>` if absent), so data sources, expressions and steps see it like any other state. Free text is
  * written when leaving the field or with Enter, so as not to reload the data sources at every character. Validation
- * errors are shown after the first change; enforcement stays with the service that receives the value.
+ * errors and warnings are shown after the first change; enforcement stays with the service that receives the value.
  */
 @Component({
   selector: 'lc-input',
@@ -26,9 +26,10 @@ import { nextId } from './shared';
     <div nz-form nzLayout="vertical">
       <nz-form-item>
         @if (f.type !== 'checkbox') {
-          <nz-form-label [nzFor]="id" [id]="id + '-label'" [nzRequired]="!!f.required" [nzTooltipTitle]="f.tooltip ? runtime().text(f.tooltip, scope()) : undefined" [nzTooltipIcon]="'question-circle'">{{ runtime().text(f.label, scope()) || f.name }}</nz-form-label>
+          <nz-form-label [nzFor]="id" [id]="id + '-label'" [nzRequired]="required()" [nzTooltipTitle]="f.tooltip ? runtime().text(f.tooltip, scope()) : undefined" [nzTooltipIcon]="'question-circle'">{{ runtime().text(f.label, scope()) || f.name }}</nz-form-label>
         }
-        <nz-form-control [nzValidateStatus]="error() && f.type !== 'repeater' ? 'error' : ''" [nzErrorTip]="error() ?? undefined">
+        @let p = problem();
+        <nz-form-control [nzValidateStatus]="f.type === 'repeater' ? '' : p.error ? 'error' : p.warning ? 'warning' : ''" [nzErrorTip]="p.error ?? undefined" [nzWarningTip]="p.warning ?? undefined">
           <lc-field-control
             [field]="f"
             [runtime]="runtime()"
@@ -37,9 +38,9 @@ import { nextId } from './shared';
             [disabled]="disabled()"
             [inputId]="id"
             [labelId]="id + '-label'"
-            [invalid]="!!error()"
+            [invalid]="!!p.error"
             [submitted]="touched()"
-            [summary]="error()"
+            [summary]="p.error ?? p.warning"
             commitOn="change"
             (valueChange)="change($event)"
           />
@@ -67,13 +68,13 @@ export class InputComponent implements OnInit {
     return !runtime.isEnabled(node, this.scope()) || runtime.isReadOnly(node, this.scope()) || runtime.isReadOnly(node.field, this.scope());
   });
 
-  protected readonly error = computed(() => {
-    if (!this.touched()) return null;
+  private readonly env = computed(() => {
     const field = this.node().field;
-    return field.type === 'repeater'
-      ? repeaterError(field, this.value(), this.runtime(), this.scope(), this.i18n)
-      : fieldError(field, this.value(), this.runtime(), this.scope(), this.i18n);
+    return validationEnv(this.runtime(), this.i18n, this.scope(), { [field.name]: this.value() }, [field]);
   });
+  protected readonly required = computed(() => isRequired(this.node().field, this.env()));
+  private readonly check = computed(() => checkValue(this.node().field, this.value(), this.env()));
+  protected readonly problem = computed(() => (this.touched() ? this.check() : NO_PROBLEM));
 
   ngOnInit(): void {
     // Usually the state has already been prepared by the runtime; here for fields in windows or added later.
@@ -81,7 +82,7 @@ export class InputComponent implements OnInit {
     // The validate step checks the fields of the group (`default` if not given) while the field is on the screen.
     const unregister = this.runtime().registerValidator(this.node().group ?? 'default', () => {
       this.touched.set(true);
-      return this.error() === null;
+      return this.check().error === null;
     });
     this.destroyRef.onDestroy(unregister);
   }

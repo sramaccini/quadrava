@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { I18n, type ScreenRuntime, type Scope } from 'core';
+import { I18n, inputHints, transformValue, type ScreenRuntime, type Scope } from 'core';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzCheckboxModule } from 'ng-zorro-antd/checkbox';
 import { NzDatePickerModule } from 'ng-zorro-antd/date-picker';
@@ -8,7 +8,7 @@ import { NzInputModule } from 'ng-zorro-antd/input';
 import { NzSelectModule } from 'ng-zorro-antd/select';
 import { NzSwitchModule } from 'ng-zorro-antd/switch';
 import type { FieldDefinition } from 'schema';
-import { repeaterCellErrors, repeaterRows } from './field-validation';
+import { repeaterCellChecks, repeaterRows, validationEnv } from './field-validation';
 import { FileFieldComponent } from './file-field.component';
 import { IconComponent } from './icon.component';
 import { LookupComponent } from './lookup.component';
@@ -36,6 +36,7 @@ type Row = Record<string, unknown>;
     td.remove { min-width: 0; width: 40px; padding-right: 0; }
     nz-select, nz-date-picker { width: 100%; }
     .cell-error { margin: 2px 0 0; font-size: 12px; color: var(--lc-color-danger, #c62828); }
+    .cell-error.warning { color: var(--lc-color-warning, #ad6800); }
     .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
     .summary { margin: 6px 0 0; color: var(--lc-color-danger, #c62828); }
     .empty { margin: 0 0 8px; color: var(--lc-color-muted, #5d6b7a); }
@@ -65,7 +66,8 @@ type Row = Record<string, unknown>;
                 @for (sub of field().fields ?? []; track sub.name) {
                   <td [class.wide]="sub.type === 'lookup' || sub.type === 'file'">
                     @let cellId = id + i + '-' + sub.name;
-                    @let err = submitted() ? errors()[i]?.[sub.name] : null;
+                    @let cell = submitted() ? checks()[i]?.[sub.name] : null;
+                    @let err = cell?.error;
                     @switch (sub.type) {
                       @case ('select') {
                         <nz-select [nzId]="cellId" nzAllowClear nzPlaceHolder="—" [nzDisabled]="disabled()" [nzStatus]="err ? 'error' : ''" [ngModel]="row[sub.name] ?? null" (ngModelChange)="set(i, sub, $event)">
@@ -93,14 +95,16 @@ type Row = Record<string, unknown>;
                         <lc-file-field [inputId]="cellId" [field]="sub" [runtime]="runtime()" [scope]="cellScope(row)" [value]="row[sub.name]" [disabled]="disabled()" (valueChange)="set(i, sub, $event)" />
                       }
                       @case ('textarea') {
-                        <textarea nz-input [id]="cellId" [rows]="sub.rows ?? 2" [attr.aria-label]="label(sub)" [readonly]="disabled()" [nzStatus]="err ? 'error' : ''" [value]="text(row, sub)" (input)="set(i, sub, $any($event.target).value)"></textarea>
+                        <textarea nz-input [id]="cellId" [rows]="sub.rows ?? 2" [attr.aria-label]="label(sub)" [readonly]="disabled()" [nzStatus]="err ? 'error' : ''" [value]="text(row, sub)" (input)="set(i, sub, $any($event.target).value)" (change)="set(i, sub, transform(sub, $any($event.target).value))"></textarea>
                       }
                       @default {
-                        <input nz-input [id]="cellId" [type]="sub.type === 'number' ? 'number' : 'text'" [attr.aria-label]="label(sub)" [attr.aria-invalid]="!!err" [readonly]="disabled()" [nzStatus]="err ? 'error' : ''" [value]="text(row, sub)" (input)="set(i, sub, $any($event.target).value)" />
+                        <input nz-input [id]="cellId" [type]="sub.type === 'number' ? 'number' : 'text'" [attr.inputmode]="hints(sub).inputMode ?? null" [attr.aria-label]="label(sub)" [attr.aria-invalid]="!!err" [readonly]="disabled()" [nzStatus]="err ? 'error' : ''" [value]="text(row, sub)" (input)="set(i, sub, $any($event.target).value)" (change)="set(i, sub, transform(sub, $any($event.target).value))" />
                       }
                     }
                     @if (err) {
                       <p class="cell-error" role="alert">{{ err }}</p>
+                    } @else if (cell?.warning) {
+                      <p class="cell-error warning">{{ cell?.warning }}</p>
                     }
                   </td>
                 }
@@ -146,7 +150,8 @@ export class RepeaterComponent {
   protected readonly rows = linkedSignal(() => repeaterRows(this.value()));
   protected readonly min = computed(() => this.field().minRows ?? 0);
   protected readonly max = computed(() => this.field().maxRows ?? 50);
-  protected readonly errors = computed(() => repeaterCellErrors(this.field(), this.rows(), this.runtime(), this.scope(), this.i18n));
+  /** Errors and warnings of the cells (their rules, and the values repeated across rows). */
+  protected readonly checks = computed(() => repeaterCellChecks(this.field(), this.rows(), validationEnv(this.runtime(), this.i18n, this.scope(), {}, [])));
   /** Dates of the `date` cells, once per value (see the form). */
   protected readonly dates = computed(() =>
     this.rows().map((row) => Object.fromEntries((this.field().fields ?? []).filter((f) => f.type === 'date').map((f) => [f.name, parseIsoDate(row[f.name])]))),
@@ -160,6 +165,11 @@ export class RepeaterComponent {
     return scope;
   }
 
+  /** Keyboard of the text cells, from their format. */
+  protected hints(sub: FieldDefinition): ReturnType<typeof inputHints> {
+    return inputHints(sub, this.runtime().validatorRegistry);
+  }
+
   protected label(sub: FieldDefinition): string {
     return this.runtime().text(sub.label, this.scope()) || sub.name;
   }
@@ -171,6 +181,11 @@ export class RepeaterComponent {
   protected text(row: Row, sub: FieldDefinition): string {
     const value = row[sub.name];
     return value === null || value === undefined ? '' : String(value);
+  }
+
+  /** The text of a cell after its `transform`, when leaving it. */
+  protected transform(sub: FieldDefinition, text: string): unknown {
+    return transformValue(sub, text);
   }
 
   protected toIso(date: Date | null): string | null {

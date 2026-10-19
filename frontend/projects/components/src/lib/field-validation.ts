@@ -1,23 +1,21 @@
-import type { I18n, ScreenRuntime, Scope } from 'core';
+import { checkField, uniqueCellErrors, type CompiledRule, type FieldCheck, type I18n, type ScreenRuntime, type Scope, type ValidationEnv } from 'core';
 import type { FieldDefinition } from 'schema';
 
-/** A value counts as «missing»: null, empty text or empty list. */
-export function isEmptyValue(value: unknown): boolean {
-  return value === undefined || value === null || value === '' || (Array.isArray(value) && value.length === 0);
-}
-
 /**
- * Error of a simple field, or `null`: required check (checkbox and switch are never required) and the `validate`
- * rule evaluated with `value` and the given scope. A rule that cannot be evaluated makes the field invalid (fail-closed).
+ * Where fields are checked: the runtime, the scope of the expressions, the values next to the field (the form, or the
+ * row of a repeater) and the labels of `fields`, used by the messages of the rules across fields.
  */
-export function fieldError(field: FieldDefinition, value: unknown, runtime: ScreenRuntime, scope: Scope, i18n: I18n): string | null {
-  const empty = isEmptyValue(value);
-  if (field.required && empty && field.type !== 'checkbox' && field.type !== 'switch') return i18n.t('lc.required');
-  if (field.validate && !empty) {
-    const result = runtime.engine.interpolate(field.validate.rule, { ...runtime.context(scope), value });
-    if (!result.ok || result.value !== true) return runtime.text(field.validate.message, scope) || i18n.t('lc.invalid');
-  }
-  return null;
+export function validationEnv(runtime: ScreenRuntime, i18n: I18n, scope: Scope, values: Record<string, unknown>, fields: readonly FieldDefinition[]): ValidationEnv {
+  return {
+    runtime,
+    i18n,
+    scope,
+    values,
+    label: (name) => {
+      const field = fields.find((f) => f.name === name);
+      return field ? runtime.text(field.label, scope) || field.name : name;
+    },
+  };
 }
 
 /** Rows of a `repeater` field: always a list of objects. */
@@ -25,25 +23,41 @@ export function repeaterRows(value: unknown): Record<string, unknown>[] {
   return Array.isArray(value) ? value.filter((r): r is Record<string, unknown> => r !== null && typeof r === 'object' && !Array.isArray(r)) : [];
 }
 
-/** Errors of every cell of a `repeater` field (by row, by field name). The rules see the row in `item`. */
-export function repeaterCellErrors(field: FieldDefinition, value: unknown, runtime: ScreenRuntime, scope: Scope, i18n: I18n): Record<string, string>[] {
-  return repeaterRows(value).map((item) => {
-    const errors: Record<string, string> = {};
-    for (const sub of field.fields ?? []) {
-      const error = fieldError(sub, item[sub.name], runtime, { ...scope, item }, i18n);
-      if (error) errors[sub.name] = error;
+/**
+ * Problems of every cell of a `repeater` field (by row, by field name): the rules of the cells, which see the row in
+ * `item` and compare it with the other cells of the same row, and the `unique` rules of the field.
+ */
+export function repeaterCellChecks(field: FieldDefinition, value: unknown, env: ValidationEnv): Record<string, FieldCheck>[] {
+  const rows = repeaterRows(value);
+  const repeated = uniqueCellErrors(field, rows, env);
+  const fields = field.fields ?? [];
+  return rows.map((item, i) => {
+    const cellEnv = validationEnv(env.runtime, env.i18n, { ...env.scope, item }, item, fields);
+    const checks: Record<string, FieldCheck> = {};
+    for (const sub of fields) {
+      const own = checkField(sub, item[sub.name], cellEnv);
+      const duplicate = repeated.get(i)?.[sub.name];
+      const result = !own.error && duplicate ? { error: duplicate, warning: null } : own;
+      if (result.error || result.warning) checks[sub.name] = result;
     }
-    return errors;
+    return checks;
   });
 }
 
-/** Overall error of a `repeater` field: number of rows and invalid cells. */
-export function repeaterError(field: FieldDefinition, value: unknown, runtime: ScreenRuntime, scope: Scope, i18n: I18n): string | null {
+/**
+ * Problem of a field, `extra` being the rules of the form that concern it. For a `repeater`: required, number of rows,
+ * its own rules, then the invalid cells.
+ */
+export function checkValue(field: FieldDefinition, value: unknown, env: ValidationEnv, extra: readonly CompiledRule[] = []): FieldCheck {
+  if (field.type !== 'repeater') return checkField(field, value, env, extra);
   const rows = repeaterRows(value);
+  const own = checkField(field, rows, env, extra);
+  if (own.error && rows.length === 0) return own;
   const min = field.minRows ?? 0;
   const max = field.maxRows ?? 50;
-  if (field.required && rows.length === 0) return i18n.t('lc.required');
-  if (rows.length < min) return i18n.t('lc.minRows', { n: min });
-  if (rows.length > max) return i18n.t('lc.maxRows', { n: max });
-  return repeaterCellErrors(field, rows, runtime, scope, i18n).some((e) => Object.keys(e).length > 0) ? i18n.t('lc.rowsInvalid') : null;
+  if (rows.length < min) return { error: env.i18n.t('lc.minRows', { n: min }), warning: null };
+  if (rows.length > max) return { error: env.i18n.t('lc.maxRows', { n: max }), warning: null };
+  if (own.error) return own;
+  if (repeaterCellChecks(field, rows, env).some((cells) => Object.values(cells).some((c) => c.error))) return { error: env.i18n.t('lc.rowsInvalid'), warning: null };
+  return own;
 }

@@ -1,14 +1,18 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
-import { I18n, runSteps, type ScreenRuntime, type Scope } from 'core';
+import { formRules, I18n, isRequired, NO_PROBLEM, runSteps, transformValue, type FieldCheck, type ScreenRuntime, type Scope } from 'core';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzFormModule } from 'ng-zorro-antd/form';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import type { ActionDefinition, FieldDefinition, FormNode } from 'schema';
 import { FieldControlComponent } from './field-control.component';
-import { fieldError, repeaterError, repeaterRows } from './field-validation';
+import { checkValue, repeaterRows, validationEnv } from './field-validation';
 import { nextId } from './shared';
 
-/** Form: initial values come from the `source` data source (if it returns an object); actions receive `form` in the scope. */
+/**
+ * Form: initial values come from the `source` data source (if it returns an object); actions receive `form` in the scope.
+ * The fields are checked with their rules and with the rules of the form across fields (`validation`) after the first
+ * submit attempt: errors block the actions, warnings only inform.
+ */
 @Component({
   selector: 'lc-form',
   imports: [FieldControlComponent, NzFormModule, NzButtonModule, NzTooltipModule],
@@ -34,9 +38,10 @@ import { nextId } from './shared';
         @if (runtime().isVisible(field, fieldScope())) {
           <nz-form-item [style.--lc-field-span]="span(field)">
             @if (field.type !== 'checkbox') {
-              <nz-form-label [nzFor]="id + field.name" [id]="id + field.name + '-label'" [nzRequired]="!!field.required" [nzTooltipTitle]="field.tooltip ? runtime().text(field.tooltip, fieldScope()) : undefined" [nzTooltipIcon]="'question-circle'">{{ runtime().text(field.label, fieldScope()) || field.name }}</nz-form-label>
+              <nz-form-label [nzFor]="id + field.name" [id]="id + field.name + '-label'" [nzRequired]="required(field)" [nzTooltipTitle]="field.tooltip ? runtime().text(field.tooltip, fieldScope()) : undefined" [nzTooltipIcon]="'question-circle'">{{ runtime().text(field.label, fieldScope()) || field.name }}</nz-form-label>
             }
-            <nz-form-control [nzValidateStatus]="error(field) && field.type !== 'repeater' ? 'error' : ''" [nzErrorTip]="error(field) ?? undefined">
+            @let problem = shown(field);
+            <nz-form-control [nzValidateStatus]="field.type === 'repeater' ? '' : problem.error ? 'error' : problem.warning ? 'warning' : ''" [nzErrorTip]="problem.error ?? undefined" [nzWarningTip]="problem.warning ?? undefined">
               <lc-field-control
                 [field]="field"
                 [runtime]="runtime()"
@@ -45,9 +50,9 @@ import { nextId } from './shared';
                 [disabled]="readOnly(field)"
                 [inputId]="id + field.name"
                 [labelId]="id + field.name + '-label'"
-                [invalid]="!!error(field)"
+                [invalid]="!!problem.error"
                 [submitted]="submitted()"
-                [summary]="error(field)"
+                [summary]="problem.error ?? problem.warning"
                 (valueChange)="set(field, $event)"
               />
             </nz-form-control>
@@ -101,6 +106,10 @@ export class FormComponent {
 
   protected readonly fieldScope = computed<Scope>(() => ({ ...this.scope(), form: this.values() }));
 
+  /** Rules of the form across fields, by the field they check. */
+  private readonly crossRules = computed(() => formRules(this.node().validation));
+  private readonly env = computed(() => validationEnv(this.runtime(), this.i18n, this.fieldScope(), this.values(), this.node().fields));
+
   constructor() {
     // Initial values declared in the form (once), then those of the data source when it arrives.
     effect(() => {
@@ -144,23 +153,32 @@ export class FormComponent {
     this.values.update((current) => ({ ...current, [field.name]: value }));
   }
 
-  /** Error message of the field, shown only after the first submit attempt. */
-  protected error(field: FieldDefinition): string | null {
-    return this.submitted() ? this.validate(field) : null;
+  /** The asterisk of the label: required, or required now by a conditional rule. */
+  protected required(field: FieldDefinition): boolean {
+    return isRequired(field, this.env(), this.crossRules().get(field.name));
   }
 
-  private validate(field: FieldDefinition): string | null {
-    const value = this.values()[field.name];
-    return field.type === 'repeater'
-      ? repeaterError(field, value, this.runtime(), this.fieldScope(), this.i18n)
-      : fieldError(field, value, this.runtime(), this.fieldScope(), this.i18n);
+  /** Error or warning of the field, shown only after the first submit attempt. */
+  protected shown(field: FieldDefinition): FieldCheck {
+    return this.submitted() ? this.check(field) : NO_PROBLEM;
+  }
+
+  private check(field: FieldDefinition): FieldCheck {
+    return checkValue(field, this.values()[field.name], this.env(), this.crossRules().get(field.name));
+  }
+
+  private transform(name: string, value: unknown): unknown {
+    const field = this.node().fields.find((f) => f.name === name);
+    return field ? transformValue(field, value) : value;
   }
 
   protected async run(action: ActionDefinition): Promise<void> {
     if (this.busy()) return;
     this.submitted.set(true);
+    // The steps receive the values as they are checked: after `transform` (usually already applied when leaving the field).
+    this.values.update((values) => Object.fromEntries(Object.entries(values).map(([name, value]) => [name, this.transform(name, value)])));
     const visible = this.node().fields.filter((f) => this.runtime().isVisible(f, this.fieldScope()));
-    if (visible.some((f) => this.validate(f) !== null)) return;
+    if (visible.some((f) => this.check(f).error !== null)) return;
     this.busy.set(true);
     try {
       this.completed.emit(await runSteps(this.runtime(), action.onClick, this.fieldScope()));
