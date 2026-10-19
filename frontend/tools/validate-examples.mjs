@@ -59,6 +59,30 @@ for (const [file, doc] of Object.entries(documents).filter(([f]) => f.startsWith
     }
   }
 }
+// The patterns of fields and validation rules compile as the runtime compiles them (Unicode, whole value, at most 500
+// characters): a broken one would make its field always invalid.
+for (const [file, doc] of Object.entries(documents).filter(([f]) => f.startsWith('screens/'))) {
+  const walk = (value, path) => {
+    if (Array.isArray(value)) value.forEach((v, i) => walk(v, `${path}/${i}`));
+    else if (value && typeof value === 'object') {
+      for (const [key, v] of Object.entries(value)) {
+        // messages.pattern is the text of the message, not an expression.
+        if (key === 'messages') continue;
+        if (key !== 'pattern' || typeof v !== 'string') walk(v, `${path}/${key}`);
+        else {
+          try {
+            if (v.length > 500) throw new Error('longer than 500 characters');
+            new RegExp(`^(?:${v})$`, 'u');
+          } catch (e) {
+            failed++;
+            console.error(`ERROR ${file}: ${path}/pattern is not a valid regular expression (${e.message})`);
+          }
+        }
+      }
+    }
+  };
+  walk(doc, '');
+}
 const project = documents['project.json'];
 for (const theme of project?.themes ?? []) {
   if (!documents[`themes/${theme}.json`]) {
