@@ -12,6 +12,37 @@ const CONTAINERS = new Set(['section', 'box', 'grid', 'border', 'tabs', 'wizard'
 const LANGUAGES = ['en', 'it'];
 
 /** Equality by content: every message arrives cloned, hence with new objects even when nothing changed. */
+/** Events that in selection mode do not reach the components of the drawing. */
+const GUARDED_EVENTS = [
+  'pointerdown',
+  'pointerup',
+  'mousedown',
+  'mouseup',
+  'click',
+  'dblclick',
+  'auxclick',
+  'contextmenu',
+  'touchstart',
+  'touchend',
+  'keydown',
+  'keyup',
+  'keypress',
+  'input',
+  'change',
+  'submit',
+  'focusin',
+  'pointerover',
+  'pointerout',
+  'pointerenter',
+  'pointerleave',
+  'mouseover',
+  'mouseout',
+  'mouseenter',
+  'mouseleave',
+];
+/** Their default action stays: pressing keeps dragging the components possible, the hover events have none that matters. */
+const KEEP_DEFAULT = new Set(['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'touchstart', 'focusin', 'pointerover', 'pointerout', 'pointerenter', 'pointerleave', 'mouseover', 'mouseout', 'mouseenter', 'mouseleave']);
+
 const sameJson = (a: unknown, b: unknown): boolean => a === b || JSON.stringify(a) === JSON.stringify(b);
 
 /**
@@ -152,10 +183,10 @@ export class PreviewApp {
     });
     effect(() => (document.documentElement.lang = this.i18n.locale()));
 
-    // Click in the capture phase: the one selecting does not reach the button or link of the component.
-    const listener = (event: MouseEvent): void => this.pick(event);
-    document.addEventListener('click', listener, true);
-    inject(DestroyRef).onDestroy(() => document.removeEventListener('click', listener, true));
+    // Events in the capture phase: in selection mode they do not reach the components (see `guard`).
+    const listener = (event: Event): void => this.guard(event);
+    for (const type of GUARDED_EVENTS) document.addEventListener(type, listener, true);
+    inject(DestroyRef).onDestroy(() => GUARDED_EVENTS.forEach((type) => document.removeEventListener(type, listener, true)));
 
     this.channel.send({ type: 'lc-preview:ready' });
 
@@ -302,15 +333,52 @@ export class PreviewApp {
     this.channel.send({ type: 'lc-preview:drop', kind, targetId: at.targetId, zone: at.zone });
   }
 
-  /** With Alt or in selection mode a click chooses the component (sends its id to the editor) and does not activate it. */
-  private pick(event: MouseEvent): void {
-    if (!event.altKey && !this.state()?.selectMode) return;
-    const target = event.target as Element | null;
-    if (!target?.closest?.('.frame')) return;
-    event.preventDefault();
-    event.stopPropagation();
+  /** Where the pointer went down in selection mode: a release close to it is a choice, not the end of a drag. */
+  private pressedAt: { x: number; y: number } | null = null;
+  /** The last component chosen and when: the click that follows the release does not choose it again. */
+  private picked: { id: string; at: number } | null = null;
+
+  /**
+   * In selection mode the drawing is a design surface: the events of the pointer, the keyboard, the focus and the hover stop
+   * before the components (no select or date picker opens, no input takes the cursor, no tooltip or menu appears, no button
+   * acts) and a component is chosen when the pointer is released on it, so disabled ones (which receive no click) can be
+   * chosen too. The pointer and mouse presses keep their default action, so components can still be dragged to move them.
+   * Outside selection mode only Alt+click chooses a component.
+   */
+  private guard(event: Event): void {
+    const target = event.target instanceof Element ? event.target : null;
+    if (!target?.closest('.frame')) return;
     const node = target.closest('lc-node[data-node-id]');
-    if (node) this.channel.send({ type: 'lc-preview:select', id: node.getAttribute('data-node-id')! });
+    const id = node?.getAttribute('data-node-id') ?? null;
+    if (!this.state()?.selectMode) {
+      if (event.type === 'click' && (event as MouseEvent).altKey) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (id) this.pick(id);
+      }
+      return;
+    }
+    // The handle of the selected component and the indicators belong to the editor, not to the drawing.
+    if (!node) {
+      if (event.type === 'click') event.preventDefault();
+      return;
+    }
+    const pointer = event as PointerEvent;
+    if (event.type === 'pointerdown' && pointer.button === 0) this.pressedAt = { x: pointer.clientX, y: pointer.clientY };
+    if (event.type === 'pointerup' && pointer.button === 0 && this.pressedAt) {
+      if (Math.abs(pointer.clientX - this.pressedAt.x) < 5 && Math.abs(pointer.clientY - this.pressedAt.y) < 5 && id) this.pick(id);
+      this.pressedAt = null;
+    }
+    // A click without a press before it (from the keyboard or a script) chooses too.
+    if (event.type === 'click' && id && !(this.picked?.id === id && Date.now() - this.picked.at < 600)) this.pick(id);
+    if (event.type === 'focusin' && target instanceof HTMLElement) target.blur();
+    if (event.cancelable && !KEEP_DEFAULT.has(event.type)) event.preventDefault();
+    event.stopPropagation();
+  }
+
+  private pick(id: string): void {
+    this.picked = { id, at: Date.now() };
+    this.channel.send({ type: 'lc-preview:select', id });
   }
 
   protected navigated(event: NavigateEvent): void {

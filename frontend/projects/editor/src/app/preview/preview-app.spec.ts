@@ -93,6 +93,48 @@ describe('preview (inside the iframe)', () => {
     expect(sent).toContainEqual({ type: 'lc-preview:select', id: 'text-1' });
   });
 
+  it('in selection mode the components do not react: they are chosen on release, also when disabled, and take no focus', async () => {
+    const form: ScreenDefinition = {
+      schemaVersion: '1.0',
+      screen: 'form',
+      components: [
+        { id: 'off', type: 'button', label: 'Disabled', enabledIf: '{{ false }}', onClick: [{ toast: 'Done' }] },
+        { id: 'name', type: 'input', name: 'name', label: 'Name', field: 'text' },
+      ],
+    } as ScreenDefinition;
+    await deliver({ screen: form, selectMode: true });
+    await until(() => !!el.querySelector('lc-node[data-node-id="off"] button'), 'buttons');
+    const button = el.querySelector('lc-node[data-node-id="off"] button') as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+    // A press and a release in the same place choose the component, even if disabled (it receives no click).
+    const reached: string[] = [];
+    for (const type of ['pointerdown', 'mousedown', 'keydown', 'mouseenter']) button.addEventListener(type, () => reached.push(type));
+    button.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, clientX: 10, clientY: 10 }));
+    button.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    button.dispatchEvent(new MouseEvent('mouseenter'));
+    button.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, button: 0, clientX: 11, clientY: 10 }));
+    expect(sent.filter((m) => m.type === 'lc-preview:select')).toEqual([{ type: 'lc-preview:select', id: 'off' }]);
+    expect(reached).toEqual([]);
+    // The click that follows does not choose it again, nor activate it.
+    button.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    expect(sent.filter((m) => m.type === 'lc-preview:select')).toHaveLength(1);
+    // A press released far away is a drag, not a choice.
+    const input = el.querySelector('lc-node[data-node-id="name"] input') as HTMLInputElement;
+    input.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, clientX: 10, clientY: 10 }));
+    input.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, button: 0, clientX: 80, clientY: 40 }));
+    expect(sent.filter((m) => m.type === 'lc-preview:select')).toHaveLength(1);
+    // Fields take no focus and no typing.
+    input.focus();
+    expect(document.activeElement).not.toBe(input);
+    const typed = new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'a' });
+    input.dispatchEvent(typed);
+    expect(typed.defaultPrevented).toBe(true);
+    // Outside selection mode the components work again.
+    await deliver({ screen: form, selectMode: false });
+    input.focus();
+    expect(document.activeElement).toBe(input);
+  });
+
   it('a component dragged from the palette onto the drawing: indicator and drop message to the editor', async () => {
     await deliver({ screen });
     await until(() => !!el.querySelector('lc-node[data-node-id="button-1"]'), 'button-1');
