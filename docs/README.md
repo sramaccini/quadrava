@@ -10,6 +10,7 @@ Reference documents:
 - [Dynamic texts and i18n](dynamic-texts-and-i18n.md): options considered for dynamic texts and i18n, the choice made (presentation functions and application catalogue) and the departures from it.
 - [Component catalogue](component-catalogue.md): available components, with the specification of each.
 - [Schema reference](schema-reference.md): all the properties of components, steps, fields and data sources, generated from `screen.schema.json` (`npm run schema:docs`).
+- [ADR-15: declarative field validation](adr-15-declarative-field-validation.md): validators, the two syntaxes of the rules, built-in and national formats, safety.
 - [Quadrava Studio](editor.md): how the visual screen editor is built, how it generates the property panel from the schema, the preview, the shortcuts, the limits.
 
 The functional specification, architecture and implementation guidelines date from 7–13 October 2026: the most recent detail is in the component catalogue, in `editor.md` and in the code.
