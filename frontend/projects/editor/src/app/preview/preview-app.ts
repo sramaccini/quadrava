@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterEveryRender, computed, effect, inject, linkedSignal, signal, untracked, viewChild } from '@angular/core';
-import { QuadravaWordmarkComponent, SidebarComponent, type NavigateEvent } from 'components';
+import { AppBrandComponent, QuadravaWordmarkComponent, SidebarComponent, type NavigateEvent } from 'components';
 import { I18n, NavigationRuntime, Notifier, ScreenComponent, ThemeService, loadMessages } from 'core';
 import { type ThemeDefinition } from 'schema';
 import { validateTheme } from 'schema/validation';
@@ -59,7 +59,7 @@ const sameJson = (a: unknown, b: unknown): boolean => a === b || JSON.stringify(
  */
 @Component({
   selector: 'lc-root',
-  imports: [QuadravaWordmarkComponent, ScreenComponent, SidebarComponent],
+  imports: [AppBrandComponent, QuadravaWordmarkComponent, ScreenComponent, SidebarComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: flex; min-height: 100vh; background: var(--lc-color-background); color: var(--lc-color-on-surface); }
@@ -77,8 +77,12 @@ const sameJson = (a: unknown, b: unknown): boolean => a === b || JSON.stringify(
   `,
   template: `
     @if (navigation(); as nav) {
-      <lc-sidebar [navigation]="nav" brand="Quadrava" [tone]="tone()" [areaId]="areaId()" (areaChange)="areaId.set($event)" (navigate)="navigated($event)">
-        <lc-quadrava-wordmark lcBrand icon="brand/quadrava-icon-small.svg" [tone]="tone()" />
+      <lc-sidebar [navigation]="nav" [brand]="brand()?.name ?? 'Quadrava'" [tone]="tone()" [areaId]="areaId()" (areaChange)="areaId.set($event)" (navigate)="navigated($event)">
+        @if (brand(); as b) {
+          <lc-app-brand lcBrand [brand]="b" [tone]="tone()" />
+        } @else {
+          <lc-quadrava-wordmark lcBrand icon="brand/quadrava-icon-small.svg" [tone]="tone()" />
+        }
       </lc-sidebar>
     }
     @if (state(); as s) {
@@ -155,6 +159,8 @@ export class PreviewApp {
       return previous?.value && visible.some((u) => u.id === previous.value) ? previous.value : (visible[0]?.id ?? null);
     },
   });
+  /** Logo and name of the application, from the theme (null: the Quadrava logo), as in the runtime. */
+  protected readonly brand = computed(() => (this.theme() ?? this.fallbackTheme())?.brand ?? null);
   protected readonly tone = computed(() => {
     const theme = this.theme() ?? this.fallbackTheme();
     return theme?.tokens.layout?.sider?.tone ?? (theme?.mode === 'dark' ? 'dark' : 'light');
