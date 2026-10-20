@@ -4,7 +4,7 @@
       <ng-template #sidebar let-inDrawer>
         <lc-sidebar
           [navigation]="nav"
-          brand="Quadrava"
+          [brand]="brand()?.name ?? 'Quadrava'"
           [tone]="siderTone()"
           [collapsed]="inDrawer ? false : collapsed()"
           (collapsedChange)="collapsed.set($event)"
@@ -16,7 +16,12 @@
           (navigate)="open($event.area, $event.leaf)"
           (areaChange)="navigation.switchArea($event)"
         >
-          <lc-quadrava-wordmark lcBrand icon="brand/quadrava-icon-small.svg" [tone]="siderTone()" [compact]="inDrawer ? false : collapsed()" />
+          <!-- The brand of the application, from its theme; without it the Quadrava logo. -->
+          @if (brand(); as b) {
+            <lc-app-brand lcBrand [brand]="b" [tone]="siderTone()" [compact]="inDrawer ? false : collapsed()" />
+          } @else {
+            <lc-quadrava-wordmark lcBrand icon="brand/quadrava-icon-small.svg" [tone]="siderTone()" [compact]="inDrawer ? false : collapsed()" />
+          }
         </lc-sidebar>
       </ng-template>
       @if (viewport() === 'narrow') {

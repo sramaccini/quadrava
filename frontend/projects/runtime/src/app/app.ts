@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, injec
 import { FormsModule } from '@angular/forms';
 import { RouterOutlet } from '@angular/router';
 import { NgTemplateOutlet } from '@angular/common';
-import { IconComponent, QuadravaWordmarkComponent, SidebarComponent, UserMenuComponent, type UserMenuItem } from 'components';
+import { AppBrandComponent, IconComponent, QuadravaWordmarkComponent, SidebarComponent, UserMenuComponent, type UserMenuItem } from 'components';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzDrawerModule } from 'ng-zorro-antd/drawer';
 import { NzDropdownModule } from 'ng-zorro-antd/dropdown';
@@ -61,7 +61,7 @@ function initialLanguage(settings: ApplicationSettings): string {
 /** Shell of the application: top bar (profile and theme of the demo), side menu, content and notifications. */
 @Component({
   selector: 'lc-root',
-  imports: [FormsModule, NgTemplateOutlet, RouterOutlet, IconComponent, QuadravaWordmarkComponent, SidebarComponent, UserMenuComponent, NzButtonModule, NzDrawerModule, NzDropdownModule, NzLayoutModule, NzMenuModule, NzSelectModule],
+  imports: [FormsModule, NgTemplateOutlet, RouterOutlet, AppBrandComponent, IconComponent, QuadravaWordmarkComponent, SidebarComponent, UserMenuComponent, NzButtonModule, NzDrawerModule, NzDropdownModule, NzLayoutModule, NzMenuModule, NzSelectModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './app.scss',
   templateUrl: './app.html',
@@ -88,6 +88,8 @@ export class App {
   protected readonly drawerOpen = signal(false);
   /** User menu items before the logout, which the component adds by itself as the last one. */
   protected readonly userItems = computed<UserMenuItem[]>(() => [{ id: 'permessi', label: this.i18n.t('app.permissions', { n: this.session.permissionCount() }), icon: 'safety', disabled: true }]);
+  /** Logo and name of the application at the top left, from the theme (null: the Quadrava logo). */
+  protected readonly brand = computed(() => this.themeService.current()?.brand ?? null);
   /** Style of the menu: the theme says it (light or dark sidebar). */
   protected readonly siderTone = computed(() => {
     const theme = this.themeService.current();

@@ -12,6 +12,7 @@ import expenses from '../../public/examples/screens/expense-list.json';
 import ordersSources from '../../public/examples/datasources/orders.json';
 import light from '../../public/examples/themes/light.json';
 import dark from '../../public/examples/themes/dark.json';
+import classic from '../../public/examples/themes/classic.json';
 import { DemoDiagnostics } from '../demo/demo-ports';
 import { NavigationService } from './navigation.service';
 import { openSelect, stubViewportHeight } from './select-testing';
@@ -32,6 +33,7 @@ describe('App (demo)', () => {
     'examples/screens/expense-list.json': expenses,
     'examples/themes/light.json': light,
     'examples/themes/dark.json': dark,
+    'examples/themes/classic.json': classic,
   };
 
   let restoreViewport: () => void;
@@ -281,6 +283,19 @@ describe('App (demo)', () => {
     await choose(fixture, headerSelect(el, 1), 'light');
     await until(fixture, () => document.documentElement.style.getPropertyValue('--ant-primary-color') === '#1f5fbf', 'light theme');
     expect(document.getElementById('lc-nz-dark-theme')).toBeNull();
+  });
+
+  it('a theme with a brand puts the logo of the application at the top left; without one, the Quadrava logo', async () => {
+    const { fixture, el } = await start();
+    await until(fixture, () => rows(el) > 0, 'invoice list');
+    expect(el.querySelector('lc-sidebar .logo lc-quadrava-wordmark')).not.toBeNull();
+    await choose(fixture, headerSelect(el, 1), 'classic');
+    await until(fixture, () => !!el.querySelector('lc-sidebar .logo lc-app-brand'), 'brand of the theme');
+    const brand = el.querySelector('lc-sidebar .logo lc-app-brand') as HTMLElement;
+    expect(brand.querySelector('[role="img"]')?.getAttribute('aria-label')).toBe('Acme Office');
+    // The classic theme has a dark side bar: the logo for dark backgrounds.
+    expect(brand.querySelector('img')?.getAttribute('src')).toBe(classic.brand.logoOnDark);
+    expect(el.querySelector('lc-sidebar .logo lc-quadrava-wordmark')).toBeNull();
   });
 
   it('navigates to the detail of an order and shows the form with the protected fields', async () => {

@@ -3,6 +3,13 @@
   "theme": "classic",
   "label": "Classic (dark sidebar)",
   "mode": "light",
+  "brand": {
+    "name": "Acme Office",
+    "logo": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNTAiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAxNTAgMzIiPjxyZWN0IHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgcng9IjciIGZpbGw9IiMxZjVmYmYiLz48cGF0aCBkPSJNOSAyMyAxNiA4bDcgMTVoLTQuMkwxNiAxNi42IDEzLjIgMjN6IiBmaWxsPSIjZmZmIi8+PHRleHQgeD0iNDAiIHk9IjIyIiBmb250LWZhbWlseT0iU2Vnb2UgVUksIEFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjE3IiBmb250LXdlaWdodD0iNjAwIiBmaWxsPSIjMWIyNDMwIj5BY21lIE9mZmljZTwvdGV4dD48L3N2Zz4=",
+    "logoOnDark": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNTAiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAxNTAgMzIiPjxyZWN0IHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgcng9IjciIGZpbGw9IiMxZjVmYmYiLz48cGF0aCBkPSJNOSAyMyAxNiA4bDcgMTVoLTQuMkwxNiAxNi42IDEzLjIgMjN6IiBmaWxsPSIjZmZmIi8+PHRleHQgeD0iNDAiIHk9IjIyIiBmb250LWZhbWlseT0iU2Vnb2UgVUksIEFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjE3IiBmb250LXdlaWdodD0iNjAwIiBmaWxsPSIjZmZmZmZmIj5BY21lIE9mZmljZTwvdGV4dD48L3N2Zz4=",
+    "icon": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgdmlld0JveD0iMCAwIDMyIDMyIj48cmVjdCB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHJ4PSI3IiBmaWxsPSIjMWY1ZmJmIi8+PHBhdGggZD0iTTkgMjMgMTYgOGw3IDE1aC00LjJMMTYgMTYuNiAxMy4yIDIzeiIgZmlsbD0iI2ZmZiIvPjwvc3ZnPg==",
+    "height": 32
+  },
   "tokens": {
     "colors": {
       "primary": "#1f5fbf",
