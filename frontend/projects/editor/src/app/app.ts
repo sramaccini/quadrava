@@ -42,6 +42,8 @@ import { RegistryOpenComponent, type RegistryDocument } from './ui/registry-open
 import { RegistryPanelComponent } from './ui/registry-panel.component';
 import { RegistryReviewComponent } from './ui/registry-review.component';
 import { RegistryTargetComponent } from './ui/registry-target.component';
+import { RuntimeAddressComponent } from './ui/runtime-address.component';
+import { RunProject } from './model/run-project';
 import { SCREEN_VIEWS } from './ui/screen-editor.component';
 import { StartPageComponent, type StartCommand } from './ui/start-page.component';
 import { ThemeInspectorComponent } from './ui/theme-inspector.component';
@@ -134,6 +136,7 @@ const SHORTCUTS: { group: string; keys: [string, string][] }[] = [
     RegistryPanelComponent,
     RegistryReviewComponent,
     RegistryTargetComponent,
+    RuntimeAddressComponent,
     StartPageComponent,
     ThemeInspectorComponent,
     WorkspaceComponent,
@@ -224,6 +227,9 @@ export class App {
   private readonly publisher = inject(ProjectPublisher);
   /** Dialog asking for the application before «Save to registry». */
   protected readonly showRegistryTarget = signal(false);
+  /** «Run project»: the runtime opened in another window with the project (ADR-16), and the dialog of its address. */
+  protected readonly runner = inject(RunProject);
+  protected readonly showRuntimeAddress = signal(false);
   /** Shortcuts shown in the help, by group (texts in the `ed.keys.*` messages). */
   protected readonly shortcutGroups = SHORTCUTS;
 
@@ -244,6 +250,8 @@ export class App {
       { id: 'import-project', label: t('ed.menu.importProject'), run: () => void this.importProjectZip() },
       { id: 'export-project', label: t('ed.menu.exportProject'), disabled: !open, run: () => void this.commands.exportZip() },
       { id: 'close-project', label: t('ed.menu.closeProject'), disabled: !open, run: () => void this.commands.close() },
+      { id: 'run-project', label: t('ed.menu.runProject'), separator: true, disabled: !open, run: () => this.runProject() },
+      { id: 'runtime-address', label: t('ed.menu.runtimeAddress'), run: () => this.showRuntimeAddress.set(true) },
       {
         id: 'new',
         label: t('ed.menu.new'),
@@ -539,6 +547,20 @@ export class App {
   }
 
   /** «Save to registry»: a new version of the active document in the chosen application (asked first, if missing). */
+  /** «Run project»: opens (or reloads) the runtime with the project as it is now; a popup blocked or a bad address are said. */
+  protected runProject(): void {
+    if (!this.project.isOpen()) return;
+    const outcome = this.runner.run();
+    if (outcome === 'invalid') this.showRuntimeAddress.set(true);
+    else if (outcome === 'blocked') this.notifier.toast(this.i18n.t('ed.run.blocked'), 'error');
+  }
+
+  /** The address chosen in the dialog: the project runs there at once. */
+  protected runtimeAddressChosen(): void {
+    this.showRuntimeAddress.set(false);
+    this.runProject();
+  }
+
   protected async saveToRegistry(): Promise<void> {
     if ((await this.registry.check()) === 'login') return this.registry.login();
     const win = this.active();

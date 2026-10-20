@@ -221,6 +221,8 @@ describe('screen editor', () => {
       'Import project (zip)…',
       'Export project (zip)',
       'Close project',
+      'Run project',
+      'Runtime address…',
       'New',
       'Import file…',
       'Import example',
