@@ -37,7 +37,9 @@ test.describe('Studio: document windows', () => {
     // No project yet: the start page. A new project kept in the browser.
     await page.getByRole('button', { name: 'New project…' }).click();
     await page.getByLabel('Name of the application').fill('E2E shop');
-    await page.getByRole('radio', { name: /In the browser/ }).check();
+    // click and then wait: check() verifies at once, before the radio group has drawn the choice.
+    await page.getByRole('radio', { name: /In the browser/ }).click();
+    await expect(page.getByRole('radio', { name: /In the browser/ })).toBeChecked();
     await page.getByRole('button', { name: 'Create' }).click();
     await expect(page.getByRole('heading', { name: 'No document open' })).toBeVisible();
     await expect(page.getByRole('navigation', { name: 'Project' })).toBeVisible();
