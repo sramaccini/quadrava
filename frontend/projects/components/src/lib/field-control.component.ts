@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { I18n, inputHints, passwordStrength, resolveDateLimit, transformValue, type ScreenRuntime, type Scope } from 'core';
+import { I18n, inputHints, passwordStrength, resolveDateLimit, transformValue, type RemoteChecks, type ScreenRuntime, type Scope } from 'core';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzCheckboxModule } from 'ng-zorro-antd/checkbox';
 import { NzDatePickerModule } from 'ng-zorro-antd/date-picker';
@@ -109,7 +109,7 @@ import { parseIsoDate, parseIsoDateTime, toIsoDate, toIsoDateTime } from './shar
         <nz-switch [nzId]="inputId()" [nzDisabled]="disabled()" [ngModel]="value() === true" (ngModelChange)="toggled($event)" />
       }
       @case ('repeater') {
-        <lc-repeater [field]="f" [runtime]="runtime()" [scope]="scope()" [value]="value()" [disabled]="disabled()" [submitted]="submitted()" [summary]="summary()" [labelId]="labelId()" [serverErrors]="cellErrors()" (valueChange)="valueChange.emit($event)" />
+        <lc-repeater [field]="f" [runtime]="runtime()" [scope]="scope()" [value]="value()" [disabled]="disabled()" [submitted]="submitted()" [summary]="summary()" [labelId]="labelId()" [serverErrors]="cellErrors()" [remote]="remote()" (valueChange)="valueChange.emit($event)" />
       }
       @case ('file') {
         <lc-file-field [inputId]="inputId()" [field]="f" [runtime]="runtime()" [scope]="scope()" [value]="value()" [disabled]="disabled()" (valueChange)="valueChange.emit($event)" />
@@ -209,6 +209,8 @@ export class FieldControlComponent {
   readonly personal = input<readonly string[]>([]);
   /** For repeatable rows: errors of the cells returned by the service (`row/column` → message). */
   readonly cellErrors = input<Record<string, string>>({});
+  /** For repeatable rows: the remote checks of the form, for the remote rules of the cells. */
+  readonly remote = input<RemoteChecks | undefined>(undefined);
   /** Free text is emitted at every character (`input`) or only when leaving the field / with Enter (`change`). */
   readonly commitOn = input<'input' | 'change'>('input');
   /** `form`: field of a form; `filter`: search criterion, where empty means «all». */

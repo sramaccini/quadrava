@@ -62,6 +62,7 @@ import { nextId } from './shared';
                 [summary]="problem.error ?? problem.warning"
                 [cellErrors]="cellErrors()[field.name] ?? {}"
                 [personal]="personal()"
+                [remote]="remote()"
                 (valueChange)="set(field, $event)"
               />
             </nz-form-control>
@@ -118,7 +119,7 @@ export class FormComponent {
   /** Rules of the form across fields, by the field they check. */
   private readonly crossRules = computed(() => formRules(this.node().validation));
   /** Remote checks of the fields, one set per runtime. */
-  private readonly remote = computed(() => new RemoteChecks(this.runtime()));
+  protected readonly remote = computed(() => new RemoteChecks(this.runtime()));
   private readonly env = computed(() => validationEnv(this.runtime(), this.i18n, this.fieldScope(), this.values(), this.node().fields, this.remote()));
   /** Values of the text fields, which a password should not contain. */
   protected readonly personal = computed(() => personalValues(this.node().fields, this.values()));

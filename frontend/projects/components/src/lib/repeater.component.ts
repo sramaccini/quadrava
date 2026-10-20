@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { I18n, inputHints, transformValue, type ScreenRuntime, type Scope } from 'core';
+import { I18n, inputHints, transformValue, type RemoteChecks, type ScreenRuntime, type Scope } from 'core';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzCheckboxModule } from 'ng-zorro-antd/checkbox';
 import { NzDatePickerModule } from 'ng-zorro-antd/date-picker';
@@ -36,6 +36,7 @@ type Row = Record<string, unknown>;
     td.remove { min-width: 0; width: 40px; padding-right: 0; }
     nz-select, nz-date-picker { width: 100%; }
     .cell-error { margin: 2px 0 0; font-size: 12px; color: var(--lc-color-danger, #c62828); }
+    .cell-checking { margin: 2px 0 0; font-size: 12px; color: var(--lc-color-muted, #5d6b7a); }
     .cell-error.warning { color: var(--lc-color-warning, #ad6800); }
     .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
     .summary { margin: 6px 0 0; color: var(--lc-color-danger, #c62828); }
@@ -66,7 +67,9 @@ type Row = Record<string, unknown>;
                 @for (sub of field().fields ?? []; track sub.name) {
                   <td [class.wide]="sub.type === 'lookup' || sub.type === 'file'">
                     @let cellId = id + i + '-' + sub.name;
-                    @let cell = submitted() ? checks()[i]?.[sub.name] : null;
+                    @let check = checks()[i]?.[sub.name];
+                    <!-- After the first submit; a remote check (running or done) as soon as it is known. -->
+                    @let cell = submitted() || check?.pending || check?.remote ? check : null;
                     @let err = serverErrors()[i + '/' + sub.name] ?? cell?.error;
                     @switch (sub.type) {
                       @case ('select') {
@@ -105,6 +108,8 @@ type Row = Record<string, unknown>;
                       <p class="cell-error" role="alert">{{ err }}</p>
                     } @else if (cell?.warning) {
                       <p class="cell-error warning">{{ cell?.warning }}</p>
+                    } @else if (cell?.pending) {
+                      <p class="cell-checking" role="status">{{ i18n.t('lc.validation.checking') }}</p>
                     }
                   </td>
                 }
@@ -142,6 +147,8 @@ export class RepeaterComponent {
   readonly summary = input<string | null>(null);
   /** Errors of the cells returned by the service (`row/column` → message), shown until the rows change. */
   readonly serverErrors = input<Record<string, string>>({});
+  /** Remote checks of the form, for the remote rules of the cells (without them those rules fail closed). */
+  readonly remote = input<RemoteChecks | undefined>(undefined);
   /** Id of the label of the field, to give the group a name. */
   readonly labelId = input<string | null>(null);
   readonly valueChange = output<Row[]>();
@@ -153,7 +160,7 @@ export class RepeaterComponent {
   protected readonly min = computed(() => this.field().minRows ?? 0);
   protected readonly max = computed(() => this.field().maxRows ?? 50);
   /** Errors and warnings of the cells (their rules, and the values repeated across rows). */
-  protected readonly checks = computed(() => repeaterCellChecks(this.field(), this.rows(), validationEnv(this.runtime(), this.i18n, this.scope(), {}, [])));
+  protected readonly checks = computed(() => repeaterCellChecks(this.field(), this.rows(), validationEnv(this.runtime(), this.i18n, this.scope(), {}, [], this.remote())));
   /** Dates of the `date` cells, once per value (see the form). */
   protected readonly dates = computed(() =>
     this.rows().map((row) => Object.fromEntries((this.field().fields ?? []).filter((f) => f.type === 'date').map((f) => [f.name, parseIsoDate(row[f.name])]))),

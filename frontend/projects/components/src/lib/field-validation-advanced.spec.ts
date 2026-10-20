@@ -186,4 +186,96 @@ describe('validation: passwords, remote rules, errors of the services', () => {
     expect(message(h, 'Tags')).toBe('');
     expect(h.toasts).toEqual(['saved']);
   });
+
+  describe('standalone fields of a validation group', () => {
+    /** The message of a standalone field, by its label. */
+    const standalone = (h: ScreenHarness, label: string): HTMLElement =>
+      [...h.el.querySelectorAll<HTMLElement>('lc-input')].find((i) => plain(i.querySelector('nz-form-label')?.textContent) === label)!;
+    const note = (h: ScreenHarness, label: string): string => plain(standalone(h, label).querySelector('.ant-form-item-explain')?.textContent);
+    const change = (h: ScreenHarness, label: string, value: string): void => type(standalone(h, label).querySelector('input'), value, 'change');
+    const field = (name: string, label: string, extra: Partial<FieldDefinition> = {}): NodeDefinition =>
+      ({ type: 'input', group: 'contact', field: { name, type: 'text', label, ...extra } }) as NodeDefinition;
+
+    it('rules across fields read the values of the group', async () => {
+      const h = await renderScreen({
+        components: [
+          field('email', 'Email'),
+          field('confirm', 'Confirm', { validation: [{ sameAs: 'email' }] }),
+          field('phone', 'Phone', { validation: [{ atLeastOne: ['email'] }, { rule: "{{ form.email != 'x@y.it' }}", message: 'Not that one' }] }),
+          { type: 'input', field: { name: 'elsewhere', type: 'text', label: 'Elsewhere', validation: [{ sameAs: 'email' }] } } as NodeDefinition,
+          { type: 'button', label: 'Check', onClick: [{ validate: 'contact' }, { toast: 'valid' }] } as NodeDefinition,
+        ],
+      });
+      (h.el.querySelector('lc-button button') as HTMLButtonElement).click();
+      await h.settle();
+      expect(note(h, 'Phone')).toBe('Fill in at least one of: Email');
+      expect(h.toasts).not.toContain('valid');
+      change(h, 'Email', 'x@y.it');
+      change(h, 'Confirm', 'z@y.it');
+      await h.settle();
+      expect(note(h, 'Confirm')).toBe('Does not match “Email”');
+      expect(note(h, 'Phone')).toBe('');
+      change(h, 'Phone', '0612345');
+      await h.settle();
+      expect(note(h, 'Phone')).toBe('Not that one');
+      // Another group does not see the field.
+      change(h, 'Elsewhere', 'x@y.it');
+      await h.settle();
+      expect(note(h, 'Elsewhere')).toBe('Does not match “email”');
+    });
+
+    it('the field errors of a call started by a button go to the standalone fields by name', async () => {
+      const h = await renderScreen({
+        components: [
+          field('email', 'Email'),
+          { type: 'button', label: 'Send', onClick: [{ call: 'send' }] } as NodeDefinition,
+        ],
+        dataSources: { send: { type: 'rest', method: 'POST', url: '/api/send', body: { email: '{{ state.email }}' } } },
+        respond: () => {
+          throw Object.assign(new Error('422'), { status: 422, fieldErrors: [{ path: '/email', code: 'email' }] });
+        },
+      });
+      change(h, 'Email', 'a@b.it');
+      (h.el.querySelector('lc-button button') as HTMLButtonElement).click();
+      await h.until(() => note(h, 'Email') !== '', 'field error');
+      expect(note(h, 'Email')).toBe('Enter a valid email address');
+      expect(h.toasts).toEqual(['Check the highlighted fields']);
+      change(h, 'Email', 'c@d.it');
+      await h.settle();
+      expect(note(h, 'Email')).toBe('');
+    });
+  });
+
+  it('remote rules in the rows of a repeater: per cell, shown as soon as known, waited for before sending', async () => {
+    const used = new Set(['A1']);
+    const h = await renderScreen({
+      components: [
+        form(
+          [
+            {
+              name: 'lines',
+              type: 'repeater',
+              label: 'Lines',
+              minRows: 2,
+              fields: [{ name: 'code', type: 'text', label: 'Code', validation: [{ remote: 'checkCode', debounce: 100, message: 'Code already used' }] }],
+            },
+          ],
+          [{ toast: 'saved' }],
+        ),
+      ],
+      dataSources: { checkCode: { type: 'rest', method: 'GET', url: '/api/code', params: { code: '{{ value }}' } } },
+      respond: (r) => !used.has(String(r.query?.['code'])),
+    });
+    const cells = [...h.el.querySelectorAll('lc-repeater input')];
+    type(cells[0], 'A1');
+    type(cells[1], 'B2');
+    await h.until(() => [...h.el.querySelectorAll('lc-repeater .cell-error')].length === 1, 'remote outcome of the cells');
+    expect(plain(h.el.querySelector('lc-repeater .cell-error')?.textContent)).toBe('Code already used');
+    expect(h.requests.map((r) => r.query?.['code']).sort()).toEqual(['A1', 'B2']);
+    await save(h);
+    expect(h.toasts).toEqual([]);
+    type(cells[0], 'C3');
+    await save(h);
+    await h.until(() => h.toasts.includes('saved'), 'saved after the check');
+  });
 });

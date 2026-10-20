@@ -39,20 +39,21 @@ export function repeaterRows(value: unknown): Record<string, unknown>[] {
 
 /**
  * Problems of every cell of a `repeater` field (by row, by field name): the rules of the cells, which see the row in
- * `item` and compare it with the other cells of the same row, and the `unique` rules of the field.
+ * `item` and compare it with the other cells of the same row, and the `unique` rules of the field. Remote rules of the
+ * cells use the remote checks of the form, one per row and column.
  */
 export function repeaterCellChecks(field: FieldDefinition, value: unknown, env: ValidationEnv): Record<string, FieldCheck>[] {
   const rows = repeaterRows(value);
   const repeated = uniqueCellErrors(field, rows, env);
   const fields = Array.isArray(field.fields) ? field.fields : [];
   return rows.map((item, i) => {
-    const cellEnv = validationEnv(env.runtime, env.i18n, { ...env.scope, item }, item, fields);
+    const cellEnv: ValidationEnv = { ...validationEnv(env.runtime, env.i18n, { ...env.scope, item }, item, fields, env.remote), slot: `${field.name}[${i}].` };
     const checks: Record<string, FieldCheck> = {};
     for (const sub of fields) {
       const own = checkField(sub, item[sub.name], cellEnv);
       const duplicate = repeated.get(i)?.[sub.name];
       const result = !own.error && duplicate ? { error: duplicate, warning: null } : own;
-      if (result.error || result.warning) checks[sub.name] = result;
+      if (result.error || result.warning || result.pending) checks[sub.name] = result;
     }
     return checks;
   });
@@ -72,6 +73,9 @@ export function checkValue(field: FieldDefinition, value: unknown, env: Validati
   if (rows.length < min) return { error: env.i18n.t('lc.minRows', { n: min }), warning: null };
   if (rows.length > max) return { error: env.i18n.t('lc.maxRows', { n: max }), warning: null };
   if (own.error) return own;
-  if (repeaterCellChecks(field, rows, env).some((cells) => Object.values(cells).some((c) => c.error))) return { error: env.i18n.t('lc.rowsInvalid'), warning: null };
+  const cells = repeaterCellChecks(field, rows, env).flatMap((row) => Object.values(row));
+  if (cells.some((c) => c.error)) return { error: env.i18n.t('lc.rowsInvalid'), warning: null };
+  // A cell still being checked on a service: the field cannot be sent yet.
+  if (cells.some((c) => c.pending)) return { ...own, pending: true };
   return own;
 }
