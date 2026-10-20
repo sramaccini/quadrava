@@ -40,8 +40,9 @@ test.describe('Studio: run the project in the runtime', () => {
     const popup = await opened;
     await popup.waitForLoadState();
     expect(popup.url()).toBe(`${runtime}/?studio=${encodeURIComponent(editor)}`);
-    // The screen of the project, by its route: the window reloads and asks Studio again for the project.
-    await popup.goto(`${runtime}/area/orders?studio=${encodeURIComponent(editor)}`);
+    // The screen of the project, by its route and without ?studio= (the routes drop it): the tab remembers its Studio
+    // and asks again for the project.
+    await popup.goto(`${runtime}/area/orders`);
     await expect(popup.getByRole('heading', { name: 'Orders (not saved)', level: 1 })).toBeVisible();
 
     // «Run project» again after another change: the same window, reloaded with the new project.

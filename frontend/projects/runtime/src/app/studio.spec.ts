@@ -31,6 +31,14 @@ describe('runtime opened by Studio', () => {
     expect(studioOrigin(config, '')).toBeNull();
   });
 
+  it('a tab opened by Studio remembers it: a reload asks again even when the routes dropped ?studio=', () => {
+    const config = { definitions: { source: 'examples' as const }, studio: { origins: [STUDIO] } };
+    expect(studioOrigin(config, '', STUDIO)).toBe(STUDIO);
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    expect(studioOrigin(config, '', 'https://evil.example')).toBeNull();
+    expect(studioOrigin(config, '', null)).toBeNull();
+  });
+
   it('the configuration keeps only well-formed origins', async () => {
     vi.stubGlobal('fetch', async () => ({ ok: true, json: async () => ({ definitions: { source: 'examples' }, studio: { origins: [STUDIO, 'http://localhost:4201/path', 'nope', 3] } }) }));
     expect((await loadRuntimeConfig()).studio).toEqual({ origins: [STUDIO] });
@@ -55,6 +63,7 @@ describe('runtime opened by Studio', () => {
     vi.spyOn(window, 'postMessage').mockImplementation(() => undefined);
     await expect(receiveProject(STUDIO, window as unknown as StudioWindow, 10)).rejects.toThrow('Studio did not send the project');
     await expect(receiveProject(STUDIO, null)).rejects.toThrow('no Studio window');
+    await expect(receiveProject(STUDIO, { postMessage: () => undefined, closed: true })).rejects.toThrow('no Studio window');
   });
 
   it('«Run project» again reloads the window', () => {

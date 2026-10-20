@@ -9,11 +9,38 @@ import { DEFAULT_APPLICATION_SETTINGS, type ApplicationSettings, type RuntimeCon
 /** The window that opened this one, as far as the link needs it. */
 export interface StudioWindow {
   postMessage(message: FromRuntime, targetOrigin: string): void;
+  readonly closed?: boolean;
 }
 
-/** The origin of the Studio that opened the runtime (`?studio=`), if the configuration allows it; otherwise null. */
-export function studioOrigin(config: RuntimeConfig, search: string = location.search): string | null {
-  const origin = new URLSearchParams(search).get(STUDIO_QUERY);
+/**
+ * Where the tab remembers the origin of its Studio: the routes of the runtime drop `?studio=` (the home page goes to
+ * the first screen), and a reload must still ask Studio for the project. Only for this tab (sessionStorage).
+ */
+export const STUDIO_SESSION_KEY = 'lc.studio.origin';
+
+function remembered(): string | null {
+  try {
+    return sessionStorage.getItem(STUDIO_SESSION_KEY);
+  } catch {
+    return null;
+  }
+}
+
+/** Remembers the origin of Studio for the reloads of this tab. */
+export function rememberStudio(origin: string): void {
+  try {
+    sessionStorage.setItem(STUDIO_SESSION_KEY, origin);
+  } catch {
+    // Private browsing: a reload by hand starts without Studio.
+  }
+}
+
+/**
+ * The origin of the Studio that opened the runtime (`?studio=`, or remembered by this tab), if the configuration allows it;
+ * otherwise null.
+ */
+export function studioOrigin(config: RuntimeConfig, search: string = location.search, stored: string | null = remembered()): string | null {
+  const origin = new URLSearchParams(search).get(STUDIO_QUERY) ?? stored;
   if (!origin) return null;
   if (!(config.studio?.origins ?? []).includes(origin)) {
     console.warn('[studio] this runtime does not accept projects from that origin (studio.origins in runtime-config.json)');
@@ -28,7 +55,7 @@ export function studioOrigin(config: RuntimeConfig, search: string = location.se
  */
 export function receiveProject(origin: string, opener: StudioWindow | null = window.opener as StudioWindow | null, timeoutMs = 15_000): Promise<ProjectSnapshot> {
   return new Promise((resolve, reject) => {
-    if (!opener) {
+    if (!opener || opener.closed) {
       reject(new Error('no Studio window to ask for the project'));
       return;
     }
