@@ -2,7 +2,7 @@ import { provideHttpClient, withFetch } from '@angular/common/http';
 import { ApplicationConfig, provideBrowserGlobalErrorListeners, type EnvironmentProviders, type Provider } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { NzNotifier, SectionTools, provideLowcodeComponents } from 'components';
-import { Authorization, DataClient, DefinitionSource, Notifier, RuntimeDiagnostics, ScreenNavigator, UserProvider } from 'core';
+import { Authorization, DataClient, DefinitionSource, Notifier, RuntimeDiagnostics, ScreenNavigator, SnapshotDefinitions, UserProvider, type ProjectSnapshot } from 'core';
 import { provideLowcodeServices, provideRegistryDefinitions } from 'services';
 import { DemoDiagnostics, DemoSession, MockDataClient } from '../demo/demo-ports';
 import { ExampleDefinitions } from '../demo/example-definitions';
@@ -12,8 +12,12 @@ import { ShowcaseTools } from './showcase/showcase-tools';
 import { APPLICATION_SETTINGS, DEFAULT_APPLICATION_SETTINGS, DEFAULT_RUNTIME_CONFIG, type ApplicationSettings, type RuntimeConfig } from './runtime-config';
 import { BffShellSession, DemoShellSession, ShellSession } from './shell-session';
 
-/** Where screens, navigation and themes come from: the demo examples or the versions published in the registry. */
-function definitions(config: RuntimeConfig): Provider[] {
+/**
+ * Where screens, navigation and themes come from: the demo examples, the versions published in the registry, or the
+ * project sent by Studio («Run project», ADR-16).
+ */
+function definitions(config: RuntimeConfig, settings: ApplicationSettings, project: ProjectSnapshot | null): Provider[] {
+  if (project) return [{ provide: DefinitionSource, useValue: new SnapshotDefinitions(project, settings.themes ?? Object.keys(project.themes)) }];
   if (config.definitions.source === 'registry') {
     const { source: _, languages: _languages, defaultLanguage: _default, ...registry } = config.definitions;
     return provideRegistryDefinitions(registry);
@@ -39,14 +43,14 @@ function ports(config: RuntimeConfig): (Provider | EnvironmentProviders)[] {
   ];
 }
 
-export function appConfigFor(config: RuntimeConfig, settings: ApplicationSettings = DEFAULT_APPLICATION_SETTINGS): ApplicationConfig {
+export function appConfigFor(config: RuntimeConfig, settings: ApplicationSettings = DEFAULT_APPLICATION_SETTINGS, project: ProjectSnapshot | null = null): ApplicationConfig {
   return {
     providers: [
       provideBrowserGlobalErrorListeners(),
       { provide: APPLICATION_SETTINGS, useValue: settings },
       provideRouter(routes),
       provideLowcodeComponents(),
-      ...definitions(config),
+      ...definitions(config, settings, project),
       ...ports(config),
       { provide: ScreenNavigator, useExisting: RouterNavigator },
       { provide: Notifier, useExisting: NzNotifier },

@@ -17,6 +17,26 @@ export interface RuntimeConfig {
    * data and telemetry through the BFF, `services` library). When missing: demo.
    */
   services?: { source: 'demo' } | { source: 'bff'; appId: string };
+  /**
+   * Origins of Quadrava Studio allowed to open this runtime with their project («Run project», ADR-16), for example
+   * `http://localhost:4201`. Without them a runtime ignores `?studio=` (fail-closed).
+   */
+  studio?: { origins: string[] };
+}
+
+/** The origins of Studio of a configuration: only well-formed origins (scheme, host, port), nothing else. */
+function studioOf(value: unknown): RuntimeConfig['studio'] {
+  const origins = (value as { origins?: unknown } | null | undefined)?.origins;
+  if (!Array.isArray(origins)) return undefined;
+  const valid = origins.filter((o): o is string => {
+    if (typeof o !== 'string') return false;
+    try {
+      return new URL(o).origin === o;
+    } catch {
+      return false;
+    }
+  });
+  return valid.length ? { origins: valid } : undefined;
 }
 
 export const DEFAULT_RUNTIME_CONFIG: RuntimeConfig = { definitions: { source: 'examples' } };
@@ -85,9 +105,9 @@ export async function loadRuntimeConfig(url = 'runtime-config.json'): Promise<Ru
         console.warn('[runtime-config] incomplete registry configuration: using the examples');
         return DEFAULT_RUNTIME_CONFIG;
       }
-      return config;
+      return { ...config, studio: studioOf(config.studio) };
     }
-    return { ...DEFAULT_RUNTIME_CONFIG, services: config?.services };
+    return { ...DEFAULT_RUNTIME_CONFIG, services: config?.services, studio: studioOf(config?.studio) };
   } catch {
     return DEFAULT_RUNTIME_CONFIG;
   }

@@ -18,5 +18,10 @@
   "services": {
     "source": "bff",
     "appId": "demo"
+  },
+  "studio": {
+    "origins": [
+      "http://localhost:4201"
+    ]
   }
 }

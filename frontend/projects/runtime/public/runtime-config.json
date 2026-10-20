@@ -1,5 +1,12 @@
 {
   "definitions": {
     "source": "examples"
+  },
+  "studio": {
+    "origins": [
+      "http://localhost:4201",
+      "http://localhost:4301",
+      "http://localhost:4303"
+    ]
   }
 }
