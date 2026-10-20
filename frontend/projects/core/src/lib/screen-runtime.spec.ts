@@ -251,6 +251,25 @@ describe('runSteps', () => {
     rt.destroy();
   });
 
+  it('standalone fields by validation group: their values, and the field errors of a call started outside a form', async () => {
+    fakes.respond = () => {
+      throw Object.assign(new Error('422'), { status: 422, fieldErrors: [{ path: '/email', code: 'taken' }, { path: '/other', code: 'x' }] });
+    };
+    const rt = fakes.runtime(screen, injector);
+    const shown: string[] = [];
+    rt.setState('contact.email', 'a@b.it');
+    const off = rt.registerField('contact', { field: { name: 'email', type: 'text' }, path: 'contact.email', showFieldError: (e) => shown.push(e.code) });
+    rt.registerField('contact', { field: { name: 'phone', type: 'text' }, path: 'contact.phone', showFieldError: () => undefined });
+    expect(rt.groupValues('contact')).toEqual({ email: 'a@b.it', phone: null });
+    expect(rt.groupValues('none')).toEqual({});
+    await runSteps(rt, [{ call: 'approve', args: { id: 1 } }], {});
+    expect(shown).toEqual(['taken']);
+    expect(fakes.toasts.at(-1)?.message).toBe('Check the highlighted fields');
+    off();
+    expect(rt.groupFields('contact').map((e) => e.field.name)).toEqual(['phone']);
+    rt.destroy();
+  });
+
   it('a query with a signal is its own request and, cancelled, is not an error', async () => {
     const rt = fakes.runtime(screen, injector);
     const controller = new AbortController();

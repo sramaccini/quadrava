@@ -1,6 +1,6 @@
 import { effect, Injector, signal, computed, untracked, type EffectRef } from '@angular/core';
 import { ExpressionEngine, parseTemplate } from 'expressions';
-import { inlineDataSource, type DialogStep, type InputNode, type NodeDefinition, type ScreenDefinition, type Step } from 'schema';
+import { inlineDataSource, type DialogStep, type FieldDefinition, type InputNode, type NodeDefinition, type ScreenDefinition, type Step } from 'schema';
 import {
   Authorization,
   Confirmation,
@@ -19,9 +19,19 @@ import {
 } from './ports';
 import type { I18n } from './i18n';
 import type { CallResult, DataSourceState, Scope } from './types';
-import { fieldErrorsOf } from './field-errors';
+import { fieldErrorsOf, pointerSegments, type FieldError } from './field-errors';
 import { remoteSources } from './validation';
 import { ValidatorRegistry } from './validators';
+
+/** A standalone field on the screen, as its validation group knows it. */
+export interface GroupField {
+  /** Its definition (name, label, type). */
+  readonly field: FieldDefinition;
+  /** Where its value is in the state. */
+  readonly path: string;
+  /** Shows an error of a service on the field (until its value changes). */
+  showFieldError(error: FieldError): void;
+}
 
 export interface RuntimeDeps {
   authorization: Authorization;
@@ -70,6 +80,8 @@ export class ScreenRuntime {
   /** Identical service reads (`query`) in progress: whoever arrives later waits for the same response. */
   private readonly sharedQueries = new Map<string, Promise<unknown>>();
   private readonly missingKeys = new Set<string>();
+  /** Standalone fields by validation group: rules across fields see the values of the group. */
+  private readonly groups = signal<ReadonlyMap<string, readonly GroupField[]>>(new Map());
   /** Checks of the standalone fields, by validation group. */
   private readonly validators = new Map<string, Set<() => boolean>>();
   /** Last request of the automatic load of every GET data source (so as not to repeat it if it does not change). */
@@ -289,6 +301,43 @@ export class ScreenRuntime {
     set.add(check);
     this.validators.set(group, set);
     return () => set.delete(check);
+  }
+
+  /**
+   * Registers a standalone field in its validation group while it is on the screen; returns the function that removes it.
+   * The fields of a group see each other's values in their rules (`groupValues`) and receive the field errors of the
+   * services (`placeFieldErrors`).
+   */
+  registerField(group: string, entry: GroupField): () => void {
+    this.groups.update((all) => new Map(all).set(group, [...(all.get(group) ?? []), entry]));
+    return () => this.groups.update((all) => new Map(all).set(group, (all.get(group) ?? []).filter((e) => e !== entry)));
+  }
+
+  /** The standalone fields of a group. */
+  groupFields(group: string): readonly GroupField[] {
+    return this.groups().get(group) ?? [];
+  }
+
+  /** The values of the standalone fields of a group, by field name (read in a reactive context, they follow the state). */
+  groupValues(group: string): Record<string, unknown> {
+    return Object.fromEntries(this.groupFields(group).map((e) => [e.field.name, this.getState(e.path) ?? null]));
+  }
+
+  /**
+   * Field errors of a service for the standalone fields (a `call` started outside a form): `/name` goes to every
+   * standalone field with that name. Returns how many were placed.
+   */
+  placeFieldErrors(errors: readonly FieldError[]): number {
+    const fields = [...untracked(() => this.groups()).values()].flat();
+    let placed = 0;
+    for (const error of errors) {
+      const segments = pointerSegments(error.path);
+      if (segments.length !== 1) continue;
+      const targets = fields.filter((e) => e.field.name === segments[0]);
+      for (const target of targets) target.showFieldError(error);
+      if (targets.length) placed++;
+    }
+    return placed;
   }
 
   /** Checks all the fields of the group (`*` = all), without stopping at the first one: each one shows its own errors. */

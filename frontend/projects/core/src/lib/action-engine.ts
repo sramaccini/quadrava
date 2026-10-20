@@ -30,7 +30,7 @@ interface Run {
 export interface StepOptions {
   /**
    * The field errors of a failed `call` (from the service's Problem), for the form that started the sequence: it shows them
-   * on its fields and returns how many it could place.
+   * on its fields and returns how many it could place. Without it they go to the standalone fields of the screen.
    */
   onFieldErrors?: (errors: readonly FieldError[]) => number;
 }
@@ -91,7 +91,9 @@ async function runStep(runtime: ScreenRuntime, step: Step, scope: Scope, run: Ru
     if (result.ok) return { ok: true, scope: step.as ? { ...scope, [step.as]: result.data } : scope };
     // The server message is not shown to the user: it could contain internal details. The onError steps
     // see only the code (error.status) and how many field errors the form shows (error.fields).
-    const fields = result.fieldErrors?.length && run.onFieldErrors ? run.onFieldErrors(result.fieldErrors) : 0;
+    // A form places them on its fields; started elsewhere (a button), they go to the standalone fields.
+    const place = run.onFieldErrors ?? ((errors: readonly FieldError[]) => runtime.placeFieldErrors(errors));
+    const fields = result.fieldErrors?.length ? place(result.fieldErrors) : 0;
     const fallback = fields ? runtime.systemText('lc.checkFields', 'Check the highlighted fields') : genericError(runtime);
     const handler = step.onError === undefined ? [{ toast: fallback }] : asList(step.onError);
     await runSequence(runtime, handler, { ...scope, error: { status: result.status ?? 0, fields } }, run);
