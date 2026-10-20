@@ -46,19 +46,22 @@ export const THEME_SCHEMA: Record<string, unknown> = {
           "type": "string",
           "maxLength": 100000,
           "pattern": "^(https://[^\\s]+|data:image/(png|jpeg|gif|webp|svg\\+xml);base64,[A-Za-z0-9+/=]+|/?[A-Za-z0-9_-][A-Za-z0-9_\\-./%]*)$",
-          "description": "Image of the logo in the expanded side bar (it usually holds the name too)."
+          "description": "Image of the logo in the expanded side bar (it usually holds the name too).",
+          "contentMediaType": "image/*"
         },
         "logoOnDark": {
           "type": "string",
           "maxLength": 100000,
           "pattern": "^(https://[^\\s]+|data:image/(png|jpeg|gif|webp|svg\\+xml);base64,[A-Za-z0-9+/=]+|/?[A-Za-z0-9_-][A-Za-z0-9_\\-./%]*)$",
-          "description": "Variant of the logo for a dark side bar (sider tone dark); the logo if absent."
+          "description": "Variant of the logo for a dark side bar (sider tone dark); the logo if absent.",
+          "contentMediaType": "image/*"
         },
         "icon": {
           "type": "string",
           "maxLength": 100000,
           "pattern": "^(https://[^\\s]+|data:image/(png|jpeg|gif|webp|svg\\+xml);base64,[A-Za-z0-9+/=]+|/?[A-Za-z0-9_-][A-Za-z0-9_\\-./%]*)$",
-          "description": "Square image for the collapsed side bar; without it the collapsed bar shows the logo, reduced."
+          "description": "Square image for the collapsed side bar; without it the collapsed bar shows the logo, reduced.",
+          "contentMediaType": "image/*"
         },
         "showName": {
           "type": "boolean",
