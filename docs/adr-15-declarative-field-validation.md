@@ -138,7 +138,7 @@ Not in a repeater nor in a filter bar.
 
 ### Remote (asynchronous) rules
 
-A rule `{ "remote": "<data source>", "debounce": 400, "message"?, "when"?, "severity"? }` checks the value on a service: the data source sees the value in `value` (and the form in `form`), for example `"params": { "staffNumber": "{{ value }}" }`, and answers `true` / `false` or `{ "valid": false, "code": "taken", "params": {…} }`. The check starts when the user stops typing (`debounce` ms, 400 if absent), only when every other rule of the field passes, and a newer value cancels the request still in progress (`AbortSignal`). Results are kept per value, so going back to a value already checked asks nothing. While it runs the field shows a spinner; the form waits for the checks in progress before sending. A check that fails (network, error status, an answer of another shape) does not pass (fail-closed) with its own message. Remote rules exist in forms and standalone fields, not in the rows of a repeater nor in filters; a standalone field still being checked does not pass the `validate` step.
+A rule `{ "remote": "<data source>", "debounce": 400, "message"?, "when"?, "severity"? }` checks the value on a service: the data source sees the value in `value` (and the form in `form`), for example `"params": { "staffNumber": "{{ value }}" }`, and answers `true` / `false` or `{ "valid": false, "code": "taken", "params": {…} }`. The check starts when the user stops typing (`debounce` ms, 400 if absent), only when every other rule of the field passes, and a newer value cancels the request still in progress (`AbortSignal`). Results are kept per value, so going back to a value already checked asks nothing. While it runs the field shows a spinner; the form waits for the checks in progress before sending. A check that fails (network, error status, an answer of another shape) does not pass (fail-closed) with its own message. Remote rules exist in forms, standalone fields and the cells of repeaters (one check per row and column), not in filters; a standalone field still being checked does not pass the `validate` step.
 
 The message: the rule's own, otherwise the `code` of the answer translated (`validation.<code>` in the application's catalogue, then `lc.validation.<code>`), otherwise `lc.validation.remote`. The text written by the service is never shown, as for every other error of the services.
 
@@ -148,7 +148,15 @@ The message: the rule's own, otherwise the `code` of the answer translated (`val
 
 ### Field errors from the services (contract first)
 
-`contracts/problem.yaml` describes the RFC 9457 Problem that application services return for invalid data (400 or 422), with `errors`: `{ "path": "/email", "code": "taken", "params"?: {…}, "message"?: "…" }`. `path` is a JSON Pointer into the request body (`/lines/0/code` for a cell of a repeater), as in the registry's validation problems; `code` is translated by the front end like the code of a remote rule; `message` is for developers and is never shown. The `services` data client reads these entries (at most 50, codes and paths of limited length, parameters only with simple values) into the error of the call; the form that ran the `call` step puts each message on its field (or cell) until that field changes, and the default message of the failure becomes «Check the highlighted fields». Entries that match no field are ignored.
+`contracts/problem.yaml` describes the RFC 9457 Problem that application services return for invalid data (400 or 422), with `errors`: `{ "path": "/email", "code": "taken", "params"?: {…}, "message"?: "…" }`. `path` is a JSON Pointer into the request body (`/lines/0/code` for a cell of a repeater), as in the registry's validation problems; `code` is translated by the front end like the code of a remote rule; `message` is for developers and is never shown. The `services` data client reads these entries (at most 50, codes and paths of limited length, parameters only with simple values) into the error of the call; the form that ran the `call` step puts each message on its field (or cell) until that field changes; a `call` started outside a form sends them to the standalone fields with that name; the default message of the failure becomes «Check the highlighted fields». Entries that match no field are ignored.
+
+### Standalone fields as a group (20 October 2026)
+
+The standalone fields of a validation group behave as the fields of a form: their rules see the values of the group in `form`, so `sameAs`, `after`, `atLeastOne` and CEL rules work across them with no new syntax. `ScreenRuntime.registerField` keeps them by group while they are on the screen.
+
+### Validators outside the initial bundle (20 October 2026)
+
+The precompiled validators of the schemas (one Ajv function per schema, about 370 kB minified, larger with every rule variant) are the secondary entry point `schema/validation`. The runtime and `core` load it with `await import`, in parallel with the document they check; the editor imports it statically. The runtime's initial bundle went back under its 2.5 MB budget (2.36 MB, 438 kB transferred).
 
 ### Alternatives considered (amendment)
 
