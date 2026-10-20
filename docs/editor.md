@@ -31,7 +31,7 @@ The side panels (components, structure, properties) and the problems always show
 
 At the top left is the **Quadrava Studio** logotype (icon and name; the Studio icon in the browser tab), then a **menu bar** as in desktop applications:
 
-- **File**: New project…, Open project folder… (Chrome and Edge), Open the demo project, Close project; New ▸ (Screen…, Data sources…, Navigation, Theme), Import file… (Ctrl+O), Import example ▸, Open from registry ▸ (Screen…, Data sources…, Navigation…, Theme…); Save (Ctrl+S), Save all, Export…, Save to registry, Registry…; Close, Close all. The commands that bring in a document write it into the project and open it in a **new window**; the others work on the document of the active window:
+- **File**: New project…, Open project folder… (Chrome and Edge), Open the demo project, Close project; Run project, Runtime address… (§ 3a); New ▸ (Screen…, Data sources…, Navigation, Theme), Import file… (Ctrl+O), Import example ▸, Open from registry ▸ (Screen…, Data sources…, Navigation…, Theme…); Save (Ctrl+S), Save all, Export…, Save to registry, Registry…; Close, Close all. The commands that bring in a document write it into the project and open it in a **new window**; the others work on the document of the active window:
   - **New**: a screen first asks for the **title** and the **identifier** (`screen`), a theme for its name, a data sources document for a description; the identifier is derived (kebab-case, without accents, up to 60 characters) until you edit it, and «Create» stays disabled while the name is missing, the identifier is not valid or another resource of the kind has it. The file is created in the project at once. The navigation is one per project: «New › Navigation» opens it (or creates it, if the project has none).
   - **Import file…**: a `.json` file from the computer, written into the project as the resource of its kind, recognised from the document's identifier property (`screen`, `datasources`, `navigation` or `theme`; any other file is refused with a message), and opened. If the project already has that resource, it asks before replacing it. **Import example ▸** does the same with a resource of the demo project.
   - **Save**: the document in its file of the project, as indented JSON (`screens/<identifier>.json`…). The file follows the identifier: changing it renames the resource (written under the new name, the old file removed); an identifier already used by another resource is refused. A document with errors is saved anyway (it is work in progress), and the message says how many errors there are. **Save all** saves every window with changes; **Export…** writes the document to a file outside the project (downloaded where the browser cannot write files).
@@ -168,6 +168,23 @@ No call leaves the browser. The preview's ports (`preview/preview-ports.ts`, ins
 If the chosen width (tablet, phone) does not fit in the preview area, the page is scaled down to fit, as in Chrome's device toolbar: it stays as wide as the device (same breakpoints), only smaller, and a label in the corner gives the percentage. Before, the page overflowed the panel and was cut off on the right. Widths can be tried with the three icons in the bar, as in Chrome's device toolbar (desktop, tablet 768 px, phone 375 px; the name and pixels in the tooltip), and so can the screen parameters (`params`, for example `{"id": 1}`). Redrawing starts 250 ms after the last change.
 
 To link drawing and structure, `lc-node` exposes `data-node-id` and `data-node-type` (never data): this is why the editor gives an `id` to every node it creates. Nodes without an `id` (written by hand) can be selected only from the structure.
+
+## 3a. Run the project in the runtime
+
+**File › Run project**, or the ▶ button in the toolbar, opens the runtime in another window of the browser with the project as it is in Studio (ADR-16): the files of the project with the documents of the open windows in their place, unsaved changes and the translations written in the screens included. It is the real runtime: its menu, routes, themes and languages, and its data (the fake back end in the demo, the real services behind the BFF). Running again reloads the same window with the project as it is then; a reload by hand asks Studio again too, as long as Studio is open.
+
+```
+Studio (4201)                          runtime (4200)
+  ▶ Run project ── opens runtime?studio=http://localhost:4201
+                ◄── «ready» (only if 4201 is in its studio.origins)
+  project ──────────────────────────► starts on it (screens, menu, themes, catalogues)
+  ▶ again ─────── reload ───────────► asks again
+```
+
+- **Address of the runtime.** **File › Runtime address…**, remembered in this browser. By default, in development, the port before Studio's (4200 next to 4201, 4300 next to 4301); otherwise the root of the same origin.
+- **The runtime must accept Studio.** Its `runtime-config.json` lists the origins of Studio in `studio.origins`; without them it ignores the request and starts as usual. The demo and the development configurations list 4201, 4301 and 4303.
+- **Pop-ups.** The browser may ask to allow the new window the first time; a blocked one is said in a message.
+- Only definitions travel, as JSON, from Studio to the window it opened and to the origin of the runtime address; the runtime validates every document as it does with the registry.
 
 ## 3b. Navigation
 
