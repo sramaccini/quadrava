@@ -199,7 +199,7 @@ The navigation draft is saved in the browser like the screen's; «Open example»
 
 ## 3c. Theme
 
-A theme window: a file of `themes/` in the project (design tokens). The panel on the right shows all the tokens, group by group (colours, typography, shape, density, layout of side bar, header, page), generated from `theme.schema.json`; colours have a picker next to the text (`#rrggbb`; `rgb()` and `hsl()` are typed in the text). The preview draws **the screen and the menu of the screen and navigation windows used last** with the theme, in its iframe: dark themes are complete (NG-ZORRO's surfaces too) and the editor stays as it is. The screen and menu previews also use the theme of the theme window used last (the demo's light one, if there is none or it has errors). With errors the preview stays at the last valid theme.
+A theme window: a file of `themes/` in the project (design tokens). The panel on the right shows all the tokens, group by group (colours, typography, shape, density, layout of side bar, header, page) and the **brand** of the application (logo, its variant for a dark side bar, icon for the collapsed bar, name), generated from `theme.schema.json`; colours have a picker next to the text (`#rrggbb`; `rgb()` and `hsl()` are typed in the text). The preview draws **the screen and the menu of the screen and navigation windows used last** with the theme, in its iframe: dark themes are complete (NG-ZORRO's surfaces too) and the editor stays as it is. The screen and menu previews also use the theme of the theme window used last (the demo's light one, if there is none or it has errors). With errors the preview stays at the last valid theme.
 
 ## 4. Shortcuts
 
