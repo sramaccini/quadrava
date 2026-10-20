@@ -1,6 +1,43 @@
+import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { NavigationRuntime, type Authorization, type UserProvider } from 'core';
 import type { ThemeBrand } from 'schema';
 import { AppBrandComponent } from './app-brand.component';
+import { provideLowcodeComponents } from './provide';
+import { SidebarComponent } from './sidebar.component';
+
+/** A side bar with the brand of a theme, as the previews of Studio put it: without saying whether it is collapsed. */
+@Component({
+  imports: [AppBrandComponent, SidebarComponent],
+  template: `
+    <lc-sidebar [navigation]="nav" [(collapsed)]="collapsed">
+      <lc-app-brand lcBrand [brand]="brand" />
+    </lc-sidebar>
+  `,
+})
+class BrandInSidebar {
+  readonly nav = new NavigationRuntime(
+    { schemaVersion: '1.0', navigation: 'app', areas: [{ id: 'main', label: 'Main', items: [{ id: 'list', label: 'List', screen: 'list' }] }] },
+    { authorization: { can: () => true } as Authorization, userProvider: { user: () => ({}) } as UserProvider },
+  );
+  readonly collapsed = signal(false);
+  readonly brand: ThemeBrand = { name: 'Staff', logo: 'images/logo.svg', icon: 'images/icon.svg' };
+}
+
+describe('brand of the application inside the side bar', () => {
+  it('follows the collapsed state of the bar by itself: the icon when collapsed', async () => {
+    TestBed.configureTestingModule({ providers: [provideLowcodeComponents()] });
+    const fixture = TestBed.createComponent(BrandInSidebar);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const src = (): string | null | undefined => (fixture.nativeElement as HTMLElement).querySelector('lc-app-brand img')?.getAttribute('src');
+    expect(src()).toBe('images/logo.svg');
+    fixture.componentInstance.collapsed.set(true);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(src()).toBe('images/icon.svg');
+  });
+});
 
 describe('brand of the application (lc-app-brand)', () => {
   function render(brand: ThemeBrand, tone: 'light' | 'dark' = 'light', compact = false) {

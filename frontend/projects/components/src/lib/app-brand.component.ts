@@ -1,11 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, input, linkedSignal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal } from '@angular/core';
 import type { ThemeBrand } from 'schema';
 import { safeImageSrc } from './display.component';
+import { SidebarComponent } from './sidebar.component';
 
 /**
  * Brand of the application at the top left of the side bar, from its theme (`brand`): the logo (its dark variant on a dark
  * side bar, the icon when the bar is collapsed) and, with `showName` or without a logo, the name. Images follow the rules
- * of the image component (relative, https:// or data:image/…); one that does not load leaves the name.
+ * of the image component (relative, https:// or data:image/…); one that does not load leaves the name. Inside `lc-sidebar` it
+ * follows the collapsed state of the bar by itself.
  */
 @Component({
   selector: 'lc-app-brand',
@@ -21,11 +23,11 @@ import { safeImageSrc } from './display.component';
   `,
   template: `
     @let b = brand();
-    <span class="brand" [class.compact]="compact()" [attr.role]="showsName() ? null : 'img'" [attr.aria-label]="showsName() ? null : b.name || null">
+    <span class="brand" [class.compact]="collapsed()" [attr.role]="showsName() ? null : 'img'" [attr.aria-label]="showsName() ? null : b.name || null">
       @if (src(); as image) {
         <img [src]="image" alt="" [style.height.px]="b.height ?? 32" (error)="failed.set(true)" />
       }
-      @if (!src() && compact() && b.name) {
+      @if (!src() && collapsed() && b.name) {
         <span class="initial" aria-hidden="true">{{ b.name.charAt(0).toUpperCase() }}</span>
       }
       @if (showsName()) {
@@ -38,16 +40,20 @@ export class AppBrandComponent {
   readonly brand = input.required<ThemeBrand>();
   /** Light or dark side bar: on a dark one the logo for dark backgrounds. */
   readonly tone = input<'light' | 'dark'>('light');
-  /** Collapsed side bar: the icon, without the name. */
-  readonly compact = input(false);
+  /** Collapsed side bar: the icon, without the name. Without it, the state of the `lc-sidebar` that contains it. */
+  readonly compact = input<boolean | undefined>(undefined);
+
+  private readonly sidebar = inject(SidebarComponent, { optional: true });
+  /** The bar is collapsed: as said by `compact`, otherwise by the side bar around the brand. */
+  protected readonly collapsed = computed(() => this.compact() ?? this.sidebar?.collapsed() ?? false);
 
   /** The image did not load: the name is shown instead. */
-  protected readonly failed = linkedSignal({ source: () => [this.brand(), this.tone(), this.compact()], computation: () => false });
+  protected readonly failed = linkedSignal({ source: () => [this.brand(), this.tone(), this.collapsed()], computation: () => false });
 
   protected readonly src = computed(() => {
     const b = this.brand();
     const logo = this.tone() === 'dark' ? (b.logoOnDark ?? b.logo) : b.logo;
-    const raw = this.compact() ? (b.icon ?? logo) : logo;
+    const raw = this.collapsed() ? (b.icon ?? logo) : logo;
     return this.failed() || !raw ? null : safeImageSrc(raw);
   });
 
@@ -55,7 +61,7 @@ export class AppBrandComponent {
   protected readonly showsName = computed(() => {
     const b = this.brand();
     if (!b.name) return false;
-    if (!this.src()) return !this.compact();
-    return !!b.showName && !this.compact();
+    if (!this.src()) return !this.collapsed();
+    return !!b.showName && !this.collapsed();
   });
 }
