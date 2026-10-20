@@ -109,6 +109,32 @@ describe('Showcase: validation', () => {
     expect(TestBed.inject(DemoDiagnostics).events()).toEqual([]);
   });
 
+  it('standalone fields of a group: the confirmation sees the e-mail, the error of the service goes to the field', { timeout: 20000 }, async () => {
+    const s = await openShowcase('/showcase/showcase-validation');
+    const box = (id: string): HTMLInputElement => s.el.querySelector(`[data-node-id="${id}"] input`) as HTMLInputElement;
+    const note = (id: string): string => plainText(s.el.querySelector(`[data-node-id="${id}"] .ant-form-item-explain`)?.textContent);
+    const enter = (id: string, value: string): void => {
+      box(id).value = value;
+      box(id).dispatchEvent(new Event('change'));
+    };
+    const subscribe = (): void => (s.el.querySelector('[data-node-id="newsletter-subscribe"] button') as HTMLButtonElement).click();
+    enter('newsletter-email', 'Ada@Example.org ');
+    enter('newsletter-confirm', 'ada@example.net');
+    await s.settle();
+    expect(box('newsletter-email').value).toBe('ada@example.org');
+    expect(note('newsletter-confirm')).toBe('The two addresses are different');
+    enter('newsletter-confirm', 'ada@example.org');
+    subscribe();
+    await s.until(() => note('newsletter-email') === 'E-mail addresses of this domain are not accepted', 'error of the service on the standalone field');
+    enter('newsletter-email', 'ada@example.com');
+    enter('newsletter-confirm', 'ada@example.com');
+    await s.settle();
+    expect(note('newsletter-email')).toBe('');
+    subscribe();
+    await s.until(() => toast().includes('Subscribed to the newsletter'), 'subscribed');
+    expect(TestBed.inject(DemoDiagnostics).events()).toEqual([]);
+  });
+
   it('isValid() in an expression', async () => {
     const s = await openShowcase('/showcase/showcase-validation');
     const result = (): string => plainText(s.el.querySelector('[data-node-id="iban-result"]')?.textContent);

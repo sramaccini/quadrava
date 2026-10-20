@@ -159,6 +159,12 @@ export class DemoBackend {
       this.staffNumbers.add(number);
       return { staffNumber: number };
     }
+    // Newsletter of the validation showcase, from standalone fields: the same blocked domain as above.
+    if (path === '/api/showcase/subscribe' && req.method === 'POST') {
+      const email = String(((req.body ?? {}) as Record<string, unknown>)['email'] ?? '').toLowerCase();
+      if (email.endsWith('@example.org')) throw Object.assign(new Error('422'), { status: 422, fieldErrors: [{ path: '/email', code: 'emailDomainBlocked' }] });
+      return { subscribed: true };
+    }
     // A report returns its protocol number (the following steps read it with `as`).
     if (path === '/api/showcase/flag' && req.method === 'POST') return { protocol: `PR-${String(++this.reports).padStart(4, '0')}`, receipt: true };
     // Always in conflict: to try onError with error.status.

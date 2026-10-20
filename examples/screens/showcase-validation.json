@@ -23,6 +23,14 @@
       "method": "POST",
       "url": "/api/showcase/staff",
       "body": "{{form}}"
+    },
+    "subscribe": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/showcase/subscribe",
+      "body": {
+        "email": "{{ state.newsletter.email }}"
+      }
     }
   },
   "components": [
@@ -522,6 +530,81 @@
                   "toast": "{{ t('showcase_validation.staff_saved', 'Staff member saved') }}"
                 }
               ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "section-group",
+      "type": "section",
+      "title": "{{ t('showcase_validation.group_title', 'Standalone fields in a validation group') }}",
+      "components": [
+        {
+          "id": "group-intro",
+          "type": "text",
+          "text": "{{ t('showcase_validation.group_intro', 'Fields outside a form see the other fields of their validation group: the confirmation compares itself with the e-mail. The service rejects addresses at example.org, and its error goes to the field with that name.') }}"
+        },
+        {
+          "id": "newsletter-fields",
+          "type": "box",
+          "components": [
+            {
+              "id": "newsletter-email",
+              "type": "input",
+              "bind": "state.newsletter.email",
+              "group": "newsletter",
+              "field": {
+                "name": "email",
+                "type": "text",
+                "label": "{{ t('showcase_validation.newsletter_email', 'E-mail for the newsletter') }}",
+                "required": true,
+                "format": "email",
+                "transform": [
+                  "trim",
+                  "lowercase"
+                ]
+              },
+              "grow": 1
+            },
+            {
+              "id": "newsletter-confirm",
+              "type": "input",
+              "bind": "state.newsletter.emailConfirm",
+              "group": "newsletter",
+              "field": {
+                "name": "emailConfirm",
+                "type": "text",
+                "label": "{{ t('showcase_validation.newsletter_confirm', 'Confirm the e-mail') }}",
+                "required": true,
+                "transform": [
+                  "trim",
+                  "lowercase"
+                ],
+                "validation": [
+                  {
+                    "sameAs": "email",
+                    "message": "{{ t('showcase_validation.newsletter_differ', 'The two addresses are different') }}"
+                  }
+                ]
+              },
+              "grow": 1
+            }
+          ]
+        },
+        {
+          "id": "newsletter-subscribe",
+          "type": "button",
+          "label": "{{ t('showcase_validation.subscribe', 'Subscribe') }}",
+          "onClick": [
+            {
+              "validate": "newsletter"
+            },
+            {
+              "call": "subscribe"
+            },
+            {
+              "toast": "{{ t('showcase_validation.subscribed', 'Subscribed to the newsletter') }}"
             }
           ]
         }
