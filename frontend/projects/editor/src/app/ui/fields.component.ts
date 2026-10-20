@@ -12,6 +12,8 @@ import { NzMenuModule } from 'ng-zorro-antd/menu';
 import { NzSelectModule } from 'ng-zorro-antd/select';
 import { getIn, isObject, moveBy, setIn, toPointer, type Json, type JsonObject, type Path } from '../model/doc-ops';
 import { DocumentState } from '../model/document-state';
+import { FileAccess } from '../model/file-access';
+import { embeddedImageKb, IMAGE_TYPES, imageFileToDataUrl } from '../model/image-file';
 import { listItem, objectFields, type ItemShape, type PropertyInfo, type Variant } from '../model/schema-info';
 import { defaultItem, summaryOf } from '../model/templates';
 import { applyCompletion, completionAt, expressionHints, insertHint, type Hint } from '../model/expression-help';
@@ -85,6 +87,9 @@ export class FieldsComponent {
   protected readonly completion = signal<{ key: string; from: number; items: Hint[]; active: number } | null>(null);
   /** Lists shown as JSON instead of element by element. */
   protected readonly raw = signal<Set<string>>(new Set());
+  /** Last image of the computer that could not be embedded, by field. */
+  protected readonly imageError = signal<{ key: string; message: string } | null>(null);
+  private readonly files = inject(FileAccess);
 
   protected readonly rows = computed<FieldRow[]>(() => {
     const doc = this.store.doc();
@@ -232,6 +237,25 @@ export class FieldsComponent {
     if (/^#[0-9a-f]{6}$/i.test(value)) return value.toLowerCase();
     const short = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(value);
     return short ? `#${short[1]}${short[1]}${short[2]}${short[2]}${short[3]}${short[3]}`.toLowerCase() : '#000000';
+  }
+
+  /** Size in kB of an image embedded in the field, or null if the field holds an address (or nothing). */
+  protected embeddedKb(row: FieldRow): number | null {
+    return embeddedImageKb(row.value);
+  }
+
+  /** An image of the computer, embedded in the field as data:image/…;base64 if its kind and size are allowed. */
+  protected async loadImage(row: FieldRow): Promise<void> {
+    const file = await this.files.chooseFile(IMAGE_TYPES.join(','));
+    if (!file) return;
+    const result = await imageFileToDataUrl(file, row.info.maxLength);
+    const key = this.key(row.path);
+    if (result.ok) {
+      this.imageError.set(null);
+      this.setText(row, result.url);
+    } else {
+      this.imageError.set({ key, message: result.reason === 'unsupported' ? this.i18n.t('ed.image.unsupported') : this.i18n.t('ed.image.tooBig', { max: result.maxKb }) });
+    }
   }
 
   protected asNumber(value: Json | undefined): number | null {

@@ -112,7 +112,30 @@
         </div>
       }
       @default {
-        @if (isLong(row)) {
+        @if (row.info.image && !asText(row.value).includes('{{')) {
+          <!-- An image: an address, or a file of the computer embedded as data:image/…;base64 (a thumbnail, not the text). -->
+          <div class="image-field">
+            @if (embeddedKb(row); as kb) {
+              <img class="thumb" [src]="asText(row.value)" alt="" />
+              <span class="embedded" [id]="row.id">{{ i18n.t('ed.image.embedded', { kb }) }}</span>
+            } @else {
+              <input nz-input nzSize="small" [id]="row.id" [value]="asText(row.value)" (input)="setText(row, $any($event.target).value)" [attr.placeholder]="i18n.t('ed.image.placeholder')" spellcheck="false" />
+            }
+            <div class="image-actions">
+              <button nz-button nzSize="small" type="button" (click)="loadImage(row)">
+                <span nz-icon nzType="upload"></span>{{ i18n.t(embeddedKb(row) ? 'ed.image.replace' : 'ed.image.load') }}
+              </button>
+              @if (asText(row.value)) {
+                <button nz-button nzSize="small" nzType="text" nzDanger type="button" (click)="setText(row, '')">{{ i18n.t('ed.image.remove') }}</button>
+              }
+            </div>
+            @if (imageError(); as error) {
+              @if (error.key === key(row.path)) {
+                <p class="image-error" role="alert">{{ error.message }}</p>
+              }
+            }
+          </div>
+        } @else if (isLong(row)) {
           <!-- Coloured syntax: the normal fixed text, the {{ }} expressions with their parts (see code-highlight). -->
           <div class="ed-code">
           <textarea

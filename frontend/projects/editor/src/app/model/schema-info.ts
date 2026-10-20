@@ -26,6 +26,10 @@ export interface PropertyInfo {
   schema?: Schema;
   /** The schema (screens, navigation…) the property comes from. */
   reader?: SchemaReader;
+  /** A text holding an image (`contentMediaType: image/*`): it can also be loaded from the computer, as data:image/…;base64. */
+  image?: boolean;
+  /** Maximum length of a text (for an image loaded from the computer: the largest file it can hold). */
+  maxLength?: number;
   /** Fixed value of a boolean (`const`, for example `print: true`): it is also the initial value. */
   fixed?: boolean;
 }
@@ -77,7 +81,15 @@ export class SchemaReader {
     if (typeof s['const'] === 'boolean') return { kind: 'boolean', description, fixed: s['const'] as boolean };
     if (ref === 'expression') return { kind: 'expression', description };
     if (ref === 'color') return { kind: 'color', description, pattern: typeof s['pattern'] === 'string' ? (s['pattern'] as string) : undefined };
-    if (s['type'] === 'string') return { kind: 'text', description, pattern: typeof s['pattern'] === 'string' ? (s['pattern'] as string) : undefined };
+    if (s['type'] === 'string') {
+      const image = typeof s['contentMediaType'] === 'string' && (s['contentMediaType'] as string).startsWith('image/');
+      return {
+        kind: 'text',
+        description,
+        pattern: typeof s['pattern'] === 'string' ? (s['pattern'] as string) : undefined,
+        ...(image ? { image: true, maxLength: typeof s['maxLength'] === 'number' ? (s['maxLength'] as number) : undefined } : {}),
+      };
+    }
     if (s['type'] === 'boolean') return { kind: 'boolean', description };
     if (s['type'] === 'integer' || s['type'] === 'number') {
       return { kind: 'number', description, minimum: s['minimum'] as number | undefined, maximum: s['maximum'] as number | undefined };
