@@ -19,6 +19,7 @@ export * from './lib/markdown.component';
 export * from './lib/code-tokens';
 export * from './lib/code-view.component';
 export * from './lib/quadrava-wordmark.component';
+export * from './lib/app-brand.component';
 export * from './lib/rich-text-editor.component';
 export * from './lib/rich-text-dom';
 export * from './lib/timeline.component';
