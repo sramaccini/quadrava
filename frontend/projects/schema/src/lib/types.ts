@@ -663,11 +663,27 @@ export interface ThemeTokens {
   layout?: ThemeLayout;
 }
 
+/** Logo and name of the application at the top left (the Quadrava logo if absent). Images: relative, https:// or data:image/…. */
+export interface ThemeBrand {
+  name?: string;
+  logo?: string;
+  /** For a dark side bar. */
+  logoOnDark?: string;
+  /** Square, for the collapsed side bar. */
+  icon?: string;
+  /** The name next to the logo. */
+  showName?: boolean;
+  /** Height of the logo in px (32 if absent). */
+  height?: number;
+}
+
 export interface ThemeDefinition {
   schemaVersion: string;
   theme: string;
   label?: string;
   mode?: 'light' | 'dark';
+  /** Logo and name of the application at the top left. */
+  brand?: ThemeBrand;
   tokens: ThemeTokens;
 }
 

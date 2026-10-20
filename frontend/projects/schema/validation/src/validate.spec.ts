@@ -108,6 +108,16 @@ describe('validateTheme', () => {
     expect(validateTheme(base).valid).toBe(true);
   });
 
+  it('a brand of the application: relative, https or data:image addresses only', () => {
+    const svg = 'data:image/svg+xml;base64,PHN2Zy8+';
+    expect(validateTheme({ ...base, brand: { name: 'Staff', logo: 'images/logo.svg', logoOnDark: 'https://cdn.example/logo.png', icon: svg, showName: true, height: 40 } }).valid).toBe(true);
+    for (const logo of ['javascript:alert(1)', 'http://plain.example/logo.png', 'data:text/html;base64,PGI+', '//cdn.example/x.png', 'url(x)']) {
+      expect(validateTheme({ ...base, brand: { logo } }).valid, logo).toBe(false);
+    }
+    expect(validateTheme({ ...base, brand: { height: 100 } }).valid).toBe(false);
+    expect(validateTheme({ ...base, brand: { colour: 'red' } }).valid).toBe(false);
+  });
+
   it('rejects colours that could inject CSS', () => {
     const bad = structuredClone(base);
     bad.tokens.colors.primary = 'red; background: url(http://evil)';

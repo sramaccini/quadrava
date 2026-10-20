@@ -29,6 +29,47 @@
       ],
       "description": "Helps the runtime set color-scheme."
     },
+    "brand": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Logo and name of the application at the top left of the side bar. If absent, the Quadrava logo. Images are relative addresses (images/logo.svg, served next to the application), https:// or data:image/…;base64 (svg, png, jpeg, gif, webp, up to about 75 kB): any other address is not shown.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60,
+          "description": "Name of the application: the accessible name of the logo, and the text next to it with showName or when there is no logo."
+        },
+        "logo": {
+          "type": "string",
+          "maxLength": 100000,
+          "pattern": "^(https://[^\\s]+|data:image/(png|jpeg|gif|webp|svg\\+xml);base64,[A-Za-z0-9+/=]+|/?[A-Za-z0-9_-][A-Za-z0-9_\\-./%]*)$",
+          "description": "Image of the logo in the expanded side bar (it usually holds the name too)."
+        },
+        "logoOnDark": {
+          "type": "string",
+          "maxLength": 100000,
+          "pattern": "^(https://[^\\s]+|data:image/(png|jpeg|gif|webp|svg\\+xml);base64,[A-Za-z0-9+/=]+|/?[A-Za-z0-9_-][A-Za-z0-9_\\-./%]*)$",
+          "description": "Variant of the logo for a dark side bar (sider tone dark); the logo if absent."
+        },
+        "icon": {
+          "type": "string",
+          "maxLength": 100000,
+          "pattern": "^(https://[^\\s]+|data:image/(png|jpeg|gif|webp|svg\\+xml);base64,[A-Za-z0-9+/=]+|/?[A-Za-z0-9_-][A-Za-z0-9_\\-./%]*)$",
+          "description": "Square image for the collapsed side bar; without it the collapsed bar shows the logo, reduced."
+        },
+        "showName": {
+          "type": "boolean",
+          "description": "Shows the name next to the logo (for a logo that is only a symbol)."
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 16,
+          "maximum": 64,
+          "description": "Height of the logo in px (32 if absent)."
+        }
+      }
+    },
     "tokens": {
       "$ref": "#/$defs/tokens"
     }
