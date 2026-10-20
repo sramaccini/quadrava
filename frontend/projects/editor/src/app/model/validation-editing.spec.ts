@@ -65,6 +65,19 @@ describe('editing validation', () => {
     expect(hints(['components', 0, 'validation', 0, 'rule'])).toEqual(expect.arrayContaining(['form.vat', 'form.country']));
   });
 
+  it('the rules of a standalone field see the fields of its validation group in form', () => {
+    const doc: Json = {
+      components: [
+        { type: 'input', group: 'contact', field: { name: 'email', type: 'text' } },
+        { type: 'box', components: [{ type: 'input', group: 'contact', field: { name: 'confirm', type: 'text', validation: [{ rule: '{{ true }}' }] } }] },
+        { type: 'input', field: { name: 'other', type: 'text' } },
+      ],
+    };
+    const labels = expressionHints(doc, ['components', 1, 'components', 0, 'field', 'validation', 0, 'rule']).map((h) => h.label);
+    expect(labels).toEqual(expect.arrayContaining(['value', 'form.email', 'form.confirm']));
+    expect(labels).not.toContain('form.other');
+  });
+
   describe('issues', () => {
     let store: EditorStore;
 

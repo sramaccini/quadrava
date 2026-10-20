@@ -51,6 +51,8 @@ export function expressionHints(doc: Json, path: Path): Hint[] {
       fieldsOf(value['columns'], 'field').forEach((f) => add(`row.${f}`));
     }
     if (value['type'] === 'form' && (next === 'actions' || next === 'fields' || next === 'validation')) fieldsOf(value['fields'], 'name').forEach((f) => add(`form.${f}`));
+    // The rules of a standalone field see the fields of its validation group in `form`.
+    if (value['type'] === 'input' && next === 'field') groupFields(doc, value['group']).forEach((f) => add(`form.${f}`));
     if (next === 'dialog' && isObject(value['dialog'])) fieldsOf(value['dialog']['fields'], 'name').forEach((f) => add(`form.${f}`));
     // In the rules of a field (and of a form, which check the fields they name): the value being checked.
     if (next === 'validate' || next === 'validation' || next === 'messages') add('value');
@@ -72,6 +74,22 @@ export function expressionHints(doc: Json, path: Path): Hint[] {
 function rank(name: string): number {
   const root = name.split('.')[0];
   return ['row', 'form', 'value', 'search', 'lookupKey', 'request'].includes(root) ? 0 : root === 'state' || root === 'params' ? 1 : 2;
+}
+
+/** Names of the standalone fields of a validation group (`default` without one), anywhere in the screen. */
+function groupFields(doc: Json, group: Json | undefined): string[] {
+  const wanted = typeof group === 'string' ? group : 'default';
+  const names: string[] = [];
+  const walk = (value: Json): void => {
+    if (Array.isArray(value)) value.forEach(walk);
+    else if (isObject(value)) {
+      const field = value['field'];
+      if (value['type'] === 'input' && (typeof value['group'] === 'string' ? value['group'] : 'default') === wanted && isObject(field) && typeof field['name'] === 'string') names.push(field['name']);
+      Object.values(value).forEach(walk);
+    }
+  };
+  walk(doc);
+  return names;
 }
 
 function fieldsOf(list: Json | undefined, key: string): string[] {
