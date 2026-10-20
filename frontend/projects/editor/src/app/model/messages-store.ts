@@ -1,6 +1,6 @@
 import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import { I18n } from 'core';
-import { validateMessages } from 'schema';
+import { validateMessages } from 'schema/validation';
 import { isObject, toPointer, type Json, type Path } from './doc-ops';
 import { DOCUMENT_ID, DocumentState, readDraft, writeDraft, type EditorIssue } from './document-state';
 import { KnownTranslations } from './shared-state';

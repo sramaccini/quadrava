@@ -10,7 +10,6 @@ import { NzMenuModule } from 'ng-zorro-antd/menu';
 import { NzLayoutModule } from 'ng-zorro-antd/layout';
 import { NzSelectModule } from 'ng-zorro-antd/select';
 import { DefinitionSource, I18n, ThemeService, loadCatalogs, type VisibleLeaf } from 'core';
-import { validateTheme } from 'schema';
 import { NavigationService } from './navigation.service';
 import { APPLICATION_SETTINGS, type ApplicationSettings } from './runtime-config';
 import { ShellSession } from './shell-session';
@@ -126,7 +125,9 @@ export class App {
       const name = this.themeName();
       this.definitions
         .theme(name)
-        .then((doc: unknown) => {
+        .then(async (doc: unknown) => {
+          // The precompiled validators are large: loaded when first needed, outside the initial bundle.
+          const { validateTheme } = await import('schema/validation');
           const result = validateTheme(doc);
           if (result.valid) this.themeService.apply(result.value);
         })

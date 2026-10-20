@@ -1,6 +1,6 @@
 import { ExpressionEngine } from 'expressions';
 import { I18n, checkScreenExpressions } from 'core';
-import { validateScreen } from 'schema';
+import { validateScreen } from 'schema/validation';
 import fatturaNuova from '../../public/examples/screens/invoice-new.json';
 import fattureElenco from '../../public/examples/screens/invoice-list.json';
 import ordineDettaglio from '../../public/examples/screens/order-detail.json';

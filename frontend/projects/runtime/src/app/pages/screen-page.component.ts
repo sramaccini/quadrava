@@ -5,7 +5,7 @@ import { ExpressionEngine } from 'expressions';
 import { DefinitionSource, I18n, RuntimeDiagnostics, ScreenComponent, checkScreenExpressions, loadDataSources } from 'core';
 import { NavigationService } from '../navigation.service';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
-import { validateScreen, type ScreenDefinition } from 'schema';
+import { type ScreenDefinition } from 'schema';
 
 type Loaded = { ok: true; definition: ScreenDefinition } | { ok: false; issues: string[] } | { ok: false; failed: 'lc.screenNotFound' | 'lc.screenLoadFailed' };
 
@@ -77,6 +77,8 @@ export class ScreenPage {
         const status = (e as { status?: unknown } | null)?.status;
         return { ok: false, failed: status === 404 || status === 403 ? 'lc.screenNotFound' : 'lc.screenLoadFailed' };
       }
+      // The precompiled validators are large: loaded when first needed, outside the initial bundle.
+      const { validateScreen } = await import('schema/validation');
       const result = validateScreen(document);
       if (!result.valid) return { ok: false, issues: result.issues.map((i) => `${i.path} ${i.message}`) };
       const problems = checkScreenExpressions(result.value, new ExpressionEngine({ can: () => false }));

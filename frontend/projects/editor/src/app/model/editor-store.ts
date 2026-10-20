@@ -1,7 +1,8 @@
 import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import { I18n, checkScreenExpressions, checkScreenPatterns } from 'core';
 import { ExpressionEngine } from 'expressions';
-import { splitReference, validateScreen, type ScreenDefinition } from 'schema';
+import { splitReference, type ScreenDefinition } from 'schema';
+import { validateScreen } from 'schema/validation';
 import { fromPointer, getIn, insertAt, isObject, moveBy, moveTo, removeAt, samePath, setIn, startsWith, toPointer, type Json, type JsonObject, type Path } from './doc-ops';
 import { DataSourceList, SOURCE_NAME } from './datasources-store';
 import { DOCUMENT_ID, DocumentState, readDraft, writeDraft, type EditorIssue } from './document-state';

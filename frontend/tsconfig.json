@@ -16,6 +16,7 @@
       "core": ["./dist/core"],
       "expressions": ["./dist/expressions"],
       "schema": ["./dist/schema"],
+      "schema/validation": ["./dist/schema/validation"],
       "services": ["./dist/services"]
     },
     "target": "ES2022",

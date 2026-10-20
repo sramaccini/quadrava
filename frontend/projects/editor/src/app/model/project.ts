@@ -1,5 +1,6 @@
 import { Injectable, computed, signal } from '@angular/core';
-import { validateDataSources, validateProject, type DataSourcesDefinition, type ProjectDefinition } from 'schema';
+import { type DataSourcesDefinition, type ProjectDefinition } from 'schema';
+import { validateDataSources, validateProject } from 'schema/validation';
 import { isObject, type Json } from './doc-ops';
 import type { ProjectFolder } from './project-folder';
 

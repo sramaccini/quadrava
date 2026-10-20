@@ -1,6 +1,6 @@
 import { inlineDataSource, isDataSourceReference, referencedDocuments, resolveDataSources } from './data-sources';
 import type { DataSourcesDefinition, ScreenDefinition } from './types';
-import { validateDataSources, validateProject, validateScreen } from './validate';
+import { validateDataSources, validateProject, validateScreen } from 'schema/validation';
 
 const orders: DataSourcesDefinition = {
   schemaVersion: '1.0',

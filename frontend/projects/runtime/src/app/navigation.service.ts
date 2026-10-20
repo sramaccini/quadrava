@@ -3,7 +3,7 @@ import { DestroyRef, Injectable, inject, signal } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { ExpressionEngine } from 'expressions';
 import { Authorization, DataClient, DefinitionSource, I18n, NavigationRuntime, RuntimeDiagnostics, ScreenNavigator, UserProvider, checkNavigation, type VisibleLeaf } from 'core';
-import { validateNavigation, type NavigationDefinition } from 'schema';
+import { type NavigationDefinition } from 'schema';
 
 export interface RouteLocation {
   area: string | null;
@@ -47,7 +47,9 @@ export class NavigationService {
   /** Loads the navigation document, validates it (schema and consistency) and prepares the menu. */
   private async load(): Promise<void> {
     try {
-      const result = validateNavigation(await this.definitions.navigation());
+      // The precompiled validators are large: loaded when first needed, outside the initial bundle.
+      const [doc, { validateNavigation }] = await Promise.all([this.definitions.navigation(), import('schema/validation')]);
+      const result = validateNavigation(doc);
       if (!result.valid) {
         this.problems.set(result.issues.map((i) => `${i.path} ${i.message}`));
         return;

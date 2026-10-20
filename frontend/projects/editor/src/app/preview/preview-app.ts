@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterEveryRender, computed, effect, inject, linkedSignal, signal, untracked, viewChild } from '@angular/core';
 import { QuadravaWordmarkComponent, SidebarComponent, type NavigateEvent } from 'components';
 import { I18n, NavigationRuntime, Notifier, ScreenComponent, ThemeService, loadMessages } from 'core';
-import { validateTheme, type ThemeDefinition } from 'schema';
+import { type ThemeDefinition } from 'schema';
+import { validateTheme } from 'schema/validation';
 import { PreviewChannel, PreviewSession } from './preview-ports';
 import { NODE_DRAG_TYPE, PALETTE_DRAG_TYPE, type DropZone, type ResizeProperty } from './protocol';
 import { resizeValue } from './resize';

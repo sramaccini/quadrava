@@ -1,7 +1,8 @@
 import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import { checkScreenExpressions } from 'core';
 import { ExpressionEngine } from 'expressions';
-import { validateDataSources, type DataSourcesDefinition } from 'schema';
+import { type DataSourcesDefinition } from 'schema';
+import { validateDataSources } from 'schema/validation';
 import { getIn, isObject, setIn, type Json, type JsonObject, type Path } from './doc-ops';
 import { DOCUMENT_ID, DocumentState, readDraft, writeDraft, type EditorIssue } from './document-state';
 

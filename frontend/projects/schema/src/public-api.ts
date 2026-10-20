@@ -3,7 +3,7 @@
  */
 
 export * from './lib/types';
-export * from './lib/validate';
+// The validators are in the secondary entry point schema/validation (loaded lazily by the runtime).
 export * from './lib/data-sources';
 export { SCREEN_SCHEMA } from './lib/screen.schema';
 export { THEME_SCHEMA } from './lib/theme.schema';

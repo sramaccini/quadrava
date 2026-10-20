@@ -248,7 +248,11 @@
         "test": {
           "builder": "@angular/build:unit-test",
           "options": {
-            "tsConfig": "projects/schema/tsconfig.spec.json"
+            "tsConfig": "projects/schema/tsconfig.spec.json",
+            "include": [
+              "**/*.spec.ts",
+              "../validation/src/**/*.spec.ts"
+            ]
           }
         }
       }

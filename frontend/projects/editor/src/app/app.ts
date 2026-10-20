@@ -10,7 +10,7 @@ import { NzSelectModule } from 'ng-zorro-antd/select';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import { QuadravaWordmarkComponent } from 'components';
-import { validateTheme } from 'schema';
+import { validateTheme } from 'schema/validation';
 import type { Json } from './model/doc-ops';
 import { EditorStore } from './model/editor-store';
 import { runScreenShortcut } from './model/screen-shortcuts';

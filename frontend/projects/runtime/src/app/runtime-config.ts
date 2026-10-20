@@ -1,5 +1,4 @@
 import { InjectionToken } from '@angular/core';
-import { validateProject } from 'schema';
 import type { RegistryDefinitionsConfig } from 'services';
 
 /**
@@ -48,7 +47,9 @@ export async function loadApplicationSettings(config: RuntimeConfig, url = 'exam
   try {
     const response = await fetch(url);
     if (!response.ok) return DEFAULT_APPLICATION_SETTINGS;
-    const result = validateProject(await response.json());
+    // The precompiled validators are large: loaded when first needed, outside the initial bundle.
+    const [doc, { validateProject }] = await Promise.all([response.json(), import('schema/validation')]);
+    const result = validateProject(doc);
     if (!result.valid) {
       console.warn('[project] examples/project.json is not valid: using the default languages');
       return DEFAULT_APPLICATION_SETTINGS;

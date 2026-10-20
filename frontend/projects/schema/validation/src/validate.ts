@@ -1,5 +1,5 @@
 import { datasourcesValidator, messagesValidator, navigationValidator, projectValidator, screenValidator, themeValidator } from './validators.generated';
-import type { DataSourcesDefinition, MessagesDefinition, NavigationDefinition, ProjectDefinition, ScreenDefinition, ThemeDefinition } from './types';
+import type { DataSourcesDefinition, MessagesDefinition, NavigationDefinition, ProjectDefinition, ScreenDefinition, ThemeDefinition } from 'schema';
 
 export interface ValidationIssue {
   /** Position in the document, for example `/components/0/columns`. */

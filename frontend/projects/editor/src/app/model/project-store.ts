@@ -1,6 +1,7 @@
 import { Injectable, effect, inject } from '@angular/core';
 import { I18n } from 'core';
-import { PROJECT_SCHEMA, validateProject } from 'schema';
+import { PROJECT_SCHEMA } from 'schema';
+import { validateProject } from 'schema/validation';
 import { isObject, type Json, type Path } from './doc-ops';
 import { DOCUMENT_ID, DocumentState, readDraft, writeDraft, type EditorIssue } from './document-state';
 import { Project } from './project';

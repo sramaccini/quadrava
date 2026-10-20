@@ -1,4 +1,4 @@
-import { validateScreen } from 'schema';
+import { validateScreen } from 'schema/validation';
 import { paletteGroups } from '../ui/palette.component';
 import { EDITOR_MESSAGES } from '../messages';
 import type { Json, JsonObject } from './doc-ops';

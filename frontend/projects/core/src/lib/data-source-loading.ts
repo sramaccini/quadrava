@@ -1,4 +1,4 @@
-import { referencedDocuments, resolveDataSources, validateDataSources, type DataSourcesDefinition, type ResolutionIssue, type ScreenDefinition } from 'schema';
+import { referencedDocuments, resolveDataSources, type DataSourcesDefinition, type ResolutionIssue, type ScreenDefinition } from 'schema';
 import type { DefinitionSource } from './ports';
 
 /**
@@ -14,7 +14,9 @@ export async function loadDataSources(screen: ScreenDefinition, source: Definiti
   await Promise.all(
     ids.map(async (id) => {
       try {
-        const result = validateDataSources(await source.dataSources(id));
+        // The precompiled validators are large: loaded when first needed, outside the initial bundle.
+        const [doc, { validateDataSources }] = await Promise.all([source.dataSources(id), import('schema/validation')]);
+        const result = validateDataSources(doc);
         if (result.valid) documents[id] = result.value;
         else issues.push({ path: `datasources/${id}`, message: result.issues.map((i) => `${i.path} ${i.message}`).join('; ') });
       } catch (e) {

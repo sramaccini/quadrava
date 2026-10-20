@@ -1,5 +1,6 @@
 import { Injectable, computed, effect, inject } from '@angular/core';
-import { THEME_SCHEMA, validateTheme, type ThemeDefinition } from 'schema';
+import { THEME_SCHEMA, type ThemeDefinition } from 'schema';
+import { validateTheme } from 'schema/validation';
 import { isObject, type Json, type JsonObject, type Path } from './doc-ops';
 import { DOCUMENT_ID, DocumentState, readDraft, writeDraft, type EditorIssue } from './document-state';
 import { SchemaReader, type Schema } from './schema-info';

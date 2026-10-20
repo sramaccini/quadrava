@@ -1,5 +1,5 @@
 // Generates the TS files of the schemas (projects/schema/src/lib/*.schema.ts) from the JSON files, which stay the only
-// source, and the precompiled validators (projects/schema/src/lib/validators.generated.ts, Ajv "standalone"): nothing is
+// source, and the precompiled validators (projects/schema/validation/src/validators.generated.ts, Ajv "standalone", in the secondary entry point schema/validation): nothing is
 // compiled in the browser, so no `new Function` (the Content-Security-Policy does not need 'unsafe-eval') and no Ajv
 // compiler in the bundle.
 // Usage: node tools/sync-schema.mjs [--check]   (with --check it writes nothing: it fails if the files are not aligned)
@@ -66,7 +66,7 @@ for (const { name, constant } of schemas) {
     '/* eslint-disable */\n// @ts-nocheck\n' +
     code +
     '\n';
-  const target = join(lib, 'validators.generated.ts');
+  const target = join(here, '../projects/schema/validation/src/validators.generated.ts');
   if (check) {
     const current = existsSync(target) ? readFileSync(target, 'utf8') : '';
     if (current !== content) {

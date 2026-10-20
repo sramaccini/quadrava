@@ -1,4 +1,4 @@
-import { validateMessages, validateScreen } from './validate';
+import { validateMessages, validateScreen } from 'schema/validation';
 
 /** Schema of the components added to the catalogue after the first version (one block per component). */
 const screen = (components: unknown[], dataSources: Record<string, unknown> = {}) => ({ schemaVersion: '1.0', screen: 'prova', dataSources, components });

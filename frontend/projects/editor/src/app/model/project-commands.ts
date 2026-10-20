@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { Confirmation, I18n, Notifier } from 'core';
-import { validateProject } from 'schema';
+import { validateProject } from 'schema/validation';
 import { isObject, type Json, type JsonObject } from './doc-ops';
 import { emptyDataSources } from './datasources-store';
 import { FileAccess } from './file-access';
