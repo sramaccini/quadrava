@@ -51,6 +51,8 @@ export interface ValidationEnv {
   readonly remote?: RemoteChecks;
   /** Values of the text fields next to the checked one, for the validators that look for personal data. */
   readonly personal?: readonly string[];
+  /** Prefix of the remote checks of these fields, when the same names repeat (the rows of a repeater: `lines[0].`). */
+  readonly slot?: string;
 }
 
 /** Keys of the rules named by their own constraint (`{ "minLength": 3 }`); the others are `format`, `use` and `rule`. */
@@ -234,7 +236,7 @@ export function checkRules(rules: readonly CompiledRule[], field: Pick<FieldDefi
     const scope: Scope = { ...env.scope, value };
     if (!applies(rule, scope, env)) continue;
     if (!env.remote) return { error: misconfigured(field, rule, 'remote rules are checked only in forms and standalone fields', env), warning: null };
-    const result = env.remote.result(`${field.name}/${index}`, rule, value, scope);
+    const result = env.remote.result(`${env.slot ?? ''}${field.name}/${index}`, rule, value, scope);
     if (result.status === 'pending') return { error: null, warning, pending: true };
     if (result.status === 'failed') return { error: env.i18n.t('lc.validation.remoteFailed'), warning: null, remote: true };
     if (result.status !== 'invalid') continue;
