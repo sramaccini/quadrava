@@ -1,0 +1,232 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "medical-staff-list",
+  "title": "{{ t('staff_list.title', 'Medical staff') }}",
+  "description": "{{ t('staff_list.description', 'Doctors, nurses and the other healthcare staff of the hospital.') }}",
+  "requires": "hospital.staff.read",
+  "dataSources": {
+    "staff": {
+      "ref": "medical-staff/list",
+      "params": {
+        "q": "{{state.filters.q}}",
+        "staffType": "{{state.filters.staffType}}",
+        "department": "{{state.filters.department}}",
+        "active": "{{state.filters.active}}"
+      }
+    },
+    "staffForExport": {
+      "ref": "medical-staff/export"
+    },
+    "removeStaff": {
+      "ref": "medical-staff/remove"
+    }
+  },
+  "components": [
+    {
+      "id": "toolbar",
+      "type": "box",
+      "justify": "end",
+      "gap": "small",
+      "components": [
+        {
+          "id": "btn-export",
+          "type": "button",
+          "label": "{{ t('staff_list.export', 'Export CSV') }}",
+          "onClick": [
+            {
+              "export": {
+                "source": "staffForExport",
+                "fileName": "medical-staff",
+                "columns": [
+                  {
+                    "field": "registrationNumber",
+                    "label": "{{ t('staff.registration_number', 'Staff number') }}"
+                  },
+                  {
+                    "field": "lastName",
+                    "label": "{{ t('staff.last_name', 'Last name') }}"
+                  },
+                  {
+                    "field": "firstName",
+                    "label": "{{ t('staff.first_name', 'First name') }}"
+                  },
+                  {
+                    "field": "staffType",
+                    "label": "{{ t('staff.staff_type', 'Staff type') }}"
+                  },
+                  {
+                    "field": "department",
+                    "label": "{{ t('staff.department', 'Department') }}"
+                  },
+                  {
+                    "field": "email",
+                    "label": "{{ t('staff.email', 'Email') }}"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "btn-new",
+          "type": "button",
+          "label": "{{ t('staff_list.new', 'New staff member') }}",
+          "visibleIf": "{{can('hospital.staff.create')}}",
+          "onClick": [
+            {
+              "navigate": "medical-staff-new"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "staff-filters",
+      "type": "filterBar",
+      "bind": "state.filters",
+      "fields": [
+        {
+          "name": "q",
+          "type": "text",
+          "label": "{{ t('staff_list.search', 'Name or staff number') }}"
+        },
+        {
+          "name": "staffType",
+          "type": "select",
+          "label": "{{ t('staff.staff_type', 'Staff type') }}",
+          "options": [
+            "doctor",
+            "nurse",
+            "midwife",
+            "technician",
+            "therapist",
+            "pharmacist",
+            "assistant"
+          ],
+          "optionKey": "values.staff_type"
+        },
+        {
+          "name": "department",
+          "type": "select",
+          "label": "{{ t('staff.department', 'Department') }}",
+          "options": [
+            "emergency",
+            "cardiology",
+            "surgery",
+            "pediatrics",
+            "radiology",
+            "internal-medicine",
+            "obstetrics",
+            "pharmacy"
+          ],
+          "optionKey": "values.department"
+        },
+        {
+          "name": "active",
+          "type": "select",
+          "label": "{{ t('staff_list.status', 'Status') }}",
+          "options": [
+            "true",
+            "false"
+          ],
+          "optionKey": "values.active"
+        }
+      ]
+    },
+    {
+      "id": "staff-table",
+      "type": "table",
+      "source": "staff",
+      "refreshable": true,
+      "rowActionsInline": 1,
+      "columns": [
+        {
+          "field": "registrationNumber",
+          "label": "{{ t('staff.registration_number', 'Staff number') }}"
+        },
+        {
+          "field": "lastName",
+          "label": "{{ t('staff.last_name', 'Last name') }}"
+        },
+        {
+          "field": "firstName",
+          "label": "{{ t('staff.first_name', 'First name') }}"
+        },
+        {
+          "field": "staffType",
+          "label": "{{ t('staff.staff_type', 'Staff type') }}",
+          "valueKey": "values.staff_type"
+        },
+        {
+          "field": "department",
+          "label": "{{ t('staff.department', 'Department') }}",
+          "valueKey": "values.department"
+        },
+        {
+          "field": "hireDate",
+          "label": "{{ t('staff.hire_date', 'Hire date') }}",
+          "format": "date"
+        },
+        {
+          "field": "active",
+          "label": "{{ t('staff.active', 'In service') }}",
+          "format": "boolean"
+        }
+      ],
+      "rowActions": [
+        {
+          "id": "btn-open",
+          "label": "{{ t('common.open', 'Open') }}",
+          "onClick": [
+            {
+              "navigate": "medical-staff-detail",
+              "params": {
+                "id": "{{row.id}}"
+              }
+            }
+          ]
+        },
+        {
+          "id": "btn-edit",
+          "label": "{{ t('common.edit', 'Edit') }}",
+          "visibleIf": "{{can('hospital.staff.update')}}",
+          "onClick": [
+            {
+              "navigate": "medical-staff-edit",
+              "params": {
+                "id": "{{row.id}}"
+              }
+            }
+          ]
+        },
+        {
+          "id": "btn-delete",
+          "label": "{{ t('common.delete', 'Delete') }}",
+          "visibleIf": "{{can('hospital.staff.delete')}}",
+          "onClick": [
+            {
+              "confirm": "{{ t('staff.confirm_delete', 'Delete {first} {last} from the register?', {'first': row.firstName, 'last': row.lastName}) }}"
+            },
+            {
+              "call": "removeStaff",
+              "args": {
+                "id": "{{row.id}}"
+              },
+              "onError": [
+                {
+                  "toast": "{{ t('staff.delete_failed', 'Deletion failed') }}"
+                }
+              ]
+            },
+            {
+              "refresh": "staff"
+            },
+            {
+              "toast": "{{ t('staff.deleted', 'Staff member deleted') }}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

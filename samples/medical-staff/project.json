@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "1.0",
+  "project": "medical-staff",
+  "name": "Medical staff",
+  "description": "Register of the medical staff of a hospital: list with filters, detail, creation, editing and deletion.",
+  "languages": [
+    "en",
+    "it"
+  ],
+  "defaultLanguage": "en",
+  "themes": [
+    "light"
+  ]
+}

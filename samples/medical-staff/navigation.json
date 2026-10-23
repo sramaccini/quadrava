@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "1.0",
+  "navigation": "medical-staff",
+  "default": "staff-registry",
+  "areas": [
+    {
+      "id": "staff-registry",
+      "label": "{{ t('nav.staff_registry', 'Staff registry') }}",
+      "icon": "user",
+      "requires": "hospital.staff.read",
+      "items": [
+        {
+          "id": "staff-list",
+          "label": "{{ t('nav.medical_staff', 'Medical staff') }}",
+          "icon": "list",
+          "screen": "medical-staff-list"
+        },
+        {
+          "id": "staff-new",
+          "label": "{{ t('nav.new_staff_member', 'New staff member') }}",
+          "icon": "plus",
+          "screen": "medical-staff-new",
+          "requires": "hospital.staff.create"
+        }
+      ]
+    }
+  ]
+}

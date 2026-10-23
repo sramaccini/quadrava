@@ -1,0 +1,43 @@
+{
+  "schemaVersion": "1.0",
+  "datasources": "medical-staff",
+  "description": "Calls of the medical staff service: list with filters and pages, read, create, update, delete.",
+  "sources": {
+    "list": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/medical-staff",
+      "paging": "server",
+      "params": {
+        "page": "{{state.page}}"
+      }
+    },
+    "get": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/medical-staff/{{params.id}}"
+    },
+    "create": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/medical-staff",
+      "body": "{{form}}"
+    },
+    "update": {
+      "type": "rest",
+      "method": "PUT",
+      "url": "/api/medical-staff/{{params.id}}",
+      "body": "{{form}}"
+    },
+    "remove": {
+      "type": "rest",
+      "method": "DELETE",
+      "url": "/api/medical-staff/{{id}}"
+    },
+    "export": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/medical-staff"
+    }
+  }
+}

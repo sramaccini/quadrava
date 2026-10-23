@@ -1,0 +1,148 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "medical-staff-detail",
+  "title": "{{ t('staff_detail.title', 'Staff member') }}",
+  "requires": "hospital.staff.read",
+  "dataSources": {
+    "member": {
+      "ref": "medical-staff/get"
+    },
+    "removeStaff": {
+      "ref": "medical-staff/remove"
+    }
+  },
+  "components": [
+    {
+      "id": "member-detail",
+      "type": "detail",
+      "title": "{{ t('staff_detail.heading', 'Personal and contract data') }}",
+      "source": "member",
+      "fields": [
+        {
+          "field": "registrationNumber",
+          "label": "{{ t('staff.registration_number', 'Staff number') }}"
+        },
+        {
+          "field": "staffType",
+          "label": "{{ t('staff.staff_type', 'Staff type') }}",
+          "valueKey": "values.staff_type"
+        },
+        {
+          "field": "specialty",
+          "label": "{{ t('staff.specialty', 'Specialty') }}"
+        },
+        {
+          "field": "licenseNumber",
+          "label": "{{ t('staff.license_number', 'Professional register number') }}"
+        },
+        {
+          "field": "department",
+          "label": "{{ t('staff.department', 'Department') }}",
+          "valueKey": "values.department"
+        },
+        {
+          "field": "contract",
+          "label": "{{ t('staff.contract', 'Contract') }}",
+          "valueKey": "values.contract"
+        },
+        {
+          "field": "hireDate",
+          "label": "{{ t('staff.hire_date', 'Hire date') }}",
+          "format": "date"
+        },
+        {
+          "field": "contractEnd",
+          "label": "{{ t('staff.contract_end', 'Contract end') }}",
+          "format": "date"
+        },
+        {
+          "field": "shift",
+          "label": "{{ t('staff.shift', 'Shift') }}",
+          "valueKey": "values.shift"
+        },
+        {
+          "field": "weeklyHours",
+          "label": "{{ t('staff.weekly_hours', 'Weekly hours') }}",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "field": "email",
+          "label": "{{ t('staff.email', 'Email') }}"
+        },
+        {
+          "field": "phone",
+          "label": "{{ t('staff.phone', 'Phone') }}"
+        },
+        {
+          "field": "active",
+          "label": "{{ t('staff.active', 'In service') }}",
+          "format": "boolean"
+        },
+        {
+          "field": "notes",
+          "label": "{{ t('staff.notes', 'Notes') }}"
+        }
+      ]
+    },
+    {
+      "id": "detail-actions",
+      "type": "box",
+      "gap": "small",
+      "components": [
+        {
+          "id": "btn-back",
+          "type": "button",
+          "label": "{{ t('common.back', 'Back to the list') }}",
+          "onClick": [
+            {
+              "navigate": "medical-staff-list"
+            }
+          ]
+        },
+        {
+          "id": "btn-edit",
+          "type": "button",
+          "label": "{{ t('common.edit', 'Edit') }}",
+          "visibleIf": "{{can('hospital.staff.update')}}",
+          "onClick": [
+            {
+              "navigate": "medical-staff-edit",
+              "params": {
+                "id": "{{params.id}}"
+              }
+            }
+          ]
+        },
+        {
+          "id": "btn-delete",
+          "type": "button",
+          "label": "{{ t('common.delete', 'Delete') }}",
+          "visibleIf": "{{can('hospital.staff.delete')}}",
+          "onClick": [
+            {
+              "confirm": "{{ t('staff.confirm_delete_this', 'Delete this staff member from the register?') }}"
+            },
+            {
+              "call": "removeStaff",
+              "args": {
+                "id": "{{params.id}}"
+              },
+              "onError": [
+                {
+                  "toast": "{{ t('staff.delete_failed', 'Deletion failed') }}"
+                }
+              ]
+            },
+            {
+              "toast": "{{ t('staff.deleted', 'Staff member deleted') }}"
+            },
+            {
+              "navigate": "medical-staff-list"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

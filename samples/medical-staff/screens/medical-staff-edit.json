@@ -1,0 +1,216 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "medical-staff-edit",
+  "title": "{{ t('staff_edit.title', 'Edit staff member') }}",
+  "requires": "hospital.staff.update",
+  "dataSources": {
+    "member": {
+      "ref": "medical-staff/get"
+    },
+    "updateStaff": {
+      "ref": "medical-staff/update"
+    }
+  },
+  "components": [
+    {
+      "id": "staff-form",
+      "type": "form",
+      "source": "member",
+      "columns": 2,
+      "fields": [
+        {
+          "name": "registrationNumber",
+          "type": "text",
+          "label": "{{ t('staff.registration_number', 'Staff number') }}",
+          "required": true,
+          "tooltip": "{{ t('staff.registration_number_hint', 'Unique number assigned by the human resources office.') }}",
+          "readOnlyIf": "{{true}}"
+        },
+        {
+          "name": "staffType",
+          "type": "select",
+          "label": "{{ t('staff.staff_type', 'Staff type') }}",
+          "required": true,
+          "options": [
+            "doctor",
+            "nurse",
+            "midwife",
+            "technician",
+            "therapist",
+            "pharmacist",
+            "assistant"
+          ],
+          "optionKey": "values.staff_type"
+        },
+        {
+          "name": "firstName",
+          "type": "text",
+          "label": "{{ t('staff.first_name', 'First name') }}",
+          "required": true
+        },
+        {
+          "name": "lastName",
+          "type": "text",
+          "label": "{{ t('staff.last_name', 'Last name') }}",
+          "required": true
+        },
+        {
+          "name": "specialty",
+          "type": "text",
+          "label": "{{ t('staff.specialty', 'Specialty') }}",
+          "visibleIf": "{{form.staffType == 'doctor'}}",
+          "required": true
+        },
+        {
+          "name": "licenseNumber",
+          "type": "text",
+          "label": "{{ t('staff.license_number', 'Professional register number') }}",
+          "visibleIf": "{{form.staffType in ['doctor', 'nurse', 'midwife', 'pharmacist']}}",
+          "required": true
+        },
+        {
+          "name": "department",
+          "type": "select",
+          "label": "{{ t('staff.department', 'Department') }}",
+          "required": true,
+          "options": [
+            "emergency",
+            "cardiology",
+            "surgery",
+            "pediatrics",
+            "radiology",
+            "internal-medicine",
+            "obstetrics",
+            "pharmacy"
+          ],
+          "optionKey": "values.department"
+        },
+        {
+          "name": "contract",
+          "type": "radio",
+          "label": "{{ t('staff.contract', 'Contract') }}",
+          "required": true,
+          "options": [
+            "permanent",
+            "fixed-term",
+            "consultant"
+          ],
+          "optionKey": "values.contract"
+        },
+        {
+          "name": "hireDate",
+          "type": "date",
+          "label": "{{ t('staff.hire_date', 'Hire date') }}",
+          "required": true
+        },
+        {
+          "name": "contractEnd",
+          "type": "date",
+          "label": "{{ t('staff.contract_end', 'Contract end') }}",
+          "visibleIf": "{{form.contract == 'fixed-term'}}",
+          "required": true,
+          "validate": {
+            "rule": "{{value > form.hireDate}}",
+            "message": "{{ t('staff.contract_end_after_hire', 'The contract must end after the hire date') }}"
+          }
+        },
+        {
+          "name": "shift",
+          "type": "select",
+          "label": "{{ t('staff.shift', 'Shift') }}",
+          "options": [
+            "day",
+            "rotating",
+            "night",
+            "on-call"
+          ],
+          "optionKey": "values.shift"
+        },
+        {
+          "name": "weeklyHours",
+          "type": "number",
+          "label": "{{ t('staff.weekly_hours', 'Weekly hours') }}",
+          "validate": {
+            "rule": "{{value > 0 && value <= 48}}",
+            "message": "{{ t('staff.weekly_hours_range', 'Between 1 and 48 hours') }}"
+          }
+        },
+        {
+          "name": "email",
+          "type": "text",
+          "label": "{{ t('staff.email', 'Email') }}",
+          "required": true,
+          "validate": {
+            "rule": "{{value.contains('@')}}",
+            "message": "{{ t('staff.email_invalid', 'Not a valid email address') }}"
+          }
+        },
+        {
+          "name": "phone",
+          "type": "text",
+          "label": "{{ t('staff.phone', 'Phone') }}"
+        },
+        {
+          "name": "active",
+          "type": "switch",
+          "label": "{{ t('staff.active', 'In service') }}"
+        },
+        {
+          "name": "notes",
+          "type": "textarea",
+          "label": "{{ t('staff.notes', 'Notes') }}",
+          "rows": 3,
+          "span": 2
+        }
+      ],
+      "actions": [
+        {
+          "id": "btn-save",
+          "label": "{{ t('common.save', 'Save') }}",
+          "enabledIf": "{{can('hospital.staff.update')}}",
+          "onClick": [
+            {
+              "call": "updateStaff",
+              "onError": [
+                {
+                  "if": "{{error.status == 409}}",
+                  "then": [
+                    {
+                      "toast": "{{ t('staff.conflict', 'Someone else changed this staff member: reload and try again') }}"
+                    }
+                  ],
+                  "else": [
+                    {
+                      "toast": "{{ t('staff.save_failed', 'Saving failed') }}"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "toast": "{{ t('staff.saved', 'Changes saved') }}"
+            },
+            {
+              "navigate": "medical-staff-detail",
+              "params": {
+                "id": "{{params.id}}"
+              }
+            }
+          ]
+        },
+        {
+          "id": "btn-cancel",
+          "label": "{{ t('common.cancel', 'Cancel') }}",
+          "onClick": [
+            {
+              "navigate": "medical-staff-detail",
+              "params": {
+                "id": "{{params.id}}"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
