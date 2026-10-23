@@ -182,7 +182,7 @@ Studio (4201)                          runtime (4200)
   ▶ again ─────── reload ───────────► asks again
 ```
 
-- **Address of the runtime.** **File › Runtime address…**, remembered in this browser. By default, in development, the port before Studio's (4200 next to 4201, 4300 next to 4301); otherwise the root of the same origin.
+- **Address of the runtime.** **File › Runtime address…**, remembered in this browser. Without a choice, the address in `studio-config.json` next to Studio (`{ "runtimeAddress": "https://…/" }`, written when Studio is published: DEVELOPMENT-GUIDE § 3); without that, in development the port before Studio's (4200 next to 4201, 4300 next to 4301), otherwise the root of the same origin.
 - **The runtime must accept Studio.** Its `runtime-config.json` lists the origins of Studio in `studio.origins`; without them it ignores the request and starts as usual. The demo and the development configurations list 4201, 4301 and 4303.
 - **Pop-ups.** The browser may ask to allow the new window the first time; a blocked one is said in a message.
 - Only definitions travel, as JSON, from Studio to the window it opened and to the origin of the runtime address; the runtime validates every document as it does with the registry.

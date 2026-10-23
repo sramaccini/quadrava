@@ -1,4 +1,4 @@
-import { DestroyRef, Injectable, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { isFromRuntime, STUDIO_QUERY, type FromStudio } from 'core';
 import { Project } from './project';
 import { projectSnapshot } from './project-snapshot';
@@ -8,7 +8,19 @@ import { Workspace } from './workspace';
 export const RUNTIME_ADDRESS_KEY = 'lc.editor.runtimeAddress';
 
 /**
- * The address of the runtime when none was chosen: in development the runtime runs on the port before Studio's (4200 next
+ * Optional settings of a published Studio, in its public folder: `{ "runtimeAddress": "https://…/" }` says where the runtime
+ * of that installation is, for everyone who opens it (written at build time, for example by tools/deploy-config.mjs).
+ */
+export const STUDIO_CONFIG_URL = 'studio-config.json';
+
+/** The runtime address of the settings, if they have one that is an http(s) address. */
+export function configuredRuntimeAddress(config: unknown): string | null {
+  const address = (config as { runtimeAddress?: unknown } | null)?.runtimeAddress;
+  return typeof address === 'string' && runtimeUrl(address, 'http://localhost') ? address.trim() : null;
+}
+
+/**
+ * The address of the runtime when none was chosen and the settings give none: in development the runtime runs on the port before Studio's (4200 next
  * to 4201, 4300 next to 4301); elsewhere, the root of the same origin.
  */
 export function defaultRuntimeAddress(here: Pick<Location, 'protocol' | 'hostname' | 'port' | 'origin'>): string {
@@ -40,7 +52,10 @@ export type RunOutcome = 'opened' | 'reloaded' | 'blocked' | 'invalid';
 export class RunProject {
   private readonly project = inject(Project);
   private readonly workspace = inject(Workspace);
-  readonly address = signal(readAddress());
+  /** The address chosen by the user in this browser, then the one of the settings, then the one guessed from the port. */
+  private readonly chosen = signal(readChosenAddress());
+  private readonly configured = signal<string | null>(null);
+  readonly address = computed(() => this.chosen() ?? this.configured() ?? defaultRuntimeAddress(location));
   private target: Window | null = null;
   private targetOrigin: string | null = null;
 
@@ -51,12 +66,23 @@ export class RunProject {
     };
     window.addEventListener('message', listener);
     inject(DestroyRef).onDestroy(() => window.removeEventListener('message', listener));
+    void this.loadSettings();
+  }
+
+  /** Reads `studio-config.json`; without it (or if it is not valid JSON) the address is guessed as before. */
+  private async loadSettings(): Promise<void> {
+    try {
+      const response = await fetch(STUDIO_CONFIG_URL, { cache: 'no-cache' });
+      if (response.ok) this.configured.set(configuredRuntimeAddress(await response.json()));
+    } catch {
+      // No settings: nothing to do.
+    }
   }
 
   /** Changes the address of the runtime; false if it is not an http(s) address. */
   setAddress(address: string): boolean {
     if (!runtimeUrl(address, location.origin)) return false;
-    this.address.set(address.trim());
+    this.chosen.set(address.trim());
     try {
       localStorage.setItem(RUNTIME_ADDRESS_KEY, address.trim());
     } catch {
@@ -97,10 +123,10 @@ export class RunProject {
   }
 }
 
-function readAddress(): string {
+function readChosenAddress(): string | null {
   try {
-    return localStorage.getItem(RUNTIME_ADDRESS_KEY) ?? defaultRuntimeAddress(location);
+    return localStorage.getItem(RUNTIME_ADDRESS_KEY);
   } catch {
-    return defaultRuntimeAddress(location);
+    return null;
   }
 }

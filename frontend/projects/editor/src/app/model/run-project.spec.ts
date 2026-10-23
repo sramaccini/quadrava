@@ -5,7 +5,7 @@ import type { Json } from './doc-ops';
 import { Project } from './project';
 import { MemoryFolder } from './project-folder';
 import { projectSnapshot } from './project-snapshot';
-import { defaultRuntimeAddress, RUNTIME_ADDRESS_KEY, RunProject, runtimeUrl } from './run-project';
+import { configuredRuntimeAddress, defaultRuntimeAddress, RUNTIME_ADDRESS_KEY, RunProject, runtimeUrl, STUDIO_CONFIG_URL } from './run-project';
 
 describe('running the project in the runtime', () => {
   describe('snapshot', () => {
@@ -63,6 +63,28 @@ describe('running the project in the runtime', () => {
     expect(runtimeUrl('http://localhost:4200/', 'http://localhost:4201')).toBe('http://localhost:4200/?studio=http%3A%2F%2Flocalhost%3A4201');
     expect(runtimeUrl('javascript:alert(1)', 'http://localhost:4201')).toBeNull();
     expect(runtimeUrl('not an address', 'http://localhost:4201')).toBeNull();
+  });
+
+  it('address: the settings of a published Studio come before the guess, the choice of the user before both', async () => {
+    expect(configuredRuntimeAddress({ runtimeAddress: ' https://runtime.example/ ' })).toBe('https://runtime.example/');
+    expect(configuredRuntimeAddress({ runtimeAddress: 'javascript:alert(1)' })).toBeNull();
+    expect(configuredRuntimeAddress('<!doctype html>')).toBeNull();
+    localStorage.removeItem(RUNTIME_ADDRESS_KEY);
+    TestBed.configureTestingModule({ providers: [
+      { provide: Notifier, useValue: { toast: () => undefined } },
+      { provide: Confirmation, useValue: { confirm: async () => true } },
+    ] });
+    const fetch = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ runtimeAddress: 'https://runtime.example/' })));
+    try {
+      const run = TestBed.inject(RunProject);
+      expect(fetch).toHaveBeenCalledWith(STUDIO_CONFIG_URL, { cache: 'no-cache' });
+      await vi.waitFor(() => expect(run.address()).toBe('https://runtime.example/'));
+      run.setAddress('http://localhost:4300/');
+      expect(run.address()).toBe('http://localhost:4300/');
+    } finally {
+      vi.restoreAllMocks();
+      localStorage.removeItem(RUNTIME_ADDRESS_KEY);
+    }
   });
 
   describe('the window of the runtime', () => {
