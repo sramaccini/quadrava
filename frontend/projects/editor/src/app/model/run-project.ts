@@ -1,5 +1,6 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { isFromRuntime, STUDIO_QUERY, type FromStudio } from 'core';
+import { desktopApi } from './desktop';
 import { Project } from './project';
 import { projectSnapshot } from './project-snapshot';
 import { Workspace } from './workspace';
@@ -56,6 +57,11 @@ export class RunProject {
   private readonly chosen = signal(readChosenAddress());
   private readonly configured = signal<string | null>(null);
   readonly address = computed(() => this.chosen() ?? this.configured() ?? defaultRuntimeAddress(location));
+  /**
+   * Not in the desktop app (ADR-17): the runtime would open in another program, and the project travels only between two
+   * windows of the same browser.
+   */
+  readonly available = !desktopApi();
   private target: Window | null = null;
   private targetOrigin: string | null = null;
 

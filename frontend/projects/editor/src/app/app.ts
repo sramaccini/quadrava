@@ -250,8 +250,12 @@ export class App {
       { id: 'import-project', label: t('ed.menu.importProject'), run: () => void this.importProjectZip() },
       { id: 'export-project', label: t('ed.menu.exportProject'), disabled: !open, run: () => void this.commands.exportZip() },
       { id: 'close-project', label: t('ed.menu.closeProject'), disabled: !open, run: () => void this.commands.close() },
-      { id: 'run-project', label: t('ed.menu.runProject'), separator: true, disabled: !open, run: () => this.runProject() },
-      { id: 'runtime-address', label: t('ed.menu.runtimeAddress'), run: () => this.showRuntimeAddress.set(true) },
+      ...(this.runner.available
+        ? [
+            { id: 'run-project', label: t('ed.menu.runProject'), separator: true, disabled: !open, run: () => this.runProject() },
+            { id: 'runtime-address', label: t('ed.menu.runtimeAddress'), run: () => this.showRuntimeAddress.set(true) },
+          ]
+        : []),
       {
         id: 'new',
         label: t('ed.menu.new'),
@@ -410,8 +414,9 @@ export class App {
       texts.project.set(manifest ? { languages: manifest.languages, defaultLanguage: manifest.defaultLanguage, catalogues: this.workspace.catalogues() } : null);
     });
     effect(() => (document.documentElement.lang = this.i18n.locale()));
-    // The last project kept in the browser opens again by itself; one on disk needs a click (the browser asks for permission).
-    if (this.library.last()?.location === 'browser') void this.reopenLast(true);
+    // The last project kept in the browser (or, in the desktop app, on disk) opens again by itself; one on disk in the
+    // browser needs a click (the browser asks for permission).
+    if (this.library.reopensQuietly()) void this.reopenLast(true);
   }
 
   /** The dockable panels now: the project (with a project open) and those of the active document. */

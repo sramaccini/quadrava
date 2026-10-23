@@ -1,0 +1,17 @@
+[package]
+name = "quadrava-studio"
+version = "0.1.0"
+description = "Quadrava Studio, the visual editor of Quadrava, as a desktop application"
+authors = ["Simone Ramaccini"]
+license = "MPL-2.0"
+edition = "2021"
+rust-version = "1.77.2"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-persisted-scope = "2"

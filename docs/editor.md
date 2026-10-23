@@ -260,6 +260,15 @@ editor/src/app/
 - The project is read and written through `ProjectFolder` (`DirectoryFolder` on a directory handle, on disk or in the private storage of the browser; `MemoryFolder` in the tests). A window knows the file of its resource (`path`); `Workspace.saveToProject` writes it, renaming the file when the identifier changes. `Workspace.dataSources` gives the data sources documents as the screens see them (saved, with the valid changes of the open windows); the application puts them in `KnownDataSources`, which the screen store reads to check its references and the previews to resolve them (`resolveDataSources` of the `schema` library). See ADR-14.
 - Tests: document operations, schema reading (every type has a valid template), editor state, project (resources, open, create, write, remove, commands, references, data sources documents, manifest), workspace (open, focus, minimize, cycle, close, restore per project, save and rename in the project, data sources of the windows, drafts of earlier versions) and window geometry, drag and drop, preview ports; the preview inside the iframe driven through its messages (drawing, sample data, selection, tabs, menu and profile, dark theme, foreign messages ignored); an overall test that uses the real interface and checks the states sent to the iframe (in jsdom the iframe does not load the application: the test simulates its «ready»); in the browser (Playwright, `e2e/editor-windows.spec.ts`) a project created in the browser, windows moved, resized and maximized with the mouse, and an accessibility check of the workspace.
 
+## 3d. The desktop app
+
+Studio is also a desktop application for Windows, Linux and macOS (ADR-17): the same Studio in a window of its own, built with Tauri. The differences:
+
+- **Projects on disk everywhere.** «Open project folder…» opens the folder chooser of the system, also on macOS and Linux; the project is read and written in place. The last project opens again at start, without asking. Projects in the browser storage and zip archives work as in the browser.
+- **Not available yet:** «Run project» and «Runtime address…» (the runtime would open in another program, ADR-16) and the registry (no BFF next to the app).
+
+Installers: from the **Desktop** workflow on GitHub Actions (artifacts `quadrava-studio-Windows`, `-Linux`, `-macOS`); they are not signed, so the system warns the first time.
+
 ## 6. Limits and next steps
 
 - **Translations.** Languages are added in the «Texts» panel; the editor's interface is in English and Italian. Catalogues (`messages` documents) are reviewed through the registry APIs; the «Texts» panel saves and publishes directly.
@@ -270,6 +279,6 @@ editor/src/app/
 - **Width.** Below 1100 px the panels stack; the editor is designed for desktop screens. A window is never smaller than 360 × 220 px.
 - **Translations between windows.** Outside a project, translations written in a screen apply at once to the previews of all the windows (the catalogue of the editor is one) and are saved with the draft of that screen. With a project they go into its catalogues, and «Save to the registry and publish» of the «Texts» panel publishes the catalogues of the project as they are (with the translations of the screen not saved yet).
 - **Catalogues and the registry.** The windows of the catalogues have no «Save to registry» (in the registry a catalogue is a `messages` document with `texts`, while the project keeps the plain format of the runtime).
-- **Projects.** A folder on disk needs Chrome or Edge; elsewhere projects stay in the browser (and travel as zip archives). The other files of a project folder (images) are not resources: they are not listed, exported or imported.
+- **Projects.** In the browser a folder on disk needs Chrome or Edge (in the desktop app, every system: § 3d); elsewhere projects stay in the browser (and travel as zip archives). The other files of a project folder (images) are not resources: they are not listed, exported or imported.
 
 **Decisions (13 October 2026).** ADR-08 accepted: preview in an isolated iframe (implemented). ADR-09 amended: the history keeps immutable versions of the document instead of JSON Patch operations; patches will be derived by difference when diffs between versions and locks are needed. Registry: one document per screen, one for the navigation, one per theme.

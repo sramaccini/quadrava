@@ -44,7 +44,7 @@ Contributor documentation: [DEVELOPMENT-GUIDE.md](DEVELOPMENT-GUIDE.md). Status 
 | --- | --- | --- |
 | **Runtime** (`frontend/projects/runtime`) | Angular application that loads screens, theme and navigation, validates them, and renders them | Working demo, fake back end |
 | **Libraries** (`schema`, `expressions`, `core`, `components`, `services`) | JSON Schema and types, expression evaluator, interpreter, NG-ZORRO component catalogue, HTTP/session/authorization/telemetry services | Working, tested |
-| **Quadrava Studio**, the visual editor (`frontend/projects/editor`) | Builds screens and the navigation (areas and menus) with property panels generated from the JSON Schemas and live previews rendered by the real runtime | Screens, navigation and themes |
+| **Quadrava Studio**, the visual editor (`frontend/projects/editor`) | Builds screens and the navigation (areas and menus) with property panels generated from the JSON Schemas and live previews rendered by the real runtime; also a desktop app for Windows, Linux and macOS (`frontend/desktop`, Tauri) | Screens, navigation and themes |
 | **Contracts** (`contracts/`) | OpenAPI 3.1: authorization, telemetry ingestion, registry | Defined and validated |
 | **Reference implementation** (`reference/`) | Spring Boot BFF, registry, authorization and telemetry services that implement the contracts | Compiles and its unit tests pass (JDK 21, Maven 3.9), in CI too |
 | **Identity provider** (`idp/`) | Keycloak with a sample realm for local development | Ready |
@@ -284,6 +284,8 @@ npm run start:editor         # builds the libraries, copies the examples, serves
 ```
 
 Studio works on a **project**, the folder of an application (`project.json`, `screens/`, `datasources/`, `navigation.json`, `themes/`, `i18n/`): on the start page create one, open a folder on disk (Chrome, Edge) or open the demo project (`examples/`, copied into the browser). Details, shortcuts and limits are in [docs/editor.md](docs/editor.md).
+
+**Desktop app.** Studio is also packaged with Tauri for Windows, Linux and macOS, where it opens project folders on disk on every system ([ADR-17](docs/adr-17-studio-desktop-app.md)). The installers are built by the **Desktop** workflow on GitHub Actions; locally, with Rust installed, `npm run desktop:build` builds the one for your system.
 
 ### Workspace
 

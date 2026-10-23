@@ -1,6 +1,7 @@
 import { DOCUMENT } from '@angular/common';
 import { Injectable, inject, signal } from '@angular/core';
 import { DatabaseFolder, HANDLES, databaseProjects, deleteDatabaseProject, request } from './browser-db';
+import { DesktopFolder, desktopApi } from './desktop';
 import { DirectoryFolder, MemoryFolder, type DirectoryHandle, type ProjectFolder } from './project-folder';
 
 /** Folder of the private storage of the browser that holds the projects kept in the browser. */
@@ -8,8 +9,11 @@ const BROWSER_ROOT = 'quadrava-projects';
 /** The last project opened, to offer it again at the next visit. */
 export const LAST_PROJECT_KEY = 'lc.editor.project';
 
-/** The last project opened: in the browser (by name) or on disk (the handle, asking for permission again). */
-export type LastProject = { location: 'browser'; name: string } | { location: 'disk'; name: string };
+/**
+ * The last project opened: in the browser (by name) or on disk (the handle, asking for permission again; in the desktop app
+ * its path).
+ */
+export type LastProject = { location: 'browser'; name: string } | { location: 'disk'; name: string; path?: string };
 
 interface Pickers {
   showDirectoryPicker?: (options?: { mode?: 'readwrite'; id?: string }) => Promise<DirectoryHandle>;
@@ -28,10 +32,18 @@ export class ProjectLibrary {
   /** Projects kept in this browser (names), read with `refresh`. */
   readonly browserProjects = signal<string[]>([]);
   readonly last = signal<LastProject | null>(readLast());
+  /** The Tauri APIs when Studio runs in the desktop app (ADR-17). */
+  private readonly desktop = desktopApi(this.window);
 
   /** The browser lets the user choose a folder on disk to read and write. */
   canUseDisk(): boolean {
-    return typeof this.window?.showDirectoryPicker === 'function';
+    return !!this.desktop || typeof this.window?.showDirectoryPicker === 'function';
+  }
+
+  /** The last project opens at start without asking: one kept in the browser, or any in the desktop app. */
+  reopensQuietly(): boolean {
+    const last = this.last();
+    return last?.location === 'browser' || (!!this.desktop && !!last && 'path' in last && !!last.path);
   }
 
   /**
@@ -58,6 +70,10 @@ export class ProjectLibrary {
 
   /** Asks the user for a folder on disk (null if they cancel). */
   async chooseDiskFolder(): Promise<ProjectFolder | null> {
+    if (this.desktop) {
+      const path = await this.desktop.dialog.open({ directory: true });
+      return path ? new DesktopFolder(path, this.desktop) : null;
+    }
     const picker = this.window?.showDirectoryPicker;
     if (!picker) return null;
     try {
@@ -95,7 +111,7 @@ export class ProjectLibrary {
   /** Remembers the project just opened, to offer it again at the next visit. */
   async remember(folder: ProjectFolder): Promise<void> {
     if (folder.location === 'memory') return;
-    const last: LastProject = { location: folder.location, name: folder.name };
+    const last: LastProject = folder instanceof DesktopFolder ? { location: 'disk', name: folder.name, path: folder.path } : { location: folder.location, name: folder.name };
     this.last.set(last);
     try {
       localStorage.setItem(LAST_PROJECT_KEY, JSON.stringify(last));
@@ -122,6 +138,10 @@ export class ProjectLibrary {
     const last = this.last();
     if (!last) return null;
     if (last.location === 'browser') return this.browserFolder(last.name);
+    if (this.desktop) {
+      if (!last.path || !(await this.desktop.fs.exists(last.path).catch(() => false))) return null;
+      return new DesktopFolder(last.path, this.desktop);
+    }
     const handle = await loadHandle().catch(() => null);
     if (!handle) return null;
     const permission = (await handle.queryPermission?.({ mode: 'readwrite' })) ?? 'granted';
@@ -144,7 +164,8 @@ export class ProjectLibrary {
 function readLast(): LastProject | null {
   try {
     const parsed = JSON.parse(localStorage.getItem(LAST_PROJECT_KEY) ?? 'null') as LastProject | null;
-    return parsed && (parsed.location === 'browser' || parsed.location === 'disk') && typeof parsed.name === 'string' ? parsed : null;
+    if (!parsed || (parsed.location !== 'browser' && parsed.location !== 'disk') || typeof parsed.name !== 'string') return null;
+    return parsed.location === 'disk' && typeof parsed.path !== 'string' ? { location: 'disk', name: parsed.name } : parsed;
   } catch {
     return null;
   }

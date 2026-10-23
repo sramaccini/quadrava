@@ -7,6 +7,7 @@ How to work on Quadrava: set up, build, test, extend and contribute. For what th
 * Node.js 24 and npm (pinned in `.nvmrc` and in `engines` of `frontend/package.json`; `nvm use` or `fnm use` from the repository root picks it).
 * JDK 21 and Maven 3.9+ (only for `reference/`).
 * Docker (only for the Keycloak in `idp/`).
+* Rust 1.77.2 or later and the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) of your system (only to build the desktop app of Studio locally; CI builds it on every system).
 
 ```bash
 cd frontend
@@ -57,6 +58,8 @@ editor  ──► components ──► core   (the preview renders screens with 
 | `npm run conformance:registry` / `conformance:authz` / `conformance:telemetry` | Conformance kits: check a service over HTTP against its contract (`--registry`, `--authz`, `--telemetry` for the address; `--user`/`--password` or `--token`; `--reviewer-user` for the registry, `--other-user` for authorization). Shared helpers in `tools/conformance-lib.mjs` |
 | `npm run validate:examples` | Validates every JSON in `examples/` against the schemas |
 | `npx ng build runtime` | Production build (budgets: warning 2.5 MB, error 4 MB initial) |
+| `npm run desktop:build` | Desktop app of Studio for the system you are on (ADR-17): builds the libraries, the examples and the web build of Studio, then `tauri build` in `desktop/`; installers in `desktop/src-tauri/target/release/bundle/` |
+| `npm run desktop:dev` | The desktop app on the dev server of Studio (start `ng serve editor --port 4301` first), with reload on change |
 | `npm run deploy:config` | Before `ng build` on a static host: writes Studio's `studio-config.json` from `STUDIO_RUNTIME_ADDRESS` and the runtime's `studio.origins` from `RUNTIME_STUDIO_ORIGINS` (comma separated); stops on an address that is not http(s). See «Publishing Studio and the runtime» below |
 | `npm run e2e` | Playwright end-to-end tests (`e2e/`, including the axe-core accessibility check of every showcase screen) in Chromium against the demo and Studio; starts `ng serve runtime` on port 4300 and `ng serve editor` on port 4301 (`E2E_PORT` and `E2E_EDITOR_PORT` to change them) unless a server is already running there. Needs `npm run demo:prepare` and, once, `npx playwright install chromium` |
 

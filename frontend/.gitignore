@@ -52,3 +52,7 @@ projects/editor/public/studio-config.json
 # rapporti di Playwright
 /playwright-report/
 /test-results/
+
+# Tauri (desktop app of Studio): Rust build output and generated schemas
+desktop/src-tauri/target/
+desktop/src-tauri/gen/
