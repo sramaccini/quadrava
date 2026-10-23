@@ -11,7 +11,9 @@ rust-version = "1.77.2"
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = [] }
+# devtools: Inspect (right click, or Ctrl+Shift+I) also in the installed app, to read the errors of Studio while the
+# desktop app is young.
+tauri = { version = "2", features = ["devtools"] }
 tauri-plugin-dialog = "2"
 tauri-plugin-fs = "2"
 tauri-plugin-persisted-scope = "2"

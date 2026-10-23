@@ -35,6 +35,7 @@ Studio (web build)
 - Studio on disk everywhere, with native dialogs, in a window of its own; the browser version is unchanged.
 - **«Run project» is not available in the desktop app** (ADR-16): the project travels between two windows of the same browser (`window.opener`, `postMessage`), and the runtime would open in another program. A later version can open the runtime in a second window of the app and relay the messages.
 - **The registry** is reached at relative addresses behind the BFF in the browser; in the desktop app there is no BFF, so saving to and opening from a registry are not available yet.
+- **Developer tools** (Inspect, Ctrl+Shift+I) are on in the installed app too (`devtools` feature of `tauri`), to read the errors of Studio while the app is young; to be switched off once it is stable.
 - The packages are **not signed**: Windows SmartScreen and macOS Gatekeeper warn the first time. Signing needs certificates (Windows) and an Apple Developer account (macOS), configured as secrets of the workflow.
 - New dependencies: `@tauri-apps/cli` (development only, npm) and the Rust crates `tauri`, `tauri-build`, `tauri-plugin-dialog`, `tauri-plugin-fs`, `tauri-plugin-persisted-scope` (MIT or Apache-2.0). Building locally needs Rust 1.77.2 or later and the system prerequisites of Tauri.
 
