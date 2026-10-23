@@ -27,7 +27,7 @@ Studio (web build)
 
 - **No Tauri code in the web build.** Studio reads the Tauri APIs from `window.__TAURI__`, which only the desktop app defines: no npm package of Tauri is bundled, and in the browser nothing changes.
 - **Files only where the user chose.** The page may call the dialog and a few `fs` commands (read a folder, read and write text files, create folders, remove a file, check existence), only inside the folders chosen in the dialog (the scope of the `fs` plugin). `persisted-scope` keeps those folders between sessions, so the last project reopens at start without asking. Paths inside the project follow the same rule as on the web (`RESOURCE_PATH`): no `..`, no absolute paths.
-- **Content Security Policy** of the window: scripts only from the application, connections to the application, to Tauri and to `http(s)` addresses (OpenAPI import, registry), frames only from the application (the preview, ADR-08).
+- **Content Security Policy** of the window: scripts only from the application, connections to the application, to Tauri and to `http(s)` addresses (OpenAPI import, registry), frames only from the application (the preview, ADR-08). Styles allow `'unsafe-inline'`, which Angular and NG-ZORRO need; Tauri is told not to add its nonce to `style-src` (`dangerousDisableAssetCspModification`), because with a nonce the browser ignores `'unsafe-inline'` and the window stays white.
 - **Builds on GitHub Actions** (`.github/workflows/desktop.yml`), one machine per operating system, because Tauri does not cross-compile: `.msi` and `.exe` for Windows, `.deb`, `.rpm` and `.AppImage` for Linux, `.dmg` and `.app` for macOS (one package for Apple silicon and Intel). The packages are downloaded from the run as artifacts.
 
 ## Consequences
