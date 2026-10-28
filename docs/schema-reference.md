@@ -650,6 +650,7 @@ Data sources of a project, shared by its screens: one document holds one or more
 | `schemaVersion` * | `"1.0"` | Version of the format. |
 | `datasources` * | text | Identifier of the document (kebab-case): the first part of the references, orders in orders/list. |
 | `description` | text | What these data sources are for, for whoever chooses them in the editor. |
+| `baseUrl` | text | Address put in front of the url of every data source of the document, for example /api/orders or {{ settings.ordersApi }}: the url of each data source is then the rest of the path (/{{ params.id }}). Relative to the same origin, as every url; none if missing. |
 | `sources` * | object | The data sources, by name: the second part of the references, list in orders/list. |
 
 ## Project manifest (`project.schema.json`)
@@ -665,3 +666,4 @@ Manifest of a Quadrava project (project.json): the configuration of an applicati
 | `languages` * | list of text | Languages of the application (codes such as en, it, pt-BR): one translation catalogue each in i18n/. |
 | `defaultLanguage` * | text | Language of the fallback texts written in the screens; one of languages. |
 | `themes` | list of text | Themes the user can choose, in order: the first one is the initial one (all those in themes/ if missing). |
+| `settings` | object | Values of the application that the expressions read as settings.name, for example the base address of a service: {"ordersApi": "/api/orders"} is {{ settings.ordersApi }} in a data source. They reach the browser: never secrets or tokens. |

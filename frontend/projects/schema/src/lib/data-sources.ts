@@ -17,6 +17,18 @@ export function inlineDataSource(entry: DataSourceEntry | undefined): DataSource
   return entry && !isDataSourceReference(entry) ? entry : undefined;
 }
 
+/**
+ * The url of a data source of a document with a base address: base and url joined by a single slash
+ * (`/api/orders` + `/{{ params.id }}` → `/api/orders/{{ params.id }}`); without a base the url as it is. Both can hold
+ * expressions, evaluated later as every url (so a base such as `{{ settings.ordersApi }}` works).
+ */
+export function joinUrl(baseUrl: string | undefined, url: string): string {
+  if (!baseUrl) return url;
+  const base = baseUrl.replace(/\/+$/, '');
+  const path = url.replace(/^\/+/, '');
+  return path ? `${base}/${path}` : base || '/';
+}
+
 /** Document and name of a reference: `orders/list` → `['orders', 'list']`. */
 export function splitReference(ref: string): [document: string, name: string] {
   const slash = ref.indexOf('/');
@@ -32,8 +44,8 @@ export function referencedDocuments(screen: Pick<ScreenDefinition, 'dataSources'
 }
 
 /**
- * The screen with every reference replaced by the referenced definition: `params` of the reference are added to those of the
- * definition (same name: the reference wins), `body` replaces the definition's. A reference that does not resolve (document or
+ * The screen with every reference replaced by the referenced definition: its url with the `baseUrl` of the document in front,
+ * `params` of the reference added to those of the definition (same name: the reference wins), `body` replacing the definition's. A reference that does not resolve (document or
  * name missing) is left out, with a problem: fail-closed, the screen sees no data source with that name.
  */
 export function resolveDataSources(
@@ -57,7 +69,7 @@ export function resolveDataSources(
       issues.push({ path: `/dataSources/${name}/ref`, message });
       continue;
     }
-    const definition: DataSourceDefinition = { ...target };
+    const definition: DataSourceDefinition = { ...target, url: joinUrl(document.baseUrl, target.url) };
     if (entry.params) definition.params = { ...target.params, ...entry.params };
     if (entry.body !== undefined) definition.body = entry.body;
     resolved[name] = definition;

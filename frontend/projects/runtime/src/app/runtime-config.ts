@@ -11,7 +11,7 @@ export interface RuntimeConfig {
    * With the registry, `languages` and `defaultLanguage` say the languages of the application (from its project, which the
    * registry does not hold); with the examples they come from `examples/project.json`.
    */
-  definitions: { source: 'examples' } | ({ source: 'registry'; languages?: string[]; defaultLanguage?: string } & RegistryDefinitionsConfig);
+  definitions: { source: 'examples' } | ({ source: 'registry'; languages?: string[]; defaultLanguage?: string; settings?: Record<string, string> } & RegistryDefinitionsConfig);
   /**
    * Ports of the runtime: `demo` (fake profiles, data and reports in the browser) or `bff` (session, permissions,
    * data and telemetry through the BFF, `services` library). When missing: demo.
@@ -47,6 +47,15 @@ export interface ApplicationSettings {
   defaultLanguage: string;
   /** Themes the user can choose, the first one initial (from the project; the definition source decides when missing). */
   themes?: string[];
+  /** Values of the settings of the application, `settings` in the expressions (from the project, or the configuration with the registry). */
+  settings?: Record<string, string>;
+}
+
+/** Only the settings with a name and a text value: anything else is left out. */
+export function settingsOf(value: unknown): Record<string, string> | undefined {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return undefined;
+  const entries = Object.entries(value).filter(([name, v]) => /^[A-Za-z][A-Za-z0-9_]*$/.test(name) && typeof v === 'string');
+  return entries.length ? (Object.fromEntries(entries) as Record<string, string>) : undefined;
 }
 
 export const DEFAULT_APPLICATION_SETTINGS: ApplicationSettings = { languages: ['en', 'it'], defaultLanguage: 'en' };
@@ -59,10 +68,11 @@ export const APPLICATION_SETTINGS = new InjectionToken<ApplicationSettings>('APP
 export async function loadApplicationSettings(config: RuntimeConfig, url = 'examples/project.json'): Promise<ApplicationSettings> {
   if (config.definitions.source === 'registry') {
     const { languages, defaultLanguage } = config.definitions;
+    const settings = settingsOf(config.definitions.settings);
     if (Array.isArray(languages) && languages.length && languages.every((l) => typeof l === 'string')) {
-      return { languages, defaultLanguage: typeof defaultLanguage === 'string' && languages.includes(defaultLanguage) ? defaultLanguage : languages[0] };
+      return { languages, defaultLanguage: typeof defaultLanguage === 'string' && languages.includes(defaultLanguage) ? defaultLanguage : languages[0], ...(settings ? { settings } : {}) };
     }
-    return DEFAULT_APPLICATION_SETTINGS;
+    return settings ? { ...DEFAULT_APPLICATION_SETTINGS, settings } : DEFAULT_APPLICATION_SETTINGS;
   }
   try {
     const response = await fetch(url);
@@ -74,8 +84,13 @@ export async function loadApplicationSettings(config: RuntimeConfig, url = 'exam
       console.warn('[project] examples/project.json is not valid: using the default languages');
       return DEFAULT_APPLICATION_SETTINGS;
     }
-    const { languages, defaultLanguage, themes } = result.value;
-    return { languages, defaultLanguage: languages.includes(defaultLanguage) ? defaultLanguage : languages[0], ...(themes?.length ? { themes } : {}) };
+    const { languages, defaultLanguage, themes, settings } = result.value;
+    return {
+      languages,
+      defaultLanguage: languages.includes(defaultLanguage) ? defaultLanguage : languages[0],
+      ...(themes?.length ? { themes } : {}),
+      ...(settings && Object.keys(settings).length ? { settings } : {}),
+    };
   } catch {
     return DEFAULT_APPLICATION_SETTINGS;
   }

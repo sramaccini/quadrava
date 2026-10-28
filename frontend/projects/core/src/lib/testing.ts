@@ -49,6 +49,8 @@ export class Fakes {
   dialogValues: Record<string, unknown>[] = [];
   i18n = new I18n();
   respond: (request: DataRequest) => unknown = () => ({ items: [], total: 0 });
+  /** Values of the settings of the application (`settings` in the expressions). */
+  settings: Record<string, string> = {};
 
   readonly deps = {
     /** Validators of the fields (the built-in ones if null). */
@@ -74,6 +76,7 @@ export class Fakes {
       },
     } as FormDialog,
     i18n: this.i18n,
+    settings: () => this.settings,
     tracer: {
       start: (name: string, attributes: SpanAttributes, parent?: SpanContext) => {
         const id = String(this.spans.length + 1).padStart(16, '0');

@@ -1,8 +1,8 @@
 import { ApplicationConfig, inject, provideBrowserGlobalErrorListeners, provideEnvironmentInitializer } from '@angular/core';
 import { NzNotifier, provideLowcodeComponents } from 'components';
-import { Authorization, DataClient, I18n, Notifier, RuntimeDiagnostics, ScreenNavigator, UserProvider } from 'core';
+import { Authorization, DataClient, I18n, Notifier, RuntimeDiagnostics, ScreenNavigator, SETTINGS_VALUES, UserProvider } from 'core';
 import { EDITOR_MESSAGES } from '../messages';
-import { PreviewDataClient, PreviewDiagnostics, PreviewNavigator, PreviewSession } from './preview-ports';
+import { PreviewChannel, PreviewDataClient, PreviewDiagnostics, PreviewNavigator, PreviewSession } from './preview-ports';
 
 /** Configuration of the application when it starts as the preview (inside the editor's iframe). */
 export const previewConfig: ApplicationConfig = {
@@ -20,5 +20,13 @@ export const previewConfig: ApplicationConfig = {
     { provide: ScreenNavigator, useExisting: PreviewNavigator },
     { provide: Notifier, useExisting: NzNotifier },
     { provide: RuntimeDiagnostics, useExisting: PreviewDiagnostics },
+    // The settings of the project, as the editor sends them with every state.
+    {
+      provide: SETTINGS_VALUES,
+      useFactory: () => {
+        const channel = inject(PreviewChannel);
+        return () => channel.state()?.settings ?? {};
+      },
+    },
   ],
 };

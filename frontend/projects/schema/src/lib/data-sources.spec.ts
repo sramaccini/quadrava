@@ -1,4 +1,4 @@
-import { inlineDataSource, isDataSourceReference, referencedDocuments, resolveDataSources } from './data-sources';
+import { inlineDataSource, isDataSourceReference, joinUrl, referencedDocuments, resolveDataSources } from './data-sources';
 import type { DataSourcesDefinition, ScreenDefinition } from './types';
 import { validateDataSources, validateProject, validateScreen } from 'schema/validation';
 
@@ -53,6 +53,24 @@ describe('data sources of the project', () => {
     });
     // The original is untouched.
     expect(screen.dataSources!['list']).toEqual({ ref: 'orders/list', params: { status: '{{ state.status }}' } });
+  });
+
+  it('the base address of the document goes in front of the url of its data sources, with a single slash', () => {
+    expect(joinUrl(undefined, '/api/x')).toBe('/api/x');
+    expect(joinUrl('/api/orders/', '/{{ params.id }}')).toBe('/api/orders/{{ params.id }}');
+    expect(joinUrl('{{ settings.ordersApi }}', 'open')).toBe('{{ settings.ordersApi }}/open');
+    expect(joinUrl('/api/orders', '')).toBe('/api/orders');
+    const based = { ...orders, baseUrl: '{{ settings.ordersApi }}', sources: { get: { type: 'rest' as const, method: 'GET' as const, url: '/{{ params.id }}' } } };
+    expect(validateDataSources(based).valid).toBe(true);
+    const { screen: resolved } = resolveDataSources({ schemaVersion: '1.0', screen: 's', dataSources: { order: { ref: 'orders/get' } }, components: [] }, { orders: based });
+    expect(resolved.dataSources!['order']).toMatchObject({ url: '{{ settings.ordersApi }}/{{ params.id }}' });
+  });
+
+  it('the settings of a project: names and text values only', () => {
+    const project = { schemaVersion: '1.0', project: 'demo', name: 'Demo', languages: ['en'], defaultLanguage: 'en' };
+    expect(validateProject({ ...project, settings: { ordersApi: '/api/orders' } }).valid).toBe(true);
+    expect(validateProject({ ...project, settings: { ordersApi: 3 } }).valid).toBe(false);
+    expect(validateProject({ ...project, settings: { 'orders-api': '/x' } }).valid).toBe(false);
   });
 
   it('a reference that does not resolve is left out with a problem (fail-closed)', () => {

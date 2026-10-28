@@ -28,6 +28,11 @@ export const DATASOURCES_SCHEMA: Record<string, unknown> = {
       "maxLength": 300,
       "description": "What these data sources are for, for whoever chooses them in the editor."
     },
+    "baseUrl": {
+      "type": "string",
+      "maxLength": 500,
+      "description": "Address put in front of the url of every data source of the document, for example /api/orders or {{ settings.ordersApi }}: the url of each data source is then the rest of the path (/{{ params.id }}). Relative to the same origin, as every url; none if missing."
+    },
     "sources": {
       "type": "object",
       "minProperties": 1,

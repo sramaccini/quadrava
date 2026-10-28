@@ -175,6 +175,18 @@ Plain text keeps its line breaks. Labels (fields, columns, buttons, menu) delibe
 }
 ```
 
+**Base address and settings of the application.** A data sources document can have a `baseUrl`, put in front of the url of each of its data sources, so they hold only the rest of the path. The base can come from the **settings** of the project: name/value pairs in `project.json`, that every expression reads as `settings.<name>` (edited as a table in Studio's project settings; with the registry they are `definitions.settings` of `runtime-config.json`). They reach the browser: never secrets.
+
+```json
+// project.json
+"settings": { "staffApi": "/api/medical-staff" }
+// datasources/medical-staff.json
+"baseUrl": "{{ settings.staffApi }}",
+"sources": { "get": { "type": "rest", "method": "GET", "url": "/{{params.id}}" } }
+```
+
+Every value written into a url is encoded, so data cannot add path segments; a setting written alone (`{{ settings.staffApi }}`) goes in as it is when it holds only path characters, and the url must still be a relative path.
+
 GET data sources reload by themselves only when their resolved request (URL and parameters) changes; `refresh` on a non-GET source only notifies the components that query it themselves (such as the server data table).
 
 **Expressions** are written in [CEL](https://github.com/google/cel-spec) inside `{{ ... }}` and see these variables: `user`, `state`, `params`, `row`, `form`, `value`, and the function `can('domain.resource.action')`. Visibility (`visibleIf`, `hiddenIf`), read-only (`readOnlyIf`), enablement (`enabledIf`) and permissions (`requires`) all use them.
@@ -389,7 +401,7 @@ npm run conformance:telemetry -- --user operator --password operator
 
 Every push to `main` and every pull request runs [`.github/workflows/ci.yml`](.github/workflows/ci.yml) on GitHub Actions: the front-end job (`schema:check`, `validate:examples`, `build:libs`, the tests of every project, the production builds of runtime and editor), the end-to-end job (Playwright in Chromium; report uploaded as an artifact when it fails) and the Java job (`mvn -B verify`).
 
-At the time of writing there are **610 automated tests**: schema 71, expressions 42, core 86, components 181, services 34, runtime 86, editor 110. The Java modules add 39 (`mvn verify`: authz 7, bff 8, registry 18 — including the parity of the server-side schema validation with Ajv on every example and the coherence between controller and contract —, telemetry 6).
+At the time of writing there are **866 automated tests**: schema 88, expressions 46, core 193, components 206, services 35, runtime 102, editor 196. The Java modules add 39 (`mvn verify`: authz 7, bff 8, registry 18 — including the parity of the server-side schema validation with Ajv on every example and the coherence between controller and contract —, telemetry 6).
 
 The unit tests run in jsdom, so layout, real focus handling and pixel-level rendering are **not** covered there; see the development guide for the helpers that make NG-ZORRO overlays testable.
 

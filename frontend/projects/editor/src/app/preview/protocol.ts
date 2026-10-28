@@ -48,6 +48,8 @@ export interface PreviewState {
   version: number;
   /** Reads from the real services (same origin) instead of the sample data; writes stay blocked. */
   liveData: boolean;
+  /** Values of the settings of the project (`settings` in the expressions). */
+  settings: Record<string, string>;
 }
 
 /** Row of the preview log. */
@@ -122,6 +124,7 @@ export function previewState(partial: Partial<PreviewState>): PreviewState {
     selectMode: false,
     version: 0,
     liveData: false,
+    settings: {},
     ...partial,
   };
 }

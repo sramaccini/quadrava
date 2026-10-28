@@ -13,12 +13,14 @@ import { NzSelectModule } from 'ng-zorro-antd/select';
 import { getIn, isObject, moveBy, setIn, toPointer, type Json, type JsonObject, type Path } from '../model/doc-ops';
 import { DocumentState } from '../model/document-state';
 import { FileAccess } from '../model/file-access';
+import { Project } from '../model/project';
 import { embeddedImageKb, IMAGE_TYPES, imageFileToDataUrl } from '../model/image-file';
 import { listItem, objectFields, type ItemShape, type PropertyInfo, type Variant } from '../model/schema-info';
 import { defaultItem, summaryOf } from '../model/templates';
 import { applyCompletion, completionAt, expressionHints, insertHint, type Hint } from '../model/expression-help';
 import { TemplateHighlightDirective } from './code-highlight';
 import { JsonFieldComponent } from './json-field.component';
+import { MapFieldComponent } from './map-field.component';
 
 /** Properties shown as a multi-line text area even if they are simple texts. */
 const LONG_TEXT = new Set(['text', 'description', 'tooltip', 'title', 'confirm', 'toast', 'message']);
@@ -51,6 +53,7 @@ interface ListEntry {
   imports: [
     FormsModule,
     JsonFieldComponent,
+    MapFieldComponent,
     NzAutocompleteModule,
     NzButtonModule,
     NzCheckboxModule,
@@ -68,6 +71,9 @@ interface ListEntry {
 })
 export class FieldsComponent {
   protected readonly store = inject(DocumentState);
+  /** Names of the settings of the project, offered as `settings.<name>` by the expression help. */
+  private readonly project = inject(Project);
+  private readonly settingNames = computed(() => Object.keys(this.project.manifest()?.settings ?? {}));
   protected readonly i18n = inject(I18n);
   protected readonly expressionHint = '{{ … }}';
 
@@ -149,13 +155,13 @@ export class FieldsComponent {
 
   /** Variables and functions available for this expression (computed only when the help is open). */
   protected hints(row: FieldRow): Hint[] {
-    return expressionHints(this.store.doc(), row.path);
+    return expressionHints(this.store.doc(), row.path, this.settingNames());
   }
 
   /** After every character: offers the variables and functions continuing the word typed inside `{{ }}`. */
   protected suggest(row: FieldRow, area: HTMLTextAreaElement): void {
     const caret = area.selectionStart ?? area.value.length;
-    const found = area.selectionStart === area.selectionEnd ? completionAt(area.value, caret, expressionHints(this.store.doc(), row.path)) : null;
+    const found = area.selectionStart === area.selectionEnd ? completionAt(area.value, caret, expressionHints(this.store.doc(), row.path, this.settingNames())) : null;
     this.completion.set(found ? { key: this.key(row.path), from: found.from, items: found.items, active: 0 } : null);
   }
 

@@ -8,8 +8,8 @@ To open it in Quadrava Studio, zip this folder (or use `../medical-staff.zip`) a
 
 | File | What it is |
 | --- | --- |
-| `project.json` | manifest: languages `en` (default) and `it`, theme `light` |
-| `datasources/medical-staff.json` | the calls of the staff service, shared by the screens |
+| `project.json` | manifest: languages `en` (default) and `it`, theme `light`, and the setting `staffApi` (`/api/medical-staff`), the base address of the staff service |
+| `datasources/medical-staff.json` | the calls of the staff service, shared by the screens; their base address is `{{ settings.staffApi }}`, so every url is only the rest of the path (`/{{params.id}}`) |
 | `screens/medical-staff-list.json` | filters (name or number, staff type, department, status), paged table, CSV export; row actions Open, Edit, Delete (with confirmation) |
 | `screens/medical-staff-detail.json` | the record of a staff member (`params.id`), with Edit and Delete |
 | `screens/medical-staff-new.json` | entry form in two columns, with default values |

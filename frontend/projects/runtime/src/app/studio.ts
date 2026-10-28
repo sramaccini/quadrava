@@ -92,6 +92,11 @@ export async function studioSettings(project: ProjectSnapshot): Promise<Applicat
   const result = validateProject(project.manifest);
   const themes = result.valid && result.value.themes?.length ? result.value.themes : Object.keys(project.themes);
   if (!result.valid) return { ...DEFAULT_APPLICATION_SETTINGS, ...(themes.length ? { themes } : {}) };
-  const { languages, defaultLanguage } = result.value;
-  return { languages, defaultLanguage: languages.includes(defaultLanguage) ? defaultLanguage : languages[0], ...(themes.length ? { themes } : {}) };
+  const { languages, defaultLanguage, settings } = result.value;
+  return {
+    languages,
+    defaultLanguage: languages.includes(defaultLanguage) ? defaultLanguage : languages[0],
+    ...(themes.length ? { themes } : {}),
+    ...(settings && Object.keys(settings).length ? { settings } : {}),
+  };
 }

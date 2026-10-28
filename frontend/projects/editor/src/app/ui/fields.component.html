@@ -40,6 +40,9 @@
           <input nz-input nzSize="small" [id]="row.id" [value]="asText(row.value)" (input)="setText(row, $any($event.target).value)" spellcheck="false" />
         </div>
       }
+      @case ('map') {
+        <ed-map-field [fieldId]="row.id" [label]="row.info.name" [value]="row.value" [namePattern]="row.info.pattern" (valueChange)="setJson(row, $event)" />
+      }
       @case ('json') {
         <ed-json-field [fieldId]="row.id" [value]="row.value" [allowExpression]="true" [minRows]="2" (valueChange)="setJson(row, $event)" />
       }

@@ -272,7 +272,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                   "return",
                   "var",
                   "void",
-                  "while"
+                  "while",
+                  "settings"
                 ]
               }
             }

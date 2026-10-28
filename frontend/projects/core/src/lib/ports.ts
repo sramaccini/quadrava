@@ -1,3 +1,4 @@
+import { InjectionToken } from '@angular/core';
 import type { FormNode } from 'schema';
 import type { ScreenRuntime } from './screen-runtime';
 import type { HttpMethod, Scope } from './types';
@@ -6,6 +7,13 @@ import type { HttpMethod, Scope } from './types';
  * Ports (interfaces towards the outside). The core knows nothing of HTTP, router, notifications or authentication:
  * the host application provides the implementations (real ones in the `services` library; fake ones in the demo and in tests).
  */
+
+/**
+ * The values of the settings of the application (`settings` in project.json), read by the expressions as
+ * `settings.<name>`, for example the base address of a service. A function, so that whoever provides them can change them
+ * (the preview of Studio); none if not provided. They reach the browser: never secrets.
+ */
+export const SETTINGS_VALUES = new InjectionToken<() => Readonly<Record<string, string>>>('SETTINGS_VALUES', { factory: () => () => ({}) });
 
 /** Source of the current user's permissions. The application is never the enforcement point: the back end checks again. */
 export abstract class Authorization {

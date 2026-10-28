@@ -41,6 +41,11 @@ describe('runtime configuration: where the definitions come from', () => {
     const withLanguages: RuntimeConfig = { definitions: { ...registry.definitions, languages: ['it', 'fr'], defaultLanguage: 'fr' } as RuntimeConfig['definitions'] };
     expect(await loadApplicationSettings(withLanguages)).toEqual({ languages: ['it', 'fr'], defaultLanguage: 'fr' });
     expect(await loadApplicationSettings(registry)).toEqual(DEFAULT_APPLICATION_SETTINGS);
+    // The settings of the application: from the project with the examples, from the configuration with the registry.
+    serve({ ...project, settings: { ordersApi: '/api/orders' } });
+    expect((await loadApplicationSettings(DEFAULT_RUNTIME_CONFIG)).settings).toEqual({ ordersApi: '/api/orders' });
+    const withSettings = { definitions: { ...registry.definitions, settings: { ordersApi: '/api/v2/orders', bad: 3, 'bad-name': 'x' } } } as unknown as RuntimeConfig;
+    expect((await loadApplicationSettings(withSettings)).settings).toEqual({ ordersApi: '/api/v2/orders' });
     // The demo offers the themes of its project.
     TestBed.configureTestingModule({ providers: appConfigFor(DEFAULT_RUNTIME_CONFIG, { languages: ['en'], defaultLanguage: 'en', themes: ['dark'] }).providers });
     expect(TestBed.inject(DefinitionSource).themes()).toEqual(['dark']);

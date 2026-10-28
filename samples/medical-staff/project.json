@@ -10,5 +10,8 @@
   "defaultLanguage": "en",
   "themes": [
     "light"
-  ]
+  ],
+  "settings": {
+    "staffApi": "/api/medical-staff"
+  }
 }

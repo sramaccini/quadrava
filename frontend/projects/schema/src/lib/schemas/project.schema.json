@@ -33,6 +33,13 @@
       "uniqueItems": true,
       "items": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
       "description": "Themes the user can choose, in order: the first one is the initial one (all those in themes/ if missing)."
+    },
+    "settings": {
+      "type": "object",
+      "maxProperties": 100,
+      "propertyNames": { "pattern": "^[A-Za-z][A-Za-z0-9_]*$", "maxLength": 60 },
+      "additionalProperties": { "type": "string", "maxLength": 500 },
+      "description": "Values of the application that the expressions read as settings.name, for example the base address of a service: {\"ordersApi\": \"/api/orders\"} is {{ settings.ordersApi }} in a data source. They reach the browser: never secrets or tokens."
     }
   }
 }

@@ -10,7 +10,7 @@ import { getIn, isObject, type Json, type Path } from './doc-ops';
 export type Schema = Record<string, unknown>;
 
 /** How a property is edited in the inspector. */
-export type PropertyKind = 'text' | 'color' | 'expression' | 'enum' | 'boolean' | 'number' | 'json' | 'children' | 'object' | 'list';
+export type PropertyKind = 'text' | 'color' | 'expression' | 'enum' | 'boolean' | 'number' | 'json' | 'children' | 'object' | 'list' | 'map';
 
 export interface PropertyInfo {
   name: string;
@@ -98,6 +98,13 @@ export class SchemaReader {
       const items = s['items'] as Schema;
       if (items['$ref'] === '#/$defs/node') return { kind: 'children', description };
       if (this.isListable(items)) return { kind: 'list', description, schema: s, reader: this, minimum: s['minItems'] as number | undefined, maximum: s['maxItems'] as number | undefined };
+    }
+    // Names with a text each (the settings of the project): a table of names and values; `pattern` is the rule of the names.
+    const values = s['additionalProperties'];
+    if (s['type'] === 'object' && !s['properties'] && isObject(values as Json) && (values as Schema)['type'] === 'string') {
+      const names = s['propertyNames'];
+      const pattern = isObject(names as Json) && typeof (names as Schema)['pattern'] === 'string' ? ((names as Schema)['pattern'] as string) : undefined;
+      return { kind: 'map', description, pattern };
     }
     // Objects with known fields (not free maps such as `params` or `badges`): a group of fields.
     if (this.shapeOf(s)?.closed) return { kind: 'object', description, schema: s, reader: this };

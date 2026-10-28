@@ -29,8 +29,9 @@ const FUNCTIONS: Hint[] = [
   { label: "isValid('iban', …)", insert: "isValid('', )", kind: 'function' },
 ];
 
-export function expressionHints(doc: Json, path: Path): Hint[] {
-  const variables = new Set<string>(['user.username', 'user.displayName', 'user.locale']);
+/** `settings`: the names of the settings of the project (`settings.<name>` in the expressions). */
+export function expressionHints(doc: Json, path: Path, settings: readonly string[] = []): Hint[] {
+  const variables = new Set<string>(['user.username', 'user.displayName', 'user.locale', ...settings.map((name) => `settings.${name}`)]);
   const add = (name: string): void => {
     variables.add(name);
   };

@@ -12,6 +12,7 @@ import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import { resolveDataSources, type ScreenDefinition } from 'schema';
 import { getIn, isObject, type Json } from '../model/doc-ops';
 import { EditorStore } from '../model/editor-store';
+import { Project } from '../model/project';
 import { runScreenShortcut, type KeyStroke } from '../model/screen-shortcuts';
 import { ThemeStore } from '../model/theme-store';
 import { KnownDataSources, KnownTranslations } from '../model/shared-state';
@@ -49,6 +50,7 @@ const WIDTH_ICONS: Record<string, string> = { desktop: 'desktop', tablet: 'table
 export class PreviewComponent {
   protected readonly store = inject(EditorStore);
   private readonly workspace = inject(Workspace);
+  private readonly project = inject(Project);
   private readonly projectSources = inject(KnownDataSources).documents;
   /** With a project the preview uses its catalogues (which include the translations written in the screens). */
   private readonly projectTexts = inject(KnownTranslations).project;
@@ -112,6 +114,7 @@ export class PreviewComponent {
       selectMode: this.selectMode(),
       version: this.version(),
       liveData: this.liveData(),
+      settings: this.project.manifest()?.settings ?? {},
     }),
   );
 

@@ -55,6 +55,11 @@ describe('expression help', () => {
     expect(names(['components', 0, 'onClick', 2, 'toast'])).not.toContain('error.status');
   });
 
+    it('offers the settings of the project as settings.<name>', () => {
+      const names = expressionHints({ components: [{ type: 'text' }] }, ['components', 0, 'text'], ['ordersApi']).map((h) => h.label);
+      expect(names).toContain('settings.ordersApi');
+    });
+
     it('inserts at the cursor; an empty field becomes {{ }}', () => {
     expect(insertHint('', 0, 0, 'row.number')).toEqual({ value: '{{ row.number }}', caret: 13 });
     expect(insertHint('{{  > 0 }}', 3, 3, 'row.amount')).toEqual({ value: '{{ row.amount > 0 }}', caret: 13 });

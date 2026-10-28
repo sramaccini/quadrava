@@ -41,6 +41,23 @@ describe('ScreenRuntime', () => {
     rt.destroy();
   });
 
+  it('the expressions read the settings of the application: a base address in a url', async () => {
+    fakes.settings = { ordersApi: '/api/v2/orders' };
+    const rt = fakes.runtime({ schemaVersion: '1.0', screen: 's', dataSources: { list: { type: 'rest', method: 'GET', url: '{{ settings.ordersApi }}/open' } }, components: [] }, injector);
+    await settle();
+    expect(fakes.requests.map((r) => r.url)).toEqual(['/api/v2/orders/open']);
+    rt.destroy();
+    // Only a setting alone, and only with path characters, goes in as it is: anything else is encoded, and the url must stay
+    // a relative path.
+    fakes.requests = [];
+    fakes.settings = { ordersApi: '//evil.example/x', other: '/a?b' };
+    const evil = fakes.runtime({ schemaVersion: '1.0', screen: 's', dataSources: { list: { type: 'rest', method: 'GET', url: '{{ settings.ordersApi }}' }, q: { type: 'rest', method: 'GET', url: '/api/{{ settings.other }}' } }, components: [] }, injector);
+    await settle();
+    expect(fakes.requests.map((r) => r.url)).toEqual(['/api/%2Fa%3Fb']);
+    expect(evil.source('list').status).toBe('error');
+    evil.destroy();
+  });
+
   it('reloads when a value it depends on changes', async () => {
     const rt = fakes.runtime(screen, injector);
     rt.setState('filters', { status: null });

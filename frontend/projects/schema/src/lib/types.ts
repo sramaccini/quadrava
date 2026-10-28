@@ -33,6 +33,8 @@ export interface DataSourcesDefinition {
   /** Identifier of the document: the first part of the references. */
   datasources: string;
   description?: string;
+  /** Address put in front of the url of every data source of the document (`joinUrl`). */
+  baseUrl?: string;
   sources: Record<string, DataSourceDefinition>;
 }
 
@@ -767,4 +769,6 @@ export interface ProjectDefinition {
   defaultLanguage: string;
   /** Themes the user can choose, the first one initial (all those of the project if missing). */
   themes?: string[];
+  /** Values of the application, read by the expressions as `settings.<name>` (never secrets: they reach the browser). */
+  settings?: Record<string, string>;
 }

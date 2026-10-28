@@ -50,12 +50,18 @@ export interface RuntimeDeps {
   i18n?: I18n | null;
   /** Validators of the fields and of `isValid()`. If missing, the built-in ones. */
   validators?: ValidatorRegistry | null;
+  /** Values of the settings of the application, `settings` in the expressions. If missing, none. */
+  settings?: (() => Readonly<Record<string, string>>) | null;
 }
 
 type Built = { ok: true; request: DataRequest } | { ok: false; error: string };
 
 const FORBIDDEN_PATH_SEGMENTS = new Set(['__proto__', 'constructor', 'prototype']);
 const IDLE: DataSourceState = { status: 'idle', data: null };
+/** An expression that is only a setting of the application (`settings.ordersApi`). */
+const SETTING_ALONE = /^\s*settings\.[A-Za-z][A-Za-z0-9_]*\s*$/;
+/** Characters of a path (no query, fragment, backslash or spaces). */
+const PATH_TEXT = /^[A-Za-z0-9\-._~/%]*$/;
 
 /**
  * State and behaviour of ONE running screen: state (`state`), data sources, evaluation of expressions.
@@ -228,7 +234,13 @@ export class ScreenRuntime {
   /** Evaluation context: user, state, parameters and variables of the current point. */
   context(scope: Scope = {}): Scope {
     const user = this.deps.userProvider.user();
-    return { user: this.deps.i18n ? { ...user, locale: this.deps.i18n.locale() } : user, state: this.state(), params: this.params, ...scope };
+    return {
+      user: this.deps.i18n ? { ...user, locale: this.deps.i18n.locale() } : user,
+      state: this.state(),
+      params: this.params,
+      settings: this.deps.settings?.() ?? {},
+      ...scope,
+    };
   }
 
   isVisible(node: { visibleIf?: string; hiddenIf?: string }, scope: Scope = {}): boolean {
@@ -551,7 +563,11 @@ export class ScreenRuntime {
           if (!result.ok || result.value === null || result.value === undefined) {
             return { ok: false, error: `missing value in the URL: ${segment.source}` };
           }
-          url += encodeURIComponent(String(result.value));
+          // A setting of the application written alone (`{{ settings.ordersApi }}`) is a piece of path chosen by the author,
+          // such as a base address: it goes in as it is when it holds only path characters. Every other value is data and is
+          // encoded, so that it cannot add segments; the check below still accepts only relative paths.
+          const text = String(result.value);
+          url += SETTING_ALONE.test(segment.source) && PATH_TEXT.test(text) ? text : encodeURIComponent(text);
         }
       }
     } catch (e) {

@@ -1,5 +1,5 @@
 import { Injectable, computed, inject } from '@angular/core';
-import { splitReference, type DataSourceDefinition } from 'schema';
+import { joinUrl, splitReference, type DataSourceDefinition } from 'schema';
 import { setIn, type Json, type JsonObject } from './doc-ops';
 import { DataSourcesStore } from './datasources-store';
 import { Project, resourcePath } from './project';
@@ -24,10 +24,12 @@ export class ProjectDataSources {
   /** Identifiers of the data sources documents of the project. */
   readonly documents = computed(() => Object.keys(this.workspace.dataSources()).sort());
 
-  /** The definition a reference points to, or null. */
+  /** The definition a reference points to (its url with the base address of the document in front), or null. */
   definition(ref: string): DataSourceDefinition | null {
     const [document, name] = splitReference(ref);
-    return this.workspace.dataSources()[document]?.sources[name] ?? null;
+    const doc = this.workspace.dataSources()[document];
+    const source = doc?.sources[name];
+    return source ? { ...source, url: joinUrl(doc.baseUrl, source.url) } : null;
   }
 
   /**
