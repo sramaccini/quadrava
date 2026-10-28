@@ -5,7 +5,8 @@ import type { Json } from './doc-ops';
 import { Project } from './project';
 import { MemoryFolder } from './project-folder';
 import { projectSnapshot } from './project-snapshot';
-import { configuredRuntimeAddress, defaultRuntimeAddress, RUNTIME_ADDRESS_KEY, RunProject, runtimeUrl, STUDIO_CONFIG_URL } from './run-project';
+import { defaultRuntimeAddress, RUNTIME_ADDRESS_KEY, RunProject, runtimeUrl } from './run-project';
+import { readStudioConfig, STUDIO_CONFIG_URL } from './studio-settings';
 
 describe('running the project in the runtime', () => {
   describe('snapshot', () => {
@@ -66,9 +67,9 @@ describe('running the project in the runtime', () => {
   });
 
   it('address: the settings of a published Studio come before the guess, the choice of the user before both', async () => {
-    expect(configuredRuntimeAddress({ runtimeAddress: ' https://runtime.example/ ' })).toBe('https://runtime.example/');
-    expect(configuredRuntimeAddress({ runtimeAddress: 'javascript:alert(1)' })).toBeNull();
-    expect(configuredRuntimeAddress('<!doctype html>')).toBeNull();
+    expect(readStudioConfig({ runtimeAddress: ' https://runtime.example/ ', registry: false })).toEqual({ runtimeAddress: 'https://runtime.example/', registry: false });
+    expect(readStudioConfig({ runtimeAddress: 'javascript:alert(1)', registry: 'no' })).toEqual({});
+    expect(readStudioConfig('<!doctype html>')).toEqual({});
     localStorage.removeItem(RUNTIME_ADDRESS_KEY);
     TestBed.configureTestingModule({ providers: [
       { provide: Notifier, useValue: { toast: () => undefined } },

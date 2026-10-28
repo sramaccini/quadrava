@@ -14,6 +14,7 @@ import { ownerOf, targetAt } from '../model/schema-info';
 import { fallbackText } from '../model/templates';
 import { collectTexts, translatable, usedKeys, type TextEntry } from '../model/texts';
 import { RegistryClient, RegistryError, readRegistrySettings } from '../model/registry-client';
+import { StudioSettings } from '../model/studio-settings';
 
 interface TextRow {
   entry: TextEntry;
@@ -76,6 +77,8 @@ export class TextsComponent {
   private readonly notifier = inject(Notifier);
   /** Application and environment chosen in the registry panel. */
   protected registry = readRegistrySettings();
+  /** Saving to the registry is switched on in this Studio (studio-config.json; off in the desktop app). */
+  protected readonly registryOn = inject(StudioSettings).registry;
   protected readonly saving = signal(false);
 
   protected readonly rows = computed<TextRow[]>(() => {

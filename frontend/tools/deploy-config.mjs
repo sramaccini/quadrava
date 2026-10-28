@@ -3,6 +3,8 @@
 //
 //   STUDIO_RUNTIME_ADDRESS=https://runtime.example/        → projects/editor/public/studio-config.json
 //                                                           (the runtime Studio opens, for every visitor)
+//   STUDIO_REGISTRY=off                                    → registry: false in studio-config.json (on: true)
+//                                                           (saving to and opening from the registry in Studio)
 //   RUNTIME_STUDIO_ORIGINS=https://studio.example[,…]      → studio.origins in projects/runtime/public/runtime-config.json
 //                                                           (the Studios allowed to open this runtime; they replace the
 //                                                           development ones)
@@ -29,12 +31,23 @@ function httpUrl(value, name) {
   return url;
 }
 
+const studio = {};
 const runtimeAddress = process.env.STUDIO_RUNTIME_ADDRESS?.trim();
 if (runtimeAddress) {
-  const url = httpUrl(runtimeAddress, 'STUDIO_RUNTIME_ADDRESS');
-  const file = join(here, '../projects/editor/public/studio-config.json');
-  writeFileSync(file, JSON.stringify({ runtimeAddress: url.toString() }, null, 2) + '\n');
-  console.log(`Studio opens the runtime at ${url}`);
+  studio.runtimeAddress = httpUrl(runtimeAddress, 'STUDIO_RUNTIME_ADDRESS').toString();
+  console.log(`Studio opens the runtime at ${studio.runtimeAddress}`);
+}
+const registry = process.env.STUDIO_REGISTRY?.trim().toLowerCase();
+if (registry) {
+  if (!['on', 'off', 'true', 'false'].includes(registry)) {
+    console.error(`STUDIO_REGISTRY: on or off, not ${registry}`);
+    process.exit(1);
+  }
+  studio.registry = registry === 'on' || registry === 'true';
+  console.log(`Studio: registry ${studio.registry ? 'on' : 'off'}`);
+}
+if (Object.keys(studio).length) {
+  writeFileSync(join(here, '../projects/editor/public/studio-config.json'), JSON.stringify(studio, null, 2) + '\n');
 }
 
 const studioOrigins = process.env.RUNTIME_STUDIO_ORIGINS?.trim();

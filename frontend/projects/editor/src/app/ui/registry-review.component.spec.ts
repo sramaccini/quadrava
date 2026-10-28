@@ -6,6 +6,7 @@ import { EDITOR_MESSAGES } from '../messages';
 import type { DocumentSummary } from '../model/registry-client';
 import { applies, needsAttention } from '../model/registry-review';
 import { RegistrySession } from '../model/registry-session';
+import { StudioSettings, fixedStudioSettings } from '../model/studio-settings';
 import { RegistryReviewComponent } from './registry-review.component';
 
 const doc = (kind: DocumentSummary['kind'], id: string, state: string, published?: string): DocumentSummary => ({
@@ -52,7 +53,12 @@ describe('review of several versions', () => {
         return json({ hash: `${id}-h`, createdAt: '', author: 'mario', state: 'approved' });
       });
       TestBed.configureTestingModule({
-        providers: [provideLowcodeComponents(), { provide: Notifier, useValue: { toast: () => undefined } }, { provide: Confirmation, useValue: { confirm: async () => true } }],
+        providers: [
+          provideLowcodeComponents(),
+          { provide: Notifier, useValue: { toast: () => undefined } },
+          { provide: Confirmation, useValue: { confirm: async () => true } },
+          { provide: StudioSettings, useValue: fixedStudioSettings() },
+        ],
       });
       TestBed.inject(I18n).addMessages('en', EDITOR_MESSAGES['en']);
       await TestBed.inject(RegistrySession).check();

@@ -3,6 +3,7 @@ import { Confirmation, I18n, Notifier } from 'core';
 import { vi } from 'vitest';
 import { EDITOR_MESSAGES } from '../messages';
 import { RegistrySession } from './registry-session';
+import { StudioSettings, fixedStudioSettings } from './studio-settings';
 
 describe('RegistrySession', () => {
   const toasts: string[] = [];
@@ -15,12 +16,24 @@ describe('RegistrySession', () => {
       providers: [
         { provide: Notifier, useValue: { toast: (m: string) => toasts.push(m) } },
         { provide: Confirmation, useValue: { confirm: async () => true } },
+        { provide: StudioSettings, useValue: fixedStudioSettings() },
       ],
     });
     TestBed.inject(I18n).addMessages('en', EDITOR_MESSAGES['en']);
   });
 
   afterEach(() => vi.unstubAllGlobals());
+
+  it('switched off by the settings of Studio: the registry is not even asked', async () => {
+    const fetch = vi.fn();
+    vi.stubGlobal('fetch', fetch);
+    TestBed.inject(StudioSettings).registry.set(false);
+    const session = TestBed.inject(RegistrySession);
+    expect(await session.check()).toBe('off');
+    expect(session.enabled()).toBe(false);
+    expect(session.usable()).toBe(false);
+    expect(fetch).not.toHaveBeenCalled();
+  });
 
   it('the registry is there if GET /registry/apps responds, asks for sign-in with 401, is missing otherwise', async () => {
     let answer = respond(200, [{ id: 'orders', name: 'Orders' }]);
@@ -59,7 +72,7 @@ describe('RegistrySession', () => {
     expect(session.basedOn('d1', { kind: 'screen', id: 'list' })).toBe('aaaaaaaaaaaa');
     const version = await session.save('d1', 'screen', { schemaVersion: '1.0', screen: 'list', components: [] });
     expect(version?.hash).toBe('bbbbbbbbbbbb');
-    expect(calls.at(-1)?.ifMatch).toContain('aaaaaaaaaaaa');
+    expect(calls.find((c) => c.url.endsWith('/versions'))?.ifMatch).toContain('aaaaaaaaaaaa');
     expect(session.basedOn('d1', { kind: 'screen', id: 'list' })).toBe('bbbbbbbbbbbb');
     expect(toasts.at(-1)).toContain('bbbbbbbbbb');
   });

@@ -2,7 +2,7 @@
   <header class="toolbar">
     <h1 class="brand"><lc-quadrava-wordmark icon="brand/quadrava-studio-icon-small.svg" product="Studio" /></h1>
     <!-- Menu as in desktop applications: File (new, open, save, to a file and to the registry), Edit, View, Window, Help. -->
-    <ed-menu-bar [menus]="menus()" [label]="i18n.t('ed.menu.bar')" (opened)="$event === 'file' && registry.check()" />
+    <ed-menu-bar [menus]="menus()" [label]="i18n.t('ed.menu.bar')" (opened)="$event === 'file' && registry.enabled() && registry.check()" />
     <div class="group">
       <button nz-button nzType="text" nzSize="small" type="button" [disabled]="!active()?.state.canUndo()" (click)="active()?.state.undo()" [attr.aria-label]="i18n.t('ed.undo')" [nz-tooltip]="i18n.t('ed.undo')">
         <span nz-icon nzType="undo"></span>

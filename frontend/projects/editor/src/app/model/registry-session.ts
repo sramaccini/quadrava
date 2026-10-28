@@ -15,9 +15,13 @@ import {
   type RegistryIssue,
   type RegistrySettings,
 } from './registry-client';
+import { StudioSettings } from './studio-settings';
 
-/** What is known about the registry: being checked, reachable, reachable but sign-in is needed, absent. */
-export type RegistryStatus = 'checking' | 'available' | 'login' | 'unavailable';
+/**
+ * What is known about the registry: being checked, reachable, reachable but sign-in is needed, absent, or switched off by the
+ * settings of this Studio (`off`: studio-config.json, or the desktop app).
+ */
+export type RegistryStatus = 'checking' | 'available' | 'login' | 'unavailable' | 'off';
 
 /** Registry document: type and identifier. */
 export interface RegistryRef {
@@ -40,6 +44,7 @@ export class RegistrySession {
   private readonly confirmation = inject(Confirmation);
   private readonly redirect = inject(EDITOR_REDIRECT);
   private readonly i18n = inject(I18n);
+  private readonly studio = inject(StudioSettings);
 
   private readonly settings = readRegistrySettings();
   readonly appId = signal(this.settings.appId);
@@ -73,7 +78,13 @@ export class RegistrySession {
       if (this.status() === 'available' && appId) void this.loadScreens(appId);
       else this.screens.set([]);
     });
-    void this.check();
+    // The settings first: with the registry switched off it is not even asked.
+    void this.studio.loaded.then(() => this.check());
+  }
+
+  /** The registry is switched on in this Studio (it may still be unreachable). */
+  enabled(): boolean {
+    return this.status() !== 'off';
   }
 
   private async loadScreens(appId: string): Promise<void> {
@@ -90,6 +101,10 @@ export class RegistrySession {
 
   /** Checks whether the registry is there (and whether it asks for sign-in); updates the list of applications. */
   async check(): Promise<RegistryStatus> {
+    if (!this.studio.registry()) {
+      this.status.set('off');
+      return 'off';
+    }
     try {
       const apps = await this.client.apps();
       this.apps.set(Array.isArray(apps) ? apps.filter((a) => typeof a?.id === 'string') : []);

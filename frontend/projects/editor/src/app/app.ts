@@ -241,6 +241,8 @@ export class App {
     const open = this.project.isOpen();
     // The registry items are off when the registry is not there (as in the demo editor), with the reason in the tooltip.
     const noRegistry = !this.registry.usable();
+    // Switched off by the settings (studio-config.json, the desktop app): its items are not there at all.
+    const registryOn = this.registry.enabled();
     const registryHint = this.registry.status() === 'checking' ? t('ed.menu.registryChecking') : noRegistry ? t('ed.menu.registryUnavailable') : undefined;
     const registryDocument = !!win && win.kind !== 'project' && win.kind !== 'messages';
     const file: MenuItem[] = [
@@ -271,20 +273,28 @@ export class App {
         disabled: !open,
         children: this.exampleNames().map((name) => ({ id: 'example:' + name, label: name, run: () => void this.importExample(name) })),
       },
-      {
-        id: 'open-registry',
-        label: t('ed.menu.openRegistry'),
-        disabled: noRegistry || !open,
-        hint: registryHint,
-        children: CREATABLE.map((kind) => ({ id: 'open-registry-' + kind, label: t('ed.openRegistry.' + kind), run: () => void this.openFromRegistry(kind as DocumentKind) })),
-      },
+      ...(registryOn
+        ? [
+            {
+              id: 'open-registry',
+              label: t('ed.menu.openRegistry'),
+              disabled: noRegistry || !open,
+              hint: registryHint,
+              children: CREATABLE.map((kind) => ({ id: 'open-registry-' + kind, label: t('ed.openRegistry.' + kind), run: () => void this.openFromRegistry(kind as DocumentKind) })),
+            },
+          ]
+        : []),
       { id: 'save', label: t('ed.menu.save'), shortcut: 'Ctrl+S', separator: true, disabled: !win, run: () => win && void this.commands.save(win) },
       { id: 'save-all', label: t('ed.menu.saveAll'), disabled: !this.workspace.windows().length, run: () => void this.commands.saveAll() },
       { id: 'export', label: t('ed.menu.export'), disabled: !win, run: () => win && void this.commands.export(win) },
-      { id: 'save-registry', label: t('ed.menu.saveRegistry'), disabled: noRegistry || !registryDocument, hint: registryHint, run: () => void this.saveToRegistry() },
-      { id: 'publish-project', label: t('ed.menu.publishProject'), disabled: noRegistry || !open, hint: registryHint, run: () => void this.publishProject() },
-      { id: 'registry', label: t('ed.menu.registry'), separator: true, disabled: !registryDocument, run: () => this.showRegistry.set(true) },
-      { id: 'review', label: t('ed.menu.review'), disabled: noRegistry, hint: registryHint, run: () => void this.openReview() },
+      ...(registryOn
+        ? [
+            { id: 'save-registry', label: t('ed.menu.saveRegistry'), disabled: noRegistry || !registryDocument, hint: registryHint, run: () => void this.saveToRegistry() },
+            { id: 'publish-project', label: t('ed.menu.publishProject'), disabled: noRegistry || !open, hint: registryHint, run: () => void this.publishProject() },
+            { id: 'registry', label: t('ed.menu.registry'), separator: true, disabled: !registryDocument, run: () => this.showRegistry.set(true) },
+            { id: 'review', label: t('ed.menu.review'), disabled: noRegistry, hint: registryHint, run: () => void this.openReview() },
+          ]
+        : []),
       { id: 'close', label: t('ed.menu.close'), separator: true, disabled: !win, run: () => win && void this.closeWindow(win) },
       { id: 'close-all', label: t('ed.menu.closeAll'), disabled: !this.workspace.windows().length, run: () => void this.closeAll() },
     ];

@@ -60,7 +60,7 @@ editor  ──► components ──► core   (the preview renders screens with 
 | `npx ng build runtime` | Production build (budgets: warning 2.5 MB, error 4 MB initial) |
 | `npm run desktop:build` | Desktop app of Studio for the system you are on (ADR-17): builds the libraries, the examples and the web build of Studio, then `tauri build` in `desktop/`; installers in `desktop/src-tauri/target/release/bundle/` |
 | `npm run desktop:dev` | The desktop app on the dev server of Studio (start `ng serve editor --port 4301` first), with reload on change |
-| `npm run deploy:config` | Before `ng build` on a static host: writes Studio's `studio-config.json` from `STUDIO_RUNTIME_ADDRESS` and the runtime's `studio.origins` from `RUNTIME_STUDIO_ORIGINS` (comma separated); stops on an address that is not http(s). See «Publishing Studio and the runtime» below |
+| `npm run deploy:config` | Before `ng build` on a static host: writes Studio's `studio-config.json` from `STUDIO_RUNTIME_ADDRESS` and `STUDIO_REGISTRY` (`on`/`off`) and the runtime's `studio.origins` from `RUNTIME_STUDIO_ORIGINS` (comma separated); stops on an address that is not http(s). See «Publishing Studio and the runtime» below |
 | `npm run e2e` | Playwright end-to-end tests (`e2e/`, including the axe-core accessibility check of every showcase screen) in Chromium against the demo and Studio; starts `ng serve runtime` on port 4300 and `ng serve editor` on port 4301 (`E2E_PORT` and `E2E_EDITOR_PORT` to change them) unless a server is already running there. Needs `npm run demo:prepare` and, once, `npx playwright install chromium` |
 
 Before opening a pull request, all of these must pass: `schema:check`, `schema:docs:check`, `validate:examples`, `notices:check`, `build:libs`, `test:libs`, runtime and editor tests, production builds, `npm run e2e`. CI (`.github/workflows/ci.yml`) runs the same checks on every push to `main` and every pull request, in three jobs: `frontend`, `e2e` and `java` (`mvn -B verify`). When the e2e job fails, the Playwright report and traces are uploaded as the `playwright-report` artifact (open a trace with `npx playwright show-trace <trace.zip>`).
@@ -72,6 +72,7 @@ Studio and the runtime are two static sites. For «Run project» to work online,
 | Site | Environment variable | What it writes |
 | --- | --- | --- |
 | Studio | `STUDIO_RUNTIME_ADDRESS=https://quadrava-runtime.example/` | `projects/editor/public/studio-config.json`: the runtime that «Run project» opens for every visitor |
+| Studio | `STUDIO_REGISTRY=off` | `"registry": false` in the same file: no registry commands, no calls to `/registry` (for a Studio without BFF, such as a public demo; the default is on in the browser, off in the desktop app) |
 | Runtime | `RUNTIME_STUDIO_ORIGINS=https://quadrava.example` | `studio.origins` in `projects/runtime/public/runtime-config.json`: the Studios allowed to send their project (the development origins are replaced) |
 
 Example on Render (two *Static Sites* on the same repository, *Root Directory* `frontend`, environment variable `NODE_VERSION=24.21.0`, and a *Rewrite* rule `/*` → `/index.html` for the routes of the single-page apps):

@@ -5,17 +5,19 @@
       <button nz-button nzSize="small" type="button" (click)="importInput.click()"><span nz-icon nzType="upload"></span>{{ i18n.t('ed.texts.import') }}</button>
       <input #importInput type="file" accept="application/json,.json" hidden (change)="importTranslations(importInput)" />
       <button nz-button nzSize="small" type="button" (click)="exportTranslations()"><span nz-icon nzType="download"></span>{{ i18n.t('ed.texts.export') }}</button>
-      <button
-        nz-button
-        nzSize="small"
-        type="button"
-        [disabled]="saving() || !registry.appId"
-        [nzLoading]="saving()"
-        [attr.title]="registry.appId ? null : i18n.t('ed.texts.registryHint')"
-        (click)="saveToRegistry()"
-      >
-        <span nz-icon nzType="upload"></span>{{ i18n.t('ed.texts.saveRegistry', { env: registry.env }) }}
-      </button>
+      @if (registryOn()) {
+        <button
+          nz-button
+          nzSize="small"
+          type="button"
+          [disabled]="saving() || !registry.appId"
+          [nzLoading]="saving()"
+          [attr.title]="registry.appId ? null : i18n.t('ed.texts.registryHint')"
+          (click)="saveToRegistry()"
+        >
+          <span nz-icon nzType="upload"></span>{{ i18n.t('ed.texts.saveRegistry', { env: registry.env }) }}
+        </button>
+      }
     </div>
   </div>
   <!-- Languages of the translations: the default one stays; the others can be removed, new ones added. -->
