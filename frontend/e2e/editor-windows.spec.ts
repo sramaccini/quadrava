@@ -15,7 +15,7 @@ async function box(locator: Locator): Promise<{ x: number; y: number; width: num
 }
 
 async function newDocument(page: Page, kind: 'Navigation' | 'Theme', name?: string): Promise<void> {
-  await page.getByRole('menuitem', { name: 'File' }).click();
+  await page.getByRole('menuitem', { name: 'File', exact: true }).click();
   await page.getByRole('menuitem', { name: 'New', exact: true }).click();
   await page.getByRole('menuitem', { name: kind, exact: true }).click();
   if (name) {
