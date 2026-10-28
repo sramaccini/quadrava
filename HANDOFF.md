@@ -1,6 +1,6 @@
 # HANDOFF — Quadrava
 
-Project status, conventions and next steps, for picking the work up locally. Last updated: 28 October 2026, after the desktop app of Studio (ADR-17), data sources defined only in data sources documents, settings of the application and the YAML import.
+Project status, conventions and next steps, for picking the work up locally. Last updated: 28 October 2026, after the desktop app of Studio (ADR-17), data sources defined only in data sources documents, settings of the application, the YAML import, «Run project» in the desktop app and thirteen demo themes.
 
 ## 1. What it is
 
@@ -94,6 +94,8 @@ The main ones are in the DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In short:
 **Data sources (28 October 2026).** Defined only in data sources documents (`datasources/*.json`, with an optional `baseUrl`); a screen only refers to them (`{ ref, params, body }`; the schema rejects definitions in a screen, Studio flags old ones and moves them into the project). The import from OpenAPI or Swagger, in JSON or YAML (`yaml` library, loaded lazily), lives in the data sources documents, whose cards are coloured by HTTP verb. `settings` of `project.json` (with the registry: `definitions.settings` of `runtime-config.json`) are read by the expressions as `settings.<name>`; in a url a setting written alone goes in unencoded when it holds only path characters. Studio edits them as a table of names and values (the `map` kind of the property panel).
 
 **Desktop app (23–28 October 2026, ADR-17).** Tauri 2 around the web build of Studio (`frontend/desktop/src-tauri`), built by the **Desktop** workflow on Windows, Linux and macOS when Studio, its libraries, the examples or the desktop project change (artifacts, not signed). Project folders on disk through the dialog and fs plugins (recursive scope, kept by persisted-scope). «Run project» opens the runtime bundled with Studio (`/runtime/`, `tools/desktop-runtime.mjs`) in a second window of the app, the project travelling on a `BroadcastChannel` of the same origin; no registry in the app (decided, ADR-17: the cookie session of the BFF cannot reach it). Developer tools are on in the installed app until it is confirmed stable. Building locally on Windows needs the Visual Studio Build Tools (C++ workload) and Rust ≥ 1.77.2.
+
+**Themes (28 October 2026).** The demo has thirteen themes (`examples/themes/`: light, classic, dark, ocean, forest, sunset, lavender, slate, sand, high-contrast, midnight, graphite, polar), all within WCAG AA for text, muted text, status colours and menu. Trying them brought out three defects of the shell, fixed: the secondary texts of a coloured top bar (`--lc-header-muted`), the link colour of the selected menu item with dark side bars, and cards, tables and pop-ups painted with the fixed greys of the NG-ZORRO dark stylesheet (`NZ_DARK_SURFACES_CSS` in `theme-bridge.ts`). The demo project kept in the browser by Studio is copied from the examples only the first time: an older copy does not show the new themes.
 
 **Settings of a published Studio.** `studio-config.json` next to Studio (written by `npm run deploy:config` from environment variables): `runtimeAddress` («Run project») and `registry` (`false` removes every registry command). DEVELOPMENT-GUIDE § 3 has the Render settings for publishing Studio and the runtime.
 
