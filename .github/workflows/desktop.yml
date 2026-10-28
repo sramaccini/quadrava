@@ -2,7 +2,7 @@ name: Desktop
 
 # Quadrava Studio as a desktop application (ADR-17): one machine per operating system builds the installers, because
 # Tauri does not cross-compile (macOS packages are built only on macOS). Started by hand, on a «studio-v*» tag, and on
-# changes to the desktop project. The installers are not signed: Windows SmartScreen and macOS Gatekeeper warn the first
+# changes to Studio or to the desktop project. The installers are not signed: Windows SmartScreen and macOS Gatekeeper warn the first
 # time they are opened.
 
 on:
@@ -10,8 +10,16 @@ on:
   push:
     tags: ['studio-v*']
     branches: [main]
+    # The app holds the whole of Studio: it is built again when Studio, the libraries it uses or the desktop project change.
     paths:
       - 'frontend/desktop/**'
+      - 'frontend/projects/editor/**'
+      - 'frontend/projects/schema/**'
+      - 'frontend/projects/expressions/**'
+      - 'frontend/projects/core/**'
+      - 'frontend/projects/components/**'
+      - 'frontend/package-lock.json'
+      - 'examples/**'
       - '.github/workflows/desktop.yml'
 
 concurrency:
