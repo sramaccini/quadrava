@@ -8,6 +8,8 @@ import { expect, test } from '@playwright/test';
 const editorPort = Number(process.env['E2E_EDITOR_PORT'] ?? 4301);
 const editor = `http://localhost:${editorPort}`;
 const runtime = `http://localhost:${editorPort - 1}`;
+/** Start of the runtime with the project of Studio (a reload included). */
+const STARTUP_MS = 20_000;
 
 test.describe('Studio: run the project in the runtime', () => {
   test('the runtime opens in another window with the project of Studio, unsaved changes included', async ({ page, context }) => {
@@ -40,15 +42,20 @@ test.describe('Studio: run the project in the runtime', () => {
     const popup = await opened;
     await popup.waitForLoadState();
     expect(popup.url()).toBe(`${runtime}/?studio=${encodeURIComponent(editor)}`);
+    // First the project must arrive (its menu, the one of a new project, is drawn): only then the tab remembers its Studio.
+    // Moving away before would start the plain demo.
+    await expect(popup.getByRole('navigation', { name: 'Menu New area' })).toBeVisible({ timeout: STARTUP_MS });
     // The screen of the project, by its route and without ?studio= (the routes drop it): the tab remembers its Studio
     // and asks again for the project.
     await popup.goto(`${runtime}/area/orders`);
-    await expect(popup.getByRole('heading', { name: 'Orders (not saved)', level: 1 })).toBeVisible();
+    // The runtime starts, reads its configuration and asks Studio for the project before drawing: with the whole suite running
+    // in parallel on the dev servers this takes longer than the default 5 seconds.
+    await expect(popup.getByRole('heading', { name: 'Orders (not saved)', level: 1 })).toBeVisible({ timeout: STARTUP_MS });
 
     // «Run project» again after another change: the same window, reloaded with the new project.
     await title.fill('Orders (changed again)');
     await page.getByRole('button', { name: 'Run project' }).click();
-    await expect(popup.getByRole('heading', { name: 'Orders (changed again)', level: 1 })).toBeVisible();
+    await expect(popup.getByRole('heading', { name: 'Orders (changed again)', level: 1 })).toBeVisible({ timeout: STARTUP_MS });
     expect(context.pages()).toHaveLength(2);
   });
 });
