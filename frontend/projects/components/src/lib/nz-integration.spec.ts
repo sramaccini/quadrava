@@ -54,6 +54,7 @@ describe('integration with NG-ZORRO', () => {
   afterEach(() => {
     document.body.querySelectorAll('.cdk-overlay-container').forEach((n) => n.remove());
     document.getElementById('lc-nz-dark-theme')?.remove();
+    document.getElementById('lc-nz-dark-surfaces')?.remove();
     document.documentElement.removeAttribute('style');
   });
 
@@ -78,9 +79,14 @@ describe('integration with NG-ZORRO', () => {
       TestBed.tick();
       expect(document.documentElement.style.getPropertyValue('--ant-primary-color')).toBe('#1f5fbf');
       expect(document.getElementById('lc-nz-dark-theme')?.getAttribute('href')).toBe('nz-dark.css');
+      // After the dark stylesheet, the rules that give its cards, tables and pop-ups the colours of the theme.
+      const surfaces = document.getElementById('lc-nz-dark-surfaces');
+      expect(surfaces?.textContent).toContain('var(--lc-color-surface)');
+      expect(document.getElementById('lc-nz-dark-theme')?.compareDocumentPosition(surfaces!)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
       themes.apply(theme('light'));
       TestBed.tick();
       expect(document.getElementById('lc-nz-dark-theme')).toBeNull();
+      expect(document.getElementById('lc-nz-dark-surfaces')).toBeNull();
     });
   });
 

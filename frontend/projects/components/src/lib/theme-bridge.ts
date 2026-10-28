@@ -7,6 +7,7 @@ import type { ThemeDefinition } from 'schema';
 /** Name of the NG-ZORRO dark stylesheet, published as a separate file (see the style configuration of the application). */
 export const NZ_DARK_STYLESHEET = 'nz-dark.css';
 const DARK_LINK_ID = 'lc-nz-dark-theme';
+const DARK_SURFACES_ID = 'lc-nz-dark-surfaces';
 
 function rgba(hex: string, alpha: number): string {
   const n = parseInt(hex.slice(1), 16);
@@ -98,6 +99,32 @@ export const NZ_CONTRAST_CSS = `
 `;
 
 /**
+ * The dark stylesheet of NG-ZORRO paints cards, tables, dialogs, drawers and pop-ups with its own greys (#141414,
+ * #1f1f1f, #1d1d1d) and borders (#303030): with a dark theme they ignore its surface and border colours. Loaded after that
+ * stylesheet, only with dark themes; `:root` gives these rules the weight to win over the library's.
+ */
+export const NZ_DARK_SURFACES_CSS = `
+:root .ant-card, :root .ant-card-actions, :root .ant-collapse-content, :root .ant-collapse-panel, :root .ant-table, :root .ant-table-summary,
+:root .ant-table-cell-fix-left, :root .ant-table-cell-fix-right, :root .ant-table-sticky-holder, :root .ant-picker-calendar,
+:root .ant-picker-calendar .ant-picker-panel, :root .ant-picker-panel-container, :root .ant-picker-panel, :root .ant-drawer-content,
+:root .ant-dropdown-menu, :root .ant-select-dropdown, :root .ant-message-notice-content, :root .ant-notification-notice,
+:root .ant-modal-content, :root .ant-modal-header, :root .ant-popover-inner, :root .ant-popover-arrow-content,
+:root .ant-timeline-item-head, :root .ant-tree-show-line .ant-tree-switcher, :root .ant-modal .ant-table, :root .ant-drawer .ant-table,
+:root .ant-tabs-card > .ant-tabs-nav .ant-tabs-tab-active { background-color: var(--lc-color-surface); }
+:root .ant-table-thead > tr > th, :root tr.ant-table-expanded-row > td, :root .ant-modal .ant-table.ant-table-small thead > tr > th,
+:root .ant-drawer .ant-table.ant-table-small thead > tr > th { background-color: color-mix(in srgb, var(--lc-color-on-surface) 6%, var(--lc-color-surface)); }
+:root .ant-table-tbody > tr.ant-table-row:hover > td, :root .ant-table-thead th.ant-table-column-sort,
+:root .ant-modal .ant-table tbody > tr.ant-table-row:hover > td, :root .ant-drawer .ant-table tbody > tr.ant-table-row:hover > td {
+  background-color: color-mix(in srgb, var(--lc-color-on-surface) 10%, var(--lc-color-surface)); }
+:root .ant-card-bordered, :root .ant-card-head, :root .ant-card-actions, :root .ant-table-thead > tr > th, :root .ant-table-tbody > tr > td,
+:root .ant-table-summary > tr > td, :root .ant-modal-header, :root .ant-modal-footer, :root .ant-drawer-header, :root .ant-drawer-footer,
+:root .ant-descriptions-bordered .ant-descriptions-view, :root .ant-descriptions-bordered .ant-descriptions-row,
+:root .ant-descriptions-bordered .ant-descriptions-item-label, :root .ant-descriptions-bordered .ant-descriptions-item-content,
+:root .ant-list-split .ant-list-item, :root .ant-list-split .ant-list-header, :root .ant-picker-panel, :root .ant-popover-title,
+:root .ant-collapse, :root .ant-collapse > .ant-collapse-item, :root .ant-collapse-content { border-color: var(--lc-color-border); }
+`;
+
+/**
  * Connects the platform theme to NG-ZORRO: on every theme change it sets the `--ant-*` variables and,
  * for dark themes, loads the NG-ZORRO dark stylesheet (removed when switching to a light theme).
  */
@@ -117,14 +144,23 @@ export function provideNzThemeBridge(): EnvironmentProviders {
       const root = doc.documentElement;
       for (const [name, value] of Object.entries(themeToNzVars(theme))) root.style.setProperty(name, value);
       const existing = doc.getElementById(DARK_LINK_ID);
-      if (theme.mode === 'dark' && !existing) {
-        const link = doc.createElement('link');
-        link.id = DARK_LINK_ID;
-        link.rel = 'stylesheet';
-        link.href = NZ_DARK_STYLESHEET;
-        doc.head.appendChild(link);
-      } else if (theme.mode !== 'dark' && existing) {
-        existing.remove();
+      if (theme.mode === 'dark') {
+        if (!existing) {
+          const link = doc.createElement('link');
+          link.id = DARK_LINK_ID;
+          link.rel = 'stylesheet';
+          link.href = NZ_DARK_STYLESHEET;
+          doc.head.appendChild(link);
+        }
+        if (!doc.getElementById(DARK_SURFACES_ID)) {
+          const surfaces = doc.createElement('style');
+          surfaces.id = DARK_SURFACES_ID;
+          surfaces.textContent = NZ_DARK_SURFACES_CSS;
+          doc.head.appendChild(surfaces);
+        }
+      } else {
+        existing?.remove();
+        doc.getElementById(DARK_SURFACES_ID)?.remove();
       }
     });
   });

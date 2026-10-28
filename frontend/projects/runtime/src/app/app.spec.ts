@@ -87,6 +87,7 @@ describe('App (demo)', () => {
     document.documentElement.removeAttribute('style');
     document.body.querySelectorAll('.cdk-overlay-container').forEach((n) => n.remove());
     document.getElementById('lc-nz-dark-theme')?.remove();
+    document.getElementById('lc-nz-dark-surfaces')?.remove();
   });
 
   async function until(fixture: ComponentFixture<App>, condition: () => boolean, label: string): Promise<void> {

@@ -45,6 +45,7 @@ describe('preview (inside the iframe)', () => {
     vi.unstubAllGlobals();
     document.documentElement.removeAttribute('style');
     document.getElementById('lc-nz-dark-theme')?.remove();
+    document.getElementById('lc-nz-dark-surfaces')?.remove();
     document.body.querySelectorAll('.cdk-overlay-container').forEach((n) => n.remove());
   });
 
