@@ -46,14 +46,16 @@ function isHttpAddress(address: string): boolean {
 
 /**
  * The settings of this installation of Studio, read once at start. Without the file (or without a setting) the defaults
- * hold: the registry is on in the browser and off in the desktop app (there is no BFF next to it, ADR-17).
+ * hold: the registry is on in the browser. In the desktop app it is always off, whatever the file says: there is no BFF
+ * next to it and its session cookie cannot reach the app (ADR-17).
  */
 @Injectable({ providedIn: 'root' })
 export class StudioSettings {
+  private readonly desktop = !!desktopApi();
   /** The runtime address of the settings, if any. */
   readonly runtimeAddress = signal<string | null>(null);
   /** Saving to and opening from the registry are possible here. */
-  readonly registry = signal(!desktopApi());
+  readonly registry = signal(!this.desktop);
   /** Resolved when the file has been read (or found missing). */
   readonly loaded: Promise<void> = this.load();
 
@@ -63,7 +65,7 @@ export class StudioSettings {
       if (!response.ok) return;
       const config = readStudioConfig(await response.json());
       if (config.runtimeAddress) this.runtimeAddress.set(config.runtimeAddress);
-      if (config.registry !== undefined) this.registry.set(config.registry);
+      if (config.registry !== undefined && !this.desktop) this.registry.set(config.registry);
     } catch {
       // No settings (or not JSON, for example the page of a single-page host): the defaults hold.
     }
