@@ -1,6 +1,6 @@
 # HANDOFF — Quadrava
 
-Project status, conventions and next steps, for picking the work up locally. Last updated: 19 October 2026, after phases 1, 2 and 3 of declarative field validation (ADR-15).
+Project status, conventions and next steps, for picking the work up locally. Last updated: 28 October 2026, after the desktop app of Studio (ADR-17), data sources defined only in data sources documents, settings of the application and the YAML import.
 
 ## 1. What it is
 
@@ -91,6 +91,12 @@ The main ones are in the DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In short:
 - Messages with literal braces (`{{ }}`, JSON): write them `\\{` `\\}` in the TypeScript source.
 - Studio windows: an iframe moved in the page reloads, so the windows keep their order in the page and only their z-index changes (`Workspace.order`). The stores are not singletons: inject them only inside a window or a side panel (drawn with the window's injector), or reach them through `Workspace` (`latest`, `injector.get`). The side columns stay even without panels, otherwise the area of the windows changes size when the first document opens.
 
+**Data sources (28 October 2026).** Defined only in data sources documents (`datasources/*.json`, with an optional `baseUrl`); a screen only refers to them (`{ ref, params, body }`; the schema rejects definitions in a screen, Studio flags old ones and moves them into the project). The import from OpenAPI or Swagger, in JSON or YAML (`yaml` library, loaded lazily), lives in the data sources documents, whose cards are coloured by HTTP verb. `settings` of `project.json` (with the registry: `definitions.settings` of `runtime-config.json`) are read by the expressions as `settings.<name>`; in a url a setting written alone goes in unencoded when it holds only path characters. Studio edits them as a table of names and values (the `map` kind of the property panel).
+
+**Desktop app (23–28 October 2026, ADR-17).** Tauri 2 around the web build of Studio (`frontend/desktop/src-tauri`), built by the **Desktop** workflow on Windows, Linux and macOS when Studio, its libraries, the examples or the desktop project change (artifacts, not signed). Project folders on disk through the dialog and fs plugins (recursive scope, kept by persisted-scope). «Run project» is hidden there and the registry is off by default. Developer tools are on in the installed app until it is confirmed stable. Building locally on Windows needs the Visual Studio Build Tools (C++ workload) and Rust ≥ 1.77.2.
+
+**Settings of a published Studio.** `studio-config.json` next to Studio (written by `npm run deploy:config` from environment variables): `runtimeAddress` («Run project») and `registry` (`false` removes every registry command). DEVELOPMENT-GUIDE § 3 has the Render settings for publishing Studio and the runtime.
+
 ## 7. Known limits / debt
 
 - Runtime: in `bff` mode it uses `provideLowcodeServices` (session, authorization, data client, telemetry) and `BffShellSession`; in the demo the fake ports and `DemoShellSession`. The demo's data logic lives in `runtime/src/demo/demo-backend.ts`, used by `MockDataClient` and by `tools/demo-api.mjs`.
@@ -98,6 +104,8 @@ The main ones are in the DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In short:
 - Telemetry (15 October 2026): traces `screen.open`, `action.run`, `http.client` and logs of the technical reports, both OTLP/HTTP JSON in batches, also sent when the page closes. Not done yet: the W3C `baggage` header with screen and action (guidelines § 9, RF-AUD-02), the `sensitive` redaction at the source (RF-TEL-06: the spans carry no data values, so today it matters only for logs) and the log level per environment (RF-TEL-07).
 - Reference registry (contract 0.5, 15 October: cross-document reference check, see architecture § 10): validation with the same JSON Schemas as the front end (networknt), four-eyes review (roles `manager`, `administrator`), protected environments `testing` and `production`, If-Match, optional file store, `messages` documents for translations. CEL expressions are **not** checked server-side (editor and runtime check them).
 - e2e in Chromium only; the automatic accessibility check does not replace manual testing.
+- Desktop app: «Run project» and the registry are not available there; the packages are not signed (SmartScreen, Gatekeeper; on PCs with the attack surface reduction rules of Defender the executable may be blocked until signed or excluded); developer tools on.
+- The runtime published as a static site uses the in-browser demo back end: a project with its own `/api` (such as `samples/medical-staff`) opens without data there.
 - Editor: on the preview components can be added, moved and resized (span, grow); the border's sides can be resized only in the runtime; comparison is between a version and the open document, not between two versions. Translations written in a screen apply to the previews of all the windows (one editor catalogue).
 - `validate:examples` does not check CEL expressions (the `i18n-examples.spec.ts` test does).
 - Component limits: catalogue § 3 (validation: absolute dates only, no async checks, no field errors from the services, no rules across standalone `input` fields).
@@ -113,7 +121,9 @@ The main ones are in the DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In short:
 6. e2e in Firefox and WebKit.
 7. CEL in `validate:examples` and, eventually, in the registry.
 8. Bring the project documents (architecture § 9, functional specification, guidelines) up to date with the October status.
-9. Validation, what is left: remote rules in filters; field errors of the services deeper than one level of rows; a check of passwords against leaked lists (a service with k-anonymity) if a customer needs it.
+9. Desktop app: switch the developer tools off once the app is confirmed stable; sign the packages (Azure Trusted Signing or a code-signing certificate for Windows, an Apple Developer account for macOS) as secrets of the Desktop workflow; «Run project» in a second window of the app (relaying the messages); the registry from the app (it would need an address of its own, not the relative one of the BFF).
+10. Sample data for the medical-staff sample in the demo back end, so that the published runtime shows it with data.
+11. Validation, what is left: remote rules in filters; field errors of the services deeper than one level of rows; a check of passwords against leaked lists (a service with k-anonymity) if a customer needs it.
 
 ## 8b. What was missing and proposed optimisations (13 October 2026)
 
