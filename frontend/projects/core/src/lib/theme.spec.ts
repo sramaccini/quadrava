@@ -57,4 +57,12 @@ describe('themeToCssVars', () => {
     expect(vars['--lc-page-header-bg']).toBe('#fafafa');
     expect(vars['--lc-content-padding']).toBe('16px');
   });
+
+  it('the secondary text of a top bar with a colour of its own follows the bar, not the muted text of the page', () => {
+    const withHeader = (header: { background?: string; text?: string }) =>
+      themeToCssVars({ ...theme, tokens: { ...theme.tokens, layout: { header } } })['--lc-header-muted'];
+    expect(withHeader({})).toBe(themeToCssVars(theme)['--lc-color-muted']);
+    expect(withHeader({ background: theme.tokens.colors.surface })).toBe(themeToCssVars(theme)['--lc-color-muted']);
+    expect(withHeader({ background: '#000000', text: '#ffffff' })).toBe('color-mix(in srgb, #ffffff 80%, #000000)');
+  });
 });

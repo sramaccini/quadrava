@@ -53,7 +53,8 @@ export interface NavigateEvent {
     :host ::ng-deep .ant-menu-item:hover, :host ::ng-deep .ant-menu-submenu-title:hover, :host ::ng-deep .ant-menu-submenu-open > .ant-menu-submenu-title { color: var(--lc-sider-active-text) !important; }
     :host ::ng-deep .ant-menu-item-selected { background: var(--lc-sider-active-bg) !important; color: var(--lc-sider-active-text) !important; }
     :host ::ng-deep .ant-menu-item-selected::after { border-color: var(--lc-sider-active-text); }
-    :host ::ng-deep .ant-menu-item a, :host ::ng-deep .ant-menu-item-selected a { color: inherit; }
+    /* The links take the colour of their item: the dark menu of the library sets its own, more specific, on them. */
+    :host ::ng-deep .ant-menu-item a, :host ::ng-deep .ant-menu-item-selected a { color: inherit !important; }
     :host ::ng-deep .ant-menu-submenu-arrow { color: inherit; }
     /* Long items wrap instead of being truncated. */
     :host ::ng-deep li.ant-menu-item, :host ::ng-deep .ant-menu-submenu-title { height: auto; min-height: 40px; line-height: 1.4; padding-block: 9px; white-space: normal; }
@@ -63,6 +64,7 @@ export interface NavigateEvent {
     .empty { margin: 0; padding: 0 16px; color: var(--lc-sider-muted); font-size: .9em; }
     .search { padding: 0 16px 8px; }
     .search input { background: transparent; color: var(--lc-sider-text); border-color: var(--lc-sider-border, #d5dbe3); }
+    .search input::placeholder { color: var(--lc-sider-muted) !important; }
     .results { list-style: none; margin: 0; padding: 0 8px; display: flex; flex-direction: column; gap: 2px; }
     .results a { display: flex; flex-direction: column; padding: 6px 10px; border-radius: var(--lc-radius, 6px); color: var(--lc-sider-text); text-decoration: none; }
     .results a:hover, .results a:focus-visible { background: var(--lc-sider-active-bg); color: var(--lc-sider-active-text); outline: none; }

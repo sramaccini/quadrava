@@ -37,6 +37,12 @@ export function themeToCssVars(theme: ThemeDefinition): Record<string, string> {
   vars['--lc-sider-collapsed-width'] = `${sider.collapsedWidth ?? 80}px`;
   vars['--lc-header-bg'] = header.background ?? colors.surface;
   vars['--lc-header-text'] = header.text ?? colors.onSurface;
+  // Secondary text of the top bar (title, labels): the muted text of the theme, unless the bar has a colour of its own,
+  // where that text may not be readable; then the text of the bar, slightly faded towards its background.
+  vars['--lc-header-muted'] =
+    header.background && header.background !== colors.surface
+      ? `color-mix(in srgb, ${header.text ?? colors.onSurface} 80%, ${header.background})`
+      : muted;
   vars['--lc-header-border'] = header.border ?? colors.border;
   vars['--lc-header-height'] = `${header.height ?? 56}px`;
   vars['--lc-page-header-bg'] = page.background ?? colors.surface;

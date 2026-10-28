@@ -7,9 +7,9 @@
   display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; height: var(--lc-header-height); line-height: 1.5715; padding: 0 16px 0 40px;
   background: var(--lc-header-bg); color: var(--lc-header-text); border-bottom: 1px solid var(--lc-header-border); position: relative; z-index: 1;
 }
-.crumb { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--lc-color-muted); }
+.crumb { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--lc-header-muted, var(--lc-color-muted)); }
 .spacer { flex: 1; }
-.bar label { margin-left: 8px; color: var(--lc-color-muted); white-space: nowrap; }
+.bar label { margin-left: 8px; color: var(--lc-header-muted, var(--lc-color-muted)); white-space: nowrap; }
 /* Four choices (profile, theme, language, network) must fit in the bar even at 1200px with the sidebar open. */
 .pick { min-width: 112px; }
 .menu-button, .settings-button { flex: none; color: inherit; font-size: 18px; }

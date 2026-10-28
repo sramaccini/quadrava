@@ -54,7 +54,7 @@
             </nz-select>
           }
           <label for="lc-theme">{{ i18n.t('app.theme') }}</label>
-          <nz-select nzId="lc-theme" nzSize="small" class="pick" [ngModel]="themeName()" (ngModelChange)="themeName.set($event)">
+          <nz-select nzId="lc-theme" nzSize="small" class="pick" [nzDropdownMatchSelectWidth]="false" [ngModel]="themeName()" (ngModelChange)="themeName.set($event)">
             @for (t of themes; track t) {
               <nz-option [nzValue]="t" [nzLabel]="i18n.t('app.theme.' + t, {}, t)" />
             }
