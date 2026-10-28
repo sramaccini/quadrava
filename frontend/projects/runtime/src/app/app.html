@@ -42,7 +42,7 @@
             <lc-icon name="menu" />
           </button>
         }
-        <span class="crumb">{{ i18n.t('app.title') }}</span>
+        <span class="crumb">{{ i18n.t('app.title', {}, '') }}</span>
         <span class="spacer"></span>
         @if (viewport() === 'wide') {
           @if (profiles.length) {

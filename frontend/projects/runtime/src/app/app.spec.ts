@@ -144,6 +144,13 @@ describe('App (demo)', () => {
     expect(el.querySelector('lc-sidebar a[aria-current="page"]')?.textContent).toContain('Invoice list');
   });
 
+  it('the title of the top bar never shows its catalogue key, while the catalogue loads or when it lacks the title', async () => {
+    // Here the catalogues are not served: the title stays empty instead of showing app.title.
+    const { fixture, el } = await start();
+    await until(fixture, () => rows(el) > 0, 'invoice list');
+    expect(el.querySelector('nz-header .crumb')?.textContent?.trim()).toBe('');
+  });
+
   it('on a narrow screen the menu is in a drawer and the demo settings in a menu', async () => {
     // jsdom has no matchMedia: it is simulated with a window 390px wide.
     vi.stubGlobal('matchMedia', (query: string) => ({
