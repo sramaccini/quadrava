@@ -1,11 +1,11 @@
 import { TestBed } from '@angular/core/testing';
-import { Confirmation, Notifier } from 'core';
+import { Confirmation, Notifier, STUDIO_CHANNEL } from 'core';
 import { vi } from 'vitest';
 import type { Json } from './doc-ops';
 import { Project } from './project';
 import { MemoryFolder } from './project-folder';
 import { projectSnapshot } from './project-snapshot';
-import { defaultRuntimeAddress, RUNTIME_ADDRESS_KEY, RunProject, runtimeUrl } from './run-project';
+import { DESKTOP_RUN_LABEL, DESKTOP_RUNTIME_PATH, defaultRuntimeAddress, RUNTIME_ADDRESS_KEY, RunProject, runtimeUrl } from './run-project';
 import { readStudioConfig, STUDIO_CONFIG_URL } from './studio-settings';
 
 describe('running the project in the runtime', () => {
@@ -136,6 +136,52 @@ describe('running the project in the runtime', () => {
       expect(run.run()).toBe('reloaded');
       expect(runtime.postMessage).toHaveBeenLastCalledWith({ type: 'lc-studio:reload' }, RUNTIME);
       expect(runtime.focus).toHaveBeenCalled();
+    });
+
+    it('in the desktop app: the bundled runtime in a window of the app, the project on the channel of the same origin', async () => {
+      const windows: { label: string; options: { url: string; title?: string } }[] = [];
+      const focus = vi.fn(async () => undefined);
+      class FakeWindow {
+        constructor(label: string, options: { url: string; title?: string }) {
+          windows.push({ label, options });
+        }
+        static async getByLabel(label: string) {
+          return windows.some((w) => w.label === label) ? { setFocus: focus } : null;
+        }
+      }
+      vi.stubGlobal('__TAURI__', { fs: {}, dialog: {}, webviewWindow: { WebviewWindow: FakeWindow } });
+      // The window of the runtime, on the same channel.
+      const runtime = new BroadcastChannel(STUDIO_CHANNEL);
+      const heard: { type: string; project?: { screens: unknown } }[] = [];
+      runtime.onmessage = (event: MessageEvent) => heard.push(event.data);
+      try {
+        const run = TestBed.inject(RunProject);
+        expect(run.address()).toBe(DESKTOP_RUNTIME_PATH);
+        expect(run.available).toBe(true);
+        expect(run.addressChoice).toBe(false);
+        expect(await run.run()).toBe('opened');
+        expect(windows).toEqual([{ label: DESKTOP_RUN_LABEL, options: expect.objectContaining({ url: `/runtime/?studio=${encodeURIComponent(location.origin)}`, title: 'Staff' }) }]);
+        expect(window.open).not.toHaveBeenCalled();
+        runtime.postMessage({ type: 'lc-studio:ready' });
+        await vi.waitFor(() => expect(heard.some((m) => m.type === 'lc-studio:project')).toBe(true));
+        expect(heard.find((m) => m.type === 'lc-studio:project')?.project?.screens).toEqual({ 'staff-list': { screen: 'staff-list' } });
+        expect(await run.run()).toBe('reloaded');
+        expect(windows).toHaveLength(1);
+        expect(focus).toHaveBeenCalled();
+        await vi.waitFor(() => expect(heard.at(-1)).toEqual({ type: 'lc-studio:reload' }));
+      } finally {
+        runtime.close();
+        vi.unstubAllGlobals();
+      }
+    });
+
+    it('in a desktop app that cannot open windows «Run project» is not available', () => {
+      vi.stubGlobal('__TAURI__', { fs: {}, dialog: {} });
+      try {
+        expect(TestBed.inject(RunProject).available).toBe(false);
+      } finally {
+        vi.unstubAllGlobals();
+      }
     });
 
     it('a popup blocked, or an address that is not http(s), are said', () => {

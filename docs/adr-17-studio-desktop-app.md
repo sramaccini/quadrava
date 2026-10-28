@@ -28,12 +28,22 @@ Studio (web build)
 - **No Tauri code in the web build.** Studio reads the Tauri APIs from `window.__TAURI__`, which only the desktop app defines: no npm package of Tauri is bundled, and in the browser nothing changes.
 - **Files only where the user chose.** The page may call the dialog and a few `fs` commands (read a folder, read and write text files, create folders, remove a file, check existence), only inside the folders chosen in the dialog (the scope of the `fs` plugin). `persisted-scope` keeps those folders between sessions, so the last project reopens at start without asking. Paths inside the project follow the same rule as on the web (`RESOURCE_PATH`): no `..`, no absolute paths.
 - **Content Security Policy** of the window: scripts only from the application, connections to the application, to Tauri and to `http(s)` addresses (OpenAPI import, registry), frames only from the application (the preview, ADR-08). Styles allow `'unsafe-inline'`, which Angular and NG-ZORRO need; Tauri is told not to add its nonce to `style-src` (`dangerousDisableAssetCspModification`), because with a nonce the browser ignores `'unsafe-inline'` and the window stays white.
+- **«Run project» in a second window of the app.** The runtime is bundled with Studio, built with `--base-href /runtime/` and copied into `runtime/` of the web build by `tools/desktop-runtime.mjs`, which also lists the origins of Studio in the app in its `runtime-config.json` (`tauri://localhost` on macOS and Linux, `http(s)://tauri.localhost` on Windows). «Run project» opens `/runtime/?studio=<origin>` in a window labelled `run` (`WebviewWindow`), or brings it to the front and reloads it. The two windows are on the same origin but the second has no `window.opener`: the messages of ADR-16 (`lc-studio:ready`, `project`, `reload`) travel on a `BroadcastChannel` named `quadrava-studio`, which the webview keeps to the windows of that origin. The runtime uses the channel only when it has no opener and Studio is on its own origin; it still accepts only well-formed messages. On reload the runtime window goes back to `/runtime/`, because the app does not serve deep routes. Only the main window has permissions (`capabilities/default.json`: create a window, focus it, plus the dialog and `fs`); the runtime window has none.
+
+```
+Studio (main window)                         runtime (window "run", /runtime/)
+  ▶ Run project ── new WebviewWindow ──────▶ starts, ?studio=tauri://localhost
+               ◀── lc-studio:ready ───────── on BroadcastChannel "quadrava-studio"
+               ─── lc-studio:project ──────▶ draws the project
+  ▶ again ─────── lc-studio:reload + focus ─▶ back to /runtime/, asks again
+```
+
 - **Builds on GitHub Actions** (`.github/workflows/desktop.yml`), one machine per operating system, because Tauri does not cross-compile: `.msi` and `.exe` for Windows, `.deb`, `.rpm` and `.AppImage` for Linux, `.dmg` and `.app` for macOS (one package for Apple silicon and Intel). The packages are downloaded from the run as artifacts.
 
 ## Consequences
 
 - Studio on disk everywhere, with native dialogs, in a window of its own; the browser version is unchanged.
-- **«Run project» is not available in the desktop app** (ADR-16): the project travels between two windows of the same browser (`window.opener`, `postMessage`), and the runtime would open in another program. A later version can open the runtime in a second window of the app and relay the messages.
+- **«Run project»** works with the runtime bundled in the app; «Runtime address…» is not offered there. The first version of the app did not have it (the runtime would have opened in another program); the package is now larger by the size of the runtime.
 - **The registry** is reached at relative addresses behind the BFF in the browser; in the desktop app there is no BFF, so saving to and opening from a registry are not available yet.
 - **Developer tools** (Inspect, Ctrl+Shift+I) are on in the installed app too (`devtools` feature of `tauri`), to read the errors of Studio while the app is young; to be switched off once it is stable.
 - The packages are **not signed**: Windows SmartScreen and macOS Gatekeeper warn the first time. Signing needs certificates (Windows) and an Apple Developer account (macOS), configured as secrets of the workflow.

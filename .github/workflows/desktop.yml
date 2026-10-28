@@ -18,6 +18,8 @@ on:
       - 'frontend/projects/expressions/**'
       - 'frontend/projects/core/**'
       - 'frontend/projects/components/**'
+      - 'frontend/projects/runtime/**'
+      - 'frontend/tools/desktop-runtime.mjs'
       - 'frontend/package-lock.json'
       - 'examples/**'
       - '.github/workflows/desktop.yml'
@@ -71,6 +73,9 @@ jobs:
       - run: npm ci
       - run: npm run demo:prepare
       - run: npx ng build editor
+      # The runtime bundled with Studio, for «Run project» in a window of the app.
+      - run: npx ng build runtime --base-href /runtime/ --output-path dist/runtime-desktop
+      - run: node tools/desktop-runtime.mjs
       - name: Installers
         working-directory: frontend/desktop
         run: npx tauri build ${{ matrix.args }}

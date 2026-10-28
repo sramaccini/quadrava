@@ -1,7 +1,7 @@
 import { vi } from 'vitest';
 import type { ProjectSnapshot } from 'core';
 import { loadRuntimeConfig } from './runtime-config';
-import { followStudio, receiveProject, studioOrigin, studioSettings, type StudioWindow } from './studio';
+import { followStudio, receiveProject, sameOriginChannel, studioOrigin, studioSettings, type StudioChannel, type StudioWindow } from './studio';
 
 const STUDIO = 'http://localhost:4201';
 const project = (): ProjectSnapshot => ({
@@ -74,6 +74,69 @@ describe('runtime opened by Studio', () => {
     stop();
     message({ type: 'lc-studio:reload' });
     expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  describe('in the desktop app: Studio on the same origin, without opener', () => {
+    class FakeChannel implements StudioChannel {
+      readonly sent: unknown[] = [];
+      closed = false;
+      private readonly listeners = new Set<(event: MessageEvent) => void>();
+      postMessage(message: unknown): void {
+        this.sent.push(message);
+      }
+      addEventListener(_type: 'message', listener: (event: MessageEvent) => void): void {
+        this.listeners.add(listener);
+      }
+      removeEventListener(_type: 'message', listener: (event: MessageEvent) => void): void {
+        this.listeners.delete(listener);
+      }
+      close(): void {
+        this.closed = true;
+      }
+      deliver(data: unknown): void {
+        for (const listener of [...this.listeners]) listener(new MessageEvent('message', { data }));
+      }
+    }
+
+    it('the channel is used only without opener and with Studio on the origin of the runtime', () => {
+      const here = 'tauri://localhost';
+      const channel = sameOriginChannel(here, null, here);
+      expect(channel).not.toBeNull();
+      channel?.close();
+      expect(sameOriginChannel(here, window, here)).toBeNull();
+      expect(sameOriginChannel(STUDIO, null, here)).toBeNull();
+    });
+
+    it('asks for the project on the channel and takes only a well-formed one', async () => {
+      const channel = new FakeChannel();
+      const received = receiveProject(STUDIO, null, 1000, channel);
+      expect(channel.sent).toEqual([{ type: 'lc-studio:ready' }]);
+      channel.deliver({ type: 'lc-studio:project', project: { screens: 'x' } });
+      channel.deliver({ type: 'lc-studio:reload' });
+      channel.deliver({ type: 'lc-studio:project', project: project() });
+      expect((await received).screens).toEqual({ 'staff-list': { screen: 'staff-list' } });
+      expect(channel.closed).toBe(true);
+    });
+
+    it('gives up when Studio does not answer on the channel', async () => {
+      const channel = new FakeChannel();
+      await expect(receiveProject(STUDIO, null, 10, channel)).rejects.toThrow('Studio did not send the project');
+      expect(channel.closed).toBe(true);
+    });
+
+    it('«Run project» again sends the window back to its start, which asks again', () => {
+      const channel = new FakeChannel();
+      const reload = vi.fn();
+      const restart = vi.fn();
+      const stop = followStudio(STUDIO, null, reload, channel, restart);
+      channel.deliver({ type: 'lc-studio:project', project: project() });
+      channel.deliver({ type: 'lc-studio:reload' });
+      stop();
+      channel.deliver({ type: 'lc-studio:reload' });
+      expect(restart).toHaveBeenCalledTimes(1);
+      expect(reload).not.toHaveBeenCalled();
+      expect(channel.closed).toBe(true);
+    });
   });
 
   it('languages and themes come from the manifest of the project', async () => {

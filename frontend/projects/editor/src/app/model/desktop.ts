@@ -9,6 +9,10 @@ export interface DesktopApi {
     /** `recursive`: the subfolders of the chosen folder join the scope too (without it only its own files). */
     open(options: { directory: true; recursive?: boolean; multiple?: false; title?: string }): Promise<string | null>;
   };
+  /** Windows of the app: «Run project» opens the runtime in one of them. */
+  webviewWindow?: {
+    WebviewWindow: DesktopWindowClass;
+  };
   fs: {
     readDir(path: string): Promise<{ name: string; isDirectory: boolean; isFile: boolean }[]>;
     readTextFile(path: string): Promise<string>;
@@ -17,6 +21,17 @@ export interface DesktopApi {
     remove(path: string): Promise<void>;
     exists(path: string): Promise<boolean>;
   };
+}
+
+/** A window of the desktop app. */
+export interface DesktopWindow {
+  setFocus(): Promise<void>;
+}
+
+/** The class of the windows of the app: a new one by label and address, an existing one by label. */
+export interface DesktopWindowClass {
+  new (label: string, options: { url: string; title?: string; width?: number; height?: number }): DesktopWindow;
+  getByLabel(label: string): Promise<DesktopWindow | null>;
 }
 
 /** The Tauri APIs when Studio runs in the desktop app, otherwise null. */

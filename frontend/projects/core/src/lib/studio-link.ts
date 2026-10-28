@@ -9,6 +9,13 @@ import { DefinitionSource } from './ports';
 /** URL parameter with the origin of the Studio that opened the runtime. */
 export const STUDIO_QUERY = 'studio';
 
+/**
+ * Name of the channel between Studio and the runtime when they are on the same origin, as in the desktop app (ADR-17): there
+ * the runtime opens in a window of the app without `window.opener`, and the two talk on a `BroadcastChannel`, which the
+ * browser keeps to the windows of that origin.
+ */
+export const STUDIO_CHANNEL = 'quadrava-studio';
+
 /** The project as Studio sees it: its files, with the documents open in the windows in their place. */
 export interface ProjectSnapshot {
   /** project.json: name, languages, default language, themes. */

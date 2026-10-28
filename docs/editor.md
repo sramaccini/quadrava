@@ -266,7 +266,8 @@ editor/src/app/
 Studio is also a desktop application for Windows, Linux and macOS (ADR-17): the same Studio in a window of its own, built with Tauri. The differences:
 
 - **Projects on disk everywhere.** «Open project folder…» opens the folder chooser of the system, also on macOS and Linux; the project is read and written in place. The last project opens again at start, without asking. Projects in the browser storage and zip archives work as in the browser.
-- **Not available yet:** «Run project» and «Runtime address…» (the runtime would open in another program, ADR-16). The registry is switched off by default (no BFF next to the app; `studio-config.json` can switch it on, § 1).
+- **Run project** opens the runtime bundled with the app in a second window of the app (ADR-17), with the project as it is in Studio, as in the browser; running again reloads that window and brings it to the front. «Runtime address…» is not offered: the runtime is the one in the app.
+- **Not available yet:** the registry is switched off by default (no BFF next to the app; `studio-config.json` can switch it on, § 1).
 - **Projects chosen with the first version of the app** must be chosen again with «Open project folder…»: that version allowed only the files of the folder itself, not its subfolders, so saving failed.
 
 Installers: from the **Desktop** workflow on GitHub Actions (artifacts `quadrava-studio-Windows`, `-Linux`, `-macOS`); they are not signed, so the system warns the first time.

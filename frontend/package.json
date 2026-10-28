@@ -16,7 +16,7 @@
     "demo:prepare": "npm run build:libs && node tools/copy-examples.mjs",
     "deploy:config": "node tools/deploy-config.mjs",
     "desktop:dev": "cd desktop && tauri dev",
-    "desktop:build": "npm run demo:prepare && ng build editor && cd desktop && tauri build",
+    "desktop:build": "npm run demo:prepare && ng build editor && ng build runtime --base-href /runtime/ --output-path dist/runtime-desktop && node tools/desktop-runtime.mjs && cd desktop && tauri build",
     "test:libs": "ng test schema --watch=false && ng test expressions --watch=false && ng test core --watch=false && ng test components --watch=false && ng test services --watch=false",
     "e2e": "playwright test",
     "start:runtime:registry": "npm run demo:prepare && ng serve runtime --port 4200 -c registry",

@@ -254,8 +254,8 @@ export class App {
       { id: 'close-project', label: t('ed.menu.closeProject'), disabled: !open, run: () => void this.commands.close() },
       ...(this.runner.available
         ? [
-            { id: 'run-project', label: t('ed.menu.runProject'), separator: true, disabled: !open, run: () => this.runProject() },
-            { id: 'runtime-address', label: t('ed.menu.runtimeAddress'), run: () => this.showRuntimeAddress.set(true) },
+            { id: 'run-project', label: t('ed.menu.runProject'), separator: true, disabled: !open, run: () => void this.runProject() },
+            ...(this.runner.addressChoice ? [{ id: 'runtime-address', label: t('ed.menu.runtimeAddress'), run: () => this.showRuntimeAddress.set(true) }] : []),
           ]
         : []),
       {
@@ -563,9 +563,9 @@ export class App {
 
   /** «Save to registry»: a new version of the active document in the chosen application (asked first, if missing). */
   /** «Run project»: opens (or reloads) the runtime with the project as it is now; a popup blocked or a bad address are said. */
-  protected runProject(): void {
+  protected async runProject(): Promise<void> {
     if (!this.project.isOpen()) return;
-    const outcome = this.runner.run();
+    const outcome = await this.runner.run();
     if (outcome === 'invalid') this.showRuntimeAddress.set(true);
     else if (outcome === 'blocked') this.notifier.toast(this.i18n.t('ed.run.blocked'), 'error');
   }
@@ -573,7 +573,7 @@ export class App {
   /** The address chosen in the dialog: the project runs there at once. */
   protected runtimeAddressChosen(): void {
     this.showRuntimeAddress.set(false);
-    this.runProject();
+    void this.runProject();
   }
 
   protected async saveToRegistry(): Promise<void> {

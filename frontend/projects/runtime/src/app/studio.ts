@@ -1,4 +1,4 @@
-import { isFromStudio, STUDIO_QUERY, type FromRuntime, type ProjectSnapshot } from 'core';
+import { isFromStudio, STUDIO_CHANNEL, STUDIO_QUERY, type FromRuntime, type ProjectSnapshot } from 'core';
 import { DEFAULT_APPLICATION_SETTINGS, type ApplicationSettings, type RuntimeConfig } from './runtime-config';
 
 /**
@@ -49,11 +49,34 @@ export function studioOrigin(config: RuntimeConfig, search: string = location.se
   return origin;
 }
 
+/** The parts of a `BroadcastChannel` the link uses. */
+export interface StudioChannel {
+  postMessage(message: unknown): void;
+  addEventListener(type: 'message', listener: (event: MessageEvent) => void): void;
+  removeEventListener(type: 'message', listener: (event: MessageEvent) => void): void;
+  close(): void;
+}
+
 /**
- * Asks Studio for the project and waits for it: only from `opener` and from `origin`, in the expected shape. Rejects if
- * nothing arrives within `timeoutMs` (Studio closed, or the runtime reloaded by hand without it).
+ * The channel to Studio when it is on the same origin and did not open this window (the desktop app): null in the browser,
+ * where Studio is the opener.
  */
-export function receiveProject(origin: string, opener: StudioWindow | null = window.opener as StudioWindow | null, timeoutMs = 15_000): Promise<ProjectSnapshot> {
+export function sameOriginChannel(origin: string, opener: unknown = window.opener, here: string = location.origin): StudioChannel | null {
+  return !opener && origin === here && typeof BroadcastChannel === 'function' ? new BroadcastChannel(STUDIO_CHANNEL) : null;
+}
+
+/**
+ * Asks Studio for the project and waits for it: only from `opener` and from `origin` (or, in the desktop app, on the
+ * channel of the same origin), in the expected shape. Rejects if nothing arrives within `timeoutMs` (Studio closed, or the
+ * runtime reloaded by hand without it).
+ */
+export function receiveProject(
+  origin: string,
+  opener: StudioWindow | null = window.opener as StudioWindow | null,
+  timeoutMs = 15_000,
+  channel: StudioChannel | null = sameOriginChannel(origin, opener),
+): Promise<ProjectSnapshot> {
+  if (channel) return receiveOnChannel(channel, timeoutMs);
   return new Promise((resolve, reject) => {
     if (!opener || opener.closed) {
       reject(new Error('no Studio window to ask for the project'));
@@ -77,8 +100,49 @@ export function receiveProject(origin: string, opener: StudioWindow | null = win
   });
 }
 
-/** After the start: «Run project» again in Studio reloads this window, which asks again for the project. */
-export function followStudio(origin: string, opener: unknown = window.opener, reload: () => void = () => location.reload()): () => void {
+/** The project on the channel of the same origin (desktop app). */
+function receiveOnChannel(channel: StudioChannel, timeoutMs: number): Promise<ProjectSnapshot> {
+  return new Promise((resolve, reject) => {
+    const done = (): void => {
+      channel.removeEventListener('message', listener);
+      channel.close();
+      clearTimeout(timer);
+    };
+    const listener = (event: MessageEvent): void => {
+      if (!isFromStudio(event.data) || event.data.type !== 'lc-studio:project') return;
+      done();
+      resolve(event.data.project);
+    };
+    const timer = setTimeout(() => {
+      done();
+      reject(new Error('Studio did not send the project'));
+    }, timeoutMs);
+    channel.addEventListener('message', listener);
+    channel.postMessage({ type: 'lc-studio:ready' } satisfies FromRuntime);
+  });
+}
+
+/**
+ * After the start: «Run project» again in Studio reloads this window, which asks again for the project. In the desktop app
+ * (the channel of the same origin) the window goes back to its start page: a deep route would not be found there on reload.
+ */
+export function followStudio(
+  origin: string,
+  opener: unknown = window.opener,
+  reload: () => void = () => location.reload(),
+  channel: StudioChannel | null = sameOriginChannel(origin, opener),
+  restart: () => void = () => location.replace(`${document.baseURI}?${STUDIO_QUERY}=${encodeURIComponent(origin)}`),
+): () => void {
+  if (channel) {
+    const onChannel = (event: MessageEvent): void => {
+      if (isFromStudio(event.data) && event.data.type === 'lc-studio:reload') restart();
+    };
+    channel.addEventListener('message', onChannel);
+    return () => {
+      channel.removeEventListener('message', onChannel);
+      channel.close();
+    };
+  }
   const listener = (event: MessageEvent): void => {
     if (event.origin === origin && event.source === opener && isFromStudio(event.data) && event.data.type === 'lc-studio:reload') reload();
   };
