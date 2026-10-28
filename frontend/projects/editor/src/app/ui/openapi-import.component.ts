@@ -10,6 +10,7 @@ import { getIn, isObject } from '../model/doc-ops';
 import { DataSourcesStore } from '../model/datasources-store';
 import { METHOD_COLORS } from '../model/http-methods';
 import { OpenApiError, dataSourceOf, readOpenApi, sourceNameOf, type ApiDescription, type ApiOperation } from '../model/openapi';
+import { parseApiText } from '../model/openapi-text';
 
 const URL_KEY = 'lc.editor.openapi.url';
 /** Default address: that of springdoc in Spring Boot. */
@@ -19,7 +20,7 @@ const MAX_SIZE = 5_000_000;
 const TIMEOUT_MS = 15_000;
 
 /**
- * Import of data sources from an OpenAPI 3.x or Swagger 2.0 document: it is read from an address (springdoc in
+ * Import of data sources from an OpenAPI 3.x or Swagger 2.0 document, in JSON or YAML: it is read from an address (springdoc in
  * Spring Boot exposes it at `/v3/api-docs`) or from a file, the operations are chosen and each one becomes a data source,
  * with the sample data taken from the response. A relative address goes through the same origin as the editor (behind the
  * BFF it reaches the services); an absolute one of another origin works only if the service allows CORS.
@@ -53,7 +54,7 @@ const TIMEOUT_MS = 15_000;
       <input nz-input nzSize="small" data-openapi-url [attr.aria-label]="i18n.t('ed.openapi.url')" [placeholder]="defaultUrl" [ngModel]="url()" (ngModelChange)="url.set($event)" name="url" spellcheck="false" />
       <button nz-button nzType="primary" nzSize="small" type="submit" [nzLoading]="loading()">{{ i18n.t('ed.openapi.read') }}</button>
       <button nz-button nzSize="small" type="button" (click)="file.click()"><span nz-icon nzType="upload"></span>{{ i18n.t('ed.openapi.file') }}</button>
-      <input #file type="file" accept="application/json,.json" hidden (change)="loadFile(file)" />
+      <input #file type="file" accept="application/json,.json,application/yaml,text/yaml,.yaml,.yml" hidden (change)="loadFile(file)" />
     </form>
     <p class="hint">{{ i18n.t('ed.openapi.hint') }}</p>
     @if (error()) {
@@ -164,9 +165,9 @@ export class OpenApiImportComponent {
     const abort = new AbortController();
     const timer = setTimeout(() => abort.abort(), TIMEOUT_MS);
     try {
-      const response = await fetch(url, { headers: { Accept: 'application/json' }, credentials: 'same-origin', signal: abort.signal });
+      const response = await fetch(url, { headers: { Accept: 'application/json, application/yaml;q=0.9, */*;q=0.8' }, credentials: 'same-origin', signal: abort.signal });
       if (!response.ok) throw new Error(this.i18n.t('ed.openapi.error.http', { status: response.status }));
-      this.show(await response.text());
+      await this.show(await response.text());
       try {
         localStorage.setItem(URL_KEY, url);
       } catch {
@@ -187,17 +188,18 @@ export class OpenApiImportComponent {
     if (!file) return;
     this.error.set('');
     try {
-      this.show(await file.text());
+      await this.show(await file.text());
     } catch (e) {
       this.error.set(e instanceof Error ? e.message : String(e));
     }
   }
 
-  private show(raw: string): void {
+  /** Shows the operations of a document in JSON or YAML. */
+  private async show(raw: string): Promise<void> {
     if (raw.length > MAX_SIZE) throw new Error(this.i18n.t('ed.openapi.error.tooLarge'));
     let doc: unknown;
     try {
-      doc = JSON.parse(raw);
+      doc = await parseApiText(raw);
     } catch {
       throw new Error(this.i18n.t('ed.openapi.error.notJson'));
     }
