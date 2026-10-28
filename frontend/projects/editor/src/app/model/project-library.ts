@@ -71,7 +71,9 @@ export class ProjectLibrary {
   /** Asks the user for a folder on disk (null if they cancel). */
   async chooseDiskFolder(): Promise<ProjectFolder | null> {
     if (this.desktop) {
-      const path = await this.desktop.dialog.open({ directory: true });
+      // recursive: a project has subfolders (screens/, themes/…); without it Tauri allows only the files of the folder
+      // itself, and writing screens/… fails.
+      const path = await this.desktop.dialog.open({ directory: true, recursive: true });
       return path ? new DesktopFolder(path, this.desktop) : null;
     }
     const picker = this.window?.showDirectoryPicker;

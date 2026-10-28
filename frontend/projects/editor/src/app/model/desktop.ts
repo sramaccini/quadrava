@@ -6,7 +6,8 @@ import { RESOURCE_PATH, type ProjectFolder } from './project-folder';
  */
 export interface DesktopApi {
   dialog: {
-    open(options: { directory: true; multiple?: false; title?: string }): Promise<string | null>;
+    /** `recursive`: the subfolders of the chosen folder join the scope too (without it only its own files). */
+    open(options: { directory: true; recursive?: boolean; multiple?: false; title?: string }): Promise<string | null>;
   };
   fs: {
     readDir(path: string): Promise<{ name: string; isDirectory: boolean; isFile: boolean }[]>;

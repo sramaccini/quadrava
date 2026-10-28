@@ -4,12 +4,14 @@ import { DesktopFolder, desktopApi, type DesktopApi } from './desktop';
 import { LAST_PROJECT_KEY, ProjectLibrary } from './project-library';
 
 /** The Tauri APIs over a map of files, as the desktop app would give them (paths with «/» or «\»). */
-function fakeApi(files: Record<string, string>, chosen: string | null = 'C:\\work\\staff'): DesktopApi & { files: Map<string, string> } {
+function fakeApi(files: Record<string, string>, chosen: string | null = 'C:\\work\\staff'): DesktopApi & { files: Map<string, string>; dialogs: unknown[] } {
   const map = new Map(Object.entries(files));
+  const dialogs: unknown[] = [];
   const norm = (p: string) => p.replace(/\\/g, '/');
   return {
     files: map,
-    dialog: { open: async () => chosen },
+    dialogs,
+    dialog: { open: async (options) => (dialogs.push(options), chosen) },
     fs: {
       readDir: async (dir) => {
         const prefix = norm(dir) + '/';
@@ -80,6 +82,8 @@ describe('Studio in the desktop app', () => {
       expect(library.canUseDisk()).toBe(true);
       const folder = await library.chooseDiskFolder();
       expect(folder).toBeInstanceOf(DesktopFolder);
+      // The subfolders of the project (screens/, themes/…) must be writable too.
+      expect(api.dialogs).toEqual([{ directory: true, recursive: true }]);
       await library.remember(folder!);
       expect(JSON.parse(localStorage.getItem(LAST_PROJECT_KEY)!)).toEqual({ location: 'disk', name: 'staff', path: 'C:\\work\\staff' });
       expect(library.reopensQuietly()).toBe(true);
