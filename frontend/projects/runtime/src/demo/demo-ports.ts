@@ -4,13 +4,14 @@ import { DemoBackend } from './demo-backend';
 
 /** Profiles of the demo: the permissions are those the authorization service would give in production. */
 export const DEMO_PROFILES: Record<string, string[]> = {
-  // Enters and looks up invoices and sees the orders: two areas.
-  operator: ['showcase.components.read', 'invoices.invoice.read', 'invoices.invoice.create', 'orders.order.read'],
+  // Enters and looks up invoices and sees the orders: two areas. Reads the staff of the medical-staff sample.
+  operator: ['showcase.components.read', 'invoices.invoice.read', 'invoices.invoice.create', 'orders.order.read', 'hospital.staff.read'],
   // Adds packages, expense review and order approval: all four areas.
-  manager: ['showcase.components.read', 'invoices.invoice.read', 'invoices.invoice.create', 'orders.order.read', 'orders.order.approve', 'orders.order.write', 'packages.package.read', 'packages.package.create', 'expenses.expense.read', 'expenses.expense.review'],
+  manager: ['showcase.components.read', 'invoices.invoice.read', 'invoices.invoice.create', 'orders.order.read', 'orders.order.approve', 'orders.order.write', 'packages.package.read', 'packages.package.create', 'expenses.expense.read', 'expenses.expense.review', 'hospital.staff.read', 'hospital.staff.create', 'hospital.staff.update'],
   administrator: [
     'showcase.components.read', 'invoices.invoice.read', 'invoices.invoice.create', 'orders.order.read', 'orders.order.approve', 'orders.order.write', 'orders.iban.read', 'orders.iban.write',
     'packages.package.read', 'packages.package.create', 'expenses.expense.read', 'expenses.expense.review',
+    'hospital.staff.read', 'hospital.staff.create', 'hospital.staff.update', 'hospital.staff.delete',
   ],
 };
 

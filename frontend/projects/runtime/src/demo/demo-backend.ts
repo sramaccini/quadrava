@@ -1,4 +1,5 @@
 import type { DataRequest } from 'core';
+import { MedicalStaffRegister } from './demo-medical-staff';
 import { transactionArchive, searchTransactions } from './demo-search';
 
 interface Invoice { id: number; number: string; customer: string; type: string; amount: number; status: 'draft' | 'sent' | 'paid'; issued: string; collected: boolean; rows: number; rate: number }
@@ -68,6 +69,8 @@ export class DemoBackend {
     'Marine Builders|Bari', 'Greek Transport|Palermo', 'Rooster Energy|Padua', 'Count Software|Trento',
   ].map((entry, i) => ({ id: i + 1, name: entry.split('|')[0], city: entry.split('|')[1] }));
   private attachments = 0;
+  /** The staff service of the medical-staff sample project (samples/medical-staff). */
+  private readonly medicalStaff = new MedicalStaffRegister(DemoBackend.PAGE_SIZE);
   private reports = 0;
   /** Staff numbers already used (validation showcase). */
   private readonly staffNumbers = new Set(['S000001', 'S123456']);
@@ -116,6 +119,7 @@ export class DemoBackend {
 
   async handle(req: DataRequest): Promise<unknown> {
     const path = req.url.split('?')[0];
+    if (path === '/api/medical-staff' || path.startsWith('/api/medical-staff/')) return this.medicalStaff.handle(req, path);
 
     if (req.method === 'GET' && path === '/api/orders') {
       const status = req.query?.['status'];

@@ -53,4 +53,6 @@ The project contains only the front end: the calls go to the BFF of the applicat
 
 Permissions: `hospital.staff.read`, `hospital.staff.create`, `hospital.staff.update`, `hospital.staff.delete`. The screens hide the commands the user cannot use; the service must check the same permissions.
 
+In the **demo runtime** (Studio's «Run project», or the runtime published from this repository) the demo back end answers these calls with 26 sample staff members, kept in memory for the visit: list, filters, detail, creation (409 for a staff number already used), editing and deletion work; the demo profiles have the permissions (operator reads, manager also creates and edits, administrator also deletes).
+
 In the Studio preview there is no such service: reads return the sample data written in the editor (empty lists otherwise) and writes are simulated. Screens with `params.id` (detail, edit) need a parameter in the preview, for example `{"id": 1}`.

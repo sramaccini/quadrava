@@ -105,7 +105,7 @@ The main ones are in the DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In short:
 - Reference registry (contract 0.5, 15 October: cross-document reference check, see architecture § 10): validation with the same JSON Schemas as the front end (networknt), four-eyes review (roles `manager`, `administrator`), protected environments `testing` and `production`, If-Match, optional file store, `messages` documents for translations. CEL expressions are **not** checked server-side (editor and runtime check them).
 - e2e in Chromium only; the automatic accessibility check does not replace manual testing.
 - Desktop app: «Run project» and the registry are not available there; the packages are not signed (SmartScreen, Gatekeeper; on PCs with the attack surface reduction rules of Defender the executable may be blocked until signed or excluded); developer tools on.
-- The runtime published as a static site uses the in-browser demo back end: a project with its own `/api` (such as `samples/medical-staff`) opens without data there.
+- The runtime published as a static site uses the in-browser demo back end: it answers the demo screens and `samples/medical-staff` (`/api/medical-staff`); any other project with its own `/api` opens without data there.
 - Editor: on the preview components can be added, moved and resized (span, grow); the border's sides can be resized only in the runtime; comparison is between a version and the open document, not between two versions. Translations written in a screen apply to the previews of all the windows (one editor catalogue).
 - `validate:examples` does not check CEL expressions (the `i18n-examples.spec.ts` test does).
 - Component limits: catalogue § 3 (validation: absolute dates only, no async checks, no field errors from the services, no rules across standalone `input` fields).
@@ -122,8 +122,7 @@ The main ones are in the DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In short:
 7. CEL in `validate:examples` and, eventually, in the registry.
 8. Bring the project documents (architecture § 9, functional specification, guidelines) up to date with the October status.
 9. Desktop app: switch the developer tools off once the app is confirmed stable; sign the packages (Azure Trusted Signing or a code-signing certificate for Windows, an Apple Developer account for macOS) as secrets of the Desktop workflow; «Run project» in a second window of the app (relaying the messages); the registry from the app (it would need an address of its own, not the relative one of the BFF).
-10. Sample data for the medical-staff sample in the demo back end, so that the published runtime shows it with data.
-11. Validation, what is left: remote rules in filters; field errors of the services deeper than one level of rows; a check of passwords against leaked lists (a service with k-anonymity) if a customer needs it.
+10. Validation, what is left: remote rules in filters; field errors of the services deeper than one level of rows; a check of passwords against leaked lists (a service with k-anonymity) if a customer needs it.
 
 ## 8b. What was missing and proposed optimisations (13 October 2026)
 

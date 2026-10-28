@@ -83,7 +83,7 @@ Example on Render (two *Static Sites* on the same repository, *Root Directory* `
 | Publish directory | `dist/editor/browser` | `dist/runtime/browser` |
 | Environment | `STUDIO_RUNTIME_ADDRESS` = address of the runtime site | `RUNTIME_STUDIO_ORIGINS` = origin of the Studio site |
 
-The runtime published this way is the demo: its data come from the in-browser back end, which knows only the demo's `/api` endpoints.
+The runtime published this way is the demo: its data come from the in-browser back end, which knows the demo's `/api` endpoints and the staff service of `samples/medical-staff` (`runtime/src/demo/demo-medical-staff.ts`, described in `tools/demo-api.openapi.json` too).
 
 ## 4. Adding or changing a component
 
