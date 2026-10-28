@@ -20,7 +20,7 @@ describe('validateScreen', () => {
     const doc = {
       ...minimal(),
       requires: 'orders.order.read',
-      dataSources: { ordini: { type: 'rest', method: 'GET', url: '/api/ordini', paging: 'server' } },
+      dataSources: { ordini: { ref: 'orders/list' } },
       components: [
         {
           id: 'tabella-ordini',

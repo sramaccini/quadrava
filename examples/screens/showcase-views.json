@@ -6,17 +6,10 @@
   "requires": "showcase.components.read",
   "dataSources": {
     "categories": {
-      "type": "rest",
-      "method": "GET",
-      "url": "/api/categories"
+      "ref": "showcase-views/categories"
     },
     "deadlines": {
-      "type": "rest",
-      "method": "GET",
-      "url": "/api/deadlines",
-      "params": {
-        "month": "{{ state.month }}"
-      }
+      "ref": "showcase-views/deadlines"
     }
   },
   "components": [

@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "1.0",
+  "datasources": "showcase-advanced-tables",
+  "description": "Calls used by the «showcase-advanced-tables» showcase screen.",
+  "sources": {
+    "orders": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/orders",
+      "params": {
+        "sort": "{{state.sorting.field}}",
+        "dir": "{{state.sorting.direction}}",
+        "page": "{{state.page}}"
+      },
+      "paging": "server"
+    },
+    "invoices": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/invoices"
+    },
+    "sendInvoices": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/invoices/send",
+      "body": {
+        "ids": "{{ids}}"
+      }
+    },
+    "sendInvoice": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/invoices/{{id}}/send"
+    }
+  }
+}

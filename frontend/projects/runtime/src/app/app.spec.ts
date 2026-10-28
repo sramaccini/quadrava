@@ -10,6 +10,22 @@ import newPackage from '../../public/examples/screens/package-new.json';
 import packages from '../../public/examples/screens/package-list.json';
 import expenses from '../../public/examples/screens/expense-list.json';
 import ordersSources from '../../public/examples/datasources/orders.json';
+import expensesSources from '../../public/examples/datasources/expenses.json';
+import invoicesSources from '../../public/examples/datasources/invoices.json';
+import packagesSources from '../../public/examples/datasources/packages.json';
+import showcaseAdvancedTablesSources from '../../public/examples/datasources/showcase-advanced-tables.json';
+import showcaseBasicsSources from '../../public/examples/datasources/showcase-basics.json';
+import showcaseContainersSources from '../../public/examples/datasources/showcase-containers.json';
+import showcaseDashboardSources from '../../public/examples/datasources/showcase-dashboard.json';
+import showcaseDatatableSources from '../../public/examples/datasources/showcase-datatable.json';
+import showcaseFieldsSources from '../../public/examples/datasources/showcase-fields.json';
+import showcaseFormSources from '../../public/examples/datasources/showcase-form.json';
+import showcaseInputSources from '../../public/examples/datasources/showcase-input.json';
+import showcaseLayoutSources from '../../public/examples/datasources/showcase-layout.json';
+import showcaseTablesSources from '../../public/examples/datasources/showcase-tables.json';
+import showcaseTasksSources from '../../public/examples/datasources/showcase-tasks.json';
+import showcaseValidationSources from '../../public/examples/datasources/showcase-validation.json';
+import showcaseViewsSources from '../../public/examples/datasources/showcase-views.json';
 import light from '../../public/examples/themes/light.json';
 import dark from '../../public/examples/themes/dark.json';
 import classic from '../../public/examples/themes/classic.json';
@@ -26,6 +42,22 @@ describe('App (demo)', () => {
     'examples/screens/order-list.json': list,
     'examples/screens/order-detail.json': detail,
     'examples/datasources/orders.json': ordersSources,
+    'examples/datasources/expenses.json': expensesSources,
+    'examples/datasources/invoices.json': invoicesSources,
+    'examples/datasources/packages.json': packagesSources,
+    'examples/datasources/showcase-advanced-tables.json': showcaseAdvancedTablesSources,
+    'examples/datasources/showcase-basics.json': showcaseBasicsSources,
+    'examples/datasources/showcase-containers.json': showcaseContainersSources,
+    'examples/datasources/showcase-dashboard.json': showcaseDashboardSources,
+    'examples/datasources/showcase-datatable.json': showcaseDatatableSources,
+    'examples/datasources/showcase-fields.json': showcaseFieldsSources,
+    'examples/datasources/showcase-form.json': showcaseFormSources,
+    'examples/datasources/showcase-input.json': showcaseInputSources,
+    'examples/datasources/showcase-layout.json': showcaseLayoutSources,
+    'examples/datasources/showcase-tables.json': showcaseTablesSources,
+    'examples/datasources/showcase-tasks.json': showcaseTasksSources,
+    'examples/datasources/showcase-validation.json': showcaseValidationSources,
+    'examples/datasources/showcase-views.json': showcaseViewsSources,
     'examples/screens/invoice-list.json': invoices,
     'examples/screens/invoice-new.json': newInvoice,
     'examples/screens/package-new.json': newPackage,

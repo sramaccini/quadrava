@@ -5,22 +5,13 @@
   "requires": "showcase.components.read",
   "dataSources": {
     "order": {
-      "type": "rest",
-      "method": "GET",
-      "url": "/api/orders/{{has(params.id) ? params.id : 1}}"
+      "ref": "showcase-layout/order"
     },
     "invoices": {
-      "type": "rest",
-      "method": "GET",
-      "url": "/api/invoices",
-      "params": {
-        "status": "paid"
-      }
+      "ref": "showcase-layout/invoices"
     },
     "deleteDraft": {
-      "type": "rest",
-      "method": "POST",
-      "url": "/api/showcase/flag"
+      "ref": "showcase-layout/deleteDraft"
     }
   },
   "components": [

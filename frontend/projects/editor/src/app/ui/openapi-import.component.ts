@@ -7,7 +7,8 @@ import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzInputModule } from 'ng-zorro-antd/input';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 import { getIn, isObject } from '../model/doc-ops';
-import { EditorStore } from '../model/editor-store';
+import { DataSourcesStore } from '../model/datasources-store';
+import { METHOD_COLORS } from '../model/http-methods';
 import { OpenApiError, dataSourceOf, readOpenApi, sourceNameOf, type ApiDescription, type ApiOperation } from '../model/openapi';
 
 const URL_KEY = 'lc.editor.openapi.url';
@@ -105,7 +106,8 @@ const TIMEOUT_MS = 15_000;
 })
 export class OpenApiImportComponent {
   protected readonly i18n = inject(I18n);
-  private readonly store = inject(EditorStore);
+  /** The data sources document of the window: the import writes there (a screen only refers to data sources). */
+  private readonly store = inject(DataSourcesStore);
   private readonly notifier = inject(Notifier);
   /** Closing of the dialog (after the import or with Cancel). */
   readonly closed = output<void>();
@@ -117,7 +119,7 @@ export class OpenApiImportComponent {
   protected readonly api = signal<ApiDescription | null>(null);
   protected readonly basePath = signal('');
   protected readonly selected = signal<ReadonlySet<string>>(new Set());
-  protected readonly colors: Record<string, string> = { GET: 'blue', POST: 'green', PUT: 'orange', PATCH: 'gold', DELETE: 'red' };
+  protected readonly colors = METHOD_COLORS;
 
   /** Operations by tag, in document order. */
   protected readonly groups = computed(() => {
@@ -128,7 +130,7 @@ export class OpenApiImportComponent {
 
   /** Operations that already have an equal data source (same method and address). */
   protected readonly existing = computed(() => {
-    const sources = getIn(this.store.doc(), ['dataSources']);
+    const sources = getIn(this.store.doc(), ['sources']);
     const present = new Set(isObject(sources) ? Object.values(sources).filter(isObject).map((s) => `${s['method']} ${s['url']}`) : []);
     const base = this.basePath();
     return new Set((this.api()?.operations ?? []).filter((op) => present.has(`${op.method} ${dataSourceOf(op, base)['url']}`)).map((op) => op.key));

@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "1.0",
+  "datasources": "showcase-form",
+  "description": "Calls used by the «showcase-form» showcase screen.",
+  "sources": {
+    "save": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/showcase/flag",
+      "body": "{{form}}"
+    },
+    "order": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/orders/{{has(params.id) ? params.id : 1}}"
+    },
+    "saveOrder": {
+      "type": "rest",
+      "method": "PUT",
+      "url": "/api/orders/{{has(params.id) ? params.id : 1}}",
+      "body": "{{form}}"
+    }
+  }
+}

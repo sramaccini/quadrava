@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "1.0",
+  "datasources": "showcase-validation",
+  "description": "Calls used by the «showcase-validation» showcase screen.",
+  "sources": {
+    "save": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/showcase/flag",
+      "body": "{{form}}"
+    },
+    "checkStaff": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/showcase/staff/check",
+      "params": {
+        "number": "{{ value }}"
+      }
+    },
+    "saveStaff": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/showcase/staff",
+      "body": "{{form}}"
+    },
+    "subscribe": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/showcase/subscribe",
+      "body": {
+        "email": "{{ state.newsletter.email }}"
+      }
+    }
+  }
+}

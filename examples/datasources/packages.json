@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1.0",
+  "datasources": "packages",
+  "description": "Calls of the packages service: the list and the creation of a package.",
+  "sources": {
+    "packages": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/packages"
+    },
+    "createPackage": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/packages",
+      "body": "{{form}}"
+    }
+  }
+}

@@ -5,21 +5,13 @@
   "requires": "showcase.components.read",
   "dataSources": {
     "save": {
-      "type": "rest",
-      "method": "POST",
-      "url": "/api/showcase/flag",
-      "body": "{{form}}"
+      "ref": "showcase-form/save"
     },
     "order": {
-      "type": "rest",
-      "method": "GET",
-      "url": "/api/orders/{{has(params.id) ? params.id : 1}}"
+      "ref": "showcase-form/order"
     },
     "saveOrder": {
-      "type": "rest",
-      "method": "PUT",
-      "url": "/api/orders/{{has(params.id) ? params.id : 1}}",
-      "body": "{{form}}"
+      "ref": "showcase-form/saveOrder"
     }
   },
   "components": [

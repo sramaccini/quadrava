@@ -5,32 +5,16 @@
   "requires": "showcase.components.read",
   "dataSources": {
     "save": {
-      "type": "rest",
-      "method": "POST",
-      "url": "/api/showcase/flag",
-      "body": "{{form}}"
+      "ref": "showcase-validation/save"
     },
     "checkStaff": {
-      "type": "rest",
-      "method": "GET",
-      "url": "/api/showcase/staff/check",
-      "params": {
-        "number": "{{ value }}"
-      }
+      "ref": "showcase-validation/checkStaff"
     },
     "saveStaff": {
-      "type": "rest",
-      "method": "POST",
-      "url": "/api/showcase/staff",
-      "body": "{{form}}"
+      "ref": "showcase-validation/saveStaff"
     },
     "subscribe": {
-      "type": "rest",
-      "method": "POST",
-      "url": "/api/showcase/subscribe",
-      "body": {
-        "email": "{{ state.newsletter.email }}"
-      }
+      "ref": "showcase-validation/subscribe"
     }
   },
   "components": [

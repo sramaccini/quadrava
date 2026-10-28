@@ -18,8 +18,13 @@ export abstract class DataSourceList {
   abstract readonly listPath: Path;
   /** Sample data by data source name, used by the previews instead of the services. */
   abstract readonly samples: () => Record<string, Json>;
-  /** Adds a GET data source with a free name and returns it. */
-  abstract addSource(): string;
+  /** Names of the data sources of the document. */
+  abstract readonly sourceNames: () => string[];
+  /**
+   * Adds a data source with a free name and returns it: in a data sources document a GET to define; in a screen a reference
+   * to a data source of the project (null if the project has none).
+   */
+  abstract addSource(): string | null;
   /** Renames a data source (false if the name is not valid or already used). */
   abstract renameSource(from: string, to: string): boolean;
   abstract removeSource(name: string): void;
@@ -100,6 +105,21 @@ export class DataSourcesStore extends DocumentState implements DataSourceList {
   removeSource(name: string): void {
     this.apply(setIn(this.doc(), ['sources', name], undefined));
     this.setSample(name, undefined);
+  }
+
+  /**
+   * Adds several data sources in a single step to undo (import from OpenAPI). Names already in use are not overwritten;
+   * sample data are set only for the new data sources. Returns the names added.
+   */
+  importSources(entries: { name: string; source: JsonObject; sample?: Json }[]): string[] {
+    const existing = new Set(this.sourceNames());
+    const fresh = entries.filter((e) => SOURCE_NAME.test(e.name) && !existing.has(e.name));
+    if (!fresh.length) return [];
+    let next = this.doc();
+    for (const entry of fresh) next = setIn(next, ['sources', entry.name], entry.source);
+    this.apply(next);
+    for (const entry of fresh) if (entry.sample !== undefined) this.setSample(entry.name, entry.sample);
+    return fresh.map((e) => e.name);
   }
 
   setSample(source: string, value: Json | undefined): void {

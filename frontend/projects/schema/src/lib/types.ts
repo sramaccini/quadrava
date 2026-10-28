@@ -21,7 +21,10 @@ export interface DataSourceReference {
   body?: Record<string, unknown> | Expression;
 }
 
-/** A data source of a screen: defined in the screen or referred to in the project. */
+/**
+ * A data source of a screen. In the screen document it is always a reference to the project (the schema allows nothing
+ * else); once the screen is loaded the reference is replaced by the definition it points to (`resolveDataSources`).
+ */
 export type DataSourceEntry = DataSourceDefinition | DataSourceReference;
 
 /** Data sources of a project shared by its screens (`datasources.schema.json`). */
@@ -616,7 +619,10 @@ export interface ScreenDefinition {
   title?: string;
   description?: string;
   requires?: string;
-  /** Data sources by name; a reference is replaced by the referenced definition when the screen is loaded (`resolveDataSources`). */
+  /**
+   * Data sources by name: references to the data sources documents of the project, replaced by the definitions they point
+   * to when the screen is loaded (`resolveDataSources`).
+   */
   dataSources?: Record<string, DataSourceEntry>;
   /** Named sequences of steps, called by the `run` step. */
   actions?: Record<string, Step | Step[]>;

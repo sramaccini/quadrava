@@ -186,12 +186,8 @@ The examples show the indicative syntax of the language; the exact field names w
   "title": "Ordini",
   "requires": "orders.order.read",
   "dataSources": {
-    "orders": {
-      "type": "rest", "method": "GET", "url": "/api/orders",
-      "params": { "status": "{{state.filters.status}}", "page": "{{state.page}}" },
-      "paging": "server"
-    },
-    "approveOrder": { "type": "rest", "method": "POST", "url": "/api/orders/{{id}}/approve" }
+    "orders": { "ref": "orders/list", "params": { "status": "{{state.filters.status}}" } },
+    "approveOrder": { "ref": "orders/approve" }
   },
   "components": [
     { "type": "filterBar", "bind": "state.filters",

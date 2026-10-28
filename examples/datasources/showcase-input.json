@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "1.0",
+  "datasources": "showcase-input",
+  "description": "Calls used by the «showcase-input» showcase screen.",
+  "sources": {
+    "invoices": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/invoices",
+      "params": {
+        "type": "{{ state.type }}",
+        "status": "{{ state.statuses }}",
+        "customer": "{{ state.customer }}"
+      }
+    },
+    "customers": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/customers",
+      "params": {
+        "q": "{{ search }}",
+        "id": "{{ lookupKey }}"
+      }
+    }
+  }
+}

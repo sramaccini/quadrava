@@ -5,22 +5,10 @@
   "requires": "expenses.expense.read",
   "dataSources": {
     "expenses": {
-      "type": "rest",
-      "method": "GET",
-      "url": "/api/expenses",
-      "paging": "server",
-      "params": {
-        "status": "{{has(params.status) ? params.status : ''}}",
-        "page": "{{state.page}}"
-      }
+      "ref": "expenses/expenses"
     },
     "reviewExpense": {
-      "type": "rest",
-      "method": "POST",
-      "url": "/api/expenses/{{id}}/review",
-      "body": {
-        "outcome": "{{outcome}}"
-      }
+      "ref": "expenses/reviewExpense"
     }
   },
   "components": [

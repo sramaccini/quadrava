@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "1.0",
+  "datasources": "showcase-tables",
+  "description": "Calls used by the «showcase-tables» showcase screen.",
+  "sources": {
+    "orders": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/orders",
+      "params": {
+        "status": "{{state.filters.status}}",
+        "page": "{{state.page}}"
+      },
+      "paging": "server"
+    },
+    "approveOrder": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/orders/{{id}}/approve"
+    },
+    "packages": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/packages"
+    },
+    "invoices": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/invoices",
+      "params": {
+        "status": "sent"
+      }
+    }
+  }
+}

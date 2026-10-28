@@ -6,28 +6,16 @@
   "requires": "showcase.components.read",
   "dataSources": {
     "transactions": {
-      "type": "rest",
-      "method": "GET",
-      "url": "/api/transactions"
+      "ref": "showcase-datatable/transactions"
     },
     "archive": {
-      "type": "rest",
-      "method": "GET",
-      "url": "/api/transactions",
-      "params": {
-        "count": 20000
-      }
+      "ref": "showcase-datatable/archive"
     },
     "search": {
-      "type": "rest",
-      "method": "POST",
-      "url": "/api/transactions/search",
-      "body": "{{ request }}"
+      "ref": "showcase-datatable/search"
     },
     "checkTransaction": {
-      "type": "rest",
-      "method": "POST",
-      "url": "/api/transactions/{{ id }}/check"
+      "ref": "showcase-datatable/checkTransaction"
     }
   },
   "components": [

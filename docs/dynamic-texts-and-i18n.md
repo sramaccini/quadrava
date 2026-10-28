@@ -60,7 +60,8 @@ It is the smallest change with the biggest return: it takes logic out of the tex
 **A3. Texts coming from a data source.** The label points to a value loaded from an API or a file, for example a content service that lets a business user change a text without republishing the screen.
 
 ```json
-"dataSources": { "texts": { "type": "rest", "method": "GET", "url": "/api/contents/invoices" } },
+"dataSources": { "texts": { "ref": "contents/invoices" } },
+// datasources/contents.json: "invoices": { "type": "rest", "method": "GET", "url": "/api/contents/invoices" }
 "components": [{ "type": "button", "label": "{{ state.texts.save }}", "onClick": [] }]
 ```
 

@@ -269,7 +269,8 @@ Table for analysing an already loaded set of rows in the page: every column can 
 The same interface as the data table (header filters, sorting, group choice, totals, row actions), but the browser receives only the visible page and groups: all computation belongs to the service. Suited to stores of hundreds of thousands or millions of rows.
 
 ```json
-"dataSources": { "search": { "type": "rest", "method": "POST", "url": "/api/transactions/search", "body": "{{ request }}" } },
+"dataSources": { "search": { "ref": "transactions/search" } },
+// datasources/transactions.json: "search": { "type": "rest", "method": "POST", "url": "/api/transactions/search", "body": "{{ request }}" }
 ...
 { "type": "serverDataTable", "source": "search", "groupBy": ["account"], "pageSize": 15,
   "defaultSort": { "field": "data", "direction": "desc" }, "bind": "state.transactionSearch",
@@ -551,7 +552,8 @@ In the rows of a repeater the rules of a cell compare it with the other cells of
 **Checks on a service (remote rules).** `{ "remote": "<data source>" }` asks a service whether the value is valid, for example whether a staff number is already used:
 
 ```json
-"dataSources": { "checkStaff": { "type": "rest", "method": "GET", "url": "/api/staff/check", "params": { "number": "{{ value }}" } } },
+"dataSources": { "checkStaff": { "ref": "staff/check", "params": { "number": "{{ value }}" } } },
+// datasources/staff.json: "check": { "type": "rest", "method": "GET", "url": "/api/staff/check" }
 …
 { "name": "staffNumber", "type": "text", "pattern": "S\\d{6}", "validation": [{ "remote": "checkStaff", "debounce": 400 }] }
 ```

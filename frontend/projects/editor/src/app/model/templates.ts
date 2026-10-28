@@ -8,17 +8,17 @@ import { listItem, type PropertyInfo } from './schema-info';
 
 type Translate = (key: string) => string;
 
-/** Name of the data source the template expects (created if missing, see `ensureSource`). */
-export const TEMPLATE_SOURCES: Record<string, { name: string; method: 'GET' | 'POST' }> = {
-  table: { name: 'list', method: 'GET' },
-  dataTable: { name: 'list', method: 'GET' },
-  serverDataTable: { name: 'search', method: 'POST' },
-  detail: { name: 'detail', method: 'GET' },
-  tree: { name: 'tree', method: 'GET' },
-  calendar: { name: 'events', method: 'GET' },
-  chart: { name: 'series', method: 'GET' },
-  timeline: { name: 'events', method: 'GET' },
-  kanban: { name: 'tasks', method: 'GET' },
+/** Name of the data source the template expects (referred to when the project has one with that name, see `ensureSource`). */
+export const TEMPLATE_SOURCES: Record<string, string> = {
+  table: 'list',
+  dataTable: 'list',
+  serverDataTable: 'search',
+  detail: 'detail',
+  tree: 'tree',
+  calendar: 'events',
+  chart: 'series',
+  timeline: 'events',
+  kanban: 'tasks',
 };
 
 /** Field types the palette offers as standalone `input` components (item `input.<type>`). */
@@ -44,7 +44,7 @@ function inputField(kind: string, label: string): JsonObject {
  */
 export function nodeTemplate(kind: string, t: Translate): JsonObject {
   const [type, variant] = kind.split('.');
-  const source = TEMPLATE_SOURCES[type]?.name;
+  const source = TEMPLATE_SOURCES[type];
   const label = t('ed.tpl.label');
   switch (type) {
     case 'section':
@@ -119,21 +119,20 @@ export function nodeTemplate(kind: string, t: Translate): JsonObject {
   }
 }
 
-/** Starting data source for a template (`{{ request }}` for the server-side datatable). */
-export function sourceTemplate(name: string, method: 'GET' | 'POST'): JsonObject {
-  return method === 'POST' ? { type: 'rest', method, url: `/api/${name}`, body: '{{ request }}' } : { type: 'rest', method, url: `/api/${name}` };
-}
-
-/** Adds to the document the data source the node uses, if it does not exist yet. */
-export function ensureSource(doc: Json, node: JsonObject): Json {
+/**
+ * Adds to the screen a reference to the data source the node uses, if the screen does not have it yet and the project has a
+ * data source with that name (`references`: those of the project, `document/name`). Otherwise the screen stays without it:
+ * the issues flag the missing data source and «Use from the project» adds one. A screen never defines data sources.
+ */
+export function ensureSource(doc: Json, node: JsonObject, references: readonly string[] = []): Json {
   // The lookup of a standalone field searches a GET data source.
   const lookup = getIn(node, ['field', 'lookup', 'source']);
   const name = node['source'] ?? lookup;
   if (typeof name !== 'string' || !isObject(doc)) return doc;
   const sources = isObject(getIn(doc, ['dataSources'])) ? (doc['dataSources'] as JsonObject) : {};
   if (name in sources) return doc;
-  const method = TEMPLATE_SOURCES[String(node['type'])]?.method ?? 'GET';
-  return { ...doc, dataSources: { ...sources, [name]: sourceTemplate(name, method) } };
+  const ref = references.find((r) => r.slice(r.indexOf('/') + 1) === name);
+  return ref ? { ...doc, dataSources: { ...sources, [name]: { ref } } } : doc;
 }
 
 /** A new `input` with a field name no other `input` of the screen already uses (`text`, `text2`…). */

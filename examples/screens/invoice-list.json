@@ -6,19 +6,10 @@
   "requires": "invoices.invoice.read",
   "dataSources": {
     "invoices": {
-      "type": "rest",
-      "method": "GET",
-      "url": "/api/invoices",
-      "paging": "server",
-      "params": {
-        "status": "{{has(params.status) ? params.status : state.filters.status}}",
-        "page": "{{state.page}}"
-      }
+      "ref": "invoices/invoices"
     },
     "sendInvoice": {
-      "type": "rest",
-      "method": "POST",
-      "url": "/api/invoices/{{id}}/send"
+      "ref": "invoices/sendInvoice"
     }
   },
   "components": [

@@ -6,23 +6,10 @@
   "requires": "showcase.components.read",
   "dataSources": {
     "invoices": {
-      "type": "rest",
-      "method": "GET",
-      "url": "/api/invoices",
-      "params": {
-        "type": "{{ state.type }}",
-        "status": "{{ state.statuses }}",
-        "customer": "{{ state.customer }}"
-      }
+      "ref": "showcase-input/invoices"
     },
     "customers": {
-      "type": "rest",
-      "method": "GET",
-      "url": "/api/customers",
-      "params": {
-        "q": "{{ search }}",
-        "id": "{{ lookupKey }}"
-      }
+      "ref": "showcase-input/customers"
     }
   },
   "components": [

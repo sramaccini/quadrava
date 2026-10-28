@@ -4,6 +4,7 @@ import { I18n } from 'core';
 import { EDITOR_MESSAGES } from '../messages';
 import { getIn, type Json } from './doc-ops';
 import { EditorStore } from './editor-store';
+import { KnownDataSources } from './shared-state';
 import { listItem, nodeProperties } from './schema-info';
 import { defaultItem } from './templates';
 import { documentProviders } from './workspace';
@@ -15,6 +16,10 @@ describe('EditorStore', () => {
     localStorage.clear();
     TestBed.configureTestingModule({ providers: documentProviders('screen', 'd1') });
     TestBed.inject(I18n).addMessages('en', EDITOR_MESSAGES['en']);
+    // The data sources of the project the screens refer to.
+    TestBed.inject(KnownDataSources).documents.set({
+      orders: { schemaVersion: '1.0', datasources: 'orders', sources: { list: { type: 'rest', method: 'GET', url: '/api/list' }, search: { type: 'rest', method: 'POST', url: '/api/search' } } },
+    });
     store = TestBed.inject(EditorStore);
     store.newScreen();
   });
@@ -27,12 +32,12 @@ describe('EditorStore', () => {
     expect(store.target()).toEqual({ kind: 'screen' });
   });
 
-  it('adds inside the selected container or after the node, and creates the data source it needs', () => {
+  it('adds inside the selected container or after the node, and refers to the data source of the project it needs', () => {
     store.addNode('section');
     expect(store.selection()).toEqual(['components', 0]);
     store.addNode('table');
     expect(store.selection()).toEqual(['components', 0, 'components', 0]);
-    expect(getIn(store.doc(), ['dataSources', 'list'])).toEqual({ type: 'rest', method: 'GET', url: '/api/list' });
+    expect(getIn(store.doc(), ['dataSources', 'list'])).toEqual({ ref: 'orders/list' });
     store.addNode('text');
     expect(store.selection()).toEqual(['components', 0, 'components', 1]);
     store.select([]);
@@ -127,8 +132,10 @@ describe('EditorStore', () => {
     expect(store.sourceNames()).toEqual(['orders']);
     expect(store.samples()).toEqual({ orders: [{ id: 1 }] });
     expect(store.renameSource('orders', '1x')).toBe(false);
-    expect(store.addSource()).toBe('data');
-    expect(store.renameSource('data', 'orders')).toBe(false);
+    // Adding gives a reference to the first data source of the project, under a free name.
+    expect(store.addSource()).toBe('list');
+    expect(getIn(store.doc(), ['dataSources', 'list'])).toEqual({ ref: 'orders/list' });
+    expect(store.renameSource('list', 'orders')).toBe(false);
   });
 
   it('makes a text translatable and keeps count of the missing translations', () => {

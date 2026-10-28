@@ -5,32 +5,16 @@
   "requires": "showcase.components.read",
   "dataSources": {
     "orders": {
-      "type": "rest",
-      "method": "GET",
-      "url": "/api/orders",
-      "params": {
-        "status": "{{state.filters.status}}",
-        "page": "{{state.page}}"
-      },
-      "paging": "server"
+      "ref": "showcase-tables/orders"
     },
     "approveOrder": {
-      "type": "rest",
-      "method": "POST",
-      "url": "/api/orders/{{id}}/approve"
+      "ref": "showcase-tables/approveOrder"
     },
     "packages": {
-      "type": "rest",
-      "method": "GET",
-      "url": "/api/packages"
+      "ref": "showcase-tables/packages"
     },
     "invoices": {
-      "type": "rest",
-      "method": "GET",
-      "url": "/api/invoices",
-      "params": {
-        "status": "sent"
-      }
+      "ref": "showcase-tables/invoices"
     }
   },
   "components": [

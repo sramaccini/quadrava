@@ -6,19 +6,13 @@
   "requires": "showcase.components.read",
   "dataSources": {
     "summary": {
-      "type": "rest",
-      "method": "GET",
-      "url": "/api/summary"
+      "ref": "showcase-dashboard/summary"
     },
     "sales": {
-      "type": "rest",
-      "method": "GET",
-      "url": "/api/monthly-sales"
+      "ref": "showcase-dashboard/sales"
     },
     "byStatus": {
-      "type": "rest",
-      "method": "GET",
-      "url": "/api/invoices-by-status"
+      "ref": "showcase-dashboard/byStatus"
     }
   },
   "components": [

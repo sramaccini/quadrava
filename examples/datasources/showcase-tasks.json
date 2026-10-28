@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "1.0",
+  "datasources": "showcase-tasks",
+  "description": "Calls used by the «showcase-tasks» showcase screen.",
+  "sources": {
+    "tasks": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/tasks"
+    },
+    "moveTask": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/tasks/{{ id }}/move",
+      "body": {
+        "status": "{{ status }}"
+      }
+    },
+    "events": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/events"
+    }
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "1.0",
+  "datasources": "showcase-datatable",
+  "description": "Calls used by the «showcase-datatable» showcase screen.",
+  "sources": {
+    "transactions": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/transactions"
+    },
+    "archive": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/transactions",
+      "params": {
+        "count": 20000
+      }
+    },
+    "search": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/transactions/search",
+      "body": "{{ request }}"
+    },
+    "checkTransaction": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/transactions/{{ id }}/check"
+    }
+  }
+}

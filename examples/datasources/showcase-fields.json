@@ -1,0 +1,58 @@
+{
+  "schemaVersion": "1.0",
+  "datasources": "showcase-fields",
+  "description": "Calls used by the «showcase-fields» showcase screen.",
+  "sources": {
+    "invoices": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/invoices",
+      "params": {
+        "status": "{{state.fieldFilters.statuses}}",
+        "type": "{{state.fieldFilters.type}}",
+        "customer": "{{state.fieldFilters.customer}}"
+      }
+    },
+    "customers": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/customers",
+      "params": {
+        "q": "{{ search }}",
+        "id": "{{ lookupKey }}"
+      }
+    },
+    "uploadAttachment": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/attachments",
+      "body": "{{ file }}"
+    },
+    "contacts": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/contacts"
+    },
+    "createContact": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/contacts",
+      "body": "{{ form }}"
+    },
+    "editContact": {
+      "type": "rest",
+      "method": "PUT",
+      "url": "/api/contacts/{{ id }}",
+      "body": "{{ form }}"
+    },
+    "articles": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/articles",
+      "params": {
+        "q": "{{ search }}",
+        "id": "{{ lookupKey }}"
+      }
+    }
+  }
+}

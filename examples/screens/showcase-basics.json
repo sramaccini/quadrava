@@ -5,22 +5,13 @@
   "requires": "showcase.components.read",
   "dataSources": {
     "flag": {
-      "type": "rest",
-      "method": "POST",
-      "url": "/api/showcase/flag",
-      "body": {
-        "message": "{{state.message}}"
-      }
+      "ref": "showcase-basics/flag"
     },
     "flagWithError": {
-      "type": "rest",
-      "method": "POST",
-      "url": "/api/showcase/error"
+      "ref": "showcase-basics/flagWithError"
     },
     "flagConflict": {
-      "type": "rest",
-      "method": "POST",
-      "url": "/api/showcase/conflict"
+      "ref": "showcase-basics/flagConflict"
     }
   },
   "actions": {

@@ -1,9 +1,9 @@
 import { validateScreen } from 'schema/validation';
 import { paletteGroups } from '../ui/palette.component';
 import { EDITOR_MESSAGES } from '../messages';
-import type { Json, JsonObject } from './doc-ops';
+import { getIn, type Json, type JsonObject } from './doc-ops';
 import { childSlots, containerItems, definitionProperties, listItem, nodeProperties, NODE_TYPES, objectFields, ownerOf, screenProperties, targetAt, type PropertyInfo, type Variant } from './schema-info';
-import { defaultItem, emptyScreen, ensureSource, freshId, INPUT_KINDS, nodeTemplate, summaryOf, uniqueInputName, withFreshIds } from './templates';
+import { defaultItem, emptyScreen, ensureSource, TEMPLATE_SOURCES, freshId, INPUT_KINDS, nodeTemplate, summaryOf, uniqueInputName, withFreshIds } from './templates';
 
 const t = (key: string): string => EDITOR_MESSAGES['en'][key] ?? key;
 
@@ -67,15 +67,17 @@ describe('reading the schema', () => {
     expect(childSlots(doc, ['components', 0])).toEqual([]);
   });
 
-  it('every type of the schema is in the palette and has a valid template, with the data source it uses', () => {
+  it('every type of the schema is in the palette and has a valid template, referring to the data source it uses', () => {
     const kinds = paletteGroups().flatMap((g) => g.types);
+    // The project has a data source with every name the templates expect.
+    const references = [...new Set([...Object.values(TEMPLATE_SOURCES), 'customers'])].map((name) => `demo/${name}`);
     expect([...new Set(kinds.map((k) => k.split('.')[0]))].sort()).toEqual([...NODE_TYPES].sort());
     for (const type of [...NODE_TYPES, ...kinds.filter((k) => k.includes('.'))]) {
       const node: JsonObject = { id: freshId({}, type.split('.')[0]), ...nodeTemplate(type, t) };
-      const doc = ensureSource({ ...emptyScreen(t), components: [node] }, node);
+      const doc = ensureSource({ ...emptyScreen(t), components: [node] }, node, references);
       const result = validateScreen(doc);
       expect(result.valid ? [] : result.issues, type).toEqual([]);
-      if (typeof node['source'] === 'string') expect(Object.keys((doc as { dataSources: object }).dataSources)).toContain(node['source']);
+      if (typeof node['source'] === 'string') expect(getIn(doc, ['dataSources', node['source']])).toEqual({ ref: `demo/${node['source']}` });
     }
   });
 
@@ -84,7 +86,9 @@ describe('reading the schema', () => {
     expect(nodeTemplate('input.select', t)).toMatchObject({ type: 'input', field: { name: 'choice', type: 'select' } });
     expect(nodeTemplate('text.markdown', t)).toMatchObject({ type: 'text', format: 'markdown' });
     const lookup = nodeTemplate('input.lookup', t);
-    expect(Object.keys((ensureSource(emptyScreen(t), lookup) as { dataSources: object }).dataSources)).toEqual(['customers']);
+    expect(getIn(ensureSource(emptyScreen(t), lookup, ['crm/customers']), ['dataSources'])).toEqual({ customers: { ref: 'crm/customers' } });
+    // Without a data source of that name in the project the screen stays without it (the issues flag it).
+    expect(getIn(ensureSource(emptyScreen(t), lookup, ['crm/contacts']), ['dataSources'])).toEqual({});
     const doc: Json = { components: [{ type: 'input', field: { name: 'text', type: 'text' } }, { type: 'input', field: { name: 'text2', type: 'text' } }] };
     expect(uniqueInputName(doc, nodeTemplate('input.text', t))).toMatchObject({ field: { name: 'text3' } });
     expect(uniqueInputName(doc, nodeTemplate('input.date', t))).toMatchObject({ field: { name: 'date' } });

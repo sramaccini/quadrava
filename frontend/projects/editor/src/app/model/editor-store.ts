@@ -176,7 +176,7 @@ export class EditorStore extends DocumentState implements DataSourceList {
     const doc = this.doc();
     const template = uniqueInputName(doc, nodeTemplate(kind, (k) => this.t(k)));
     const node: JsonObject = { id: freshId(doc, String(template['type'])), ...template };
-    const next = insertAt(ensureSource(doc, node), at.list, at.index, node);
+    const next = insertAt(ensureSource(doc, node, this.projectReferences()), at.list, at.index, node);
     const list = getIn(next, at.list) as Json[];
     this.apply(next, { select: [...at.list, Math.min(at.index, list.length - 1)] });
   }
@@ -364,16 +364,30 @@ export class EditorStore extends DocumentState implements DataSourceList {
     const doc = this.doc();
     const used = usedIds(doc);
     const copy = [...usedIds(node)].some((id) => used.has(id)) ? withFreshIds(doc, node) : node;
-    const next = insertAt(ensureSource(doc, copy as JsonObject), at.list, at.index, copy);
+    const next = insertAt(ensureSource(doc, copy as JsonObject, this.projectReferences()), at.list, at.index, copy);
     this.apply(next, { select: [...at.list, at.index] });
   }
 
-  /** Adds a GET data source with a free name and returns it. */
-  addSource(): string {
+  /** The data sources of the project as references (`document/name`), sorted. */
+  private projectReferences(): string[] {
+    const documents = this.projectSources() ?? {};
+    return Object.entries(documents)
+      .flatMap(([doc, definition]) => Object.keys(definition.sources).map((source) => `${doc}/${source}`))
+      .sort();
+  }
+
+  /**
+   * Adds a reference to the first data source of the project, under its own name (made unique), and returns the name; null
+   * if the project has no data sources. A screen only refers to data sources: they are defined in the documents.
+   */
+  addSource(): string | null {
+    const first = this.projectReferences()[0];
+    if (!first) return null;
     const names = new Set(this.sourceNames());
-    let name = 'data';
-    for (let n = 2; names.has(name); n++) name = `data${n}`;
-    this.apply(setIn(this.doc(), ['dataSources', name], { type: 'rest', method: 'GET', url: `/api/${name}` }));
+    const base = first.split('/')[1];
+    let name = base;
+    for (let n = 2; names.has(name); n++) name = `${base}${n}`;
+    this.apply(setIn(this.doc(), ['dataSources', name], { ref: first }));
     return name;
   }
 
@@ -511,21 +525,6 @@ export class EditorStore extends DocumentState implements DataSourceList {
       else next[source] = value;
       return next;
     });
-  }
-
-  /**
-   * Adds several data sources in a single step to undo (import from OpenAPI). Names already in use are not
-   * overwritten; sample data are set only for the new data sources. Returns the names added.
-   */
-  importSources(entries: { name: string; source: JsonObject; sample?: Json }[]): string[] {
-    const existing = new Set(this.sourceNames());
-    const fresh = entries.filter((e) => SOURCE_NAME.test(e.name) && !existing.has(e.name));
-    if (!fresh.length) return [];
-    let next = this.doc();
-    for (const entry of fresh) next = setIn(next, ['dataSources', entry.name], entry.source);
-    this.apply(next);
-    for (const entry of fresh) if (entry.sample !== undefined) this.setSample(entry.name, entry.sample);
-    return fresh.map((e) => e.name);
   }
 
   /** Opens a document (file, example, new screen): clears history and selection. */

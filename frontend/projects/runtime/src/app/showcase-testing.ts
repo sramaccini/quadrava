@@ -14,6 +14,23 @@ import views from '../../public/examples/screens/showcase-views.json';
 import datatable from '../../public/examples/screens/showcase-datatable.json';
 import validation from '../../public/examples/screens/showcase-validation.json';
 import light from '../../public/examples/themes/light.json';
+import expensesSources from '../../public/examples/datasources/expenses.json';
+import invoicesSources from '../../public/examples/datasources/invoices.json';
+import ordersSources from '../../public/examples/datasources/orders.json';
+import packagesSources from '../../public/examples/datasources/packages.json';
+import showcaseAdvancedTablesSources from '../../public/examples/datasources/showcase-advanced-tables.json';
+import showcaseBasicsSources from '../../public/examples/datasources/showcase-basics.json';
+import showcaseContainersSources from '../../public/examples/datasources/showcase-containers.json';
+import showcaseDashboardSources from '../../public/examples/datasources/showcase-dashboard.json';
+import showcaseDatatableSources from '../../public/examples/datasources/showcase-datatable.json';
+import showcaseFieldsSources from '../../public/examples/datasources/showcase-fields.json';
+import showcaseFormSources from '../../public/examples/datasources/showcase-form.json';
+import showcaseInputSources from '../../public/examples/datasources/showcase-input.json';
+import showcaseLayoutSources from '../../public/examples/datasources/showcase-layout.json';
+import showcaseTablesSources from '../../public/examples/datasources/showcase-tables.json';
+import showcaseTasksSources from '../../public/examples/datasources/showcase-tasks.json';
+import showcaseValidationSources from '../../public/examples/datasources/showcase-validation.json';
+import showcaseViewsSources from '../../public/examples/datasources/showcase-views.json';
 import catalogIt from '../../public/examples/i18n/it.json';
 import catalogEn from '../../public/examples/i18n/en.json';
 import { openSelect } from './select-testing';
@@ -23,6 +40,24 @@ import { appConfig } from './app.config';
 /** For tests only: documents served to the demo instead of `fetch`. */
 export const SHOWCASE_FILES: Record<string, unknown> = {
   'examples/navigation.json': navigationDoc,
+  // The data sources documents the screens refer to.
+  'examples/datasources/expenses.json': expensesSources,
+  'examples/datasources/invoices.json': invoicesSources,
+  'examples/datasources/orders.json': ordersSources,
+  'examples/datasources/packages.json': packagesSources,
+  'examples/datasources/showcase-advanced-tables.json': showcaseAdvancedTablesSources,
+  'examples/datasources/showcase-basics.json': showcaseBasicsSources,
+  'examples/datasources/showcase-containers.json': showcaseContainersSources,
+  'examples/datasources/showcase-dashboard.json': showcaseDashboardSources,
+  'examples/datasources/showcase-datatable.json': showcaseDatatableSources,
+  'examples/datasources/showcase-fields.json': showcaseFieldsSources,
+  'examples/datasources/showcase-form.json': showcaseFormSources,
+  'examples/datasources/showcase-input.json': showcaseInputSources,
+  'examples/datasources/showcase-layout.json': showcaseLayoutSources,
+  'examples/datasources/showcase-tables.json': showcaseTablesSources,
+  'examples/datasources/showcase-tasks.json': showcaseTasksSources,
+  'examples/datasources/showcase-validation.json': showcaseValidationSources,
+  'examples/datasources/showcase-views.json': showcaseViewsSources,
   // The initial destination, which opens before going to the showcase screen.
   'examples/screens/invoice-list.json': fattureElenco,
   'examples/screens/showcase-advanced-tables.json': tabelleAvanzate,

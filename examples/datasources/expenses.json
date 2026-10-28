@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "1.0",
+  "datasources": "expenses",
+  "description": "Calls of the expenses service: the list and the review of an expense.",
+  "sources": {
+    "expenses": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/expenses",
+      "paging": "server",
+      "params": {
+        "status": "{{has(params.status) ? params.status : ''}}",
+        "page": "{{state.page}}"
+      }
+    },
+    "reviewExpense": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/expenses/{{id}}/review",
+      "body": {
+        "outcome": "{{outcome}}"
+      }
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "1.0",
+  "datasources": "showcase-containers",
+  "description": "Calls used by the «showcase-containers» showcase screen.",
+  "sources": {
+    "invoices": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/invoices",
+      "params": {
+        "status": "{{ state.invoiceStatus }}"
+      }
+    }
+  }
+}

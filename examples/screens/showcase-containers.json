@@ -6,12 +6,7 @@
   "requires": "showcase.components.read",
   "dataSources": {
     "invoices": {
-      "type": "rest",
-      "method": "GET",
-      "url": "/api/invoices",
-      "params": {
-        "status": "{{ state.invoiceStatus }}"
-      }
+      "ref": "showcase-containers/invoices"
     }
   },
   "components": [

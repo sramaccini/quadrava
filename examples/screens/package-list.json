@@ -5,9 +5,7 @@
   "requires": "packages.package.read",
   "dataSources": {
     "packages": {
-      "type": "rest",
-      "method": "GET",
-      "url": "/api/packages"
+      "ref": "packages/packages"
     }
   },
   "components": [

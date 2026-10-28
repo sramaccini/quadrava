@@ -91,10 +91,8 @@ Key design choices:
   "title": "Orders",
   "requires": "orders.order.read",
   "dataSources": {
-    "orders": { "type": "rest", "method": "GET", "url": "/api/orders",
-                "params": { "status": "{{state.filters.status}}", "page": "{{state.page}}" },
-                "paging": "server" },
-    "approveOrder": { "type": "rest", "method": "POST", "url": "/api/orders/{{id}}/approve" }
+    "orders": { "ref": "orders/list", "params": { "status": "{{state.filters.status}}" } },
+    "approveOrder": { "ref": "orders/approve" }
   },
   "components": [
     { "type": "filterBar", "bind": "state.filters",
@@ -164,12 +162,16 @@ Plain text keeps its line breaks. Labels (fields, columns, buttons, menu) delibe
 * `print`: the browser print dialog; the print stylesheet hides menu, header and buttons;
 * `export`: downloads the rows of a GET data source as CSV (semicolon separator and UTF-8 BOM for Excel; cells starting with `=`, `+`, `-` or `@` are neutralised against formula injection).
 
-**Data sources shared by the screens.** A data source can be defined in the screen, as above, or in a **data sources document** of the project (`datasources/orders.json`, one or more data sources per file, schema `datasources.schema.json`) and referred to by name; `params` and `body` of the reference adjust it for the screen. The runtime loads the documents referred to when the screen opens; a reference that does not resolve leaves its data source out and is reported (fail-closed). This is how the demo's `order-list` and `order-detail` share the calls of the orders service:
+**Data sources are defined only in data sources documents.** The calls of a service live in a **data sources document** of the project (`datasources/orders.json`, one or more data sources per file, schema `datasources.schema.json`); a screen only **refers** to them by name, as above, and the reference can add `params` and replace the `body` for that screen. The runtime loads the documents referred to when the screen opens; a reference that does not resolve leaves its data source out and is reported (fail-closed). The demo's `order-list` and `order-detail` share the calls of the orders service this way:
 
 ```json
-"dataSources": {
-  "orders": { "ref": "orders/list", "params": { "status": "{{state.filters.status}}" } },
-  "approveOrder": { "ref": "orders/approve" }
+{
+  "schemaVersion": "1.0",
+  "datasources": "orders",
+  "sources": {
+    "list": { "type": "rest", "method": "GET", "url": "/api/orders", "params": { "page": "{{state.page}}" }, "paging": "server" },
+    "approve": { "type": "rest", "method": "POST", "url": "/api/orders/{{id}}/approve" }
+  }
 }
 ```
 
@@ -289,7 +291,7 @@ Studio works on a **project**, the folder of an application (`project.json`, `sc
 
 ### Workspace
 
-* **Projects.** The **Project** panel lists the resources of the project (settings, screens, data sources, navigation, themes, translation catalogues): open, create, delete them; «Save» writes the file of the resource in the project folder, renaming it when the identifier changes. Data sources shared by the screens are resources of their own: a screen refers to them, and one written in a screen can be moved into the project.
+* **Projects.** The **Project** panel lists the resources of the project (settings, screens, data sources, navigation, themes, translation catalogues): open, create, delete them; «Save» writes the file of the resource in the project folder, renaming it when the identifier changes. Data sources are resources of their own, shared by the screens: a screen only refers to them (one written in a screen by an earlier version is flagged and can be moved into the project).
 * **Multi-document windows.** As in an IDE, every resource opens in its own window inside the workspace: windows can be moved, resized, maximized, minimized to the bar of the open documents, tiled or cascaded, and Ctrl+F6 moves between them. The side panels, the toolbar and the problems follow the window in front; the open windows and their drafts come back when the page is reloaded.
 * **Menu bar.** A desktop-style menu bar offers *File* (new, open and close projects; new screen, data sources, navigation or theme; import a file or an example; open from the registry; save to the project with Ctrl+S, save all, export, save to the registry, registry panel, close; an «Unsaved changes» tag tells when the document differs from the last save), *Edit* (undo, redo, cut, copy, paste, duplicate, delete, move, with their shortcuts), *View* (pinned sides, problems panel, central view), *Window* (arrangement and list of the windows) and *Help* (every keyboard shortcut, also F1). It is fully keyboard operable.
 * **Panels.** As in classic IDEs, for every kind of document each panel (components, outline, properties) can be unpinned on its own: it becomes a vertical tab on the edge strip while the other panels of the side keep the column, slides over the preview on hover and closes again when the pointer leaves (not while a field inside has the focus). The sides can be resized by dragging their inner edge.
@@ -308,7 +310,7 @@ Studio works on a **project**, the folder of an application (`project.json`, `sc
 
 ### Data sources and texts
 
-* **Data source tab.** Defines the services and the sample data the preview returns. It also imports data sources from an OpenAPI 3 or Swagger 2 document (for example springdoc's `/v3/api-docs` in Spring Boot, or a file): operations are picked from a list grouped by tag and become data sources with path parameters, required query parameters, a `{{ form }}` body and sample data built from the response schema.
+* **Data sources.** A data sources document defines the services (each card coloured by its HTTP verb, as in the import) and the sample data the preview returns; the *Data sources* tab of a screen picks the references to them, with parameters and body for that screen. A data sources document also imports data sources from an OpenAPI 3 or Swagger 2 document (for example springdoc's `/v3/api-docs` in Spring Boot, or a file): operations are picked from a list grouped by tag and become data sources with path parameters, required query parameters, a `{{ form }}` body and sample data built from the response schema.
 * **Testi tab.** Lists every user-facing text and turns plain texts into translation keys with one click. It edits the translations (applied to the preview at once), exports them, or saves them to the registry (merged into the latest catalogue version) and publishes them.
 * **Languages.** Translations are not limited to Italian and English: languages are added in the *Texts* tab from a list with their names (or imported from files), any of them can become the default language of the fallback texts, and the preview can switch to any of them.
 

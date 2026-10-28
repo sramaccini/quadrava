@@ -92,7 +92,7 @@ describe('editing validation', () => {
       store.load({
         schemaVersion: '1.0',
         screen: 'v',
-        dataSources: { checkStaff: { type: 'rest', method: 'GET', url: '/api/staff/check' } },
+        dataSources: { checkStaff: { ref: 'staff/check' } },
         components: [{ type: 'form', fields: [{ name: 'a', type: 'text', validation: [{ remote: 'checkStaff' }] }, { name: 'b', type: 'text', validation: [{ remote: 'nope' }] }] }],
       });
       expect(store.issues().map((i) => `${i.severity} ${i.pointer}`)).toEqual(['warning /components/0/fields/1/validation/0/remote']);

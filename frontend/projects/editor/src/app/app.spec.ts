@@ -2,9 +2,11 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { vi } from 'vitest';
 import layout from '../../public/examples/screens/showcase-layout.json';
+import layoutSources from '../../public/examples/datasources/showcase-layout.json';
 import { Confirmation, I18n, Notifier } from 'core';
 import { App } from './app';
 import { appConfig } from './app.config';
+import { DataSourcesStore } from './model/datasources-store';
 import { EditorStore } from './model/editor-store';
 import { getIn as getAt, type Json } from './model/doc-ops';
 import { NavigationStore } from './model/navigation-store';
@@ -455,7 +457,7 @@ describe('screen editor', () => {
     expect(workspace.active()?.path()).toBe('navigation.json');
   });
 
-  it('data sources of the project: a screen refers to one and the preview resolves it; one written in the screen moves to the project', async () => {
+  it('data sources of the project: a screen only refers to them and the preview resolves it; one written in the screen moves to the project', async () => {
     folder.files.set(
       'datasources/orders.json',
       JSON.stringify({ schemaVersion: '1.0', datasources: 'orders', sources: { list: { type: 'rest', method: 'GET', url: '/api/orders', params: { size: 20 } } } }),
@@ -467,12 +469,18 @@ describe('screen editor', () => {
     (el.querySelector('[data-add-ref]') as HTMLButtonElement).click();
     await settle();
     expect(store.doc()).toMatchObject({ dataSources: { list: { ref: 'orders/list' } } });
-    expect(el.querySelector('[data-target="list"]')?.textContent).toBe('GET /api/orders');
+    // The call it points to, with the verb coloured as in the OpenAPI import; a screen has no import nor data sources of its own.
+    expect(el.querySelector('[data-target="list"] nz-tag')?.textContent?.trim()).toBe('GET');
+    expect(el.querySelector('[data-target="list"] code')?.textContent).toBe('/api/orders');
+    expect(el.querySelector('ed-data-sources [data-openapi-open]')).toBeNull();
+    expect(el.querySelector('ed-data-sources [data-method="GET"]')).not.toBeNull();
     // The preview receives the screen with the reference resolved; the screen keeps the reference.
     await untilState('ed-preview', (st) => (screenOf(st) as { dataSources?: Record<string, { url?: string }> }).dataSources?.['list']?.url === '/api/orders', 'resolved in the preview');
-    // A data source written in the screen moves into the project and a reference stays.
-    store.addSource();
+    // A data source written in the screen (by an earlier version) is flagged; it moves into the project and a reference stays.
+    store.setValue(['dataSources', 'data'], { type: 'rest', method: 'GET', url: '/api/all' });
     await settle();
+    expect(el.querySelector('[data-inline="data"]')).not.toBeNull();
+    expect(el.querySelector('ed-data-sources')?.textContent).toContain('data sources are defined only in the data sources documents');
     (el.querySelector('[data-move="data"]') as HTMLButtonElement).click();
     await until(() => !!document.querySelector('#move-document'), 'move dialog');
     type(document.querySelector('#move-name') as HTMLInputElement, 'all');
@@ -675,7 +683,7 @@ describe('screen editor', () => {
     await untilState('ed-preview', (st) => st.defaultLocale === 'it', 'default language in the preview');
   });
 
-  it('data sources imported from OpenAPI (springdoc): read from the address, choice of the operations, sample data', async () => {
+  it('data sources imported from OpenAPI (springdoc) into a data sources document: read from the address, choice of the operations, sample data', async () => {
     const doc = {
       openapi: '3.0.1',
       info: { title: 'Accounting', version: '1' },
@@ -693,9 +701,11 @@ describe('screen editor', () => {
       if (url === '/v3/api-docs') return { ok: true, status: 200, text: async () => JSON.stringify(doc) };
       return { ok: false, status: 404, text: async () => '' };
     });
-    tab(2);
+    // The import belongs to the data sources documents of the project (a screen only refers to data sources).
+    const window = await TestBed.inject(ProjectCommands).createResource('datasources', 'Accounting', 'accounting');
     await settle();
-    (el.querySelector('[data-openapi-open]') as HTMLButtonElement).click();
+    const sources = window!.injector.get(DataSourcesStore);
+    (el.querySelector('ed-datasources-editor [data-openapi-open]') as HTMLButtonElement).click();
     await until(() => !!document.querySelector('[data-openapi-url]'), 'import dialog');
     const url = document.querySelector('[data-openapi-url]') as HTMLInputElement;
     expect(url.value).toBe('/v3/api-docs');
@@ -719,14 +729,14 @@ describe('screen editor', () => {
     await settle();
     expect(importButton().textContent).toContain('Import 2 data sources');
     importButton().click();
-    await until(() => getAt(store.doc(), ['dataSources', 'listCustomers']) !== undefined, 'import');
-    expect(getAt(store.doc(), ['dataSources', 'listCustomers'])).toEqual({ type: 'rest', method: 'GET', url: '/api/customers' });
-    expect(getAt(store.doc(), ['dataSources', 'createCustomer'])).toEqual({ type: 'rest', method: 'POST', url: '/api/customers', body: '{{ form }}' });
-    expect(store.samples()['listCustomers']).toEqual([{ name: 'Smith' }, { name: 'Smith' }]);
+    await until(() => getAt(sources.doc(), ['sources', 'listCustomers']) !== undefined, 'import');
+    expect(getAt(sources.doc(), ['sources', 'listCustomers'])).toEqual({ type: 'rest', method: 'GET', url: '/api/customers' });
+    expect(getAt(sources.doc(), ['sources', 'createCustomer'])).toEqual({ type: 'rest', method: 'POST', url: '/api/customers', body: '{{ form }}' });
+    expect(sources.samples()['listCustomers']).toEqual([{ name: 'Smith' }, { name: 'Smith' }]);
     expect(localStorage.getItem('lc.editor.openapi.url')).toBe('/v3/api-docs');
     // A single step to undo.
-    store.undo();
-    expect(getAt(store.doc(), ['dataSources', 'listCustomers'])).toBeUndefined();
+    sources.undo();
+    expect(getAt(sources.doc(), ['sources', 'listCustomers'])).toBeUndefined();
   });
 
   it('properties: path of the element with clickable containers and filter by name', async () => {
@@ -867,6 +877,10 @@ describe('screen editor', () => {
   });
 
   it('data source with sample data: the preview shows them; renaming updates the table', async () => {
+    // The table refers to the data source of the project with the name it expects (list).
+    folder.files.set('datasources/orders.json', JSON.stringify({ schemaVersion: '1.0', datasources: 'orders', sources: { list: { type: 'rest', method: 'GET', url: '/api/list' } } }));
+    await TestBed.inject(Project).refresh();
+    await settle();
     (el.querySelector('ed-palette button[data-type="table"]') as HTMLButtonElement).click();
     await settle();
     // The source field suggests the data sources of the screen.
@@ -890,6 +904,7 @@ describe('screen editor', () => {
     name.dispatchEvent(new Event('change'));
     await settle();
     expect(getAt(store.doc(), ['components', 0, 'source'])).toBe('orders');
+    expect(getAt(store.doc(), ['dataSources', 'orders'])).toEqual({ ref: 'orders/list' });
     tab(0);
     const shown = await untilState('ed-preview', (st) => getAt(screenOf(st), ['components', 0, 'source']) === 'orders', 'table renamed');
     expect(shown.samples).toEqual({ orders: [{ id: 1, description: 'First row' }] });
@@ -917,6 +932,9 @@ describe('screen editor', () => {
   });
 
   it('lists in the properties: columns field by field, steps by variant, and as JSON', async () => {
+    folder.files.set('datasources/orders.json', JSON.stringify({ schemaVersion: '1.0', datasources: 'orders', sources: { list: { type: 'rest', method: 'GET', url: '/api/list' } } }));
+    await TestBed.inject(Project).refresh();
+    await settle();
     (el.querySelector('ed-palette button[data-type="table"]') as HTMLButtonElement).click();
     await settle();
     const columns = (): HTMLElement => el.querySelector('ed-inspector [data-prop="columns"]') as HTMLElement;
@@ -1374,6 +1392,9 @@ describe('screen editor', () => {
   });
 
   it('opens an example, and deletes the selected node from the keyboard', async () => {
+    // The data sources it refers to are in the project.
+    folder.files.set('datasources/showcase-layout.json', JSON.stringify(layoutSources));
+    await TestBed.inject(Project).refresh();
     store.load(layout as never);
     await until(() => outline().length > 5, 'outline of the example');
     expect(outline()).toContain('Tabs');

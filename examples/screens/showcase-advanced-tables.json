@@ -6,33 +6,16 @@
   "requires": "showcase.components.read",
   "dataSources": {
     "orders": {
-      "type": "rest",
-      "method": "GET",
-      "url": "/api/orders",
-      "params": {
-        "sort": "{{state.sorting.field}}",
-        "dir": "{{state.sorting.direction}}",
-        "page": "{{state.page}}"
-      },
-      "paging": "server"
+      "ref": "showcase-advanced-tables/orders"
     },
     "invoices": {
-      "type": "rest",
-      "method": "GET",
-      "url": "/api/invoices"
+      "ref": "showcase-advanced-tables/invoices"
     },
     "sendInvoices": {
-      "type": "rest",
-      "method": "POST",
-      "url": "/api/invoices/send",
-      "body": {
-        "ids": "{{ids}}"
-      }
+      "ref": "showcase-advanced-tables/sendInvoices"
     },
     "sendInvoice": {
-      "type": "rest",
-      "method": "POST",
-      "url": "/api/invoices/{{id}}/send"
+      "ref": "showcase-advanced-tables/sendInvoice"
     }
   },
   "components": [

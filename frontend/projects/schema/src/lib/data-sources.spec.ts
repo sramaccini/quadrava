@@ -25,12 +25,13 @@ const screen: ScreenDefinition = {
 describe('data sources of the project', () => {
   it('a data sources document and a screen with references are valid; malformed references are not', () => {
     expect(validateDataSources(orders).valid).toBe(true);
-    expect(validateScreen(screen).valid).toBe(true);
+    const { local: _, ...references } = screen.dataSources!;
+    expect(validateScreen({ ...screen, dataSources: references }).valid).toBe(true);
     const bad = validateScreen({ ...screen, dataSources: { list: { ref: 'Orders list', url: '/x' } } });
     expect(bad.valid ? [] : bad.issues.map((i) => i.path)).toContain('/dataSources/list/ref');
-    // Without ref the entry is a full definition, checked as before.
-    const inline = validateScreen({ ...screen, dataSources: { list: { url: '/api' } } });
-    expect(inline.valid).toBe(false);
+    // A screen only refers to data sources: a definition written in it is not accepted.
+    const inline = validateScreen({ ...screen, dataSources: { list: { type: 'rest', method: 'GET', url: '/api' } } });
+    expect(inline.valid ? [] : inline.issues.map((i) => i.message)).toContain('missing required property: ref');
     expect(validateDataSources({ schemaVersion: '1.0', datasources: 'orders', sources: {} }).valid).toBe(false);
     expect(validateDataSources({ ...orders, sources: { list: { ref: 'other/list' } } }).valid).toBe(false);
   });
@@ -50,8 +51,7 @@ describe('data sources of the project', () => {
       approve: { type: 'rest', method: 'POST', url: '/api/orders/{{ row.id }}/approve', body: '{{ form }}' },
       local: { type: 'rest', method: 'GET', url: '/api/local' },
     });
-    // The resolved screen is still a valid screen; the original is untouched.
-    expect(validateScreen(resolved).valid).toBe(true);
+    // The original is untouched.
     expect(screen.dataSources!['list']).toEqual({ ref: 'orders/list', params: { status: '{{ state.status }}' } });
   });
 

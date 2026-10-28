@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "1.0",
+  "datasources": "invoices",
+  "description": "Calls of the invoices service: list, sending and creation of an invoice.",
+  "sources": {
+    "invoices": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/invoices",
+      "paging": "server",
+      "params": {
+        "status": "{{has(params.status) ? params.status : state.filters.status}}",
+        "page": "{{state.page}}"
+      }
+    },
+    "sendInvoice": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/invoices/{{id}}/send"
+    },
+    "createInvoice": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/invoices",
+      "body": "{{form}}"
+    }
+  }
+}

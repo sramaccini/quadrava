@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "1.0",
+  "datasources": "showcase-basics",
+  "description": "Calls used by the «showcase-basics» showcase screen.",
+  "sources": {
+    "flag": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/showcase/flag",
+      "body": {
+        "message": "{{state.message}}"
+      }
+    },
+    "flagWithError": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/showcase/error"
+    },
+    "flagConflict": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/showcase/conflict"
+    }
+  }
+}

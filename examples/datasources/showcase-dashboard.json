@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "1.0",
+  "datasources": "showcase-dashboard",
+  "description": "Calls used by the «showcase-dashboard» showcase screen.",
+  "sources": {
+    "summary": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/summary"
+    },
+    "sales": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/monthly-sales"
+    },
+    "byStatus": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/invoices-by-status"
+    }
+  }
+}

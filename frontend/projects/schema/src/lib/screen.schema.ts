@@ -30,12 +30,12 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
     },
     "dataSources": {
       "type": "object",
-      "description": "Data sources of the screen, by name (the name used in source, call and refresh). Each one is defined here or refers to a data source of the project (a data sources document) with ref.",
+      "description": "Data sources of the screen, by name (the name used in source, call and refresh). Each one refers to a data source of the project, defined in a data sources document, with ref (orders/list); the screen can add parameters and replace the body. Data sources are defined only in the data sources documents.",
       "propertyNames": {
         "pattern": "^[A-Za-z][A-Za-z0-9_]*$"
       },
       "additionalProperties": {
-        "$ref": "#/$defs/dataSourceEntry"
+        "$ref": "#/$defs/dataSourceRef"
       }
     },
     "actions": {
@@ -127,24 +127,6 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
         }
       },
       "description": "A REST call to a service of the application, through the BFF (relative address on the same origin)."
-    },
-    "dataSourceEntry": {
-      "description": "A data source of the screen: defined here, or a reference to one of the project ({\"ref\": \"orders/list\"}).",
-      "if": {
-        "type": "object",
-        "properties": {
-          "ref": true
-        },
-        "required": [
-          "ref"
-        ]
-      },
-      "then": {
-        "$ref": "#/$defs/dataSourceRef"
-      },
-      "else": {
-        "$ref": "#/$defs/dataSource"
-      }
     },
     "dataSourceRef": {
       "type": "object",

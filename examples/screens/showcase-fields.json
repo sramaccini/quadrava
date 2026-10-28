@@ -6,55 +6,25 @@
   "requires": "showcase.components.read",
   "dataSources": {
     "invoices": {
-      "type": "rest",
-      "method": "GET",
-      "url": "/api/invoices",
-      "params": {
-        "status": "{{state.fieldFilters.statuses}}",
-        "type": "{{state.fieldFilters.type}}",
-        "customer": "{{state.fieldFilters.customer}}"
-      }
+      "ref": "showcase-fields/invoices"
     },
     "customers": {
-      "type": "rest",
-      "method": "GET",
-      "url": "/api/customers",
-      "params": {
-        "q": "{{ search }}",
-        "id": "{{ lookupKey }}"
-      }
+      "ref": "showcase-fields/customers"
     },
     "uploadAttachment": {
-      "type": "rest",
-      "method": "POST",
-      "url": "/api/attachments",
-      "body": "{{ file }}"
+      "ref": "showcase-fields/uploadAttachment"
     },
     "contacts": {
-      "type": "rest",
-      "method": "GET",
-      "url": "/api/contacts"
+      "ref": "showcase-fields/contacts"
     },
     "createContact": {
-      "type": "rest",
-      "method": "POST",
-      "url": "/api/contacts",
-      "body": "{{ form }}"
+      "ref": "showcase-fields/createContact"
     },
     "editContact": {
-      "type": "rest",
-      "method": "PUT",
-      "url": "/api/contacts/{{ id }}",
-      "body": "{{ form }}"
+      "ref": "showcase-fields/editContact"
     },
     "articles": {
-      "type": "rest",
-      "method": "GET",
-      "url": "/api/articles",
-      "params": {
-        "q": "{{ search }}",
-        "id": "{{ lookupKey }}"
-      }
+      "ref": "showcase-fields/articles"
     }
   },
   "components": [

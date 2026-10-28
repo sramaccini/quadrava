@@ -16,11 +16,14 @@ import catalogEn from '../../public/examples/i18n/en.json';
 import { I18n } from 'core';
 import { App } from './app';
 import { appConfig } from './app.config';
+import { SHOWCASE_FILES } from './showcase-testing';
 
 /** The showcase must really work: every screen opens without errors and its examples do what they say. */
 describe('Component showcase', () => {
   const files: Record<string, unknown> = {
     'examples/navigation.json': navigationDoc,
+    // The data sources documents the screens refer to.
+    ...Object.fromEntries(Object.entries(SHOWCASE_FILES).filter(([url]) => url.startsWith('examples/datasources/'))),
     // The initial destination, which opens before going to the showcase screen.
     'examples/screens/invoice-list.json': invoices,
     'examples/screens/showcase-basics.json': base,

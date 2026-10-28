@@ -6,22 +6,13 @@
   "requires": "showcase.components.read",
   "dataSources": {
     "tasks": {
-      "type": "rest",
-      "method": "GET",
-      "url": "/api/tasks"
+      "ref": "showcase-tasks/tasks"
     },
     "moveTask": {
-      "type": "rest",
-      "method": "POST",
-      "url": "/api/tasks/{{ id }}/move",
-      "body": {
-        "status": "{{ status }}"
-      }
+      "ref": "showcase-tasks/moveTask"
     },
     "events": {
-      "type": "rest",
-      "method": "GET",
-      "url": "/api/events"
+      "ref": "showcase-tasks/events"
     }
   },
   "components": [

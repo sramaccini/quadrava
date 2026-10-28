@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "1.0",
+  "datasources": "showcase-layout",
+  "description": "Calls used by the «showcase-layout» showcase screen.",
+  "sources": {
+    "order": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/orders/{{has(params.id) ? params.id : 1}}"
+    },
+    "invoices": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/invoices",
+      "params": {
+        "status": "paid"
+      }
+    },
+    "deleteDraft": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/showcase/flag"
+    }
+  }
+}

@@ -5,10 +5,7 @@
   "requires": "invoices.invoice.create",
   "dataSources": {
     "createInvoice": {
-      "type": "rest",
-      "method": "POST",
-      "url": "/api/invoices",
-      "body": "{{form}}"
+      "ref": "invoices/createInvoice"
     }
   },
   "components": [

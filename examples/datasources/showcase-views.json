@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "1.0",
+  "datasources": "showcase-views",
+  "description": "Calls used by the «showcase-views» showcase screen.",
+  "sources": {
+    "categories": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/categories"
+    },
+    "deadlines": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/deadlines",
+      "params": {
+        "month": "{{ state.month }}"
+      }
+    }
+  }
+}
