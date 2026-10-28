@@ -32,7 +32,7 @@ describe('runtime configuration: where the definitions come from', () => {
 
   it('settings of the application: from the demo project, or the languages of the registry configuration', async () => {
     serve(project);
-    expect(await loadApplicationSettings(DEFAULT_RUNTIME_CONFIG)).toEqual({ languages: ['en', 'it'], defaultLanguage: 'en', themes: ['light', 'classic', 'dark'] });
+    expect(await loadApplicationSettings(DEFAULT_RUNTIME_CONFIG)).toEqual({ languages: ['en', 'it'], defaultLanguage: 'en', themes: project.themes });
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     serve({ ...project, languages: [] });
     expect(await loadApplicationSettings(DEFAULT_RUNTIME_CONFIG)).toEqual(DEFAULT_APPLICATION_SETTINGS);

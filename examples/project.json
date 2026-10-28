@@ -5,5 +5,5 @@
   "description": "Orders, invoices, expenses and the showcase of the components.",
   "languages": ["en", "it"],
   "defaultLanguage": "en",
-  "themes": ["light", "classic", "dark"]
+  "themes": ["light", "classic", "dark", "ocean", "forest", "sunset", "lavender", "slate", "sand", "high-contrast", "midnight", "graphite", "polar"]
 }

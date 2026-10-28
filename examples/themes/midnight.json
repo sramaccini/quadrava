@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "1.0",
+  "theme": "midnight",
+  "label": "Midnight",
+  "mode": "dark",
+  "tokens": {
+    "colors": {
+      "primary": "#8c9eff",
+      "onPrimary": "#0d1030",
+      "background": "#0b0e1f",
+      "surface": "#151a33",
+      "onSurface": "#e5e8fa",
+      "mutedText": "#a0a7c8",
+      "border": "#2a3157",
+      "danger": "#ff7a85",
+      "success": "#6fd59a",
+      "warning": "#f0bd5a"
+    },
+    "typography": {
+      "fontFamily": "Segoe UI, Roboto, Arial, sans-serif",
+      "baseSize": 15
+    },
+    "shape": {
+      "radius": 8
+    },
+    "density": "comfortable",
+    "layout": {
+      "sider": {
+        "tone": "dark",
+        "background": "#10142a",
+        "text": "#dfe3f7",
+        "mutedText": "#a0a7c8",
+        "activeBackground": "#262e5c",
+        "activeText": "#b4c0ff",
+        "border": "#2a3157",
+        "width": 256,
+        "collapsedWidth": 80
+      },
+      "header": {
+        "background": "#151a33",
+        "text": "#e5e8fa",
+        "height": 56
+      },
+      "pageHeader": {
+        "background": "#151a33"
+      },
+      "content": {
+        "padding": 24
+      }
+    }
+  }
+}

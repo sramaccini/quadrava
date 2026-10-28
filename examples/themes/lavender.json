@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "1.0",
+  "theme": "lavender",
+  "label": "Lavender",
+  "mode": "light",
+  "tokens": {
+    "colors": {
+      "primary": "#6741a8",
+      "onPrimary": "#ffffff",
+      "background": "#f6f3fb",
+      "surface": "#ffffff",
+      "onSurface": "#261d36",
+      "mutedText": "#5f566e",
+      "border": "#ddd5ea",
+      "danger": "#b3261e",
+      "success": "#2e7d32",
+      "warning": "#8f5a00"
+    },
+    "typography": {
+      "fontFamily": "Segoe UI, Roboto, Arial, sans-serif",
+      "baseSize": 15
+    },
+    "shape": {
+      "radius": 12
+    },
+    "density": "comfortable",
+    "layout": {
+      "sider": {
+        "tone": "light",
+        "background": "#ffffff",
+        "text": "#261d36",
+        "mutedText": "#5f566e",
+        "activeBackground": "#ece4f8",
+        "activeText": "#55328f",
+        "border": "#e6dff1",
+        "width": 256,
+        "collapsedWidth": 80
+      },
+      "header": {
+        "background": "#ffffff",
+        "text": "#261d36",
+        "height": 56
+      },
+      "pageHeader": {
+        "background": "#ffffff"
+      },
+      "content": {
+        "padding": 24
+      }
+    }
+  }
+}

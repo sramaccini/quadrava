@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "1.0",
+  "theme": "ocean",
+  "label": "Ocean",
+  "mode": "light",
+  "tokens": {
+    "colors": {
+      "primary": "#0b6e8a",
+      "onPrimary": "#ffffff",
+      "background": "#eef6f8",
+      "surface": "#ffffff",
+      "onSurface": "#0f2a33",
+      "mutedText": "#4c6670",
+      "border": "#c9dde3",
+      "danger": "#b3261e",
+      "success": "#1e7a46",
+      "warning": "#9a5b00"
+    },
+    "typography": {
+      "fontFamily": "Segoe UI, Roboto, Arial, sans-serif",
+      "baseSize": 15
+    },
+    "shape": {
+      "radius": 8
+    },
+    "density": "comfortable",
+    "layout": {
+      "sider": {
+        "tone": "dark",
+        "background": "#0d3b4a",
+        "text": "#e3f1f5",
+        "mutedText": "#a6c5cf",
+        "activeBackground": "#0b6e8a",
+        "activeText": "#ffffff",
+        "border": "#0d3b4a",
+        "width": 256,
+        "collapsedWidth": 80
+      },
+      "header": {
+        "background": "#ffffff",
+        "text": "#0f2a33",
+        "height": 56
+      },
+      "pageHeader": {
+        "background": "#ffffff"
+      },
+      "content": {
+        "padding": 24
+      }
+    }
+  }
+}
