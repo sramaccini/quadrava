@@ -361,7 +361,7 @@ Prerequisites: Node.js 24, JDK 21, Maven 3.9+, Docker.
 cd frontend && npm run stack
 ```
 
-`tools/stack.mjs` starts Keycloak in Docker, builds the Java modules when their jars are missing (`-- --rebuild` forces it), starts registry (file storage in `data/registry`), authorization, telemetry, BFF and the demo back end waiting for each to answer, publishes the examples with a real user, then serves the runtime (http://localhost:4200) and the editor (http://localhost:4201) behind the BFF (`-- --services-only` skips them). Logs go to `.stack/logs/`; Ctrl+C stops everything except Keycloak (`cd idp && docker compose down`).
+`tools/stack.mjs` starts Keycloak in Docker, builds the Java modules when their jars are missing (`-- --rebuild` forces it), starts registry (file storage in `data/registry`), authorization, telemetry, BFF and the demo back end waiting for each to answer, publishes the examples with a real user, then serves the runtime (http://localhost:4200) and the editor (http://localhost:4201) behind the BFF (`-- --services-only` skips them). Logs go to `.stack/logs/`; Ctrl+C stops everything except Keycloak (`cd idp && docker compose down`). Keycloak imports `idp/realm-lowcode.json` only when its container is created: after changing the realm, recreate it (`docker compose down`, then `up -d`). The runtime image can run in front of the same stack on port 8090 ([docker/runtime/README.md](docker/runtime/README.md)).
 
 **Step by step:**
 

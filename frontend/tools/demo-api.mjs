@@ -6,7 +6,8 @@
 // Every request must carry a valid Keycloak token (Authorization: Bearer, added by the BFF): RS256 signature checked
 // with the keys published by the realm, issuer and expiry. With --no-auth the check is off (warning in the log). Back-end
 // errors come back as Problem (RFC 9457) with the status only, never with details; invalid data also with the field errors
-// (paths and codes, contracts/problem.yaml).
+// (paths and codes, contracts/problem.yaml). /api/streams/tasks is an event stream (ADR-19): `tasks.changed` after
+// every change of the tasks, for the live boards of the showcase.
 import { readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { createPublicKey, createVerify } from 'node:crypto';
@@ -36,7 +37,14 @@ const bundle = await build({
   logLevel: 'error',
 });
 const { DemoBackend } = await import('data:text/javascript;base64,' + Buffer.from(bundle.outputFiles[0].text).toString('base64'));
-const backend = new DemoBackend();
+
+// Event streams (ADR-19): the open responses by address. An event only says that something changed; the boards read
+// their data source again.
+const streams = new Map([['/api/streams/tasks', new Set()]]);
+function emit(url, event) {
+  for (const res of streams.get(url) ?? []) res.write(`event: ${event}\ndata: {}\n\n`);
+}
+const backend = new DemoBackend(emit);
 
 // Public keys of the realm, by kid; reloaded when an unknown kid arrives.
 let keys = new Map();
@@ -129,11 +137,27 @@ createServer(async (req, res) => {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     return res.end(openApi);
   }
+  const stream = streams.get(url.pathname);
+  if (stream && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' });
+    res.write(': connected\n\n');
+    // A comment now and then keeps proxies from closing a quiet stream.
+    const heartbeat = setInterval(() => res.write(': ping\n\n'), 25_000);
+    stream.add(res);
+    req.on('close', () => {
+      clearInterval(heartbeat);
+      stream.delete(res);
+    });
+    return;
+  }
   try {
     const request = await readRequest(req, url);
     const result = await backend.handle(request);
     if (result === undefined) return problem(res, 404, 'Not found');
     send(res, 200, result);
+    // Behind the BFF several users share this back end: a change of the tasks reaches the boards of the others too.
+    // The colleague's move announces itself when it happens.
+    if (req.method !== 'GET' && url.pathname.startsWith('/api/tasks') && url.pathname !== '/api/tasks/colleague') emit('/api/streams/tasks', 'tasks.changed');
   } catch (e) {
     const status = Number(e instanceof Error ? e.message : NaN);
     // Invalid data: the field errors of the back end (paths and codes, contracts/problem.yaml).

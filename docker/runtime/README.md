@@ -62,6 +62,27 @@ The browser talks only to the BFF, on the origin of the page (`contracts/bff.yam
 `runtime-config.json` and `index.html` are served with `Cache-Control: no-cache`; the bundles, which have the hash of
 their content in the name, are cached for a year.
 
+## Against the local stack
+
+The development stack (`npm run stack`, README) is ready for the image on port 8090: the Keycloak realm accepts
+`http://localhost:8090` as a login callback and after the logout, and the reference BFF accepts it as a return page.
+With the stack running:
+
+```bash
+docker run -d --name quadrava-runtime -p 8090:8080 \
+  -e QUADRAVA_REGISTRY_APP=demo -e QUADRAVA_REGISTRY_ENV=development -e QUADRAVA_NAVIGATION=invoicing \
+  -e QUADRAVA_THEMES=light,classic,dark -e QUADRAVA_LANGUAGES=en,it \
+  -e QUADRAVA_BFF_URL=http://host.docker.internal:8080 quadrava-runtime
+```
+
+Then open http://localhost:8090 and sign in (`operator`, `manager` or `administrator`, password = user name): the
+screens come from the registry, the data from the demo back end through the BFF, and the boards of the showcase tasks
+screen follow the changes of other users over the event stream. From Git Bash on Windows, run it with
+`MSYS_NO_PATHCONV=1`, otherwise a value such as `/bff/tenant` is rewritten into a Windows path (and refused).
+
+The realm is imported only when Keycloak is created: after a change to `idp/realm-lowcode.json`, recreate it with
+`cd idp && docker compose down && docker compose up -d` (its users and sessions start again from the file).
+
 ## Building it
 
 From the root of the repository:

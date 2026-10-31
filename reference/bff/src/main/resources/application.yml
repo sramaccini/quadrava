@@ -41,6 +41,8 @@ lowcode:
     frontend-origins:
       - http://localhost:4200
       - http://localhost:4201
+      # The runtime image in front of this BFF (docker/runtime/README.md, «Against the local stack»).
+      - http://localhost:8090
     # After a login without a return page, and when opening the BFF root.
     home: ${LOWCODE_HOME:http://localhost:4200/}
     # Signing out also closes the session in Keycloak.

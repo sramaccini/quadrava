@@ -11,6 +11,13 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Added
+
+- The demo back end of the stack (`tools/demo-api.mjs`) serves the event stream `/api/streams/tasks`: behind the BFF
+  the live boards of the showcase follow the changes of other users.
+- The development realm and the reference BFF accept the runtime image on `http://localhost:8090` (login, return page,
+  logout), for trying the image against the local stack. Recreate Keycloak to import the realm again.
+
 ### Fixed
 
 - `npm run conformance:bff` with `--cookie`: the CSRF cookie check asks as a new visitor, since a signed-in session
