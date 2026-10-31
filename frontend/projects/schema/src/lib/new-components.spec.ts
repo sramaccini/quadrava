@@ -304,6 +304,10 @@ describe('schema of the new components', () => {
         badges: [{ field: 'priority', tones: { high: 'danger' } }], avatarField: 'who', footerFields: [{ field: 'points', label: 'Points' }],
       };
       expect(issuesOf(screen([board]))).toEqual([]);
+      // Columns from an expression or from a data source.
+      const base = { type: 'kanban', source: 's', columnField: 'c', titleField: 't' };
+      expect(issuesOf(screen([{ ...base, columns: '{{ state.columns }}' }]))).toEqual([]);
+      expect(issuesOf(screen([{ ...base, columnsFrom: { source: 'statuses', valueField: 'id', labelField: 'name', toneField: 'tone', limitField: 'wip' } }]))).toEqual([]);
     });
 
     it('rejects images without alternative text, ambiguous or dangerous links, missing columns', () => {
@@ -320,6 +324,10 @@ describe('schema of the new components', () => {
       expect(issuesOf(screen([{ ...board, lanes: [{ value: 'x', label: 'X' }] }])).length, 'lanes without laneField').toBeGreaterThan(0);
       expect(issuesOf(screen([{ ...board, columns: [{ value: 'a', label: 'A', limit: 0 }] }])).length, 'limit 0').toBeGreaterThan(0);
       expect(issuesOf(screen([{ ...board, badges: [{ tones: {} }] }])).length, 'badge without field').toBeGreaterThan(0);
+      const { columns: _, ...noColumns } = board;
+      expect(issuesOf(screen([noColumns])).length, 'no columns at all').toBeGreaterThan(0);
+      expect(issuesOf(screen([{ ...board, columnsFrom: { source: 'statuses' } }])).length, 'both columns and columnsFrom').toBeGreaterThan(0);
+      expect(issuesOf(screen([{ ...board, columns: 'statuses' }])).length, 'a text that is not an expression').toBeGreaterThan(0);
     });
   });
 

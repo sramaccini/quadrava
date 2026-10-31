@@ -10,7 +10,7 @@ import { NzTagModule } from 'ng-zorro-antd/tag';
 import type { KanbanNode, Tone } from 'schema';
 import { TONE_COLORS } from './display.component';
 import { IconComponent } from './icon.component';
-import { cardKey, initials, kanbanBoard, placement, type KanbanLane } from './kanban-board';
+import { cardKey, columnsOf, initials, kanbanBoard, placement, type KanbanLane } from './kanban-board';
 
 type Row = Record<string, unknown>;
 
@@ -21,7 +21,8 @@ type Row = Record<string, unknown>;
  * the cards of its column («Move up», «Move down»). The steps see the row in `row`, the starting column in `from`, the
  * target one in `to` and the keys of the new neighbours in `beforeId` and `afterId` (usually a call and a refresh).
  * `moveIf` decides which cards can be moved (fail-closed). The real move is done by the service: the card changes
- * place when the reloaded data says so, and screen readers then hear where it is.
+ * place when the reloaded data says so, and screen readers then hear where it is. The columns can also come from an
+ * expression or from a data source (`columnsFrom`), so one screen serves several boards.
  */
 @Component({
   selector: 'lc-kanban',
@@ -63,10 +64,10 @@ type Row = Record<string, unknown>;
     .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   `,
   template: `
-    @if (source().status === 'error') {
-      <div role="alert"><nz-alert nzType="error" [nzMessage]="source().error ?? null" nzShowIcon /></div>
+    @if (failure(); as error) {
+      <div role="alert"><nz-alert nzType="error" [nzMessage]="error" nzShowIcon /></div>
     } @else {
-      <lc-busy [busy]="source().status === 'loading'">
+      <lc-busy [busy]="loading()">
       @let b = board();
       @if (node().laneField) {
         <div class="board lanes" [style.--lc-kanban-columns]="b.columns.length">
@@ -228,9 +229,27 @@ export class KanbanComponent {
   private dragged: Row | null = null;
 
   protected readonly source = computed(() => this.runtime().source(this.node().source));
+  /** The data source of the columns, with `columnsFrom`. */
+  private readonly columnsSource = computed(() => {
+    const from = this.node().columnsFrom;
+    return from ? this.runtime().source(from.source) : null;
+  });
+  protected readonly loading = computed(() => this.source().status === 'loading' || this.columnsSource()?.status === 'loading');
+  protected readonly failure = computed(() => {
+    const failed = [this.source(), this.columnsSource()].find((s) => s?.status === 'error');
+    return failed ? (failed.error ?? null) : null;
+  });
+
+  /** The columns: from the data source, from the expression (labels as they are) or the list (labels with {{ }}). */
+  private readonly columnDefs = computed(() => {
+    const node = this.node();
+    if (node.columnsFrom) return columnsOf(rowsOf(this.columnsSource()?.data), node.columnsFrom);
+    if (typeof node.columns === 'string') return columnsOf(this.runtime().resolveValue(node.columns, this.scope()));
+    return (node.columns ?? []).map((c) => ({ ...c, label: this.runtime().text(c.label, this.scope()) }));
+  });
 
   protected readonly board = computed(() =>
-    kanbanBoard(rowsOf(this.source().data), this.node(), (text) => this.runtime().text(text, this.scope()), this.i18n.t('lc.kanbanNoLane')),
+    kanbanBoard(rowsOf(this.source().data), this.node(), this.columnDefs(), (text) => this.runtime().text(text, this.scope()), this.i18n.t('lc.kanbanNoLane')),
   );
 
   protected text(row: Row, field: string): string {
@@ -294,7 +313,7 @@ export class KanbanComponent {
     const from = this.text(row, node.columnField);
     if (from === column && !node.reorder) return;
     event.preventDefault();
-    const cards = lane.cells[node.columns.findIndex((c) => c.value === column)] ?? [];
+    const cards = lane.cells[this.board().columns.findIndex((c) => c.value === column)] ?? [];
     let gap = cards.length;
     if (node.reorder) {
       const card = (event.target as Element | null)?.closest?.('li.card') as HTMLElement | null;
@@ -329,7 +348,7 @@ export class KanbanComponent {
     const from = this.text(row, node.columnField);
     if (this.busy() || !this.canMove(row) || (from === to && !node.reorder)) return;
     const lane = this.laneOf(row);
-    const cards = lane?.cells[node.columns.findIndex((c) => c.value === to)];
+    const cards = lane?.cells[this.board().columns.findIndex((c) => c.value === to)];
     if (!cards) return;
     const place = placement(cards, row, gap ?? cards.length, node);
     if (!place) return;

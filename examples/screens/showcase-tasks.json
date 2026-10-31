@@ -8,6 +8,9 @@
     "tasks": {
       "ref": "showcase-tasks/tasks"
     },
+    "statuses": {
+      "ref": "showcase-tasks/statuses"
+    },
     "moveTask": {
       "ref": "showcase-tasks/moveTask"
     },
@@ -162,22 +165,13 @@
               }
             }
           ],
-          "columns": [
-            {
-              "value": "to-do",
-              "label": "{{ t('showcase_tasks.to_do', 'To do') }}"
-            },
-            {
-              "value": "in-progress",
-              "label": "{{ t('showcase_tasks.in_progress', 'In progress') }}",
-              "tone": "primary"
-            },
-            {
-              "value": "done",
-              "label": "{{ t('showcase_tasks.done', 'Done') }}",
-              "tone": "success"
-            }
-          ],
+          "columnsFrom": {
+            "source": "statuses",
+            "valueField": "id",
+            "labelField": "name",
+            "toneField": "tone",
+            "limitField": "wip"
+          },
           "moveIf": "{{ can('showcase.components.read') }}",
           "onMove": [
             {

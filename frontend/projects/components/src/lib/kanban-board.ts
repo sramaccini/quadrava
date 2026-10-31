@@ -1,4 +1,4 @@
-import type { KanbanNode, Tone } from 'schema';
+import type { KanbanColumnDefinition, KanbanNode, Tone } from 'schema';
 
 type Row = Record<string, unknown>;
 
@@ -33,13 +33,53 @@ const valueOf = (row: Row, field: string): string => {
   return value === null || value === undefined ? '' : String(value);
 };
 
+const TONES: readonly string[] = ['neutral', 'primary', 'success', 'danger'];
+
 /**
- * The board: columns in the order of `columns` and, with `laneField`, lanes in the order of `lanes` (or of appearance
- * in the data, with the cards without a value in a last lane labelled `noLane`). Rows whose column, or lane when `lanes`
- * is given, is not listed are left out. Inside a cell the cards keep the order of the data: the service decides it.
+ * Columns that come from data (the rows of `columnsFrom`, or the result of a `columns` expression): the value and the
+ * label are texts, the tone one of the known ones, the limit a positive whole number (also written as text); rows without a value, and values
+ * already seen, are left out. The labels are data: they are shown as they are, never evaluated.
  */
-export function kanbanBoard(rows: readonly Row[], node: KanbanNode, label: (text: string) => string, noLane: string): KanbanBoard {
-  const columnIndex = new Map(node.columns.map((c, i) => [c.value, i]));
+export function columnsOf(list: unknown, fields: NonNullable<KanbanNode['columnsFrom']> | Record<string, never> = {}): KanbanColumnDefinition[] {
+  if (!Array.isArray(list)) return [];
+  const f = fields as Partial<NonNullable<KanbanNode['columnsFrom']>>;
+  const seen = new Set<string>();
+  const columns: KanbanColumnDefinition[] = [];
+  for (const row of list) {
+    if (row === null || typeof row !== 'object') continue;
+    const r = row as Row;
+    const value = valueOf(r, f.valueField ?? 'value');
+    if (value === '' || seen.has(value)) continue;
+    seen.add(value);
+    const label = valueOf(r, f.labelField ?? 'label');
+    const tone = r[f.toneField ?? 'tone'];
+    // A whole number, also as text: the values of a CEL map literal all have the same type ({'limit': '5'}).
+    const raw = r[f.limitField ?? 'limit'];
+    const limit = typeof raw === 'string' && /^\d+$/.test(raw) ? Number(raw) : raw;
+    columns.push({
+      value,
+      label: label || value,
+      ...(typeof tone === 'string' && TONES.includes(tone) ? { tone: tone as Tone } : {}),
+      ...(typeof limit === 'number' && Number.isInteger(limit) && limit > 0 ? { limit } : {}),
+    });
+  }
+  return columns;
+}
+
+/**
+ * The board: columns in the order given (their labels already resolved) and, with `laneField`, lanes in the order of
+ * `lanes` (or of appearance in the data, with the cards without a value in a last lane labelled `noLane`). Rows whose
+ * column, or lane when `lanes` is given, is not listed are left out. Inside a cell the cards keep the order of the data:
+ * the service decides it.
+ */
+export function kanbanBoard(
+  rows: readonly Row[],
+  node: KanbanNode,
+  columnDefs: readonly KanbanColumnDefinition[],
+  label: (text: string) => string,
+  noLane: string,
+): KanbanBoard {
+  const columnIndex = new Map(columnDefs.map((c, i) => [c.value, i]));
   const shown = rows.filter((row) => columnIndex.has(valueOf(row, node.columnField)));
 
   let laneDefs: { value: string | null; label: string }[];
@@ -53,9 +93,9 @@ export function kanbanBoard(rows: readonly Row[], node: KanbanNode, label: (text
     laneDefs = seen.includes('') ? [...named, { value: '', label: noLane }] : named;
   }
 
-  const lanes: KanbanLane[] = laneDefs.map((lane) => ({ ...lane, count: 0, cells: node.columns.map(() => []) }));
+  const lanes: KanbanLane[] = laneDefs.map((lane) => ({ ...lane, count: 0, cells: columnDefs.map(() => []) }));
   const laneIndex = new Map(lanes.map((l, i) => [l.value, i]));
-  const counts = node.columns.map(() => 0);
+  const counts = columnDefs.map(() => 0);
   for (const row of shown) {
     const lane = lanes[node.laneField ? (laneIndex.get(valueOf(row, node.laneField)) ?? -1) : 0];
     if (!lane) continue;
@@ -65,9 +105,9 @@ export function kanbanBoard(rows: readonly Row[], node: KanbanNode, label: (text
     counts[column]++;
   }
 
-  const columns = node.columns.map((c, i) => ({
+  const columns = columnDefs.map((c, i) => ({
     value: c.value,
-    label: label(c.label),
+    label: c.label,
     tone: c.tone ?? 'neutral',
     limit: c.limit ?? null,
     count: counts[i],

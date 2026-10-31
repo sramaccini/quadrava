@@ -2368,8 +2368,7 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
             "required": [
               "source",
               "columnField",
-              "titleField",
-              "columns"
+              "titleField"
             ],
             "properties": {
               "source": {
@@ -2444,37 +2443,74 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                 "description": "Values at the bottom of the card, for example the story points or the due date (at most 4)."
               },
               "columns": {
-                "type": "array",
-                "minItems": 1,
-                "maxItems": 10,
-                "items": {
-                  "type": "object",
-                  "required": [
-                    "value",
-                    "label"
-                  ],
-                  "additionalProperties": false,
-                  "properties": {
-                    "value": {
-                      "type": "string",
-                      "description": "Value of `columnField` for the cards of the column."
-                    },
-                    "label": {
-                      "type": "string",
-                      "description": "Header of the column (it can contain {{ }})."
-                    },
-                    "tone": {
-                      "$ref": "#/$defs/tone",
-                      "description": "Colour of the column (neutral if absent)."
-                    },
-                    "limit": {
-                      "type": "integer",
-                      "minimum": 1,
-                      "description": "Maximum number of cards (work in progress): the header shows «3/5» and a warning when the column holds more; moves are not blocked."
+                "anyOf": [
+                  {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 10,
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "label"
+                      ],
+                      "additionalProperties": false,
+                      "properties": {
+                        "value": {
+                          "type": "string",
+                          "description": "Value of `columnField` for the cards of the column."
+                        },
+                        "label": {
+                          "type": "string",
+                          "description": "Header of the column (it can contain {{ }})."
+                        },
+                        "tone": {
+                          "$ref": "#/$defs/tone",
+                          "description": "Colour of the column (neutral if absent)."
+                        },
+                        "limit": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "description": "Maximum number of cards (work in progress): the header shows «3/5» and a warning when the column holds more; moves are not blocked."
+                        }
+                      }
                     }
+                  },
+                  {
+                    "$ref": "#/$defs/expression"
+                  }
+                ],
+                "description": "Columns of the board, in order (at most 10); or an expression that returns them as a list of {value, label, tone, limit}, for example {{ params.board == \"bugs\" ? [...] : [...] }}, so one screen serves several boards. In a CEL list all the values of a column are texts ('limit': '5'); labels returned by an expression are shown as they are."
+              },
+              "columnsFrom": {
+                "type": "object",
+                "required": [
+                  "source"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "source": {
+                    "type": "string",
+                    "description": "Data source whose rows are the columns, in order."
+                  },
+                  "valueField": {
+                    "type": "string",
+                    "description": "Field with the value of `columnField` for the column (value if absent)."
+                  },
+                  "labelField": {
+                    "type": "string",
+                    "description": "Field with the header, shown as text (label if absent)."
+                  },
+                  "toneField": {
+                    "type": "string",
+                    "description": "Field with the colour: neutral, primary, success or danger (neutral if absent or different)."
+                  },
+                  "limitField": {
+                    "type": "string",
+                    "description": "Field with the maximum number of cards (no limit if absent or not a positive whole number)."
                   }
                 },
-                "description": "Columns of the board, in order (at most 10)."
+                "description": "Columns read from a data source instead of `columns`, for boards whose columns are data (for example the statuses of a workflow)."
               },
               "laneField": {
                 "type": "string",
@@ -2525,6 +2561,34 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
               "lanes": [
                 "laneField"
               ]
+            },
+            "anyOf": [
+              {
+                "required": [
+                  "columns"
+                ],
+                "properties": {
+                  "columns": true
+                }
+              },
+              {
+                "required": [
+                  "columnsFrom"
+                ],
+                "properties": {
+                  "columnsFrom": true
+                }
+              }
+            ],
+            "not": {
+              "required": [
+                "columns",
+                "columnsFrom"
+              ],
+              "properties": {
+                "columns": true,
+                "columnsFrom": true
+              }
             }
           }
         }

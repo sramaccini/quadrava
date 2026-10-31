@@ -273,5 +273,30 @@ describe('image, link, progress, timeline and kanban', () => {
       expect([plain(avatar.textContent), avatar.getAttribute('role'), avatar.getAttribute('aria-label')]).toEqual(['AR', 'img', 'Anna Rossi']);
       expect(plain(card.querySelector('.footer')?.textContent)).toBe('Points: 3');
     });
+
+    it('columns from a data source: order, headers as text, colours and limits from the rows', async () => {
+      const statuses = [
+        { id: 'in-progress', name: 'Doing {{ 1 + 1 }}', colour: 'primary', wip: 1 },
+        { id: 'to-do', name: 'Backlog' },
+      ];
+      const h = await renderScreen({
+        components: [kanban({ columns: undefined, columnsFrom: { source: 'statuses', valueField: 'id', labelField: 'name', toneField: 'colour', limitField: 'wip' } })],
+        dataSources: { ...dataSources, statuses: { type: 'rest' as const, method: 'GET' as const, url: '/api/statuses' } },
+        respond: (r) => (r.url === '/api/statuses' ? statuses : ranked),
+      });
+      await h.until(() => h.el.querySelectorAll('lc-kanban .card').length === 4, 'cards');
+      expect([...h.el.querySelectorAll('lc-kanban h3')].map((x) => plain(x.textContent))).toEqual(['Doing {{ 1 + 1 }} 1/1', 'Backlog 3']);
+      expect(h.reports).toEqual([]);
+    });
+
+    it('columns from an expression: the list that it returns', async () => {
+      const h = await renderScreen({
+        components: [kanban({ columns: "{{ [{'value': 'to-do', 'label': 'Open'}, {'value': 'in-progress', 'label': 'Busy', 'limit': '5'}] }}" })],
+        dataSources,
+        respond: () => ranked,
+      });
+      await h.until(() => h.el.querySelectorAll('lc-kanban .card').length === 4, 'cards');
+      expect([...h.el.querySelectorAll('lc-kanban h3')].map((x) => plain(x.textContent))).toEqual(['Open 3', 'Busy 1/5']);
+    });
   });
 });

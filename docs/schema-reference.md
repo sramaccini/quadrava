@@ -275,7 +275,8 @@
 | `avatarField` | text | Field with the name of the person of the card (for example the assignee), shown as a round mark with the initials; the full name is in the tooltip and read by screen readers. |
 | `badges` | list of object | Coloured labels on the card, for example priority and type (at most 4). |
 | `footerFields` | list of object | Values at the bottom of the card, for example the story points or the due date (at most 4). |
-| `columns` * | list of object | Columns of the board, in order (at most 10). |
+| `columns` | list of object or expression | Columns of the board, in order (at most 10); or an expression that returns them as a list of {value, label, tone, limit}, for example {{ params.board == "bugs" ? [...] : [...] }}, so one screen serves several boards. In a CEL list all the values of a column are texts ('limit': '5'); labels returned by an expression are shown as they are. |
+| `columnsFrom` | object | Columns read from a data source instead of `columns`, for boards whose columns are data (for example the statuses of a workflow). |
 | `laneField` | text | Field of the row that decides the swimlane (for example the assignee): the board is divided into horizontal lanes that can be collapsed. A card moves only within its lane. |
 | `lanes` | list of object | Lanes in order, with their headers; rows whose value is not a lane are not shown. Without it every value of `laneField` in the data is a lane, in order of appearance, and the cards without a value go to a last lane «No group». |
 | `reorder` | yes/no | Cards can also change place within their column: they are dropped between other cards, or moved up and down from the «Move» menu, and onMove runs for these moves too (false if absent: only moves to another column). |

@@ -315,6 +315,14 @@ export class DemoBackend {
       return { id: this.attachments };
     }
     if (path === '/api/tasks' && req.method === 'GET') return this.tasks.map((t) => ({ ...t }));
+    // The workflow's states, as a service would describe them: the board by person draws its columns from here.
+    if (path === '/api/task-statuses' && req.method === 'GET') {
+      return [
+        { id: 'to-do', name: 'To do', tone: 'neutral' },
+        { id: 'in-progress', name: 'In progress', tone: 'primary', wip: 3 },
+        { id: 'done', name: 'Done', tone: 'success' },
+      ];
+    }
     if (path === '/api/menu/counters' && req.method === 'GET') {
       // Menu counters: draft invoices, expenses to review, tasks not finished.
       return {

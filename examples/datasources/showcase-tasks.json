@@ -8,6 +8,11 @@
       "method": "GET",
       "url": "/api/tasks"
     },
+    "statuses": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/task-statuses"
+    },
     "moveTask": {
       "type": "rest",
       "method": "POST",

@@ -585,6 +585,14 @@ export interface TimelineNode extends NodeBase {
   withTime?: boolean;
 }
 
+/** A column of the kanban: `value` of `columnField`, header, colour and maximum number of cards. */
+export interface KanbanColumnDefinition {
+  value: string;
+  label: string;
+  tone?: Tone;
+  limit?: number;
+}
+
 /** Cards in columns according to a field (for example the status), movable with `onMove`. */
 export interface KanbanNode extends NodeBase {
   type: 'kanban';
@@ -600,8 +608,10 @@ export interface KanbanNode extends NodeBase {
   badges?: { field: string; tones?: Record<string, Tone> }[];
   /** Values at the bottom of the card. */
   footerFields?: { field: string; label?: string }[];
-  /** Columns; `limit` is the maximum number of cards (work in progress). */
-  columns: { value: string; label: string; tone?: Tone; limit?: number }[];
+  /** Columns, or an expression that returns them; `limit` is the maximum number of cards (work in progress). */
+  columns?: KanbanColumnDefinition[] | Expression;
+  /** Columns read from a data source instead of `columns`. */
+  columnsFrom?: { source: string; valueField?: string; labelField?: string; toneField?: string; limitField?: string };
   /** Field that decides the swimlane; `lanes` gives order and headers. */
   laneField?: string;
   lanes?: { value: string; label: string }[];
