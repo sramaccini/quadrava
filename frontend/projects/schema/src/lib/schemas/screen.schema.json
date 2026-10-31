@@ -1092,7 +1092,8 @@
             "link",
             "progress",
             "timeline",
-            "kanban"
+            "kanban",
+            "comments"
           ]
         },
         "visibleIf": {
@@ -2645,6 +2646,86 @@
               "properties": {
                 "columns": true,
                 "columnsFrom": true
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "comments"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "required": [
+              "source"
+            ],
+            "properties": {
+              "source": {
+                "type": "string",
+                "description": "Name of the data source (GET) that returns the comments, one row each."
+              },
+              "textField": {
+                "type": "string",
+                "description": "Field of the row with the text of the comment, in restricted Markdown (text if absent). Never HTML."
+              },
+              "authorField": {
+                "type": "string",
+                "description": "Field of the row with the name of the author (author if absent)."
+              },
+              "dateField": {
+                "type": "string",
+                "description": "Field of the row with the date and time, ISO 8601 (date if absent). Comments without a valid date come last, without a date."
+              },
+              "order": {
+                "enum": [
+                  "asc",
+                  "desc"
+                ],
+                "description": "Order of the comments by date: oldest first, the newest next to the box for writing (asc, default), or newest first (desc)."
+              },
+              "onPost": {
+                "$ref": "#/$defs/steps",
+                "description": "Steps that publish a comment: they see text (the Markdown written, without spaces at the ends) and mentions (the values of the people mentioned who are still in the text). Without onPost the thread is read-only. The box is emptied when the steps succeed, so they usually end with a refresh of source."
+              },
+              "postIf": {
+                "$ref": "#/$defs/expression",
+                "description": "Condition for showing the box for writing, for example {{ can('tasks.comments.create') }}; an error counts as false. Always shown with onPost if absent."
+              },
+              "mentions": {
+                "type": "object",
+                "required": [
+                  "source",
+                  "labelField"
+                ],
+                "additionalProperties": false,
+                "description": "People who can be mentioned: typing @ followed by letters asks this GET data source with the search variable (as a lookup does) and the chosen person is inserted as @ followed by the label.",
+                "properties": {
+                  "source": {
+                    "type": "string",
+                    "description": "Name of the data source (GET) that returns the people."
+                  },
+                  "valueField": {
+                    "type": "string",
+                    "description": "Field of the row that identifies the person in mentions (id if absent)."
+                  },
+                  "labelField": {
+                    "type": "string",
+                    "description": "Field of the row with the name inserted after @."
+                  },
+                  "minChars": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 5,
+                    "description": "Letters after @ before asking (1 if absent; 0 = right after @)."
+                  }
+                }
               }
             }
           }

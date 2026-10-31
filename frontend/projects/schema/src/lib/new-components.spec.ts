@@ -346,6 +346,31 @@ describe('schema of the new components', () => {
     });
   });
 
+  describe('comments', () => {
+    const thread = { type: 'comments', source: 'comments' };
+    it('accepts a read-only thread and one with publishing and mentions', () => {
+      expect(issuesOf(screen([thread]))).toEqual([]);
+      const full = {
+        ...thread,
+        textField: 'body',
+        authorField: 'who',
+        dateField: 'at',
+        order: 'desc',
+        onPost: [{ call: 'addComment' }, { refresh: 'comments' }],
+        postIf: "{{ can('tasks.comments.create') }}",
+        mentions: { source: 'people', valueField: 'id', labelField: 'name', minChars: 0 },
+      };
+      expect(issuesOf(screen([full]))).toEqual([]);
+    });
+    it('rejects a thread without a source, unknown orders and mentions without a label', () => {
+      expect(issuesOf(screen([{ type: 'comments' }])).length).toBeGreaterThan(0);
+      expect(issuesOf(screen([{ ...thread, order: 'random' }])).length).toBeGreaterThan(0);
+      expect(issuesOf(screen([{ ...thread, mentions: { source: 'people' } }])).length).toBeGreaterThan(0);
+      expect(issuesOf(screen([{ ...thread, postIf: 'yes' }])).length).toBeGreaterThan(0);
+      expect(issuesOf(screen([{ ...thread, html: '<b>' }])).length).toBeGreaterThan(0);
+    });
+  });
+
   describe('translation catalogues', () => {
     it('accepts one catalogue per language; rejects invalid languages, keys or texts', () => {
       const ok = validateMessages({ schemaVersion: '1.0', messages: 'pt-br', texts: { 'app.title': 'Olá', 'comune.n': '{n, number}' } });

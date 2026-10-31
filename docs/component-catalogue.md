@@ -21,6 +21,7 @@ Rules common to all components, new ones included:
 | `image`, `link` | Image with alternative text; link to a screen or to an https address (§ 2.23). |
 | `progress` | Progress bar or circle (§ 2.23). |
 | `timeline`, `kanban` | Events in date order; cards in columns that can be moved (§ 2.24). |
+| `comments` | Thread of comments in Markdown with a box for writing and @mentions (§ 2.30). |
 | `text` | Plain text (with line breaks), heading (`style: heading`) or formatted text (`format: markdown`, § 2.26). |
 | `button` | Button that runs a sequence of steps (`onClick`). |
 | `filterBar` | Filter bar that writes to the screen state (`bind`). |
@@ -73,6 +74,7 @@ Built in this order, one per commit, each with tests (schema, component and show
 | 24 | Timeline and kanban | visualisation | done |
 | 25 | Menu: search, counters, keyboard | shell | done |
 | 26 | Declarative validation: constraints, formats, rules across fields, warnings | fields | done |
+| 27 | Comments: thread, Markdown, mentions | visualisation | done |
 
 ### 2.1 Column sorting
 
@@ -618,6 +620,40 @@ Its message is `lc.validation.staffNumber` (or `messageKey`) in the application'
 **Order and fail-closed.** Flat constraints first, then `validate`, then `validation`: the first error wins, a warning shows only without errors, and every rule except `required` and `atLeastOne` passes on an empty field. An unknown validator, a rule on the wrong field type, invalid parameters or a pattern that does not compile make the field invalid and are reported once to the diagnostics, never with the value; the editor and `validate:examples` report patterns that do not compile. In the filter bar an empty filter still means «all», and a value that breaks its rules is not searched for.
 
 In the showcase: «Validazione» (Validation), also with a staff form for passwords, the check of a staff number on the service and the errors returned by it.
+
+### 2.30 Comments
+
+A thread of comments read from a data source, with a box for writing below it. Today a discussion can also be built with `timeline`, `richtext` and a `dialog`; `comments` puts it in one node.
+
+```json
+{ "type": "comments", "source": "comments",
+  "onPost": [ { "call": "addComment" }, { "refresh": "comments" } ],
+  "postIf": "{{ can('tasks.comments.create') }}",
+  "mentions": { "source": "people", "valueField": "id", "labelField": "name" } }
+
+"addComment": { "type": "rest", "method": "POST", "url": "/api/comments",
+                "body": { "text": "{{ text }}", "mentions": "{{ mentions }}" } },
+"people":     { "type": "rest", "method": "GET", "url": "/api/people", "params": { "q": "{{ search }}" } }
+```
+
+```
+ AR  Anna Rossi · 27 Oct 2026, 10:12
+     The quote for Smith Ltd is ready for review.
+ LB  Luca Bianchi · 27 Oct 2026, 11:40
+     @Anna Rossi looks good. Two notes:
+     • the delivery date
+┌ Write a comment ─────────────────────────────┐
+│ Thanks @ma▌                                  │
+│   ┌ Marta Verdi ┐  ← people of «mentions»    │
+└──────────────────────────────────────────────┘
+ Markdown: **bold**, *italic*, lists; @ to mention someone.   [ Publish ]
+```
+
+- **Thread**: one row per comment, with `authorField` (`author`), `dateField` (`date`, ISO 8601) and `textField` (`text`). Comments are in date order, oldest first so the newest sits next to the box (`order: "desc"` for the newest first); those without a valid date come last, those without text are left out. The author has a circle with the initials; the text is restricted Markdown drawn by `lc-markdown`, never HTML, and texts from the data are never evaluated. While loading the thread shows the wait (`lc-busy`); an error of the data source shows the error.
+- **Writing**: with `onPost` a labelled multi-line box appears (`postIf` decides who sees it, fail-closed: an error hides it). «Publish» or Ctrl+Enter (Cmd+Enter) runs the steps with `text` (the Markdown written, without spaces at the ends) and `mentions`; when they succeed the box is emptied and «Comment published» is announced, otherwise the text stays where it is. The steps usually end with a `refresh` of the thread. A real service takes the author from the session, not from the page (the fake service of the showcase receives `{{ user.username }}` in the body).
+- **Mentions** (`mentions`): typing `@` followed by letters (`minChars`, 1 if absent) asks the data source with `search`, like a lookup, so the same source of people serves both. The chosen person is inserted as `@` followed by `labelField` and a space; `mentions` holds, as texts, the `valueField` (`id`) of the people chosen who are still in the text when it is published, once each. The list of people is the same combobox as a text field with suggestions (§ 2.7): arrows, Enter, Escape, the number announced.
+
+In the showcase: «Vetrina: attività e avanzamento» (Showcase: tasks and progress), «Commenti» (Comments) section.
 
 ## 3. Implementation notes and known limits
 

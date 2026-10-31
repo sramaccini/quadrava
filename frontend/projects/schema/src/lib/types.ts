@@ -623,6 +623,21 @@ export interface KanbanNode extends NodeBase {
   onMove?: Step[];
 }
 
+/** Thread of comments of a data source, in restricted Markdown, with a box for writing and mentions. */
+export interface CommentsNode extends NodeBase {
+  type: 'comments';
+  source: string;
+  textField?: string;
+  authorField?: string;
+  dateField?: string;
+  order?: 'asc' | 'desc';
+  /** Steps that publish a comment; they see `text` and `mentions`. */
+  onPost?: Step[];
+  postIf?: Expression;
+  /** People who can be mentioned with @ (a data source searched with `search`). */
+  mentions?: { source: string; valueField?: string; labelField: string; minChars?: number };
+}
+
 /** Standalone field (text box, drop-down list, date…) bound to the screen state. */
 export interface InputNode extends NodeBase {
   type: 'input';
@@ -638,7 +653,7 @@ export interface InputNode extends NodeBase {
   group?: string;
 }
 
-export type NodeDefinition = SectionNode | TextNode | ButtonNode | FilterBarNode | TableNode | FormNode | TabsNode | DetailNode | AlertNode | StatsNode | WizardNode | TreeNode | CalendarNode | ChartNode | DataTableNode | ServerDataTableNode | InputNode | BoxNode | GridNode | BorderNode | ImageNode | LinkNode | ProgressNode | TimelineNode | KanbanNode;
+export type NodeDefinition = SectionNode | TextNode | ButtonNode | FilterBarNode | TableNode | FormNode | TabsNode | DetailNode | AlertNode | StatsNode | WizardNode | TreeNode | CalendarNode | ChartNode | DataTableNode | ServerDataTableNode | InputNode | BoxNode | GridNode | BorderNode | ImageNode | LinkNode | ProgressNode | TimelineNode | KanbanNode | CommentsNode;
 export type NodeType = NodeDefinition['type'];
 
 export interface ScreenDefinition {

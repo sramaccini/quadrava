@@ -27,6 +27,29 @@
       "type": "rest",
       "method": "GET",
       "url": "/api/events"
+    },
+    "comments": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/task-comments"
+    },
+    "addComment": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/task-comments",
+      "body": {
+        "text": "{{ text }}",
+        "mentions": "{{ mentions }}",
+        "author": "{{ user.username }}"
+      }
+    },
+    "people": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/people",
+      "params": {
+        "q": "{{ search }}"
+      }
     }
   }
 }

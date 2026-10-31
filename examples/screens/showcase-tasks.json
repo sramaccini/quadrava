@@ -16,6 +16,15 @@
     },
     "events": {
       "ref": "showcase-tasks/events"
+    },
+    "comments": {
+      "ref": "showcase-tasks/comments"
+    },
+    "addComment": {
+      "ref": "showcase-tasks/addComment"
+    },
+    "people": {
+      "ref": "showcase-tasks/people"
     }
   },
   "components": [
@@ -193,6 +202,37 @@
               "toast": "{{ t('showcase_tasks.moved', '“{title}” moved', {'title': row.title}) }}"
             }
           ]
+        }
+      ]
+    },
+    {
+      "id": "section-comments",
+      "type": "section",
+      "title": "{{ t('showcase_tasks.comments', 'Comments') }}",
+      "components": [
+        {
+          "id": "explain-comments",
+          "type": "text",
+          "text": "{{ t('showcase_tasks.the_thread_of_the_team_in_date_o', 'The thread of the team in date order. Write in Markdown, type @ followed by a name to mention a person, Ctrl+Enter or «Publish» to send.') }}"
+        },
+        {
+          "id": "comments",
+          "type": "comments",
+          "source": "comments",
+          "onPost": [
+            {
+              "call": "addComment"
+            },
+            {
+              "refresh": "comments"
+            }
+          ],
+          "postIf": "{{ can('showcase.components.read') }}",
+          "mentions": {
+            "source": "people",
+            "valueField": "id",
+            "labelField": "name"
+          }
         }
       ]
     },

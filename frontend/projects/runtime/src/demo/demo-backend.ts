@@ -85,6 +85,16 @@ export class DemoBackend {
     { id: 4, title: 'Reminder to Walker & Co.', who: 'Marta Verdi', status: 'in-progress', priority: 'high', points: 1 },
     { id: 5, title: 'Order 1001 shipped', who: 'Luca Bianchi', status: 'done', priority: 'low', points: 2 },
   ];
+  private readonly people = [
+    { id: 1, name: 'Anna Rossi' },
+    { id: 2, name: 'Luca Bianchi' },
+    { id: 3, name: 'Marta Verdi' },
+  ];
+  /** The team's comments on the board (Markdown, as a service would store it). */
+  private readonly taskComments: { author: string; text: string; date: string; mentions: string[] }[] = [
+    { author: 'Anna Rossi', text: 'The quote for **Smith Ltd** is ready for review.', date: '2026-10-27T09:12:00Z', mentions: [] },
+    { author: 'Luca Bianchi', text: '@Anna Rossi looks good. Two notes:\n\n- the delivery date\n- the discount', date: '2026-10-27T10:40:00Z', mentions: ['1'] },
+  ];
   /** Transactions for the datatable: 60 deterministic rows over three accounts and six categories, from July to October 2026. */
   private readonly transactions = Array.from({ length: 60 }, (_, i) => {
     const categories = ['Rent', 'Utilities', 'Salaries', 'Customer receipts', 'Suppliers', 'Sundry expenses'];
@@ -315,6 +325,19 @@ export class DemoBackend {
       return { id: this.attachments };
     }
     if (path === '/api/tasks' && req.method === 'GET') return this.tasks.map((t) => ({ ...t }));
+    if (path === '/api/task-comments' && req.method === 'GET') return this.taskComments.map((c) => ({ ...c }));
+    if (path === '/api/task-comments' && req.method === 'POST') {
+      // A real service takes the author from the session; the demo trusts the name it receives.
+      const text = String(req.body?.['text'] ?? '').trim();
+      if (!text || text.length > 5000) throw new Error('400');
+      const mentions = Array.isArray(req.body?.['mentions']) ? (req.body['mentions'] as unknown[]).map(String) : [];
+      this.taskComments.push({ author: String(req.body?.['author'] || 'Demo'), text, date: new Date().toISOString(), mentions });
+      return {};
+    }
+    if (path === '/api/people' && req.method === 'GET') {
+      const q = String(req.query?.['q'] ?? '').toLowerCase();
+      return this.people.filter((p) => !q || p.name.toLowerCase().split(' ').some((part) => part.startsWith(q)));
+    }
     // The workflow's states, as a service would describe them: the board by person draws its columns from here.
     if (path === '/api/task-statuses' && req.method === 'GET') {
       return [

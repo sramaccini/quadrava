@@ -176,7 +176,7 @@ import { parseIsoDate, parseIsoDateTime, toIsoDate, toIsoDateTime } from './shar
       }
       @default {
         @if (f.type === 'text' && f.suggest) {
-          <lc-suggest-input [inputId]="inputId()" [field]="f" [runtime]="runtime()" [scope]="scope()" [value]="text()" [disabled]="disabled()" [invalid]="invalid()" (typed)="typed($event.value, $event.event)" />
+          <lc-suggest-input [inputId]="inputId()" [spec]="f.suggest ?? null" [runtime]="runtime()" [scope]="scope()" [value]="text()" [disabled]="disabled()" [invalid]="invalid()" (typed)="typed($event.value, $event.event)" />
         } @else {
           <input
             nz-input

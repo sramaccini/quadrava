@@ -24,6 +24,7 @@ export * from './lib/rich-text-editor.component';
 export * from './lib/rich-text-dom';
 export * from './lib/timeline.component';
 export * from './lib/kanban.component';
+export * from './lib/comments.component';
 export * from './lib/icon.component';
 export * from './lib/sidebar.component';
 export * from './lib/user-menu.component';

@@ -19,6 +19,7 @@ export const TEMPLATE_SOURCES: Record<string, string> = {
   chart: 'series',
   timeline: 'events',
   kanban: 'tasks',
+  comments: 'comments',
 };
 
 /** Field types the palette offers as standalone `input` components (item `input.<type>`). */
@@ -112,6 +113,8 @@ export function nodeTemplate(kind: string, t: Translate): JsonObject {
           { value: 'done', label: t('ed.tpl.done') },
         ],
       };
+    case 'comments':
+      return { type, source };
     case 'input':
       return { type, field: inputField(variant ?? 'text', label) };
     default:

@@ -25,6 +25,7 @@ import { BorderComponent, BoxComponent, GridComponent } from './layout.component
 import { ImageComponent, LinkComponent, ProgressComponent } from './display.component';
 import { KanbanComponent } from './kanban.component';
 import { TimelineComponent } from './timeline.component';
+import { CommentsComponent } from './comments.component';
 import { TreeComponent } from './tree.component';
 import { WizardComponent } from './wizard.component';
 import { TableComponent } from './table.component';
@@ -83,6 +84,7 @@ export const STANDARD_COMPONENTS: ComponentCatalog = {
   progress: ProgressComponent,
   timeline: TimelineComponent,
   kanban: KanbanComponent,
+  comments: CommentsComponent,
 };
 
 /**

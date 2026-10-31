@@ -2,6 +2,9 @@ import type { FieldDefinition } from 'schema';
 
 type Row = Record<string, unknown>;
 
+/** Where the suggestions come from and what they insert (the `suggest` of a text field). */
+export type SuggestSpec = NonNullable<FieldDefinition['suggest']>;
+
 export interface Suggestion {
   /** Text inserted. */
   value: string;
@@ -47,7 +50,7 @@ export function insertSuggestion(text: string, caret: number, value: string, rep
  * The suggestions in the response of the data source (a list, or `items`): rows without a value are left out, and so are
  * values already listed. Texts from the data are shown as they are.
  */
-export function suggestionsOf(data: unknown, spec: NonNullable<FieldDefinition['suggest']>): Suggestion[] {
+export function suggestionsOf(data: unknown, spec: SuggestSpec): Suggestion[] {
   const rows = Array.isArray(data) ? data : (data as { items?: unknown } | null)?.items;
   if (!Array.isArray(rows)) return [];
   const seen = new Set<string>();

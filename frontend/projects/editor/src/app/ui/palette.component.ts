@@ -21,7 +21,7 @@ const GROUPS: { key: string; types: string[] }[] = [
   { key: 'fields', types: INPUT_KINDS.map((k) => 'input.' + k) },
   { key: 'input', types: ['form', 'filterBar', 'button'] },
   { key: 'data', types: ['table', 'dataTable', 'serverDataTable', 'detail'] },
-  { key: 'view', types: ['stats', 'chart', 'progress', 'timeline', 'kanban', 'tree', 'calendar'] },
+  { key: 'view', types: ['stats', 'chart', 'progress', 'timeline', 'kanban', 'comments', 'tree', 'calendar'] },
 ];
 
 /**

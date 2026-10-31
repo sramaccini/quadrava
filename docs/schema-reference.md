@@ -283,6 +283,19 @@
 | `moveIf` | expression | Condition for moving a card (it sees the row in row), for example a permission. |
 | `onMove` | list of step | Steps that move a card (usually call and refresh): they see the row in row, the starting column in from, the target one in to, and the keys (keyField) of the cards that will be before and after it in beforeId and afterId (null at the ends of the column). |
 
+### `comments`
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `source` * | text | Name of the data source (GET) that returns the comments, one row each. |
+| `textField` | text | Field of the row with the text of the comment, in restricted Markdown (text if absent). Never HTML. |
+| `authorField` | text | Field of the row with the name of the author (author if absent). |
+| `dateField` | text | Field of the row with the date and time, ISO 8601 (date if absent). Comments without a valid date come last, without a date. |
+| `order` | `asc`, `desc` | Order of the comments by date: oldest first, the newest next to the box for writing (asc, default), or newest first (desc). |
+| `onPost` | steps | Steps that publish a comment: they see text (the Markdown written, without spaces at the ends) and mentions (the values of the people mentioned who are still in the text). Without onPost the thread is read-only. The box is emptied when the steps succeed, so they usually end with a refresh of source. |
+| `postIf` | expression | Condition for showing the box for writing, for example {{ can('tasks.comments.create') }}; an error counts as false. Always shown with onPost if absent. |
+| `mentions` | object | People who can be mentioned: typing @ followed by letters asks this GET data source with the search variable (as a lookup does) and the chosen person is inserted as @ followed by the label. |
+
 ## Action steps
 
 ### `call`
