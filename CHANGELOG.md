@@ -11,6 +11,13 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Added
+
+- **Quadrava CLI** (`@sramaccini/quadrava-cli` on GitHub Packages, from this version): `quadrava validate` checks a
+  project as the runtime and Studio read it, CEL expressions included; `quadrava publish` publishes it in a registry.
+- `npm run conformance:authz` with `--cookie` and `--other-cookie`: checks a BFF that answers `/authz` itself on the
+  session (the `cookieAuth` of `contracts/authz.yaml`), with the CSRF token on writes.
+
 ## [0.1.0] - 2026-10-31
 
 The first versioned release.
@@ -36,8 +43,6 @@ The first versioned release.
 - **Distribution** (ADR-20): semantic versions, this changelog, a release workflow on GitHub Actions and a container
   image of the runtime (`ghcr.io/sramaccini/quadrava-runtime`) configured when it starts; the development realm and
   the reference BFF accept the image on `http://localhost:8090` for trying it against the local stack.
-- **Quadrava CLI** (`@sramaccini/quadrava-cli` on GitHub Packages): `quadrava validate` checks a project as the
-  runtime and Studio read it, CEL expressions included; `quadrava publish` publishes it in a registry.
 - **Demo back end of the stack**: the event stream `/api/streams/tasks`, so that behind the BFF the live boards of the
   showcase follow the changes of other users.
 

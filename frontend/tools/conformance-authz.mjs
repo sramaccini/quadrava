@@ -2,29 +2,40 @@
 // (the reference one or a customer's) behaves as the contract describes.
 //
 //   node tools/conformance-authz.mjs --authz http://localhost:8082 --app demo
-//        [--token <JWT> | --user <user> --password <password>]           main user (required)
-//        [--other-token <JWT> | --other-user <u> --other-password <p>]    user with different permissions (optional)
+//        [--token <JWT> | --user <user> --password <password> | --cookie "<session cookies>"]   main user (required)
+//        [--other-token <JWT> | --other-user <u> --other-password <p> | --other-cookie "…"]    other user (optional)
 //        [--issuer http://localhost:8180/realms/lowcode]
 //
+// The contract accepts a Bearer token (a service behind the BFF) or the session cookie (a BFF that answers /authz
+// itself): with --cookie (copied from a signed-in browser) the calls carry the cookies, and the writes the CSRF token
+// of the XSRF-TOKEN cookie, as the runtime sends them (contracts/bff.yaml).
 // The service is not modified: the checks only read and verify. Exits with code 1 if a check fails.
 import { call as httpCall, expect, isProblem, parseArgs, suite, tokenFromArgs } from './conformance-lib.mjs';
 
 const args = parseArgs();
 const base = (args.authz ?? 'http://localhost:8082').replace(/\/+$/, '');
 const app = args.app ?? 'demo';
-const token = await tokenFromArgs(args);
-const other = await tokenFromArgs(args, 'other-');
-if (!token) {
-  console.error('A user is needed: --token, or --user and --password.');
+const user = { token: await tokenFromArgs(args), cookie: args.cookie ?? null };
+const other = { token: await tokenFromArgs(args, 'other-'), cookie: args['other-cookie'] ?? null };
+if (!user.token && !user.cookie) {
+  console.error('A user is needed: --token, --user and --password, or --cookie.');
   process.exit(2);
 }
-const call = (method, path, options = {}) => httpCall(base, method, path, { token, ...options });
+
+/** The credentials of a user on a call: the token, or the session cookies with the CSRF token on writes. */
+function credentials({ token, cookie }, method) {
+  if (token) return { token };
+  if (!cookie) return {};
+  const csrf = /(?:^|;\s*)XSRF-TOKEN=([^;]*)/.exec(cookie)?.[1];
+  return { headers: { Cookie: cookie, ...(method !== 'GET' && csrf ? { 'X-XSRF-TOKEN': decodeURIComponent(csrf) } : {}) } };
+}
+const call = (method, path, { as = user, ...options } = {}) => httpCall(base, method, path, { ...credentials(as, method), ...options });
 const PERMISSION = /^[a-z0-9]+\.[a-z0-9]+\.[a-z0-9]+$/;
 const { check, report } = suite();
 let capabilities = null;
 
-await check('without a token: 401', async () => {
-  const r = await call('GET', `/authz/capabilities?app=${encodeURIComponent(app)}`, { token: null });
+await check('without a token or a session: 401', async () => {
+  const r = await call('GET', `/authz/capabilities?app=${encodeURIComponent(app)}`, { as: {} });
   expect(r.status === 401, `expected 401, got ${r.status}`);
 });
 
@@ -100,10 +111,10 @@ await check('body is not JSON: 400', async () => {
 });
 
 await check('users with different permissions: different versions', async () => {
-  const r = await httpCall(base, 'GET', `/authz/capabilities?app=${encodeURIComponent(app)}`, { token: other });
+  const r = await call('GET', `/authz/capabilities?app=${encodeURIComponent(app)}`, { as: other });
   expect(r.status === 200, `expected 200, got ${r.status}`);
   const same = JSON.stringify([...r.json.permissions].sort()) === JSON.stringify([...capabilities.permissions].sort());
   expect(same ? r.json.version === capabilities.version : r.json.version !== capabilities.version, 'the version must change when the permissions change');
-}, { skip: !other });
+}, { skip: !other.token && !other.cookie });
 
 report(`Conformance with the authorization contract (${base}, application ${app})`);

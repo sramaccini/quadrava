@@ -19,8 +19,15 @@ session of **OpenDevTrack**. Read [HANDOFF.md](../HANDOFF.md) first: its working
 | L3 | `af55d09` | ADR-19: `live` on GET data sources, Server-Sent Events through the BFF (`bff.yaml` 0.3.0) |
 | Q0 (D1) | `c5b06e9` | ADR-20: version 0.1.0, `CHANGELOG.md`, release workflow, the runtime image `ghcr.io/sramaccini/quadrava-runtime` (`docker/runtime/README.md`) |
 
-**What ms-authz must adapt** (in its own repository; nothing changes in Quadrava). The check is
-`npm run conformance:bff -- --bff <address> --return <page>`, with `--cookie` for the signed-in part.
+**What ms-authz had to adapt** (in its own repository; nothing changed in Quadrava). **Done** in
+[sramaccini/authz-library](https://github.com/sramaccini/authz-library) (branch `master`), Maven
+`com.logicwarez.authz:authz-bff`, `authz-session` and `authz-rbac` 2.0.0 on GitHub Packages, and checked from Quadrava
+on 31 October 2026 against its demo application (Keycloak, Redis, PostgreSQL), on the same code with the coordinates of
+the withdrawn 3.0.0: `npm run conformance:bff` 13 of 13 without and with a session (two tenants), `npm run
+conformance:authz` 11 of 11 with `--cookie` (`/authz` is answered on the session, CSRF required on writes), and the
+runtime image with `QUADRAVA_BFF_URL` in front of it (user, tenants and permissions of the session). The checks:
+`npm run conformance:bff -- --bff <address> --return <page>`, with `--cookie` for the signed-in part, and
+`npm run conformance:authz -- --authz <address> --app <app> --cookie "<cookies>" --other-cookie "<cookies>"`.
 
 1. **Logout**: `POST /logout` with `Accept: application/json` answers `{ "redirect": "<address>" }`, not `logout_url`.
 2. **Login**: `GET /bff/login?return=<page>` goes back to `return` after the login, accepted only when its origin is
@@ -46,8 +53,8 @@ session of **OpenDevTrack**. Read [HANDOFF.md](../HANDOFF.md) first: its working
   data sources, navigation, themes, i18n) run by the Quadrava runtime, used **as a versioned dependency, never cloned
   or forked**. Anything missing is added to Quadrava, with its own tests and release.
 - Its back end is a Spring Boot 4.1 + Spring Modulith monolith on PostgreSQL, with login, session and RBAC coming from
-  **ms-authz 2.0**: three libraries embedded in the monolith (`authz-bff`, `authz-session`, `authz-rbac`; Spring Session
-  on Redis), branch `feature/librerie` of [sramaccini/ms-authz](https://github.com/sramaccini/ms-authz/tree/feature/librerie).
+  **ms-authz**: three libraries embedded in the monolith (`authz-bff`, `authz-session`, `authz-rbac`; Spring Session
+  on Redis), `com.logicwarez.authz` 2.0.0 from [sramaccini/authz-library](https://github.com/sramaccini/authz-library).
 - Project plan (Claude doc, Italian): https://claude.ai/artifact/HBk1PW4u8x9C3gHaFsZZYF — sections «Uso della
   piattaforma Quadrava», «Uso di ms-authz», «Roadmap», «Decisioni aperte».
 
@@ -99,7 +106,7 @@ describing what the runtime relies on today:
 Then a kit `npm run conformance:bff` in the style of the existing ones, run against the reference BFF. Unknowns to
 settle with Simone before writing: whether the session payload gets more standard fields (`email`, `permissions`).
 
-Known differences in ms-authz 2.0 today (ms-authz will adapt, nothing to do in Quadrava): it answers the logout with
+Differences of the first ms-authz 2.0 (since adapted, see § 0): it answers the logout with
 `logout_url` instead of `redirect`, ignores `return`, has no `/authz/capabilities`, and uses `resource:action`
 permission codes instead of Quadrava's `domain.resource.action`.
 

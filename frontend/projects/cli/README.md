@@ -19,7 +19,7 @@ with `GITHUB_TOKEN` a token with `read:packages` (in GitHub Actions, the token o
 `permissions: packages: read`). Then:
 
 ```bash
-npm install --save-dev @sramaccini/quadrava-cli@0.1.0
+npm install --save-dev @sramaccini/quadrava-cli@0.2.0
 npx quadrava validate
 ```
 
@@ -80,10 +80,10 @@ steps:
       node-version: 24
       registry-url: https://npm.pkg.github.com
       scope: '@sramaccini'
-  - run: npx --yes @sramaccini/quadrava-cli@0.1.0 validate quadrava
+  - run: npx --yes @sramaccini/quadrava-cli@0.2.0 validate quadrava
     env:
       NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  - run: npx --yes @sramaccini/quadrava-cli@0.1.0 publish quadrava --registry https://registry.example --app tracker --env testing
+  - run: npx --yes @sramaccini/quadrava-cli@0.2.0 publish quadrava --registry https://registry.example --app tracker --env testing
     env:
       NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       QUADRAVA_TOKEN: ${{ secrets.REGISTRY_TOKEN }}

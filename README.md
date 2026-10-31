@@ -402,10 +402,10 @@ docker run -p 8080:8080 -e QUADRAVA_REGISTRY_APP=invoicing -e QUADRAVA_NAVIGATIO
 
 All the variables, the mounted `runtime-config.json` and the ways to keep one origin with the BFF: [docker/runtime/README.md](docker/runtime/README.md). What changed between versions: [CHANGELOG.md](CHANGELOG.md).
 
-A project checks itself in its own CI with the **Quadrava CLI**, published with every version on GitHub Packages: `quadrava validate` applies the checks of the runtime and Studio (schemas, references, CEL expressions, translations), `quadrava publish` publishes the project in a registry ([frontend/projects/cli/README.md](frontend/projects/cli/README.md)).
+A project checks itself in its own CI with the **Quadrava CLI**, published with every version on GitHub Packages from 0.2.0: `quadrava validate` applies the checks of the runtime and Studio (schemas, references, CEL expressions, translations), `quadrava publish` publishes the project in a registry ([frontend/projects/cli/README.md](frontend/projects/cli/README.md)).
 
 ```bash
-npx @sramaccini/quadrava-cli@0.1.0 validate my-project
+npx @sramaccini/quadrava-cli@0.2.0 validate my-project
 ```
 
 ## Testing
@@ -422,6 +422,8 @@ npx playwright install chromium       # once: the browser used by the end-to-end
 npm run e2e                           # Playwright end-to-end tests in a real browser (needs `npm run demo:prepare`)
 npm run conformance:registry -- --user operator --password operator --reviewer-user manager --reviewer-password manager
 npm run conformance:authz -- --user operator --password operator --other-user manager --other-password manager
+npm run conformance:authz -- --authz http://localhost:8080 --cookie "<cookies>" --other-cookie "<cookies>"
+                                      # a BFF that answers /authz on the session (cookies of a signed-in browser)
 npm run conformance:telemetry -- --user operator --password operator
 npm run conformance:bff -- --bff http://localhost:8080 --return http://localhost:4200/
                                       # conformance kits: check a service (reference or customer) against its contract
