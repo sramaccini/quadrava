@@ -4,12 +4,12 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>it.lowcode.reference</groupId>
-    <artifactId>lowcode-reference</artifactId>
+    <groupId>com.logicwarez.quadrava.reference</groupId>
+    <artifactId>quadrava-reference</artifactId>
     <version>0.1.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>lowcode-bff</artifactId>
+  <artifactId>quadrava-reference-bff</artifactId>
   <name>Quadrava reference - bff</name>
   <description>Backend For Frontend: OIDC session with Keycloak, tokens on the server side only.</description>
 

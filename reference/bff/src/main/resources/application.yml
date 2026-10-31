@@ -3,14 +3,14 @@ server:
 
 spring:
   application:
-    name: lowcode-bff
+    name: quadrava-reference-bff
   security:
     oauth2:
       client:
         registration:
           keycloak:
             client-id: lowcode-bff
-            client-secret: ${LOWCODE_BFF_CLIENT_SECRET:dev-only-secret}
+            client-secret: ${QUADRAVA_BFF_CLIENT_SECRET:dev-only-secret}
             authorization-grant-type: authorization_code
             redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
             scope: openid,profile,email
@@ -24,7 +24,7 @@ spring:
             user-info-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/lowcode}/protocol/openid-connect/userinfo
             user-name-attribute: preferred_username
 
-lowcode:
+quadrava:
   bff:
     # APIs forwarded by the BFF to the services, with the user's token. Only these prefixes and these hosts.
     routes:

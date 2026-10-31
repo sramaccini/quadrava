@@ -4,12 +4,12 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>it.lowcode.reference</groupId>
-    <artifactId>lowcode-reference</artifactId>
+    <groupId>com.logicwarez.quadrava.reference</groupId>
+    <artifactId>quadrava-reference</artifactId>
     <version>0.1.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>lowcode-telemetry</artifactId>
+  <artifactId>quadrava-reference-telemetry</artifactId>
   <name>Quadrava reference - telemetry</name>
   <description>Sample ingestion endpoint (contract telemetry.yaml).</description>
 

@@ -18,6 +18,15 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 - `npm run conformance:authz` with `--cookie` and `--other-cookie`: checks a BFF that answers `/authz` itself on the
   session (the `cookieAuth` of `contracts/authz.yaml`), with the CSRF token on writes.
 
+### Changed
+
+- **Reference implementation** (`reference/`): groupId `com.logicwarez.quadrava.reference`, artifacts
+  `quadrava-reference-authz`, `-bff`, `-registry` and `-telemetry`, Java packages `com.logicwarez.quadrava.reference.*`.
+  Its configuration moves from `lowcode.*` to `quadrava.*` (for example `quadrava.registry.storage-dir`,
+  `quadrava.bff.frontend-origins`) and the secret of the BFF client from `LOWCODE_BFF_CLIENT_SECRET` to
+  `QUADRAVA_BFF_CLIENT_SECRET`: rename them in your own configuration. Rebuild with `mvn clean` (or `npm run stack --
+  --rebuild`), so that the jars with the old names are gone.
+
 ### Fixed
 
 - **Runtime**: a BFF that answers `401` again right after a login (a call that always refuses the session, cookies

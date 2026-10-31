@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: lowcode-registry
+    name: quadrava-reference-registry
   security:
     oauth2:
       resourceserver:
@@ -18,7 +18,7 @@ management:
       exposure:
         include: health
 
-lowcode:
+quadrava:
   registry:
     # Folder of the file store (empty = in memory, lost on restart). For example data/registry.
     storage-dir: ${LOWCODE_REGISTRY_DIR:}

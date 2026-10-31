@@ -4,12 +4,12 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>it.lowcode.reference</groupId>
-    <artifactId>lowcode-reference</artifactId>
+    <groupId>com.logicwarez.quadrava.reference</groupId>
+    <artifactId>quadrava-reference</artifactId>
     <version>0.1.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>lowcode-registry</artifactId>
+  <artifactId>quadrava-reference-registry</artifactId>
   <name>Quadrava reference - registry</name>
   <description>Sample registry with immutable versions (contract registry.yaml).</description>
 

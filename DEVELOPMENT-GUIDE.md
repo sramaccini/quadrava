@@ -249,7 +249,7 @@ Real focus handling and the dark theme are not covered yet (the application shel
 ## 13. Known limits
 
 * The collapsed side menu opens groups in a popup.
-* The reference registry keeps its data in memory unless `lowcode.registry.storage-dir` is set (`npm run stack` sets it to `data/registry`). Logout from the apps is a JSON call (`Accept: application/json`, CSRF header) answered with `{"redirect": …}`: with `csrf().spa()` a form field would need the masked token.
+* The reference registry keeps its data in memory unless `quadrava.registry.storage-dir` is set (`npm run stack` sets it to `data/registry`). Logout from the apps is a JSON call (`Accept: application/json`, CSRF header) answered with `{"redirect": …}`: with `csrf().spa()` a form field would need the masked token.
 * The Playwright suite runs in Chromium only.
 * jsdom has no `document.execCommand`: the rich text toolbar is tested end to end (`e2e/showcase-input.spec.ts`); unit tests cover the Markdown ↔ DOM conversions and the value flow.
 * Inside a CEL single-quoted string a real newline is a syntax error: write `\n` in `t()` fallbacks (in screen JSON, `\\n`).

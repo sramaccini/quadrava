@@ -1,0 +1,63 @@
+package com.logicwarez.quadrava.reference.bff;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
+import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
+import org.springframework.stereotype.Component;
+
+/**
+ * After signing out of the BFF it also closes the session in Keycloak (client-initiated OIDC logout): otherwise a new
+ * sign-in would get back in without asking for the password. Keycloak then returns to the BFF root, which redirects to
+ * the applications (and therefore to the login).
+ *
+ * The applications sign out with a call ({@code Accept: application/json}, CSRF token in the header): the response is
+ * {@code {"redirect": "<address>"}} and the page navigates there. A normal navigation gets the redirect instead.
+ */
+@Component
+class EndSessionLogout implements LogoutSuccessHandler {
+
+    private final BffProperties properties;
+
+    EndSessionLogout(BffProperties properties) {
+        this.properties = properties;
+    }
+
+    @Override
+    public void onLogoutSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication)
+            throws IOException {
+        if (authentication != null && authentication.getPrincipal() instanceof OidcUser user && properties.endSessionUri() != null) {
+            String back = baseUrl(request) + "/";
+            String url = properties.endSessionUri()
+                    + "?id_token_hint=" + encode(user.getIdToken().getTokenValue())
+                    + "&post_logout_redirect_uri=" + encode(back);
+            answer(request, response, url);
+            return;
+        }
+        answer(request, response, properties.home());
+    }
+
+    private static void answer(HttpServletRequest request, HttpServletResponse response, String url) throws IOException {
+        String accept = request.getHeader("Accept");
+        if (accept != null && accept.contains("application/json")) {
+            response.setContentType("application/json");
+            response.getWriter().write("{\"redirect\":\"" + url.replace("\\", "\\\\").replace("\"", "\\\"") + "\"}");
+            return;
+        }
+        response.sendRedirect(url);
+    }
+
+    static String baseUrl(HttpServletRequest request) {
+        int port = request.getServerPort();
+        boolean standard = ("http".equals(request.getScheme()) && port == 80) || ("https".equals(request.getScheme()) && port == 443);
+        return request.getScheme() + "://" + request.getServerName() + (standard ? "" : ":" + port) + request.getContextPath();
+    }
+
+    private static String encode(String value) {
+        return URLEncoder.encode(value, StandardCharsets.UTF_8);
+    }
+}

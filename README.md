@@ -369,10 +369,10 @@ cd frontend && npm run stack
 2. Reference implementation: `cd reference && mvn verify`, then `mvn -pl <module> spring-boot:run` for each module (or `java -jar <module>/target/*.jar`). Ports: bff 8080, registry 8081, authz 8082, telemetry 8083.
 3. Demo application back end: `cd frontend && npm run demo-api` (port 8084). It serves the data of the demo screens (the same logic as the in-browser demo, `projects/runtime/src/demo/demo-backend.ts`) and accepts only access tokens signed by the local Keycloak realm (RS256, issuer, expiry); `--no-auth` switches the check off. Like a Spring Boot service with springdoc, it publishes its OpenAPI description at `/v3/api-docs` (description only, no token, CORS open) and, behind the BFF, at `/api/v3/api-docs`: the editor can import data sources from it.
 4. Publish the examples into the registry with a real token: `npm run publish:examples -- --user administrator --password administrator` (the script gets the token from the development client `lowcode-tools`, local realm only).
-5. Front end through the BFF: `npm run start:runtime:bff` (port 4200) and `npm run start:editor:bff` (port 4201). The dev servers proxy `/registry`, `/api`, `/authz`, `/telemetry`, `/bff`, `/oauth2` and `/logout` to the BFF, which keeps the session, adds the user's access token and `traceparent` to the forwarded calls and protects writes with CSRF (`XSRF-TOKEN` cookie, `X-XSRF-TOKEN` header). BFF routes (`lowcode.bff.routes`): `/registry` → registry, `/authz` → authorization, `/telemetry` → telemetry, `/api` → the application back end.
+5. Front end through the BFF: `npm run start:runtime:bff` (port 4200) and `npm run start:editor:bff` (port 4201). The dev servers proxy `/registry`, `/api`, `/authz`, `/telemetry`, `/bff`, `/oauth2` and `/logout` to the BFF, which keeps the session, adds the user's access token and `traceparent` to the forwarded calls and protects writes with CSRF (`XSRF-TOKEN` cookie, `X-XSRF-TOKEN` header). BFF routes (`quadrava.bff.routes`): `/registry` → registry, `/authz` → authorization, `/telemetry` → telemetry, `/api` → the application back end.
    * **Runtime** (`projects/runtime/config/bff/runtime-config.json`): without a session it goes straight to the Keycloak login and comes back; then it loads navigation, theme and screens published in the registry (application `demo`, environment `development`), the user's permissions from the authorization service, the data from `/api`, and sends diagnostics to the telemetry service. The header shows the user menu with the name, the number of permissions and *Sign out*: logout closes the BFF session and the Keycloak session (OIDC end-session), so the next login asks for the password again.
    * **Quadrava Studio**: the *Registry* panel offers *Sign in* when there is no session; versions are recorded with the user name as author.
-   * After login the BFF returns only to the origins listed in `lowcode.bff.frontend-origins`; a visit to the BFF root goes to `lowcode.bff.home` (the runtime).
+   * After login the BFF returns only to the origins listed in `quadrava.bff.frontend-origins`; a visit to the BFF root goes to `quadrava.bff.home` (the runtime).
    * **Tenants** (optional, [ADR-18](docs/adr-18-tenant-selection.md)): when the BFF lists several tenants for the user and `runtime-config.json` has `services.tenantSwitchUrl`, the user menu offers them under *Workspace*; choosing one is a POST to the BFF, then the page reloads. Applications without tenants see nothing. In the in-browser demo the *administrator* profile has two offices.
 6. Validate the examples against the schemas: `cd frontend && npm run validate:examples`.
 
@@ -380,13 +380,13 @@ cd frontend && npm run stack
 
 ```bash
 cd reference && mvn -q -pl registry -am package -DskipTests
-java -jar registry/target/lowcode-registry-0.1.0-SNAPSHOT.jar --spring.profiles.active=no-auth
+java -jar registry/target/quadrava-reference-registry-0.1.0-SNAPSHOT.jar --spring.profiles.active=no-auth
 cd frontend && npm run publish:examples      # every screen, the navigation, every theme and catalogue, published in "development"
 npm run start:runtime:registry               # port 4200: definitions from the registry
 npm run start:editor:registry                # port 4201: Registry panel → save, publish → reload the runtime
 ```
 
-The `no-auth` profile logs a warning at start-up and must never be used outside a developer's machine. Add `--lowcode.registry.storage-dir=<folder>` to keep the registry data across restarts.
+The `no-auth` profile logs a warning at start-up and must never be used outside a developer's machine. Add `--quadrava.registry.storage-dir=<folder>` to keep the registry data across restarts.
 
 Development users in Keycloak: `operator`, `manager`, `administrator` (password equal to the user name). For local development only.
 

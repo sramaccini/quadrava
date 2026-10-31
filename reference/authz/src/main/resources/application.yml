@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: lowcode-authz
+    name: quadrava-reference-authz
   # Framework errors (missing parameter, unreadable body) in Problem format (RFC 9457), as the contract says.
   mvc:
     problemdetails:
@@ -21,7 +21,7 @@ management:
         include: health
 
 # Role → permissions map of the sample application (domain.resource.action format).
-lowcode:
+quadrava:
   authz:
     role-permissions:
       operator:

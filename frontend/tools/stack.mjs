@@ -95,7 +95,7 @@ if (flags.has('--rebuild') || modules.some((m) => !jar(m))) {
   say('building the Java services (mvn package)…');
   run('mvn', ['-q', 'package', '-DskipTests'], reference);
 }
-start('registry', 'java', ['-jar', jar('registry'), `--lowcode.registry.storage-dir=${join(root, 'data', 'registry')}`], reference);
+start('registry', 'java', ['-jar', jar('registry'), `--quadrava.registry.storage-dir=${join(root, 'data', 'registry')}`], reference);
 start('authz', 'java', ['-jar', jar('authz')], reference);
 start('telemetry', 'java', ['-jar', jar('telemetry')], reference);
 start('bff', 'java', ['-jar', jar('bff')], reference);

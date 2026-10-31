@@ -39,7 +39,7 @@ runtime                                   BFF
 - **Quadrava does not interpret tenants.** It shows the labels as text, sends back the identifier and exposes it to the
   expressions as `user.tenant` (empty without tenants). Permissions stay in the authorization contract: the BFF or the
   services take the tenant of the session into account.
-- **The reference BFF** reads the tenants from its configuration (`lowcode.bff.tenants`, each with the users who may
+- **The reference BFF** reads the tenants from its configuration (`quadrava.bff.tenants`, each with the users who may
   use it), keeps the current one in the session, remembers the last one per user in memory, and forwards it to the
   services in the `X-Tenant` header (one sent by the browser never passes). The conformance kit
   (`npm run conformance:bff`) checks the tenant part only when the user of the session lists tenants.

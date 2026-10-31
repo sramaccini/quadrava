@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: lowcode-telemetry
+    name: quadrava-reference-telemetry
   # Framework errors (missing parameter, unreadable body) in Problem format (RFC 9457), as the contract says.
   mvc:
     problemdetails:
@@ -20,6 +20,6 @@ management:
       exposure:
         include: health
 
-lowcode:
+quadrava:
   telemetry:
     max-bytes: 1000000
