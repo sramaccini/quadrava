@@ -2,7 +2,7 @@
 // After every change to the schema: npm run schema:sync
 export const THEME_SCHEMA: Record<string, unknown> = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://lowcode.example/schemas/theme.schema.json",
+  "$id": "https://quadrava.logicwarez.com/schemas/theme.schema.json",
   "title": "Theme of a Quadrava application",
   "description": "Design tokens of a theme. The runtime applies them as CSS custom properties (--lc-*). The allowed values are deliberately restricted: a theme cannot inject arbitrary CSS.",
   "type": "object",

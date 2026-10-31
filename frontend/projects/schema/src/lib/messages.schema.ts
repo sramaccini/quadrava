@@ -2,7 +2,7 @@
 // After every change to the schema: npm run schema:sync
 export const MESSAGES_SCHEMA: Record<string, unknown> = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://lowcode.example/schemas/messages.schema.json",
+  "$id": "https://quadrava.logicwarez.com/schemas/messages.schema.json",
   "title": "Translation catalogue",
   "description": "Texts of an application in one language: key → text in the message format ({n, number}, {n, plural, …}, {x, select, …}). One document per language; texts are always plain text, never HTML.",
   "type": "object",

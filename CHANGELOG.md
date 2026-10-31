@@ -29,6 +29,10 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 - **Development realm**: `quadrava` instead of `lowcode` (`idp/realm-quadrava.json`), clients `quadrava-bff` and
   `quadrava-tools`; the issuer of the reference services and of the tools is `http://localhost:8180/realms/quadrava`.
   Recreate Keycloak: `cd idp && docker compose down && docker compose up -d`.
+- **JSON schemas**: `$id` under `https://quadrava.logicwarez.com/schemas/` instead of `https://lowcode.example/schemas/`
+  (the documents do not carry it, nothing to change in a project). The workspace is called `quadrava`.
+- **Telemetry of the runtime**: `service.name` is `quadrava-runtime` and the application goes in the attribute
+  `quadrava.app` (was `lowcode-runtime` and `lowcode.app`): update the filters of your collector.
 
 ### Fixed
 

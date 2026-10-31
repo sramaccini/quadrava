@@ -84,5 +84,5 @@ export class OtlpQueue<T> {
 
 /** Common resource of logs and traces: the runtime and the application. */
 export function runtimeResource(appId: string): { attributes: OtlpAttribute[] } {
-  return { attributes: [attribute('service.name', 'lowcode-runtime'), attribute('lowcode.app', appId)] };
+  return { attributes: [attribute('service.name', 'quadrava-runtime'), attribute('quadrava.app', appId)] };
 }

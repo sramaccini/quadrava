@@ -2,7 +2,7 @@
 // After every change to the schema: npm run schema:sync
 export const SCREEN_SCHEMA: Record<string, unknown> = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://lowcode.example/schemas/screen.schema.json",
+  "$id": "https://quadrava.logicwarez.com/schemas/screen.schema.json",
   "title": "Screen",
   "description": "Core of the definition language: a screen of a Quadrava application with the catalogue of base components.",
   "type": "object",

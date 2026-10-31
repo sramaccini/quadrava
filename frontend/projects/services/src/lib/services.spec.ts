@@ -354,7 +354,7 @@ describe('HttpDiagnostics', () => {
     const record = req.request.body.resourceLogs[0].scopeLogs[0].logRecords[0];
     expect(record.body.stringValue).toBe('GET /api/orders?… failed for [email] id [num]');
     expect(record.severityText).toBe('ERROR');
-    expect(req.request.body.resourceLogs[0].resource.attributes).toContainEqual({ key: 'lowcode.app', value: { stringValue: 'demo' } });
+    expect(req.request.body.resourceLogs[0].resource.attributes).toContainEqual({ key: 'quadrava.app', value: { stringValue: 'demo' } });
     req.flush(null, { status: 202, statusText: 'Accepted' });
   });
 
@@ -406,7 +406,7 @@ describe('HttpTracer', () => {
     expect(attrs(httpSpan)).toEqual({ 'http.request.method': 'POST', 'lowcode.datasource': 'approve', 'http.response.status_code': '409' });
     expect(actionSpan).toMatchObject({ name: 'action.run', kind: 1, status: { code: 2 } });
     expect(JSON.stringify(sent.request.body)).not.toContain('4242');
-    expect(sent.request.body.resourceSpans[0].resource.attributes).toContainEqual({ key: 'lowcode.app', value: { stringValue: 'demo' } });
+    expect(sent.request.body.resourceSpans[0].resource.attributes).toContainEqual({ key: 'quadrava.app', value: { stringValue: 'demo' } });
   });
 
   it('platform calls report the path without query; those to telemetry are not traced', () => {

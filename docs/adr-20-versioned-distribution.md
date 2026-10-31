@@ -43,12 +43,12 @@ package.json files: 0.2.0                                        │ the checks 
   catalogues), `quadrava publish` saves and publishes it in a registry, with the token from an environment variable.
   One bundled file without dependencies, built from the sources of the libraries, so it checks exactly the schemas
   of its version. Published with the release on **GitHub Packages** as `@sramaccini/quadrava-cli` (the scope of
-  GitHub Packages is the owner of the repository); on npmjs, under `@quadrava`, from 1.0.0. The examples of the
+  GitHub Packages is the owner of the repository); on npmjs, as `@logicwarez/quadrava-cli`, from 1.0.0. The examples of the
   repository are validated and published with it too (`validate:examples`, `publish:examples`).
 
 ## Alternatives considered
 
-- **The Angular libraries as npm packages `@quadrava/*`.** Useful to an application that builds its own Angular
+- **The Angular libraries as npm packages `@logicwarez/*`.** Useful to an application that builds its own Angular
   front end with the libraries (its own components or shell), but it means renaming the libraries (today `schema`,
   `core`, …, imported by those names everywhere), publishing partial Ivy builds and keeping their public API stable:
   a larger commitment than needed for an application that only runs screens. Left for the first consumer that needs

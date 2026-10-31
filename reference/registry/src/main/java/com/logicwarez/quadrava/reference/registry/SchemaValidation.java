@@ -35,7 +35,7 @@ public class SchemaValidation {
     static final int MAX_ISSUES = 20;
 
     /** Base of the {@code $id} of the schemas. */
-    static final String SCHEMA_BASE = "https://lowcode.example/schemas/";
+    static final String SCHEMA_BASE = "https://quadrava.logicwarez.com/schemas/";
 
     private final ObjectMapper json = new ObjectMapper();
     private final Map<Kind, JsonSchema> schemas = new EnumMap<>(Kind.class);
