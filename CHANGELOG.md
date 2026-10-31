@@ -18,6 +18,13 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 - `npm run conformance:authz` with `--cookie` and `--other-cookie`: checks a BFF that answers `/authz` itself on the
   session (the `cookieAuth` of `contracts/authz.yaml`), with the CSRF token on writes.
 
+### Fixed
+
+- **Runtime**: a BFF that answers `401` again right after a login (a call that always refuses the session, cookies
+  blocked) no longer sends the page round in a circle with the identity provider: within 30 seconds of a login the
+  runtime does not start another one and shows that signing in did not work, with the button to try again. Two new
+  texts in the catalogue of the application: `app.loginRefusedTitle` and `app.loginRefusedText`.
+
 ## [0.1.0] - 2026-10-31
 
 The first versioned release.

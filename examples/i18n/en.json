@@ -55,6 +55,8 @@
   "app.lang.en": "English",
   "app.lang.it": "Italiano",
   "app.language": "Language",
+  "app.loginRefusedText": "The server refused the session right after signing in. Try again in a moment; if it happens again, contact the administrator.",
+  "app.loginRefusedTitle": "Signing in did not work",
   "app.menuInvalid": "The menu is not valid:",
   "app.network": "Network",
   "app.network.normal": "normal",

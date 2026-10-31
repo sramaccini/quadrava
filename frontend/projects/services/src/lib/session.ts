@@ -4,7 +4,29 @@ import { UserProvider } from 'core';
 import { firstValueFrom } from 'rxjs';
 import { LOWCODE_REDIRECT, LOWCODE_SERVICES_CONFIG } from './config';
 
-export type SessionState = 'unknown' | 'authenticated' | 'expired';
+/** `refused`: the BFF answered 401 again right after a login, so no other login is started (no loop). */
+export type SessionState = 'unknown' | 'authenticated' | 'expired' | 'refused';
+
+/** A 401 within this time from the start of a login does not start another one (milliseconds). */
+const LOGIN_RETRY_MS = 30_000;
+/** Only the time the last login started, per tab: it outlives the page, which the login replaces. */
+const LOGIN_STARTED_KEY = 'lc.loginStartedAt';
+
+function loginStartedAt(): number {
+  try {
+    return Number(globalThis.sessionStorage?.getItem(LOGIN_STARTED_KEY)) || 0;
+  } catch {
+    return 0;
+  }
+}
+
+function rememberLoginStart(): void {
+  try {
+    globalThis.sessionStorage?.setItem(LOGIN_STARTED_KEY, String(Date.now()));
+  } catch {
+    // Storage not available: the guard is lost, the login still works.
+  }
+}
 
 /** A tenant the user may work on (contracts/bff.yaml, Tenant). Quadrava does not interpret it: it shows the label. */
 export interface SessionTenant {
@@ -59,11 +81,25 @@ export class HttpSession extends UserProvider {
     return u ? { name: u.name ?? '', username: u.username ?? '', email: u.email ?? '', roles: u.roles ?? [], tenant: this.currentTenant() ?? '' } : {};
   }
 
-  /** Session missing or expired: the user is cleared and the flow restarts from the login, which then returns to this page. */
+  /**
+   * Session missing or expired: the user is cleared and the flow restarts from the login, which then returns to this page.
+   * If a login started a moment ago, the BFF refuses the session it has just created (a call that always answers 401, the
+   * cookies blocked): the page stops at `refused` instead of going round in a circle with the identity provider.
+   */
   markExpired(): void {
-    if (this.state() === 'expired') return;
+    if (this.state() === 'expired' || this.state() === 'refused') return;
     this.info.set(null);
+    if (Date.now() - loginStartedAt() < LOGIN_RETRY_MS) {
+      this.state.set('refused');
+      return;
+    }
     this.state.set('expired');
+    this.login();
+  }
+
+  /** Goes to the login of the BFF, which then returns to this page. Also asked by the user, after `refused`. */
+  login(): void {
+    rememberLoginStart();
     this.redirect(`${this.config.loginUrl}?return=${encodeURIComponent(globalThis.location?.href ?? '/')}`);
   }
 

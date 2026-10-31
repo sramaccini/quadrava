@@ -21,11 +21,11 @@ session of **OpenDevTrack**. Read [HANDOFF.md](../HANDOFF.md) first: its working
 
 **What ms-authz had to adapt** (in its own repository; nothing changed in Quadrava). **Done** in
 [sramaccini/authz-library](https://github.com/sramaccini/authz-library) (branch `master`), Maven
-`com.logicwarez.authz:authz-bff`, `authz-session` and `authz-rbac` 2.0.0 on GitHub Packages, and checked from Quadrava
-on 31 October 2026 against its demo application (Keycloak, Redis, PostgreSQL), on the same code with the coordinates of
-the withdrawn 3.0.0: `npm run conformance:bff` 13 of 13 without and with a session (two tenants), `npm run
+`com.logicwarez.authz:authz-bff`, `authz-session` and `authz-rbac` **2.0.1** on GitHub Packages, and checked from Quadrava
+on 31 October 2026 against its demo application (Keycloak, Redis, PostgreSQL): `npm run conformance:bff` 13 of 13 without and with a session (two tenants), `npm run
 conformance:authz` 11 of 11 with `--cookie` (`/authz` is answered on the session, CSRF required on writes), and the
-runtime image with `QUADRAVA_BFF_URL` in front of it (user, tenants and permissions of the session). The checks:
+runtime image with `QUADRAVA_BFF_URL` in front of it (user, tenants and permissions of the session). 2.0.1 fixes a
+`401` with a valid session on unknown paths and on asynchronous answers (event streams); use it, not 2.0.0. The checks:
 `npm run conformance:bff -- --bff <address> --return <page>`, with `--cookie` for the signed-in part, and
 `npm run conformance:authz -- --authz <address> --app <app> --cookie "<cookies>" --other-cookie "<cookies>"`.
 
@@ -54,7 +54,7 @@ runtime image with `QUADRAVA_BFF_URL` in front of it (user, tenants and permissi
   or forked**. Anything missing is added to Quadrava, with its own tests and release.
 - Its back end is a Spring Boot 4.1 + Spring Modulith monolith on PostgreSQL, with login, session and RBAC coming from
   **ms-authz**: three libraries embedded in the monolith (`authz-bff`, `authz-session`, `authz-rbac`; Spring Session
-  on Redis), `com.logicwarez.authz` 2.0.0 from [sramaccini/authz-library](https://github.com/sramaccini/authz-library).
+  on Redis), `com.logicwarez.authz` 2.0.1 from [sramaccini/authz-library](https://github.com/sramaccini/authz-library).
 - Project plan (Claude doc, Italian): https://claude.ai/artifact/HBk1PW4u8x9C3gHaFsZZYF — sections «Uso della
   piattaforma Quadrava», «Uso di ms-authz», «Roadmap», «Decisioni aperte».
 

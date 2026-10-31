@@ -130,8 +130,13 @@
   </nz-layout>
 } @else {
   <div class="signed-out" role="status">
-    <h1>{{ i18n.t('app.signedOutTitle') }}</h1>
-    <p>{{ i18n.t('app.signedOutText') }}</p>
+    @if (session.loginRefused()) {
+      <h1>{{ i18n.t('app.loginRefusedTitle') }}</h1>
+      <p>{{ i18n.t('app.loginRefusedText') }}</p>
+    } @else {
+      <h1>{{ i18n.t('app.signedOutTitle') }}</h1>
+      <p>{{ i18n.t('app.signedOutText') }}</p>
+    }
     <button nz-button nzType="primary" type="button" (click)="session.login()">{{ i18n.t('app.signIn') }}</button>
   </div>
 }

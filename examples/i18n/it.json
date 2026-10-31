@@ -55,6 +55,8 @@
   "app.lang.en": "English",
   "app.lang.it": "Italiano",
   "app.language": "Lingua",
+  "app.loginRefusedText": "Il server ha rifiutato la sessione subito dopo l'accesso. Riprova tra poco; se succede ancora, contatta l'amministratore.",
+  "app.loginRefusedTitle": "Accesso non riuscito",
   "app.menuInvalid": "Il menu non è valido:",
   "app.network": "Rete",
   "app.network.normal": "normale",

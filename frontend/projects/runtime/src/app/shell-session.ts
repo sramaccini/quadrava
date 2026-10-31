@@ -1,4 +1,4 @@
-import { Injectable, computed, inject, type Signal } from '@angular/core';
+import { Injectable, computed, inject, signal, type Signal } from '@angular/core';
 import { HttpAuthorization, HttpSession, type SessionTenant } from 'services';
 import { DEMO_PROFILES, DEMO_TENANTS, DemoDiagnostics, DemoSession } from '../demo/demo-ports';
 
@@ -9,6 +9,8 @@ import { DEMO_PROFILES, DEMO_TENANTS, DemoDiagnostics, DemoSession } from '../de
  */
 export abstract class ShellSession {
   abstract readonly loggedIn: Signal<boolean>;
+  /** The BFF refused the session right after a login: the page says so instead of signing in again. */
+  abstract readonly loginRefused: Signal<boolean>;
   abstract readonly username: Signal<string>;
   /** Profiles to choose from (only in the demo); empty = no selector. */
   abstract readonly profiles: string[];
@@ -30,6 +32,7 @@ export class DemoShellSession extends ShellSession {
   private readonly demo = inject(DemoSession);
   private readonly diagnostics = inject(DemoDiagnostics);
   readonly loggedIn = this.demo.loggedIn.asReadonly();
+  readonly loginRefused = signal(false).asReadonly();
   readonly username = this.demo.username.asReadonly();
   readonly profiles = Object.keys(DEMO_PROFILES);
   readonly permissionCount = computed(() => (DEMO_PROFILES[this.demo.username()] ?? []).length);
@@ -61,6 +64,7 @@ export class BffShellSession extends ShellSession {
   private readonly session = inject(HttpSession);
   private readonly authorization = inject(HttpAuthorization);
   readonly loggedIn = computed(() => this.session.state() === 'authenticated');
+  readonly loginRefused = computed(() => this.session.state() === 'refused');
   readonly username = computed(() => {
     const user = this.session.user();
     return String(user['name'] || user['username'] || '');
@@ -80,7 +84,7 @@ export class BffShellSession extends ShellSession {
   }
 
   login(): void {
-    this.session.markExpired();
+    this.session.login();
   }
 
   logout(): void {

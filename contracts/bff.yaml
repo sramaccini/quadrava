@@ -16,7 +16,9 @@ info:
     Rules that hold for every call of the applications, not only for the paths below:
 
     - **Session missing or expired.** Any call answers `401` instead of redirecting to the login page; the runtime then
-      navigates to the login with the current page as return address.
+      navigates to the login with the current page as return address. A `401` again within 30 seconds of a login the
+      runtime started does not start another one: the page says that signing in did not work, so that a BFF refusing
+      the session it has just created does not send the browser round in a circle with the identity provider.
 
     - **CSRF.** The BFF puts a token in the `XSRF-TOKEN` cookie, readable by the page (not `HttpOnly`), at the latest with
       the first response of a session. Every write (`POST`, `PUT`, `PATCH`, `DELETE`) carries it back in the

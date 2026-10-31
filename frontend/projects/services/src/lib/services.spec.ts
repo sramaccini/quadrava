@@ -16,6 +16,7 @@ import { HttpTracer } from './tracer';
 
 function setup(overrides: Partial<Parameters<typeof resolveConfig>[0]> = {}) {
   const redirects: string[] = [];
+  sessionStorage.clear();
   TestBed.configureTestingModule({
     providers: [
       provideHttpClient(withInterceptors([lowcodeHttpInterceptor])),
@@ -74,6 +75,30 @@ describe('interceptor', () => {
 });
 
 describe('HttpSession', () => {
+  it('a 401 right after a login stops at refused instead of signing in again', async () => {
+    const { http, redirects } = setup();
+    const session = TestBed.inject(HttpSession);
+    session.login();
+    expect(redirects).toHaveLength(1);
+    // Back from the login, the BFF still refuses the session: no second trip to the identity provider.
+    const p = session.load();
+    http.expectOne('/bff/user').flush({}, { status: 401, statusText: 'Unauthorized' });
+    await p;
+    expect(session.state()).toBe('refused');
+    expect(redirects).toHaveLength(1);
+    // The user can still ask for it.
+    session.login();
+    expect(redirects).toHaveLength(2);
+  });
+  it('a 401 long after the last login goes to the login again', async () => {
+    const { http, redirects } = setup();
+    sessionStorage.setItem('lc.loginStartedAt', String(Date.now() - 60_000));
+    const p = TestBed.inject(HttpSession).load();
+    http.expectOne('/bff/user').flush({}, { status: 401, statusText: 'Unauthorized' });
+    await p;
+    expect(TestBed.inject(HttpSession).state()).toBe('expired');
+    expect(redirects).toHaveLength(1);
+  });
   it('loads the user from the BFF', async () => {
     const { http } = setup();
     const session = TestBed.inject(HttpSession);
