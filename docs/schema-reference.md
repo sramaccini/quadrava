@@ -271,9 +271,16 @@
 | `columnField` * | text | Field of the row that decides the column (for example status). |
 | `titleField` * | text | Field shown as the title of the card. |
 | `descriptionField` | text | Field shown under the title of the card. |
-| `columns` * | list of object | Columns of the board, in order: value is the value of `columnField`, label the header (it can contain {{ }}), tone the colour (neutral if absent). |
+| `keyField` | text | Field that identifies the card (id if absent): onMove receives the keys of the neighbours in beforeId and afterId. |
+| `avatarField` | text | Field with the name of the person of the card (for example the assignee), shown as a round mark with the initials; the full name is in the tooltip and read by screen readers. |
+| `badges` | list of object | Coloured labels on the card, for example priority and type (at most 4). |
+| `footerFields` | list of object | Values at the bottom of the card, for example the story points or the due date (at most 4). |
+| `columns` * | list of object | Columns of the board, in order (at most 10). |
+| `laneField` | text | Field of the row that decides the swimlane (for example the assignee): the board is divided into horizontal lanes that can be collapsed. A card moves only within its lane. |
+| `lanes` | list of object | Lanes in order, with their headers; rows whose value is not a lane are not shown. Without it every value of `laneField` in the data is a lane, in order of appearance, and the cards without a value go to a last lane «No group». |
+| `reorder` | yes/no | Cards can also change place within their column: they are dropped between other cards, or moved up and down from the «Move» menu, and onMove runs for these moves too (false if absent: only moves to another column). |
 | `moveIf` | expression | Condition for moving a card (it sees the row in row), for example a permission. |
-| `onMove` | list of step | Steps that move a card (usually call and refresh): they see the row in row, the starting column in from and the target one in to. |
+| `onMove` | list of step | Steps that move a card (usually call and refresh): they see the row in row, the starting column in from, the target one in to, and the keys (keyField) of the cards that will be before and after it in beforeId and afterId (null at the ends of the column). |
 
 ## Action steps
 

@@ -76,7 +76,7 @@
     {
       "id": "section-kanban",
       "type": "section",
-      "title": "{{ t('showcase_tasks.kanban_drag_a_card_or_use_move_t', 'Kanban: drag a card or use “Move to”') }}",
+      "title": "{{ t('showcase_tasks.kanban_drag_a_card_or_use_move_t', 'Kanban: drag a card or use “Move”') }}",
       "components": [
         {
           "id": "kanban",
@@ -84,7 +84,84 @@
           "source": "tasks",
           "columnField": "status",
           "titleField": "title",
-          "descriptionField": "who",
+          "avatarField": "who",
+          "badges": [
+            {
+              "field": "priority",
+              "tones": {
+                "high": "danger",
+                "normal": "primary"
+              }
+            }
+          ],
+          "footerFields": [
+            {
+              "field": "points",
+              "label": "{{ t('showcase_tasks.points', 'Points') }}"
+            }
+          ],
+          "columns": [
+            {
+              "value": "to-do",
+              "label": "{{ t('showcase_tasks.to_do', 'To do') }}"
+            },
+            {
+              "value": "in-progress",
+              "label": "{{ t('showcase_tasks.in_progress', 'In progress') }}",
+              "tone": "primary",
+              "limit": 2
+            },
+            {
+              "value": "done",
+              "label": "{{ t('showcase_tasks.done', 'Done') }}",
+              "tone": "success"
+            }
+          ],
+          "reorder": true,
+          "moveIf": "{{ can('showcase.components.read') }}",
+          "onMove": [
+            {
+              "call": "moveTask",
+              "args": {
+                "id": "{{ row.id }}",
+                "status": "{{ to }}",
+                "beforeId": "{{ beforeId }}",
+                "afterId": "{{ afterId }}"
+              },
+              "onError": {
+                "toast": "{{ t('showcase_tasks.move_failed', 'Move failed') }}"
+              }
+            },
+            {
+              "refresh": "tasks"
+            },
+            {
+              "toast": "{{ t('showcase_tasks.moved', '“{title}” moved', {'title': row.title}) }}"
+            }
+          ]
+        },
+        {
+          "id": "lanes-title",
+          "type": "text",
+          "style": "heading",
+          "text": "{{ t('showcase_tasks.board_by_person', 'The same tasks by person (swimlanes)') }}"
+        },
+        {
+          "id": "kanban-lanes",
+          "type": "kanban",
+          "source": "tasks",
+          "columnField": "status",
+          "titleField": "title",
+          "laneField": "who",
+          "badges": [
+            {
+              "field": "priority",
+              "tones": {
+                "high": "danger",
+                "normal": "primary"
+              }
+            }
+          ],
           "columns": [
             {
               "value": "to-do",
@@ -107,7 +184,9 @@
               "call": "moveTask",
               "args": {
                 "id": "{{ row.id }}",
-                "status": "{{ to }}"
+                "status": "{{ to }}",
+                "beforeId": "{{ beforeId }}",
+                "afterId": "{{ afterId }}"
               },
               "onError": {
                 "toast": "{{ t('showcase_tasks.move_failed', 'Move failed') }}"

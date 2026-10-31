@@ -148,5 +148,130 @@ describe('image, link, progress, timeline and kanban', () => {
       const buttons = [...h.el.querySelectorAll('lc-kanban .card button')];
       expect(buttons.map((b) => b.getAttribute('aria-label'))).toEqual(['Move “Quote” to…']);
     });
+
+    const dragEvent = (type: string, target: Element, clientY = 0) => {
+      const event = new Event(type, { bubbles: true, cancelable: true }) as DragEvent;
+      Object.defineProperty(event, 'dataTransfer', { value: { setData: () => undefined, effectAllowed: '' } });
+      Object.defineProperty(event, 'clientY', { value: clientY });
+      target.dispatchEvent(event);
+    };
+    const places = '{{ from }}→{{ to }} after {{ beforeId == null ? "-" : string(beforeId) }} before {{ afterId == null ? "-" : string(afterId) }}';
+    const ranked = [
+      { id: 1, title: 'Quote', status: 'to-do', who: 'Anna Rossi' },
+      { id: 2, title: 'Contract', status: 'to-do', who: 'Luca' },
+      { id: 3, title: 'Reminder', status: 'to-do', who: 'Anna Rossi' },
+      { id: 4, title: 'Invoice', status: 'in-progress', who: 'Luca' },
+    ];
+
+    it('with reorder a card is dropped between the cards of its column; onMove sees the keys of the neighbours', async () => {
+      const h = await renderScreen({ components: [kanban({ reorder: true, onMove: [{ toast: places }] })], dataSources, respond: () => ranked });
+      await h.until(() => h.el.querySelectorAll('lc-kanban .card').length === 4, 'cards');
+      const cards = () => [...column(h.el, 'To do').querySelectorAll<HTMLElement>('.card')];
+      // «Reminder» over the lower half of «Quote»: between Quote and Contract.
+      dragEvent('dragstart', cards()[2]);
+      dragEvent('dragover', cards()[0], 10);
+      await h.settle();
+      expect(cards()[1].classList).toContain('drop-before');
+      dragEvent('drop', cards()[0]);
+      await h.until(() => h.toasts.length === 1, 'moved');
+      // To another column, over the upper half of its only card: before it.
+      dragEvent('dragstart', cards()[0]);
+      dragEvent('dragover', column(h.el, 'In progress').querySelector('.card')!, 0);
+      dragEvent('drop', column(h.el, 'In progress'));
+      await h.until(() => h.toasts.length === 2, 'moved again');
+      expect(h.toasts).toEqual(['to-do→to-do after 1 before 2', 'to-do→in-progress after - before 4']);
+    });
+
+    it('with reorder the «Move» menu also moves up and down; the first cannot go up', async () => {
+      const h = await renderScreen({ components: [kanban({ reorder: true, onMove: [{ toast: places }] })], dataSources, respond: () => ranked });
+      await h.until(() => h.el.querySelectorAll('lc-kanban .card').length === 4, 'cards');
+      (column(h.el, 'To do').querySelector('.card button') as HTMLButtonElement).click();
+      await h.until(() => document.querySelectorAll('.ant-dropdown-menu-item').length > 0, 'menu');
+      const items = [...document.querySelectorAll<HTMLElement>('.ant-dropdown-menu-item')];
+      expect(items.map((i) => plain(i.textContent))).toEqual(['Move up', 'Move down', 'In progress', 'Done']);
+      expect(items[0].classList).toContain('ant-dropdown-menu-item-disabled');
+      items[0].click();
+      items[1].click();
+      await h.until(() => h.toasts.length === 1, 'moved down');
+      expect(h.toasts).toEqual(['to-do→to-do after 2 before 3']);
+      // Screen readers hear where the card is (here the data does not change: it is still first).
+      await h.until(() => plain(h.el.querySelector('lc-kanban [aria-live]')?.textContent) === '“Quote” is in To do, position 1 of 3', 'announcement');
+      document.querySelectorAll('.cdk-overlay-container').forEach((c) => (c.innerHTML = ''));
+    });
+
+    it('without reorder a card dropped on its own column does not move', async () => {
+      const h = await renderScreen({ components: [kanban({ onMove: [{ toast: places }] })], dataSources, respond: () => ranked });
+      await h.until(() => h.el.querySelectorAll('lc-kanban .card').length === 4, 'cards');
+      const card = column(h.el, 'To do').querySelector('.card') as HTMLElement;
+      dragEvent('dragstart', card);
+      dragEvent('dragover', column(h.el, 'To do'));
+      dragEvent('drop', column(h.el, 'To do'));
+      await h.settle();
+      expect(h.toasts).toEqual([]);
+    });
+
+    it('swimlanes: one per value, collapsible; a card moves only within its lane', async () => {
+      const h = await renderScreen({ components: [kanban({ laneField: 'who', onMove: [{ toast: places }] })], dataSources, respond: () => ranked });
+      await h.until(() => h.el.querySelectorAll('lc-kanban .card').length === 4, 'cards');
+      const lanes = () => [...h.el.querySelectorAll<HTMLButtonElement>('lc-kanban .lane button')];
+      expect(lanes().map((b) => [plain(b.textContent), b.getAttribute('aria-expanded')])).toEqual([
+        ['Anna Rossi 2', 'true'],
+        ['Luca 2', 'true'],
+      ]);
+      expect([...h.el.querySelectorAll('lc-kanban section')].map((s) => s.getAttribute('aria-label')).slice(0, 3)).toEqual(['Anna Rossi — To do', 'Anna Rossi — In progress', 'Anna Rossi — Done']);
+      // Column headers once, above the lanes.
+      expect([...h.el.querySelectorAll('lc-kanban .head h3')].map((x) => plain(x.textContent))).toEqual(['To do 3', 'In progress 1', 'Done 0']);
+      const card = column(h.el, 'Anna Rossi — To do').querySelector('.card') as HTMLElement;
+      dragEvent('dragstart', card);
+      dragEvent('dragover', column(h.el, 'Luca — Done'));
+      await h.settle();
+      expect(column(h.el, 'Luca — Done').classList).not.toContain('over');
+      dragEvent('dragover', column(h.el, 'Anna Rossi — Done'));
+      dragEvent('drop', column(h.el, 'Anna Rossi — Done'));
+      await h.until(() => h.toasts.length === 1, 'moved');
+      expect(h.toasts).toEqual(['to-do→done after - before -']);
+      lanes()[0].click();
+      await h.settle();
+      expect(lanes()[0].getAttribute('aria-expanded')).toBe('false');
+      expect(column(h.el, 'Anna Rossi — To do')).toBeUndefined();
+      expect(h.el.querySelectorAll('lc-kanban .card')).toHaveLength(2);
+    });
+
+    it('a column over its limit shows the count against the limit and a warning in words', async () => {
+      const columns = [
+        { value: 'to-do', label: 'To do', limit: 2 },
+        { value: 'in-progress', label: 'In progress', limit: 1 },
+      ];
+      const h = await renderScreen({ components: [kanban({ columns })], dataSources, respond: () => ranked });
+      await h.until(() => h.el.querySelectorAll('lc-kanban .card').length === 4, 'cards');
+      expect([...h.el.querySelectorAll('lc-kanban h3')].map((x) => plain(x.textContent))).toEqual(['To do 3/2 over the limit', 'In progress 1/1']);
+      expect(column(h.el, 'To do').classList).toContain('over-limit');
+      expect(column(h.el, 'In progress').classList).not.toContain('over-limit');
+    });
+
+    it('rich cards: labels coloured by value, the initials of the person, values at the bottom', async () => {
+      const rows = [{ id: 1, title: 'Quote', status: 'to-do', who: 'Anna Rossi', priority: 'high', kind: '', points: 3 }];
+      const h = await renderScreen({
+        components: [
+          kanban({
+            descriptionField: undefined,
+            badges: [{ field: 'priority', tones: { high: 'danger' } }, { field: 'kind' }],
+            avatarField: 'who',
+            footerFields: [
+              { field: 'points', label: 'Points' },
+              { field: 'due', label: 'Due' },
+            ],
+          }),
+        ],
+        dataSources,
+        respond: () => rows,
+      });
+      await h.until(() => h.el.querySelectorAll('lc-kanban .card').length === 1, 'cards');
+      const card = h.el.querySelector('lc-kanban .card') as HTMLElement;
+      expect([...card.querySelectorAll('nz-tag')].map((t) => plain(t.textContent))).toEqual(['high']);
+      const avatar = card.querySelector('.avatar') as HTMLElement;
+      expect([plain(avatar.textContent), avatar.getAttribute('role'), avatar.getAttribute('aria-label')]).toEqual(['AR', 'img', 'Anna Rossi']);
+      expect(plain(card.querySelector('.footer')?.textContent)).toBe('Points: 3');
+    });
   });
 });

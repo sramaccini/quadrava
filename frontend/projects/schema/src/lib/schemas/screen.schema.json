@@ -2386,6 +2386,61 @@
                 "type": "string",
                 "description": "Field shown under the title of the card."
               },
+              "keyField": {
+                "type": "string",
+                "description": "Field that identifies the card (id if absent): onMove receives the keys of the neighbours in beforeId and afterId."
+              },
+              "avatarField": {
+                "type": "string",
+                "description": "Field with the name of the person of the card (for example the assignee), shown as a round mark with the initials; the full name is in the tooltip and read by screen readers."
+              },
+              "badges": {
+                "type": "array",
+                "maxItems": 4,
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "field"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "field": {
+                      "type": "string",
+                      "description": "Field shown as a label on the card; an empty value shows nothing."
+                    },
+                    "tones": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "$ref": "#/$defs/tone"
+                      },
+                      "description": "Colour of the label by value, for example {\"high\": \"danger\"}; values not listed are neutral."
+                    }
+                  }
+                },
+                "description": "Coloured labels on the card, for example priority and type (at most 4)."
+              },
+              "footerFields": {
+                "type": "array",
+                "maxItems": 4,
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "field"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "field": {
+                      "type": "string",
+                      "description": "Field whose value is shown; an empty value shows nothing."
+                    },
+                    "label": {
+                      "type": "string",
+                      "description": "Text before the value, for example \"Points\" (it can contain {{ }})."
+                    }
+                  }
+                },
+                "description": "Values at the bottom of the card, for example the story points or the due date (at most 4)."
+              },
               "columns": {
                 "type": "array",
                 "minItems": 1,
@@ -2399,17 +2454,57 @@
                   "additionalProperties": false,
                   "properties": {
                     "value": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "Value of `columnField` for the cards of the column."
                     },
                     "label": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "Header of the column (it can contain {{ }})."
                     },
                     "tone": {
-                      "$ref": "#/$defs/tone"
+                      "$ref": "#/$defs/tone",
+                      "description": "Colour of the column (neutral if absent)."
+                    },
+                    "limit": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "description": "Maximum number of cards (work in progress): the header shows «3/5» and a warning when the column holds more; moves are not blocked."
                     }
                   }
                 },
-                "description": "Columns of the board, in order: value is the value of `columnField`, label the header (it can contain {{ }}), tone the colour (neutral if absent)."
+                "description": "Columns of the board, in order (at most 10)."
+              },
+              "laneField": {
+                "type": "string",
+                "description": "Field of the row that decides the swimlane (for example the assignee): the board is divided into horizontal lanes that can be collapsed. A card moves only within its lane."
+              },
+              "lanes": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 30,
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "label"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "value": {
+                      "type": "string",
+                      "description": "Value of `laneField` for the cards of the lane."
+                    },
+                    "label": {
+                      "type": "string",
+                      "description": "Header of the lane (it can contain {{ }})."
+                    }
+                  }
+                },
+                "description": "Lanes in order, with their headers; rows whose value is not a lane are not shown. Without it every value of `laneField` in the data is a lane, in order of appearance, and the cards without a value go to a last lane «No group»."
+              },
+              "reorder": {
+                "type": "boolean",
+                "description": "Cards can also change place within their column: they are dropped between other cards, or moved up and down from the «Move» menu, and onMove runs for these moves too (false if absent: only moves to another column)."
               },
               "moveIf": {
                 "$ref": "#/$defs/expression",
@@ -2421,8 +2516,13 @@
                 "items": {
                   "$ref": "#/$defs/step"
                 },
-                "description": "Steps that move a card (usually call and refresh): they see the row in row, the starting column in from and the target one in to."
+                "description": "Steps that move a card (usually call and refresh): they see the row in row, the starting column in from, the target one in to, and the keys (keyField) of the cards that will be before and after it in beforeId and afterId (null at the ends of the column)."
               }
+            },
+            "dependentRequired": {
+              "lanes": [
+                "laneField"
+              ]
             }
           }
         }

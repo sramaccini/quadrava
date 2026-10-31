@@ -592,7 +592,21 @@ export interface KanbanNode extends NodeBase {
   columnField: string;
   titleField: string;
   descriptionField?: string;
-  columns: { value: string; label: string; tone?: Tone }[];
+  /** Field that identifies the card (`id` if absent): `onMove` sees the neighbours' keys in `beforeId` and `afterId`. */
+  keyField?: string;
+  /** Name of the person of the card, shown with the initials. */
+  avatarField?: string;
+  /** Coloured labels on the card. */
+  badges?: { field: string; tones?: Record<string, Tone> }[];
+  /** Values at the bottom of the card. */
+  footerFields?: { field: string; label?: string }[];
+  /** Columns; `limit` is the maximum number of cards (work in progress). */
+  columns: { value: string; label: string; tone?: Tone; limit?: number }[];
+  /** Field that decides the swimlane; `lanes` gives order and headers. */
+  laneField?: string;
+  lanes?: { value: string; label: string }[];
+  /** Cards can also change place within their column. */
+  reorder?: boolean;
   moveIf?: Expression;
   onMove?: Step[];
 }

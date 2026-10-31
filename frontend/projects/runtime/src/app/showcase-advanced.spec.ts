@@ -290,17 +290,30 @@ describe('Showcase: advanced components', () => {
   });
 
   describe('tasks and progress', () => {
-    it('kanban: «Sposta in» calls the service, reloads and the card changes column; timeline and progress', { timeout: 20000 }, async () => {
+    it('kanban: «Move» calls the service, reloads and the card changes column or place; lanes, limits, rich cards; timeline and progress', { timeout: 20000 }, async () => {
       const { el, until, settle } = await openShowcase('/showcase/showcase-tasks');
       const column = (label: string) => [...el.querySelectorAll<HTMLElement>('main lc-kanban section')].find((c) => c.getAttribute('aria-label') === label)!;
       const titles = (label: string) => [...column(label).querySelectorAll('.title')].map((t) => plainText(t.textContent));
-      await until(() => el.querySelectorAll('main lc-kanban .card').length === 5, 'tabs');
+      // Two boards on the same tasks: the second one in lanes by person.
+      await until(() => el.querySelectorAll('main lc-kanban .card').length === 10, 'cards');
       expect(titles('To do')).toEqual(['Quote for Smith Ltd', 'Contract for Baker Inc']);
+      expect([...el.querySelectorAll('main lc-kanban .lane button')].map((b) => plainText(b.textContent))).toEqual(['Anna Rossi 2', 'Luca Bianchi 2', 'Marta Verdi 1']);
+      expect(plainText(column('In progress').querySelector('h3')?.textContent)).toBe('In progress 2/2');
+      const first = column('To do').querySelector('.card') as HTMLElement;
+      expect([plainText(first.querySelector('nz-tag')?.textContent), first.querySelector('.avatar')?.getAttribute('aria-label'), plainText(first.querySelector('.footer')?.textContent)]).toEqual(['high', 'Anna Rossi', 'Points: 3']);
+      // Down one place, from the keyboard menu: the service puts it after «Contract for Baker Inc».
       (column('To do').querySelector('.card button') as HTMLButtonElement).click();
       await until(() => document.querySelectorAll('.ant-dropdown-menu-item').length > 0, 'menu');
-      ([...document.querySelectorAll<HTMLElement>('.ant-dropdown-menu-item')].find((i) => plainText(i.textContent) === 'Done') as HTMLElement).click();
+      ([...document.querySelectorAll<HTMLElement>('.ant-dropdown-menu-item')].find((i) => plainText(i.textContent) === 'Move down') as HTMLElement).click();
+      await until(() => titles('To do')[0] === 'Contract for Baker Inc', 'moved down');
+      await settle();
+      (column('To do').querySelectorAll('.card button')[1] as HTMLButtonElement).click();
+      const done = () => [...document.querySelectorAll<HTMLElement>('.ant-dropdown:not(.ant-dropdown-hidden) .ant-dropdown-menu-item')].find((i) => plainText(i.textContent) === 'Done');
+      await until(() => !!done(), 'menu');
+      done()!.click();
       await until(() => titles('Done').includes('Quote for Smith Ltd'), 'moved');
       expect(titles('To do')).toEqual(['Contract for Baker Inc']);
+      expect(titles('Done')).toEqual(['Order 1001 shipped', 'Quote for Smith Ltd']);
       await until(() => [...document.querySelectorAll('.ant-message-notice')].some((n) => n.textContent?.includes('“Quote for Smith Ltd” moved')), 'notice');
       // Timeline from the most recent, and progress bars.
       await until(() => el.querySelectorAll('main lc-timeline .title').length === 4, 'events');

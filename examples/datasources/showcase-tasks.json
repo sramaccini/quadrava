@@ -13,7 +13,9 @@
       "method": "POST",
       "url": "/api/tasks/{{ id }}/move",
       "body": {
-        "status": "{{ status }}"
+        "status": "{{ status }}",
+        "beforeId": "{{ beforeId }}",
+        "afterId": "{{ afterId }}"
       }
     },
     "events": {

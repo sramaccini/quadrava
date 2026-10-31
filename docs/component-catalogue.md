@@ -419,10 +419,21 @@ What **must** happen regardless (checks, rules, audit, several calls to keep con
   "columns": [ { "value": "to-do", "label": "Da fare" }, { "value": "done", "label": "Fatto", "tone": "success" } ],
   "moveIf": "{{ can('tasks.tasks.modifica') }}",
   "onMove": [ { "call": "move", "args": { "id": "{{ row.id }}", "status": "{{ to }}" } }, { "refresh": "tasks" } ] }
+
+{ "type": "kanban", "source": "tasks", "columnField": "status", "titleField": "title", "reorder": true,
+  "laneField": "assignee", "avatarField": "assignee",
+  "badges": [ { "field": "priority", "tones": { "high": "danger" } } ], "footerFields": [ { "field": "points", "label": "Points" } ],
+  "columns": [ { "value": "to-do", "label": "To do" }, { "value": "doing", "label": "Doing", "tone": "primary", "limit": 3 } ],
+  "onMove": [ { "call": "move", "args": { "id": "{{ row.id }}", "status": "{{ to }}", "beforeId": "{{ beforeId }}", "afterId": "{{ afterId }}" } },
+              { "refresh": "tasks" } ] }
 ```
 
 - **timeline**: the data-source rows in date order (`order`: `desc` by default, `asc`); a date without a time counts as a local day; rows without a valid date are not shown.
-- **kanban**: columns in the order of `columns`, with a count; rows whose value is not a column are not shown. With `onMove` a card is moved by dragging it to another column or, from the keyboard, with the «Sposta «…» in…» (move to) button (menu of the other columns). The steps see `row`, `from` and `to`; the card changes column when the reloaded data says so (the actual move belongs to the service). `moveIf` decides per row, fail-closed.
+- **kanban**: columns in the order of `columns`, with a count; rows whose value is not a column are not shown. Inside a column the cards keep the order of the data: the service decides it. With `onMove` a card is moved by dragging it to another column or, from the keyboard, with the «Move “…” to…» button (menu of the other columns). The steps see `row`, `from`, `to` and the keys (`keyField`, `id` if absent) of the cards that will be around it in `beforeId` and `afterId` (null at the ends; at the end of the column when it goes to another one from the menu); the card changes place when the reloaded data says so (the actual move belongs to the service). `moveIf` decides per row, fail-closed. After a move screen readers hear where the card is now («“Quote” is in Done, position 2 of 4»).
+  - **Order** (`reorder: true`): a card can also be dropped between the cards of its own column (a line shows where it goes), and the menu gains «Move up» and «Move down». Without it a card dropped on its own column does not move.
+  - **Swimlanes** (`laneField`): the board is divided into horizontal lanes, one per value of the field (in order of appearance, cards without a value in a last lane «No group»), or the ones listed in `lanes` with their headers. The column headers stay at the top; each lane has a header with its count that collapses it (`aria-expanded`). A card moves only within its lane; every cell is a region named «lane — column».
+  - **Limits** (`columns[].limit`): the header shows «3/5»; above the limit the column is tinted and its header says «over the limit» next to a warning icon (not only colour). The count includes every lane; moves are not blocked.
+  - **Rich cards**: `badges` (labels with the value of a field, coloured by `tones`), `avatarField` (initials of a person in a circle, the full name in the tooltip and for screen readers), `footerFields` (values at the bottom, with an optional label). Empty values show nothing.
 
 ### 2.25 Menu: search, counters, keyboard
 
@@ -593,7 +604,7 @@ In the showcase: «Validazione» (Validation), also with a staff form for passwo
 - **Standalone fields.** To block an action until the fields are valid, use the `validate` step (§ 2.22); as always, the real check belongs to the service. Rules across fields (§ 2.29) see the other standalone fields of the same validation group.
 - **Validation.** Relative dates are counted on the local day (no time of day); no remote rules in filters; field errors of the services reach the cells of repeaters only one level down (`/lines/0/code`), and standalone fields only by their `name` (not by a nested path); patterns are tested on values up to 1000 characters; the password strength is an estimate, not a check against leaked passwords. The front end is not a boundary: every rule that matters is repeated by the service.
 - **Layout containers.** Widths chosen with the dividers last for the visit to the screen (they are not remembered); no grid cells spanning several rows; fixed stacking thresholds (600 px grid, 768 px border).
-- **Kanban.** No reordering of cards within a column and no per-column limits; a move waits for the service's response (no optimistic update).
+- **Kanban.** A move waits for the service's response (no optimistic update); a card cannot change lane; limits warn but do not block; with swimlanes the board needs about 220 px per column and scrolls sideways on narrow screens.
 - **Formatted text.** No tables, images, colours or HTML; three levels of headings and lists. The editor uses the browser's editing commands: the result is always normalised to the restricted Markdown, but rendering while typing may vary slightly between browsers.
 - **Export.** The rows are those the data source returns in one call: for paged stores the service must offer a complete read (or an export of its own).
 

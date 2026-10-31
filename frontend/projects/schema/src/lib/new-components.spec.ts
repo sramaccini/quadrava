@@ -296,6 +296,14 @@ describe('schema of the new components', () => {
       expect(issuesOf(screen([{ type: 'progress', value: '{{ 3 }}', max: 4, kind: 'circle', tone: 'success' }]))).toEqual([]);
       expect(issuesOf(screen([{ type: 'timeline', source: 's', dateField: 'd', labelField: 'l', toneField: 't', tones: { ko: 'danger' }, order: 'asc' }]))).toEqual([]);
       expect(issuesOf(screen([{ type: 'kanban', source: 's', columnField: 'stato', titleField: 't', columns: [{ value: 'a', label: 'To', tone: 'primary' }], moveIf: '{{ true }}', onMove: [{ refresh: 's' }] }]))).toEqual([]);
+      // Rank, swimlanes, limits and rich cards.
+      const board = {
+        type: 'kanban', source: 's', columnField: 'c', titleField: 't', keyField: 'key', reorder: true,
+        columns: [{ value: 'a', label: 'A', limit: 3 }],
+        laneField: 'who', lanes: [{ value: 'anna', label: 'Anna' }],
+        badges: [{ field: 'priority', tones: { high: 'danger' } }], avatarField: 'who', footerFields: [{ field: 'points', label: 'Points' }],
+      };
+      expect(issuesOf(screen([board]))).toEqual([]);
     });
 
     it('rejects images without alternative text, ambiguous or dangerous links, missing columns', () => {
@@ -308,6 +316,10 @@ describe('schema of the new components', () => {
       }
       expect(issuesOf(screen([{ type: 'progress', value: true }])).length).toBeGreaterThan(0);
       expect(issuesOf(screen([{ type: 'kanban', source: 's', columnField: 'c', titleField: 't', columns: [] }])).length).toBeGreaterThan(0);
+      const board = { type: 'kanban', source: 's', columnField: 'c', titleField: 't', columns: [{ value: 'a', label: 'A' }] };
+      expect(issuesOf(screen([{ ...board, lanes: [{ value: 'x', label: 'X' }] }])).length, 'lanes without laneField').toBeGreaterThan(0);
+      expect(issuesOf(screen([{ ...board, columns: [{ value: 'a', label: 'A', limit: 0 }] }])).length, 'limit 0').toBeGreaterThan(0);
+      expect(issuesOf(screen([{ ...board, badges: [{ tones: {} }] }])).length, 'badge without field').toBeGreaterThan(0);
     });
   });
 

@@ -74,13 +74,16 @@ export class DemoBackend {
   private reports = 0;
   /** Staff numbers already used (validation showcase). */
   private readonly staffNumbers = new Set(['S000001', 'S123456']);
-  /** Tasks of the showcase kanban: the status changes with /api/tasks/{id}/move. */
-  private readonly tasks: { id: number; title: string; who: string; status: string }[] = [
-    { id: 1, title: 'Quote for Smith Ltd', who: 'Anna', status: 'to-do' },
-    { id: 2, title: 'Contract for Baker Inc', who: 'Luca', status: 'to-do' },
-    { id: 3, title: 'Invoice FT-2026-012', who: 'Anna', status: 'in-progress' },
-    { id: 4, title: 'Reminder to Walker & Co.', who: 'Marta', status: 'in-progress' },
-    { id: 5, title: 'Order 1001 shipped', who: 'Luca', status: 'done' },
+  /**
+   * Tasks of the showcase kanban, in the order of the board: /api/tasks/{id}/move changes the status and, with beforeId or
+   * afterId (the cards that will be around it), the place.
+   */
+  private readonly tasks: { id: number; title: string; who: string; status: string; priority: string; points: number }[] = [
+    { id: 1, title: 'Quote for Smith Ltd', who: 'Anna Rossi', status: 'to-do', priority: 'high', points: 3 },
+    { id: 2, title: 'Contract for Baker Inc', who: 'Luca Bianchi', status: 'to-do', priority: 'normal', points: 5 },
+    { id: 3, title: 'Invoice FT-2026-012', who: 'Anna Rossi', status: 'in-progress', priority: 'normal', points: 2 },
+    { id: 4, title: 'Reminder to Walker & Co.', who: 'Marta Verdi', status: 'in-progress', priority: 'high', points: 1 },
+    { id: 5, title: 'Order 1001 shipped', who: 'Luca Bianchi', status: 'done', priority: 'low', points: 2 },
   ];
   /** Transactions for the datatable: 60 deterministic rows over three accounts and six categories, from July to October 2026. */
   private readonly transactions = Array.from({ length: 60 }, (_, i) => {
@@ -327,6 +330,13 @@ export class DemoBackend {
       if (!task) throw new Error('404');
       if (typeof status !== 'string' || !['to-do', 'in-progress', 'done'].includes(status)) throw new Error('400');
       task.status = status;
+      // The place: before afterId, or else after beforeId; without either, at the end.
+      const others = this.tasks.filter((t) => t !== task);
+      const at = (id: unknown) => others.findIndex((t) => id !== null && id !== undefined && id !== '' && t.id === Number(id));
+      const before = at(req.body?.['afterId']);
+      const after = at(req.body?.['beforeId']);
+      others.splice(before >= 0 ? before : after >= 0 ? after + 1 : others.length, 0, task);
+      this.tasks.splice(0, this.tasks.length, ...others);
       return {};
     }
     if (path === '/api/events' && req.method === 'GET') {

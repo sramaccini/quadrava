@@ -113,9 +113,9 @@ Key design choices:
 }
 ```
 
-**Components** (node `type`): `section`, `box`, `grid`, `border`, `text`, `image`, `link`, `button`, `input`, `filterBar`, `table`, `dataTable`, `serverDataTable`, `form`, `tabs`, `detail`, `alert`, `stats`, `progress`, `timeline`, `kanban`, `wizard`, `tree`, `calendar`, `chart`. Every property of every component is listed in [docs/schema-reference.md](docs/schema-reference.md) (generated from the schema; descriptions in Italian).
+**Components** (node `type`): `section`, `box`, `grid`, `border`, `text`, `image`, `link`, `button`, `input`, `filterBar`, `table`, `dataTable`, `serverDataTable`, `form`, `tabs`, `detail`, `alert`, `stats`, `progress`, `timeline`, `kanban`, `wizard`, `tree`, `calendar`, `chart`. Every property of every component is listed in [docs/schema-reference.md](docs/schema-reference.md) (generated from the schema).
 
-**Display components**: `image` (mandatory alternative text; only relative, `https` or `data:image` addresses), `link` (to a screen with parameters, or to an `https` address opened in a new tab without access to the opener), `progress` (bar or circle), `timeline` (events of a data source ordered by date, coloured by a field) and `kanban` (cards in columns by a field, moved by dragging or with a keyboard-accessible *Sposta in* menu, which runs the `onMove` steps with `row`, `from` and `to`; `moveIf` decides which cards can move).
+**Display components**: `image` (mandatory alternative text; only relative, `https` or `data:image` addresses), `link` (to a screen with parameters, or to an `https` address opened in a new tab without access to the opener), `progress` (bar or circle), `timeline` (events of a data source ordered by date, coloured by a field) and `kanban` (cards in columns by a field, moved by dragging or with a keyboard-accessible *Move* menu, which runs the `onMove` steps with `row`, `from`, `to` and the neighbours `beforeId`/`afterId`; `moveIf` decides which cards can move; optional order within a column, swimlanes, work-in-progress limits, labels, avatars and footer values on the cards).
 
 **Layout containers** place their children without drawing a frame:
 
