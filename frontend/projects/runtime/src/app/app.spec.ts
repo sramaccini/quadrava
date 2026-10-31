@@ -29,7 +29,7 @@ import showcaseViewsSources from '../../public/examples/datasources/showcase-vie
 import light from '../../public/examples/themes/light.json';
 import dark from '../../public/examples/themes/dark.json';
 import classic from '../../public/examples/themes/classic.json';
-import { DemoDiagnostics } from '../demo/demo-ports';
+import { DemoDiagnostics, DemoSession } from '../demo/demo-ports';
 import { NavigationService } from './navigation.service';
 import { openSelect, stubViewportHeight } from './select-testing';
 import { App } from './app';
@@ -212,6 +212,26 @@ describe('App (demo)', () => {
     expect(el.querySelector('lc-sidebar')).toBeNull();
     (el.querySelector('.signed-out button') as HTMLButtonElement).click();
     await until(fixture, () => !el.querySelector('.signed-out'), 'signed in again');
+  });
+
+  it('a user with several tenants chooses one in the user menu; with one there is no choice', async () => {
+    const { fixture, el } = await start();
+    await until(fixture, () => rows(el) > 0, 'invoice list');
+    const radios = () => [...document.querySelectorAll<HTMLElement>('.ant-dropdown li[role="menuitemradio"]')];
+    const trigger = el.querySelector('lc-user-menu button.trigger') as HTMLButtonElement;
+    trigger.click();
+    await until(fixture, () => document.querySelectorAll('.ant-dropdown li[nz-menu-item]').length > 0, 'user menu');
+    expect(radios()).toEqual([]);
+    trigger.click();
+
+    await choose(fixture, headerSelect(el, 0), 'administrator');
+    trigger.click();
+    await until(fixture, () => radios().length === 2, 'tenants in the user menu');
+    expect(document.querySelector('.ant-dropdown .ant-dropdown-menu-item-group-title')?.textContent?.trim()).toBe('Workspace');
+    expect(radios().map((r) => [r.textContent?.trim(), r.getAttribute('aria-checked')])).toEqual([['North office', 'true'], ['South office', 'false']]);
+    radios()[1].click();
+    await until(fixture, () => TestBed.inject(DemoSession).user()['tenant'] === 'south', 'south chosen');
+    await until(fixture, () => radios()[1]?.getAttribute('aria-checked') === 'true', 'south marked');
   });
 
   it('the areas depend on the permissions of the profile', async () => {

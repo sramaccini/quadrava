@@ -36,6 +36,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -89,6 +90,13 @@ class ApiForwardingTest {
         registry.add("lowcode.bff.frontend-origins[0]", () -> "http://localhost:4201");
         registry.add("lowcode.bff.home", () -> "http://localhost:4200/");
         registry.add("lowcode.bff.end-session-uri", () -> "http://idp.test/logout");
+        // Two tenants for grace only: the other users have none.
+        registry.add("lowcode.bff.tenants[0].id", () -> "north");
+        registry.add("lowcode.bff.tenants[0].label", () -> "North office");
+        registry.add("lowcode.bff.tenants[0].users[0]", () -> "grace");
+        registry.add("lowcode.bff.tenants[1].id", () -> "south");
+        registry.add("lowcode.bff.tenants[1].label", () -> "South office");
+        registry.add("lowcode.bff.tenants[1].users[0]", () -> "grace");
     }
 
     @TestConfiguration
@@ -234,5 +242,52 @@ class ApiForwardingTest {
         mvc.perform(post("/logout").with(oidcLogin()).with(csrf()).accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(result -> assertThat(result.getResponse().getContentAsString()).startsWith("{\"redirect\":\"http://idp.test/logout?id_token_hint="));
+    }
+
+    @Test
+    // csrf() replaces the token repository for good (see writesRequireTheCsrfToken).
+    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+    void theUserSwitchesTenantWithAPostAndTheNextSessionStartsOnTheLastOne() throws Exception {
+        MockHttpSession session = new MockHttpSession();
+        mvc.perform(get("/bff/user").session(session).with(grace()))
+                .andExpect(status().isOk())
+                .andExpect(content().json("{\"tenants\":[{\"id\":\"north\",\"label\":\"North office\"},{\"id\":\"south\",\"label\":\"South office\"}],\"currentTenant\":\"north\"}"));
+        // Who may use a tenant stays in the BFF.
+        mvc.perform(get("/bff/user").session(session).with(grace()))
+                .andExpect(result -> assertThat(result.getResponse().getContentAsString()).doesNotContain("users"));
+
+        mvc.perform(post("/bff/tenant").session(session).with(grace()).contentType(MediaType.APPLICATION_JSON).content("{\"tenant\":\"south\"}"))
+                .andExpect(status().isForbidden());
+        mvc.perform(post("/bff/tenant").session(session).with(grace()).with(csrf()).contentType(MediaType.APPLICATION_JSON).content("{\"tenant\":\"south\"}"))
+                .andExpect(status().isNoContent());
+        mvc.perform(get("/bff/user").session(session).with(grace())).andExpect(content().json("{\"currentTenant\":\"south\"}"));
+        // The services receive the tenant of the session, not the one of the browser.
+        mvc.perform(get("/registry/apps").session(session).with(grace()).header("X-Tenant", "north")).andExpect(status().isOk());
+        assertThat(received.getFirst().headers().get("X-tenant")).containsExactly("south");
+
+        // A new session starts on the last tenant chosen.
+        mvc.perform(get("/bff/user").session(new MockHttpSession()).with(grace())).andExpect(content().json("{\"currentTenant\":\"south\"}"));
+    }
+
+    @Test
+    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+    void onlyTheTenantsOfferedToTheUserCanBeChosen() throws Exception {
+        mvc.perform(post("/bff/tenant").with(grace()).with(csrf()).contentType(MediaType.APPLICATION_JSON).content("{\"tenant\":\"west\"}"))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentTypeCompatibleWith("application/problem+json"));
+        mvc.perform(post("/bff/tenant").with(grace()).with(csrf()).contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isBadRequest());
+        mvc.perform(post("/bff/tenant").with(grace()).with(csrf()).contentType(MediaType.APPLICATION_JSON).content("not json"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith("application/problem+json"));
+        // A user without tenants: nothing to choose, nothing in the user, nothing forwarded.
+        mvc.perform(post("/bff/tenant").with(oidcLogin()).with(csrf()).contentType(MediaType.APPLICATION_JSON).content("{\"tenant\":\"north\"}"))
+                .andExpect(status().isNotFound());
+        mvc.perform(get("/registry/apps").with(oauth2Login()).header("X-Tenant", "north")).andExpect(status().isOk());
+        assertThat(received.getFirst().headers()).doesNotContainKey("X-tenant");
+    }
+
+    private static org.springframework.test.web.servlet.request.RequestPostProcessor grace() {
+        return oidcLogin().idToken(t -> t.claim("preferred_username", "grace"));
     }
 }

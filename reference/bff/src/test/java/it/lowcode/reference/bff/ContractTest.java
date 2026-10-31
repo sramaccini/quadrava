@@ -53,7 +53,7 @@ class ContractTest {
     void theEndpointsOfTheApplicationsAreInTheContract() throws IOException {
         Map<String, Object> paths = (Map<String, Object>) contract().get("paths");
         List<String> undocumented = new ArrayList<>();
-        for (Class<?> controller : List.of(UserController.class, LoginController.class)) {
+        for (Class<?> controller : List.of(UserController.class, LoginController.class, TenantController.class)) {
             for (Method method : controller.getDeclaredMethods()) {
                 String verb = null;
                 String[] path = null;
@@ -85,5 +85,8 @@ class ContractTest {
         Map<String, Object> properties = (Map<String, Object>) ((Map<String, Object>) schemas.get("User")).get("properties");
         List<String> fields = Arrays.stream(UserController.UserInfo.class.getRecordComponents()).map(RecordComponent::getName).toList();
         assertThat(properties.keySet()).containsAll(fields);
+        Map<String, Object> tenant = (Map<String, Object>) ((Map<String, Object>) schemas.get("Tenant")).get("properties");
+        List<String> tenantFields = Arrays.stream(UserController.TenantInfo.class.getRecordComponents()).map(RecordComponent::getName).toList();
+        assertThat(tenant.keySet()).containsAll(tenantFields);
     }
 }

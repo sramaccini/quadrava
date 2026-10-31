@@ -28,7 +28,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
  *
  * <ul>
  *   <li>Only a few headers reach the service (format, conditional cache, language, {@code traceparent}): never the
- *       session cookies nor any {@code Authorization} from the browser.</li>
+ *       session cookies nor any {@code Authorization} from the browser. The tenant of the session, if any, goes in
+ *       {@code X-Tenant}.</li>
  *   <li>Only status, body and a few safe headers (type, ETag, cache, file name, permissions version) go back to the browser.</li>
  *   <li>The body is streamed, within {@link BffProperties#maxBodyBytes()} (files go up to 100 MB).</li>
  * </ul>
@@ -46,14 +47,16 @@ public class ApiForwardingFilter extends OncePerRequestFilter {
 
     private final BffProperties properties;
     private final AccessTokens tokens;
+    private final Tenants tenants;
     private final HttpClient http = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(5))
             .followRedirects(HttpClient.Redirect.NEVER)
             .build();
 
-    public ApiForwardingFilter(BffProperties properties, AccessTokens tokens) {
+    public ApiForwardingFilter(BffProperties properties, AccessTokens tokens, Tenants tenants) {
         this.properties = properties;
         this.tokens = tokens;
+        this.tenants = tenants;
     }
 
     @Override
@@ -93,6 +96,8 @@ public class ApiForwardingFilter extends OncePerRequestFilter {
             }
         }
         upstream.header("Authorization", "Bearer " + token.get());
+        // The tenant of the session, if any: the one from the browser never passes (it is not in REQUEST_HEADERS).
+        tenants.current(request.getSession(false), Tenants.username(user)).ifPresent(t -> upstream.header("X-Tenant", t.id()));
         String method = request.getMethod();
         if (BODY_METHODS.contains(method)) {
             InputStream body = request.getInputStream();

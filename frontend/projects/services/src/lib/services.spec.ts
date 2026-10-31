@@ -81,7 +81,10 @@ describe('HttpSession', () => {
     http.expectOne('/bff/user').flush({ name: 'Mario Rossi', username: 'mrossi', email: 'mrossi@example.test' });
     await p;
     expect(session.state()).toBe('authenticated');
-    expect(session.user()).toEqual({ name: 'Mario Rossi', username: 'mrossi', email: 'mrossi@example.test', roles: [] });
+    expect(session.user()).toEqual({ name: 'Mario Rossi', username: 'mrossi', email: 'mrossi@example.test', roles: [], tenant: '' });
+    // Without tenants in the BFF there is nothing to choose.
+    expect(session.tenants()).toEqual([]);
+    expect(session.canSwitchTenant()).toBe(false);
   });
   it('if the BFF does not respond it considers the session expired', async () => {
     const { http, redirects } = setup();
@@ -91,6 +94,63 @@ describe('HttpSession', () => {
     expect(redirects).toHaveLength(1);
     expect(TestBed.inject(HttpSession).user()).toEqual({});
   });
+  const twoTenants = { username: 'grace', tenants: [{ id: 'north', label: 'North office' }, { id: 'south', label: 'South office' }, { id: 7 }], currentTenant: 'north' };
+
+  it('offers the tenant switch only with the address configured and more than one tenant', async () => {
+    let { http } = setup();
+    let session = TestBed.inject(HttpSession);
+    let p = session.load();
+    http.expectOne('/bff/user').flush(twoTenants);
+    await p;
+    // The malformed entry is dropped; the tenant reaches the expressions.
+    expect(session.tenants()).toEqual([{ id: 'north', label: 'North office' }, { id: 'south', label: 'South office' }]);
+    expect(session.user()['tenant']).toBe('north');
+    expect(session.canSwitchTenant()).toBe(false);
+    expect(await session.switchTenant('south')).toBe(false);
+    http.expectNone('/bff/tenant');
+
+    TestBed.resetTestingModule();
+    ({ http } = setup({ tenantSwitchUrl: '/bff/tenant' }));
+    session = TestBed.inject(HttpSession);
+    p = session.load();
+    http.expectOne('/bff/user').flush({ ...twoTenants, tenants: twoTenants.tenants.slice(0, 1) });
+    await p;
+    expect(session.canSwitchTenant()).toBe(false);
+  });
+
+  it('switches tenant with a POST and then reloads the page', async () => {
+    const { http, redirects } = setup({ tenantSwitchUrl: '/bff/tenant' });
+    const session = TestBed.inject(HttpSession);
+    const p = session.load();
+    http.expectOne('/bff/user').flush(twoTenants);
+    await p;
+    expect(session.canSwitchTenant()).toBe(true);
+    // The current tenant and the ones not offered are not sent.
+    expect(await session.switchTenant('north')).toBe(false);
+    expect(await session.switchTenant('west')).toBe(false);
+    http.expectNone('/bff/tenant');
+
+    const done = session.switchTenant('south');
+    const request = http.expectOne('/bff/tenant');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ tenant: 'south' });
+    request.flush(null, { status: 204, statusText: 'No Content' });
+    expect(await done).toBe(true);
+    expect(redirects).toEqual([globalThis.location.href.split('#')[0]]);
+  });
+
+  it('a refused switch leaves the page where it is', async () => {
+    const { http, redirects } = setup({ tenantSwitchUrl: '/bff/tenant' });
+    const session = TestBed.inject(HttpSession);
+    const p = session.load();
+    http.expectOne('/bff/user').flush(twoTenants);
+    await p;
+    const done = session.switchTenant('south');
+    http.expectOne('/bff/tenant').flush({ title: 'Tenant not offered to the user', status: 404 }, { status: 404, statusText: 'Not Found' });
+    expect(await done).toBe(false);
+    expect(redirects).toEqual([]);
+  });
+
   it('logout calls the BFF and then goes to the end-session address of the provider', async () => {
     const { http, redirects } = setup();
     const done = TestBed.inject(HttpSession).logout();

@@ -1,5 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Authorization, DataClient, RuntimeDiagnostics, UserProvider, type DataRequest, type DataRequestOptions } from 'core';
+import type { SessionTenant } from 'services';
 import { DemoBackend } from './demo-backend';
 
 /** Profiles of the demo: the permissions are those the authorization service would give in production. */
@@ -15,12 +16,29 @@ export const DEMO_PROFILES: Record<string, string[]> = {
   ],
 };
 
+/** Tenants of the demo profiles: the administrator works for two offices, so the shell offers the choice. */
+export const DEMO_TENANTS: Record<string, readonly SessionTenant[]> = {
+  operator: [{ id: 'north', label: 'North office' }],
+  manager: [{ id: 'north', label: 'North office' }],
+  administrator: [
+    { id: 'north', label: 'North office' },
+    { id: 'south', label: 'South office' },
+  ],
+};
+
 /** Fake authorization, based on signals: changing profile redraws the screen. */
 @Injectable({ providedIn: 'root' })
 export class DemoSession extends Authorization implements UserProvider {
   readonly username = signal('operator');
   /** False after logging out: no permission until signing in again. */
   readonly loggedIn = signal(true);
+  /** Tenant chosen in the demo, if it is one of the profile's; otherwise the first one. */
+  readonly chosenTenant = signal<string | null>(null);
+
+  tenant(): string {
+    const tenants = DEMO_TENANTS[this.username()] ?? [];
+    return tenants.find((t) => t.id === this.chosenTenant())?.id ?? tenants[0]?.id ?? '';
+  }
 
   logout(): void {
     this.loggedIn.set(false);
@@ -35,7 +53,7 @@ export class DemoSession extends Authorization implements UserProvider {
   }
 
   user(): Record<string, unknown> {
-    return { username: this.username(), roles: [this.username()] };
+    return { username: this.username(), roles: [this.username()], tenant: this.tenant() };
   }
 }
 

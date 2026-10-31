@@ -3,10 +3,11 @@
 //
 //   node tools/conformance-bff.mjs --bff http://localhost:8080 --return http://localhost:4200/
 //        [--cookie "<session cookies of a signed-in browser>"]
-//        [--session-url /bff/user] [--login-url /bff/login] [--logout-url /logout]
+//        [--session-url /bff/user] [--login-url /bff/login] [--logout-url /logout] [--tenant-url /bff/tenant]
 //
 // Without --cookie only the checks that need no session run. With it (copied from a signed-in browser, for example
-// "JSESSIONID=…"), the checks of the user and, last, of the logout run too: that session ends.
+// "JSESSIONID=…"), the checks of the user and, last, of the logout run too: that session ends. The checks of the
+// tenants (optional part of the contract) run only if the user of the session lists them.
 // Exits with code 1 if a check fails.
 import { expect, isProblem, parseArgs, suite } from './conformance-lib.mjs';
 
@@ -16,20 +17,27 @@ const returnTo = args.return ?? 'http://localhost:4200/';
 const sessionUrl = args['session-url'] ?? '/bff/user';
 const loginUrl = args['login-url'] ?? '/bff/login';
 const logoutUrl = args['logout-url'] ?? '/logout';
+const tenantUrl = args['tenant-url'] ?? '/bff/tenant';
 const session = args.cookie ?? null;
 const { check, report } = suite();
 
 /** A call as the browser makes it: cookies by hand, redirects not followed. */
-async function call(method, path, { cookie, headers = {}, accept = 'application/json' } = {}) {
-  const response = await fetch(base + path, { method, redirect: 'manual', headers: { Accept: accept, ...(cookie ? { Cookie: cookie } : {}), ...headers } });
+async function call(method, path, { cookie, headers = {}, accept = 'application/json', body } = {}) {
+  const json = body === undefined ? {} : { 'Content-Type': 'application/json' };
+  const response = await fetch(base + path, {
+    method,
+    redirect: 'manual',
+    headers: { Accept: accept, ...json, ...(cookie ? { Cookie: cookie } : {}), ...headers },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
   const text = await response.text();
-  let json = null;
+  let parsed = null;
   try {
-    json = text ? JSON.parse(text) : null;
+    parsed = text ? JSON.parse(text) : null;
   } catch {
     // body is not JSON
   }
-  return { status: response.status, headers: response.headers, json, text, cookies: response.headers.getSetCookie() };
+  return { status: response.status, headers: response.headers, json: parsed, text, cookies: response.headers.getSetCookie() };
 }
 
 /** The `XSRF-TOKEN` cookie set by a response: its value and whether the page can read it. */
@@ -85,18 +93,59 @@ await check('current user with the session: 200, only the fields of the contract
   expect(r.status === 200, `expected 200, got ${r.status}`);
   const user = r.json;
   expect(user && typeof user === 'object' && !Array.isArray(user), 'the body is not a JSON object');
-  for (const field of ['name', 'username', 'email']) {
+  for (const field of ['name', 'username', 'email', 'currentTenant']) {
     expect(user[field] === undefined || typeof user[field] === 'string', `${field} is not a text`);
   }
   expect(user.roles === undefined || (Array.isArray(user.roles) && user.roles.every((x) => typeof x === 'string')), 'roles is not a list of texts');
   expect(!/token/i.test(Object.keys(user).join(' ')), 'the user carries a field named like a token');
 }, { skip: !session });
 
-await check('logout with the session and the CSRF token: 200 with the address to go to', async () => {
+/** Session cookies plus the CSRF cookie, and the header that carries it back: what the page sends with a write. */
+async function withCsrf() {
   const first = await call('GET', sessionUrl, { cookie: session });
   const token = csrfCookie(first) ?? { value: /XSRF-TOKEN=([^;]+)/.exec(session ?? '')?.[1] ?? '' };
-  const cookie = `${session}; XSRF-TOKEN=${encodeURIComponent(token.value)}`;
-  const r = await call('POST', logoutUrl, { cookie, headers: { 'X-XSRF-TOKEN': token.value } });
+  return { cookie: `${session}; XSRF-TOKEN=${encodeURIComponent(token.value)}`, headers: { 'X-XSRF-TOKEN': token.value }, user: first.json };
+}
+
+const tenantsOf = (user) => (Array.isArray(user?.tenants) ? user.tenants : []);
+const signedIn = session ? await call('GET', sessionUrl, { cookie: session }) : null;
+const tenants = tenantsOf(signedIn?.json);
+const noTenants = !session || tenants.length === 0;
+
+await check('tenants of the user: id and label as text, the current one among them', async () => {
+  expect(tenants.every((t) => typeof t?.id === 'string' && typeof t?.label === 'string'), 'a tenant without id or label as text');
+  const current = signedIn.json.currentTenant;
+  expect(current === undefined || tenants.some((t) => t.id === current), `currentTenant "${current}" is not one of the tenants`);
+}, { skip: noTenants });
+
+await check('tenant switch with a GET: refused', async () => {
+  const r = await call('GET', tenantUrl, { cookie: session });
+  expect(r.status >= 400, `expected a refusal (4xx), got ${r.status}: a link from another site could switch the tenant`);
+}, { skip: noTenants });
+
+await check(`tenant switch without the CSRF token: 403`, async () => {
+  const r = await call('POST', tenantUrl, { cookie: session, body: { tenant: tenants[0]?.id } });
+  expect(r.status === 403, `expected 403, got ${r.status}`);
+}, { skip: noTenants });
+
+await check('tenant switch to a tenant not offered: 404 in Problem format', async () => {
+  const csrf = await withCsrf();
+  const r = await call('POST', tenantUrl, { ...csrf, body: { tenant: 'not-a-tenant-of-this-user' } });
+  expect(r.status === 404, `expected 404, got ${r.status}`);
+  expect(isProblem(r), 'the response is not a Problem (title, status)');
+}, { skip: noTenants });
+
+await check('tenant switch to the current tenant: 204', async () => {
+  const csrf = await withCsrf();
+  const current = csrf.user?.currentTenant ?? tenants[0].id;
+  const r = await call('POST', tenantUrl, { ...csrf, body: { tenant: current } });
+  expect(r.status === 204, `expected 204, got ${r.status}`);
+  const after = await call('GET', sessionUrl, { cookie: session });
+  expect(after.json?.currentTenant === current, 'the session is no longer on the same tenant');
+}, { skip: noTenants });
+
+await check('logout with the session and the CSRF token: 200 with the address to go to', async () => {
+  const r = await call('POST', logoutUrl, await withCsrf());
   expect(r.status === 200, `expected 200, got ${r.status}`);
   expect(typeof r.json?.redirect === 'string' && r.json.redirect.length > 0, 'the body has no "redirect" address');
 }, { skip: !session });

@@ -9,6 +9,11 @@ export interface LowcodeServicesConfig {
   loginUrl?: string;
   /** Logout: POST to the BFF, which also closes the session of the identity provider. */
   logoutUrl?: string;
+  /**
+   * Tenant switch: POST to the BFF with `{ tenant }` (contracts/bff.yaml, optional part). Only when it is set, and the
+   * user has more than one tenant, the shell offers the choice.
+   */
+  tenantSwitchUrl?: string;
   /** Base of the authorization contract. */
   authzBase?: string;
   /** Base of the telemetry contract. */
@@ -28,6 +33,7 @@ export interface ResolvedServicesConfig {
   sessionUrl: string;
   loginUrl: string;
   logoutUrl: string;
+  tenantSwitchUrl: string | null;
   authzBase: string;
   telemetryBase: string;
   telemetry: boolean;
@@ -44,6 +50,7 @@ export function resolveConfig(config: LowcodeServicesConfig): ResolvedServicesCo
     sessionUrl: config.sessionUrl ?? '/bff/user',
     loginUrl: config.loginUrl ?? '/bff/login',
     logoutUrl: config.logoutUrl ?? '/logout',
+    tenantSwitchUrl: config.tenantSwitchUrl ?? null,
     authzBase: config.authzBase ?? '/authz',
     telemetryBase: config.telemetryBase ?? '/telemetry/v1',
     telemetry: config.telemetry ?? true,

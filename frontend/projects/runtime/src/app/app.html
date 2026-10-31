@@ -116,7 +116,7 @@
             </ul>
           </nz-dropdown-menu>
         }
-        <lc-user-menu [name]="session.username()" [items]="userItems()" (logout)="session.logout()" />
+        <lc-user-menu [name]="session.username()" [items]="userItems()" [choices]="tenantChoices()" (choice)="switchTenant($event)" (logout)="session.logout()" />
       </nz-header>
       <nz-content>
         <main>

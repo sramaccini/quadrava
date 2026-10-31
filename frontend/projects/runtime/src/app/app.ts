@@ -2,14 +2,14 @@ import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, injec
 import { FormsModule } from '@angular/forms';
 import { RouterOutlet } from '@angular/router';
 import { NgTemplateOutlet } from '@angular/common';
-import { AppBrandComponent, IconComponent, QuadravaWordmarkComponent, SidebarComponent, UserMenuComponent, type UserMenuItem } from 'components';
+import { AppBrandComponent, IconComponent, QuadravaWordmarkComponent, SidebarComponent, UserMenuComponent, type UserMenuChoices, type UserMenuItem } from 'components';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzDrawerModule } from 'ng-zorro-antd/drawer';
 import { NzDropdownModule } from 'ng-zorro-antd/dropdown';
 import { NzMenuModule } from 'ng-zorro-antd/menu';
 import { NzLayoutModule } from 'ng-zorro-antd/layout';
 import { NzSelectModule } from 'ng-zorro-antd/select';
-import { DefinitionSource, I18n, ThemeService, loadCatalogs, type VisibleLeaf } from 'core';
+import { DefinitionSource, I18n, Notifier, ThemeService, loadCatalogs, type VisibleLeaf } from 'core';
 import { NavigationService } from './navigation.service';
 import { APPLICATION_SETTINGS, type ApplicationSettings } from './runtime-config';
 import { ShellSession } from './shell-session';
@@ -88,6 +88,12 @@ export class App {
   protected readonly drawerOpen = signal(false);
   /** User menu items before the logout, which the component adds by itself as the last one. */
   protected readonly userItems = computed<UserMenuItem[]>(() => [{ id: 'permessi', label: this.i18n.t('app.permissions', { n: this.session.permissionCount() }), icon: 'safety', disabled: true }]);
+  /** Tenants of the user, first in the user menu: only when there are at least two to choose from. */
+  protected readonly tenantChoices = computed<UserMenuChoices | undefined>(() => {
+    const tenants = this.session.tenants();
+    return tenants.length > 1 ? { label: this.i18n.t('lc.tenant'), items: tenants, selected: this.session.currentTenant() ?? undefined } : undefined;
+  });
+  private readonly notifier = inject(Notifier);
   /** Logo and name of the application at the top left, from the theme (null: the Quadrava logo). */
   protected readonly brand = computed(() => this.themeService.current()?.brand ?? null);
   /** Style of the menu: the theme says it (light or dark sidebar). */
@@ -141,5 +147,10 @@ export class App {
   protected open(area: string, leaf: VisibleLeaf): void {
     this.drawerOpen.set(false);
     this.navigation.open(area, leaf.screen, leaf.params);
+  }
+
+  /** Switches tenant: on success the page starts again (with the BFF); if refused, it says so and stays. */
+  protected async switchTenant(id: string): Promise<void> {
+    if (!(await this.session.switchTenant(id))) this.notifier.toast(this.i18n.t('lc.tenantSwitchFailed'), 'error');
   }
 }

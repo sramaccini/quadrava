@@ -1,10 +1,16 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { UserProvider } from 'core';
 import { firstValueFrom } from 'rxjs';
 import { LOWCODE_REDIRECT, LOWCODE_SERVICES_CONFIG } from './config';
 
 export type SessionState = 'unknown' | 'authenticated' | 'expired';
+
+/** A tenant the user may work on (contracts/bff.yaml, Tenant). Quadrava does not interpret it: it shows the label. */
+export interface SessionTenant {
+  id: string;
+  label: string;
+}
 
 /** The user of the session (contracts/bff.yaml, User). */
 interface BffUser {
@@ -12,6 +18,8 @@ interface BffUser {
   username?: string;
   email?: string;
   roles?: string[];
+  tenants?: unknown;
+  currentTenant?: unknown;
 }
 
 /** Current user, read from the BFF. Tokens stay in the BFF: the browser has only the session cookie. */
@@ -23,6 +31,18 @@ export class HttpSession extends UserProvider {
   private readonly info = signal<BffUser | null>(null);
 
   readonly state = signal<SessionState>('unknown');
+  /** Tenants offered to the user: only the well-formed ones; none when the BFF has no tenants. */
+  readonly tenants = computed<readonly SessionTenant[]>(() => {
+    const list = this.info()?.tenants;
+    return Array.isArray(list) ? list.filter((t): t is SessionTenant => typeof t?.id === 'string' && typeof t?.label === 'string').map((t) => ({ id: t.id, label: t.label })) : [];
+  });
+  /** The tenant of the session, if it is one of those offered. */
+  readonly currentTenant = computed(() => {
+    const id = this.info()?.currentTenant;
+    return typeof id === 'string' && this.tenants().some((t) => t.id === id) ? id : null;
+  });
+  /** The choice is offered only when the switch address is configured and there is more than one tenant. */
+  readonly canSwitchTenant = computed(() => this.config.tenantSwitchUrl !== null && this.tenants().length > 1);
 
   async load(): Promise<void> {
     try {
@@ -36,7 +56,7 @@ export class HttpSession extends UserProvider {
 
   user(): Record<string, unknown> {
     const u = this.info();
-    return u ? { name: u.name ?? '', username: u.username ?? '', email: u.email ?? '', roles: u.roles ?? [] } : {};
+    return u ? { name: u.name ?? '', username: u.username ?? '', email: u.email ?? '', roles: u.roles ?? [], tenant: this.currentTenant() ?? '' } : {};
   }
 
   /** Session missing or expired: the user is cleared and the flow restarts from the login, which then returns to this page. */
@@ -45,6 +65,24 @@ export class HttpSession extends UserProvider {
     this.info.set(null);
     this.state.set('expired');
     this.redirect(`${this.config.loginUrl}?return=${encodeURIComponent(globalThis.location?.href ?? '/')}`);
+  }
+
+  /**
+   * Moves the session to another tenant: a POST to the BFF (never a GET, so a link from another site cannot do it), then
+   * the page starts again, because permissions, navigation and screens depend on the tenant. False if the switch is not
+   * offered, the tenant is not one of those listed, or the BFF refuses it.
+   */
+  async switchTenant(id: string): Promise<boolean> {
+    const url = this.config.tenantSwitchUrl;
+    if (!this.canSwitchTenant() || url === null || id === this.currentTenant() || !this.tenants().some((t) => t.id === id)) return false;
+    try {
+      await firstValueFrom(this.http.post(url, { tenant: id }));
+    } catch {
+      // Refused, or session expired (the interceptor then goes to the login).
+      return false;
+    }
+    this.redirect((globalThis.location?.href ?? '/').split('#')[0]);
+    return true;
   }
 
   /**

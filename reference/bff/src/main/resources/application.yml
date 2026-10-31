@@ -45,6 +45,15 @@ lowcode:
     home: ${LOWCODE_HOME:http://localhost:4200/}
     # Signing out also closes the session in Keycloak.
     end-session-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/lowcode}/protocol/openid-connect/logout
+    # Optional tenants (contracts/bff.yaml): the user switches with POST /bff/tenant, the services receive X-Tenant.
+    # Without users a tenant is offered to everybody. The runtime shows the choice only with services.tenantSwitchUrl.
+    # tenants:
+    #   - id: north
+    #     label: North office
+    #     users: [administrator]
+    #   - id: south
+    #     label: South office
+    #     users: [administrator, operator]
 
 management:
   endpoints:

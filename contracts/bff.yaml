@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Quadrava - BFF contract
-  version: 0.1.0
+  version: 0.2.0
   description: >
     What the Quadrava runtime and Studio expect from the Backend for Frontend (BFF) that serves them. The BFF does the
     OpenID Connect login, keeps the tokens on the server and gives the browser only a session cookie; it forwards the
@@ -27,6 +27,13 @@ info:
       reloads the permissions.
 
     - **Errors** are in Problem format (problem.yaml, RFC 9457).
+
+
+    **Optional part: tenants.** A BFF whose users work for several tenants (customers, companies, offices: Quadrava
+    does not interpret what a tenant is) may list them in the user (`tenants`, `currentTenant`) and offer
+    `POST /bff/tenant` to switch. The login opens the session on a tenant chosen by the BFF (for example the last one
+    used): it never asks. The runtime shows the choice only when its `tenantSwitchUrl` is configured and the list has
+    more than one entry; a BFF without tenants leaves both fields out and needs no endpoint.
   license:
     name: Mozilla Public License 2.0
     identifier: MPL-2.0
@@ -77,6 +84,34 @@ paths:
               description: Where the browser goes.
               schema: { type: string }
         '400': { $ref: '#/components/responses/BadRequest' }
+  /bff/tenant:
+    post:
+      tags: [session]
+      operationId: switchTenant
+      summary: Switches the tenant of the session (optional)
+      description: >
+        Moves the session to another of the tenants listed in the user. It is a POST with the CSRF token, never a GET:
+        a link from another site must not be able to switch it. After the answer the runtime reloads the page, so
+        permissions, navigation and screens are read again for the new tenant. The path is the default; the runtime
+        uses the one configured as `tenantSwitchUrl`.
+      parameters:
+        - name: X-XSRF-TOKEN
+          in: header
+          required: true
+          description: The value of the `XSRF-TOKEN` cookie.
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TenantSelection' }
+      responses:
+        '204':
+          description: The session is now on the chosen tenant.
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
   /logout:
     post:
       tags: [session]
@@ -117,6 +152,11 @@ components:
       description: Session missing or expired.
     Forbidden:
       description: CSRF token missing or wrong.
+    NotFound:
+      description: The tenant is not one of those offered to the user.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
   schemas:
     User:
       type: object
@@ -137,6 +177,31 @@ components:
           type: array
           description: Roles of the user, for display and expressions only (permissions come from authz.yaml).
           items: { type: string }
+        tenants:
+          type: array
+          description: Tenants the user may work on (optional). Absent or with a single entry, the runtime shows no choice.
+          items: { $ref: '#/components/schemas/Tenant' }
+        currentTenant:
+          type: string
+          description: Identifier of the tenant of the session, one of `tenants`; available to the expressions as `user.tenant`.
+    Tenant:
+      type: object
+      required: [id, label]
+      properties:
+        id:
+          type: string
+          description: Identifier, sent back when switching.
+        label:
+          type: string
+          description: Name shown to the user, as text.
+    TenantSelection:
+      type: object
+      required: [tenant]
+      additionalProperties: false
+      properties:
+        tenant:
+          type: string
+          description: Identifier of the tenant to switch to, one of `tenants`.
     LogoutResult:
       type: object
       required: [redirect]

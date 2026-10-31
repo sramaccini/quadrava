@@ -16,7 +16,7 @@ export interface RuntimeConfig {
    * Ports of the runtime: `demo` (fake profiles, data and reports in the browser) or `bff` (session, permissions,
    * data and telemetry through the BFF, `services` library). When missing: demo.
    */
-  services?: { source: 'demo' } | { source: 'bff'; appId: string };
+  services?: { source: 'demo' } | { source: 'bff'; appId: string; tenantSwitchUrl?: string };
   /**
    * Origins of Quadrava Studio allowed to open this runtime with their project («Run project», ADR-16), for example
    * `http://localhost:4201`. Without them a runtime ignores `?studio=` (fail-closed).
@@ -106,6 +106,12 @@ export async function loadRuntimeConfig(url = 'runtime-config.json'): Promise<Ru
     if (services && services['source'] === 'bff' && typeof services['appId'] !== 'string') {
       console.warn('[runtime-config] bff services without appId: using the demo');
       return DEFAULT_RUNTIME_CONFIG;
+    }
+    // The browser talks only to the BFF: the switch address is a path of the same origin.
+    const tenantSwitchUrl = services?.['tenantSwitchUrl'];
+    if (tenantSwitchUrl !== undefined && !(typeof tenantSwitchUrl === 'string' && tenantSwitchUrl.startsWith('/') && !tenantSwitchUrl.startsWith('//'))) {
+      console.warn('[runtime-config] tenantSwitchUrl must be a path of the same origin: tenant choice disabled');
+      delete services!['tenantSwitchUrl'];
     }
     const definitions = config?.definitions as Record<string, unknown> | undefined;
     if (definitions?.['source'] === 'registry') {
