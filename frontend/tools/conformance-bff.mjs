@@ -52,8 +52,9 @@ await check('current user without a session: 401', async () => {
   expect(r.status === 401, `expected 401, got ${r.status}`);
 });
 
+// As a new visitor: the cookies of a session already hold the token, so the BFF rightly does not send it again.
 await check('the CSRF token arrives in a cookie the page can read', async () => {
-  const r = await call('GET', sessionUrl, { cookie: session ?? undefined });
+  const r = await call('GET', sessionUrl);
   const token = csrfCookie(r);
   expect(token, 'no XSRF-TOKEN cookie in the response');
   expect(!token.httpOnly, 'the XSRF-TOKEN cookie is HttpOnly: the page cannot read it');

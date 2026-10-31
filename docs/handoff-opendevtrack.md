@@ -35,9 +35,10 @@ session of **OpenDevTrack**. Read [HANDOFF.md](../HANDOFF.md) first: its working
    `POST /bff/tenant` with CSRF (ADR-18).
 7. **Event streams**, only if boards use `live`: `text/event-stream` answers passed on unbuffered and without a time
    limit, with the user's token (ADR-19).
-8. **Behind the runtime image** with `QUADRAVA_BFF_URL`: honour `X-Forwarded-Host` and `X-Forwarded-Proto` (for Spring
-   Boot `server.forward-headers-strategy=framework`), so that the login callback and the `return` check use the public
-   address.
+8. **Behind the runtime image** with `QUADRAVA_BFF_URL`: build the login callback from the forwarded `Host` (the
+   reference BFF does) and, behind TLS, honour `X-Forwarded-Proto` (for Spring Boot
+   `server.forward-headers-strategy=framework`); accept the address of the image as a return page and as a redirect URI
+   of its identity provider client.
 
 ## 1. Context in three lines
 

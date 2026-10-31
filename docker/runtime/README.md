@@ -53,10 +53,11 @@ The browser talks only to the BFF, on the origin of the page (`contracts/bff.yam
   BFF; leave `QUADRAVA_BFF_URL` unset.
 - **This image as the front**: with `QUADRAVA_BFF_URL`, nginx forwards `/bff/`, `/logout`, `/oauth2/`,
   `/login/oauth2/`, `/api/`, `/registry/`, `/authz/` and `/telemetry/` to the BFF, without buffering (event streams,
-  ADR-19), with `Host` and the `X-Forwarded-*` headers so that the BFF builds its own addresses (for Spring Boot:
-  `server.forward-headers-strategy=framework`). Behind a TLS terminator, the terminator must set
-  `X-Forwarded-Proto` itself. nginx resolves the host of the BFF when it starts: it must already be known then (in
-  Docker Compose, `depends_on` the BFF).
+  ADR-19), with `Host` and the `X-Forwarded-*` headers so that the BFF builds its own addresses (the login callback on the
+  address of this image). Behind a TLS terminator, the terminator must set `X-Forwarded-Proto` itself and the BFF must
+  honour it (for Spring Boot: `server.forward-headers-strategy=framework`). The address of this image must be among the
+  redirect URIs of the identity provider and the return pages the BFF accepts. nginx resolves the host of the BFF
+  when it starts: it must already be known then (in Docker Compose, `depends_on` the BFF).
 
 `runtime-config.json` and `index.html` are served with `Cache-Control: no-cache`; the bundles, which have the hash of
 their content in the name, are cached for a year.

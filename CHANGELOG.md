@@ -11,6 +11,11 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Fixed
+
+- `npm run conformance:bff` with `--cookie`: the CSRF cookie check asks as a new visitor, since a signed-in session
+  already holds the token and the BFF rightly does not send it again.
+
 ## [0.1.0] - 2026-10-31
 
 The first versioned release.
