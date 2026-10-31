@@ -11,18 +11,6 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
-### Added
-
-- The demo back end of the stack (`tools/demo-api.mjs`) serves the event stream `/api/streams/tasks`: behind the BFF
-  the live boards of the showcase follow the changes of other users.
-- The development realm and the reference BFF accept the runtime image on `http://localhost:8090` (login, return page,
-  logout), for trying the image against the local stack. Recreate Keycloak to import the realm again.
-
-### Fixed
-
-- `npm run conformance:bff` with `--cookie`: the CSRF cookie check asks as a new visitor, since a signed-in session
-  already holds the token and the BFF rightly does not send it again.
-
 ## [0.1.0] - 2026-10-31
 
 The first versioned release.
@@ -46,7 +34,12 @@ The first versioned release.
 - **Reference implementation** (`reference/`, not for production): BFF, registry, authorization and telemetry services
   in Spring Boot, with conformance kits for the contracts.
 - **Distribution** (ADR-20): semantic versions, this changelog, a release workflow on GitHub Actions and a container
-  image of the runtime (`ghcr.io/sramaccini/quadrava-runtime`) configured when it starts.
+  image of the runtime (`ghcr.io/sramaccini/quadrava-runtime`) configured when it starts; the development realm and
+  the reference BFF accept the image on `http://localhost:8090` for trying it against the local stack.
+- **Quadrava CLI** (`@sramaccini/quadrava-cli` on GitHub Packages): `quadrava validate` checks a project as the
+  runtime and Studio read it, CEL expressions included; `quadrava publish` publishes it in a registry.
+- **Demo back end of the stack**: the event stream `/api/streams/tasks`, so that behind the BFF the live boards of the
+  showcase follow the changes of other users.
 
 [Unreleased]: https://github.com/sramaccini/quadrava/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/sramaccini/quadrava/releases/tag/v0.1.0

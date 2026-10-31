@@ -27,7 +27,7 @@ From `frontend/`:
 - `npm run schema:sync` — regenerates the `*.schema.ts` files and the precompiled validators (`validators.generated.ts`) from the JSON schemas; `schema:docs` regenerates `docs/schema-reference.md`
 - `npm run conformance:registry` / `conformance:authz` / `conformance:telemetry` / `conformance:bff` — conformance kits of the services and of the BFF against the contracts (see README)
 - `npm run e2e` — Playwright (standalone fields, border layout, axe accessibility on the whole showcase, Studio windows; it starts the runtime on 4300 and the editor on 4301)
-- `npm run validate:examples` — validates the examples (schema, translation keys, patterns of the fields)
+- `npm run validate:examples` — checks the examples with the Quadrava CLI (schema, identifiers, references, patterns, CEL expressions, translation keys); `npm run cli:test` — tests of the CLI
 - `npm run demo:prepare` / `npm run start:runtime` — copies `examples/` into `projects/runtime/public/examples` and starts the demo (port 4200). The dev server does **not** reload `dist`: restart it after changing libraries or examples.
 - `npm run start:editor` — Quadrava Studio (visual editor) on port 4201 (it also prepares the examples, with `examples/index.json`).
 - Local registry without Keycloak: `java -jar reference/registry/target/lowcode-registry-0.1.0-SNAPSHOT.jar --spring.profiles.active=no-auth`, then `npm run publish:examples`, then `npm run start:runtime:registry` / `start:editor:registry`.
@@ -73,7 +73,7 @@ Navigation windows: structure of areas/groups/items with «+ Area / Group / Item
 
 **Work for OpenDevTrack (30–31 October 2026).** `contracts/bff.yaml` (0.3.0) describes what the runtime expects from a BFF, checked by `npm run conformance:bff`; optional tenants (ADR-18); `kanban` with order, swimlanes, WIP limits, rich cards and columns from data; `suggest` on text fields (the `word` variable); the `comments` component with mentions; `live` data sources over Server-Sent Events and the `LiveUpdates` port (ADR-19). What ms-authz must adapt is listed in `docs/handoff-opendevtrack.md` § 0.
 
-**Versions and releases (31 October 2026, ADR-20).** One semantic version (0.1.0) for workspace and libraries, `CHANGELOG.md` (every visible change adds a line to `[Unreleased]`), `npm run release:check` in CI, `.github/workflows/release.yml` on a `v*` tag, and the runtime image `ghcr.io/sramaccini/quadrava-runtime` (`docker/runtime/`: nginx, configuration written at start-up from `QUADRAVA_*` variables or a mounted `runtime-config.json`, optional forwarding of the BFF paths). CI builds and starts the image (job `image`). How to release: DEVELOPMENT-GUIDE § 3.
+**Versions and releases (31 October 2026, ADR-20).** One semantic version (0.1.0) for workspace and libraries, `CHANGELOG.md` (every visible change adds a line to `[Unreleased]`), `npm run release:check` in CI, `.github/workflows/release.yml` on a `v*` tag, and the runtime image `ghcr.io/sramaccini/quadrava-runtime` (`docker/runtime/`: nginx, configuration written at start-up from `QUADRAVA_*` variables or a mounted `runtime-config.json`, optional forwarding of the BFF paths). CI builds and starts the image (job `image`). The Quadrava CLI (`frontend/projects/cli`, `@sramaccini/quadrava-cli` on GitHub Packages with every release; npmjs from 1.0.0): `quadrava validate` and `quadrava publish` for the CI of a project; `validate:examples` and `publish:examples` use it. How to release: DEVELOPMENT-GUIDE § 3.
 
 ## 6. Known traps (NG-ZORRO / Angular / tools)
 
@@ -113,7 +113,7 @@ The main ones are in the DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In short:
 - Desktop app: no registry there, by decision (ADR-17), not even with `studio-config.json`; the packages are not signed (SmartScreen, Gatekeeper; on PCs with the attack surface reduction rules of Defender the executable may be blocked until signed or excluded); developer tools on.
 - The runtime published as a static site uses the in-browser demo back end: it answers the demo screens and `samples/medical-staff` (`/api/medical-staff`); any other project with its own `/api` opens without data there.
 - Editor: on the preview components can be added, moved and resized (span, grow); the border's sides can be resized only in the runtime; comparison is between a version and the open document, not between two versions. Translations written in a screen apply to the previews of all the windows (one editor catalogue).
-- `validate:examples` does not check CEL expressions (the `i18n-examples.spec.ts` test does).
+- Quadrava CLI: built with esbuild, which does not check types; type checking it needs `@types/node`, not in the workspace (a new dependency to propose). The pattern check repeats the rule of `compilePattern`, whose file in `core` imports Angular.
 - BFF kit: 13/13 against the reference BFF with a signed-in session and two tenants configured (31 October 2026); it does not check event streams. Per-event flushing of the reference BFF was measured by hand with a temporary stream (one event a second arrives one a second, directly, through the BFF and through the image): the MockMvc test alone cannot show it.
 - Stack mode: `tools/demo-api.mjs` serves `/api/streams/tasks` and announces every change of the tasks, so behind the BFF a card moved by one user appears on the boards of the others (checked with two users through the image, 31 October 2026).
 - Live data sources: one connection per stream address; over HTTP/1.1 browsers allow six per host (ADR-19).
@@ -130,7 +130,7 @@ The main ones are in the DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In short:
 4. Conformance kits in CI against the reference services (today they are run by hand, for example after `npm run stack`).
 5. Editor: comparison between two registry versions; border side widths from the preview.
 6. e2e in Firefox and WebKit.
-7. CEL in `validate:examples` and, eventually, in the registry.
+7. CEL checks in the registry too (the CLI and `validate:examples` already check them).
 8. Bring the project documents (architecture § 9, functional specification, guidelines) up to date with the October status.
 9. Desktop app: switch the developer tools off once the app is confirmed stable; sign the packages (Azure Trusted Signing or a code-signing certificate for Windows, an Apple Developer account for macOS) as secrets of the Desktop workflow. The registry from the app only if it becomes necessary (a session of its own with the BFF, ADR-17).
 10. Validation, what is left: remote rules in filters; field errors of the services deeper than one level of rows; a check of passwords against leaked lists (a service with k-anonymity) if a customer needs it.

@@ -9,7 +9,7 @@
     "start:editor": "npm run demo:prepare && ng serve editor --port 4201",
     "build": "ng build",
     "test": "ng test",
-    "validate:examples": "node tools/validate-examples.mjs",
+    "validate:examples": "npm run cli:build && node dist/cli/bin/quadrava.mjs validate ../examples",
     "schema:sync": "node tools/sync-schema.mjs",
     "schema:check": "node tools/sync-schema.mjs --check",
     "build:libs": "ng build schema && ng build expressions && ng build core && ng build components && ng build services",
@@ -34,7 +34,9 @@
     "conformance:authz": "node tools/conformance-authz.mjs",
     "conformance:telemetry": "node tools/conformance-telemetry.mjs",
     "conformance:bff": "node tools/conformance-bff.mjs",
-    "release:check": "node tools/release.mjs"
+    "release:check": "node tools/release.mjs",
+    "cli:build": "node projects/cli/build.mjs",
+    "cli:test": "npm run cli:build && node --test \"projects/cli/src/*.spec.mjs\""
   },
   "private": true,
   "engines": {

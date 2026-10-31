@@ -215,7 +215,7 @@ The JSON document is untrusted input. The rules below are checked by the pipelin
 
 The example applications in `examples` are the common thread: every test level uses them, so a change that breaks them shows up immediately.
 
-**Useful commands.** From the `frontend` folder: `npm run validate:examples` validates screens, themes and `navigation.json`; `npm test` runs all the tests; the demo application starts with a single command and uses simulated data with three profiles (operator, manager, administrator) to try out permissions and menus. For every change to permissions or the menu, add a test that covers both the user with the permission and the one without.
+**Useful commands.** From the `frontend` folder: `npm run validate:examples` checks the example project with the Quadrava CLI (schemas, references, CEL expressions, translations); `npm test` runs all the tests; the demo application starts with a single command and uses simulated data with three profiles (operator, manager, administrator) to try out permissions and menus. For every change to permissions or the menu, add a test that covers both the user with the permission and the one without.
 
 **Component and showcase tests.** Every component has three levels of tests: the schema (`schema/new-components.spec.ts`), the component mounted in a screen with fake ports (`renderScreen` in `components/screen-testing.ts`) and the demo showcase (`openShowcase` in `runtime/showcase-testing.ts`), which also checks that technical diagnostics stay empty. What jsdom cannot see (layout, real focus, colours, timing) is checked in the browser on the demo before every commit; data-table performance has tests with 20,000 and 50,000 rows.
 

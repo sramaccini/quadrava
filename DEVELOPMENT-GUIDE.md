@@ -57,7 +57,8 @@ editor  ──► components ──► core   (the preview renders screens with 
 | `npm run notices` / `notices:check` | Regenerate / verify `THIRD-PARTY-NOTICES.md` (the packages shipped in the bundles, with their licences); run it after changing the dependencies. The file is copied into the runtime and editor builds |
 | `npm run conformance:registry` / `conformance:authz` / `conformance:telemetry` | Conformance kits: check a service over HTTP against its contract (`--registry`, `--authz`, `--telemetry` for the address; `--user`/`--password` or `--token`; `--reviewer-user` for the registry, `--other-user` for authorization). Shared helpers in `tools/conformance-lib.mjs` |
 | `npm run conformance:bff` | Conformance kit of a BFF against `contracts/bff.yaml` (`--bff` for the address, `--return` for a page of the applications). Without a session it checks the refusals, the CSRF cookie and the login; with `--cookie "<session cookies of a signed-in browser>"` also the user, the tenant switch when the user lists tenants (ADR-18) and, last, the logout (that session ends) |
-| `npm run validate:examples` | Validates every JSON in `examples/` against the schemas |
+| `npm run validate:examples` | Checks the example project with the Quadrava CLI (`quadrava validate ../examples`): schemas, identifiers, data source references, patterns, CEL expressions, themes, languages and catalogues |
+| `npm run cli:build` / `cli:test` | Builds the Quadrava CLI (`projects/cli`, bundled with esbuild) into `dist/cli`, ready for `npm publish` / builds it and runs its tests (`node --test`, the built command on copies of the examples and a fake registry) |
 | `npm run release:check` | Checks that the workspace, its lock file and every library carry one semantic version and that `CHANGELOG.md` has its section (ADR-20); `node tools/release.mjs --tag v1.2.3 --notes <file>` also checks a tag and writes the notes of the release |
 | `npx ng build runtime` | Production build (budgets: warning 2.5 MB, error 4 MB initial) |
 | `npm run desktop:build` | Desktop app of Studio for the system you are on (ADR-17): builds the libraries, the examples and the web build of Studio, then `tauri build` in `desktop/`; installers in `desktop/src-tauri/target/release/bundle/` |
@@ -93,9 +94,9 @@ Quadrava has one semantic version for the workspace and the libraries, a changel
 
 1. **While working**: every change visible to users or to applications adds a line under `## [Unreleased]` in `CHANGELOG.md` (`Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Security`), in the same commit. Before 1.0.0 a minor version may break compatibility: say so, with what to do.
 2. **The release commit**: the new version in `frontend/package.json` and in `frontend/projects/*/package.json`, then `npm install` (for the lock file); `[Unreleased]` becomes `## [x.y.z] - YYYY-MM-DD` with a new empty `[Unreleased]` above it, and the links at the bottom. `npm run release:check` must pass. Commit: `chore(release): x.y.z`.
-3. **The tag**: `git tag -a vx.y.z -m "Quadrava x.y.z"` and `git push origin vx.y.z`. The *Release* workflow runs the checks of CI, compares the tag with the versions and the changelog, publishes `ghcr.io/<owner>/quadrava-runtime` (`x.y.z`, `x.y` and `latest`; only `x.y.z` for a pre-release such as `x.y.z-rc.1`) and creates the GitHub release with the notes of the changelog section.
+3. **The tag**: `git tag -a vx.y.z -m "Quadrava x.y.z"` and `git push origin vx.y.z`. The *Release* workflow runs the checks of CI, compares the tag with the versions and the changelog, publishes `ghcr.io/<owner>/quadrava-runtime` (`x.y.z`, `x.y` and `latest`; only `x.y.z` for a pre-release such as `x.y.z-rc.1`), publishes the CLI `@sramaccini/quadrava-cli` on GitHub Packages (a pre-release under the `next` tag) and creates the GitHub release with the notes of the changelog section.
 
-The first time, the package on GitHub Container Registry is private: make it public in its settings if the image is meant for everyone. The image and its variables: [docker/runtime/README.md](docker/runtime/README.md).
+The first time, the packages on GitHub (the image and the CLI) are private: make them public in their settings if they are meant for everyone. The CLI and how a project uses it in its CI: [frontend/projects/cli/README.md](frontend/projects/cli/README.md). The image and its variables: [docker/runtime/README.md](docker/runtime/README.md).
 
 ## 4. Adding or changing a component
 
@@ -252,7 +253,7 @@ Real focus handling and the dark theme are not covered yet (the application shel
 * The Playwright suite runs in Chromium only.
 * jsdom has no `document.execCommand`: the rich text toolbar is tested end to end (`e2e/showcase-input.spec.ts`); unit tests cover the Markdown ↔ DOM conversions and the value flow.
 * Inside a CEL single-quoted string a real newline is a syntax error: write `\n` in `t()` fallbacks (in screen JSON, `\\n`).
-* `validate:examples` checks translation keys but not CEL expressions (the runtime test `i18n-examples.spec.ts` does).
+* `validate:examples` checks translation keys and CEL expressions (with `checkScreenExpressions` of `core`, as Studio does); the runtime test `i18n-examples.spec.ts` also checks that no text of the examples is left untranslated.
 * Component limits that remain (no nested repeaters, no chart zoom, no row selection in the server data table) are listed in the component catalogue, § 3.
 * NG-ZORRO 22's `nz-input` has its own `readonly` input and writes the attribute from it: bind `[readonly]`, never `[readOnly]` (the property binding is overwritten and the field stays editable).
 * Single fields are drawn by `lc-field-control` (`components`), shared by `form`, `input` and `filterBar` (`variant="filter"`: "all" placeholder and choice, switched-off checkboxes mean no filter): a new field type goes there once.

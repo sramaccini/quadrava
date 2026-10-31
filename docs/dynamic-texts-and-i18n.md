@@ -160,7 +160,7 @@ The editor has not been started yet, so this is the right moment to make the cho
 
 - **Text field with choice**: every label is written as free text or picked as a key from the catalogue; if the key does not exist, the editor offers to create it with the text already typed.
 - **Preview in several languages**: a language selector in the editor shows the screen in the chosen language and highlights in yellow the texts without a translation.
-- **Check before publishing**: a list of the keys used in the screens but missing from a language, computable with the same script that validates the examples today (`validate:examples`).
+- **Check before publishing**: a list of the keys used in the screens but missing from a language, reported by `quadrava validate` (the Quadrava CLI, which `validate:examples` uses too).
 
 For expressions (A2) the editor can add a small assistant: the author just picks "currency" or "date" from a list and the editor writes `fmt.currency(…)`; those who do not write expressions never meet CEL.
 

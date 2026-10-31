@@ -38,12 +38,24 @@ package.json files: 0.2.0                                        │ the checks 
   version has a pre-release part). CI builds and starts the image on every push, so a broken image is found before a
   tag.
 
+- **A command line for projects** (`frontend/projects/cli`): `quadrava validate` checks a project folder with the
+  checks of the runtime and Studio (schemas, identifiers, references, patterns, CEL expressions, themes, languages,
+  catalogues), `quadrava publish` saves and publishes it in a registry, with the token from an environment variable.
+  One bundled file without dependencies, built from the sources of the libraries, so it checks exactly the schemas
+  of its version. Published with the release on **GitHub Packages** as `@sramaccini/quadrava-cli` (the scope of
+  GitHub Packages is the owner of the repository); on npmjs, under `@quadrava`, from 1.0.0. The examples of the
+  repository are validated and published with it too (`validate:examples`, `publish:examples`).
+
 ## Alternatives considered
 
-- **npm packages `@quadrava/*`.** Useful to an application that builds its own Angular front end with the libraries,
-  but it means renaming the libraries (today `schema`, `core`, …, imported by those names everywhere), publishing
-  partial Ivy builds and keeping their public API stable: a larger commitment than needed for an application that only
-  runs screens. Left for later; the single version already fits it.
+- **The Angular libraries as npm packages `@quadrava/*`.** Useful to an application that builds its own Angular
+  front end with the libraries (its own components or shell), but it means renaming the libraries (today `schema`,
+  `core`, …, imported by those names everywhere), publishing partial Ivy builds and keeping their public API stable:
+  a larger commitment than needed for an application that only runs screens. Left for the first consumer that needs
+  them; the single version already fits it.
+- **The CLI on npmjs now.** Anonymous installation, but it needs an organisation on npmjs and a token among the
+  secrets; GitHub Packages needs a token to read even public packages, which a CI on GitHub already has. Until 1.0.0
+  the consumers are few and on GitHub.
 - **Git tags only.** A fixed point, but the consumer still builds Angular.
 - **A Node server in the image** (to read the configuration at each request). nginx with a start-up script is smaller
   and enough: the configuration changes with the deployment, not while running.
@@ -59,3 +71,5 @@ package.json files: 0.2.0                                        │ the checks 
 - The image is the demo when unconfigured: it must never be exposed that way as if it were an application.
 - nginx resolves the host of the BFF when it starts; a BFF whose name is not known yet at that moment stops the container.
 - Studio has no image yet: it is published as static files (DEVELOPMENT-GUIDE) and as the desktop app (ADR-17).
+- A project checks itself in its own CI with the CLI of the version of Quadrava it runs on, before reaching the
+  registry; installing the CLI from GitHub Packages needs a token with `read:packages`.

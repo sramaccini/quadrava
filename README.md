@@ -228,7 +228,7 @@ Quadrava's own strings (`lc.*`) ship in English (the default language) and Itali
 
 Values that come from the service (statuses, types) keep their original value and are translated only for display: a column takes `"valueKey": "values.status"` (the text shown is `t('values.status.<value>')`, with the value itself as fallback; badge colours stay bound to the original value) and a select field takes `"optionKey": "values.type"`.
 
-The demo remembers the chosen language and starts from the browser language when it is supported, otherwise from English. `validate:examples` checks that every language has the same keys and that every key used with `t()` exists, and a runtime test checks that no text in the example screens is left untranslated.
+The demo remembers the chosen language and starts from the browser language when it is supported, otherwise from English. `validate:examples` (the Quadrava CLI) checks that every language has the same keys and that every key used with `t()` exists, and a runtime test checks that no text in the example screens is left untranslated.
 
 ## Repository layout
 
@@ -401,6 +401,12 @@ docker run -p 8080:8080 -e QUADRAVA_REGISTRY_APP=invoicing -e QUADRAVA_NAVIGATIO
 ```
 
 All the variables, the mounted `runtime-config.json` and the ways to keep one origin with the BFF: [docker/runtime/README.md](docker/runtime/README.md). What changed between versions: [CHANGELOG.md](CHANGELOG.md).
+
+A project checks itself in its own CI with the **Quadrava CLI**, published with every version on GitHub Packages: `quadrava validate` applies the checks of the runtime and Studio (schemas, references, CEL expressions, translations), `quadrava publish` publishes the project in a registry ([frontend/projects/cli/README.md](frontend/projects/cli/README.md)).
+
+```bash
+npx @sramaccini/quadrava-cli@0.1.0 validate my-project
+```
 
 ## Testing
 

@@ -2,7 +2,8 @@ name: Release
 
 # A version of Quadrava (ADR-20), started by pushing a «v*» tag such as v0.1.0. The checks of CI run first; then the tag
 # must match the version of the packages and have its section in CHANGELOG.md; then the runtime image is published on
-# GitHub Container Registry and the GitHub release is created with the notes of the changelog.
+# GitHub Container Registry, the CLI on GitHub Packages (npm), and the GitHub release is created with the notes of the
+# changelog.
 
 on:
   push:
@@ -32,6 +33,11 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+          # The CLI goes to GitHub Packages (npm), with the token of the workflow.
+          registry-url: https://npm.pkg.github.com
+          scope: '@sramaccini'
       - name: Version, tag and changelog
         working-directory: frontend
         run: node tools/release.mjs --tag "$GITHUB_REF_NAME" --notes "$RUNNER_TEMP/notes.md"
@@ -64,6 +70,17 @@ jobs:
           build-args: VERSION=${{ steps.version.outputs.version }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+      - name: CLI on GitHub Packages
+        working-directory: frontend
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # A pre-release goes under the «next» tag, so that installing without a version keeps the stable one.
+        run: |
+          npm ci --no-audit --no-fund
+          npm run cli:build
+          tag='latest'
+          case "$GITHUB_REF_NAME" in *-*) tag='next' ;; esac
+          npm publish dist/cli --tag "$tag"
       - name: GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
