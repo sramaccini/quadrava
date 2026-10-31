@@ -14,6 +14,7 @@ import { IconComponent } from './icon.component';
 import { LookupComponent } from './lookup.component';
 import { RepeaterComponent } from './repeater.component';
 import { RichTextEditorComponent } from './rich-text-editor.component';
+import { SuggestInputComponent } from './suggest-input.component';
 import { parseIsoDate, parseIsoDateTime, toIsoDate, toIsoDateTime } from './shared';
 
 /**
@@ -24,11 +25,12 @@ import { parseIsoDate, parseIsoDateTime, toIsoDate, toIsoDateTime } from './shar
  * The validation of the field shows here too: the keyboard and autocomplete of its format, the limits of numbers
  * (`min`, `max`, `step`) and of dates (days out of `minDate` / `maxDate` cannot be chosen); its `transform` is applied
  * when leaving the field. A password field has a button that shows its text and, for a new password, a strength meter
- * (segments and text, announced politely); the estimate never sends the password anywhere.
+ * (segments and text, announced politely); the estimate never sends the password anywhere. A text field with `suggest`
+ * proposes words from a data source while typing (`lc-suggest-input`).
  */
 @Component({
   selector: 'lc-field-control',
-  imports: [FormsModule, LookupComponent, FileFieldComponent, IconComponent, RepeaterComponent, RichTextEditorComponent, NzButtonModule, NzInputModule, NzSelectModule, NzCheckboxModule, NzDatePickerModule, NzRadioModule, NzSwitchModule],
+  imports: [FormsModule, LookupComponent, FileFieldComponent, IconComponent, RepeaterComponent, RichTextEditorComponent, SuggestInputComponent, NzButtonModule, NzInputModule, NzSelectModule, NzCheckboxModule, NzDatePickerModule, NzRadioModule, NzSwitchModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: block; }
@@ -173,21 +175,25 @@ import { parseIsoDate, parseIsoDateTime, toIsoDate, toIsoDateTime } from './shar
         }
       }
       @default {
-        <input
-          nz-input
-          [id]="inputId()"
-          [type]="f.type"
-          [value]="text()"
-          [readonly]="disabled()"
-          [attr.inputmode]="hints().inputMode ?? null"
-          [attr.autocomplete]="f.sensitive ? 'off' : (hints().autocomplete ?? null)"
-          [attr.min]="f.type === 'number' ? (f.min ?? null) : null"
-          [attr.max]="f.type === 'number' ? (f.max ?? null) : null"
-          [attr.step]="f.type === 'number' ? (f.step ?? (f.integer || f.decimals === 0 ? 1 : 'any')) : null"
-          [attr.aria-invalid]="invalid()"
-          (input)="typed($any($event.target).value, 'input')"
-          (change)="typed($any($event.target).value, 'change')"
-        />
+        @if (f.type === 'text' && f.suggest) {
+          <lc-suggest-input [inputId]="inputId()" [field]="f" [runtime]="runtime()" [scope]="scope()" [value]="text()" [disabled]="disabled()" [invalid]="invalid()" (typed)="typed($event.value, $event.event)" />
+        } @else {
+          <input
+            nz-input
+            [id]="inputId()"
+            [type]="f.type"
+            [value]="text()"
+            [readonly]="disabled()"
+            [attr.inputmode]="hints().inputMode ?? null"
+            [attr.autocomplete]="f.sensitive ? 'off' : (hints().autocomplete ?? null)"
+            [attr.min]="f.type === 'number' ? (f.min ?? null) : null"
+            [attr.max]="f.type === 'number' ? (f.max ?? null) : null"
+            [attr.step]="f.type === 'number' ? (f.step ?? (f.integer || f.decimals === 0 ? 1 : 'any')) : null"
+            [attr.aria-invalid]="invalid()"
+            (input)="typed($any($event.target).value, 'input')"
+            (change)="typed($any($event.target).value, 'change')"
+          />
+        }
       }
     }
   `,

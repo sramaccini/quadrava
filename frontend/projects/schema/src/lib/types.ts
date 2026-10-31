@@ -135,6 +135,8 @@ export interface FieldDefinition {
   uploadAs?: 'multipart' | 'base64';
   /** For `lookup`: data source searched while typing (variable `search`), value field and text field. */
   lookup?: { source: string; valueField?: string; labelField: string; minChars?: number };
+  /** For `text`: suggestions from a data source while typing (variables `search` and `word`); the value stays free text. */
+  suggest?: { source: string; valueField?: string; labelField?: string; descriptionField?: string; minChars?: number; replace?: 'word' | 'all' };
   /** Columns taken in the form grid (1 if absent). */
   span?: number;
   /** Visible rows of a `textarea` field (4 if absent). */

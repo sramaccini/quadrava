@@ -11,6 +11,9 @@
     "customers": {
       "ref": "showcase-fields/customers"
     },
+    "queryWords": {
+      "ref": "showcase-fields/queryWords"
+    },
     "uploadAttachment": {
       "ref": "showcase-fields/uploadAttachment"
     },
@@ -147,6 +150,47 @@
           "initial": {
             "customer": 12
           }
+        }
+      ]
+    },
+    {
+      "id": "section-suggest",
+      "type": "section",
+      "title": "{{ t('showcase_fields.query_with_suggestions', 'Query with suggestions') }}",
+      "components": [
+        {
+          "id": "explain-suggest",
+          "type": "text",
+          "text": "{{ t('showcase_fields.write_a_query_such_as_status_pai', 'Write a query such as «status:paid customer:smith»: while you type, the service suggests the names of the criteria and their values, and the chosen one replaces only the word you are writing. The value stays free text. Arrows to move in the list, Enter to insert, Escape to close.') }}"
+        },
+        {
+          "id": "form-suggest",
+          "type": "form",
+          "fields": [
+            {
+              "name": "query",
+              "type": "text",
+              "label": "{{ t('showcase_fields.query', 'Query') }}",
+              "suggest": {
+                "source": "queryWords",
+                "valueField": "insert",
+                "labelField": "label",
+                "descriptionField": "example",
+                "minChars": 1
+              }
+            }
+          ],
+          "actions": [
+            {
+              "id": "btn-run-query",
+              "label": "{{ t('showcase_fields.search', 'Search') }}",
+              "onClick": [
+                {
+                  "toast": "{{ t('showcase_fields.query_sent', 'Query sent: {query}', {'query': form.query}) }}"
+                }
+              ]
+            }
+          ]
         }
       ]
     },

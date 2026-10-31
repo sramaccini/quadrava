@@ -47,7 +47,7 @@ export function expressionHints(doc: Json, path: Path, settings: readonly string
     if (!isObject(value)) continue;
     // In the onError steps: the HTTP code of the error.
     if (next === 'onError') add('error.status');
-    if (i === 0 && next === 'dataSources') ['search', 'lookupKey', 'request'].forEach(add);
+    if (i === 0 && next === 'dataSources') ['search', 'lookupKey', 'word', 'request'].forEach(add);
     if (typeof value['type'] === 'string' && TABLES.has(value['type']) && typeof next === 'string' && ROW_SCOPES.has(next)) {
       fieldsOf(value['columns'], 'field').forEach((f) => add(`row.${f}`));
     }
@@ -74,7 +74,7 @@ export function expressionHints(doc: Json, path: Path, settings: readonly string
 /** The context variables come first: row and form, then state and parameters, then the user. */
 function rank(name: string): number {
   const root = name.split('.')[0];
-  return ['row', 'form', 'value', 'search', 'lookupKey', 'request'].includes(root) ? 0 : root === 'state' || root === 'params' ? 1 : 2;
+  return ['row', 'form', 'value', 'search', 'lookupKey', 'word', 'request'].includes(root) ? 0 : root === 'state' || root === 'params' ? 1 : 2;
 }
 
 /** Names of the standalone fields of a validation group (`default` without one), anywhere in the screen. */

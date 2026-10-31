@@ -100,6 +100,21 @@ describe('schema of the new components', () => {
     });
   });
 
+  describe('text field with suggestions', () => {
+    const form = (fields: unknown[]) => screen([{ type: 'form', fields }]);
+    it('accepts suggestions on a text field', () => {
+      expect(issuesOf(form([{ name: 'q', type: 'text', suggest: { source: 'words' } }]))).toEqual([]);
+      const full = { source: 'words', valueField: 'insert', labelField: 'name', descriptionField: 'hint', minChars: 0, replace: 'all' };
+      expect(issuesOf(form([{ name: 'q', type: 'text', suggest: full }]))).toEqual([]);
+    });
+    it('rejects suggestions on other types, without a data source or with unknown settings', () => {
+      expect(issuesOf(form([{ name: 'q', type: 'textarea', suggest: { source: 'words' } }])).length).toBeGreaterThan(0);
+      expect(issuesOf(form([{ name: 'q', type: 'text', suggest: {} }])).length).toBeGreaterThan(0);
+      expect(issuesOf(form([{ name: 'q', type: 'text', suggest: { source: 'w', replace: 'line' } }])).length).toBeGreaterThan(0);
+      expect(issuesOf(form([{ name: 'q', type: 'text', suggest: { source: 'w', minChars: 6 } }])).length).toBeGreaterThan(0);
+    });
+  });
+
   describe('file upload', () => {
     const form = (fields: unknown[]) => screen([{ type: 'form', fields }]);
     it('accepts allowed types, maximum size and upload data source', () => {

@@ -131,6 +131,7 @@ The position properties live on the children, like the constraints of classic la
 
 * `text`, `number`, `select`, `checkbox`, `date`, `textarea`, `datetime`, `radio`, `switch`, `multiselect`;
 * `lookup`: search on a data source, which also resolves the label of an unloaded value through `{{ lookupKey }}`;
+* `text` with `suggest`: free text (for example a query) with suggestions from a data source for the word at the cursor (`{{ word }}`);
 * `file`: uploaded as multipart up to 100 MB, or base64;
 * `repeater`: repeatable rows, which may contain lookups and files;
 * `richtext`: a rich text editor with a toolbar (bold, italic, strikethrough, headings, bulleted and numbered lists, quotes, links).

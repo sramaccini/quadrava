@@ -246,6 +246,7 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                   "value",
                   "search",
                   "lookupKey",
+                  "word",
                   "request",
                   "file",
                   "item",
@@ -688,6 +689,45 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
             }
           }
         },
+        "suggest": {
+          "type": "object",
+          "required": [
+            "source"
+          ],
+          "additionalProperties": false,
+          "description": "For type text: suggestions from a GET data source while typing; the value stays free text (for example a query). The data source sees `search` (the whole text) and `word` (the word at the cursor, delimited by spaces, brackets and commas), for example \"params\": { \"q\": \"{{ search }}\", \"word\": \"{{ word }}\" }; choosing a suggestion replaces that word.",
+          "properties": {
+            "source": {
+              "type": "string",
+              "description": "Name of the data source (GET) that returns the suggestions."
+            },
+            "valueField": {
+              "type": "string",
+              "description": "Field of the row inserted in the text (value if absent)."
+            },
+            "labelField": {
+              "type": "string",
+              "description": "Field of the row shown in the list (the inserted text if absent)."
+            },
+            "descriptionField": {
+              "type": "string",
+              "description": "Field of the row shown next to the suggestion, in a lighter colour (none if absent)."
+            },
+            "minChars": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 5,
+              "description": "Minimum characters of the word before asking for suggestions (1 if absent; 0 = also at the start of a word)."
+            },
+            "replace": {
+              "enum": [
+                "word",
+                "all"
+              ],
+              "description": "What a chosen suggestion replaces: the word at the cursor (word, default) or the whole text (all)."
+            }
+          }
+        },
         "accept": {
           "type": "string",
           "pattern": "^\\s*(\\.[A-Za-z0-9]+|[a-z]+/(\\*|[A-Za-z0-9.+-]+))(\\s*,\\s*(\\.[A-Za-z0-9]+|[a-z]+/(\\*|[A-Za-z0-9.+-]+)))*\\s*$",
@@ -990,6 +1030,25 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
             "properties": {
               "minItems": false,
               "maxItems": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "not": {
+                  "const": "text"
+                }
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "properties": {
+              "suggest": false
             }
           }
         }

@@ -22,6 +22,15 @@
         "id": "{{ lookupKey }}"
       }
     },
+    "queryWords": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/invoices/query-words",
+      "params": {
+        "q": "{{ search }}",
+        "word": "{{ word }}"
+      }
+    },
     "uploadAttachment": {
       "type": "rest",
       "method": "POST",

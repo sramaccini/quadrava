@@ -19,6 +19,8 @@ export interface EvalContext {
   search?: string | null;
   /** Value of a lookup field whose text is needed (in the parameters of its data source). */
   lookupKey?: unknown;
+  /** Word at the cursor of a text field with suggestions (in the parameters of its data source). */
+  word?: string | null;
   /** Request of a serverDataTable (page, sorting, filters, groups), to pass to the service. */
   request?: Record<string, unknown> | null;
   /** Current row of a repeatable-rows field (in its validation rules). */

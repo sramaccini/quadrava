@@ -400,6 +400,7 @@
 | `optionKey` | text | Prefix of the translation keys for the option labels: the label of an option is t('<prefix>.<value>'), with the value as a fallback. |
 | `rows` | integer 2–20 | Visible rows of a textarea field (4 if absent). |
 | `lookup` | object | For type lookup: GET data source queried with the `search` variable (for example "params": { "q": "{{ search }}" }). |
+| `suggest` | object | For type text: suggestions from a GET data source while typing; the value stays free text (for example a query). The data source sees `search` (the whole text) and `word` (the word at the cursor, delimited by spaces, brackets and commas), for example "params": { "q": "{{ search }}", "word": "{{ word }}" }; choosing a suggestion replaces that word. |
 | `accept` | text | For type file: allowed extensions (.pdf) and MIME types (image/*, application/pdf), separated by commas. |
 | `maxSizeKb` | integer 1–102400 | For type file: maximum size in KB (1024 if absent). Up to 102400 with multipart upload; base64 content is limited to 10240. |
 | `upload` | text | For type file: data source (POST) to which the file is sent right away. In multipart the file is the "file" part of the request and the `file` variable has name, type and size; in base64 it also has content. |

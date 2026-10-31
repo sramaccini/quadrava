@@ -536,8 +536,9 @@ export class ScreenRuntime {
     if (!source) return { ok: false, error: `unknown data source: ${name}` };
     // Arguments take precedence over the variables of the point the call starts from (row, form).
     // Variables of the components that query a data source, always present and null until needed: `search` and
-    // `lookupKey` (lookup fields), `request` (page, sorting, filters and groups of a serverDataTable).
-    const ctx = this.context({ search: null, lookupKey: null, request: null, ...scope, ...args });
+    // `lookupKey` (lookup fields), `word` (text fields with suggestions), `request` (page, sorting, filters and groups
+    // of a serverDataTable).
+    const ctx = this.context({ search: null, lookupKey: null, word: null, request: null, ...scope, ...args });
     const url = this.resolveUrl(source.url, ctx);
     if (!url.ok) return url;
     const resolved = (this.resolveIn(source.params ?? {}, ctx) ?? {}) as Record<string, unknown>;

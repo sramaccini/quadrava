@@ -53,7 +53,7 @@ Built in this order, one per commit, each with tests (schema, component and show
 | 4 | Expandable detail rows | table | done |
 | 5 | Number format, clickable cells, totals row | table | done |
 | 6 | New field types: text area, date and time, radio, switch, multiple selection | fields | done |
-| 7 | Field with search on a data source (lookup) | fields | done |
+| 7 | Field with search on a data source (lookup); text with suggestions | fields | done |
 | 8 | File upload | fields | done |
 | 9 | Column grid in the form | form | done |
 | 10 | Repeatable rows in the form | form | done |
@@ -148,6 +148,33 @@ They work in the form and, where it makes sense, in the filter bar (`switch`, `m
 As the user types, the field runs the `source` data source (GET) with the `search` variable and offers the returned rows. The field value is `valueField`; the text shown is `labelField`. Searches in quick succession are merged (300 ms wait) and an old response does not overwrite a newer one.
 
 If the current value is not among the known rows (for example in an edit form) and the data source uses `{{ lookupKey }}`, the field asks the service for that value's row, once, and shows its text instead of the id. The field's requests do not change the rows the same data source shows to other components (`ScreenRuntime.query`).
+
+#### Text with suggestions (`suggest`)
+
+A `lookup` chooses a row; a `text` field with `suggest` stays **free text** and only proposes words to insert, which is what a query language needs (`status:paid customer:smith`).
+
+```json
+{ "name": "query", "type": "text",
+  "suggest": { "source": "queryWords", "valueField": "insert", "labelField": "label", "descriptionField": "example" } }
+
+"queryWords": { "type": "rest", "method": "GET", "url": "/api/invoices/query-words",
+                "params": { "q": "{{ search }}", "word": "{{ word }}" } }
+```
+
+```
+status:paid cust▌            → word = "cust", search = "status:paid cust"
+   ┌──────────────────────────────┐
+   │ customer:   customer:smith   │   ← label, then description
+   └──────────────────────────────┘
+status:paid customer:▌        → Enter: only the word at the cursor is replaced
+```
+
+- The data source sees the whole text in `search` and the **word at the cursor** in `word`: the characters between spaces, brackets (`( ) [ ] { }`) and commas around it. The service decides what to suggest, so the language is entirely its own.
+- Each row gives the text inserted (`valueField`, `value` if absent), the text in the list (`labelField`, the inserted text if absent) and an optional `descriptionField` in a lighter colour. Texts from the service are shown as they are; empty and repeated values are left out.
+- A chosen suggestion replaces the word at the cursor (`replace: "all"`: the whole text) and the cursor goes right after it. The suggestion is inserted as it is: a service that wants a space after a complete term includes it (`"status:paid "`).
+- The request starts once the word has `minChars` characters (1 if absent; 0 also at the start of a word). Requests in quick succession are merged (300 ms) and an old response never replaces a newer one; an error of the data source shows no suggestions.
+- Keyboard: the arrows open the list and move in it, Enter inserts (without submitting the form), Escape closes only the list (not the dialog around it). The field is a WAI-ARIA combobox (`aria-expanded`, `aria-activedescendant`, a listbox of options) and the number of suggestions is announced.
+- Only for `text` fields; it works in forms, in standalone fields and in the filter bar.
 
 ### 2.8 File upload
 

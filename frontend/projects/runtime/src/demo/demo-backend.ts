@@ -363,6 +363,21 @@ export class DemoBackend {
       const q = String(req.query?.['q'] ?? '').toLowerCase();
       return this.customers.filter((c) => !q || c.name.toLowerCase().includes(q) || c.city.toLowerCase().includes(q)).slice(0, 8);
     }
+    if (path === '/api/invoices/query-words' && req.method === 'GET') {
+      // Suggestions for the word being written in an invoice query: the names of the criteria, then their values.
+      const word = String(req.query?.['word'] ?? '').toLowerCase();
+      const colon = word.indexOf(':');
+      if (colon < 0) {
+        return ['status', 'customer', 'type']
+          .filter((name) => name.startsWith(word))
+          .map((name) => ({ insert: `${name}:`, label: `${name}:`, example: name === 'status' ? 'status:paid' : name === 'customer' ? 'customer:smith' : 'type:sales' }));
+      }
+      const criterion = word.slice(0, colon);
+      const start = word.slice(colon + 1);
+      const values =
+        criterion === 'status' ? ['draft', 'sent', 'paid'] : criterion === 'type' ? ['sales', 'purchase'] : criterion === 'customer' ? this.customers.map((c) => c.name.split(' ')[0].toLowerCase()) : [];
+      return values.filter((v) => v.startsWith(start)).slice(0, 8).map((v) => ({ insert: `${criterion}:${v} `, label: `${criterion}:${v}` }));
+    }
     if (path === '/api/packages' && req.method === 'GET') return this.packages.map((p) => ({ ...p }));
     if (path === '/api/packages' && req.method === 'POST') {
       const body = req.body ?? {};
