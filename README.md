@@ -423,9 +423,9 @@ npm run conformance:bff -- --bff http://localhost:8080 --return http://localhost
 
 `npm run e2e` starts the demo itself (`ng serve runtime` on port 4300, override with `E2E_PORT`; outside CI a server already running on that port is reused) and runs the suites in `frontend/e2e/` against the in-browser fake back end.
 
-Every push to `main` and every pull request runs [`.github/workflows/ci.yml`](.github/workflows/ci.yml) on GitHub Actions: the front-end job (`schema:check`, `validate:examples`, `build:libs`, the tests of every project, the production builds of runtime and editor), the end-to-end job (Playwright in Chromium; report uploaded as an artifact when it fails) and the Java job (`mvn -B verify`).
+Every push to `main` and every pull request runs [`.github/workflows/ci.yml`](.github/workflows/ci.yml) on GitHub Actions: the front-end job (`schema:check`, `validate:examples`, `build:libs`, the tests of every project, the production builds of runtime and editor), the end-to-end job (Playwright in Chromium; report uploaded as an artifact when it fails), the image job (builds the runtime image and starts it) and the Java job (`mvn -B verify`). A `v*` tag starts [`.github/workflows/release.yml`](.github/workflows/release.yml), which publishes the runtime image and the GitHub release ([ADR-20](docs/adr-20-versioned-distribution.md)).
 
-At the time of writing there are **866 automated tests**: schema 88, expressions 46, core 193, components 206, services 35, runtime 102, editor 196. The Java modules add 39 (`mvn verify`: authz 7, bff 8, registry 18 — including the parity of the server-side schema validation with Ajv on every example and the coherence between controller and contract —, telemetry 6).
+At the time of writing there are **927 automated tests**: schema 93, expressions 46, core 198, components 233, services 42, runtime 112, editor 203. The Java modules add 53 (`mvn verify`: authz 7, bff 15, registry 25 — including the parity of the server-side schema validation with Ajv on every example and the coherence between controller and contract —, telemetry 6).
 
 The unit tests run in jsdom, so layout, real focus handling and pixel-level rendering are **not** covered there; see the development guide for the helpers that make NG-ZORRO overlays testable.
 

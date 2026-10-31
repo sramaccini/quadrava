@@ -3,8 +3,41 @@
 For the Claude Code session that continues Quadrava locally. Written on 30 October 2026, at the end of the planning
 session of **OpenDevTrack**. Read [HANDOFF.md](../HANDOFF.md) first: its working principles apply here too.
 
-> **Status: proposals, not approved work.** Nothing below has been implemented. Every item marked *decision* waits
-> for Simone's approval; the others still need a go-ahead before you start. Ask before writing code.
+> **Status (31 October 2026): implemented.** Every item and decision was approved in one go and done in the order
+> B1, B2, K1–K5, L1, L2, L3, Q0. The proposals below are kept as they were written; § 0 says where each item is.
+
+## 0. What was done
+
+| # | Commit | Where |
+| --- | --- | --- |
+| B1 | `fcde14f`, `2ea4904` | `contracts/bff.yaml`, `npm run conformance:bff`; the reference BFF now forwards `X-Permissions-Version` |
+| B2 (D8) | `528d016` | ADR-18: `tenants` and `currentTenant` in the user, `POST /bff/tenant`, `tenantSwitchUrl` in the runtime configuration |
+| K1–K4 | `0c76db6` | `kanban`: order within columns, swimlanes, WIP limits, rich cards (catalogue § 2.24) |
+| K5 (D6) | `8e85497` | `kanban`: `columns` as an expression, `columnsFrom` a data source |
+| L1 | `efd9858` | `suggest` on text fields (catalogue § 2.7) |
+| L2 | `5fa0010` | `comments` component (catalogue § 2.30) |
+| L3 | `af55d09` | ADR-19: `live` on GET data sources, Server-Sent Events through the BFF (`bff.yaml` 0.3.0) |
+| Q0 (D1) | `c5b06e9` | ADR-20: version 0.1.0, `CHANGELOG.md`, release workflow, the runtime image `ghcr.io/sramaccini/quadrava-runtime` (`docker/runtime/README.md`) |
+
+**What ms-authz must adapt** (in its own repository; nothing changes in Quadrava). The check is
+`npm run conformance:bff -- --bff <address> --return <page>`, with `--cookie` for the signed-in part.
+
+1. **Logout**: `POST /logout` with `Accept: application/json` answers `{ "redirect": "<address>" }`, not `logout_url`.
+2. **Login**: `GET /bff/login?return=<page>` goes back to `return` after the login, accepted only when its origin is
+   one of the applications (no open redirect); `400` otherwise.
+3. **Capabilities**: `GET /authz/capabilities` as in `contracts/authz.yaml` (the permissions of the user, with their
+   version).
+4. **Permission codes** in the format `domain.resource.action` (for example `tracker.issue.edit`), not
+   `resource:action`.
+5. **Rules of every call** (`bff.yaml`): `401` instead of a redirect when the session is missing; the `XSRF-TOKEN`
+   cookie readable by the page and `X-XSRF-TOKEN` required on writes; `X-Permissions-Version` passed on to the browser.
+6. **Tenants**, only if OpenDevTrack has more than one: `tenants` and `currentTenant` in `/bff/user`,
+   `POST /bff/tenant` with CSRF (ADR-18).
+7. **Event streams**, only if boards use `live`: `text/event-stream` answers passed on unbuffered and without a time
+   limit, with the user's token (ADR-19).
+8. **Behind the runtime image** with `QUADRAVA_BFF_URL`: honour `X-Forwarded-Host` and `X-Forwarded-Proto` (for Spring
+   Boot `server.forward-headers-strategy=framework`), so that the login callback and the `return` check use the public
+   address.
 
 ## 1. Context in three lines
 
