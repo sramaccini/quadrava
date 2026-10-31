@@ -1,5 +1,5 @@
 {
-  "realm": "lowcode",
+  "realm": "quadrava",
   "displayName": "Quadrava",
   "enabled": true,
   "sslRequired": "none",
@@ -23,7 +23,7 @@
   },
   "clients": [
     {
-      "clientId": "lowcode-bff",
+      "clientId": "quadrava-bff",
       "name": "Quadrava BFF",
       "enabled": true,
       "protocol": "openid-connect",
@@ -47,7 +47,7 @@
       }
     },
     {
-      "clientId": "lowcode-tools",
+      "clientId": "quadrava-tools",
       "name": "Quadrava development tools (local scripts, never in production)",
       "enabled": true,
       "protocol": "openid-connect",

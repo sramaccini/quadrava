@@ -1,7 +1,7 @@
 // Sample back end of the demo, for running with the BFF: it exposes as real REST APIs (/api/...) the same in-memory back
 // end the demo uses in the browser (projects/runtime/src/demo/demo-backend.ts). For local development only.
 //
-//   node tools/demo-api.mjs [--port 8084] [--issuer http://localhost:8180/realms/lowcode] [--no-auth]
+//   node tools/demo-api.mjs [--port 8084] [--issuer http://localhost:8180/realms/quadrava] [--no-auth]
 //
 // Every request must carry a valid Keycloak token (Authorization: Bearer, added by the BFF): RS256 signature checked
 // with the keys published by the realm, issuer and expiry. With --no-auth the check is off (warning in the log). Back-end
@@ -23,7 +23,7 @@ const args = Object.fromEntries(
   }, []),
 );
 const port = Number(args.port ?? 8084);
-const issuer = String(args.issuer ?? process.env.KEYCLOAK_ISSUER_URI ?? 'http://localhost:8180/realms/lowcode').replace(/\/+$/, '');
+const issuer = String(args.issuer ?? process.env.KEYCLOAK_ISSUER_URI ?? 'http://localhost:8180/realms/quadrava').replace(/\/+$/, '');
 const withoutAuth = args['no-auth'] === true;
 
 // The TypeScript back end, bundled on the fly.

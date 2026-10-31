@@ -4,7 +4,7 @@
 //   node tools/conformance-registry.mjs --registry http://localhost:8081
 //        [--token <JWT> | --user <user> --password <password>]                  author (needed to save)
 //        [--reviewer-token <JWT> | --reviewer-user <u> --reviewer-password <p>]  reviewer (to approve)
-//        [--issuer http://localhost:8180/realms/lowcode] [--protected-env production]
+//        [--issuer http://localhost:8180/realms/quadrava] [--protected-env production]
 //
 // It works in a new application (conformance-<date>), so it does not touch existing data. Without a reviewer the approval
 // checks are skipped. Exits with code 1 if a check fails.

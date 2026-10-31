@@ -80,7 +80,7 @@ screens come from the registry, the data from the demo back end through the BFF,
 screen follow the changes of other users over the event stream. From Git Bash on Windows, run it with
 `MSYS_NO_PATHCONV=1`, otherwise a value such as `/bff/tenant` is rewritten into a Windows path (and refused).
 
-The realm is imported only when Keycloak is created: after a change to `idp/realm-lowcode.json`, recreate it with
+The realm is imported only when Keycloak is created: after a change to `idp/realm-quadrava.json`, recreate it with
 `cd idp && docker compose down && docker compose up -d` (its users and sessions start again from the file).
 
 ## Building it

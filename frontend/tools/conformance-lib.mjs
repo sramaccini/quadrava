@@ -6,12 +6,12 @@ export function parseArgs(argv = process.argv.slice(2)) {
   return Object.fromEntries(argv.reduce((pairs, value, i, all) => (value.startsWith('--') ? [...pairs, [value.slice(2), all[i + 1]]] : pairs), []));
 }
 
-/** Keycloak token with the development client lowcode-tools (password grant: local realm only). */
+/** Keycloak token with the development client quadrava-tools (password grant: local realm only). */
 export async function tokenFor(issuer, user, password) {
   const response = await fetch(`${issuer.replace(/\/+$/, '')}/protocol/openid-connect/token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ grant_type: 'password', client_id: 'lowcode-tools', username: user, password: password ?? '' }),
+    body: new URLSearchParams({ grant_type: 'password', client_id: 'quadrava-tools', username: user, password: password ?? '' }),
   });
   if (!response.ok) throw new Error(`no token for ${user}: HTTP ${response.status}`);
   return (await response.json()).access_token;
@@ -21,7 +21,7 @@ export async function tokenFor(issuer, user, password) {
 export async function tokenFromArgs(args, prefix = '') {
   if (args[`${prefix}token`]) return args[`${prefix}token`];
   if (!args[`${prefix}user`]) return null;
-  return tokenFor(args.issuer ?? 'http://localhost:8180/realms/lowcode', args[`${prefix}user`], args[`${prefix}password`]);
+  return tokenFor(args.issuer ?? 'http://localhost:8180/realms/quadrava', args[`${prefix}user`], args[`${prefix}password`]);
 }
 
 /** HTTP call: status, headers and body (JSON when it is JSON). */

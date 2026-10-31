@@ -87,7 +87,7 @@ mkdirSync(join(root, 'data', 'registry'), { recursive: true });
 say('starting Keycloak (Docker)…');
 if (spawnSync('docker', ['version'], { stdio: 'ignore', shell: windows }).status !== 0) fail('Docker is not available: start Docker Desktop');
 run('docker', ['compose', 'up', '-d'], join(root, 'idp'));
-await ready('Keycloak', 'http://localhost:8180/realms/lowcode/.well-known/openid-configuration', 180);
+await ready('Keycloak', 'http://localhost:8180/realms/quadrava/.well-known/openid-configuration', 180);
 
 // 2. Java services
 const modules = ['registry', 'authz', 'telemetry', 'bff'];

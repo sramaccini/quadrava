@@ -4,7 +4,7 @@
 //   node tools/conformance-authz.mjs --authz http://localhost:8082 --app demo
 //        [--token <JWT> | --user <user> --password <password> | --cookie "<session cookies>"]   main user (required)
 //        [--other-token <JWT> | --other-user <u> --other-password <p> | --other-cookie "…"]    other user (optional)
-//        [--issuer http://localhost:8180/realms/lowcode]
+//        [--issuer http://localhost:8180/realms/quadrava]
 //
 // The contract accepts a Bearer token (a service behind the BFF) or the session cookie (a BFF that answers /authz
 // itself): with --cookie (copied from a signed-in browser) the calls carry the cookies, and the writes the CSRF token

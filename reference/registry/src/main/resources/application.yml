@@ -8,7 +8,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/lowcode}
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/quadrava}
           # Author of the versions: the user name, not Keycloak's internal identifier.
           principal-claim-name: preferred_username
 

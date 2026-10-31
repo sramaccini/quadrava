@@ -6,7 +6,7 @@
 //                                   [--token <JWT> | --user <user> --password <password> [--issuer <realm>]]
 //
 // With the reference registry started with the no-auth profile no token is needed. With --user and --password the script
-// asks Keycloak for the token with the development client lowcode-tools (local realm only), and gives it to the CLI in
+// asks Keycloak for the token with the development client quadrava-tools (local realm only), and gives it to the CLI in
 // QUADRAVA_TOKEN.
 import { spawnSync } from 'node:child_process';
 import { join, dirname } from 'node:path';
@@ -19,11 +19,11 @@ const args = Object.fromEntries(
 );
 let token = args.token;
 if (!token && args.user) {
-  const issuer = (args.issuer ?? 'http://localhost:8180/realms/lowcode').replace(/\/+$/, '');
+  const issuer = (args.issuer ?? 'http://localhost:8180/realms/quadrava').replace(/\/+$/, '');
   const response = await fetch(`${issuer}/protocol/openid-connect/token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ grant_type: 'password', client_id: 'lowcode-tools', username: args.user, password: args.password ?? '' }),
+    body: new URLSearchParams({ grant_type: 'password', client_id: 'quadrava-tools', username: args.user, password: args.password ?? '' }),
   });
   if (!response.ok) {
     console.error(`No token from ${issuer}: HTTP ${response.status}`);

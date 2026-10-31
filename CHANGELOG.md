@@ -26,6 +26,9 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
   `quadrava.bff.frontend-origins`) and the secret of the BFF client from `LOWCODE_BFF_CLIENT_SECRET` to
   `QUADRAVA_BFF_CLIENT_SECRET`: rename them in your own configuration. Rebuild with `mvn clean` (or `npm run stack --
   --rebuild`), so that the jars with the old names are gone.
+- **Development realm**: `quadrava` instead of `lowcode` (`idp/realm-quadrava.json`), clients `quadrava-bff` and
+  `quadrava-tools`; the issuer of the reference services and of the tools is `http://localhost:8180/realms/quadrava`.
+  Recreate Keycloak: `cd idp && docker compose down && docker compose up -d`.
 
 ### Fixed
 

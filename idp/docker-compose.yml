@@ -10,4 +10,4 @@ services:
     ports:
       - "8180:8180"
     volumes:
-      - ./realm-lowcode.json:/opt/keycloak/data/import/realm-lowcode.json:ro
+      - ./realm-quadrava.json:/opt/keycloak/data/import/realm-quadrava.json:ro
