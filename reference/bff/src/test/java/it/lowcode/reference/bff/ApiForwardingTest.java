@@ -64,6 +64,7 @@ class ApiForwardingTest {
             byte[] reply = "{\"ok\":true}".getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().add("Content-Type", "application/json");
             exchange.getResponseHeaders().add("ETag", "\"v1\"");
+            exchange.getResponseHeaders().add("X-Permissions-Version", "7");
             exchange.getResponseHeaders().add("Set-Cookie", "internal=1");
             exchange.getResponseHeaders().add("X-Internal", "secret");
             exchange.sendResponseHeaders(exchange.getRequestMethod().equals("POST") ? 201 : 200, reply.length);
@@ -140,6 +141,8 @@ class ApiForwardingTest {
                 .andExpect(status().isOk())
                 .andExpect(content().json("{\"ok\":true}"))
                 .andExpect(header().string("ETag", "\"v1\""))
+                // The runtime reloads the permissions when this changes (authz.yaml).
+                .andExpect(header().string("X-Permissions-Version", "7"))
                 // The service's cookies do not reach the browser (the CSRF one belongs to the BFF).
                 .andExpect(cookie().doesNotExist("internal"))
                 .andExpect(header().doesNotExist("X-Internal"));

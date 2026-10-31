@@ -29,7 +29,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * <ul>
  *   <li>Only a few headers reach the service (format, conditional cache, language, {@code traceparent}): never the
  *       session cookies nor any {@code Authorization} from the browser.</li>
- *   <li>Only status, body and a few safe headers (type, ETag, cache, file name) go back to the browser.</li>
+ *   <li>Only status, body and a few safe headers (type, ETag, cache, file name, permissions version) go back to the browser.</li>
  *   <li>The body is streamed, within {@link BffProperties#maxBodyBytes()} (files go up to 100 MB).</li>
  * </ul>
  *
@@ -41,7 +41,7 @@ public class ApiForwardingFilter extends OncePerRequestFilter {
     private static final List<String> REQUEST_HEADERS = List.of(
             "Accept", "Accept-Language", "Content-Type", "If-None-Match", "If-Match", "If-Modified-Since", "traceparent", "tracestate");
     private static final List<String> RESPONSE_HEADERS = List.of(
-            "Content-Type", "ETag", "Cache-Control", "Last-Modified", "Content-Disposition");
+            "Content-Type", "ETag", "Cache-Control", "Last-Modified", "Content-Disposition", "X-Permissions-Version");
     private static final Set<String> BODY_METHODS = Set.of("POST", "PUT", "PATCH", "DELETE");
 
     private final BffProperties properties;
