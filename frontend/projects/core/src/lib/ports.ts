@@ -98,6 +98,19 @@ export abstract class RuntimeTracer {
   abstract start(name: string, attributes: SpanAttributes, parent?: SpanContext): TraceSpan;
 }
 
+/**
+ * Push notifications from the services: event streams (Server-Sent Events) on the same origin, through the BFF. Optional:
+ * without it the data sources with `live` are read only when the screen opens and on `refresh`.
+ */
+export abstract class LiveUpdates {
+  /**
+   * Listens to the stream at `url` (a same-origin path) and calls `onEvent` for every event named in `events` (the events
+   * without a name when the list is empty) and after a reconnection, when some events may have been missed. Returns the
+   * function that stops listening. It must never throw.
+   */
+  abstract listen(url: string, events: readonly string[], onEvent: () => void): () => void;
+}
+
 /** Asks the user to confirm before a sensitive action. Resolves true only if the user explicitly confirms. */
 export abstract class Confirmation {
   abstract confirm(message: string): Promise<boolean>;

@@ -1,11 +1,12 @@
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { EnvironmentProviders, inject, makeEnvironmentProviders, provideAppInitializer } from '@angular/core';
-import { Authorization, DataClient, RuntimeDiagnostics, RuntimeTracer, UserProvider } from 'core';
+import { Authorization, DataClient, LiveUpdates, RuntimeDiagnostics, RuntimeTracer, UserProvider } from 'core';
 import { HttpAuthorization } from './authorization';
 import { LOWCODE_SERVICES_CONFIG, resolveConfig, type LowcodeServicesConfig } from './config';
 import { HttpDataClient } from './http-data-client';
 import { HttpDiagnostics } from './diagnostics';
 import { lowcodeHttpInterceptor } from './interceptor';
+import { EventSourceLiveUpdates } from './live-updates';
 import { HttpSession } from './session';
 import { HttpTracer } from './tracer';
 
@@ -22,6 +23,7 @@ export function provideLowcodeServices(config: LowcodeServicesConfig): Environme
     { provide: DataClient, useExisting: HttpDataClient },
     { provide: RuntimeDiagnostics, useExisting: HttpDiagnostics },
     { provide: RuntimeTracer, useExisting: HttpTracer },
+    { provide: LiveUpdates, useExisting: EventSourceLiveUpdates },
     provideAppInitializer(async () => {
       // All dependencies before the first await: afterwards, inject() is no longer in the injection context.
       const session = inject(HttpSession);

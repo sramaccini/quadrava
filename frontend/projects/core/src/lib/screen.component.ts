@@ -3,7 +3,7 @@ import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzBreadCrumbModule } from 'ng-zorro-antd/breadcrumb';
 import { NzTypographyModule } from 'ng-zorro-antd/typography';
 import type { ScreenDefinition } from 'schema';
-import { SETTINGS_VALUES, Authorization, Confirmation, DataClient, FormDialog, Notifier, RuntimeDiagnostics, RuntimeTracer, ScreenNavigator, UserProvider } from './ports';
+import { SETTINGS_VALUES, Authorization, Confirmation, DataClient, FormDialog, LiveUpdates, Notifier, RuntimeDiagnostics, RuntimeTracer, ScreenNavigator, UserProvider } from './ports';
 import { I18n } from './i18n';
 import { NodeHostComponent } from './node-host.component';
 import { ScreenRuntime } from './screen-runtime';
@@ -74,6 +74,7 @@ export class ScreenComponent {
   private readonly tracer = inject(RuntimeTracer, { optional: true });
   private readonly confirmation = inject(Confirmation, { optional: true });
   private readonly formDialog = inject(FormDialog, { optional: true });
+  private readonly live = inject(LiveUpdates, { optional: true });
   protected readonly i18n = inject(I18n);
   private readonly validators = inject(ValidatorRegistry);
   private readonly settings = inject(SETTINGS_VALUES);
@@ -98,6 +99,7 @@ export class ScreenComponent {
               formDialog: this.formDialog,
               diagnostics: this.diagnostics,
               tracer: this.tracer,
+              live: this.live,
               i18n: this.i18n,
               validators: this.validators,
               settings: this.settings,

@@ -72,6 +72,17 @@ class ApiForwardingTest {
             exchange.getResponseBody().write(reply);
             exchange.close();
         });
+        // An event stream: two events written separately, without a declared length.
+        upstream.createContext("/registry/events", exchange -> {
+            received.add(new Received(exchange.getRequestMethod(), exchange.getRequestURI().toString(), exchange.getRequestHeaders(), ""));
+            exchange.getResponseHeaders().add("Content-Type", "text/event-stream");
+            exchange.sendResponseHeaders(200, 0);
+            for (String event : List.of("event: tasks.changed\ndata: {}\n\n", "event: comments.added\ndata: {}\n\n")) {
+                exchange.getResponseBody().write(event.getBytes(StandardCharsets.UTF_8));
+                exchange.getResponseBody().flush();
+            }
+            exchange.close();
+        });
         upstream.start();
     }
 
@@ -160,6 +171,15 @@ class ApiForwardingTest {
         assertThat(r.headers().get("Authorization")).containsExactly("Bearer test-token");
         assertThat(r.headers().get("Traceparent")).containsExactly("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01");
         assertThat(r.headers()).doesNotContainKey("Cookie");
+    }
+
+    @Test
+    void eventStreamsPassWithTheTokenAndTheirType() throws Exception {
+        mvc.perform(get("/registry/events").with(oauth2Login()).accept(MediaType.TEXT_EVENT_STREAM))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Type", "text/event-stream"))
+                .andExpect(content().string("event: tasks.changed\ndata: {}\n\nevent: comments.added\ndata: {}\n\n"));
+        assertThat(received.getFirst().headers().get("Authorization")).containsExactly("Bearer test-token");
     }
 
     @Test

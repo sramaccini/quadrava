@@ -6,6 +6,7 @@ import {
   Confirmation,
   DataClient,
   FormDialog,
+  LiveUpdates,
   Notifier,
   RuntimeDiagnostics,
   RuntimeTracer,
@@ -52,6 +53,8 @@ export interface RuntimeDeps {
   validators?: ValidatorRegistry | null;
   /** Values of the settings of the application, `settings` in the expressions. If missing, none. */
   settings?: (() => Readonly<Record<string, string>>) | null;
+  /** Event streams of the data sources with `live`. If missing, they are read only when the screen opens and on refresh. */
+  live?: LiveUpdates | null;
 }
 
 type Built = { ok: true; request: DataRequest } | { ok: false; error: string };
@@ -60,6 +63,8 @@ const FORBIDDEN_PATH_SEGMENTS = new Set(['__proto__', 'constructor', 'prototype'
 const IDLE: DataSourceState = { status: 'idle', data: null };
 /** An expression that is only a setting of the application (`settings.ordersApi`). */
 const SETTING_ALONE = /^\s*settings\.[A-Za-z][A-Za-z0-9_]*\s*$/;
+/** Wait after an event of a live data source: a burst of events becomes a single read. */
+const LIVE_DELAY_MS = 200;
 /** Characters of a path (no query, fragment, backslash or spaces). */
 const PATH_TEXT = /^[A-Za-z0-9\-._~/%]*$/;
 
@@ -97,6 +102,8 @@ export class ScreenRuntime {
   /** GET data sources that have not finished their first read yet, and whether any of them failed. */
   private readonly pendingFirstLoad = new Set<string>();
   private firstLoadFailed = false;
+  /** Reads already scheduled by an event of a live data source. */
+  private readonly liveTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
   constructor(
     readonly definition: ScreenDefinition,
@@ -164,6 +171,36 @@ export class ScreenRuntime {
         ),
       );
     }
+    // Live data sources: while the screen is allowed, an event of their stream reads them again (events carry no data).
+    for (const [name, entry] of reads) {
+      const live = inlineDataSource(entry)?.live;
+      if (!live || !deps.live) continue;
+      if (!live.url.startsWith('/') || live.url.startsWith('//') || !PATH_TEXT.test(live.url)) {
+        this.report(`data source ${name}`, `event stream not on the same origin: ${live.url}`);
+        continue;
+      }
+      this.effects.push(
+        effect(
+          (onCleanup) => {
+            if (!this.allowed()) return;
+            onCleanup(untracked(() => deps.live!.listen(live.url, live.events ?? [], () => this.liveChanged(name))));
+          },
+          { injector },
+        ),
+      );
+    }
+  }
+
+  /** An event of a live data source: one read for a burst of events. */
+  private liveChanged(name: string): void {
+    if (this.liveTimers.has(name)) return;
+    this.liveTimers.set(
+      name,
+      setTimeout(() => {
+        this.liveTimers.delete(name);
+        void this.refresh(name);
+      }, LIVE_DELAY_MS),
+    );
   }
 
   /** Declared filters (null), default sorting and selections (empty) exist in the state before the first load. */
@@ -206,6 +243,8 @@ export class ScreenRuntime {
     this.openSpan?.end(!this.firstLoadFailed, { 'lowcode.interrupted': this.pendingFirstLoad.size > 0 });
     for (const e of this.effects) e.destroy();
     this.effects.length = 0;
+    for (const timer of this.liveTimers.values()) clearTimeout(timer);
+    this.liveTimers.clear();
     // Once the screen is left, the reads in progress are no longer needed.
     for (const controller of this.inflight.values()) controller.abort();
     this.inflight.clear();

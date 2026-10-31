@@ -70,7 +70,7 @@ describe('Showcase: JSON and help of the sections', () => {
       expect(JSON.parse(section.textContent!)).toMatchObject({ type: 'section' });
       expect(section.querySelector('.lc-code-key')?.textContent).toBe('"id"');
       expect(section.querySelector('.lc-code-expression')).not.toBeNull();
-      expect(Object.keys(JSON.parse(related.textContent!).dataSources)).toEqual(['tasks', 'moveTask', 'statuses']);
+      expect(Object.keys(JSON.parse(related.textContent!).dataSources)).toEqual(['tasks', 'moveTask', 'colleagueMove', 'statuses']);
       // No HTML from the data: only built elements.
       expect(section.querySelector('script, img, a')).toBeNull();
       (document.querySelector('.ant-modal-close') as HTMLElement).click();

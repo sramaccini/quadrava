@@ -122,9 +122,55 @@
             "none"
           ],
           "description": "server: the table asks the service for one page at a time (page, size, sort, filters); none (default): all the rows at once."
+        },
+        "live": {
+          "type": "object",
+          "required": [
+            "url"
+          ],
+          "additionalProperties": false,
+          "description": "Push updates (GET only): the runtime listens to this event stream (Server-Sent Events) and reads the data source again when one of its events arrives, also after a reconnection. The events only say that something changed: the data comes from the normal request, with its parameters and permissions. Without the platform service for event streams the data source is read as usual.",
+          "properties": {
+            "url": {
+              "type": "string",
+              "pattern": "^/(?!/)[A-Za-z0-9\\-._~/%]*$",
+              "description": "Path of the event stream on the same origin, for example /api/events/tasks; no expressions, query or host."
+            },
+            "events": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+              },
+              "description": "Names of the events (the event field of the stream) that reload the data source; the events without a name if absent."
+            }
+          }
         }
       },
-      "description": "A REST call to a service of the application, through the BFF (relative address on the same origin)."
+      "description": "A REST call to a service of the application, through the BFF (relative address on the same origin).",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "method": {
+                "not": {
+                  "const": "GET"
+                }
+              }
+            },
+            "required": [
+              "method"
+            ]
+          },
+          "then": {
+            "properties": {
+              "live": false
+            }
+          }
+        }
+      ]
     },
     "dataSourceRef": {
       "type": "object",

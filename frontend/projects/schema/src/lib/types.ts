@@ -12,6 +12,8 @@ export interface DataSourceDefinition {
   /** Body (POST, PUT, PATCH): an object with expressions or a single expression such as `{{form}}`. If missing, `params` is used. */
   body?: Record<string, unknown> | Expression;
   paging?: 'server' | 'none';
+  /** GET only: the data source is read again when an event of this same-origin event stream arrives. */
+  live?: { url: string; events?: string[] };
 }
 
 /** Reference to a data source of the project (`<document>/<name>`); `params` and `body` replace those of the referenced one. */

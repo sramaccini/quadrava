@@ -658,8 +658,9 @@ In the showcase: «Vetrina: attività e avanzamento» (Showcase: tasks and progr
 ## 3. Implementation notes and known limits
 
 - **Loading data sources.** A GET data source reloads by itself only if the resolved request (URL and parameters) changes. A state change that does not touch the request (a selection, a wizard step, a chosen node) does not trigger new calls; to reload anyway, use the `refresh` step.
+- **Live data sources.** With `live` (a same-origin event stream and the names of its events) a GET data source is read again when one of its events arrives, or after the stream reconnects; a burst of events within 200 ms is one read, and it behaves like a `refresh` (previous data visible while loading). Only while the screen is open and allowed; without the `LiveUpdates` port (an application that does not provide it) nothing is listened to. The boards of the showcase tasks screen use it ([ADR-19](adr-19-live-data-sources.md)).
 - **Expressions before the data.** A state variable that does not exist yet makes the expression fail, and the error ends up in the technical diagnostics: in conditions use `has(state.x)`. Parameter maps of `t()` with values of different types need `dyn(...)`; for numbers formatted in the language write `{n, number}`.
-- **Lookup and file field variables.** Data sources always have `search` and `lookupKey` (null until needed); `file` exists in `upload` data sources.
+- **Lookup and file field variables.** Data sources always have `search`, `lookupKey` and `word` (null until needed: lookups, text fields with suggestions, mentions); `file` exists in `upload` data sources.
 - **Lookup.** The text of a value not loaded is resolved only if the data source uses `{{ lookupKey }}`; otherwise the field shows the value itself until the user searches.
 - **Repeatable rows.** No nested rows inside a row.
 - **Data table.** Works on the loaded rows (tested up to 50,000 rows in the functions and 20,000 in the component); beyond that, `serverDataTable`.

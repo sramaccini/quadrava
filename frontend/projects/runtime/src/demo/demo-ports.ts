@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { Authorization, DataClient, RuntimeDiagnostics, UserProvider, type DataRequest, type DataRequestOptions } from 'core';
+import { Authorization, DataClient, LiveUpdates, RuntimeDiagnostics, UserProvider, type DataRequest, type DataRequestOptions } from 'core';
 import type { SessionTenant } from 'services';
 import { DemoBackend } from './demo-backend';
 
@@ -103,11 +103,36 @@ export class DemoNetwork {
   }
 }
 
+/**
+ * Event streams of the demo without services: the in-memory back end announces its changes here, as a service would on
+ * its stream (`text/event-stream`), with the delay of the simulated network.
+ */
+@Injectable({ providedIn: 'root' })
+export class DemoLiveUpdates extends LiveUpdates {
+  private readonly bus = new EventTarget();
+  private readonly network = inject(DemoNetwork);
+
+  /** An event `name` on the stream at `url`. */
+  emit(url: string, name: string): void {
+    setTimeout(() => this.bus.dispatchEvent(new CustomEvent('event', { detail: { url, name } })), this.network.latency());
+  }
+
+  listen(url: string, events: readonly string[], onEvent: () => void): () => void {
+    const handler = (e: Event): void => {
+      const { url: from, name } = (e as CustomEvent<{ url: string; name: string }>).detail;
+      if (from === url && (events.length ? events.includes(name) : name === 'message')) onEvent();
+    };
+    this.bus.addEventListener('event', handler);
+    return () => this.bus.removeEventListener('event', handler);
+  }
+}
+
 /** DataClient of the demo without services: the in-memory back end in the browser, with the delay of the simulated network. */
 @Injectable({ providedIn: 'root' })
 export class MockDataClient extends DataClient {
   static readonly PAGE_SIZE = DemoBackend.PAGE_SIZE;
-  private readonly backend = new DemoBackend();
+  private readonly live = inject(DemoLiveUpdates);
+  private readonly backend = new DemoBackend((url, name) => this.live.emit(url, name));
   private readonly network = inject(DemoNetwork);
 
   async request(req: DataRequest, options: DataRequestOptions = {}): Promise<unknown> {

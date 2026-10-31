@@ -14,6 +14,7 @@ Reference documents:
 - [ADR-16: running the project of Studio in the runtime](adr-16-run-project-from-studio.md): the «Run project» command, the handshake between the two windows, safety.
 - [ADR-17: Quadrava Studio as a desktop application](adr-17-studio-desktop-app.md): Tauri around the web build, project folders on disk on Windows, Linux and macOS, builds on GitHub Actions.
 - [ADR-18: optional tenant selection](adr-18-tenant-selection.md): tenants in the BFF contract, the choice in the user menu, a POST and a reload.
+- [ADR-19: data sources updated by push](adr-19-live-data-sources.md): `live` on a data source, events that only signal, the `LiveUpdates` port, streams through the BFF.
 - [Quadrava Studio](editor.md): how the visual screen editor is built, how it generates the property panel from the schema, the preview, the shortcuts, the limits.
 
 The functional specification, architecture and implementation guidelines date from 7–13 October 2026: the most recent detail is in the component catalogue, in `editor.md` and in the code.

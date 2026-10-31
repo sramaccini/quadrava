@@ -40,6 +40,12 @@ const MONTHS = ['July', 'August', 'September', 'October'];
  */
 export class DemoBackend {
   static readonly PAGE_SIZE = 8;
+  /** Changes made «by someone else» (a colleague) so far: they pick the task to move. */
+  private colleagueMoves = 0;
+
+  /** `emit` announces a change on an event stream (the board of the showcase listens to /api/streams/tasks). */
+  constructor(private readonly emit: (url: string, event: string) => void = () => undefined) {}
+
   private readonly orders: Order[] = Array.from({ length: 21 }, (_, i) => ({
     id: i + 1,
     number: `ORD-${String(i + 1).padStart(4, '0')}`,
@@ -353,6 +359,16 @@ export class DemoBackend {
         'to-review': this.expenses.filter((s) => s.status === 'to-review').length,
         'showcase-tasks': this.tasks.filter((t) => t.status !== 'done').length,
       };
+    }
+    if (path === '/api/tasks/colleague' && req.method === 'POST') {
+      // A colleague moves a card a moment later, on their own screen: this one learns it only from the stream.
+      setTimeout(() => {
+        const task = this.tasks[this.colleagueMoves++ % this.tasks.length];
+        const states = ['to-do', 'in-progress', 'done'];
+        task.status = states[(states.indexOf(task.status) + 1) % states.length];
+        this.emit('/api/streams/tasks', 'tasks.changed');
+      }, 1200);
+      return {};
     }
     const move = /^\/api\/tasks\/(\d+)\/move$/.exec(path);
     if (move && req.method === 'POST') {

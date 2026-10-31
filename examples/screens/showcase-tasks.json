@@ -25,6 +25,9 @@
     },
     "people": {
       "ref": "showcase-tasks/people"
+    },
+    "colleagueMove": {
+      "ref": "showcase-tasks/colleagueMove"
     }
   },
   "components": [
@@ -149,6 +152,32 @@
             },
             {
               "toast": "{{ t('showcase_tasks.moved', '“{title}” moved', {'title': row.title}) }}"
+            }
+          ]
+        },
+        {
+          "id": "live-row",
+          "type": "box",
+          "direction": "row",
+          "components": [
+            {
+              "id": "live-explain",
+              "type": "text",
+              "text": "{{ t('showcase_tasks.the_boards_listen_to_the_stream_', 'The boards listen to the event stream of the tasks: when someone else moves a card, they read the tasks again by themselves.') }}",
+              "grow": 1
+            },
+            {
+              "id": "btn-colleague",
+              "type": "button",
+              "label": "{{ t('showcase_tasks.a_colleague_moves_a_card', 'A colleague moves a card') }}",
+              "onClick": [
+                {
+                  "call": "colleagueMove"
+                },
+                {
+                  "toast": "{{ t('showcase_tasks.watch_the_board', 'Watch the board: the change arrives in a moment.') }}"
+                }
+              ]
             }
           ]
         },

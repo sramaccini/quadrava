@@ -190,6 +190,13 @@ Every value written into a url is encoded, so data cannot add path segments; a s
 
 GET data sources reload by themselves only when their resolved request (URL and parameters) changes; `refresh` on a non-GET source only notifies the components that query it themselves (such as the server data table).
 
+A GET data source can also follow changes made by others with `live`: an event stream (Server-Sent Events) on the same origin, whose events only signal that something changed; the runtime then reads the data source again with its normal request ([ADR-19](docs/adr-19-live-data-sources.md)).
+
+```json
+"tasks": { "type": "rest", "method": "GET", "url": "/api/tasks",
+           "live": { "url": "/api/streams/tasks", "events": ["tasks.changed"] } }
+```
+
 **Expressions** are written in [CEL](https://github.com/google/cel-spec) inside `{{ ... }}` and see these variables: `user` (`name`, `username`, `email`, `roles`, `tenant`), `state`, `params`, `row`, `form`, `value`, and the function `can('domain.resource.action')`. Visibility (`visibleIf`, `hiddenIf`), read-only (`readOnlyIf`), enablement (`enabledIf`) and permissions (`requires`) all use them.
 
 **Permissions** always have three lowercase parts, `domain.resource.action` (for example `orders.iban.read`). The schema rejects any other shape. Record-level permissions arrive as `row._perm.update` / `form._perm.update`.

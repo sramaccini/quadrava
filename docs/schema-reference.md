@@ -652,6 +652,7 @@ A REST call to a service of the application, through the BFF (relative address o
 | `params` | object | Query parameters (GET, DELETE). |
 | `body` |  | Request body (POST, PUT, PATCH): an object with expressions or a single expression, for example {{form}}. If missing, params is used. |
 | `paging` | `server`, `none` | server: the table asks the service for one page at a time (page, size, sort, filters); none (default): all the rows at once. |
+| `live` | object | Push updates (GET only): the runtime listens to this event stream (Server-Sent Events) and reads the data source again when one of its events arrives, also after a reconnection. The events only say that something changed: the data comes from the normal request, with its parameters and permissions. Without the platform service for event streams the data source is read as usual. |
 
 ### Reference to a data source of the project
 

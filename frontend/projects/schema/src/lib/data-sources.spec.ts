@@ -66,6 +66,17 @@ describe('data sources of the project', () => {
     expect(resolved.dataSources!['order']).toMatchObject({ url: '{{ settings.ordersApi }}/{{ params.id }}' });
   });
 
+  it('push updates: only on GET, from a path on the same origin, with event names', () => {
+    const live = (spec: unknown, method = 'GET') => validateDataSources({ ...orders, sources: { list: { type: 'rest', method, url: '/api/orders', live: spec } } }).valid;
+    expect(live({ url: '/api/events/orders' })).toBe(true);
+    expect(live({ url: '/api/events', events: ['orders.changed', 'orders:deleted'] })).toBe(true);
+    expect(live({ url: '/api/events' }, 'POST')).toBe(false);
+    for (const url of ['https://evil.test/events', '//evil.test/events', 'events', '/api/events?user=1', '/api/{{ params.id }}']) expect(live({ url }), url).toBe(false);
+    expect(live({ url: '/api/events', events: [] })).toBe(false);
+    expect(live({ url: '/api/events', events: ['two words'] })).toBe(false);
+    expect(live({ url: '/api/events', every: 5 })).toBe(false);
+  });
+
   it('the settings of a project: names and text values only', () => {
     const project = { schemaVersion: '1.0', project: 'demo', name: 'Demo', languages: ['en'], defaultLanguage: 'en' };
     expect(validateProject({ ...project, settings: { ordersApi: '/api/orders' } }).valid).toBe(true);

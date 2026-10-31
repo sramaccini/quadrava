@@ -31,7 +31,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
  *       session cookies nor any {@code Authorization} from the browser. The tenant of the session, if any, goes in
  *       {@code X-Tenant}.</li>
  *   <li>Only status, body and a few safe headers (type, ETag, cache, file name, permissions version) go back to the browser.</li>
- *   <li>The body is streamed, within {@link BffProperties#maxBodyBytes()} (files go up to 100 MB).</li>
+ *   <li>The body is streamed, within {@link BffProperties#maxBodyBytes()} (files go up to 100 MB). An event stream
+ *       ({@code text/event-stream}, the data sources with {@code live}) is passed on as it arrives, flushed after every
+ *       read, and stays open as long as the service keeps it.</li>
  * </ul>
  *
  * It runs after the security chain: authentication (401 for APIs) and CSRF protection have already been applied.
@@ -122,8 +124,19 @@ public class ApiForwardingFilter extends OncePerRequestFilter {
         for (String name : RESPONSE_HEADERS) {
             reply.headers().firstValue(name).ifPresent(value -> response.setHeader(name, value));
         }
+        boolean events = reply.headers().firstValue("Content-Type").map(t -> t.startsWith("text/event-stream")).orElse(false);
         try (InputStream in = reply.body(); OutputStream out = response.getOutputStream()) {
-            in.transferTo(out);
+            if (events) {
+                // Every event must reach the browser when it arrives, not when a buffer is full.
+                response.flushBuffer();
+                byte[] buffer = new byte[8192];
+                for (int read; (read = in.read(buffer)) >= 0; ) {
+                    out.write(buffer, 0, read);
+                    out.flush();
+                }
+            } else {
+                in.transferTo(out);
+            }
         }
     }
 

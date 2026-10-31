@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Quadrava - BFF contract
-  version: 0.2.0
+  version: 0.3.0
   description: >
     What the Quadrava runtime and Studio expect from the Backend for Frontend (BFF) that serves them. The BFF does the
     OpenID Connect login, keeps the tokens on the server and gives the browser only a session cookie; it forwards the
@@ -27,6 +27,12 @@ info:
       reloads the permissions.
 
     - **Errors** are in Problem format (problem.yaml, RFC 9457).
+
+    - **Event streams.** A data source with `live` opens a `GET` with `Accept: text/event-stream` on the same origin. When
+      the service answers `text/event-stream`, the BFF passes every event on as it arrives (no buffering, no time limit on
+      the open stream) and adds the user's token as for any call. The events only signal a change, by their `event`
+      name: the runtime ignores `data` and reads the data source again. A stream that answers anything else, `401`
+      included, is not opened again by the browser; the next call of the page handles the expired session.
 
 
     **Optional part: tenants.** A BFF whose users work for several tenants (customers, companies, offices: Quadrava
