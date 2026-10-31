@@ -1,0 +1,156 @@
+openapi: 3.1.0
+info:
+  title: Quadrava - BFF contract
+  version: 0.1.0
+  description: >
+    What the Quadrava runtime and Studio expect from the Backend for Frontend (BFF) that serves them. The BFF does the
+    OpenID Connect login, keeps the tokens on the server and gives the browser only a session cookie; it forwards the
+    calls of the applications to the services with the user's token (forwarding is not part of this contract: every
+    prefix is the contract of its service, such as authz.yaml and registry.yaml).
+
+
+    The paths below are the defaults; the runtime lets each one be configured (`sessionUrl`, `loginUrl`, `logoutUrl`).
+    Every call of the applications is relative to the origin of the page: the browser talks only to the BFF.
+
+
+    Rules that hold for every call of the applications, not only for the paths below:
+
+    - **Session missing or expired.** Any call answers `401` instead of redirecting to the login page; the runtime then
+      navigates to the login with the current page as return address.
+
+    - **CSRF.** The BFF puts a token in the `XSRF-TOKEN` cookie, readable by the page (not `HttpOnly`), at the latest with
+      the first response of a session. Every write (`POST`, `PUT`, `PATCH`, `DELETE`) carries it back in the
+      `X-XSRF-TOKEN` header; a write without it, or with a wrong one, answers `403` (or `401` when
+      there is no session either).
+
+    - **Permissions version.** A response may carry `X-Permissions-Version` (authz.yaml): when it changes the runtime
+      reloads the permissions.
+
+    - **Errors** are in Problem format (problem.yaml, RFC 9457).
+  license:
+    name: Mozilla Public License 2.0
+    identifier: MPL-2.0
+servers:
+  - url: /
+tags:
+  - name: session
+    description: The signed-in user, login and logout.
+security:
+  - cookieAuth: []
+paths:
+  /bff/user:
+    get:
+      tags: [session]
+      operationId: getCurrentUser
+      summary: The signed-in user
+      description: >
+        Data of the user of the session, shown by the shell and available to the expressions as `user`. It never
+        contains tokens. Permissions are not here: they come from the authorization contract (authz.yaml).
+      responses:
+        '200':
+          description: The user of the session.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /bff/login:
+    get:
+      tags: [session]
+      operationId: startLogin
+      summary: Starts the login, then goes back to the page
+      description: >
+        A browser navigation, not a call: the BFF starts the login of the identity provider and, once signed in,
+        redirects to `return`. The return address is accepted only if it belongs to one of the applications the BFF
+        serves (no open redirect); without it the user lands on the home of the applications.
+      security: []
+      parameters:
+        - name: return
+          in: query
+          required: false
+          description: Absolute address of the page to go back to after the login; its origin must be one of the applications.
+          schema: { type: string, format: uri }
+      responses:
+        '302':
+          description: To the login of the identity provider (or straight back, if the session already exists).
+          headers:
+            Location:
+              description: Where the browser goes.
+              schema: { type: string }
+        '400': { $ref: '#/components/responses/BadRequest' }
+  /logout:
+    post:
+      tags: [session]
+      operationId: logout
+      summary: Ends the session
+      description: >
+        Closes the session of the BFF and of the identity provider. Called with `Accept: application/json`, it answers
+        with the address the page must go to (usually the logout of the identity provider, which then comes back to
+        the applications). It is a write: it needs the CSRF token.
+      parameters:
+        - name: X-XSRF-TOKEN
+          in: header
+          required: true
+          description: The value of the `XSRF-TOKEN` cookie.
+          schema: { type: string }
+      responses:
+        '200':
+          description: Session closed.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LogoutResult' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: SESSION
+      description: Session cookie of the BFF (`HttpOnly`); its name is up to the BFF.
+  responses:
+    BadRequest:
+      description: Invalid request, for example a return address outside the applications.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Unauthorized:
+      description: Session missing or expired.
+    Forbidden:
+      description: CSRF token missing or wrong.
+  schemas:
+    User:
+      type: object
+      description: >
+        The signed-in user. Every field is optional; the runtime shows `name`, or `username` when the name is missing.
+        Other fields may be present: the runtime ignores them.
+      properties:
+        name:
+          type: string
+          description: Full name, for display.
+        username:
+          type: string
+          description: Login name.
+        email:
+          type: string
+          description: E-mail address.
+        roles:
+          type: array
+          description: Roles of the user, for display and expressions only (permissions come from authz.yaml).
+          items: { type: string }
+    LogoutResult:
+      type: object
+      required: [redirect]
+      properties:
+        redirect:
+          type: string
+          description: Address the page goes to after the logout.
+    Problem:
+      type: object
+      description: Error in RFC 9457 format (problem.yaml).
+      required: [title, status]
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        correlationId: { type: string }

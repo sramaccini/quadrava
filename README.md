@@ -394,6 +394,7 @@ npm run e2e                           # Playwright end-to-end tests in a real br
 npm run conformance:registry -- --user operator --password operator --reviewer-user manager --reviewer-password manager
 npm run conformance:authz -- --user operator --password operator --other-user manager --other-password manager
 npm run conformance:telemetry -- --user operator --password operator
+npm run conformance:bff -- --bff http://localhost:8080 --return http://localhost:4200/
                                       # conformance kits: check a service (reference or customer) against its contract
 ```
 

@@ -152,6 +152,17 @@ class ApiForwardingTest {
     }
 
     @Test
+    void theUserOfTheSessionHasNoTokensAndNoEmptyFields() throws Exception {
+        mvc.perform(get("/bff/user").with(oidcLogin().idToken(t -> t.claim("name", "Ada Lovelace").claim("preferred_username", "ada").claim("email", "ada@example.test"))))
+                .andExpect(status().isOk())
+                .andExpect(content().json("{\"name\":\"Ada Lovelace\",\"username\":\"ada\",\"email\":\"ada@example.test\"}", org.springframework.test.json.JsonCompareMode.STRICT));
+        // Without an e-mail the field is left out, not null.
+        mvc.perform(get("/bff/user").with(oidcLogin().idToken(t -> t.claim("preferred_username", "ada"))))
+                .andExpect(status().isOk())
+                .andExpect(result -> assertThat(result.getResponse().getContentAsString()).doesNotContain("email").doesNotContain("null"));
+    }
+
+    @Test
     void theCsrfCookieArrivesWithTheFirstResponse() throws Exception {
         mvc.perform(get("/registry/apps").with(oauth2Login()))
                 .andExpect(status().isOk())

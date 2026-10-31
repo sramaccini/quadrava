@@ -25,7 +25,7 @@ From `frontend/`:
 - `npm run build:libs` — **before** building and testing the apps: the tsconfig paths point to `./dist/*`
 - **`npm run stack`** — the whole stack with the real login in one command (Keycloak in Docker, Java services, demo back end, examples published, runtime on 4200 and editor on 4201 behind the BFF); logs in `.stack/logs`, registry data in `data/registry`; Ctrl+C stops everything except Keycloak
 - `npm run schema:sync` — regenerates the `*.schema.ts` files and the precompiled validators (`validators.generated.ts`) from the JSON schemas; `schema:docs` regenerates `docs/schema-reference.md`
-- `npm run conformance:registry` / `conformance:authz` / `conformance:telemetry` — conformance kits of the services against the contracts (see README)
+- `npm run conformance:registry` / `conformance:authz` / `conformance:telemetry` / `conformance:bff` — conformance kits of the services and of the BFF against the contracts (see README)
 - `npm run e2e` — Playwright (standalone fields, border layout, axe accessibility on the whole showcase, Studio windows; it starts the runtime on 4300 and the editor on 4301)
 - `npm run validate:examples` — validates the examples (schema, translation keys, patterns of the fields)
 - `npm run demo:prepare` / `npm run start:runtime` — copies `examples/` into `projects/runtime/public/examples` and starts the demo (port 4200). The dev server does **not** reload `dist`: restart it after changing libraries or examples.

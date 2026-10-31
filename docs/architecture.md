@@ -16,7 +16,7 @@ The platform is made of three parts (editor, registry, runtime) that revolve aro
 | Controlled escape hatch | Custom components registrable through a contract | Unforeseen cases do not force anyone to leave the platform |
 | Governable by construction | JSON that can be versioned, compared and reviewed | History, diff, review and rollback as with code |
 
-**Product boundary.** On the back-end side the platform delivers only the REST interfaces (OpenAPI specifications for authorization, telemetry and registry) and a reference implementation of them. The reference implementation demonstrates the contracts and serves as a test bench: it is not a production service. Every customer implementation must pass the same conformance tests (proposal: a contract test kit shipped with the platform).
+**Product boundary.** On the back-end side the platform delivers only the REST interfaces (OpenAPI specifications for authorization, telemetry, registry and what the runtime expects from the BFF) and a reference implementation of them. The reference implementation demonstrates the contracts and serves as a test bench: it is not a production service. Every customer implementation must pass the same conformance tests (proposal: a contract test kit shipped with the platform).
 
 ## 2. Overview
 

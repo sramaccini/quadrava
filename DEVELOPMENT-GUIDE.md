@@ -56,6 +56,7 @@ editor  ──► components ──► core   (the preview renders screens with 
 | `npm run schema:docs` / `schema:docs:check` | Regenerate / verify `docs/schema-reference.md` from the schema descriptions |
 | `npm run notices` / `notices:check` | Regenerate / verify `THIRD-PARTY-NOTICES.md` (the packages shipped in the bundles, with their licences); run it after changing the dependencies. The file is copied into the runtime and editor builds |
 | `npm run conformance:registry` / `conformance:authz` / `conformance:telemetry` | Conformance kits: check a service over HTTP against its contract (`--registry`, `--authz`, `--telemetry` for the address; `--user`/`--password` or `--token`; `--reviewer-user` for the registry, `--other-user` for authorization). Shared helpers in `tools/conformance-lib.mjs` |
+| `npm run conformance:bff` | Conformance kit of a BFF against `contracts/bff.yaml` (`--bff` for the address, `--return` for a page of the applications). Without a session it checks the refusals, the CSRF cookie and the login; with `--cookie "<session cookies of a signed-in browser>"` also the user and, last, the logout (that session ends) |
 | `npm run validate:examples` | Validates every JSON in `examples/` against the schemas |
 | `npx ng build runtime` | Production build (budgets: warning 2.5 MB, error 4 MB initial) |
 | `npm run desktop:build` | Desktop app of Studio for the system you are on (ADR-17): builds the libraries, the examples and the web build of Studio, then `tauri build` in `desktop/`; installers in `desktop/src-tauri/target/release/bundle/` |

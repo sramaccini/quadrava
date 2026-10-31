@@ -78,10 +78,10 @@ describe('HttpSession', () => {
     const { http } = setup();
     const session = TestBed.inject(HttpSession);
     const p = session.load();
-    http.expectOne('/bff/user').flush({ name: 'Mario Rossi', username: 'mrossi' });
+    http.expectOne('/bff/user').flush({ name: 'Mario Rossi', username: 'mrossi', email: 'mrossi@example.test' });
     await p;
     expect(session.state()).toBe('authenticated');
-    expect(session.user()).toEqual({ name: 'Mario Rossi', username: 'mrossi', roles: [] });
+    expect(session.user()).toEqual({ name: 'Mario Rossi', username: 'mrossi', email: 'mrossi@example.test', roles: [] });
   });
   it('if the BFF does not respond it considers the session expired', async () => {
     const { http, redirects } = setup();

@@ -6,9 +6,11 @@ import { LOWCODE_REDIRECT, LOWCODE_SERVICES_CONFIG } from './config';
 
 export type SessionState = 'unknown' | 'authenticated' | 'expired';
 
+/** The user of the session (contracts/bff.yaml, User). */
 interface BffUser {
   name?: string;
   username?: string;
+  email?: string;
   roles?: string[];
 }
 
@@ -34,7 +36,7 @@ export class HttpSession extends UserProvider {
 
   user(): Record<string, unknown> {
     const u = this.info();
-    return u ? { name: u.name ?? '', username: u.username ?? '', roles: u.roles ?? [] } : {};
+    return u ? { name: u.name ?? '', username: u.username ?? '', email: u.email ?? '', roles: u.roles ?? [] } : {};
   }
 
   /** Session missing or expired: the user is cleared and the flow restarts from the login, which then returns to this page. */
