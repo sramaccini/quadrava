@@ -1,6 +1,6 @@
 {
   "name": "lowcode",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "license": "MPL-2.0",
   "scripts": {
     "ng": "ng",
@@ -33,7 +33,8 @@
     "conformance:registry": "node tools/conformance-registry.mjs",
     "conformance:authz": "node tools/conformance-authz.mjs",
     "conformance:telemetry": "node tools/conformance-telemetry.mjs",
-    "conformance:bff": "node tools/conformance-bff.mjs"
+    "conformance:bff": "node tools/conformance-bff.mjs",
+    "release:check": "node tools/release.mjs"
   },
   "private": true,
   "engines": {

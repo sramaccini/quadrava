@@ -32,9 +32,10 @@ Contributor documentation: [DEVELOPMENT-GUIDE.md](DEVELOPMENT-GUIDE.md). Status 
 7. [Brand](#brand)
 8. [Run Quadrava Studio](#run-quadrava-studio)
 9. [Run the full stack](#run-the-full-stack)
-10. [Testing](#testing)
-11. [Security model](#security-model)
-12. [License](#license)
+10. [Run the runtime image](#run-the-runtime-image)
+11. [Testing](#testing)
+12. [Security model](#security-model)
+13. [License](#license)
 
 ---
 
@@ -237,6 +238,7 @@ The demo remembers the chosen language and starts from the browser language when
 | `contracts/` | OpenAPI 3.1: `authz.yaml`, `telemetry.yaml`, `registry.yaml` |
 | `reference/` | Spring Boot (Maven multi-module): `bff`, `registry`, `authz`, `telemetry` |
 | `idp/` | Keycloak for local development (Docker Compose and sample realm) |
+| `docker/` | The container image of the runtime (`docker/runtime/`, ADR-20) |
 | `examples/` | The demo **project**: `project.json` (manifest: name, languages, themes), `screens/`, `datasources/`, `navigation.json`, `themes/`, `i18n/`; used by the demo, validation and tests |
 | `docs/` | Documentation entry point and architecture decision records |
 | `assets/brand/` | Quadrava brand: icons, logos, colours and usage rules (`assets/brand/README.md`) |
@@ -387,6 +389,18 @@ npm run start:editor:registry                # port 4201: Registry panel → sav
 The `no-auth` profile logs a warning at start-up and must never be used outside a developer's machine. Add `--lowcode.registry.storage-dir=<folder>` to keep the registry data across restarts.
 
 Development users in Keycloak: `operator`, `manager`, `administrator` (password equal to the user name). For local development only.
+
+## Run the runtime image
+
+Every version of Quadrava publishes the runtime as a container image ([ADR-20](docs/adr-20-versioned-distribution.md)): an application runs it and points it at its definitions, without building Angular. Unconfigured, it is the demo; with the variables below it loads the screens published in a registry and talks to the BFF.
+
+```bash
+docker run -p 8080:8080 ghcr.io/sramaccini/quadrava-runtime:0.1.0
+docker run -p 8080:8080 -e QUADRAVA_REGISTRY_APP=invoicing -e QUADRAVA_NAVIGATION=main \
+  -e QUADRAVA_BFF_URL=http://bff:8080 ghcr.io/sramaccini/quadrava-runtime:0.1
+```
+
+All the variables, the mounted `runtime-config.json` and the ways to keep one origin with the BFF: [docker/runtime/README.md](docker/runtime/README.md). What changed between versions: [CHANGELOG.md](CHANGELOG.md).
 
 ## Testing
 

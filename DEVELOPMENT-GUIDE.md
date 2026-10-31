@@ -58,13 +58,14 @@ editor  ──► components ──► core   (the preview renders screens with 
 | `npm run conformance:registry` / `conformance:authz` / `conformance:telemetry` | Conformance kits: check a service over HTTP against its contract (`--registry`, `--authz`, `--telemetry` for the address; `--user`/`--password` or `--token`; `--reviewer-user` for the registry, `--other-user` for authorization). Shared helpers in `tools/conformance-lib.mjs` |
 | `npm run conformance:bff` | Conformance kit of a BFF against `contracts/bff.yaml` (`--bff` for the address, `--return` for a page of the applications). Without a session it checks the refusals, the CSRF cookie and the login; with `--cookie "<session cookies of a signed-in browser>"` also the user, the tenant switch when the user lists tenants (ADR-18) and, last, the logout (that session ends) |
 | `npm run validate:examples` | Validates every JSON in `examples/` against the schemas |
+| `npm run release:check` | Checks that the workspace, its lock file and every library carry one semantic version and that `CHANGELOG.md` has its section (ADR-20); `node tools/release.mjs --tag v1.2.3 --notes <file>` also checks a tag and writes the notes of the release |
 | `npx ng build runtime` | Production build (budgets: warning 2.5 MB, error 4 MB initial) |
 | `npm run desktop:build` | Desktop app of Studio for the system you are on (ADR-17): builds the libraries, the examples and the web build of Studio, then `tauri build` in `desktop/`; installers in `desktop/src-tauri/target/release/bundle/` |
 | `npm run desktop:dev` | The desktop app on the dev server of Studio (start `ng serve editor --port 4301` first), with reload on change |
 | `npm run deploy:config` | Before `ng build` on a static host: writes Studio's `studio-config.json` from `STUDIO_RUNTIME_ADDRESS` and `STUDIO_REGISTRY` (`on`/`off`) and the runtime's `studio.origins` from `RUNTIME_STUDIO_ORIGINS` (comma separated); stops on an address that is not http(s). See «Publishing Studio and the runtime» below |
 | `npm run e2e` | Playwright end-to-end tests (`e2e/`, including the axe-core accessibility check of every showcase screen) in Chromium against the demo and Studio; starts `ng serve runtime` on port 4300 and `ng serve editor` on port 4301 (`E2E_PORT` and `E2E_EDITOR_PORT` to change them) unless a server is already running there. Needs `npm run demo:prepare` and, once, `npx playwright install chromium` |
 
-Before opening a pull request, all of these must pass: `schema:check`, `schema:docs:check`, `validate:examples`, `notices:check`, `build:libs`, `test:libs`, runtime and editor tests, production builds, `npm run e2e`. CI (`.github/workflows/ci.yml`) runs the same checks on every push to `main` and every pull request, in three jobs: `frontend`, `e2e` and `java` (`mvn -B verify`). When the e2e job fails, the Playwright report and traces are uploaded as the `playwright-report` artifact (open a trace with `npx playwright show-trace <trace.zip>`).
+Before opening a pull request, all of these must pass: `schema:check`, `schema:docs:check`, `validate:examples`, `notices:check`, `build:libs`, `test:libs`, runtime and editor tests, production builds, `npm run e2e`. CI (`.github/workflows/ci.yml`) runs the same checks on every push to `main` and every pull request, in four jobs: `frontend` (which starts with `release:check`), `e2e`, `image` (builds the runtime image and starts it, as the demo and with a registry configuration) and `java` (`mvn -B verify`). When the e2e job fails, the Playwright report and traces are uploaded as the `playwright-report` artifact (open a trace with `npx playwright show-trace <trace.zip>`).
 
 ### Publishing Studio and the runtime (static hosting)
 
@@ -85,6 +86,16 @@ Example on Render (two *Static Sites* on the same repository, *Root Directory* `
 | Environment | `STUDIO_RUNTIME_ADDRESS` = address of the runtime site | `RUNTIME_STUDIO_ORIGINS` = origin of the Studio site |
 
 The runtime published this way is the demo: its data come from the in-browser back end, which knows the demo's `/api` endpoints and the staff service of `samples/medical-staff` (`runtime/src/demo/demo-medical-staff.ts`, described in `tools/demo-api.openapi.json` too).
+
+### Releasing a version
+
+Quadrava has one semantic version for the workspace and the libraries, a changelog and a release workflow ([ADR-20](docs/adr-20-versioned-distribution.md)).
+
+1. **While working**: every change visible to users or to applications adds a line under `## [Unreleased]` in `CHANGELOG.md` (`Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Security`), in the same commit. Before 1.0.0 a minor version may break compatibility: say so, with what to do.
+2. **The release commit**: the new version in `frontend/package.json` and in `frontend/projects/*/package.json`, then `npm install` (for the lock file); `[Unreleased]` becomes `## [x.y.z] - YYYY-MM-DD` with a new empty `[Unreleased]` above it, and the links at the bottom. `npm run release:check` must pass. Commit: `chore(release): x.y.z`.
+3. **The tag**: `git tag -a vx.y.z -m "Quadrava x.y.z"` and `git push origin vx.y.z`. The *Release* workflow runs the checks of CI, compares the tag with the versions and the changelog, publishes `ghcr.io/<owner>/quadrava-runtime` (`x.y.z`, `x.y` and `latest`; only `x.y.z` for a pre-release such as `x.y.z-rc.1`) and creates the GitHub release with the notes of the changelog section.
+
+The first time, the package on GitHub Container Registry is private: make it public in its settings if the image is meant for everyone. The image and its variables: [docker/runtime/README.md](docker/runtime/README.md).
 
 ## 4. Adding or changing a component
 

@@ -1,0 +1,15 @@
+# The runtime image (docker/runtime/Dockerfile) needs only frontend/, examples/ and the licence files.
+**/node_modules
+**/dist
+**/.angular
+frontend/desktop
+frontend/playwright-report
+frontend/test-results
+reference
+idp
+samples
+data
+.stack
+.git
+**/.env
+**/*.log
