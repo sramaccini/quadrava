@@ -11,6 +11,8 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-01
+
 ### Added
 
 - **Quadrava CLI** (`@sramaccini/quadrava-cli` on GitHub Packages, from this version): `quadrava validate` checks a
@@ -79,5 +81,6 @@ The first versioned release.
 - **Demo back end of the stack**: the event stream `/api/streams/tasks`, so that behind the BFF the live boards of the
   showcase follow the changes of other users.
 
-[Unreleased]: https://github.com/sramaccini/quadrava/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/sramaccini/quadrava/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/sramaccini/quadrava/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/sramaccini/quadrava/releases/tag/v0.1.0
