@@ -1,6 +1,6 @@
 {
   "name": "@sramaccini/quadrava-core",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Interpreter of the Quadrava language: state, data sources, actions, visibility, component catalogue and themes.",
   "license": "MPL-2.0",
   "repository": {
@@ -14,8 +14,8 @@
   "peerDependencies": {
     "@angular/common": "^22.2.0",
     "@angular/core": "^22.2.0",
-    "expressions": "^0.3.0",
-    "schema": "^0.3.0",
+    "expressions": "^0.4.0",
+    "schema": "^0.4.0",
     "ng-zorro-antd": "^22.1.0"
   },
   "dependencies": {

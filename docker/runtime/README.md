@@ -5,10 +5,10 @@ served by nginx on port 8080. It is configured when the container starts, so an 
 builds Angular: it runs the image of a version and points it at its definitions.
 
 ```bash
-docker run -p 8080:8080 ghcr.io/sramaccini/quadrava-runtime:0.3.0     # the demo, with the examples
+docker run -p 8080:8080 ghcr.io/sramaccini/quadrava-runtime:0.4.0     # the demo, with the examples
 ```
 
-Tags: the exact version (`0.3.0`), the minor line (`0.3`) and `latest` (the most recent stable version). A version
+Tags: the exact version (`0.4.0`), the minor line (`0.4`) and `latest` (the most recent stable version). A version
 with a pre-release part (`0.2.0-rc.1`) gets only its exact tag.
 
 ## Configuration
@@ -92,7 +92,7 @@ The realm is imported only when Keycloak is created: after a change to `idp/real
 From the root of the repository:
 
 ```bash
-docker build -f docker/runtime/Dockerfile --build-arg VERSION=0.3.0 -t quadrava-runtime .
+docker build -f docker/runtime/Dockerfile --build-arg VERSION=0.4.0 -t quadrava-runtime .
 ```
 
 The release workflow (`.github/workflows/release.yml`) builds it for `linux/amd64` and `linux/arm64` and publishes it

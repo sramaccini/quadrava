@@ -12,6 +12,8 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-01
+
 ### Removed
 
 - **Quadrava Studio, its desktop app and the reference registry** leave this repository for the commercial edition
@@ -126,7 +128,8 @@ The first versioned release.
 - **Demo back end of the stack**: the event stream `/api/streams/tasks`, so that behind the BFF the live boards of the
   showcase follow the changes of other users.
 
-[Unreleased]: https://github.com/sramaccini/quadrava/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/sramaccini/quadrava/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/sramaccini/quadrava/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/sramaccini/quadrava/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/sramaccini/quadrava/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/sramaccini/quadrava/compare/v0.1.0...v0.2.0

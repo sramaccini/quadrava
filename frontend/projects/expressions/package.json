@@ -1,6 +1,6 @@
 {
   "name": "@sramaccini/quadrava-expressions",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Evaluator of the CEL expressions of the Quadrava language: isolated, deterministic, with limits and static checking.",
   "license": "MPL-2.0",
   "repository": {
