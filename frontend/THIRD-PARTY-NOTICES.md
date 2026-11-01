@@ -6,13 +6,13 @@ The reference services in `reference/` are distributed as source only; their Mav
 
 | Package | Version | Licence |
 | --- | --- | --- |
-| @angular/cdk | 22.2.2 | MIT |
-| @angular/common | 22.2.1 | MIT |
-| @angular/compiler | 22.2.1 | MIT |
-| @angular/core | 22.2.1 | MIT |
-| @angular/forms | 22.2.1 | MIT |
-| @angular/platform-browser | 22.2.1 | MIT |
-| @angular/router | 22.2.1 | MIT |
+| @angular/cdk | 22.2.5 | MIT |
+| @angular/common | 22.2.4 | MIT |
+| @angular/compiler | 22.2.4 | MIT |
+| @angular/core | 22.2.4 | MIT |
+| @angular/forms | 22.2.4 | MIT |
+| @angular/platform-browser | 22.2.4 | MIT |
+| @angular/router | 22.2.4 | MIT |
 | @ant-design/colors | 7.2.1 | MIT |
 | @ant-design/fast-color | 2.0.6 | MIT |
 | @ant-design/icons-angular | 22.1.1 | MIT |
@@ -27,9 +27,9 @@ The reference services in `reference/` are distributed as source only; their Mav
 | parse5 | 8.0.1 | MIT |
 | rxjs | 7.8.2 | Apache-2.0 |
 | tslib | 2.8.1 | 0BSD |
-| zod | 4.6.5 | MIT |
+| zod | 4.6.6 | MIT |
 
-## @angular/cdk 22.2.2
+## @angular/cdk 22.2.5
 
 Licence: MIT · Source: https://github.com/angular/components.git
 
@@ -57,7 +57,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-## @angular/common 22.2.1
+## @angular/common 22.2.4
 
 Licence: MIT · Source: https://github.com/angular/angular.git
 
@@ -85,7 +85,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-## @angular/compiler 22.2.1
+## @angular/compiler 22.2.4
 
 Licence: MIT · Source: https://github.com/angular/angular.git
 
@@ -113,7 +113,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-## @angular/core 22.2.1
+## @angular/core 22.2.4
 
 Licence: MIT · Source: https://github.com/angular/angular.git
 
@@ -141,7 +141,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-## @angular/forms 22.2.1
+## @angular/forms 22.2.4
 
 Licence: MIT · Source: https://github.com/angular/angular.git
 
@@ -169,7 +169,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-## @angular/platform-browser 22.2.1
+## @angular/platform-browser 22.2.4
 
 Licence: MIT · Source: https://github.com/angular/angular.git
 
@@ -197,7 +197,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-## @angular/router 22.2.1
+## @angular/router 22.2.4
 
 Licence: MIT · Source: https://github.com/angular/angular.git
 
@@ -791,7 +791,7 @@ OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ```
 
-## zod 4.6.5
+## zod 4.6.6
 
 Licence: MIT · Source: https://github.com/colinhacks/zod.git
 
