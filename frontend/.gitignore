@@ -43,16 +43,9 @@ __screenshots__/
 .DS_Store
 Thumbs.db
 
-# copiati da ../examples da tools/copy-examples.mjs
+# Copied from ../examples by tools/copy-examples.mjs
 projects/runtime/public/examples/
-projects/editor/public/examples/
-# Written at deployment by tools/deploy-config.mjs
-projects/editor/public/studio-config.json
 
-# rapporti di Playwright
+# Playwright reports
 /playwright-report/
 /test-results/
-
-# Tauri (desktop app of Studio): Rust build output and generated schemas
-desktop/src-tauri/target/
-desktop/src-tauri/gen/

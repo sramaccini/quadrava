@@ -31,7 +31,6 @@
 
   <modules>
     <module>bff</module>
-    <module>registry</module>
     <module>authz</module>
     <module>telemetry</module>
   </modules>

@@ -1,19 +1,6 @@
 {
   "definitions": {
-    "source": "registry",
-    "app": "demo",
-    "env": "development",
-    "navigation": "invoicing",
-    "themes": [
-      "light",
-      "classic",
-      "dark"
-    ],
-    "languages": [
-      "en",
-      "it"
-    ],
-    "defaultLanguage": "en"
+    "source": "examples"
   },
   "services": {
     "source": "bff",

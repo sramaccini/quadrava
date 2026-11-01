@@ -44,9 +44,7 @@ jobs:
       - run: npx ng test components --watch=false
       - run: npx ng test services --watch=false
       - run: npx ng test runtime --watch=false
-      - run: npx ng test editor --watch=false
       - run: npx ng build runtime
-      - run: npx ng build editor
 
   e2e:
     name: End-to-end (Playwright)

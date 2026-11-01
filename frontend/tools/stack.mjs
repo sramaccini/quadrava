@@ -1,13 +1,14 @@
 // Starts the whole development stack, with the real login, in one command:
-//   Keycloak (Docker) → registry, authorization, telemetry, BFF (Java jars) → demo back end → examples published
-//   → runtime (4200) and editor (4201) behind the BFF.
+//   Keycloak (Docker) → authorization, telemetry, BFF (Java jars) → demo back end → runtime (4200) behind the BFF,
+//   with the example project from its files.
 //
 //   npm run stack [-- --services-only] [-- --rebuild]
 //
-// --services-only  does not start runtime and editor (to start them separately, for example from the IDE)
+// --services-only  does not start the runtime (to start it separately, for example from the IDE)
 // --rebuild        rebuilds the jars even if they already exist
 //
-// The registry keeps its data in ../data/registry (it survives restarts). The logs of every process are in
+// Quadrava CE has no registry: the BFF forwards /registry to LOWCODE_REGISTRY_URL (http://localhost:8081 if absent), so a
+// registry that follows contracts/registry.yaml can be started next to the stack. The logs of every process are in
 // ../.stack/logs. Ctrl+C stops everything except Keycloak, which stays up to restart quickly
 // (to stop it: cd idp && docker compose down). For local development only.
 import { spawn, spawnSync } from 'node:child_process';
@@ -81,7 +82,6 @@ const jar = (module) => {
 };
 
 mkdirSync(logs, { recursive: true });
-mkdirSync(join(root, 'data', 'registry'), { recursive: true });
 
 // 1. Keycloak
 say('starting Keycloak (Docker)…');
@@ -90,29 +90,23 @@ run('docker', ['compose', 'up', '-d'], join(root, 'idp'));
 await ready('Keycloak', 'http://localhost:8180/realms/quadrava/.well-known/openid-configuration', 180);
 
 // 2. Java services
-const modules = ['registry', 'authz', 'telemetry', 'bff'];
+const modules = ['authz', 'telemetry', 'bff'];
 if (flags.has('--rebuild') || modules.some((m) => !jar(m))) {
   say('building the Java services (mvn package)…');
   run('mvn', ['-q', 'package', '-DskipTests'], reference);
 }
-start('registry', 'java', ['-jar', jar('registry'), `--quadrava.registry.storage-dir=${join(root, 'data', 'registry')}`], reference);
 start('authz', 'java', ['-jar', jar('authz')], reference);
 start('telemetry', 'java', ['-jar', jar('telemetry')], reference);
 start('bff', 'java', ['-jar', jar('bff')], reference);
 start('demo-api', process.execPath, [join(here, 'demo-api.mjs')], frontend);
 await Promise.all([
-  ready('registry', 'http://localhost:8081/actuator/health'),
   ready('authorization', 'http://localhost:8082/actuator/health'),
   ready('telemetry', 'http://localhost:8083/actuator/health'),
   ready('BFF', 'http://localhost:8080/actuator/health'),
   ready('demo back end', 'http://localhost:8084/'),
 ]);
 
-// 3. Examples in the registry (same content = same version: publishing again creates no duplicates)
-say('publishing the examples in the registry…');
-run(process.execPath, [join(here, 'publish-examples.mjs'), '--user', 'administrator', '--password', 'administrator'], frontend);
-
-// 4. Runtime and editor behind the BFF
+// 3. Runtime behind the BFF
 if (!flags.has('--services-only')) {
   if (!existsSync(join(frontend, 'dist', 'components'))) {
     say('building the libraries (build:libs)…');
@@ -121,14 +115,12 @@ if (!flags.has('--services-only')) {
   run(process.execPath, [join(here, 'copy-examples.mjs')], frontend);
   const ng = join(frontend, 'node_modules', '@angular', 'cli', 'bin', 'ng.js');
   start('runtime', process.execPath, [ng, 'serve', 'runtime', '--port', '4200', '-c', 'bff'], frontend);
-  start('editor', process.execPath, [ng, 'serve', 'editor', '--port', '4201', '-c', 'bff'], frontend);
-  await Promise.all([ready('runtime', 'http://localhost:4200/', 300), ready('editor', 'http://localhost:4201/', 300)]);
+  await ready('runtime', 'http://localhost:4200/', 300);
 }
 
 say('all ready:');
 console.log(`
   Runtime   http://localhost:4200   (login: operator, manager or administrator; password = user name)
-  Editor    http://localhost:4201   (Registry panel, application «demo»)
   Keycloak  http://localhost:8180   (console: admin / admin)
   Logs      .stack/logs/
 

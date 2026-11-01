@@ -36,12 +36,6 @@
       "path": "./projects/runtime/tsconfig.spec.json"
     },
     {
-      "path": "./projects/editor/tsconfig.app.json"
-    },
-    {
-      "path": "./projects/editor/tsconfig.spec.json"
-    },
-    {
       "path": "./projects/schema/tsconfig.lib.json"
     },
     {

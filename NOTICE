@@ -1,15 +1,14 @@
-Quadrava
+Quadrava Community Edition (CE)
 Copyright 2026 Simone Ramaccini
 
-The source code of Quadrava is licensed under the Mozilla Public License,
+The source code of Quadrava CE is licensed under the Mozilla Public License,
 version 2.0 (see LICENSE). If a copy of the MPL was not distributed with a
 file, you can obtain one at https://mozilla.org/MPL/2.0/.
 
-The Quadrava name and logos (assets/brand/ and its copies, among them the
-desktop app icons in frontend/desktop/src-tauri/icons/) are not covered by
+The Quadrava name and logos (assets/brand/ and its copies) are not covered by
 the MPL: see TRADEMARKS.md.
 
-Quadrava uses third-party software under their own licences, among them
+Quadrava CE uses third-party software under their own licences, among them
 Angular (MIT), NG-ZORRO and the Ant Design packages (MIT), cel-js (MIT),
 date-fns (MIT), tslib (0BSD), RxJS (Apache-2.0), the Sora typeface (SIL Open
 Font License 1.1), Spring Boot (Apache-2.0) and Keycloak (Apache-2.0).

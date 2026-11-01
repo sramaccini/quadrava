@@ -8,7 +8,7 @@ You will get an answer within a week. Once a fix is available, the advisory is p
 
 ## Scope
 
-- The libraries, the runtime and Quadrava Studio in `frontend/`, the JSON schemas and the OpenAPI contracts.
+- The libraries, the runtime and the CLI in `frontend/`, the JSON schemas and the OpenAPI contracts.
 - The reference services in `reference/` and the Keycloak setup in `idp/` are **for development only**: they use fixed development credentials (`dev-only-secret`, users whose password is their name) and must not be exposed. Problems there are welcome, but they are not vulnerabilities of a production component.
 
 ## Supported versions

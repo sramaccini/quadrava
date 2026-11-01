@@ -1,15 +1,35 @@
 # Changelog
 
-Notable changes of Quadrava, per release. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
+Notable changes of Quadrava Community Edition (CE), per release. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html) (ADR-20).
 
 What a version covers: the JSON languages (`frontend/projects/schema`), the libraries, the runtime and its container
-image, Quadrava Studio and the contracts (`contracts/*.yaml`, which also carry their own version). Before 1.0.0 a minor
+image, the CLI and the contracts (`contracts/*.yaml`, which also carry their own version); up to 0.3.0 also
+Quadrava Studio and the reference registry, which since 0.4.0 are the commercial edition (ADR-21). Before 1.0.0 a minor
 version may break compatibility; the entry then says so under **Changed** or **Removed**, with what to do.
 
 How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
+
+### Removed
+
+- **Quadrava Studio, its desktop app and the reference registry** leave this repository for the commercial edition
+  (ADR-21): `frontend/projects/editor`, `frontend/desktop`, `reference/registry`, the Desktop workflow, the scripts
+  `start:editor`, `start:editor:registry`, `start:editor:bff`, `desktop:dev`, `desktop:build`, the Studio settings
+  of `deploy:config` (`STUDIO_RUNTIME_ADDRESS`, `STUDIO_REGISTRY`) and `docs/editor.md`, ADR-17. What was published up
+  to 0.3.0 stays under MPL-2.0. The registry contract (`contracts/registry.yaml`), its conformance kit, the support of
+  registries in the runtime and in the CLI, and the «Run project» protocol (ADR-16) stay.
+
+### Changed
+
+- **The project is Quadrava Community Edition (CE)**: README, guides and notices carry the name.
+- **Local stack without a registry**: `npm run stack` starts Keycloak, authorization, telemetry, the BFF and the demo
+  back end, and the runtime behind the BFF loads the example project from its files (`config/bff/runtime-config.json`:
+  `definitions.source` `examples`). To use a registry, start one that follows `registry.yaml` on port 8081 (the BFF
+  forwards `/registry` to `LOWCODE_REGISTRY_URL`), then `npm run publish:examples` and `start:runtime:registry`.
+- `npm run demo:prepare` copies the examples into the runtime only; its `examples/files.json` lists the files of the
+  project, as before.
 
 ## [0.3.0] - 2026-11-01
 

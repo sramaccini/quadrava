@@ -1,8 +1,8 @@
 # Quadrava CLI
 
-Checks and publishes [Quadrava](https://github.com/sramaccini/quadrava) projects: the screens, data sources,
+Checks and publishes [Quadrava CE](https://github.com/sramaccini/quadrava) projects: the screens, data sources,
 navigation, themes and translations in JSON that the Quadrava runtime shows. Made for the CI of a project: a problem is
-found before the project reaches the registry, with the same checks the runtime and Quadrava Studio apply.
+found before the project reaches the registry, with the same checks the runtime applies.
 
 Node.js 20 or later; no dependencies. The version of the CLI is the version of Quadrava whose schemas it checks.
 
@@ -30,7 +30,7 @@ quadrava validate [folder]
 quadrava publish [folder] --registry <url> --app <id> [--env <environment>] [--token-env <variable>]
 ```
 
-**`validate`** reads the project in the folder (default: the current one), laid out as Quadrava Studio saves it:
+**`validate`** reads the project in the folder (default: the current one), laid out as a Quadrava project:
 
 ```
 project.json          manifest: name, languages, themes
@@ -41,7 +41,7 @@ themes/*.json         one file per theme
 i18n/*.json           one catalogue per language: key → text
 ```
 
-and checks, as the runtime and Studio read them:
+and checks, as the runtime reads them:
 
 - every document against its JSON Schema;
 - the identifier of every screen, data sources document and theme against the name of its file;
@@ -63,7 +63,7 @@ since the screens refer to them), saves a version in the registry and publishes 
 `development`), as described by the registry contract (`contracts/registry.yaml`). The token is read from the
 environment variable `QUADRAVA_TOKEN`, or from the one named by `--token-env`; never from the command line, which would
 leave it in logs and process lists. Protected environments (such as `production`) accept approved versions only:
-there publishing fails until a reviewer approves them in Studio.
+there publishing fails until a reviewer approves them in the registry.
 
 Exit code: `0` when everything is fine, `1` when the project has problems or a document was not published, `2` for a
 wrong command.

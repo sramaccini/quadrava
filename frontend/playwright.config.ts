@@ -1,11 +1,10 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * End-to-end tests in the browser against the runtime demo (`ng serve runtime`, data simulated in the browser) and the
- * editor (`ng serve editor`, at `E2E_EDITOR_PORT`). Build the libraries and copy the examples first: `npm run demo:prepare`.
+ * End-to-end tests in the browser against the runtime demo (`ng serve runtime`, data simulated in the browser). Build the
+ * libraries and copy the examples first: `npm run demo:prepare`.
  */
 const port = Number(process.env['E2E_PORT'] ?? 4300);
-const editorPort = Number(process.env['E2E_EDITOR_PORT'] ?? 4301);
 
 export default defineConfig({
   testDir: 'e2e',
@@ -19,18 +18,10 @@ export default defineConfig({
     trace: 'retain-on-failure',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
-  webServer: [
-    {
-      command: `node node_modules/@angular/cli/bin/ng.js serve runtime --port ${port}`,
-      url: `http://localhost:${port}`,
-      reuseExistingServer: !process.env['CI'],
-      timeout: 180_000,
-    },
-    {
-      command: `node node_modules/@angular/cli/bin/ng.js serve editor --port ${editorPort}`,
-      url: `http://localhost:${editorPort}`,
-      reuseExistingServer: !process.env['CI'],
-      timeout: 180_000,
-    },
-  ],
+  webServer: {
+    command: `node node_modules/@angular/cli/bin/ng.js serve runtime --port ${port}`,
+    url: `http://localhost:${port}`,
+    reuseExistingServer: !process.env['CI'],
+    timeout: 180_000,
+  },
 });

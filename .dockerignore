@@ -2,7 +2,6 @@
 **/node_modules
 **/dist
 **/.angular
-frontend/desktop
 frontend/playwright-report
 frontend/test-results
 reference

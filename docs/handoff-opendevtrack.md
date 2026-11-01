@@ -75,7 +75,7 @@ so that an adopter with another back end (the reference BFF, or anything else) s
    against the reference implementation; ms-authz must pass it too.
 
 As usual: schema first, `npm run schema:sync` and `schema:docs`, tests for schema, component and showcase, an example
-in the demo showcase, the component catalogue and `docs/editor.md` updated, an ADR for anything structural.
+in the demo showcase, the component catalogue updated, an ADR for anything structural.
 
 ## 3. Work items, in priority order
 

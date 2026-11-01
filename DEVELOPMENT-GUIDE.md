@@ -1,13 +1,12 @@
 # Development Guide
 
-How to work on Quadrava: set up, build, test, extend and contribute. For what the project is, read [README.md](README.md) first. Design rationale lives in the documents linked from [docs/README.md](docs/README.md).
+How to work on Quadrava Community Edition (CE): set up, build, test, extend and contribute. For what the project is, read [README.md](README.md) first. Design rationale lives in the documents linked from [docs/README.md](docs/README.md).
 
 ## 1. Prerequisites and setup
 
 * Node.js 24 and npm (pinned in `.nvmrc` and in `engines` of `frontend/package.json`; `nvm use` or `fnm use` from the repository root picks it).
 * JDK 21 and Maven 3.9+ (only for `reference/`).
 * Docker (only for the Keycloak in `idp/`).
-* Rust 1.77.2 or later and the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) of your system (only to build the desktop app of Studio locally; CI builds it on every system).
 
 ```bash
 cd frontend
@@ -25,7 +24,6 @@ Dependency order (an arrow means "depends on"); never introduce a cycle or an up
 runtime ──► components ──► core ──► expressions
    │                          └───► schema
    └──► services ──► core
-editor  ──► components ──► core   (the preview renders screens with the real runtime)
 ```
 
 * `schema`: JSON Schemas (`screen`, `theme`, `navigation`), Ajv validators, TypeScript types. The `.schema.ts` files are **generated** from the JSON by `tools/sync-schema.mjs`.
@@ -34,67 +32,49 @@ editor  ──► components ──► core   (the preview renders screens with 
 * `components`: everything that depends on NG-ZORRO (standard components, side menu, user menu, confirmation dialog, notifier, theme bridge).
 * `services`: production implementations of the ports.
 * `runtime`: the demo application; wiring only, plus `demo/` fakes.
-* `editor`: **Quadrava Studio**, the visual editor for screens, navigation and themes. `model/` holds pure, tested logic (immutable document operations, the `SchemaReader`, templates, drop positions, `DocumentState` with its stores `EditorStore`, `DataSourcesStore`, `NavigationStore`, `ThemeStore` and `ProjectStore`, one per open window, created by `Workspace` in an injector of the window; `Project`, `ProjectFolder` and `ProjectCommands` for the project on disk or in the browser); `ui/` the start page, the project panel, the workspace, the windows and the panels; `preview/` the live preview and its fake ports. The property panel is generated from `screen.schema.json` (`model/schema-info.ts`): do not hand-write per-component forms. See `docs/editor.md`.
 
 ## 3. Daily commands
 
 | Command | What it does |
 | --- | --- |
-| `npm run stack` | The whole development stack with the real login in one command (Keycloak in Docker, reference services, demo back end, examples published, runtime on 4200 and editor on 4201 behind the BFF); `-- --services-only`, `-- --rebuild`; logs in `.stack/logs`, registry data in `data/registry` |
+| `npm run stack` | The whole development stack with the real login in one command (Keycloak in Docker, reference services, demo back end, runtime on 4200 behind the BFF with the example project); `-- --services-only`, `-- --rebuild`; logs in `.stack/logs` |
 | `npm run build:libs` | Builds all libraries in dependency order |
 | `npm run test:libs` | Unit tests for every library |
-| `npx ng test <project> --watch=false` | Tests of one project (`schema`, `expressions`, `core`, `components`, `services`, `runtime`, `editor`) |
-| `npm run demo:prepare` | Copies `examples/` into `projects/runtime/public/examples` and `projects/editor/public/examples` (git-ignored), with an `index.json` of the screens; required by the runtime and editor specs |
+| `npx ng test <project> --watch=false` | Tests of one project (`schema`, `expressions`, `core`, `components`, `services`, `runtime`) |
+| `npm run demo:prepare` | Copies `examples/` into `projects/runtime/public/examples` (git-ignored), with an `index.json` of the screens and a `files.json` of the project; required by the runtime specs |
 | `npm run start:runtime` | Builds libs, prepares examples and serves the demo on port 4200 |
-| `npm run start:editor` | Builds libs, prepares examples and serves Quadrava Studio on port 4201 |
-| `npm run start:runtime:registry` / `start:editor:registry` | Same apps, with `/registry` proxied to the reference registry on 8081 (run it with the `no-auth` profile); the runtime loads its definitions from the registry |
-| `npm run start:runtime:bff` / `start:editor:bff` | Same apps behind the BFF on 8080 (needs Keycloak and the reference services): `/registry`, `/api`, `/authz`, `/telemetry`, `/bff`, `/oauth2`, `/logout` are proxied; the runtime uses the real `services` ports (`projects/runtime/config/bff/runtime-config.json`) |
-| `npm run demo-api` | Demo application back end on 8084 (the `/api` route of the BFF): the in-browser demo logic (`runtime/src/demo/demo-backend.ts`, bundled with esbuild at start-up) behind RS256 token verification against the local realm; `-- --no-auth` switches it off. It also serves its OpenAPI description (`tools/demo-api.openapi.json`) at `/v3/api-docs` without a token and with CORS open, and at `/api/v3/api-docs` behind the BFF, for the editor's OpenAPI import; keep it in step when demo endpoints change |
-| `npm run publish:examples -- --user <u> --password <p>` | Publishes every example into the registry with a token from the development client `quadrava-tools` (local realm only); without arguments it works against the `no-auth` registry |
+| `npm run start:runtime:registry` | The demo with `/registry` proxied to a registry on 8081 that follows `contracts/registry.yaml` (Quadrava CE has none of its own); the runtime loads its definitions from it |
+| `npm run start:runtime:bff` | The runtime behind the BFF on 8080 (needs Keycloak and the reference services): `/registry`, `/api`, `/authz`, `/telemetry`, `/bff`, `/oauth2`, `/logout` are proxied; the runtime uses the real `services` ports and the example project (`projects/runtime/config/bff/runtime-config.json`) |
+| `npm run demo-api` | Demo application back end on 8084 (the `/api` route of the BFF): the in-browser demo logic (`runtime/src/demo/demo-backend.ts`, bundled with esbuild at start-up) behind RS256 token verification against the local realm; `-- --no-auth` switches it off. It also serves its OpenAPI description (`tools/demo-api.openapi.json`) at `/v3/api-docs` without a token and with CORS open, and at `/api/v3/api-docs` behind the BFF, for tools that import data sources from OpenAPI; keep it in step when demo endpoints change |
+| `npm run publish:examples -- --user <u> --password <p>` | Publishes every example into a registry with a token from the development client `quadrava-tools` (local realm only); without arguments it sends no token |
 | `npm run publish:examples` | Publishes every example screen, the navigation, every theme and every language catalogue (as `messages` documents) to a registry (`--registry`, `--app`, `--env`, `--token`) |
 | `npm run schema:sync` / `schema:check` | Regenerate / verify the generated schema constants and the precompiled validators (`schema/validation/src/validators.generated.ts`, Ajv standalone) |
 | `npm run schema:docs` / `schema:docs:check` | Regenerate / verify `docs/schema-reference.md` from the schema descriptions |
-| `npm run notices` / `notices:check` | Regenerate / verify `THIRD-PARTY-NOTICES.md` (the packages shipped in the bundles, with their licences); run it after changing the dependencies. The file is copied into the runtime and editor builds |
+| `npm run notices` / `notices:check` | Regenerate / verify `THIRD-PARTY-NOTICES.md` (the packages shipped in the bundles, with their licences); run it after changing the dependencies. The file is copied into the runtime build |
 | `npm run conformance:registry` / `conformance:authz` / `conformance:telemetry` | Conformance kits: check a service over HTTP against its contract (`--registry`, `--authz`, `--telemetry` for the address; `--user`/`--password` or `--token`; `--reviewer-user` for the registry, `--other-user` for authorization; for a BFF that answers `/authz` on the session, `--cookie` and `--other-cookie` with the cookies of a signed-in browser, the CSRF token taken from `XSRF-TOKEN`). Shared helpers in `tools/conformance-lib.mjs` |
 | `npm run conformance:bff` | Conformance kit of a BFF against `contracts/bff.yaml` (`--bff` for the address, `--return` for a page of the applications). Without a session it checks the refusals, the CSRF cookie and the login; with `--cookie "<session cookies of a signed-in browser>"` also the user, the tenant switch when the user lists tenants (ADR-18) and, last, the logout (that session ends) |
 | `npm run validate:examples` | Checks the example project with the Quadrava CLI (`quadrava validate ../examples`): schemas, identifiers, data source references, patterns, CEL expressions, themes, languages and catalogues |
 | `npm run cli:build` / `cli:test` | Builds the Quadrava CLI (`projects/cli`, bundled with esbuild) into `dist/cli`, ready for `npm publish` / builds it and runs its tests (`node --test`, the built command on copies of the examples and a fake registry) |
 | `npm run release:check` | Checks that the workspace, its lock file and every library carry one semantic version and that `CHANGELOG.md` has its section (ADR-20); `node tools/release.mjs --tag v1.2.3 --notes <file>` also checks a tag and writes the notes of the release |
 | `npx ng build runtime` | Production build (budgets: warning 2.5 MB, error 4 MB initial) |
-| `npm run desktop:build` | Desktop app of Studio for the system you are on (ADR-17): builds the libraries, the examples and the web build of Studio, then `tauri build` in `desktop/`; installers in `desktop/src-tauri/target/release/bundle/` |
-| `npm run desktop:dev` | The desktop app on the dev server of Studio (start `ng serve editor --port 4301` first), with reload on change |
-| `npm run deploy:config` | Before `ng build` on a static host: writes Studio's `studio-config.json` from `STUDIO_RUNTIME_ADDRESS` and `STUDIO_REGISTRY` (`on`/`off`) and the runtime's `studio.origins` from `RUNTIME_STUDIO_ORIGINS` (comma separated); stops on an address that is not http(s). See «Publishing Studio and the runtime» below |
-| `npm run e2e` | Playwright end-to-end tests (`e2e/`, including the axe-core accessibility check of every showcase screen) in Chromium against the demo and Studio; starts `ng serve runtime` on port 4300 and `ng serve editor` on port 4301 (`E2E_PORT` and `E2E_EDITOR_PORT` to change them) unless a server is already running there. Needs `npm run demo:prepare` and, once, `npx playwright install chromium` |
+| `npm run deploy:config` | Before `ng build` on a static host: writes the runtime's `studio.origins` from `RUNTIME_STUDIO_ORIGINS` (comma separated), the Studios allowed to open it with «Run project» (ADR-16); stops on an address that is not http(s) |
+| `npm run e2e` | Playwright end-to-end tests (`e2e/`, including the axe-core accessibility check of every showcase screen) in Chromium against the demo; starts `ng serve runtime` on port 4300 (`E2E_PORT` to change it) unless a server is already running there. Needs `npm run demo:prepare` and, once, `npx playwright install chromium` |
 
-Before opening a pull request, all of these must pass: `schema:check`, `schema:docs:check`, `validate:examples`, `notices:check`, `build:libs`, `test:libs`, runtime and editor tests, production builds, `npm run e2e`. CI (`.github/workflows/ci.yml`) runs the same checks on every push to `main` and every pull request, in four jobs: `frontend` (which starts with `release:check`), `e2e`, `image` (builds the runtime image and starts it, as the demo and with a registry configuration) and `java` (`mvn -B verify`). When the e2e job fails, the Playwright report and traces are uploaded as the `playwright-report` artifact (open a trace with `npx playwright show-trace <trace.zip>`).
+Before opening a pull request, all of these must pass: `schema:check`, `schema:docs:check`, `validate:examples`, `notices:check`, `build:libs`, `test:libs`, runtime tests, the production build, `npm run e2e`. CI (`.github/workflows/ci.yml`) runs the same checks on every push to `main` and every pull request, in four jobs: `frontend` (which starts with `release:check`), `e2e`, `image` (builds the runtime image and starts it, as the demo and with a registry configuration) and `java` (`mvn -B verify`). When the e2e job fails, the Playwright report and traces are uploaded as the `playwright-report` artifact (open a trace with `npx playwright show-trace <trace.zip>`).
 
-### Publishing Studio and the runtime (static hosting)
+### Publishing the runtime (static hosting)
 
-Studio and the runtime are two static sites. For «Run project» to work online, each one must know the other:
-
-| Site | Environment variable | What it writes |
-| --- | --- | --- |
-| Studio | `STUDIO_RUNTIME_ADDRESS=https://quadrava-runtime.example/` | `projects/editor/public/studio-config.json`: the runtime that «Run project» opens for every visitor |
-| Studio | `STUDIO_REGISTRY=off` | `"registry": false` in the same file: no registry commands, no calls to `/registry` (for a Studio without BFF, such as a public demo; the default is on in the browser, off in the desktop app) |
-| Runtime | `RUNTIME_STUDIO_ORIGINS=https://quadrava.example` | `studio.origins` in `projects/runtime/public/runtime-config.json`: the Studios allowed to send their project (the development origins are replaced) |
-
-Example on Render (two *Static Sites* on the same repository, *Root Directory* `frontend`, environment variable `NODE_VERSION=24.21.0`, and a *Rewrite* rule `/*` → `/index.html` for the routes of the single-page apps):
-
-| | Studio | Runtime |
-| --- | --- | --- |
-| Build command | `npm ci && npm run demo:prepare && npm run deploy:config && npx ng build editor` | `npm ci && npm run demo:prepare && npm run deploy:config && npx ng build runtime` |
-| Publish directory | `dist/editor/browser` | `dist/runtime/browser` |
-| Environment | `STUDIO_RUNTIME_ADDRESS` = address of the runtime site | `RUNTIME_STUDIO_ORIGINS` = origin of the Studio site |
+The runtime is a static site. Example on Render (a *Static Site* on the repository, *Root Directory* `frontend`, environment variable `NODE_VERSION=24.21.0`, and a *Rewrite* rule `/*` → `/index.html` for the routes of the single-page app): build command `npm ci && npm run demo:prepare && npm run deploy:config && npx ng build runtime`, publish directory `dist/runtime/browser`. With `RUNTIME_STUDIO_ORIGINS` set to the origin of a published Studio, that Studio can open the runtime with «Run project».
 
 The runtime published this way is the demo: its data come from the in-browser back end, which knows the demo's `/api` endpoints and the staff service of `samples/medical-staff` (`runtime/src/demo/demo-medical-staff.ts`, described in `tools/demo-api.openapi.json` too).
 
 ### Releasing a version
 
-Quadrava has one semantic version for the workspace and the libraries, a changelog and a release workflow ([ADR-20](docs/adr-20-versioned-distribution.md)).
+Quadrava CE has one semantic version for the workspace and the libraries, a changelog and a release workflow ([ADR-20](docs/adr-20-versioned-distribution.md)).
 
 1. **While working**: every change visible to users or to applications adds a line under `## [Unreleased]` in `CHANGELOG.md` (`Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Security`), in the same commit. Before 1.0.0 a minor version may break compatibility: say so, with what to do.
 2. **The release commit**: the new version in `frontend/package.json` and in `frontend/projects/*/package.json` (also in the peer dependencies between the libraries, `^x.y.z`), then `npm install` (for the lock file); `[Unreleased]` becomes `## [x.y.z] - YYYY-MM-DD` with a new empty `[Unreleased]` above it, and the links at the bottom. `npm run release:check` must pass. Commit: `chore(release): x.y.z`.
-3. **The tag**: `git tag -a vx.y.z -m "Quadrava x.y.z"` and `git push origin vx.y.z`. The *Release* workflow runs the checks of CI, compares the tag with the versions and the changelog, publishes `ghcr.io/<owner>/quadrava-runtime` (`x.y.z`, `x.y` and `latest`; only `x.y.z` for a pre-release such as `x.y.z-rc.1`), publishes the CLI `@sramaccini/quadrava-cli` and the five libraries (`@sramaccini/quadrava-schema`, `-expressions`, `-core`, `-components`, `-services`) on GitHub Packages (a pre-release under the `next` tag), and creates the GitHub release with the notes of the changelog section and the runtime web build (`quadrava-runtime-web-x.y.z.tar.gz`).
+3. **The tag**: `git tag -a vx.y.z -m "Quadrava CE x.y.z"` and `git push origin vx.y.z`. The *Release* workflow runs the checks of CI, compares the tag with the versions and the changelog, publishes `ghcr.io/<owner>/quadrava-runtime` (`x.y.z`, `x.y` and `latest`; only `x.y.z` for a pre-release such as `x.y.z-rc.1`), publishes the CLI `@sramaccini/quadrava-cli` and the five libraries (`@sramaccini/quadrava-schema`, `-expressions`, `-core`, `-components`, `-services`) on GitHub Packages (a pre-release under the `next` tag), and creates the GitHub release with the notes of the changelog section and the runtime web build (`quadrava-runtime-web-x.y.z.tar.gz`).
 
 **Using the libraries from another project** ([ADR-21](docs/adr-21-open-core.md)). The sources import the short names (`core`, `schema/validation`…); a consumer installs every library it uses, and those they require, under those names with npm aliases, and reads the scope from GitHub Packages (a token with `read:packages`):
 
@@ -130,7 +110,7 @@ Example: adding a `progress` node.
 3. **Register.** Add it to `STANDARD_COMPONENTS` (and export it from `public-api.ts`). Application-specific components are registered with `provideLowcodeComponents(extra)`.
 4. **Tests.** Cover rendering, expression-driven state (`visibleIf`, `enabledIf`, `can()`), the fail-closed behaviour, and any action it triggers.
 5. **Example.** Add the usage to a showcase screen in `examples/showcase-*.json` and run `npm run validate:examples`.
-6. **Editor.** Add a starting template in `projects/editor/src/app/model/templates.ts` (and its data source in `TEMPLATE_SOURCES` if it reads one), put the type in a palette group (`ui/palette.component.ts`) and add `ed.type.<type>` to the editor messages (it and en). A test fails if a schema type has no valid template or is missing from the palette. Properties need nothing: the panel reads them from the schema.
+6. **Studio.** Quadrava Studio, the visual editor of the commercial edition, lives in its own repository and builds on the published packages: a new type needs a template and a palette entry there. Say it in the changelog line («new component `progress`»), so that the commercial edition adds them when it moves to the version. Properties need nothing: its panel reads them from the schema.
 7. **Docs.** Update the component catalogue and, if the language changed, the functional document.
 
 ### 4a. Adding a validator
@@ -235,7 +215,7 @@ Vitest runs in jsdom through `ng test`. Conventions:
 
 ### End-to-end tests (Playwright)
 
-What jsdom cannot see (layout, real NG-ZORRO overlays, attributes as the browser applies them) is tested with Playwright in `frontend/e2e/`, against the demo with its in-browser fake back end and against Studio (moving and resizing its windows; `playwright.config.ts`).
+What jsdom cannot see (layout, real NG-ZORRO overlays, attributes as the browser applies them) is tested with Playwright in `frontend/e2e/`, against the demo with its in-browser fake back end (`playwright.config.ts`).
 
 * One `*.spec.ts` per showcase screen; open it by URL (`/showcase/<screen>`) after fixing the language with `page.addInitScript(() => localStorage.setItem('lc.language', 'it'))`.
 * Prefer user-facing locators: `getByLabel` (field labels are `<label for>`; for `nz-select` and `nz-switch` they point at the control), `getByRole`, the visible text of `nz-option-item`. Use `data-region`, `data-node-id` and `data-node-type` when there is no accessible name.
@@ -268,7 +248,7 @@ Real focus handling and the dark theme are not covered yet (the application shel
 ## 13. Known limits
 
 * The collapsed side menu opens groups in a popup.
-* The reference registry keeps its data in memory unless `quadrava.registry.storage-dir` is set (`npm run stack` sets it to `data/registry`). Logout from the apps is a JSON call (`Accept: application/json`, CSRF header) answered with `{"redirect": …}`: with `csrf().spa()` a form field would need the masked token.
+* Logout from the apps is a JSON call (`Accept: application/json`, CSRF header) answered with `{"redirect": …}`: with `csrf().spa()` a form field would need the masked token.
 * The Playwright suite runs in Chromium only.
 * jsdom has no `document.execCommand`: the rich text toolbar is tested end to end (`e2e/showcase-input.spec.ts`); unit tests cover the Markdown ↔ DOM conversions and the value flow.
 * Inside a CEL single-quoted string a real newline is a syntax error: write `\n` in `t()` fallbacks (in screen JSON, `\\n`).
@@ -279,14 +259,12 @@ Real focus handling and the dark theme are not covered yet (the application shel
 * `DataClient.request(request, { signal })`: the runtime aborts a GET that a newer one supersedes (and all of them when the screen is left); writes are never aborted. Identical concurrent `query` GETs share one call. A custom `DataClient` should honour the signal.
 * The expression engine caches compiled CEL and parsed templates (2000 entries, least recently used evicted): evaluating the same text again costs no parsing.
 * NG-ZORRO parts with fixed or too light colours (tag text, select placeholders and arrows, waiting steps, out-of-month calendar days) are overridden by a stylesheet the theme bridge adds (`NZ_CONTRAST_CSS`); tag text colours are computed from the theme to reach 4.5:1. Group titles of the side menu get `tabindex`, `role` and `aria-expanded` after every render, and `nz-tree`'s hidden input and icons leave the accessibility tree: NG-ZORRO does not provide them.
-* The editor preview talks to the editor only through messages (`preview/protocol.ts`): `drop` (a palette component), `move` (an existing component dragged in *Select* mode) and `resize` (`span` or `grow` from the handle, computed by the pure `preview/resize.ts`) are validated and applied by the editor with the outline's rules.
-* The editor bootstraps lazily: `main.ts` imports either the editor app or the preview app (`?preview`), so the iframe does not download the editor UI.
 * Steps `validate`, `print` and `export` live in `core/action-engine.ts`; standalone fields register their check with `ScreenRuntime.registerValidator(group, check)` while they are on screen. Not to be confused with the field validators (`ValidatorRegistry`, `ScreenRuntime.validatorRegistry`, § 4a).
 * The precompiled validators are the secondary entry point `schema/validation` (`validateScreen`, `validateTheme`…): import them from there, not from `schema`. The runtime and `core` load them with `await import('schema/validation')`, in parallel with the document they check, so they stay out of the initial bundle (about 370 kB, 24 kB transferred); the editor imports them statically.
 * `validate:examples` compiles every `pattern` of the screens as the runtime does (`u` flag, whole value, at most 500 characters); `messages.pattern` is a text and is skipped.
 * `DefinitionSource.messages(locale)` returns a catalogue (key → text): the demo reads `examples/i18n`, the registry the published `messages` document. A new language needs its catalogue in both places (`publish:examples` publishes the files).
 * Layout containers (`box`, `grid`, `border`) read the position of each child from the child itself (`grow`, `span`, `region`, declared on every node in the schema). Inside them `--lc-input-max: none` lets fields fill the cell; a new container that holds nodes must also be added to `seedFilters` in `ScreenRuntime` (so that the state of nested fields exists before the first load) and to `LAYOUT_CONTAINERS` in the editor's `schema-info.ts`.
 * After `npm run build:libs` restart the dev servers: they do not reload `dist`, and one left running while `dist` is rebuilt fails with "module 'components' could not be found" until restarted.
-* `provideNzIcons` is not cumulative: a second call replaces the icons registered by `provideLowcodeComponents`. An app that registers its own icons must repeat `Object.values(ICON_TYPES).map((i) => i.icon)` (the editor does).
+* `provideNzIcons` is not cumulative: a second call replaces the icons registered by `provideLowcodeComponents`. An app that registers its own icons must repeat `Object.values(ICON_TYPES).map((i) => i.icon)` (Quadrava Studio does).
 * Developer diagnostics are not translated and are written in English: schema and expression issues, the technical detail of loading errors, and the messages of the `services` library. Everything the end user reads is translatable: a screen or a menu that cannot be loaded shows `lc.screenNotFound` (404 or 403 from the definition source), `lc.screenLoadFailed` or `lc.navigationLoadFailed`, and the detail goes to `RuntimeDiagnostics`. A `DefinitionSource` puts the HTTP code in the error's `status` so that the two cases can be told apart.
 * Adding a language means adding `examples/i18n/<code>.json` (same keys as `it.json`), an entry in `LANGUAGES` of the demo, and, for the platform strings, a block in `components/src/lib/messages.ts` and a NG-ZORRO locale in `provide.ts`.

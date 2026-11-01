@@ -1,15 +1,11 @@
-// Writes the settings of a published Studio and runtime that know each other («Run project», ADR-16), from environment
-// variables, before `ng build`. Meant for static hosting (for example Render): each site sets its own variable.
+// Writes the settings of a published runtime from environment variables, before `ng build`. Meant for static hosting
+// (for example Render).
 //
-//   STUDIO_RUNTIME_ADDRESS=https://runtime.example/        → projects/editor/public/studio-config.json
-//                                                           (the runtime Studio opens, for every visitor)
-//   STUDIO_REGISTRY=off                                    → registry: false in studio-config.json (on: true)
-//                                                           (saving to and opening from the registry in Studio)
 //   RUNTIME_STUDIO_ORIGINS=https://studio.example[,…]      → studio.origins in projects/runtime/public/runtime-config.json
-//                                                           (the Studios allowed to open this runtime; they replace the
-//                                                           development ones)
+//                                                           (the Studios allowed to open this runtime with «Run
+//                                                           project», ADR-16; they replace the development ones)
 //
-// Usage: node tools/deploy-config.mjs   Without either variable it changes nothing.
+// Usage: node tools/deploy-config.mjs   Without the variable it changes nothing.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -29,25 +25,6 @@ function httpUrl(value, name) {
     process.exit(1);
   }
   return url;
-}
-
-const studio = {};
-const runtimeAddress = process.env.STUDIO_RUNTIME_ADDRESS?.trim();
-if (runtimeAddress) {
-  studio.runtimeAddress = httpUrl(runtimeAddress, 'STUDIO_RUNTIME_ADDRESS').toString();
-  console.log(`Studio opens the runtime at ${studio.runtimeAddress}`);
-}
-const registry = process.env.STUDIO_REGISTRY?.trim().toLowerCase();
-if (registry) {
-  if (!['on', 'off', 'true', 'false'].includes(registry)) {
-    console.error(`STUDIO_REGISTRY: on or off, not ${registry}`);
-    process.exit(1);
-  }
-  studio.registry = registry === 'on' || registry === 'true';
-  console.log(`Studio: registry ${studio.registry ? 'on' : 'off'}`);
-}
-if (Object.keys(studio).length) {
-  writeFileSync(join(here, '../projects/editor/public/studio-config.json'), JSON.stringify(studio, null, 2) + '\n');
 }
 
 const studioOrigins = process.env.RUNTIME_STUDIO_ORIGINS?.trim();

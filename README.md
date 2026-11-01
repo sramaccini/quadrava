@@ -5,11 +5,13 @@
   </picture>
 </h1>
 
-<p align="center"><b>Management and administrative front ends, described in JSON.</b><br>With <b>Quadrava Studio</b>, the visual editor that writes that JSON for you.</p>
+<p align="center"><b>Community Edition (CE)</b></p>
+
+<p align="center"><b>Management and administrative front ends, described in JSON.</b></p>
 
 ---
 
-**Quadrava** is a platform for building **management and administrative front ends by describing them in JSON**, plus a visual editor, **Quadrava Studio**, that produces that JSON.
+**Quadrava Community Edition (CE)** is the open-source edition of **Quadrava**, a platform for building **management and administrative front ends by describing them in JSON**.
 
 A Quadrava application is a set of JSON documents: screens (components, data sources, actions), a theme and a navigation menu. A generic runtime reads those documents and renders a working Angular application, built on the [NG-ZORRO](https://ng.ant.design) UI library (Ant Design for Angular). Authors never write Angular code: they declare *what* a screen shows and *which* API each action calls, and the platform takes care of authentication, authorization, tracing and error handling in one place.
 
@@ -30,12 +32,11 @@ Contributor documentation: [DEVELOPMENT-GUIDE.md](DEVELOPMENT-GUIDE.md). Status 
 5. [Technology stack](#technology-stack)
 6. [Run the demo](#run-the-demo)
 7. [Brand](#brand)
-8. [Run Quadrava Studio](#run-quadrava-studio)
-9. [Run the full stack](#run-the-full-stack)
-10. [Run the runtime image](#run-the-runtime-image)
-11. [Testing](#testing)
-12. [Security model](#security-model)
-13. [License](#license)
+8. [Run the full stack](#run-the-full-stack)
+9. [Run the runtime image](#run-the-runtime-image)
+10. [Testing](#testing)
+11. [Security model](#security-model)
+12. [License](#license)
 
 ---
 
@@ -45,9 +46,9 @@ Contributor documentation: [DEVELOPMENT-GUIDE.md](DEVELOPMENT-GUIDE.md). Status 
 | --- | --- | --- |
 | **Runtime** (`frontend/projects/runtime`) | Angular application that loads screens, theme and navigation, validates them, and renders them | Working demo, fake back end |
 | **Libraries** (`schema`, `expressions`, `core`, `components`, `services`) | JSON Schema and types, expression evaluator, interpreter, NG-ZORRO component catalogue, HTTP/session/authorization/telemetry services | Working, tested |
-| **Quadrava Studio**, the visual editor (`frontend/projects/editor`) | Builds screens and the navigation (areas and menus) with property panels generated from the JSON Schemas and live previews rendered by the real runtime; also a desktop app for Windows, Linux and macOS (`frontend/desktop`, Tauri) | Screens, navigation and themes |
-| **Contracts** (`contracts/`) | OpenAPI 3.1: authorization, telemetry ingestion, registry | Defined and validated |
-| **Reference implementation** (`reference/`) | Spring Boot BFF, registry, authorization and telemetry services that implement the contracts | Compiles and its unit tests pass (JDK 21, Maven 3.9), in CI too |
+| **CLI** (`frontend/projects/cli`) | `quadrava validate` checks a project as the runtime reads it; `quadrava publish` publishes it in a registry | Published with every version |
+| **Contracts** (`contracts/`) | OpenAPI 3.1: BFF, authorization, telemetry ingestion, registry (any implementation that follows it serves the runtime) | Defined and validated, with conformance kits |
+| **Reference implementation** (`reference/`) | Spring Boot BFF, authorization and telemetry services that implement the contracts | Compiles and its unit tests pass (JDK 21, Maven 3.9), in CI too |
 | **Identity provider** (`idp/`) | Keycloak with a sample realm for local development | Ready |
 | **Examples** (`examples/`) | Reference applications used by tests and by the demo | Working |
 
@@ -177,7 +178,7 @@ Plain text keeps its line breaks. Labels (fields, columns, buttons, menu) delibe
 }
 ```
 
-**Base address and settings of the application.** A data sources document can have a `baseUrl`, put in front of the url of each of its data sources, so they hold only the rest of the path. The base can come from the **settings** of the project: name/value pairs in `project.json`, that every expression reads as `settings.<name>` (edited as a table in Studio's project settings; with the registry they are `definitions.settings` of `runtime-config.json`). They reach the browser: never secrets.
+**Base address and settings of the application.** A data sources document can have a `baseUrl`, put in front of the url of each of its data sources, so they hold only the rest of the path. The base can come from the **settings** of the project: name/value pairs in `project.json`, that every expression reads as `settings.<name>` (with a registry they are `definitions.settings` of `runtime-config.json`). They reach the browser: never secrets.
 
 ```json
 // project.json
@@ -234,9 +235,9 @@ The demo remembers the chosen language and starts from the browser language when
 
 | Folder | Content |
 | --- | --- |
-| `frontend/` | Angular workspace: apps `runtime` and `editor`; libraries `schema`, `expressions`, `core`, `components`, `services` |
-| `contracts/` | OpenAPI 3.1: `authz.yaml`, `telemetry.yaml`, `registry.yaml` |
-| `reference/` | Spring Boot (Maven multi-module): `bff`, `registry`, `authz`, `telemetry` |
+| `frontend/` | Angular workspace: the `runtime` app and the `cli`; libraries `schema`, `expressions`, `core`, `components`, `services` |
+| `contracts/` | OpenAPI 3.1: `bff.yaml`, `authz.yaml`, `telemetry.yaml`, `registry.yaml` |
+| `reference/` | Spring Boot (Maven multi-module): `bff`, `authz`, `telemetry` |
 | `idp/` | Keycloak for local development (Docker Compose and sample realm) |
 | `docker/` | The container image of the runtime (`docker/runtime/`, ADR-20) |
 | `examples/` | The demo **project**: `project.json` (manifest: name, languages, themes), `screens/`, `datasources/`, `navigation.json`, `themes/`, `i18n/`; used by the demo, validation and tests |
@@ -293,63 +294,12 @@ The libraries are not hot-reloaded: after changing anything in `frontend/project
 
 ## Brand
 
-The product is **Quadrava**; the visual editor is **Quadrava Studio**.
+The product is **Quadrava**; this repository is its **Community Edition (CE)**.
 
 * **Assets.** The sources live in `assets/brand/` (icons, logos, colours, usage). The PNG logos used in this README are rendered from the SVGs, with the Sora font embedded, by `node tools/brand-png.mjs`. Each app copies only what it needs into `public/brand/` (favicon in SVG with a 32 px PNG fallback, Apple touch icon, the small icon for the header).
-* **Logotype.** Drawn by `lc-quadrava-wordmark` (components library): the icon plus "**Q**uadrava" with the coloured Q (and "Studio") as HTML text in the Sora typeface, bundled locally from `@fontsource/sora` (weights 300 and 600, no request to Google), because an SVG logo used as an image cannot use the page's fonts. Brand colours are fixed (light and dark variants), not theme colours.
-* **Where it appears.** The demo puts the logotype in the side bar (icon only when the bar is collapsed, dark variant on a dark bar) through the side bar's `lcBrand` slot, which any application can use for its own brand; Quadrava Studio shows it at the top left.
+* **Logotype.** Drawn by `lc-quadrava-wordmark` (components library): the icon plus "**Q**uadrava" with the coloured Q (and the name of a product, when given) as HTML text in the Sora typeface, bundled locally from `@fontsource/sora` (weights 300 and 600, no request to Google), because an SVG logo used as an image cannot use the page's fonts. Brand colours are fixed (light and dark variants), not theme colours.
+* **Where it appears.** The demo puts the logotype in the side bar (icon only when the bar is collapsed, dark variant on a dark bar) through the side bar's `lcBrand` slot, which any application can use for its own brand.
 * **Technical identifiers.** The Keycloak realm of development (`quadrava`, clients `quadrava-bff` and `quadrava-tools`) and the Java packages of `reference/` (`com.logicwarez.quadrava.reference`) carry the name, as do the schema `$id`s (`https://quadrava.logicwarez.com/schemas/`) and the telemetry of the runtime (`service.name` `quadrava-runtime`); the `lc-` prefixes of components, CSS variables and texts stay.
-
-## Run Quadrava Studio
-
-```bash
-cd frontend
-npm run start:editor         # builds the libraries, copies the examples, serves on http://localhost:4201
-```
-
-Studio works on a **project**, the folder of an application (`project.json`, `screens/`, `datasources/`, `navigation.json`, `themes/`, `i18n/`): on the start page create one, open a folder on disk (Chrome, Edge) or open the demo project (`examples/`, copied into the browser). Details, shortcuts and limits are in [docs/editor.md](docs/editor.md).
-
-**Desktop app.** Studio is also packaged with Tauri for Windows, Linux and macOS, where it opens project folders on disk on every system ([ADR-17](docs/adr-17-studio-desktop-app.md)). The installers are built by the **Desktop** workflow on GitHub Actions; locally, with Rust installed, `npm run desktop:build` builds the one for your system.
-
-### Workspace
-
-* **Projects.** The **Project** panel lists the resources of the project (settings, screens, data sources, navigation, themes, translation catalogues): open, create, delete them; «Save» writes the file of the resource in the project folder, renaming it when the identifier changes. Data sources are resources of their own, shared by the screens: a screen only refers to them (one written in a screen by an earlier version is flagged and can be moved into the project).
-* **Multi-document windows.** As in an IDE, every resource opens in its own window inside the workspace: windows can be moved, resized, maximized, minimized to the bar of the open documents, tiled or cascaded, and Ctrl+F6 moves between them. The side panels, the toolbar and the problems follow the window in front; the open windows and their drafts come back when the page is reloaded.
-* **Menu bar.** A desktop-style menu bar offers *File* (new, open and close projects; new screen, data sources, navigation or theme; import a file or an example; open from the registry; save to the project with Ctrl+S, save all, export, save to the registry, registry panel, close; an «Unsaved changes» tag tells when the document differs from the last save), *Edit* (undo, redo, cut, copy, paste, duplicate, delete, move, with their shortcuts), *View* (pinned sides, problems panel, central view), *Window* (arrangement and list of the windows) and *Help* (every keyboard shortcut, also F1). It is fully keyboard operable.
-* **Panels.** As in classic IDEs, for every kind of document each panel (components, outline, properties) can be unpinned on its own: it becomes a vertical tab on the edge strip while the other panels of the side keep the column, slides over the preview on hover and closes again when the pointer leaves (not while a field inside has the focus). The sides can be resized by dragging their inner edge.
-* **Palette.** Adds components with a click or by dragging them into the outline or straight onto the preview (before, after or inside the component under the pointer). It has a search box.
-* **Outline.** Selects, reorders, duplicates, cuts and pastes nodes. It has a search box, collapsible branches, multiple selection of sibling nodes (Ctrl+click, Shift+click) and a context menu (right click or Shift+F10) that can also wrap one or several nodes in a new section, box or grid.
-* **Property panel.** Generated from `screen.schema.json`, so columns, form fields, actions and steps are edited item by item. It shows the path of the selected element and filters properties by name. Inside `{{ }}` it completes variables and functions while typing (arrows, Enter or Tab, Escape).
-* **Syntax highlighting.** JSON is highlighted in the *JSON* tab and in JSON fields (with `{{ }}` expressions marked inside strings), and so are the property text areas that accept expressions (titles, texts, conditions): functions, variables, properties, strings, numbers and operators inside `{{ }}`.
-* **Problems and saving.** Problems (schema, CEL expressions, duplicate ids, missing data sources) are listed at the bottom; the draft of every open document is saved in the browser; *File → Save* writes the JSON to a file.
-
-### Preview
-
-* The preview is the real `lc-screen` in an isolated iframe (the same app started with `?preview`, talking to the editor through a small postMessage protocol) with fake ports: nothing leaves the browser, permissions can be switched off, and Alt+click on a component selects it.
-* In *Seleziona* mode the components already there can be dragged to move them, and the selected one inside a grid or a box has a handle to change its `span` or `grow`.
-* Fixed preview widths that do not fit the pane are scaled down to fit, as in Chrome's device toolbar.
-* With *Dati veri* the preview reads from the real services (editor behind the BFF); writes stay blocked.
-
-### Data sources and texts
-
-* **Data sources.** A data sources document defines the services (each card coloured by its HTTP verb, as in the import) and the sample data the preview returns; the *Data sources* tab of a screen picks the references to them, with parameters and body for that screen. A data sources document also imports data sources from an OpenAPI 3 or Swagger 2 document, in JSON or YAML (for example springdoc's `/v3/api-docs` in Spring Boot, or a file): operations are picked from a list grouped by tag and become data sources with path parameters, required query parameters, a `{{ form }}` body and sample data built from the response schema.
-* **Testi tab.** Lists every user-facing text and turns plain texts into translation keys with one click. It edits the translations (applied to the preview at once), exports them, or saves them to the registry (merged into the latest catalogue version) and publishes them.
-* **Languages.** Translations are not limited to Italian and English: languages are added in the *Texts* tab from a list with their names (or imported from files), any of them can become the default language of the fallback texts, and the preview can switch to any of them.
-
-### Navigation and theme
-
-* The *Navigazione* mode edits `navigation.json` the same way (outline of areas, groups and items; schema-driven fields) and previews the real side menu with a simulated profile: switch permissions off to see what a user without them gets.
-* The *Tema* mode edits a theme's tokens (with colour pickers) and previews the screen and menu being edited with that theme, applied to the preview only.
-
-### Registry
-
-The *Registry* panel:
-
-* saves the open document as a new immutable version, warning when someone else saved in the meantime and listing the registry validation errors point by point;
-* lists its history with the review state and the environments it is published to;
-* compares a version with the open document;
-* requests a review, approves or rejects it (reviewers only, never the author);
-* reopens a version and publishes it (protected environments accept approved versions only).
 
 ## Run the full stack
 
@@ -361,32 +311,20 @@ Prerequisites: Node.js 24, JDK 21, Maven 3.9+, Docker.
 cd frontend && npm run stack
 ```
 
-`tools/stack.mjs` starts Keycloak in Docker, builds the Java modules when their jars are missing (`-- --rebuild` forces it), starts registry (file storage in `data/registry`), authorization, telemetry, BFF and the demo back end waiting for each to answer, publishes the examples with a real user, then serves the runtime (http://localhost:4200) and the editor (http://localhost:4201) behind the BFF (`-- --services-only` skips them). Logs go to `.stack/logs/`; Ctrl+C stops everything except Keycloak (`cd idp && docker compose down`). Keycloak imports `idp/realm-quadrava.json` only when its container is created: after changing the realm, recreate it (`docker compose down`, then `up -d`). The runtime image can run in front of the same stack on port 8090 ([docker/runtime/README.md](docker/runtime/README.md)).
+`tools/stack.mjs` starts Keycloak in Docker, builds the Java modules when their jars are missing (`-- --rebuild` forces it), starts authorization, telemetry, BFF and the demo back end waiting for each to answer, then serves the runtime (http://localhost:4200) behind the BFF with the example project from its files (`-- --services-only` skips it). Logs go to `.stack/logs/`; Ctrl+C stops everything except Keycloak (`cd idp && docker compose down`). Keycloak imports `idp/realm-quadrava.json` only when its container is created: after changing the realm, recreate it (`docker compose down`, then `up -d`). The runtime image can run in front of the same stack on port 8090 ([docker/runtime/README.md](docker/runtime/README.md)).
 
 **Step by step:**
 
 1. Identity provider: `cd idp && docker compose up` (console at http://localhost:8180, user `admin`, password `admin`).
-2. Reference implementation: `cd reference && mvn verify`, then `mvn -pl <module> spring-boot:run` for each module (or `java -jar <module>/target/*.jar`). Ports: bff 8080, registry 8081, authz 8082, telemetry 8083.
-3. Demo application back end: `cd frontend && npm run demo-api` (port 8084). It serves the data of the demo screens (the same logic as the in-browser demo, `projects/runtime/src/demo/demo-backend.ts`) and accepts only access tokens signed by the local Keycloak realm (RS256, issuer, expiry); `--no-auth` switches the check off. Like a Spring Boot service with springdoc, it publishes its OpenAPI description at `/v3/api-docs` (description only, no token, CORS open) and, behind the BFF, at `/api/v3/api-docs`: the editor can import data sources from it.
-4. Publish the examples into the registry with a real token: `npm run publish:examples -- --user administrator --password administrator` (the script gets the token from the development client `quadrava-tools`, local realm only).
-5. Front end through the BFF: `npm run start:runtime:bff` (port 4200) and `npm run start:editor:bff` (port 4201). The dev servers proxy `/registry`, `/api`, `/authz`, `/telemetry`, `/bff`, `/oauth2` and `/logout` to the BFF, which keeps the session, adds the user's access token and `traceparent` to the forwarded calls and protects writes with CSRF (`XSRF-TOKEN` cookie, `X-XSRF-TOKEN` header). BFF routes (`quadrava.bff.routes`): `/registry` → registry, `/authz` → authorization, `/telemetry` → telemetry, `/api` → the application back end.
-   * **Runtime** (`projects/runtime/config/bff/runtime-config.json`): without a session it goes straight to the Keycloak login and comes back; then it loads navigation, theme and screens published in the registry (application `demo`, environment `development`), the user's permissions from the authorization service, the data from `/api`, and sends diagnostics to the telemetry service. The header shows the user menu with the name, the number of permissions and *Sign out*: logout closes the BFF session and the Keycloak session (OIDC end-session), so the next login asks for the password again.
-   * **Quadrava Studio**: the *Registry* panel offers *Sign in* when there is no session; versions are recorded with the user name as author.
+2. Reference implementation: `cd reference && mvn verify`, then `mvn -pl <module> spring-boot:run` for each module (or `java -jar <module>/target/*.jar`). Ports: bff 8080, authz 8082, telemetry 8083.
+3. Demo application back end: `cd frontend && npm run demo-api` (port 8084). It serves the data of the demo screens (the same logic as the in-browser demo, `projects/runtime/src/demo/demo-backend.ts`) and accepts only access tokens signed by the local Keycloak realm (RS256, issuer, expiry); `--no-auth` switches the check off. Like a Spring Boot service with springdoc, it publishes its OpenAPI description at `/v3/api-docs` (description only, no token, CORS open) and, behind the BFF, at `/api/v3/api-docs`: a tool can import data sources from it.
+4. Front end through the BFF: `npm run start:runtime:bff` (port 4200). The dev server proxies `/registry`, `/api`, `/authz`, `/telemetry`, `/bff`, `/oauth2` and `/logout` to the BFF, which keeps the session, adds the user's access token and `traceparent` to the forwarded calls and protects writes with CSRF (`XSRF-TOKEN` cookie, `X-XSRF-TOKEN` header). BFF routes (`quadrava.bff.routes`): `/registry` → a registry (`LOWCODE_REGISTRY_URL`, port 8081 if absent), `/authz` → authorization, `/telemetry` → telemetry, `/api` → the application back end.
+   * **Runtime** (`projects/runtime/config/bff/runtime-config.json`): without a session it goes straight to the Keycloak login and comes back; then it loads the example project, the user's permissions from the authorization service, the data from `/api`, and sends diagnostics to the telemetry service. The header shows the user menu with the name, the number of permissions and *Sign out*: logout closes the BFF session and the Keycloak session (OIDC end-session), so the next login asks for the password again.
    * After login the BFF returns only to the origins listed in `quadrava.bff.frontend-origins`; a visit to the BFF root goes to `quadrava.bff.home` (the runtime).
    * **Tenants** (optional, [ADR-18](docs/adr-18-tenant-selection.md)): when the BFF lists several tenants for the user and `runtime-config.json` has `services.tenantSwitchUrl`, the user menu offers them under *Workspace*; choosing one is a POST to the BFF, then the page reloads. Applications without tenants see nothing. In the in-browser demo the *administrator* profile has two offices.
-6. Validate the examples against the schemas: `cd frontend && npm run validate:examples`.
+5. Validate the examples against the schemas: `cd frontend && npm run validate:examples`.
 
-**Registry only, without Keycloak** (local development): start the registry with authentication switched off and publish the examples into it, then run the runtime and Quadrava Studio against it.
-
-```bash
-cd reference && mvn -q -pl registry -am package -DskipTests
-java -jar registry/target/quadrava-reference-registry-0.1.0-SNAPSHOT.jar --spring.profiles.active=no-auth
-cd frontend && npm run publish:examples      # every screen, the navigation, every theme and catalogue, published in "development"
-npm run start:runtime:registry               # port 4200: definitions from the registry
-npm run start:editor:registry                # port 4201: Registry panel → save, publish → reload the runtime
-```
-
-The `no-auth` profile logs a warning at start-up and must never be used outside a developer's machine. Add `--quadrava.registry.storage-dir=<folder>` to keep the registry data across restarts.
+**With a registry.** Quadrava CE has no registry of its own: the runtime and the CLI work with any registry that follows `contracts/registry.yaml` (`npm run conformance:registry` checks one). With a registry on port 8081, `npm run publish:examples` publishes the example project in it (`-- --user <user> --password <password>` to get the token from the local Keycloak, with the development client `quadrava-tools`) and `npm run start:runtime:registry` serves the runtime that loads its definitions from there (application `demo`, environment `development`).
 
 Development users in Keycloak: `operator`, `manager`, `administrator` (password equal to the user name). For local development only.
 
@@ -402,7 +340,7 @@ docker run -p 8080:8080 -e QUADRAVA_REGISTRY_APP=invoicing -e QUADRAVA_NAVIGATIO
 
 All the variables, the mounted `runtime-config.json` and the ways to keep one origin with the BFF: [docker/runtime/README.md](docker/runtime/README.md). What changed between versions: [CHANGELOG.md](CHANGELOG.md).
 
-A project checks itself in its own CI with the **Quadrava CLI**, published with every version on GitHub Packages from 0.2.0: `quadrava validate` applies the checks of the runtime and Studio (schemas, references, CEL expressions, translations), `quadrava publish` publishes the project in a registry ([frontend/projects/cli/README.md](frontend/projects/cli/README.md)).
+A project checks itself in its own CI with the **Quadrava CLI**, published with every version on GitHub Packages from 0.2.0: `quadrava validate` applies the checks of the runtime (schemas, references, CEL expressions, translations), `quadrava publish` publishes the project in a registry ([frontend/projects/cli/README.md](frontend/projects/cli/README.md)).
 
 ```bash
 npx @sramaccini/quadrava-cli@0.2.0 validate my-project
@@ -414,7 +352,6 @@ npx @sramaccini/quadrava-cli@0.2.0 validate my-project
 cd frontend
 npm run test:libs                     # schema, expressions, core, components, services
 npx ng test runtime --watch=false     # end-to-end demo tests (needs `npm run demo:prepare` once)
-npx ng test editor --watch=false      # Quadrava Studio
 npm run schema:check                  # generated schema constants and precompiled validators are in sync
 npm run schema:docs:check             # docs/schema-reference.md is in sync (npm run schema:docs regenerates it)
 npm run validate:examples             # examples are valid
@@ -431,15 +368,15 @@ npm run conformance:bff -- --bff http://localhost:8080 --return http://localhost
 
 `npm run e2e` starts the demo itself (`ng serve runtime` on port 4300, override with `E2E_PORT`; outside CI a server already running on that port is reused) and runs the suites in `frontend/e2e/` against the in-browser fake back end.
 
-Every push to `main` and every pull request runs [`.github/workflows/ci.yml`](.github/workflows/ci.yml) on GitHub Actions: the front-end job (`schema:check`, `validate:examples`, `build:libs`, the tests of every project, the production builds of runtime and editor), the end-to-end job (Playwright in Chromium; report uploaded as an artifact when it fails), the image job (builds the runtime image and starts it) and the Java job (`mvn -B verify`). A `v*` tag starts [`.github/workflows/release.yml`](.github/workflows/release.yml), which publishes the runtime image and the GitHub release ([ADR-20](docs/adr-20-versioned-distribution.md)).
+Every push to `main` and every pull request runs [`.github/workflows/ci.yml`](.github/workflows/ci.yml) on GitHub Actions: the front-end job (`schema:check`, `validate:examples`, `build:libs`, the tests of every project, the production build of the runtime), the end-to-end job (Playwright in Chromium; report uploaded as an artifact when it fails), the image job (builds the runtime image and starts it) and the Java job (`mvn -B verify`). A `v*` tag starts [`.github/workflows/release.yml`](.github/workflows/release.yml), which publishes the runtime image and the GitHub release ([ADR-20](docs/adr-20-versioned-distribution.md)).
 
-At the time of writing there are **927 automated tests**: schema 93, expressions 46, core 198, components 233, services 42, runtime 112, editor 203. The Java modules add 53 (`mvn verify`: authz 7, bff 15, registry 25 — including the parity of the server-side schema validation with Ajv on every example and the coherence between controller and contract —, telemetry 6).
+At the time of writing there are **750 automated tests**: schema 95, expressions 46, core 200, components 243, services 44, runtime 113, CLI 9. The Java modules add 28 (`mvn verify`: authz 7, bff 15, telemetry 6).
 
 The unit tests run in jsdom, so layout, real focus handling and pixel-level rendering are **not** covered there; see the development guide for the helpers that make NG-ZORRO overlays testable.
 
-The Playwright suite (18 tests) checks in a real browser what jsdom cannot see: the standalone fields showcase, the rich text editor (toolbar commands are executed by the browser), the border layout at 1400 px and 375 px, and **accessibility** with axe-core (WCAG 2.1 A/AA, no serious or critical violation) on all twelve showcase screens.
+The Playwright suite (19 tests) checks in a real browser what jsdom cannot see: the standalone fields showcase, the rich text editor (toolbar commands are executed by the browser), the border layout at 1400 px and 375 px, and **accessibility** with axe-core (WCAG 2.1 A/AA, no serious or critical violation) on all twelve showcase screens.
 
-The conformance kits pass against the reference services: registry 17 of 17, authorization 11 of 11, telemetry 6 of 6. They found real deviations in the authorization and telemetry services, now fixed: unchecked permission format and batch size, a 500 on a missing `checks`, non-OTLP bodies accepted, errors without a Problem body.
+The conformance kits pass against the reference services: authorization 11 of 11, telemetry 6 of 6; the registry kit (17 checks) is for any registry that follows the contract. They found real deviations in the authorization and telemetry services, now fixed: unchecked permission format and batch size, a 500 on a missing `checks`, non-OTLP bodies accepted, errors without a Problem body.
 
 ## Security model
 
@@ -452,17 +389,16 @@ The conformance kits pass against the reference services: registry 17 of 17, aut
 * **Authorization is enforced by the back end.** The front end hides and disables for usability; permission versions (`X-Permissions-Version`) make the client refresh when permissions change.
 * **Sensitive fields** marked `sensitive` never reach traces or logs; the ingestion endpoint applies a second layer of redaction.
 
-* **Definitions are validated twice**: in the browser by validators precompiled at build time (Ajv standalone: no `new Function`, so the Content-Security-Policy does not need `unsafe-eval`) and by the registry on every save, against the same JSON Schemas.
+* **Definitions are validated twice**: in the browser by validators precompiled at build time (Ajv standalone: no `new Function`, so the Content-Security-Policy does not need `unsafe-eval`) and by the registry on every save, against the same JSON Schemas (the `schema` package carries them).
 * **URLs in components** are restricted: images accept relative, `https` and `data:image` addresses only; links accept screens, relative paths and `https` (opened with `noopener noreferrer`); never `javascript:` or other protocols.
 * **CSV exports** neutralise cells that a spreadsheet would run as formulas.
-* **The Quadrava Studio preview with live data** only reads (GET, same origin); writes are blocked.
 
-Recommended Content-Security-Policy for the runtime and Quadrava Studio served behind the BFF: `default-src 'self'; img-src 'self' https: data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; frame-ancestors 'self'` (`unsafe-inline` styles are needed by Angular's inlined critical CSS and NG-ZORRO).
+Recommended Content-Security-Policy for the runtime served behind the BFF: `default-src 'self'; img-src 'self' https: data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; frame-ancestors 'self'` (`unsafe-inline` styles are needed by Angular's inlined critical CSS and NG-ZORRO).
 
 ## License
 
-Quadrava is open source under the [Mozilla Public License 2.0](LICENSE): it can be used, also inside closed commercial products, and changes to Quadrava's own files are shared under the same licence. Attributions are in [NOTICE](NOTICE), and the third-party packages shipped in the bundles, with their licences, in [frontend/THIRD-PARTY-NOTICES.md](frontend/THIRD-PARTY-NOTICES.md). The name and the logos are not covered by the licence: see [TRADEMARKS.md](TRADEMARKS.md). Contributions are accepted under the [CLA](CLA.md), as described in [CONTRIBUTING.md](CONTRIBUTING.md).
+Quadrava CE is open source under the [Mozilla Public License 2.0](LICENSE): it can be used, also inside closed commercial products, and changes to Quadrava's own files are shared under the same licence. Attributions are in [NOTICE](NOTICE), and the third-party packages shipped in the bundles, with their licences, in [frontend/THIRD-PARTY-NOTICES.md](frontend/THIRD-PARTY-NOTICES.md). The name and the logos are not covered by the licence: see [TRADEMARKS.md](TRADEMARKS.md). Contributions are accepted under the [CLA](CLA.md), as described in [CONTRIBUTING.md](CONTRIBUTING.md).
 
-**Commercial use.** You can build and sell products and services on Quadrava, including closed ones: the MPL only asks that changes to Quadrava's own files stay open. The maintainer may also offer commercial editions, hosted services or support around the open-source core; the open-source project stays complete and usable on its own.
+**Commercial use.** You can build and sell products and services on Quadrava CE, including closed ones: the MPL only asks that changes to Quadrava's own files stay open. The maintainer may also offer commercial editions, hosted services or support around the open-source core; the open-source project stays complete and usable on its own.
 
 **Security.** Report vulnerabilities privately, as described in [SECURITY.md](SECURITY.md).

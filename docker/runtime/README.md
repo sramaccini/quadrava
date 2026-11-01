@@ -1,6 +1,6 @@
 # Runtime image
 
-The Quadrava runtime as a container image (ADR-20, `docs/adr-20-versioned-distribution.md`): the built application
+The runtime of Quadrava CE as a container image (ADR-20, `docs/adr-20-versioned-distribution.md`): the built application
 served by nginx on port 8080. It is configured when the container starts, so an application that uses Quadrava never
 builds Angular: it runs the image of a version and points it at its definitions.
 
@@ -66,17 +66,21 @@ their content in the name, are cached for a year.
 
 The development stack (`npm run stack`, README) is ready for the image on port 8090: the Keycloak realm accepts
 `http://localhost:8090` as a login callback and after the logout, and the reference BFF accepts it as a return page.
-With the stack running:
+With the stack running, the configuration of the stack mounted (the examples of the image, the services through the BFF):
 
 ```bash
 docker run -d --name quadrava-runtime -p 8090:8080 \
-  -e QUADRAVA_REGISTRY_APP=demo -e QUADRAVA_REGISTRY_ENV=development -e QUADRAVA_NAVIGATION=invoicing \
-  -e QUADRAVA_THEMES=light,classic,dark -e QUADRAVA_LANGUAGES=en,it \
+  -v "$PWD/frontend/projects/runtime/config/bff/runtime-config.json:/etc/quadrava/runtime-config.json:ro" \
   -e QUADRAVA_BFF_URL=http://host.docker.internal:8080 quadrava-runtime
 ```
 
+With a registry that follows `contracts/registry.yaml` behind the BFF (`LOWCODE_REGISTRY_URL`) and the examples
+published in it (`npm run publish:examples`), the variables take the definitions from there instead:
+`-e QUADRAVA_REGISTRY_APP=demo -e QUADRAVA_REGISTRY_ENV=development -e QUADRAVA_NAVIGATION=invoicing
+-e QUADRAVA_THEMES=light,classic,dark -e QUADRAVA_LANGUAGES=en,it`.
+
 Then open http://localhost:8090 and sign in (`operator`, `manager` or `administrator`, password = user name): the
-screens come from the registry, the data from the demo back end through the BFF, and the boards of the showcase tasks
+data come from the demo back end through the BFF, and the boards of the showcase tasks
 screen follow the changes of other users over the event stream. From Git Bash on Windows, run it with
 `MSYS_NO_PATHCONV=1`, otherwise a value such as `/bff/tenant` is rewritten into a Windows path (and refused).
 
