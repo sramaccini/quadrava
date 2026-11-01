@@ -16,6 +16,7 @@ Reference documents:
 - [ADR-18: optional tenant selection](adr-18-tenant-selection.md): tenants in the BFF contract, the choice in the user menu, a POST and a reload.
 - [ADR-19: data sources updated by push](adr-19-live-data-sources.md): `live` on a data source, events that only signal, the `LiveUpdates` port, streams through the BFF.
 - [ADR-20: versioned distribution](adr-20-versioned-distribution.md): semantic versions, the changelog, the release workflow, the runtime image (`docker/runtime/README.md` for its configuration).
+- [ADR-21: open core](adr-21-open-core.md): Quadrava CE (MPL-2.0) and the commercial edition (Studio, desktop app, registry) in two repositories; the CE libraries as packages.
 - [Quadrava Studio](editor.md): how the visual screen editor is built, how it generates the property panel from the schema, the preview, the shortcuts, the limits.
 
 The functional specification, architecture and implementation guidelines date from 7–13 October 2026: the most recent detail is in the component catalogue, in `editor.md` and in the code.
