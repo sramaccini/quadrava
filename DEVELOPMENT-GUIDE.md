@@ -93,8 +93,27 @@ The runtime published this way is the demo: its data come from the in-browser ba
 Quadrava has one semantic version for the workspace and the libraries, a changelog and a release workflow ([ADR-20](docs/adr-20-versioned-distribution.md)).
 
 1. **While working**: every change visible to users or to applications adds a line under `## [Unreleased]` in `CHANGELOG.md` (`Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Security`), in the same commit. Before 1.0.0 a minor version may break compatibility: say so, with what to do.
-2. **The release commit**: the new version in `frontend/package.json` and in `frontend/projects/*/package.json`, then `npm install` (for the lock file); `[Unreleased]` becomes `## [x.y.z] - YYYY-MM-DD` with a new empty `[Unreleased]` above it, and the links at the bottom. `npm run release:check` must pass. Commit: `chore(release): x.y.z`.
-3. **The tag**: `git tag -a vx.y.z -m "Quadrava x.y.z"` and `git push origin vx.y.z`. The *Release* workflow runs the checks of CI, compares the tag with the versions and the changelog, publishes `ghcr.io/<owner>/quadrava-runtime` (`x.y.z`, `x.y` and `latest`; only `x.y.z` for a pre-release such as `x.y.z-rc.1`), publishes the CLI `@sramaccini/quadrava-cli` on GitHub Packages (a pre-release under the `next` tag) and creates the GitHub release with the notes of the changelog section.
+2. **The release commit**: the new version in `frontend/package.json` and in `frontend/projects/*/package.json` (also in the peer dependencies between the libraries, `^x.y.z`), then `npm install` (for the lock file); `[Unreleased]` becomes `## [x.y.z] - YYYY-MM-DD` with a new empty `[Unreleased]` above it, and the links at the bottom. `npm run release:check` must pass. Commit: `chore(release): x.y.z`.
+3. **The tag**: `git tag -a vx.y.z -m "Quadrava x.y.z"` and `git push origin vx.y.z`. The *Release* workflow runs the checks of CI, compares the tag with the versions and the changelog, publishes `ghcr.io/<owner>/quadrava-runtime` (`x.y.z`, `x.y` and `latest`; only `x.y.z` for a pre-release such as `x.y.z-rc.1`), publishes the CLI `@sramaccini/quadrava-cli` and the five libraries (`@sramaccini/quadrava-schema`, `-expressions`, `-core`, `-components`, `-services`) on GitHub Packages (a pre-release under the `next` tag), and creates the GitHub release with the notes of the changelog section and the runtime web build (`quadrava-runtime-web-x.y.z.tar.gz`).
+
+**Using the libraries from another project** ([ADR-21](docs/adr-21-open-core.md)). The sources import the short names (`core`, `schema/validation`…); a consumer installs every library it uses, and those they require, under those names with npm aliases, and reads the scope from GitHub Packages (a token with `read:packages`):
+
+```json
+"dependencies": {
+  "schema": "npm:@sramaccini/quadrava-schema@0.3.0",
+  "expressions": "npm:@sramaccini/quadrava-expressions@0.3.0",
+  "core": "npm:@sramaccini/quadrava-core@0.3.0",
+  "components": "npm:@sramaccini/quadrava-components@0.3.0"
+}
+```
+
+```text
+# .npmrc
+@sramaccini:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
+```
+
+All the aliases must be declared: npm would otherwise install the missing peer dependencies (`core`, `schema`) from npmjs, where those names belong to other packages. The `schema` package also carries the JSON schemas, in `schemas/*.schema.json`.
 
 The first time, the packages on GitHub (the image and the CLI) are private: make them public in their settings if they are meant for everyone. The CLI and how a project uses it in its CI: [frontend/projects/cli/README.md](frontend/projects/cli/README.md). The image and its variables: [docker/runtime/README.md](docker/runtime/README.md).
 

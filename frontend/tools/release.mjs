@@ -26,12 +26,18 @@ if (!SEMVER.test(version ?? '')) problems.push(`package.json: not a semantic ver
 const lock = read(join(frontend, 'package-lock.json'));
 if (lock.version !== version || lock.packages?.['']?.version !== version) problems.push(`package-lock.json: ${lock.version}, expected ${version} (npm install)`);
 
+// The libraries require each other at the same version (ADR-21): their peer dependencies use the short names under
+// which a consumer installs them (npm aliases of @sramaccini/quadrava-*).
+const LIBRARIES = new Set(['schema', 'expressions', 'core', 'components', 'services']);
 const projects = join(frontend, 'projects');
 for (const project of readdirSync(projects)) {
   const file = join(projects, project, 'package.json');
   if (!existsSync(file)) continue;
-  const library = read(file).version;
-  if (library !== version) problems.push(`projects/${project}/package.json: ${library}, expected ${version}`);
+  const pkg = read(file);
+  if (pkg.version !== version) problems.push(`projects/${project}/package.json: ${pkg.version}, expected ${version}`);
+  for (const [name, range] of Object.entries(pkg.peerDependencies ?? {})) {
+    if (LIBRARIES.has(name) && range !== `^${version}`) problems.push(`projects/${project}/package.json: peer ${name} ${range}, expected ^${version}`);
+  }
 }
 
 if (values.tag !== undefined && values.tag !== `v${version}`) problems.push(`tag ${values.tag} does not match the version ${version} (expected v${version})`);

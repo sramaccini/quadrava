@@ -1,8 +1,16 @@
 {
-  "name": "expressions",
+  "name": "@sramaccini/quadrava-expressions",
   "version": "0.2.1",
   "description": "Evaluator of the CEL expressions of the Quadrava language: isolated, deterministic, with limits and static checking.",
   "license": "MPL-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sramaccini/quadrava.git",
+    "directory": "frontend/projects/expressions"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "peerDependencies": {
     "@marcbachmann/cel-js": "^8.0.0"
   },

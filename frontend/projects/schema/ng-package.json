@@ -3,5 +3,12 @@
   "dest": "../../dist/schema",
   "lib": {
     "entryFile": "src/public-api.ts"
-  }
+  },
+  "assets": [
+    {
+      "input": "src/lib/schemas",
+      "glob": "*.schema.json",
+      "output": "schemas"
+    }
+  ]
 }

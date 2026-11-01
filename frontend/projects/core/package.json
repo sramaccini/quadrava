@@ -1,13 +1,21 @@
 {
-  "name": "core",
+  "name": "@sramaccini/quadrava-core",
   "version": "0.2.1",
   "description": "Interpreter of the Quadrava language: state, data sources, actions, visibility, component catalogue and themes.",
   "license": "MPL-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sramaccini/quadrava.git",
+    "directory": "frontend/projects/core"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "peerDependencies": {
     "@angular/common": "^22.2.0",
     "@angular/core": "^22.2.0",
-    "expressions": "^0.0.1",
-    "schema": "^0.0.1",
+    "expressions": "^0.2.1",
+    "schema": "^0.2.1",
     "ng-zorro-antd": "^22.1.0"
   },
   "dependencies": {

@@ -1,8 +1,16 @@
 {
-  "name": "schema",
+  "name": "@sramaccini/quadrava-schema",
   "version": "0.2.1",
   "description": "JSON Schemas and types of the Quadrava application definition language, with precompiled validators (no run-time dependency on Ajv).",
   "license": "MPL-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sramaccini/quadrava.git",
+    "directory": "frontend/projects/schema"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "dependencies": {
     "tslib": "^2.3.0"
   },

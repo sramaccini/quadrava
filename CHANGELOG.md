@@ -11,6 +11,20 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Added
+
+- **The libraries as packages** (ADR-21): every release publishes `@sramaccini/quadrava-schema`, `-expressions`, `-core`,
+  `-components` and `-services` on GitHub Packages, at the version of the release; another project installs them with
+  npm aliases under the names the sources import (DEVELOPMENT-GUIDE, «Releasing a version»). The `schema` package carries
+  the JSON schemas too (`schemas/*.schema.json`).
+- **The runtime web build** attached to every GitHub release (`quadrava-runtime-web-x.y.z.tar.gz`): the build that goes
+  into the image, examples included, for serving the runtime without the image.
+
+### Changed
+
+- The libraries require each other at the same version (peer dependencies `^x.y.z`, checked by `npm run release:check`);
+  until now they asked for `^0.0.1`.
+
 ## [0.2.1] - 2026-11-01
 
 ### Fixed

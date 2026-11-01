@@ -2,8 +2,8 @@ name: Release
 
 # A version of Quadrava (ADR-20), started by pushing a «v*» tag such as v0.1.0. The checks of CI run first; then the tag
 # must match the version of the packages and have its section in CHANGELOG.md; then the runtime image is published on
-# GitHub Container Registry, the CLI on GitHub Packages (npm), and the GitHub release is created with the notes of the
-# changelog.
+# GitHub Container Registry, the CLI and the five libraries on GitHub Packages (npm, ADR-21), and the GitHub release is
+# created with the notes of the changelog and the web build of the runtime.
 
 on:
   push:
@@ -70,22 +70,37 @@ jobs:
           build-args: VERSION=${{ steps.version.outputs.version }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-      - name: CLI on GitHub Packages
+      - name: CLI and libraries on GitHub Packages
         working-directory: frontend
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        # A pre-release goes under the «next» tag, so that installing without a version keeps the stable one. The folder is
-        # written as ./dist/cli: without ./ npm reads dist/cli as a GitHub repository (user/repo) and asks git for it.
+        # A pre-release goes under the «next» tag, so that installing without a version keeps the stable one. The folders are
+        # written as ./dist/…: without ./ npm reads dist/cli as a GitHub repository (user/repo) and asks git for it. The
+        # libraries are published as @sramaccini/quadrava-<library>, with the licence and the notice of the project.
         run: |
           npm ci --no-audit --no-fund
           npm run cli:build
+          npm run build:libs
           tag='latest'
           case "$GITHUB_REF_NAME" in *-*) tag='next' ;; esac
           npm publish ./dist/cli --tag "$tag"
+          for library in schema expressions core components services; do
+            cp ../LICENSE ../NOTICE "dist/$library/"
+            npm publish "./dist/$library" --tag "$tag"
+          done
+      - name: Runtime web build
+        working-directory: frontend
+        # The production build of the runtime with the examples, as in the image: the desktop app of the commercial edition
+        # serves it for «Run project» (ADR-21).
+        run: |
+          node tools/copy-examples.mjs
+          npx ng build runtime
+          cp ../LICENSE ../NOTICE dist/runtime/browser/
+          tar -czf "$RUNNER_TEMP/quadrava-runtime-web-${GITHUB_REF_NAME#v}.tar.gz" -C dist/runtime/browser .
       - name: GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           prerelease=''
           case "$GITHUB_REF_NAME" in *-*) prerelease='--prerelease' ;; esac
-          gh release create "$GITHUB_REF_NAME" --verify-tag --title "Quadrava ${GITHUB_REF_NAME#v}" --notes-file "$RUNNER_TEMP/notes.md" $prerelease
+          gh release create "$GITHUB_REF_NAME" --verify-tag --title "Quadrava ${GITHUB_REF_NAME#v}" --notes-file "$RUNNER_TEMP/notes.md" $prerelease "$RUNNER_TEMP/quadrava-runtime-web-${GITHUB_REF_NAME#v}.tar.gz"

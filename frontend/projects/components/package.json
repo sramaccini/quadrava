@@ -1,13 +1,21 @@
 {
-  "name": "components",
+  "name": "@sramaccini/quadrava-components",
   "version": "0.2.1",
   "description": "Catalogue of the standard components of the Quadrava language (text, button, section, filters, table, form, tabs, detail, messages, menu), built on NG-ZORRO.",
   "license": "MPL-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sramaccini/quadrava.git",
+    "directory": "frontend/projects/components"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "peerDependencies": {
     "@angular/common": "^22.2.0",
     "@angular/core": "^22.2.0",
-    "core": "^0.0.1",
-    "schema": "^0.0.1",
+    "core": "^0.2.1",
+    "schema": "^0.2.1",
     "@angular/forms": "^22.2.0",
     "@ant-design/colors": "^7.2.1",
     "@ant-design/icons-angular": "^22.1.0",
