@@ -11,7 +11,14 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Fixed
+
+- **Release workflow**: the CLI is published from `./dist/cli`; with `dist/cli` npm took the folder for a GitHub
+  repository and the release of 0.2.0 stopped after the runtime image, without the CLI and the GitHub release.
+
 ## [0.2.0] - 2026-11-01
+
+The runtime image `0.2.0` was published; the CLI and the GitHub release were not (see 0.2.1).
 
 ### Added
 
