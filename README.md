@@ -333,7 +333,7 @@ Development users in Keycloak: `operator`, `manager`, `administrator` (password 
 Every version of Quadrava publishes the runtime as a container image ([ADR-20](docs/adr-20-versioned-distribution.md)): an application runs it and points it at its definitions, without building Angular. Unconfigured, it is the demo; with the variables below it loads the screens published in a registry and talks to the BFF.
 
 ```bash
-docker run -p 8080:8080 ghcr.io/sramaccini/quadrava-runtime:0.4.0
+docker run -p 8080:8080 ghcr.io/sramaccini/quadrava-runtime:0.4.1
 docker run -p 8080:8080 -e QUADRAVA_REGISTRY_APP=invoicing -e QUADRAVA_NAVIGATION=main \
   -e QUADRAVA_BFF_URL=http://bff:8080 ghcr.io/sramaccini/quadrava-runtime:0.1
 ```

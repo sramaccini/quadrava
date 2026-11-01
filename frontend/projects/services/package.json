@@ -1,6 +1,6 @@
 {
   "name": "@sramaccini/quadrava-services",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Implementations of the Quadrava ports on real services: session and permissions through the BFF, data client, telemetry.",
   "license": "MPL-2.0",
   "repository": {
@@ -14,7 +14,7 @@
   "peerDependencies": {
     "@angular/common": "^22.2.0",
     "@angular/core": "^22.2.0",
-    "core": "^0.4.0",
+    "core": "^0.4.1",
     "rxjs": "~7.8.0"
   },
   "dependencies": {

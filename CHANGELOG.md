@@ -12,7 +12,23 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-11-01
+
+The first published version of Quadrava Community Edition (CE): the changes of 0.4.0, below, with these.
+
+### Fixed
+
+- The accessibility check of the end-to-end tests measures contrast once loading has visually ended (the primary button
+  of a form still turning from grey to its colour made the CI of 0.4.0 fail on a slower machine).
+
+### Security
+
+- The Angular packages at their latest 22.2 patch and the audited transitive packages of the development tools (vite,
+  zod, undici, fast-uri): `npm audit` finds no vulnerability. Nothing of this reaches the browser bundles.
+
 ## [0.4.0] - 2026-11-01
+
+Tagged but not published: the CI checks of the release failed (see 0.4.1).
 
 ### Removed
 
@@ -128,7 +144,8 @@ The first versioned release.
 - **Demo back end of the stack**: the event stream `/api/streams/tasks`, so that behind the BFF the live boards of the
   showcase follow the changes of other users.
 
-[Unreleased]: https://github.com/sramaccini/quadrava/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/sramaccini/quadrava/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/sramaccini/quadrava/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/sramaccini/quadrava/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/sramaccini/quadrava/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/sramaccini/quadrava/compare/v0.2.0...v0.2.1
