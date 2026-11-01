@@ -45,7 +45,8 @@ and checks, as the runtime and Studio read them:
 
 - every document against its JSON Schema;
 - the identifier of every screen, data sources document and theme against the name of its file;
-- the references of the screens to data sources (`{ "ref": "orders/list" }`);
+- the references of the screens to data sources (`{ "ref": "orders/list" }`), and every data source a screen names
+  (components, lookups, `columnsFrom`, `fieldsFrom`, steps, remote rules, uploads) among its `dataSources`;
 - the `pattern` of fields and validation rules (Unicode, whole value, at most 500 characters);
 - the CEL expressions (`{{ … }}`) of screens, data sources and navigation;
 - the themes and the languages of the manifest;

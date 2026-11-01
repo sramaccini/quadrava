@@ -5,6 +5,8 @@ session of **OpenDevTrack**. Read [HANDOFF.md](../HANDOFF.md) first: its working
 
 > **Status (31 October 2026): implemented.** Every item and decision was approved in one go and done in the order
 > B1, B2, K1–K5, L1, L2, L3, Q0. The proposals below are kept as they were written; § 0 says where each item is.
+> **1 November 2026**: two later requests of OpenDevTrack, the CLI (its Q2) and form fields from a data source (its
+> Q6, for the custom fields of its ADR-11), are in **release 0.2.0**.
 
 ## 0. What was done
 
@@ -18,6 +20,8 @@ session of **OpenDevTrack**. Read [HANDOFF.md](../HANDOFF.md) first: its working
 | L2 | `5fa0010` | `comments` component (catalogue § 2.30) |
 | L3 | `af55d09` | ADR-19: `live` on GET data sources, Server-Sent Events through the BFF (`bff.yaml` 0.3.0) |
 | Q0 (D1) | `c5b06e9` | ADR-20: version 0.1.0, `CHANGELOG.md`, release workflow, the runtime image `ghcr.io/sramaccini/quadrava-runtime` (`docker/runtime/README.md`) |
+| Q2 | 0.2.0 | Quadrava CLI `@sramaccini/quadrava-cli` on GitHub Packages: `quadrava validate`, `quadrava publish` (`frontend/projects/cli/README.md`) |
+| Q6 | 0.2.0 | `form`: `fieldsFrom`, fields read from a data source, with `types` (models such as a user lookup) and `into` (values in their own object, `custom`) (catalogue § 2.31) |
 
 **What ms-authz had to adapt** (in its own repository; nothing changed in Quadrava). **Done** in
 [sramaccini/authz-library](https://github.com/sramaccini/authz-library) (branch `master`), Maven

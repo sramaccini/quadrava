@@ -15,6 +15,13 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 - **Quadrava CLI** (`@sramaccini/quadrava-cli` on GitHub Packages, from this version): `quadrava validate` checks a
   project as the runtime and Studio read it, CEL expressions included; `quadrava publish` publishes it in a registry.
+- **Form**: fields from a data source (`fieldsFrom`), for forms whose fields are data, like the custom fields of a
+  project. One row per field with name, label, type, options and required; labels and options are shown as they are;
+  `types` maps a type of the data to a model field (a lookup, for example); with `into` the values travel in an object
+  of their own (`custom`), and the field errors of the service land on them (`/custom/contract`).
+- **Studio and `quadrava validate`** check every data source a screen names, not only the `source` of the nodes:
+  lookups, suggestions, `columnsFrom`, `fieldsFrom`, mentions, export, steps, remote rules and uploads. Renaming a
+  data source in Studio updates all of them.
 - `npm run conformance:authz` with `--cookie` and `--other-cookie`: checks a BFF that answers `/authz` itself on the
   session (the `cookieAuth` of `contracts/authz.yaml`), with the CSRF token on writes.
 
@@ -36,6 +43,9 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ### Fixed
 
+- **Form**: after a call or a lookup of the same screen (a save refused by the service, for example) the form went
+  back to the values loaded from its data source while still showing what the user had typed, so the next save sent
+  the old values. Now only new data of the form's own source replaces them.
 - **Runtime**: a BFF that answers `401` again right after a login (a call that always refuses the session, cookies
   blocked) no longer sends the page round in a circle with the identity provider: within 30 seconds of a login the
   runtime does not start another one and shows that signing in did not work, with the button to try again. Two new

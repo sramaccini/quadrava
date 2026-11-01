@@ -58,7 +58,7 @@ import { parseIsoDate, parseIsoDateTime, toIsoDate, toIsoDateTime } from './shar
       }
       @case ('checkbox') {
         <label nz-checkbox [nzDisabled]="disabled()" [ngModel]="value() === true" (ngModelChange)="toggled($event)">
-          {{ runtime().text(f.label, scope()) || f.name }}
+          {{ label() }}
         </label>
       }
       @case ('date') {
@@ -93,14 +93,14 @@ import { parseIsoDate, parseIsoDateTime, toIsoDate, toIsoDateTime } from './shar
       }
       @case ('radio') {
         @if (variant() === 'filter') {
-          <nz-radio-group [attr.id]="inputId()" role="radiogroup" [attr.aria-label]="runtime().text(f.label, scope()) || f.name" [nzDisabled]="disabled()" [ngModel]="selected() ?? ''" (ngModelChange)="valueChange.emit($event)">
+          <nz-radio-group [attr.id]="inputId()" role="radiogroup" [attr.aria-label]="label()" [nzDisabled]="disabled()" [ngModel]="selected() ?? ''" (ngModelChange)="valueChange.emit($event)">
             <label nz-radio-button nzValue="">{{ placeholder() }}</label>
             @for (option of f.options ?? []; track option) {
               <label nz-radio-button [nzValue]="option">{{ optionLabel(option) }}</label>
             }
           </nz-radio-group>
         } @else {
-          <nz-radio-group [attr.id]="inputId()" role="radiogroup" [attr.aria-label]="runtime().text(f.label, scope()) || f.name" [nzDisabled]="disabled()" [ngModel]="selected()" (ngModelChange)="valueChange.emit($event)">
+          <nz-radio-group [attr.id]="inputId()" role="radiogroup" [attr.aria-label]="label()" [nzDisabled]="disabled()" [ngModel]="selected()" (ngModelChange)="valueChange.emit($event)">
             @for (option of f.options ?? []; track option) {
               <label nz-radio [nzValue]="option">{{ optionLabel(option) }}</label>
             }
@@ -223,6 +223,10 @@ export class FieldControlComponent {
   readonly variant = input<'form' | 'filter'>('form');
   /** Text of empty choice fields (and of the «all» choice in filters). */
   readonly placeholder = input('—');
+  /** Label that is data (a field of `fieldsFrom`), shown as it is; otherwise the label of the field, resolved by the screen. */
+  readonly labelText = input<string | null>(null);
+  /** Labels of options that are data, by value; otherwise `optionKey` or the value. */
+  readonly optionLabels = input<Readonly<Record<string, string>> | null>(null);
   readonly valueChange = output<unknown>();
 
   protected readonly i18n = inject(I18n);
@@ -260,8 +264,16 @@ export class FieldControlComponent {
   /** Strength of a new password; the text fields of the form (a name, an e-mail) make it weaker when they are inside it. */
   protected readonly strength = computed(() => passwordStrength(this.text(), this.personal()));
 
-  /** Label of an option: translated with `optionKey` (`<prefix>.<value>`), otherwise the value itself. */
+  /** Label of the field, for the checkbox and the name of the radio group. */
+  protected label(): string {
+    const f = this.field();
+    return this.labelText() ?? (this.runtime().text(f.label, this.scope()) || f.name);
+  }
+
+  /** Label of an option: from the data, translated with `optionKey` (`<prefix>.<value>`), otherwise the value itself. */
   protected optionLabel(option: string): string {
+    const own = this.optionLabels();
+    if (own) return Object.hasOwn(own, option) ? own[option] : option;
     const key = this.field().optionKey;
     return key ? this.i18n.t(`${key}.${option}`, {}, option) : option;
   }

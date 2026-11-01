@@ -99,6 +99,13 @@ describe('quadrava validate', () => {
     assert.match(stderr, /refers to orders\/\w+, which is not in datasources\//);
   });
 
+  it('reports a data source named by a screen that the screen does not declare', async () => {
+    const dir = project((d) => change(d, 'screens/order-list.json', (s) => ({ ...s, components: [...s.components, { type: 'table', source: 'nowhere', columns: [{ field: 'id', label: 'Id' }] }] })));
+    const { code, stderr } = await run(['validate', dir]);
+    assert.equal(code, 1);
+    assert.match(stderr, /screens\/order-list\.json \/components\/\d+\/source: uses the data source «nowhere»/);
+  });
+
   it('exits with 2 for a wrong command', async () => {
     assert.equal((await run(['frobnicate'])).code, 2);
     assert.equal((await run(['validate', '--nope'])).code, 2);

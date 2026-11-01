@@ -1,4 +1,5 @@
 import { checkScreenExpressions } from '../../core/src/lib/expression-check';
+import { unknownSourceReferences } from '../../core/src/lib/source-references';
 import { ExpressionEngine } from '../../expressions/src/public-api';
 import {
   validateDataSources,
@@ -92,10 +93,16 @@ export function validateProject(files: ProjectFile[]): { documents: ProjectDocum
   return { documents, issues };
 }
 
-/** The references of the screens (`{ "ref": "orders/list" }`) resolve in the data sources documents of the project. */
+/**
+ * The references of the screens (`{ "ref": "orders/list" }`) resolve in the data sources documents of the project, and
+ * every data source a screen names (components, lookups, steps, rules…) is one of its `dataSources`.
+ */
 function checkReferences(documents: ProjectDocument[], issues: Issue[]): void {
   const sources = new Map(documents.filter((d) => d.kind === 'datasources').map((d) => [d.id, ((d.doc as Json)['sources'] ?? {}) as Json]));
   for (const { file, doc } of documents.filter((d) => d.kind === 'screen')) {
+    for (const { path, name } of unknownSourceReferences(doc)) {
+      issues.push({ file, path: '/' + path.join('/'), message: `uses the data source «${name}», which the screen does not declare in dataSources` });
+    }
     for (const [name, entry] of Object.entries(((doc as Json)['dataSources'] ?? {}) as Json)) {
       const ref = isObject(entry) ? entry['ref'] : undefined;
       if (typeof ref !== 'string') continue;

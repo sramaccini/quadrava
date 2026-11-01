@@ -20,6 +20,7 @@ export * from './lib/action-engine';
 export * from './lib/navigation-runtime';
 export * from './lib/navigation-check';
 export * from './lib/expression-check';
+export * from './lib/source-references';
 export * from './lib/theme';
 export * from './lib/catalog';
 export * from './lib/studio-link';

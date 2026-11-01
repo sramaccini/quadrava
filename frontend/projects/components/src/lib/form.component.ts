@@ -1,11 +1,14 @@
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, input, output, signal, untracked } from '@angular/core';
-import { codeMessage, formRules, I18n, isRequired, NO_PROBLEM, pointerSegments, RemoteChecks, runSteps, transformValue, type FieldCheck, type FieldError, type ScreenRuntime, type Scope } from 'core';
+import { codeMessage, formRules, I18n, isRequired, NO_PROBLEM, pointerSegments, RemoteChecks, rowsOf, runSteps, transformValue, type CompiledRule, type FieldCheck, type FieldError, type ScreenRuntime, type Scope } from 'core';
+import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzFormModule } from 'ng-zorro-antd/form';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import type { ActionDefinition, FieldDefinition, FormNode } from 'schema';
+import { BusyComponent } from './busy.component';
 import { FieldControlComponent } from './field-control.component';
 import { checkValue, personalValues, repeaterRows, validationEnv } from './field-validation';
+import { dataItems, itemValue, screenItems, withItemValue, type FormItem } from './form-fields';
 import { nextId } from './shared';
 
 /**
@@ -14,10 +17,12 @@ import { nextId } from './shared';
  * submit attempt: errors block the actions, warnings only inform. Remote rules run while the user types, their outcome
  * shows as soon as it is known, and the form waits for those in progress before sending. Field errors returned by the
  * service (Problem with `errors`) go to their fields, or to the cells of a repeater, until those change.
+ * With `fieldsFrom` more fields come from a data source, after those of the screen: their labels and options are data,
+ * shown as they are; their values sit in the object `into` when it is given. The actions wait for those fields.
  */
 @Component({
   selector: 'lc-form',
-  imports: [FieldControlComponent, NzFormModule, NzButtonModule, NzTooltipModule],
+  imports: [BusyComponent, FieldControlComponent, NzAlertModule, NzFormModule, NzButtonModule, NzTooltipModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: block; container-type: inline-size; }
@@ -35,14 +40,19 @@ import { nextId } from './shared';
     .actions { display: flex; gap: var(--lc-gap, 12px); }
   `,
   template: `
+    @if (fieldsFailure(); as error) {
+      <div role="alert"><nz-alert nzType="error" [nzMessage]="error" nzShowIcon /></div>
+    }
+    <lc-busy [busy]="fieldsLoading()">
     <form nz-form ngNoForm nzLayout="vertical" novalidate [class.grid]="columns() > 1" [class.wide]="hasRows()" [style.--lc-form-columns]="columns()" (submit)="$event.preventDefault()">
-      @for (field of node().fields; track field.name) {
+      @for (item of items(); track item.key) {
+        @let field = item.field;
         @if (runtime().isVisible(field, fieldScope())) {
           <nz-form-item [style.--lc-field-span]="span(field)">
             @if (field.type !== 'checkbox') {
-              <nz-form-label [nzFor]="id + field.name" [id]="id + field.name + '-label'" [nzRequired]="required(field)" [nzTooltipTitle]="field.tooltip ? runtime().text(field.tooltip, fieldScope()) : undefined" [nzTooltipIcon]="'question-circle'">{{ runtime().text(field.label, fieldScope()) || field.name }}</nz-form-label>
+              <nz-form-label [nzFor]="id + item.key" [id]="id + item.key + '-label'" [nzRequired]="required(item)" [nzTooltipTitle]="field.tooltip ? runtime().text(field.tooltip, fieldScope()) : undefined" [nzTooltipIcon]="'question-circle'">{{ item.label ?? (runtime().text(field.label, fieldScope()) || field.name) }}</nz-form-label>
             }
-            @let problem = shown(field);
+            @let problem = shown(item);
             <nz-form-control
               [nzValidateStatus]="field.type === 'repeater' ? '' : problem.error ? 'error' : problem.pending ? 'validating' : problem.warning ? 'warning' : ''"
               [nzHasFeedback]="!!problem.pending"
@@ -53,17 +63,19 @@ import { nextId } from './shared';
                 [field]="field"
                 [runtime]="runtime()"
                 [scope]="fieldScope()"
-                [value]="values()[field.name]"
+                [value]="valueOf(item)"
                 [disabled]="readOnly(field)"
-                [inputId]="id + field.name"
-                [labelId]="id + field.name + '-label'"
+                [inputId]="id + item.key"
+                [labelId]="id + item.key + '-label'"
+                [labelText]="item.label"
+                [optionLabels]="item.optionLabels"
                 [invalid]="!!problem.error"
                 [submitted]="submitted()"
                 [summary]="problem.error ?? problem.warning"
-                [cellErrors]="cellErrors()[field.name] ?? {}"
+                [cellErrors]="cellErrors()[item.key] ?? {}"
                 [personal]="personal()"
                 [remote]="remote()"
-                (valueChange)="set(field, $event)"
+                (valueChange)="set(item, $event)"
               />
             </nz-form-control>
           </nz-form-item>
@@ -73,7 +85,7 @@ import { nextId } from './shared';
         @for (action of node().actions ?? []; track $index) {
           @if (runtime().isVisible(action, fieldScope())) {
             <span nz-tooltip [nzTooltipTitle]="action.tooltip ? runtime().text(action.tooltip, fieldScope()) : null">
-              <button nz-button nzType="primary" type="button" [nzLoading]="busy()" [disabled]="busy() || !runtime().isEnabled(action, fieldScope())" (click)="run(action)">
+              <button nz-button nzType="primary" type="button" [nzLoading]="busy()" [disabled]="busy() || fieldsLoading() || !runtime().isEnabled(action, fieldScope())" (click)="run(action)">
                 {{ runtime().text(action.label, fieldScope()) }}
               </button>
             </span>
@@ -84,6 +96,7 @@ import { nextId } from './shared';
         }
       </div>
     </form>
+    </lc-busy>
   `,
 })
 export class FormComponent {
@@ -108,6 +121,29 @@ export class FormComponent {
 
   /** Columns of the grid (from 1 to 4). */
   protected readonly columns = computed(() => Math.min(4, Math.max(1, this.node().columns ?? 1)));
+
+  /**
+   * The data of the form's source. A computed of its own: the state of the screen's sources changes with every call and
+   * lookup, and only new data of this source may replace what the user is typing.
+   */
+  private readonly sourceData = computed(() => {
+    const source = this.node().source;
+    return source ? this.runtime().source(source).data : null;
+  });
+  /** The data source of the fields that are data (`fieldsFrom`). */
+  private readonly fieldsSource = computed(() => {
+    const from = this.node().fieldsFrom;
+    return from ? this.runtime().source(from.source) : null;
+  });
+  protected readonly fieldsLoading = computed(() => this.fieldsSource()?.status === 'loading');
+  protected readonly fieldsFailure = computed(() => (this.fieldsSource()?.status === 'error' ? (this.fieldsSource()?.error ?? null) : null));
+  /** The fields of the screen, then those of the data source. */
+  protected readonly items = computed<FormItem[]>(() => {
+    const node = this.node();
+    const own = screenItems(node.fields);
+    if (!node.fieldsFrom) return own;
+    return [...own, ...dataItems(rowsOf(this.fieldsSource()?.data), node.fieldsFrom, new Set(node.fields.map((f) => f.name)))];
+  });
 
   /** Columns taken by a field, never more than those of the grid. */
   protected span(field: FieldDefinition): number {
@@ -135,22 +171,27 @@ export class FormComponent {
       untracked(() => this.values.set(this.normalize({ ...this.empty(), ...((initial ? this.runtime().resolveValue(initial, this.scope()) : {}) as Record<string, unknown>) })));
     });
     effect(() => {
-      const source = this.node().source;
-      const data = source ? this.runtime().source(source).data : null;
+      const data = this.sourceData();
       if (data !== null && typeof data === 'object' && !Array.isArray(data)) {
         untracked(() => this.values.set(this.normalize({ ...this.empty(), ...(data as Record<string, unknown>) })));
       }
     });
   }
 
-  /** Every declared field exists in the values (null): `form.field` expressions do not fail before the data arrives. */
+  /**
+   * Every declared field exists in the values (null), and so does the object of the data fields: `form.field`
+   * expressions do not fail before the data arrives.
+   */
   private empty(): Record<string, unknown> {
-    return Object.fromEntries(this.node().fields.map((f) => [f.name, null]));
+    const into = this.node().fieldsFrom?.into;
+    return { ...Object.fromEntries(this.node().fields.map((f) => [f.name, null])), ...(into ? { [into]: {} } : {}) };
   }
 
-  /** Repeatable-rows fields start with at least `minRows` empty rows. */
+  /** Repeatable-rows fields start with at least `minRows` empty rows; the object of the data fields is an object. */
   private normalize(values: Record<string, unknown>): Record<string, unknown> {
     const out = { ...values };
+    const into = this.node().fieldsFrom?.into;
+    if (into && (out[into] === null || typeof out[into] !== 'object' || Array.isArray(out[into]))) out[into] = {};
     for (const field of this.node().fields) {
       if (field.type !== 'repeater') continue;
       const rows = repeaterRows(out[field.name]);
@@ -166,50 +207,70 @@ export class FormComponent {
     return this.runtime().isReadOnly(field, this.fieldScope());
   }
 
-  protected set(field: FieldDefinition, raw: unknown): void {
+  protected valueOf(item: FormItem): unknown {
+    return itemValue(this.values(), item, this.node().fieldsFrom?.into);
+  }
+
+  protected set(item: FormItem, raw: unknown): void {
+    const field = item.field;
     const value = field.type === 'number' && raw !== '' && raw !== null ? Number(raw) : raw;
-    this.values.update((current) => ({ ...current, [field.name]: value }));
+    this.values.update((current) => withItemValue(current, item, this.node().fieldsFrom?.into, value));
     // A field changed by the user is no longer the one the service rejected.
-    if (field.name in this.serverErrors()) this.serverErrors.update(({ [field.name]: _, ...rest }) => rest);
-    if (field.name in this.cellErrors()) this.cellErrors.update(({ [field.name]: _, ...rest }) => rest);
+    if (item.key in this.serverErrors()) this.serverErrors.update(({ [item.key]: _, ...rest }) => rest);
+    if (item.key in this.cellErrors()) this.cellErrors.update(({ [item.key]: _, ...rest }) => rest);
+  }
+
+  /** The rules of the form that concern an item: they name only the fields of the screen. */
+  private rulesOf(item: FormItem): readonly CompiledRule[] | undefined {
+    return item.label === null ? this.crossRules().get(item.field.name) : undefined;
   }
 
   /** The asterisk of the label: required, or required now by a conditional rule. */
-  protected required(field: FieldDefinition): boolean {
-    return isRequired(field, this.env(), this.crossRules().get(field.name));
+  protected required(item: FormItem): boolean {
+    return isRequired(item.field, this.env(), this.rulesOf(item));
   }
 
   /**
    * Error or warning of the field: after the first submit attempt; a remote check (running or done) as soon as it is
    * known; an error of the service until the field changes.
    */
-  protected shown(field: FieldDefinition): FieldCheck {
-    const server = this.serverErrors()[field.name];
+  protected shown(item: FormItem): FieldCheck {
+    const server = this.serverErrors()[item.key];
     if (server) return { error: server, warning: null };
-    const check = this.check(field);
+    const check = this.check(item);
     return this.submitted() || check.pending || check.remote ? check : NO_PROBLEM;
   }
 
-  private check(field: FieldDefinition): FieldCheck {
-    return checkValue(field, this.values()[field.name], this.env(), this.crossRules().get(field.name));
+  private check(item: FormItem): FieldCheck {
+    return checkValue(item.field, this.valueOf(item), this.env(), this.rulesOf(item));
   }
 
-  private transform(name: string, value: unknown): unknown {
-    const field = this.node().fields.find((f) => f.name === name);
-    return field ? transformValue(field, value) : value;
+  /** The values with the `transform` of every field applied, the data fields included. */
+  private transformed(values: Record<string, unknown>): Record<string, unknown> {
+    const into = this.node().fieldsFrom?.into;
+    return this.items().reduce((out, item) => {
+      const value = itemValue(out, item, into);
+      return value === undefined ? out : withItemValue(out, item, into, transformValue(item.field, value));
+    }, values);
   }
 
-  /** Places the field errors of the service on the fields (and the cells of repeaters); returns how many it placed. */
+  /**
+   * Places the field errors of the service on the fields (and the cells of repeaters); returns how many it placed. An
+   * error on a data field kept in `into` has the path of the object (`/custom/customer`).
+   */
   private placeServerErrors(errors: readonly FieldError[]): number {
     const fields: Record<string, string> = {};
     const cells: Record<string, Record<string, string>> = {};
+    const into = this.node().fieldsFrom?.into;
     let placed = 0;
     for (const { path, code, params } of errors) {
-      const [name, row, column, ...rest] = pointerSegments(path);
-      const field = this.node().fields.find((f) => f.name === name);
-      if (!field || rest.length) continue;
+      const segments = pointerSegments(path);
+      const inData = into !== undefined && segments[0] === into && segments.length === 2;
+      const [name, row, column, ...rest] = inData ? [`${into}.${segments[1]}`] : segments;
+      const item = this.items().find((i) => i.key === name);
+      if (!item || rest.length) continue;
       const message = codeMessage(this.i18n, code, params);
-      if (field.type === 'repeater' && row !== undefined && column !== undefined && /^\d+$/.test(row)) {
+      if (item.field.type === 'repeater' && row !== undefined && column !== undefined && /^\d+$/.test(row)) {
         cells[name] = { ...cells[name], [`${row}/${column}`]: message };
       } else if (row === undefined) {
         fields[name] = message;
@@ -224,17 +285,17 @@ export class FormComponent {
   }
 
   protected async run(action: ActionDefinition): Promise<void> {
-    if (this.busy()) return;
+    if (this.busy() || this.fieldsLoading()) return;
     this.submitted.set(true);
     this.serverErrors.set({});
     this.cellErrors.set({});
     // The steps receive the values as they are checked: after `transform` (usually already applied when leaving the field).
-    this.values.update((values) => Object.fromEntries(Object.entries(values).map(([name, value]) => [name, this.transform(name, value)])));
+    this.values.update((values) => this.transformed(values));
     this.busy.set(true);
     try {
       // The remote checks still waiting for their pause start now, and the form waits for their outcome (a value changed
       // just before the click is scheduled by the check itself: one more round).
-      const visible = this.node().fields.filter((f) => this.runtime().isVisible(f, this.fieldScope()));
+      const visible = this.items().filter((i) => this.runtime().isVisible(i.field, this.fieldScope()));
       let checks = visible.map((f) => this.check(f));
       for (let round = 0; round < 3 && checks.some((c) => c.pending); round++) {
         await this.remote().settle();

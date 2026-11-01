@@ -119,16 +119,24 @@ describe('EditorStore', () => {
     expect(store.issues()).toEqual([expect.objectContaining({ pointer: '/components/2/source', severity: 'warning', message: 'Data source “list” is not defined' })]);
     // Warnings do not prevent the preview.
     expect(store.definition()).not.toBeNull();
+    // The sources named inside a component are checked too.
+    store.setValue(['components', 2, 'source'], undefined);
+    store.addNode('kanban');
+    store.setValue(['components', 3, 'columnsFrom'], { source: 'statuses' });
+    expect(store.issues()).toContainEqual(expect.objectContaining({ pointer: '/components/3/columnsFrom/source', severity: 'warning', message: 'Data source “statuses” is not defined' }));
   });
 
   it('renames a data source updating nodes, steps and sample data', () => {
     store.addNode('table');
     store.addNode('button');
     store.setValue(['components', 1, 'onClick'], [{ refresh: 'list' }]);
+    store.addNode('kanban');
+    store.setValue(['components', 2, 'columnsFrom'], { source: 'list' });
     store.setSample('list', [{ id: 1 }]);
     expect(store.renameSource('list', 'orders')).toBe(true);
     expect(getIn(store.doc(), ['components', 0, 'source'])).toBe('orders');
     expect(getIn(store.doc(), ['components', 1, 'onClick'])).toEqual([{ refresh: 'orders' }]);
+    expect(getIn(store.doc(), ['components', 2, 'columnsFrom', 'source'])).toBe('orders');
     expect(store.sourceNames()).toEqual(['orders']);
     expect(store.samples()).toEqual({ orders: [{ id: 1 }] });
     expect(store.renameSource('orders', '1x')).toBe(false);

@@ -346,6 +346,24 @@ describe('schema of the new components', () => {
     });
   });
 
+  describe('form fields from a data source', () => {
+    const form = (fieldsFrom: unknown) => screen([{ type: 'form', fields: [{ name: 'title', type: 'text' }], fieldsFrom }]);
+
+    it('accepts the source alone, the names of the row and models by type', () => {
+      expect(issuesOf(form({ source: 'customFields' }))).toEqual([]);
+      const user = { name: 'user', type: 'lookup', lookup: { source: 'members', labelField: 'name' } };
+      expect(issuesOf(form({ source: 'customFields', into: 'custom', nameField: 'key', labelField: 'label', typeField: 'type', optionsField: 'options', requiredField: 'required', types: { user, text: { name: 'text', type: 'text', maxLength: 1000 } } }))).toEqual([]);
+    });
+
+    it('rejects a missing source, an object name that is not a name, models that are not fields, foreign properties', () => {
+      expect(issuesOf(form({ into: 'custom' })).length).toBeGreaterThan(0);
+      expect(issuesOf(form({ source: 's', into: 'form.custom' })).length).toBeGreaterThan(0);
+      expect(issuesOf(form({ source: 's', types: { user: { type: 'lookup' } } })).length, 'model without name').toBeGreaterThan(0);
+      expect(issuesOf(form({ source: 's', types: { user: { name: 'user', type: 'user' } } })).length, 'model of an unknown type').toBeGreaterThan(0);
+      expect(issuesOf(form({ source: 's', visibleField: 'shown' })).length).toBeGreaterThan(0);
+    });
+  });
+
   describe('comments', () => {
     const thread = { type: 'comments', source: 'comments' };
     it('accepts a read-only thread and one with publishing and mentions', () => {

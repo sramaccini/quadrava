@@ -28,7 +28,7 @@ Rules common to all components, new ones included:
 | `table` | Table with server-side paging, cell formats, sorting, selection and bulk actions, action menu, expandable rows, clickable cells and totals. |
 | `dataTable` | Data table with filters, sorting and grouping in the page (§ 2.18). |
 | `serverDataTable` | The same data table, but filters, sorting, groups, totals and pages are computed by the service (§ 2.19). |
-| `form` | Form with validation, conditional fields, column grid and actions. |
+| `form` | Form with validation, conditional fields, column grid, fields from a data source (§ 2.31) and actions. |
 | `tabs` | Tabs, each with its own nodes. |
 | `detail` | Read-only detail card (label and value; a `format: markdown` field is shown formatted). |
 | `alert` | In-page message (info, success, error), also formatted (`format: markdown`). |
@@ -655,6 +655,37 @@ A thread of comments read from a data source, with a box for writing below it. T
 
 In the showcase: «Vetrina: attività e avanzamento» (Showcase: tasks and progress), «Commenti» (Comments) section.
 
+### 2.31 Form fields from a data source
+
+One screen serves forms whose fields are data: the custom fields of a project, the attributes of a product category.
+`fieldsFrom` reads them from a data source, one row per field, and draws them after those of `fields`.
+
+```json
+{ "type": "form", "source": "issue",
+  "fields": [{ "name": "title", "type": "text", "required": true }],
+  "fieldsFrom": { "source": "customFields", "into": "custom", "nameField": "key",
+    "types": { "user": { "name": "user", "type": "lookup", "lookup": { "source": "people", "valueField": "id", "labelField": "name" } } } } }
+```
+
+```text
+ rows of «customFields»                                  the form
+ { key: contract, label: Contract number,      ──▶   * Title            [Printer offline   ]
+   type: text, required: true }                       * Contract number  [C-1042            ]
+ { key: severity, label: Severity, type: select,  ──▶   Severity         [High            ▾]
+   options: [{ value: low, label: Low }, …] }
+ { key: reviewer, label: Reviewer, type: user } ──▶     Reviewer         [Luca Bianchi    ▾]   (model «user»)
+                                                        [ Save ]  ──▶  { title, custom: { contract, severity, reviewer } }
+```
+
+- **Rows**: `nameField` (`name`), `labelField` (`label`), `typeField` (`type`), `optionsField` (`options`, values or `{ value, label }`) and `requiredField` (`required`, true or false). Labels and options are data: shown as they are, never evaluated or translated; without a label the name is shown. At most 50 fields; rows without a valid name (letters, digits and `_`, starting with a letter), with a name already seen or with an unknown type are left out.
+- **Types**: a row can ask for the simple controls (`text`, `textarea`, `number`, `date`, `datetime`, `checkbox`, `switch`, `select`, `multiselect`, `radio`) or for a model of `types`: a field of the screen, with its control and rules (a lookup and its source, `maxLength`, `readOnlyIf`…). The row gives name, label, options and required; the rest comes from the model, and the row cannot loosen it.
+- **Values**: with `into` the values of the data fields live in that object (`form.custom.contract`), so they cannot clash with those of the screen and travel to the service as they arrived from it. Without `into` they sit next to the others, and a row cannot take the name of a field of the screen.
+- **Checks**: required flags and the rules of the models apply as for the other fields when an action runs. The field errors of the service land on the data fields too, with the path inside the object (`/custom/contract`): this is where the rules that depend on other fields belong (required only for one kind of issue, for example).
+- **Loading**: while the fields load the form shows the wait (`lc-busy`) and its actions are disabled; if their source fails the form shows the error and keeps the fields of the screen.
+- **Studio and `quadrava validate`** warn when the `source` of `fieldsFrom` or of a model is not among the screen's `dataSources`, like every other data source a screen names.
+
+In the showcase: «Vetrina: form» (Showcase: forms), «Campi dal servizio» (Fields from the service) section.
+
 ## 3. Implementation notes and known limits
 
 - **Loading data sources.** A GET data source reloads by itself only if the resolved request (URL and parameters) changes. A state change that does not touch the request (a selection, a wizard step, a chosen node) does not trigger new calls; to reload anyway, use the `refresh` step.
@@ -663,6 +694,7 @@ In the showcase: «Vetrina: attività e avanzamento» (Showcase: tasks and progr
 - **Lookup and file field variables.** Data sources always have `search`, `lookupKey` and `word` (null until needed: lookups, text fields with suggestions, mentions); `file` exists in `upload` data sources.
 - **Lookup.** The text of a value not loaded is resolved only if the data source uses `{{ lookupKey }}`; otherwise the field shows the value itself until the user searches.
 - **Repeatable rows.** No nested rows inside a row.
+- **Fields from a data source.** The rules across fields of the form (`validation`, § 2.29) check only the fields of `fields`; expressions read a data field as `form.custom.name`. A lookup, or any control with settings of its own, comes only from a model of `types`.
 - **Data table.** Works on the loaded rows (tested up to 50,000 rows in the functions and 20,000 in the component); beyond that, `serverDataTable`.
 - **Server data table.** No row selection or expandable rows; open groups are not remembered between visits to the screen. The `refresh` step on a non-GET data source calls nothing: it only notifies the components that query it themselves.
 - **Charts.** No zoom, filled areas or more than two axes.

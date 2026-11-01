@@ -198,6 +198,17 @@ describe('Component showcase', () => {
       expect(field(admin.el, 'iban')).not.toBeNull();
       await until(admin.fixture, () => button(admin.el, 'Save')!.disabled === false, 'saving enabled');
     });
+
+    it('the custom fields come from the service, with their values, and its field errors land on them', async () => {
+      const { fixture, el } = await open('/showcase/showcase-form');
+      await until(fixture, () => (field(el, 'custom.contract') as HTMLInputElement | null)?.value === 'C-1042', 'custom fields loaded');
+      expect(main(el)).toContain('Contract number');
+      expect(main(el)).toContain('Due date');
+      await type(fixture, el, 'custom.contract', '1042');
+      // The Save of the last section, after the one of the order.
+      [...el.querySelectorAll<HTMLButtonElement>('main button')].filter((b) => b.textContent?.trim() === 'Save').at(-1)!.click();
+      await until(fixture, () => main(el).includes('The value is not in the expected format'), 'field error of the service');
+    });
   });
 
   describe('filters and tables', () => {

@@ -342,6 +342,20 @@ export interface TableNode extends NodeBase {
   /** Area that opens under the row; its nodes see the row as `row`. */
   expand?: { components: NodeDefinition[]; expandIf?: Expression };
 }
+/** Fields of a form that are data (`fieldsFrom`): one row per field, the names of its properties configurable. */
+export interface FieldsFromDefinition {
+  source: string;
+  /** Object that holds their values (`form.<into>.<name>`); without it they sit next to the other fields. */
+  into?: string;
+  nameField?: string;
+  labelField?: string;
+  typeField?: string;
+  optionsField?: string;
+  requiredField?: string;
+  /** Models by type of the row: fields of the screen whose name, label, options and required the row replaces. */
+  types?: Record<string, FieldDefinition>;
+}
+
 export interface FormNode extends NodeBase {
   type: 'form';
   /** Data source of the initial values; absent in entry forms. */
@@ -349,6 +363,8 @@ export interface FormNode extends NodeBase {
   /** Initial values with expressions, resolved once when the screen opens. */
   initial?: Record<string, unknown>;
   fields: FieldDefinition[];
+  /** More fields read from a data source, after `fields` (labels and options are data, shown as they are). */
+  fieldsFrom?: FieldsFromDefinition;
   actions?: ActionDefinition[];
   /** Columns of the field grid (1 if absent). */
   columns?: number;

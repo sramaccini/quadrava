@@ -196,7 +196,7 @@ describe('Showcase: advanced components', () => {
       await until(() => rows()[0].querySelector('lc-lookup .ant-select-selection-item')?.textContent?.trim() === 'Printer toner', 'initial article');
       ([...repeater.querySelectorAll('button')].find((b) => b.textContent?.includes('Add an item')) as HTMLButtonElement).click();
       await settle();
-      const save = (): void => ([...form.querySelectorAll(':scope > form > .actions button')].find((b) => b.textContent?.trim() === 'Save') as HTMLButtonElement).click();
+      const save = (): void => ([...form.querySelectorAll(':scope form > .actions button')].find((b) => b.textContent?.trim() === 'Save') as HTMLButtonElement).click();
       save();
       await until(() => repeater.querySelectorAll('.cell-error').length === 2, 'errors of the new row');
       const second = rows()[1];

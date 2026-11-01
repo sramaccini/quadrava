@@ -12,6 +12,18 @@
     },
     "saveOrder": {
       "ref": "showcase-form/saveOrder"
+    },
+    "ticket": {
+      "ref": "showcase-form/ticket"
+    },
+    "saveTicket": {
+      "ref": "showcase-form/saveTicket"
+    },
+    "customFields": {
+      "ref": "showcase-form/customFields"
+    },
+    "people": {
+      "ref": "showcase-form/people"
     }
   },
   "components": [
@@ -181,6 +193,65 @@
                 },
                 {
                   "toast": "{{ t('showcase_form.order_saved', 'Order saved') }}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "section-custom",
+      "type": "section",
+      "title": "{{ t('showcase_form.fields_from_the_service', 'Fields from the service: the custom fields of a project') }}",
+      "components": [
+        {
+          "id": "custom-intro",
+          "type": "text",
+          "text": "{{ t('showcase_form.fields_from_the_service_intro', 'The fields after the title come from a data source (fieldsFrom): their labels and options are data, shown as they are. The values travel in the custom object, and the service checks them again.') }}"
+        },
+        {
+          "id": "ticket-form",
+          "type": "form",
+          "source": "ticket",
+          "fields": [
+            {
+              "name": "title",
+              "label": "{{ t('showcase_form.title', 'Title') }}",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "fieldsFrom": {
+            "source": "customFields",
+            "into": "custom",
+            "nameField": "key",
+            "types": {
+              "user": {
+                "name": "user",
+                "type": "lookup",
+                "lookup": {
+                  "source": "people",
+                  "valueField": "id",
+                  "labelField": "name",
+                  "minChars": 0
+                }
+              }
+            }
+          },
+          "actions": [
+            {
+              "id": "btn-save-ticket",
+              "label": "{{ t('common.save', 'Save') }}",
+              "onClick": [
+                {
+                  "call": "saveTicket",
+                  "onError": {
+                    "toast": "{{ t('common.saving_failed', 'Saving failed') }}"
+                  }
+                },
+                {
+                  "toast": "{{ t('showcase_form.ticket_saved', 'Ticket saved') }}"
                 }
               ]
             }

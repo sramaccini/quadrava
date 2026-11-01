@@ -19,6 +19,30 @@
       "method": "PUT",
       "url": "/api/orders/{{has(params.id) ? params.id : 1}}",
       "body": "{{form}}"
+    },
+    "ticket": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/showcase/ticket"
+    },
+    "saveTicket": {
+      "type": "rest",
+      "method": "PUT",
+      "url": "/api/showcase/ticket",
+      "body": "{{form}}"
+    },
+    "customFields": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/showcase/custom-fields"
+    },
+    "people": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/people",
+      "params": {
+        "q": "{{ search }}"
+      }
     }
   }
 }

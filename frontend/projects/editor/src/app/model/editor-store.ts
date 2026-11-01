@@ -1,5 +1,5 @@
 import { Injectable, computed, effect, inject, signal } from '@angular/core';
-import { I18n, checkScreenExpressions, checkScreenPatterns } from 'core';
+import { I18n, checkScreenExpressions, checkScreenPatterns, sourceReferences, unknownSourceReferences } from 'core';
 import { ExpressionEngine } from 'expressions';
 import { splitReference, type ScreenDefinition } from 'schema';
 import { validateScreen } from 'schema/validation';
@@ -126,7 +126,7 @@ export class EditorStore extends DocumentState implements DataSourceList {
    * named sequences.
    */
   override suggestions(property: string): string[] {
-    if (['source', 'call', 'refresh', 'remote'].includes(property)) return this.sourceNames();
+    if (['source', 'call', 'refresh', 'remote', 'upload'].includes(property)) return this.sourceNames();
     if (property === 'navigate') return this.knownScreens();
     if (property === 'run') return this.actionNames();
     return [];
@@ -402,14 +402,10 @@ export class EditorStore extends DocumentState implements DataSourceList {
     const sources = getIn(doc, ['dataSources']) as JsonObject;
     // Same order as before, with the new name in place of the old one.
     const renamed = Object.fromEntries(Object.entries(sources).map(([k, v]) => [k === from ? to : k, v]));
-    const replace = (value: Json, path: Path): Json => {
-      if (Array.isArray(value)) return value.map((v, i) => replace(v, [...path, i]));
-      if (!isObject(value)) return value;
-      return Object.fromEntries(
-        Object.entries(value).map(([k, v]) => [k, ['source', 'call', 'refresh'].includes(k) && v === from && path[0] !== 'dataSources' ? to : replace(v, [...path, k])]),
-      );
-    };
-    this.apply({ ...(replace(doc, []) as JsonObject), dataSources: renamed });
+    const updated = sourceReferences(doc)
+      .filter((r) => r.name === from)
+      .reduce<Json>((d, r) => setIn(d, r.path, to), doc) as JsonObject;
+    this.apply({ ...updated, dataSources: renamed });
     const sample = this.samples()[from];
     if (sample !== undefined) {
       this.setSample(from, undefined);
@@ -567,23 +563,16 @@ export class EditorStore extends DocumentState implements DataSourceList {
     }
   }
 
-  /** Checks the schema does not do: data sources that do not exist and repeated identifiers. */
+  /** Checks the schema does not do: data sources that do not exist, sequences that do not exist and repeated identifiers. */
   private checkReferences(doc: Json, add: (pointer: string, message: string, severity: EditorIssue['severity']) => void): void {
-    const sources = getIn(doc, ['dataSources']);
-    const names = new Set(isObject(sources) ? Object.keys(sources) : []);
+    // Every place that names a data source: components, nested parts (lookup, columnsFrom, fieldsFrom…), steps, rules.
+    for (const { path, name } of unknownSourceReferences(doc)) add(toPointer(path), this.t('ed.issue.unknownSource', { name }), 'warning');
     const declared = getIn(doc, ['actions']);
     const actions = new Set(isObject(declared) ? Object.keys(declared) : []);
     const seen = new Set<string>();
     const visit = (value: Json, path: Path): void => {
       if (Array.isArray(value)) return value.forEach((v, i) => visit(v, [...path, i]));
       if (!isObject(value)) return;
-      if (typeof value['type'] === 'string' && typeof value['source'] === 'string' && !names.has(value['source'])) {
-        add(toPointer([...path, 'source']), this.t('ed.issue.unknownSource', { name: value['source'] }), 'warning');
-      }
-      // Steps that call a data source, and the remote rules of fields that ask one.
-      for (const [key, step] of [['call', value['call']], ['refresh', value['refresh']], ['remote', value['remote']]] as const) {
-        if (typeof step === 'string' && !names.has(step)) add(toPointer([...path, key]), this.t('ed.issue.unknownSource', { name: step }), 'warning');
-      }
       if (typeof value['run'] === 'string' && !actions.has(value['run'])) {
         add(toPointer([...path, 'run']), this.t('ed.issue.unknownAction', { name: value['run'] }), 'warning');
       }

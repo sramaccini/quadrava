@@ -78,6 +78,8 @@ export class DemoBackend {
   /** The staff service of the medical-staff sample project (samples/medical-staff). */
   private readonly medicalStaff = new MedicalStaffRegister(DemoBackend.PAGE_SIZE);
   private reports = 0;
+  /** Ticket of the form with custom fields (showcase): the values of those fields are kept in `custom`. */
+  private ticket: { title: string; custom: Record<string, unknown> } = { title: 'Printer offline', custom: { contract: 'C-1042', severity: 'high', reviewer: 2 } };
   /** Staff numbers already used (validation showcase). */
   private readonly staffNumbers = new Set(['S000001', 'S123456']);
   /**
@@ -187,6 +189,26 @@ export class DemoBackend {
       const email = String(((req.body ?? {}) as Record<string, unknown>)['email'] ?? '').toLowerCase();
       if (email.endsWith('@example.org')) throw Object.assign(new Error('422'), { status: 422, fieldErrors: [{ path: '/email', code: 'emailDomainBlocked' }] });
       return { subscribed: true };
+    }
+    // The custom fields of a project, as a service would describe them: the form of the showcase draws them after its own.
+    // Labels and options are data, in the language of whoever set them up.
+    if (path === '/api/showcase/custom-fields' && req.method === 'GET') {
+      return [
+        { key: 'contract', label: 'Contract number', type: 'text', required: true },
+        { key: 'severity', label: 'Severity', type: 'select', options: [{ value: 'low', label: 'Low' }, { value: 'high', label: 'High' }] },
+        { key: 'reviewer', label: 'Reviewer', type: 'user' },
+        { key: 'dueDate', label: 'Due date', type: 'date' },
+      ];
+    }
+    // Saving checks the custom fields again: their errors come back with the path inside the object.
+    if (path === '/api/showcase/ticket') {
+      if (req.method === 'PUT') {
+        const body = (req.body ?? {}) as Record<string, unknown>;
+        const custom = body['custom'] !== null && typeof body['custom'] === 'object' ? (body['custom'] as Record<string, unknown>) : {};
+        if (!/^C-\d{4}$/.test(String(custom['contract'] ?? ''))) throw Object.assign(new Error('422'), { status: 422, fieldErrors: [{ path: '/custom/contract', code: 'pattern' }] });
+        this.ticket = { title: String(body['title'] ?? ''), custom: { ...custom } };
+      }
+      if (req.method === 'GET' || req.method === 'PUT') return { ...this.ticket, custom: { ...this.ticket.custom } };
     }
     // A report returns its protocol number (the following steps read it with `as`).
     if (path === '/api/showcase/flag' && req.method === 'POST') return { protocol: `PR-${String(++this.reports).padStart(4, '0')}`, receipt: true };

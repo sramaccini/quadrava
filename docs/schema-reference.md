@@ -69,6 +69,7 @@
 | `source` | text | Name of the data source that provides the initial values (absent in entry forms). |
 | `initial` | object | Initial values with expressions, resolved once when the screen opens; for example {"type": "{{params.type}}"}. |
 | `fields` * | list of field | Fields of the form, in order. The values are read as `form` in expressions. |
+| `fieldsFrom` | object | Fields read from a data source, after those of `fields`, so that one screen serves forms whose fields are data. Checked like the other fields when an action runs; the actions wait for them to load. |
 | `actions` | list of action | Buttons under the fields: on click the form checks the visible fields and, if they are valid, runs the steps, which see the values in `form`. |
 | `columns` | integer 1–4 | Columns of the field grid (1 if absent). With little space the form goes back to one column. |
 | `validation` | list of formRule | Rules across fields, checked with those of the fields: each says the fields it checks (fields), and the message goes to them. For example [{ "after": "start", "fields": ["end"] }, { "sameAs": "email", "fields": ["emailConfirm"] }, { "atLeastOne": ["phone", "email"] }]. |
