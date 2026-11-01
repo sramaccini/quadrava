@@ -1,6 +1,6 @@
 {
   "name": "@sramaccini/quadrava-cli",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Checks and publishes Quadrava projects: screens, data sources, navigation, themes and translations in JSON.",
   "license": "MPL-2.0",
   "type": "module",
