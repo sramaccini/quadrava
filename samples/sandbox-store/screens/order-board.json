@@ -1,0 +1,99 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "order-board",
+  "title": "{{ t('order_board.title', 'Order board') }}",
+  "requires": "store.order.read",
+  "dataSources": {
+    "orders": {
+      "ref": "orders/all"
+    },
+    "setStatus": {
+      "ref": "orders/setStatus"
+    }
+  },
+  "components": [
+    {
+      "id": "board-help",
+      "type": "alert",
+      "kind": "info",
+      "text": "{{ t('order_board.help', 'Drag an order to change its status: pending → processing → completed; pending or processing orders can be cancelled.') }}"
+    },
+    {
+      "id": "board",
+      "type": "kanban",
+      "source": "orders",
+      "columnField": "status",
+      "titleField": "productName",
+      "descriptionField": "number",
+      "avatarField": "userName",
+      "footerFields": [
+        {
+          "field": "quantity",
+          "label": "{{ t('order.quantity', 'Quantity') }}"
+        },
+        {
+          "field": "amountText",
+          "label": "{{ t('order.amount', 'Amount') }}"
+        }
+      ],
+      "columns": [
+        {
+          "value": "pending",
+          "label": "{{ t('values.status.pending', 'Pending') }}"
+        },
+        {
+          "value": "processing",
+          "label": "{{ t('values.status.processing', 'Processing') }}",
+          "tone": "primary"
+        },
+        {
+          "value": "completed",
+          "label": "{{ t('values.status.completed', 'Completed') }}",
+          "tone": "success"
+        },
+        {
+          "value": "cancelled",
+          "label": "{{ t('values.status.cancelled', 'Cancelled') }}",
+          "tone": "danger"
+        }
+      ],
+      "moveIf": "{{ can('store.order.update') && row.status in ['pending', 'processing'] }}",
+      "onMove": [
+        {
+          "call": "setStatus",
+          "args": {
+            "id": "{{ row.id }}",
+            "status": "{{ to }}"
+          },
+          "onError": [
+            {
+              "if": "{{ error.status == 409 }}",
+              "then": [
+                {
+                  "toast": "{{ t('order.transition_refused', 'This status change is not allowed') }}"
+                },
+                {
+                  "refresh": "orders"
+                }
+              ],
+              "else": [
+                {
+                  "toast": "{{ t('common.save_failed', 'Saving failed: check the data and try again') }}"
+                },
+                {
+                  "refresh": "orders"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "refresh": "orders"
+        },
+        {
+          "toast": "{{ t('order.moved', 'Order {n} moved', {'n': row.number}) }}"
+        }
+      ]
+    }
+  ]
+}

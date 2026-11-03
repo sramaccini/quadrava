@@ -1,0 +1,104 @@
+{
+  "schemaVersion": "1.0",
+  "navigation": "sandbox-store",
+  "default": "overview",
+  "areas": [
+    {
+      "id": "overview",
+      "label": "{{ t('nav.overview', 'Overview') }}",
+      "icon": "home",
+      "requires": "store.dashboard.read",
+      "items": [
+        {
+          "id": "dashboard",
+          "label": "{{ t('nav.dashboard', 'Dashboard') }}",
+          "icon": "home",
+          "screen": "dashboard"
+        }
+      ]
+    },
+    {
+      "id": "sales",
+      "label": "{{ t('nav.sales', 'Sales') }}",
+      "icon": "inbox",
+      "requires": "store.order.read",
+      "items": [
+        {
+          "id": "orders",
+          "label": "{{ t('nav.orders', 'Orders') }}",
+          "icon": "list",
+          "screen": "order-list"
+        },
+        {
+          "id": "order-board",
+          "label": "{{ t('nav.order_board', 'Order board') }}",
+          "icon": "appstore",
+          "screen": "order-board"
+        },
+        {
+          "id": "order-new",
+          "label": "{{ t('nav.new_order', 'New order') }}",
+          "icon": "plus",
+          "screen": "order-new",
+          "requires": "store.order.create"
+        }
+      ]
+    },
+    {
+      "id": "catalogue",
+      "label": "{{ t('nav.catalogue', 'Catalogue') }}",
+      "icon": "container",
+      "requires": "store.product.read",
+      "items": [
+        {
+          "id": "products",
+          "label": "{{ t('nav.products', 'Products') }}",
+          "icon": "list",
+          "screen": "product-list"
+        },
+        {
+          "id": "product-new",
+          "label": "{{ t('nav.new_product', 'New product') }}",
+          "icon": "plus",
+          "screen": "product-new",
+          "requires": "store.product.create"
+        }
+      ]
+    },
+    {
+      "id": "customers",
+      "label": "{{ t('nav.customers', 'Customers') }}",
+      "icon": "user",
+      "requires": "store.user.read",
+      "items": [
+        {
+          "id": "users",
+          "label": "{{ t('nav.users', 'Users') }}",
+          "icon": "user",
+          "screen": "user-list"
+        },
+        {
+          "id": "user-new",
+          "label": "{{ t('nav.new_user', 'New user') }}",
+          "icon": "plus",
+          "screen": "user-new",
+          "requires": "store.user.create"
+        }
+      ]
+    },
+    {
+      "id": "administration",
+      "label": "{{ t('nav.administration', 'Administration') }}",
+      "icon": "setting",
+      "requires": "store.session.manage",
+      "items": [
+        {
+          "id": "session",
+          "label": "{{ t('nav.sandbox_session', 'Sandbox session') }}",
+          "icon": "safety",
+          "screen": "sandbox-session"
+        }
+      ]
+    }
+  ]
+}

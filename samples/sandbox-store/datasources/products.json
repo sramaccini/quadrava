@@ -1,0 +1,67 @@
+{
+  "schemaVersion": "1.0",
+  "datasources": "products",
+  "description": "Product catalogue (sandbox /api/v1/products), through the store adapter: paged list, search, CRUD.",
+  "baseUrl": "{{ settings.storeApi }}/products",
+  "sources": {
+    "list": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/",
+      "paging": "server",
+      "params": {
+        "page": "{{ has(state.page) ? state.page : 0 }}",
+        "size": "10",
+        "sort": "{{ has(state.sort) ? state.sort.field : 'createdAt' }}",
+        "direction": "{{ has(state.sort) ? state.sort.direction : 'desc' }}",
+        "q": "{{ state.filters.q }}",
+        "category": "{{ state.filters.category }}",
+        "lowStock": "{{ state.filters.lowStock }}"
+      }
+    },
+    "all": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/all"
+    },
+    "get": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/{{ params.id }}"
+    },
+    "create": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/",
+      "body": "{{ form }}"
+    },
+    "update": {
+      "type": "rest",
+      "method": "PATCH",
+      "url": "/{{ params.id }}",
+      "body": "{{ form }}"
+    },
+    "remove": {
+      "type": "rest",
+      "method": "DELETE",
+      "url": "/{{ id }}"
+    },
+    "search": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/search",
+      "params": {
+        "q": "{{ search }}",
+        "id": "{{ lookupKey }}"
+      }
+    },
+    "categories": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/categories",
+      "params": {
+        "q": "{{ word }}"
+      }
+    }
+  }
+}

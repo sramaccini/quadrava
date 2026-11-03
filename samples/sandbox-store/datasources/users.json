@@ -1,0 +1,58 @@
+{
+  "schemaVersion": "1.0",
+  "datasources": "users",
+  "description": "Users of the store (sandbox /api/v1/users), through the store adapter: paged list, search, CRUD.",
+  "baseUrl": "{{ settings.storeApi }}/users",
+  "sources": {
+    "list": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/",
+      "paging": "server",
+      "params": {
+        "page": "{{ has(state.page) ? state.page : 0 }}",
+        "size": "10",
+        "sort": "{{ has(state.sort) ? state.sort.field : 'createdAt' }}",
+        "direction": "{{ has(state.sort) ? state.sort.direction : 'desc' }}",
+        "q": "{{ state.filters.q }}",
+        "role": "{{ state.filters.role }}"
+      }
+    },
+    "all": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/all"
+    },
+    "get": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/{{ params.id }}"
+    },
+    "create": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/",
+      "body": "{{ form }}"
+    },
+    "update": {
+      "type": "rest",
+      "method": "PATCH",
+      "url": "/{{ params.id }}",
+      "body": "{{ form }}"
+    },
+    "remove": {
+      "type": "rest",
+      "method": "DELETE",
+      "url": "/{{ id }}"
+    },
+    "search": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/search",
+      "params": {
+        "q": "{{ search }}",
+        "id": "{{ lookupKey }}"
+      }
+    }
+  }
+}

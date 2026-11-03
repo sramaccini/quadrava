@@ -1,0 +1,223 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "user-detail",
+  "title": "{{ t('user_detail.title', 'User') }}",
+  "requires": "store.user.read",
+  "dataSources": {
+    "user": {
+      "ref": "users/get"
+    },
+    "orders": {
+      "ref": "orders/byUser"
+    },
+    "removeUser": {
+      "ref": "users/remove"
+    }
+  },
+  "components": [
+    {
+      "id": "tabs",
+      "type": "tabs",
+      "tabs": [
+        {
+          "id": "tab-data",
+          "label": "{{ t('user_detail.data', 'Data') }}",
+          "components": [
+            {
+              "id": "user-card",
+              "type": "detail",
+              "source": "user",
+              "title": "{{ t('user_detail.heading', 'User data') }}",
+              "fields": [
+                {
+                  "field": "name",
+                  "label": "{{ t('user.name', 'Full name') }}"
+                },
+                {
+                  "field": "email",
+                  "label": "{{ t('user.email', 'Email') }}"
+                },
+                {
+                  "field": "role",
+                  "label": "{{ t('user.role', 'Role') }}",
+                  "format": "badge",
+                  "badges": {
+                    "user": "neutral",
+                    "moderator": "primary",
+                    "admin": "danger"
+                  },
+                  "valueKey": "values.role"
+                },
+                {
+                  "field": "age",
+                  "label": "{{ t('user.age', 'Age') }}",
+                  "format": "number",
+                  "decimals": 0
+                },
+                {
+                  "field": "createdAt",
+                  "label": "{{ t('common.created_at', 'Created') }}",
+                  "format": "datetime"
+                },
+                {
+                  "field": "updatedAt",
+                  "label": "{{ t('common.updated_at', 'Updated') }}",
+                  "format": "datetime"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "tab-orders",
+          "label": "{{ t('user_detail.orders', 'Orders') }}",
+          "visibleIf": "{{ can('store.order.read') }}",
+          "components": [
+            {
+              "id": "user-orders",
+              "type": "table",
+              "source": "orders",
+              "columns": [
+                {
+                  "field": "number",
+                  "label": "{{ t('order.number', 'Order') }}"
+                },
+                {
+                  "field": "productName",
+                  "label": "{{ t('order.product', 'Product') }}"
+                },
+                {
+                  "field": "quantity",
+                  "label": "{{ t('order.quantity', 'Quantity') }}",
+                  "format": "number",
+                  "decimals": 0
+                },
+                {
+                  "field": "amount",
+                  "label": "{{ t('order.amount', 'Amount') }}",
+                  "format": "currency",
+                  "currency": "EUR"
+                },
+                {
+                  "field": "status",
+                  "label": "{{ t('order.status', 'Status') }}",
+                  "format": "badge",
+                  "badges": {
+                    "pending": "neutral",
+                    "processing": "primary",
+                    "completed": "success",
+                    "cancelled": "danger"
+                  },
+                  "valueKey": "values.status"
+                },
+                {
+                  "field": "createdAt",
+                  "label": "{{ t('common.created_at', 'Created') }}",
+                  "format": "datetime"
+                }
+              ],
+              "rowActionsInline": 1,
+              "rowActions": [
+                {
+                  "id": "btn-open-order",
+                  "label": "{{ t('common.open', 'Open') }}",
+                  "onClick": [
+                    {
+                      "navigate": "order-detail",
+                      "params": {
+                        "id": "{{ row.id }}"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "actions",
+      "type": "box",
+      "gap": "small",
+      "components": [
+        {
+          "id": "btn-back",
+          "type": "button",
+          "label": "{{ t('common.back', 'Back to the list') }}",
+          "onClick": [
+            {
+              "navigate": "user-list"
+            }
+          ]
+        },
+        {
+          "id": "btn-new-order",
+          "type": "button",
+          "label": "{{ t('user_detail.new_order', 'New order for this user') }}",
+          "visibleIf": "{{ can('store.order.create') }}",
+          "onClick": [
+            {
+              "navigate": "order-new",
+              "params": {
+                "userId": "{{ params.id }}"
+              }
+            }
+          ]
+        },
+        {
+          "id": "btn-edit",
+          "type": "button",
+          "label": "{{ t('common.edit', 'Edit') }}",
+          "visibleIf": "{{ can('store.user.update') }}",
+          "onClick": [
+            {
+              "navigate": "user-edit",
+              "params": {
+                "id": "{{ params.id }}"
+              }
+            }
+          ]
+        },
+        {
+          "id": "btn-delete",
+          "type": "button",
+          "label": "{{ t('common.delete', 'Delete') }}",
+          "visibleIf": "{{ can('store.user.delete') }}",
+          "onClick": [
+            {
+              "confirm": "{{ t('user.confirm_delete_this', 'Delete this user?') }}"
+            },
+            {
+              "call": "removeUser",
+              "args": {
+                "id": "{{ params.id }}"
+              },
+              "onError": [
+                {
+                  "if": "{{ error.status == 409 }}",
+                  "then": [
+                    {
+                      "toast": "{{ t('user.in_use', 'It cannot be deleted: other records refer to it') }}"
+                    }
+                  ],
+                  "else": [
+                    {
+                      "toast": "{{ t('common.delete_failed', 'Deletion failed') }}"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "toast": "{{ t('user.deleted', 'User deleted') }}"
+            },
+            {
+              "navigate": "user-list"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

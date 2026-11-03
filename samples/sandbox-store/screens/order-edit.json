@@ -1,0 +1,158 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "order-edit",
+  "title": "{{ t('order_edit.title', 'Edit order') }}",
+  "requires": "store.order.update",
+  "dataSources": {
+    "order": {
+      "ref": "orders/get"
+    },
+    "updateOrder": {
+      "ref": "orders/update"
+    },
+    "userSearch": {
+      "ref": "users/search"
+    },
+    "productSearch": {
+      "ref": "products/search"
+    }
+  },
+  "components": [
+    {
+      "id": "edit-help",
+      "type": "alert",
+      "kind": "info",
+      "text": "{{ t('order_edit.help', 'Customer and product cannot be changed: to change them, cancel the order and create a new one.') }}"
+    },
+    {
+      "id": "order-form",
+      "type": "form",
+      "source": "order",
+      "columns": 2,
+      "fields": [
+        {
+          "name": "userId",
+          "type": "lookup",
+          "label": "{{ t('order.customer', 'Customer') }}",
+          "required": true,
+          "lookup": {
+            "source": "userSearch",
+            "valueField": "id",
+            "labelField": "label",
+            "minChars": 1
+          },
+          "readOnlyIf": "{{ true }}"
+        },
+        {
+          "name": "productId",
+          "type": "lookup",
+          "label": "{{ t('order.product', 'Product') }}",
+          "required": true,
+          "lookup": {
+            "source": "productSearch",
+            "valueField": "id",
+            "labelField": "label",
+            "minChars": 1
+          },
+          "readOnlyIf": "{{ true }}"
+        },
+        {
+          "name": "quantity",
+          "type": "number",
+          "label": "{{ t('order.quantity', 'Quantity') }}",
+          "required": true,
+          "integer": true,
+          "min": 1
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "label": "{{ t('order.status', 'Status') }}",
+          "required": true,
+          "options": [
+            "pending",
+            "processing",
+            "completed",
+            "cancelled"
+          ],
+          "optionKey": "values.status"
+        },
+        {
+          "name": "notes",
+          "type": "textarea",
+          "label": "{{ t('order.notes', 'Notes') }}",
+          "maxLength": 500,
+          "rows": 3,
+          "span": 2
+        }
+      ],
+      "actions": [
+        {
+          "id": "btn-save",
+          "label": "{{ t('common.save', 'Save') }}",
+          "onClick": [
+            {
+              "call": "updateOrder",
+              "onError": [
+                {
+                  "if": "{{ error.status == 422 || error.status == 400 }}",
+                  "then": [
+                    {
+                      "toast": "{{ t('common.check_fields', 'Some fields are not valid: see the messages next to them') }}"
+                    }
+                  ],
+                  "else": [
+                    {
+                      "if": "{{ error.status == 409 }}",
+                      "then": [
+                        {
+                          "toast": "{{ t('order.transition_refused', 'This status change is not allowed') }}"
+                        }
+                      ],
+                      "else": [
+                        {
+                          "if": "{{ error.status == 404 }}",
+                          "then": [
+                            {
+                              "toast": "{{ t('common.not_found', 'The record no longer exists (the sandbox session may have expired)') }}"
+                            }
+                          ],
+                          "else": [
+                            {
+                              "toast": "{{ t('common.save_failed', 'Saving failed: check the data and try again') }}"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "toast": "{{ t('common.saved', 'Changes saved') }}"
+            },
+            {
+              "navigate": "order-detail",
+              "params": {
+                "id": "{{ params.id }}"
+              }
+            }
+          ]
+        },
+        {
+          "id": "btn-cancel",
+          "label": "{{ t('common.cancel', 'Cancel') }}",
+          "onClick": [
+            {
+              "navigate": "order-detail",
+              "params": {
+                "id": "{{ params.id }}"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

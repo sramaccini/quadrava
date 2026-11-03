@@ -1,0 +1,118 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "user-edit",
+  "title": "{{ t('user_edit.title', 'Edit user') }}",
+  "requires": "store.user.update",
+  "dataSources": {
+    "user": {
+      "ref": "users/get"
+    },
+    "updateUser": {
+      "ref": "users/update"
+    }
+  },
+  "components": [
+    {
+      "id": "user-form",
+      "type": "form",
+      "source": "user",
+      "columns": 2,
+      "fields": [
+        {
+          "name": "name",
+          "type": "text",
+          "label": "{{ t('user.name', 'Full name') }}",
+          "required": true,
+          "minLength": 1,
+          "maxLength": 100
+        },
+        {
+          "name": "email",
+          "type": "text",
+          "label": "{{ t('user.email', 'Email') }}",
+          "required": true,
+          "format": "email",
+          "maxLength": 255,
+          "tooltip": "{{ t('user.email_hint', 'Unique within the sandbox session') }}"
+        },
+        {
+          "name": "role",
+          "type": "select",
+          "label": "{{ t('user.role', 'Role') }}",
+          "required": true,
+          "options": [
+            "user",
+            "admin",
+            "moderator"
+          ],
+          "optionKey": "values.role"
+        },
+        {
+          "name": "age",
+          "type": "number",
+          "label": "{{ t('user.age', 'Age') }}",
+          "integer": true,
+          "min": 0,
+          "max": 150
+        }
+      ],
+      "actions": [
+        {
+          "id": "btn-save",
+          "label": "{{ t('common.save', 'Save') }}",
+          "onClick": [
+            {
+              "call": "updateUser",
+              "onError": [
+                {
+                  "if": "{{ error.status == 422 || error.status == 400 }}",
+                  "then": [
+                    {
+                      "toast": "{{ t('common.check_fields', 'Some fields are not valid: see the messages next to them') }}"
+                    }
+                  ],
+                  "else": [
+                    {
+                      "if": "{{ error.status == 404 }}",
+                      "then": [
+                        {
+                          "toast": "{{ t('common.not_found', 'The record no longer exists (the sandbox session may have expired)') }}"
+                        }
+                      ],
+                      "else": [
+                        {
+                          "toast": "{{ t('common.save_failed', 'Saving failed: check the data and try again') }}"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "toast": "{{ t('common.saved', 'Changes saved') }}"
+            },
+            {
+              "navigate": "user-detail",
+              "params": {
+                "id": "{{ params.id }}"
+              }
+            }
+          ]
+        },
+        {
+          "id": "btn-cancel",
+          "label": "{{ t('common.cancel', 'Cancel') }}",
+          "onClick": [
+            {
+              "navigate": "user-detail",
+              "params": {
+                "id": "{{ params.id }}"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

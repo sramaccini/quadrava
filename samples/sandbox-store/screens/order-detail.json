@@ -1,0 +1,285 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "order-detail",
+  "title": "{{ t('order_detail.title', 'Order') }}",
+  "requires": "store.order.read",
+  "dataSources": {
+    "order": {
+      "ref": "orders/get"
+    },
+    "setStatus": {
+      "ref": "orders/setStatus"
+    },
+    "removeOrder": {
+      "ref": "orders/remove"
+    }
+  },
+  "components": [
+    {
+      "id": "order-card",
+      "type": "detail",
+      "source": "order",
+      "title": "{{ t('order_detail.heading', 'Order data') }}",
+      "fields": [
+        {
+          "field": "number",
+          "label": "{{ t('order.number', 'Order') }}"
+        },
+        {
+          "field": "status",
+          "label": "{{ t('order.status', 'Status') }}",
+          "format": "badge",
+          "badges": {
+            "pending": "neutral",
+            "processing": "primary",
+            "completed": "success",
+            "cancelled": "danger"
+          },
+          "valueKey": "values.status"
+        },
+        {
+          "field": "userName",
+          "label": "{{ t('order.customer', 'Customer') }}"
+        },
+        {
+          "field": "userEmail",
+          "label": "{{ t('user.email', 'Email') }}"
+        },
+        {
+          "field": "productName",
+          "label": "{{ t('order.product', 'Product') }}"
+        },
+        {
+          "field": "unitPrice",
+          "label": "{{ t('order.unit_price', 'Unit price') }}",
+          "format": "currency",
+          "currency": "EUR"
+        },
+        {
+          "field": "quantity",
+          "label": "{{ t('order.quantity', 'Quantity') }}",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "field": "amount",
+          "label": "{{ t('order.amount', 'Amount') }}",
+          "format": "currency",
+          "currency": "EUR"
+        },
+        {
+          "field": "notes",
+          "label": "{{ t('order.notes', 'Notes') }}"
+        },
+        {
+          "field": "createdAt",
+          "label": "{{ t('common.created_at', 'Created') }}",
+          "format": "datetime"
+        },
+        {
+          "field": "updatedAt",
+          "label": "{{ t('common.updated_at', 'Updated') }}",
+          "format": "datetime"
+        }
+      ]
+    },
+    {
+      "id": "workflow",
+      "type": "form",
+      "source": "order",
+      "fields": [
+        {
+          "name": "status",
+          "type": "select",
+          "label": "{{ t('order_detail.current_status', 'Current status') }}",
+          "options": [
+            "pending",
+            "processing",
+            "completed",
+            "cancelled"
+          ],
+          "optionKey": "values.status",
+          "readOnlyIf": "{{ true }}"
+        }
+      ],
+      "actions": [
+        {
+          "id": "btn-process",
+          "label": "{{ t('order_detail.process', 'Start processing') }}",
+          "visibleIf": "{{ can('store.order.update') && form.status == 'pending' }}",
+          "onClick": [
+            {
+              "call": "setStatus",
+              "args": {
+                "id": "{{ params.id }}",
+                "status": "processing"
+              },
+              "onError": [
+                {
+                  "if": "{{ error.status == 409 }}",
+                  "then": [
+                    {
+                      "toast": "{{ t('order.transition_refused', 'This status change is not allowed') }}"
+                    }
+                  ],
+                  "else": [
+                    {
+                      "toast": "{{ t('common.save_failed', 'Saving failed: check the data and try again') }}"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "refresh": "order"
+            },
+            {
+              "toast": "{{ t('order.processing', 'Order in processing') }}"
+            }
+          ]
+        },
+        {
+          "id": "btn-complete",
+          "label": "{{ t('order_detail.complete', 'Mark as completed') }}",
+          "visibleIf": "{{ can('store.order.update') && form.status == 'processing' }}",
+          "onClick": [
+            {
+              "call": "setStatus",
+              "args": {
+                "id": "{{ params.id }}",
+                "status": "completed"
+              },
+              "onError": [
+                {
+                  "if": "{{ error.status == 409 }}",
+                  "then": [
+                    {
+                      "toast": "{{ t('order.transition_refused', 'This status change is not allowed') }}"
+                    }
+                  ],
+                  "else": [
+                    {
+                      "toast": "{{ t('common.save_failed', 'Saving failed: check the data and try again') }}"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "refresh": "order"
+            },
+            {
+              "toast": "{{ t('order.completed', 'Order completed') }}"
+            }
+          ]
+        },
+        {
+          "id": "btn-cancel-order",
+          "label": "{{ t('order_detail.cancel_order', 'Cancel the order') }}",
+          "visibleIf": "{{ can('store.order.update') && form.status in ['pending', 'processing'] }}",
+          "onClick": [
+            {
+              "confirm": "{{ t('order.confirm_cancel', 'Cancel this order? It cannot be reopened.') }}"
+            },
+            {
+              "call": "setStatus",
+              "args": {
+                "id": "{{ params.id }}",
+                "status": "cancelled"
+              },
+              "onError": [
+                {
+                  "if": "{{ error.status == 409 }}",
+                  "then": [
+                    {
+                      "toast": "{{ t('order.transition_refused', 'This status change is not allowed') }}"
+                    }
+                  ],
+                  "else": [
+                    {
+                      "toast": "{{ t('common.save_failed', 'Saving failed: check the data and try again') }}"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "refresh": "order"
+            },
+            {
+              "toast": "{{ t('order.cancelled', 'Order cancelled') }}"
+            }
+          ]
+        },
+        {
+          "id": "btn-edit",
+          "label": "{{ t('common.edit', 'Edit') }}",
+          "visibleIf": "{{ can('store.order.update') && form.status in ['pending', 'processing'] }}",
+          "onClick": [
+            {
+              "navigate": "order-edit",
+              "params": {
+                "id": "{{ params.id }}"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "actions",
+      "type": "box",
+      "gap": "small",
+      "components": [
+        {
+          "id": "btn-back",
+          "type": "button",
+          "label": "{{ t('common.back', 'Back to the list') }}",
+          "onClick": [
+            {
+              "navigate": "order-list"
+            }
+          ]
+        },
+        {
+          "id": "btn-delete",
+          "type": "button",
+          "label": "{{ t('common.delete', 'Delete') }}",
+          "visibleIf": "{{ can('store.order.delete') }}",
+          "onClick": [
+            {
+              "confirm": "{{ t('order.confirm_delete_this', 'Delete this order?') }}"
+            },
+            {
+              "call": "removeOrder",
+              "args": {
+                "id": "{{ params.id }}"
+              },
+              "onError": [
+                {
+                  "if": "{{ error.status == 409 }}",
+                  "then": [
+                    {
+                      "toast": "{{ t('order.in_use', 'It cannot be deleted: other records refer to it') }}"
+                    }
+                  ],
+                  "else": [
+                    {
+                      "toast": "{{ t('common.delete_failed', 'Deletion failed') }}"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "toast": "{{ t('order.deleted', 'Order deleted') }}"
+            },
+            {
+              "navigate": "order-list"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

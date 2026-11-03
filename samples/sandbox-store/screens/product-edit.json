@@ -1,0 +1,129 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "product-edit",
+  "title": "{{ t('product_edit.title', 'Edit product') }}",
+  "requires": "store.product.update",
+  "dataSources": {
+    "product": {
+      "ref": "products/get"
+    },
+    "updateProduct": {
+      "ref": "products/update"
+    },
+    "categories": {
+      "ref": "products/categories"
+    }
+  },
+  "components": [
+    {
+      "id": "product-form",
+      "type": "form",
+      "source": "product",
+      "columns": 2,
+      "fields": [
+        {
+          "name": "name",
+          "type": "text",
+          "label": "{{ t('product.name', 'Product') }}",
+          "required": true,
+          "minLength": 1,
+          "maxLength": 100
+        },
+        {
+          "name": "category",
+          "type": "text",
+          "label": "{{ t('product.category', 'Category') }}",
+          "maxLength": 50,
+          "suggest": {
+            "source": "categories",
+            "valueField": "value",
+            "labelField": "value"
+          }
+        },
+        {
+          "name": "price",
+          "type": "number",
+          "label": "{{ t('product.price', 'Unit price') }}",
+          "required": true,
+          "decimals": 2,
+          "validate": {
+            "rule": "{{ value > 0 }}",
+            "message": "{{ t('product.price_positive', 'The price must be greater than zero') }}"
+          }
+        },
+        {
+          "name": "stock",
+          "type": "number",
+          "label": "{{ t('product.stock', 'Stock') }}",
+          "integer": true,
+          "min": 0
+        },
+        {
+          "name": "description",
+          "type": "textarea",
+          "label": "{{ t('product.description', 'Description') }}",
+          "maxLength": 500,
+          "rows": 3,
+          "span": 2
+        }
+      ],
+      "actions": [
+        {
+          "id": "btn-save",
+          "label": "{{ t('common.save', 'Save') }}",
+          "onClick": [
+            {
+              "call": "updateProduct",
+              "onError": [
+                {
+                  "if": "{{ error.status == 422 || error.status == 400 }}",
+                  "then": [
+                    {
+                      "toast": "{{ t('common.check_fields', 'Some fields are not valid: see the messages next to them') }}"
+                    }
+                  ],
+                  "else": [
+                    {
+                      "if": "{{ error.status == 404 }}",
+                      "then": [
+                        {
+                          "toast": "{{ t('common.not_found', 'The record no longer exists (the sandbox session may have expired)') }}"
+                        }
+                      ],
+                      "else": [
+                        {
+                          "toast": "{{ t('common.save_failed', 'Saving failed: check the data and try again') }}"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "toast": "{{ t('common.saved', 'Changes saved') }}"
+            },
+            {
+              "navigate": "product-detail",
+              "params": {
+                "id": "{{ params.id }}"
+              }
+            }
+          ]
+        },
+        {
+          "id": "btn-cancel",
+          "label": "{{ t('common.cancel', 'Cancel') }}",
+          "onClick": [
+            {
+              "navigate": "product-detail",
+              "params": {
+                "id": "{{ params.id }}"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

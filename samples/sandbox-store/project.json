@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1.0",
+  "project": "sandbox-store",
+  "name": "Sandbox Store",
+  "description": "Back office of the API Learning Sandbox store (users, products, orders) generated from its OpenAPI: dashboard, lists with filters and server paging, details, forms, order board and session management.",
+  "languages": [
+    "en",
+    "it"
+  ],
+  "defaultLanguage": "en",
+  "themes": [
+    "store-light",
+    "store-dark"
+  ],
+  "settings": {
+    "storeApi": "/api/store"
+  }
+}

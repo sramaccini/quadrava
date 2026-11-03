@@ -1,0 +1,127 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "order-new",
+  "title": "{{ t('order_new.title', 'New order') }}",
+  "requires": "store.order.create",
+  "dataSources": {
+    "createOrder": {
+      "ref": "orders/create"
+    },
+    "userSearch": {
+      "ref": "users/search"
+    },
+    "productSearch": {
+      "ref": "products/search"
+    }
+  },
+  "components": [
+    {
+      "id": "order-form",
+      "type": "form",
+      "columns": 2,
+      "initial": {
+        "userId": "{{ has(params.userId) ? params.userId : null }}",
+        "quantity": 1,
+        "status": "pending"
+      },
+      "fields": [
+        {
+          "name": "userId",
+          "type": "lookup",
+          "label": "{{ t('order.customer', 'Customer') }}",
+          "required": true,
+          "lookup": {
+            "source": "userSearch",
+            "valueField": "id",
+            "labelField": "label",
+            "minChars": 1
+          }
+        },
+        {
+          "name": "productId",
+          "type": "lookup",
+          "label": "{{ t('order.product', 'Product') }}",
+          "required": true,
+          "lookup": {
+            "source": "productSearch",
+            "valueField": "id",
+            "labelField": "label",
+            "minChars": 1
+          }
+        },
+        {
+          "name": "quantity",
+          "type": "number",
+          "label": "{{ t('order.quantity', 'Quantity') }}",
+          "required": true,
+          "integer": true,
+          "min": 1
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "label": "{{ t('order_new.initial_status', 'Initial status') }}",
+          "required": true,
+          "options": [
+            "pending",
+            "processing"
+          ],
+          "optionKey": "values.status"
+        },
+        {
+          "name": "notes",
+          "type": "textarea",
+          "label": "{{ t('order.notes', 'Notes') }}",
+          "maxLength": 500,
+          "rows": 3,
+          "span": 2
+        }
+      ],
+      "actions": [
+        {
+          "id": "btn-create",
+          "label": "{{ t('common.save', 'Save') }}",
+          "onClick": [
+            {
+              "call": "createOrder",
+              "as": "created",
+              "onError": [
+                {
+                  "if": "{{ error.status == 422 || error.status == 400 }}",
+                  "then": [
+                    {
+                      "toast": "{{ t('common.check_fields', 'Some fields are not valid: see the messages next to them') }}"
+                    }
+                  ],
+                  "else": [
+                    {
+                      "toast": "{{ t('common.save_failed', 'Saving failed: check the data and try again') }}"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "toast": "{{ t('order.created', 'Order created') }}"
+            },
+            {
+              "navigate": "order-detail",
+              "params": {
+                "id": "{{ created.id }}"
+              }
+            }
+          ]
+        },
+        {
+          "id": "btn-cancel",
+          "label": "{{ t('common.cancel', 'Cancel') }}",
+          "onClick": [
+            {
+              "navigate": "order-list"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
