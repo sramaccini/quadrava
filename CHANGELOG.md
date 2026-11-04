@@ -12,6 +12,8 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-04
+
 ### Added
 
 - Sample project `samples/sandbox-store`: a back office generated from the OpenAPI of the API Learning Sandbox
@@ -154,7 +156,8 @@ The first versioned release.
 - **Demo back end of the stack**: the event stream `/api/streams/tasks`, so that behind the BFF the live boards of the
   showcase follow the changes of other users.
 
-[Unreleased]: https://github.com/sramaccini/quadrava/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/sramaccini/quadrava/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/sramaccini/quadrava/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/sramaccini/quadrava/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/sramaccini/quadrava/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/sramaccini/quadrava/compare/v0.2.1...v0.3.0
