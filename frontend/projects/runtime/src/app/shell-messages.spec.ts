@@ -20,4 +20,14 @@ describe('texts of the runtime shell', () => {
     expect(i18n.t('app.permissions', { n: 2 })).toBe('2 permessi');
     expect(i18n.t('app.profile')).toBe('Profilo demo');
   });
+
+  it('can be translated by the project into a language the runtime does not ship; the rest stays in English', () => {
+    const i18n = new I18n();
+    for (const [locale, messages] of Object.entries(SHELL_MESSAGES)) i18n.addMessages(locale, messages, 'builtin');
+    i18n.addMessages('de', { 'app.language': 'Sprache', 'app.lang.de': 'Deutsch' });
+    i18n.setLocale('de');
+    expect(i18n.t('app.language')).toBe('Sprache');
+    expect(i18n.t('app.lang.de')).toBe('Deutsch');
+    expect(i18n.t('app.theme')).toBe('Theme');
+  });
 });
