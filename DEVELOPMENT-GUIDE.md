@@ -80,10 +80,10 @@ Quadrava CE has one semantic version for the workspace and the libraries, a chan
 
 ```json
 "dependencies": {
-  "schema": "npm:@sramaccini/quadrava-schema@0.5.0",
-  "expressions": "npm:@sramaccini/quadrava-expressions@0.5.0",
-  "core": "npm:@sramaccini/quadrava-core@0.5.0",
-  "components": "npm:@sramaccini/quadrava-components@0.5.0"
+  "schema": "npm:@sramaccini/quadrava-schema@0.6.0",
+  "expressions": "npm:@sramaccini/quadrava-expressions@0.6.0",
+  "core": "npm:@sramaccini/quadrava-core@0.6.0",
+  "components": "npm:@sramaccini/quadrava-components@0.6.0"
 }
 ```
 
