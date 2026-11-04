@@ -10,6 +10,7 @@ import { NzMenuModule } from 'ng-zorro-antd/menu';
 import { NzLayoutModule } from 'ng-zorro-antd/layout';
 import { NzSelectModule } from 'ng-zorro-antd/select';
 import { DefinitionSource, I18n, Notifier, ThemeService, loadCatalogs, type VisibleLeaf } from 'core';
+import { applyDocumentBrand } from './document-brand';
 import { NavigationService } from './navigation.service';
 import { APPLICATION_SETTINGS, type ApplicationSettings } from './runtime-config';
 import { ShellSession } from './shell-session';
@@ -120,6 +121,8 @@ export class App {
         // Storage not available (private browsing, blockers): the choice holds only for this session.
       }
     });
+    // The browser tab shows the brand of the theme too: its name as title and its icons (Quadrava's without a brand).
+    effect(() => applyDocumentBrand(document, this.brand()));
     // When the band changes the bar adapts: collapsed in the medium one, expanded in the wide one, drawer closed otherwise.
     // Within the same band the user's choice holds.
     effect(() => {

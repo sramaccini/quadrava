@@ -730,7 +730,16 @@ export interface ThemeTokens {
   layout?: ThemeLayout;
 }
 
-/** Logo and name of the application at the top left (the Quadrava logo if absent). Images: relative, https:// or data:image/…. */
+/** Icons of the browser tab, in place of the Quadrava ones. */
+export interface ThemeBrandIcons {
+  svg?: string;
+  /** PNG, 32 x 32 px. */
+  png32?: string;
+  /** PNG, 180 x 180 px, for the iOS home screen. */
+  appleTouch?: string;
+}
+
+/** Logo and name of the application at the top left and in the browser tab (the Quadrava ones if absent). Images: relative, https:// or data:image/…. */
 export interface ThemeBrand {
   name?: string;
   logo?: string;
@@ -738,6 +747,8 @@ export interface ThemeBrand {
   logoOnDark?: string;
   /** Square, for the collapsed side bar. */
   icon?: string;
+  /** Icons of the browser tab: with them, a kind not given is left out. */
+  icons?: ThemeBrandIcons;
   /** The name next to the logo. */
   showName?: boolean;
   /** Height of the logo in px (32 if absent). */

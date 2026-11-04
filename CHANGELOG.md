@@ -12,6 +12,12 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Added
+
+- The browser tab shows the brand of the theme: `brand.name` as title and the new `brand.icons` (`svg`, `png32`,
+  `appleTouch`) as icons, in place of Quadrava's. An application that deploys the runtime image no longer needs to mount
+  its files over `brand/quadrava-icon-*`. Example: the `classic` theme of the demo.
+
 ## [0.5.0] - 2026-11-04
 
 ### Added
