@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "1.0",
+  "theme": "store-light",
+  "label": "Store light",
+  "mode": "light",
+  "tokens": {
+    "colors": {
+      "primary": "#3b5bdb",
+      "onPrimary": "#ffffff",
+      "background": "#f5f6fa",
+      "surface": "#ffffff",
+      "onSurface": "#1c2333",
+      "mutedText": "#5c6577",
+      "border": "#d9dde7",
+      "danger": "#c92a2a",
+      "success": "#2b8a3e",
+      "warning": "#9c5d00"
+    },
+    "typography": {
+      "fontFamily": "Inter, Segoe UI, Roboto, Arial, sans-serif",
+      "baseSize": 14
+    },
+    "shape": {
+      "radius": 8
+    },
+    "density": "comfortable",
+    "layout": {
+      "sider": {
+        "tone": "light",
+        "background": "#ffffff",
+        "text": "#1c2333",
+        "mutedText": "#5c6577",
+        "activeBackground": "#edf2ff",
+        "activeText": "#3b5bdb",
+        "border": "#e4e7ef",
+        "width": 240,
+        "collapsedWidth": 80
+      },
+      "header": {
+        "background": "#ffffff",
+        "text": "#1c2333",
+        "height": 56
+      },
+      "pageHeader": {
+        "background": "#ffffff"
+      },
+      "content": {
+        "padding": 24
+      }
+    }
+  }
+}

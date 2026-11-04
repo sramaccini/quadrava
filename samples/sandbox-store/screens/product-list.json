@@ -1,0 +1,219 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "product-list",
+  "title": "{{ t('product_list.title', 'Products') }}",
+  "description": "{{ t('product_list.description', 'The catalogue with prices and stock.') }}",
+  "requires": "store.product.read",
+  "dataSources": {
+    "products": {
+      "ref": "products/list"
+    },
+    "productsForExport": {
+      "ref": "products/all"
+    },
+    "removeProduct": {
+      "ref": "products/remove"
+    },
+    "categories": {
+      "ref": "products/categories"
+    }
+  },
+  "components": [
+    {
+      "id": "toolbar",
+      "type": "box",
+      "justify": "end",
+      "gap": "small",
+      "components": [
+        {
+          "id": "btn-export",
+          "type": "button",
+          "label": "{{ t('common.export', 'Export CSV') }}",
+          "onClick": [
+            {
+              "export": {
+                "source": "productsForExport",
+                "fileName": "products",
+                "columns": [
+                  {
+                    "field": "name",
+                    "label": "{{ t('product.name', 'Product') }}"
+                  },
+                  {
+                    "field": "category",
+                    "label": "{{ t('product.category', 'Category') }}"
+                  },
+                  {
+                    "field": "price",
+                    "label": "{{ t('product.price', 'Unit price') }}"
+                  },
+                  {
+                    "field": "stock",
+                    "label": "{{ t('product.stock', 'Stock') }}"
+                  },
+                  {
+                    "field": "description",
+                    "label": "{{ t('product.description', 'Description') }}"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "btn-new",
+          "type": "button",
+          "label": "{{ t('product_list.new', 'New product') }}",
+          "visibleIf": "{{ can('store.product.create') }}",
+          "onClick": [
+            {
+              "navigate": "product-new"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "filters",
+      "type": "filterBar",
+      "bind": "state.filters",
+      "fields": [
+        {
+          "name": "q",
+          "type": "text",
+          "label": "{{ t('product_list.search', 'Name') }}"
+        },
+        {
+          "name": "category",
+          "type": "text",
+          "label": "{{ t('product.category', 'Category') }}",
+          "suggest": {
+            "source": "categories",
+            "valueField": "value",
+            "labelField": "value"
+          }
+        },
+        {
+          "name": "lowStock",
+          "type": "switch",
+          "label": "{{ t('product_list.low_stock', 'Low in stock only') }}"
+        }
+      ]
+    },
+    {
+      "id": "products-table",
+      "type": "table",
+      "source": "products",
+      "refreshable": true,
+      "rowActionsInline": 1,
+      "sort": {
+        "bind": "state.sort",
+        "default": {
+          "field": "createdAt",
+          "direction": "desc"
+        }
+      },
+      "columns": [
+        {
+          "field": "name",
+          "label": "{{ t('product.name', 'Product') }}",
+          "sortable": true
+        },
+        {
+          "field": "category",
+          "label": "{{ t('product.category', 'Category') }}",
+          "sortable": true
+        },
+        {
+          "field": "price",
+          "label": "{{ t('product.price', 'Unit price') }}",
+          "format": "currency",
+          "currency": "EUR",
+          "sortable": true
+        },
+        {
+          "field": "stock",
+          "label": "{{ t('product.stock', 'Stock') }}",
+          "format": "number",
+          "decimals": 0,
+          "sortable": true
+        },
+        {
+          "field": "stockLevel",
+          "label": "{{ t('product.stock_level', 'Availability') }}",
+          "format": "badge",
+          "badges": {
+            "ok": "success",
+            "low": "primary",
+            "out": "danger"
+          },
+          "valueKey": "values.stock_level"
+        }
+      ],
+      "rowActions": [
+        {
+          "id": "btn-open",
+          "label": "{{ t('common.open', 'Open') }}",
+          "onClick": [
+            {
+              "navigate": "product-detail",
+              "params": {
+                "id": "{{ row.id }}"
+              }
+            }
+          ]
+        },
+        {
+          "id": "btn-edit",
+          "label": "{{ t('common.edit', 'Edit') }}",
+          "visibleIf": "{{ can('store.product.update') }}",
+          "onClick": [
+            {
+              "navigate": "product-edit",
+              "params": {
+                "id": "{{ row.id }}"
+              }
+            }
+          ]
+        },
+        {
+          "id": "btn-delete",
+          "label": "{{ t('common.delete', 'Delete') }}",
+          "visibleIf": "{{ can('store.product.delete') }}",
+          "onClick": [
+            {
+              "confirm": "{{ t('product.confirm_delete', 'Delete the product {name}?', {'name': row.name}) }}"
+            },
+            {
+              "call": "removeProduct",
+              "args": {
+                "id": "{{ row.id }}"
+              },
+              "onError": [
+                {
+                  "if": "{{ error.status == 409 }}",
+                  "then": [
+                    {
+                      "toast": "{{ t('product.in_use', 'It cannot be deleted: other records refer to it') }}"
+                    }
+                  ],
+                  "else": [
+                    {
+                      "toast": "{{ t('common.delete_failed', 'Deletion failed') }}"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "toast": "{{ t('product.deleted', 'Product deleted') }}"
+            },
+            {
+              "refresh": "products"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

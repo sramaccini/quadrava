@@ -1,0 +1,82 @@
+{
+  "schemaVersion": "1.0",
+  "datasources": "orders",
+  "description": "Orders (sandbox /api/v1/orders, expanded with user and product), through the store adapter: list, board, CRUD, status.",
+  "baseUrl": "{{ settings.storeApi }}/orders",
+  "sources": {
+    "list": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/",
+      "paging": "server",
+      "params": {
+        "page": "{{ has(state.page) ? state.page : 0 }}",
+        "size": "10",
+        "sort": "{{ has(state.sort) ? state.sort.field : 'createdAt' }}",
+        "direction": "{{ has(state.sort) ? state.sort.direction : 'desc' }}",
+        "status": "{{ state.filters.status }}",
+        "userId": "{{ state.filters.userId }}",
+        "productId": "{{ state.filters.productId }}"
+      }
+    },
+    "all": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/all"
+    },
+    "get": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/{{ params.id }}"
+    },
+    "create": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/",
+      "body": "{{ form }}"
+    },
+    "update": {
+      "type": "rest",
+      "method": "PATCH",
+      "url": "/{{ params.id }}",
+      "body": "{{ form }}"
+    },
+    "remove": {
+      "type": "rest",
+      "method": "DELETE",
+      "url": "/{{ id }}"
+    },
+    "byUser": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/all",
+      "params": {
+        "userId": "{{ params.id }}"
+      }
+    },
+    "byProduct": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/all",
+      "params": {
+        "productId": "{{ params.id }}"
+      }
+    },
+    "recent": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/all",
+      "params": {
+        "limit": "5"
+      }
+    },
+    "setStatus": {
+      "type": "rest",
+      "method": "PATCH",
+      "url": "/{{ id }}",
+      "body": {
+        "status": "{{ status }}"
+      }
+    }
+  }
+}

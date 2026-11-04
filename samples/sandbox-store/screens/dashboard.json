@@ -1,0 +1,190 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "dashboard",
+  "title": "{{ t('dashboard.title', 'Dashboard') }}",
+  "requires": "store.dashboard.read",
+  "dataSources": {
+    "summary": {
+      "ref": "store/summary"
+    },
+    "byStatus": {
+      "ref": "store/ordersByStatus"
+    },
+    "byCategory": {
+      "ref": "store/stockByCategory"
+    },
+    "recent": {
+      "ref": "orders/recent"
+    }
+  },
+  "components": [
+    {
+      "id": "kpis",
+      "type": "stats",
+      "source": "summary",
+      "items": [
+        {
+          "id": "kpi-revenue",
+          "label": "{{ t('dashboard.revenue', 'Revenue (completed)') }}",
+          "field": "revenue",
+          "format": "currency",
+          "currency": "EUR",
+          "tone": "success",
+          "caption": "{{ t('dashboard.completed_orders', '{n, plural, one {# completed order} other {# completed orders}}', {'n': row.completed}) }}"
+        },
+        {
+          "id": "kpi-open",
+          "label": "{{ t('dashboard.open_value', 'Open orders value') }}",
+          "field": "openValue",
+          "format": "currency",
+          "currency": "EUR",
+          "tone": "primary",
+          "caption": "{{ t('dashboard.open_orders', '{n, plural, one {# order pending or processing} other {# orders pending or processing}}', {'n': row.open}) }}"
+        },
+        {
+          "id": "kpi-customers",
+          "label": "{{ t('dashboard.customers', 'Customers') }}",
+          "field": "users",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "kpi-low-stock",
+          "label": "{{ t('dashboard.low_stock', 'Products low in stock') }}",
+          "field": "lowStock",
+          "format": "number",
+          "decimals": 0,
+          "tone": "danger",
+          "tooltip": "{{ t('dashboard.low_stock_hint', 'Products with fewer than 10 units') }}",
+          "caption": "{{ t('dashboard.out_of_products', 'out of {n, number} products', {'n': row.products}) }}"
+        }
+      ]
+    },
+    {
+      "id": "charts",
+      "type": "grid",
+      "columns": 2,
+      "components": [
+        {
+          "id": "section-status",
+          "type": "section",
+          "title": "{{ t('dashboard.orders_by_status', 'Orders by status') }}",
+          "components": [
+            {
+              "id": "chart-status",
+              "type": "chart",
+              "kind": "pie",
+              "source": "byStatus",
+              "categoryField": "status",
+              "categoryKey": "values.status",
+              "series": [
+                {
+                  "field": "count",
+                  "label": "{{ t('dashboard.orders', 'Orders') }}"
+                }
+              ],
+              "format": "number",
+              "decimals": 0,
+              "caption": "{{ t('dashboard.orders_by_status_caption', 'Number of orders in each status') }}"
+            }
+          ]
+        },
+        {
+          "id": "section-stock",
+          "type": "section",
+          "title": "{{ t('dashboard.stock_by_category', 'Stock by category') }}",
+          "components": [
+            {
+              "id": "chart-stock",
+              "type": "chart",
+              "kind": "bar",
+              "source": "byCategory",
+              "categoryField": "category",
+              "series": [
+                {
+                  "field": "stock",
+                  "label": "{{ t('product.stock', 'Stock') }}"
+                },
+                {
+                  "field": "value",
+                  "label": "{{ t('dashboard.stock_value', 'Stock value') }}",
+                  "tone": "success",
+                  "axis": "right"
+                }
+              ],
+              "format": "number",
+              "decimals": 0,
+              "rightFormat": "currency",
+              "caption": "{{ t('dashboard.stock_by_category_caption', 'Units in stock and their value for each category') }}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "section-recent",
+      "type": "section",
+      "title": "{{ t('dashboard.recent_orders', 'Latest orders') }}",
+      "components": [
+        {
+          "id": "recent-table",
+          "type": "table",
+          "source": "recent",
+          "refreshable": true,
+          "columns": [
+            {
+              "field": "number",
+              "label": "{{ t('order.number', 'Order') }}"
+            },
+            {
+              "field": "userName",
+              "label": "{{ t('order.customer', 'Customer') }}"
+            },
+            {
+              "field": "productName",
+              "label": "{{ t('order.product', 'Product') }}"
+            },
+            {
+              "field": "amount",
+              "label": "{{ t('order.amount', 'Amount') }}",
+              "format": "currency",
+              "currency": "EUR"
+            },
+            {
+              "field": "status",
+              "label": "{{ t('order.status', 'Status') }}",
+              "format": "badge",
+              "badges": {
+                "pending": "neutral",
+                "processing": "primary",
+                "completed": "success",
+                "cancelled": "danger"
+              },
+              "valueKey": "values.status"
+            },
+            {
+              "field": "createdAt",
+              "label": "{{ t('common.created_at', 'Created') }}",
+              "format": "datetime"
+            }
+          ],
+          "rowActionsInline": 1,
+          "rowActions": [
+            {
+              "id": "btn-open-order",
+              "label": "{{ t('common.open', 'Open') }}",
+              "onClick": [
+                {
+                  "navigate": "order-detail",
+                  "params": {
+                    "id": "{{ row.id }}"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

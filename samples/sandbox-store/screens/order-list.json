@@ -1,0 +1,268 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "order-list",
+  "title": "{{ t('order_list.title', 'Orders') }}",
+  "description": "{{ t('order_list.description', 'All the orders, with customer, product and amount.') }}",
+  "requires": "store.order.read",
+  "dataSources": {
+    "orders": {
+      "ref": "orders/list"
+    },
+    "ordersForExport": {
+      "ref": "orders/all"
+    },
+    "removeOrder": {
+      "ref": "orders/remove"
+    },
+    "userSearch": {
+      "ref": "users/search"
+    },
+    "productSearch": {
+      "ref": "products/search"
+    }
+  },
+  "components": [
+    {
+      "id": "toolbar",
+      "type": "box",
+      "justify": "end",
+      "gap": "small",
+      "components": [
+        {
+          "id": "btn-board",
+          "type": "button",
+          "label": "{{ t('order_list.board', 'Board') }}",
+          "onClick": [
+            {
+              "navigate": "order-board"
+            }
+          ]
+        },
+        {
+          "id": "btn-export",
+          "type": "button",
+          "label": "{{ t('common.export', 'Export CSV') }}",
+          "onClick": [
+            {
+              "export": {
+                "source": "ordersForExport",
+                "fileName": "orders",
+                "columns": [
+                  {
+                    "field": "number",
+                    "label": "{{ t('order.number', 'Order') }}"
+                  },
+                  {
+                    "field": "userName",
+                    "label": "{{ t('order.customer', 'Customer') }}"
+                  },
+                  {
+                    "field": "productName",
+                    "label": "{{ t('order.product', 'Product') }}"
+                  },
+                  {
+                    "field": "quantity",
+                    "label": "{{ t('order.quantity', 'Quantity') }}"
+                  },
+                  {
+                    "field": "unitPrice",
+                    "label": "{{ t('order.unit_price', 'Unit price') }}"
+                  },
+                  {
+                    "field": "amount",
+                    "label": "{{ t('order.amount', 'Amount') }}"
+                  },
+                  {
+                    "field": "status",
+                    "label": "{{ t('order.status', 'Status') }}"
+                  },
+                  {
+                    "field": "createdAt",
+                    "label": "{{ t('common.created_at', 'Created') }}"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "btn-new",
+          "type": "button",
+          "label": "{{ t('order_list.new', 'New order') }}",
+          "visibleIf": "{{ can('store.order.create') }}",
+          "onClick": [
+            {
+              "navigate": "order-new"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "filters",
+      "type": "filterBar",
+      "bind": "state.filters",
+      "fields": [
+        {
+          "name": "status",
+          "type": "select",
+          "label": "{{ t('order.status', 'Status') }}",
+          "options": [
+            "pending",
+            "processing",
+            "completed",
+            "cancelled"
+          ],
+          "optionKey": "values.status"
+        },
+        {
+          "name": "userId",
+          "type": "lookup",
+          "label": "{{ t('order.customer', 'Customer') }}",
+          "lookup": {
+            "source": "userSearch",
+            "valueField": "id",
+            "labelField": "label",
+            "minChars": 1
+          }
+        },
+        {
+          "name": "productId",
+          "type": "lookup",
+          "label": "{{ t('order.product', 'Product') }}",
+          "lookup": {
+            "source": "productSearch",
+            "valueField": "id",
+            "labelField": "label",
+            "minChars": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "orders-table",
+      "type": "table",
+      "source": "orders",
+      "refreshable": true,
+      "rowActionsInline": 1,
+      "sort": {
+        "bind": "state.sort",
+        "default": {
+          "field": "createdAt",
+          "direction": "desc"
+        }
+      },
+      "columns": [
+        {
+          "field": "number",
+          "label": "{{ t('order.number', 'Order') }}"
+        },
+        {
+          "field": "userName",
+          "label": "{{ t('order.customer', 'Customer') }}",
+          "sortable": true
+        },
+        {
+          "field": "productName",
+          "label": "{{ t('order.product', 'Product') }}"
+        },
+        {
+          "field": "quantity",
+          "label": "{{ t('order.quantity', 'Quantity') }}",
+          "format": "number",
+          "decimals": 0,
+          "sortable": true
+        },
+        {
+          "field": "amount",
+          "label": "{{ t('order.amount', 'Amount') }}",
+          "format": "currency",
+          "currency": "EUR"
+        },
+        {
+          "field": "status",
+          "label": "{{ t('order.status', 'Status') }}",
+          "format": "badge",
+          "badges": {
+            "pending": "neutral",
+            "processing": "primary",
+            "completed": "success",
+            "cancelled": "danger"
+          },
+          "valueKey": "values.status",
+          "sortable": true
+        },
+        {
+          "field": "createdAt",
+          "label": "{{ t('common.created_at', 'Created') }}",
+          "format": "datetime",
+          "sortable": true
+        }
+      ],
+      "rowActions": [
+        {
+          "id": "btn-open",
+          "label": "{{ t('common.open', 'Open') }}",
+          "onClick": [
+            {
+              "navigate": "order-detail",
+              "params": {
+                "id": "{{ row.id }}"
+              }
+            }
+          ]
+        },
+        {
+          "id": "btn-edit",
+          "label": "{{ t('common.edit', 'Edit') }}",
+          "visibleIf": "{{ can('store.order.update') && row.status in ['pending', 'processing'] }}",
+          "onClick": [
+            {
+              "navigate": "order-edit",
+              "params": {
+                "id": "{{ row.id }}"
+              }
+            }
+          ]
+        },
+        {
+          "id": "btn-delete",
+          "label": "{{ t('common.delete', 'Delete') }}",
+          "visibleIf": "{{ can('store.order.delete') }}",
+          "onClick": [
+            {
+              "confirm": "{{ t('order.confirm_delete', 'Delete order {n}?', {'n': row.number}) }}"
+            },
+            {
+              "call": "removeOrder",
+              "args": {
+                "id": "{{ row.id }}"
+              },
+              "onError": [
+                {
+                  "if": "{{ error.status == 409 }}",
+                  "then": [
+                    {
+                      "toast": "{{ t('order.in_use', 'It cannot be deleted: other records refer to it') }}"
+                    }
+                  ],
+                  "else": [
+                    {
+                      "toast": "{{ t('common.delete_failed', 'Deletion failed') }}"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "toast": "{{ t('order.deleted', 'Order deleted') }}"
+            },
+            {
+              "refresh": "orders"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

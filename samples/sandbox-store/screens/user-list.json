@@ -1,0 +1,208 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "user-list",
+  "title": "{{ t('user_list.title', 'Users') }}",
+  "description": "{{ t('user_list.description', 'Customers of the store and the people who manage it.') }}",
+  "requires": "store.user.read",
+  "dataSources": {
+    "users": {
+      "ref": "users/list"
+    },
+    "usersForExport": {
+      "ref": "users/all"
+    },
+    "removeUser": {
+      "ref": "users/remove"
+    }
+  },
+  "components": [
+    {
+      "id": "toolbar",
+      "type": "box",
+      "justify": "end",
+      "gap": "small",
+      "components": [
+        {
+          "id": "btn-export",
+          "type": "button",
+          "label": "{{ t('common.export', 'Export CSV') }}",
+          "onClick": [
+            {
+              "export": {
+                "source": "usersForExport",
+                "fileName": "users",
+                "columns": [
+                  {
+                    "field": "name",
+                    "label": "{{ t('user.name', 'Full name') }}"
+                  },
+                  {
+                    "field": "email",
+                    "label": "{{ t('user.email', 'Email') }}"
+                  },
+                  {
+                    "field": "role",
+                    "label": "{{ t('user.role', 'Role') }}"
+                  },
+                  {
+                    "field": "age",
+                    "label": "{{ t('user.age', 'Age') }}"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "btn-new",
+          "type": "button",
+          "label": "{{ t('user_list.new', 'New user') }}",
+          "visibleIf": "{{ can('store.user.create') }}",
+          "onClick": [
+            {
+              "navigate": "user-new"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "filters",
+      "type": "filterBar",
+      "bind": "state.filters",
+      "fields": [
+        {
+          "name": "q",
+          "type": "text",
+          "label": "{{ t('user_list.search', 'Name or email') }}"
+        },
+        {
+          "name": "role",
+          "type": "select",
+          "label": "{{ t('user.role', 'Role') }}",
+          "options": [
+            "user",
+            "admin",
+            "moderator"
+          ],
+          "optionKey": "values.role"
+        }
+      ]
+    },
+    {
+      "id": "users-table",
+      "type": "table",
+      "source": "users",
+      "refreshable": true,
+      "rowActionsInline": 1,
+      "sort": {
+        "bind": "state.sort",
+        "default": {
+          "field": "createdAt",
+          "direction": "desc"
+        }
+      },
+      "columns": [
+        {
+          "field": "name",
+          "label": "{{ t('user.name', 'Full name') }}",
+          "sortable": true
+        },
+        {
+          "field": "email",
+          "label": "{{ t('user.email', 'Email') }}",
+          "sortable": true
+        },
+        {
+          "field": "role",
+          "label": "{{ t('user.role', 'Role') }}",
+          "format": "badge",
+          "badges": {
+            "user": "neutral",
+            "moderator": "primary",
+            "admin": "danger"
+          },
+          "valueKey": "values.role",
+          "sortable": true
+        },
+        {
+          "field": "age",
+          "label": "{{ t('user.age', 'Age') }}",
+          "format": "number",
+          "decimals": 0,
+          "sortable": true
+        },
+        {
+          "field": "createdAt",
+          "label": "{{ t('common.created_at', 'Created') }}",
+          "format": "datetime",
+          "sortable": true
+        }
+      ],
+      "rowActions": [
+        {
+          "id": "btn-open",
+          "label": "{{ t('common.open', 'Open') }}",
+          "onClick": [
+            {
+              "navigate": "user-detail",
+              "params": {
+                "id": "{{ row.id }}"
+              }
+            }
+          ]
+        },
+        {
+          "id": "btn-edit",
+          "label": "{{ t('common.edit', 'Edit') }}",
+          "visibleIf": "{{ can('store.user.update') }}",
+          "onClick": [
+            {
+              "navigate": "user-edit",
+              "params": {
+                "id": "{{ row.id }}"
+              }
+            }
+          ]
+        },
+        {
+          "id": "btn-delete",
+          "label": "{{ t('common.delete', 'Delete') }}",
+          "visibleIf": "{{ can('store.user.delete') }}",
+          "onClick": [
+            {
+              "confirm": "{{ t('user.confirm_delete', 'Delete the user {name}?', {'name': row.name}) }}"
+            },
+            {
+              "call": "removeUser",
+              "args": {
+                "id": "{{ row.id }}"
+              },
+              "onError": [
+                {
+                  "if": "{{ error.status == 409 }}",
+                  "then": [
+                    {
+                      "toast": "{{ t('user.in_use', 'It cannot be deleted: other records refer to it') }}"
+                    }
+                  ],
+                  "else": [
+                    {
+                      "toast": "{{ t('common.delete_failed', 'Deletion failed') }}"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "toast": "{{ t('user.deleted', 'User deleted') }}"
+            },
+            {
+              "refresh": "users"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

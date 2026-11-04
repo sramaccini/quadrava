@@ -1,0 +1,109 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "sandbox-session",
+  "title": "{{ t('session.title', 'Sandbox session') }}",
+  "requires": "store.session.manage",
+  "dataSources": {
+    "session": {
+      "ref": "store/session"
+    },
+    "resetData": {
+      "ref": "store/resetData"
+    },
+    "newSession": {
+      "ref": "store/newSession"
+    }
+  },
+  "components": [
+    {
+      "id": "session-help",
+      "type": "alert",
+      "kind": "info",
+      "format": "markdown",
+      "text": "{{ t('session.help', 'The data lives in a **sandbox session** of the remote service: it expires after 30 minutes without requests. The adapter keeps one session for each signed-in user and opens a new one when it expires.') }}"
+    },
+    {
+      "id": "session-card",
+      "type": "detail",
+      "source": "session",
+      "title": "{{ t('session.heading', 'Current session') }}",
+      "fields": [
+        {
+          "field": "sessionId",
+          "label": "{{ t('session.id', 'Session') }}"
+        },
+        {
+          "field": "createdAt",
+          "label": "{{ t('common.created_at', 'Created') }}",
+          "format": "datetime"
+        },
+        {
+          "field": "expiresAt",
+          "label": "{{ t('session.expires_at', 'Expires') }}",
+          "format": "datetime"
+        },
+        {
+          "field": "recordsPerEntity",
+          "label": "{{ t('session.records_per_entity', 'Records per entity (max)') }}",
+          "format": "number",
+          "decimals": 0
+        }
+      ]
+    },
+    {
+      "id": "session-actions",
+      "type": "box",
+      "gap": "small",
+      "components": [
+        {
+          "id": "btn-reset",
+          "type": "button",
+          "label": "{{ t('session.reset', 'Restore the demo data') }}",
+          "onClick": [
+            {
+              "confirm": "{{ t('session.confirm_reset', 'Replace all users, products and orders of the session with the standard demo data?') }}"
+            },
+            {
+              "call": "resetData",
+              "onError": [
+                {
+                  "toast": "{{ t('session.reset_failed', 'Restore failed') }}"
+                }
+              ]
+            },
+            {
+              "refresh": "session"
+            },
+            {
+              "toast": "{{ t('session.reset_done', 'Demo data restored') }}"
+            }
+          ]
+        },
+        {
+          "id": "btn-new-session",
+          "type": "button",
+          "label": "{{ t('session.new', 'Start a new session') }}",
+          "onClick": [
+            {
+              "confirm": "{{ t('session.confirm_new', 'Leave the current session and start a new one with the standard demo data? The current data stays in the old session until it expires.') }}"
+            },
+            {
+              "call": "newSession",
+              "onError": [
+                {
+                  "toast": "{{ t('session.new_failed', 'The new session could not be opened') }}"
+                }
+              ]
+            },
+            {
+              "refresh": "session"
+            },
+            {
+              "toast": "{{ t('session.new_done', 'New session started') }}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

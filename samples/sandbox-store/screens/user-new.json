@@ -1,0 +1,105 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "user-new",
+  "title": "{{ t('user_new.title', 'New user') }}",
+  "requires": "store.user.create",
+  "dataSources": {
+    "createUser": {
+      "ref": "users/create"
+    }
+  },
+  "components": [
+    {
+      "id": "user-form",
+      "type": "form",
+      "columns": 2,
+      "initial": {
+        "role": "user"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": "text",
+          "label": "{{ t('user.name', 'Full name') }}",
+          "required": true,
+          "minLength": 1,
+          "maxLength": 100
+        },
+        {
+          "name": "email",
+          "type": "text",
+          "label": "{{ t('user.email', 'Email') }}",
+          "required": true,
+          "format": "email",
+          "maxLength": 255,
+          "tooltip": "{{ t('user.email_hint', 'Unique within the sandbox session') }}"
+        },
+        {
+          "name": "role",
+          "type": "select",
+          "label": "{{ t('user.role', 'Role') }}",
+          "required": true,
+          "options": [
+            "user",
+            "admin",
+            "moderator"
+          ],
+          "optionKey": "values.role"
+        },
+        {
+          "name": "age",
+          "type": "number",
+          "label": "{{ t('user.age', 'Age') }}",
+          "integer": true,
+          "min": 0,
+          "max": 150
+        }
+      ],
+      "actions": [
+        {
+          "id": "btn-create",
+          "label": "{{ t('common.save', 'Save') }}",
+          "onClick": [
+            {
+              "call": "createUser",
+              "as": "created",
+              "onError": [
+                {
+                  "if": "{{ error.status == 422 || error.status == 400 }}",
+                  "then": [
+                    {
+                      "toast": "{{ t('common.check_fields', 'Some fields are not valid: see the messages next to them') }}"
+                    }
+                  ],
+                  "else": [
+                    {
+                      "toast": "{{ t('common.save_failed', 'Saving failed: check the data and try again') }}"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "toast": "{{ t('user.created', 'User created') }}"
+            },
+            {
+              "navigate": "user-detail",
+              "params": {
+                "id": "{{ created.id }}"
+              }
+            }
+          ]
+        },
+        {
+          "id": "btn-cancel",
+          "label": "{{ t('common.cancel', 'Cancel') }}",
+          "onClick": [
+            {
+              "navigate": "user-list"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

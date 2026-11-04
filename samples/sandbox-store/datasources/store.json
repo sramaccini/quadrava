@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "1.0",
+  "datasources": "store",
+  "description": "Indicators computed by the store adapter and management of the sandbox session.",
+  "baseUrl": "{{ settings.storeApi }}",
+  "sources": {
+    "summary": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/summary"
+    },
+    "ordersByStatus": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/stats/orders-by-status"
+    },
+    "stockByCategory": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/stats/stock-by-category"
+    },
+    "session": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/session"
+    },
+    "resetData": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/session/reset",
+      "body": {}
+    },
+    "newSession": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/session/new",
+      "body": {}
+    }
+  }
+}

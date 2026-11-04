@@ -1,0 +1,117 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "product-new",
+  "title": "{{ t('product_new.title', 'New product') }}",
+  "requires": "store.product.create",
+  "dataSources": {
+    "createProduct": {
+      "ref": "products/create"
+    },
+    "categories": {
+      "ref": "products/categories"
+    }
+  },
+  "components": [
+    {
+      "id": "product-form",
+      "type": "form",
+      "columns": 2,
+      "initial": {
+        "category": "general",
+        "stock": 0
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": "text",
+          "label": "{{ t('product.name', 'Product') }}",
+          "required": true,
+          "minLength": 1,
+          "maxLength": 100
+        },
+        {
+          "name": "category",
+          "type": "text",
+          "label": "{{ t('product.category', 'Category') }}",
+          "maxLength": 50,
+          "suggest": {
+            "source": "categories",
+            "valueField": "value",
+            "labelField": "value"
+          }
+        },
+        {
+          "name": "price",
+          "type": "number",
+          "label": "{{ t('product.price', 'Unit price') }}",
+          "required": true,
+          "decimals": 2,
+          "validate": {
+            "rule": "{{ value > 0 }}",
+            "message": "{{ t('product.price_positive', 'The price must be greater than zero') }}"
+          }
+        },
+        {
+          "name": "stock",
+          "type": "number",
+          "label": "{{ t('product.stock', 'Stock') }}",
+          "integer": true,
+          "min": 0
+        },
+        {
+          "name": "description",
+          "type": "textarea",
+          "label": "{{ t('product.description', 'Description') }}",
+          "maxLength": 500,
+          "rows": 3,
+          "span": 2
+        }
+      ],
+      "actions": [
+        {
+          "id": "btn-create",
+          "label": "{{ t('common.save', 'Save') }}",
+          "onClick": [
+            {
+              "call": "createProduct",
+              "as": "created",
+              "onError": [
+                {
+                  "if": "{{ error.status == 422 || error.status == 400 }}",
+                  "then": [
+                    {
+                      "toast": "{{ t('common.check_fields', 'Some fields are not valid: see the messages next to them') }}"
+                    }
+                  ],
+                  "else": [
+                    {
+                      "toast": "{{ t('common.save_failed', 'Saving failed: check the data and try again') }}"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "toast": "{{ t('product.created', 'Product created') }}"
+            },
+            {
+              "navigate": "product-detail",
+              "params": {
+                "id": "{{ created.id }}"
+              }
+            }
+          ]
+        },
+        {
+          "id": "btn-cancel",
+          "label": "{{ t('common.cancel', 'Cancel') }}",
+          "onClick": [
+            {
+              "navigate": "product-list"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,219 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "product-detail",
+  "title": "{{ t('product_detail.title', 'Product') }}",
+  "requires": "store.product.read",
+  "dataSources": {
+    "product": {
+      "ref": "products/get"
+    },
+    "orders": {
+      "ref": "orders/byProduct"
+    },
+    "removeProduct": {
+      "ref": "products/remove"
+    }
+  },
+  "components": [
+    {
+      "id": "tabs",
+      "type": "tabs",
+      "tabs": [
+        {
+          "id": "tab-data",
+          "label": "{{ t('product_detail.data', 'Data') }}",
+          "components": [
+            {
+              "id": "product-card",
+              "type": "detail",
+              "source": "product",
+              "title": "{{ t('product_detail.heading', 'Product data') }}",
+              "fields": [
+                {
+                  "field": "name",
+                  "label": "{{ t('product.name', 'Product') }}"
+                },
+                {
+                  "field": "category",
+                  "label": "{{ t('product.category', 'Category') }}"
+                },
+                {
+                  "field": "price",
+                  "label": "{{ t('product.price', 'Unit price') }}",
+                  "format": "currency",
+                  "currency": "EUR"
+                },
+                {
+                  "field": "stock",
+                  "label": "{{ t('product.stock', 'Stock') }}",
+                  "format": "number",
+                  "decimals": 0
+                },
+                {
+                  "field": "stockLevel",
+                  "label": "{{ t('product.stock_level', 'Availability') }}",
+                  "format": "badge",
+                  "badges": {
+                    "ok": "success",
+                    "low": "primary",
+                    "out": "danger"
+                  },
+                  "valueKey": "values.stock_level"
+                },
+                {
+                  "field": "description",
+                  "label": "{{ t('product.description', 'Description') }}"
+                },
+                {
+                  "field": "createdAt",
+                  "label": "{{ t('common.created_at', 'Created') }}",
+                  "format": "datetime"
+                },
+                {
+                  "field": "updatedAt",
+                  "label": "{{ t('common.updated_at', 'Updated') }}",
+                  "format": "datetime"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "tab-orders",
+          "label": "{{ t('product_detail.orders', 'Orders') }}",
+          "visibleIf": "{{ can('store.order.read') }}",
+          "components": [
+            {
+              "id": "product-orders",
+              "type": "table",
+              "source": "orders",
+              "columns": [
+                {
+                  "field": "number",
+                  "label": "{{ t('order.number', 'Order') }}"
+                },
+                {
+                  "field": "userName",
+                  "label": "{{ t('order.customer', 'Customer') }}"
+                },
+                {
+                  "field": "quantity",
+                  "label": "{{ t('order.quantity', 'Quantity') }}",
+                  "format": "number",
+                  "decimals": 0
+                },
+                {
+                  "field": "amount",
+                  "label": "{{ t('order.amount', 'Amount') }}",
+                  "format": "currency",
+                  "currency": "EUR"
+                },
+                {
+                  "field": "status",
+                  "label": "{{ t('order.status', 'Status') }}",
+                  "format": "badge",
+                  "badges": {
+                    "pending": "neutral",
+                    "processing": "primary",
+                    "completed": "success",
+                    "cancelled": "danger"
+                  },
+                  "valueKey": "values.status"
+                },
+                {
+                  "field": "createdAt",
+                  "label": "{{ t('common.created_at', 'Created') }}",
+                  "format": "datetime"
+                }
+              ],
+              "rowActionsInline": 1,
+              "rowActions": [
+                {
+                  "id": "btn-open-order",
+                  "label": "{{ t('common.open', 'Open') }}",
+                  "onClick": [
+                    {
+                      "navigate": "order-detail",
+                      "params": {
+                        "id": "{{ row.id }}"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "actions",
+      "type": "box",
+      "gap": "small",
+      "components": [
+        {
+          "id": "btn-back",
+          "type": "button",
+          "label": "{{ t('common.back', 'Back to the list') }}",
+          "onClick": [
+            {
+              "navigate": "product-list"
+            }
+          ]
+        },
+        {
+          "id": "btn-edit",
+          "type": "button",
+          "label": "{{ t('common.edit', 'Edit') }}",
+          "visibleIf": "{{ can('store.product.update') }}",
+          "onClick": [
+            {
+              "navigate": "product-edit",
+              "params": {
+                "id": "{{ params.id }}"
+              }
+            }
+          ]
+        },
+        {
+          "id": "btn-delete",
+          "type": "button",
+          "label": "{{ t('common.delete', 'Delete') }}",
+          "visibleIf": "{{ can('store.product.delete') }}",
+          "onClick": [
+            {
+              "confirm": "{{ t('product.confirm_delete_this', 'Delete this product?') }}"
+            },
+            {
+              "call": "removeProduct",
+              "args": {
+                "id": "{{ params.id }}"
+              },
+              "onError": [
+                {
+                  "if": "{{ error.status == 409 }}",
+                  "then": [
+                    {
+                      "toast": "{{ t('product.in_use', 'It cannot be deleted: other records refer to it') }}"
+                    }
+                  ],
+                  "else": [
+                    {
+                      "toast": "{{ t('common.delete_failed', 'Deletion failed') }}"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "toast": "{{ t('product.deleted', 'Product deleted') }}"
+            },
+            {
+              "navigate": "product-list"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
