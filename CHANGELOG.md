@@ -14,6 +14,9 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ### Added
 
+- The texts of the runtime shell (`app.*`: sign-in, settings, language, theme, invalid menu or screen, technical
+  reports) are built into the runtime in English and Italian. A project no longer copies them into its catalogues: a key
+  it defines still overrides the built-in text. Only `app.title` and the names of its themes stay in the project.
 - The browser tab shows the brand of the theme: `brand.name` as title and the new `brand.icons` (`svg`, `png32`,
   `appleTouch`) as icons, in place of Quadrava's. An application that deploys the runtime image no longer needs to mount
   its files over `brand/quadrava-icon-*`. Example: the `classic` theme of the demo.

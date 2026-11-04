@@ -12,6 +12,7 @@ import { NzSelectModule } from 'ng-zorro-antd/select';
 import { DefinitionSource, I18n, Notifier, ThemeService, loadCatalogs, type VisibleLeaf } from 'core';
 import { applyDocumentBrand } from './document-brand';
 import { NavigationService } from './navigation.service';
+import { SHELL_MESSAGES } from './shell-messages';
 import { APPLICATION_SETTINGS, type ApplicationSettings } from './runtime-config';
 import { ShellSession } from './shell-session';
 import { DemoNetwork, NETWORK_SPEEDS, type NetworkSpeed } from '../demo/demo-ports';
@@ -109,6 +110,8 @@ export class App {
   protected readonly hrefFor = (area: string, leaf: VisibleLeaf): string => this.navigation.href(area, leaf);
 
   constructor() {
+    // The texts of the shell are built in; the project's catalogue overrides any of them.
+    for (const [locale, messages] of Object.entries(SHELL_MESSAGES)) this.i18n.addMessages(locale, messages, 'builtin');
     // The catalogues come from the same source as the definitions: the demo files or the versions published in the registry.
     void loadCatalogs(this.i18n, this.languages, (l) => this.definitions.messages(l)).then((problems) => problems.forEach((p) => console.warn('[i18n]', p)));
     this.i18n.setLocale(initialLanguage(this.settings));

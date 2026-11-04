@@ -9,8 +9,8 @@ const INTL_TAGS: Record<string, string> = { it: 'it-IT', en: 'en-GB' };
 
 /**
  * Active language and translations. Messages have two layers: the application's (which wins) and the built-in one
- * of the libraries (`lc.*` keys). Lookup of a key, in order: active language, default language, fallback text
- * written in the JSON, the key itself. The result is always plain text.
+ * of the libraries (`lc.*` keys) and of the runtime shell (`app.*`). Lookup of a key, in order: active language,
+ * default language, fallback text written in the JSON, the key itself. The result is always plain text.
  */
 @Injectable({ providedIn: 'root' })
 export class I18n {
@@ -28,7 +28,7 @@ export class I18n {
     this.locale.set(locale);
   }
 
-  /** Adds (or replaces) the messages of a language. `layer: 'builtin'` is reserved for the libraries. */
+  /** Adds (or replaces) the messages of a language. `layer: 'builtin'` is reserved for the libraries and the runtime shell. */
   addMessages(locale: string, messages: Messages, layer: 'app' | 'builtin' = 'app'): void {
     const store = layer === 'app' ? this.app : this.builtin;
     store.update((all) => ({ ...all, [locale]: { ...all[locale], ...messages } }));
