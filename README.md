@@ -358,6 +358,7 @@ npm run validate:examples             # examples are valid
 npx playwright install chromium       # once: the browser used by the end-to-end tests
 npm run e2e                           # Playwright end-to-end tests in a real browser (needs `npm run demo:prepare`)
 npm run conformance:registry -- --user operator --password operator --reviewer-user manager --reviewer-password manager
+                                      # --protected-env none: a registry without protected environments
 npm run conformance:authz -- --user operator --password operator --other-user manager --other-password manager
 npm run conformance:authz -- --authz http://localhost:8080 --cookie "<cookies>" --other-cookie "<cookies>"
                                       # a BFF that answers /authz on the session (cookies of a signed-in browser)

@@ -62,8 +62,10 @@ ERROR  i18n/it.json: missing key orders.title
 since the screens refer to them), saves a version in the registry and publishes it in the environment (default:
 `development`), as described by the registry contract (`contracts/registry.yaml`). The token is read from the
 environment variable `QUADRAVA_TOKEN`, or from the one named by `--token-env`; never from the command line, which would
-leave it in logs and process lists. Protected environments (such as `production`) accept approved versions only:
-there publishing fails until a reviewer approves them in the registry.
+leave it in logs and process lists. The protected environments of a registry, if it has
+any (such as `production`), accept approved versions only: there publishing fails until a reviewer approves them in the
+registry. Which environments are protected is a choice of the registry (contract 0.7): one without protected
+environments publishes every version, and `quadrava publish` needs nothing else.
 
 Exit code: `0` when everything is fine, `1` when the project has problems or a document was not published, `2` for a
 wrong command.

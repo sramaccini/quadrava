@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Quadrava - Registry contract
-  version: 0.6.0
+  version: 0.7.0
   description: >
     Registry of the application definitions. An application is made of separate documents: every screen, every data
     sources document, the navigation and every theme are documents of their own, with their own versions and publications.
@@ -28,6 +28,11 @@ info:
     shared by the screens, which refer to them with {"ref": "orders/list"}. `getReferences` also lists, for screens, the
     data sources documents referred to and those missing in the environment; in the protected environments a screen is
     published only if its data sources documents are published there (otherwise 409 with `missingDataSources`).
+
+    0.7 (compatible with 0.6): protected environments are optional. Which environments are protected, if any, is the
+    configuration of each registry: in a registry without protected environments every version can be published
+    anywhere, and the review states and actions stay available without gating publication. A client cannot assume that
+    an environment is protected, nor that it is not: it reads the outcome of the publication.
   license:
     name: Mozilla Public License 2.0
     identifier: MPL-2.0
@@ -253,9 +258,9 @@ paths:
       operationId: publish
       summary: Publishes a version of the document in an environment
       description: >
-        In the protected environments (usually testing and production) only approved versions are published (otherwise
-        409) and a navigation is published only if the screens it cites are already published in the same environment
-        (otherwise 409 with `missingReferences`); a screen is published there only if the data sources documents it refers to
+        In the protected environments, if the registry has any (a choice of its configuration, usually testing and
+        production), only approved versions are published (otherwise 409) and a navigation is published only if the
+        screens it cites are already published in the same environment (otherwise 409 with `missingReferences`); a screen is published there only if the data sources documents it refers to
         are published in the same environment (otherwise 409 with `missingDataSources`). In the other environments
         publishing succeeds anyway: the missing references are read beforehand with `getReferences`.
       requestBody:

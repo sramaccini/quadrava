@@ -1,4 +1,4 @@
-// Conformance kit for the registry contract (contracts/registry.yaml 0.6): checks from the outside, over HTTP, that a
+// Conformance kit for the registry contract (contracts/registry.yaml 0.7): checks from the outside, over HTTP, that a
 // registry (the reference one or a customer's) behaves as the contract describes.
 //
 //   node tools/conformance-registry.mjs --registry http://localhost:8081
@@ -7,13 +7,15 @@
 //        [--issuer http://localhost:8180/realms/quadrava] [--protected-env production]
 //
 // It works in a new application (conformance-<date>), so it does not touch existing data. Without a reviewer the approval
-// checks are skipped. Exits with code 1 if a check fails.
+// checks are skipped; with --protected-env none (a registry without protected environments, contract 0.7) the checks of
+// a protected environment are. Exits with code 1 if a check fails.
 import { randomUUID } from 'node:crypto';
 import { call as httpCall, expect, isProblem, parseArgs, suite, tokenFromArgs } from './conformance-lib.mjs';
 
 const args = parseArgs();
 const registry = (args.registry ?? 'http://localhost:8081').replace(/\/+$/, '');
 const protectedEnv = args['protected-env'] ?? 'production';
+const unprotected = protectedEnv === 'none';
 const app = `conformance-${new Date().toISOString().slice(0, 10).replaceAll('-', '')}-${randomUUID().slice(0, 6)}`;
 const author = await tokenFromArgs(args);
 const reviewer = await tokenFromArgs(args, 'reviewer-');
@@ -105,7 +107,7 @@ await check('publishing a version that does not exist: 400', async () => {
 await check(`protected environment (${protectedEnv}): a draft is not published (409)`, async () => {
   const r = await call('PUT', `${base}/published?env=${protectedEnv}`, { body: { hash: second } });
   expect(r.status === 409, `expected 409, got ${r.status}`);
-});
+}, { skip: unprotected });
 
 await check('review: request → in-review; a draft cannot be approved', async () => {
   const r = await call('POST', `${base}/versions/${second}/review`, { body: { action: 'request' } });
@@ -119,12 +121,15 @@ await check('the author does not approve their own version (403)', async () => {
   expect(r.status === 403, `expected 403, got ${r.status}`);
 }, { skip: !author });
 
-await check('the reviewer approves; then the version is published in the protected environment', async () => {
+await check('the reviewer approves', async () => {
   const r = await call('POST', `${base}/versions/${second}/review`, { body: { action: 'approve', note: 'ok' }, token: reviewer });
   expect(r.status === 200 && r.json?.state === 'approved' && typeof r.json?.reviewedBy === 'string', `expected 200 approved, got ${r.status}`);
+}, { skip: !reviewer });
+
+await check(`the approved version is published in the protected environment (${protectedEnv})`, async () => {
   const p = await call('PUT', `${base}/published?env=${protectedEnv}`, { body: { hash: second } });
   expect(p.status === 204, `expected 204, got ${p.status}`);
-}, { skip: !reviewer });
+}, { skip: !reviewer || unprotected });
 
 const menu = {
   schemaVersion: '1.0',
@@ -157,7 +162,7 @@ await check(`approved navigation with missing screens: in ${protectedEnv} 409 wi
   const r = await call('PUT', `${nav}/published?env=${protectedEnv}`, { body: { hash: menuHash } });
   expect(r.status === 409 && isProblem(r), `expected 409 in Problem format, got ${r.status}`);
   expect(Array.isArray(r.json?.missingReferences) && r.json.missingReferences.some((m) => m.screen === 'absent'), 'the Problem must list missingReferences');
-}, { skip: !reviewer });
+}, { skip: !reviewer || unprotected });
 
 // 0.6: data sources documents and the references of the screens to them.
 const sourcesDoc = { schemaVersion: '1.0', datasources: 'probes', sources: { list: { type: 'rest', method: 'GET', url: '/api/probes' } } };
@@ -190,6 +195,6 @@ await check(`approved screen with unpublished data sources: in ${protectedEnv} 4
   const r = await call('PUT', `/registry/apps/${app}/documents/screen/probe-user/published?env=${protectedEnv}`, { body: { hash: userHash } });
   expect(r.status === 409 && isProblem(r), `expected 409 in Problem format, got ${r.status}`);
   expect(Array.isArray(r.json?.missingDataSources) && r.json.missingDataSources.some((m) => m.datasources === 'probes'), 'the Problem must list missingDataSources');
-}, { skip: !reviewer });
+}, { skip: !reviewer || unprotected });
 
 report(`Conformance with the registry contract (${registry}, application ${app})`);

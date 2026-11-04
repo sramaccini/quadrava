@@ -27,7 +27,7 @@ export class DefinitionLoadError extends Error {
 }
 
 /**
- * Definitions from the registry (contracts/registry.yaml 0.6): every screen, every data sources document, the navigation, every theme and the catalogue of every language are separate
+ * Definitions from the registry (contracts/registry.yaml 0.7): every screen, every data sources document, the navigation, every theme and the catalogue of every language are separate
  * documents, and the runtime loads the version published in the configured environment. Responses are remembered with their
  * ETag: when the same document is loaded again the registry answers 304 and the copy already downloaded is reused.
  */

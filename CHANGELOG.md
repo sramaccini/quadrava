@@ -18,6 +18,10 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
   (users, products, orders: dashboard, paged lists, details, forms, order board, session), in English and Italian, with
   the store adapter it needs behind the BFF (session per user, response and error mapping, business rules) and its tests.
 
+### Changed
+
+- Registry contract 0.7 (compatible with 0.6): protected environments, and so the approval before publishing, are a choice of each registry's configuration, not an obligation of the contract. A registry without protected environments publishes every version anywhere, and `quadrava publish` needs nothing else. The conformance kit takes `--protected-env none` for such a registry, and checks the approval apart from the publication in a protected environment.
+
 ## [0.4.1] - 2026-11-01
 
 The first published version of Quadrava Community Edition (CE): the changes of 0.4.0, below, with these.

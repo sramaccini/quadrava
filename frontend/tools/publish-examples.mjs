@@ -1,6 +1,6 @@
 // Publishes the example project (../examples) into a registry with the Quadrava CLI (`quadrava publish`, built by
 // this script first): every screen, data sources document, navigation, theme and translation catalogue as separate
-// documents (contracts/registry.yaml 0.6), after checking the project. Used to try the runtime that loads from the registry.
+// documents (contracts/registry.yaml 0.7), after checking the project. Used to try the runtime that loads from the registry.
 //
 //   node tools/publish-examples.mjs [--registry http://localhost:8081] [--app demo] [--env development]
 //                                   [--token <JWT> | --user <user> --password <password> [--issuer <realm>]]

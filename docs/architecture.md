@@ -212,7 +212,7 @@ The registry is a REST service that stores application definitions. Every versio
 | Published | Version served to the users of an environment | Whoever has the publication permission |
 | Withdrawn | No longer served, but kept in the history | Whoever has the publication permission |
 
-**Environments.** Development, testing and production point to different versions of the same application; promotion from one environment to the next is an explicit, tracked operation.
+**Environments.** Development, testing and production point to different versions of the same application; promotion from one environment to the next is an explicit, tracked operation. Which environments are protected (only approved versions are published there) is a choice of each registry's configuration, not of the contract (0.7): a registry may protect testing and production, only production, or none, and then every version is published anywhere and review gates nothing.
 
 **Cross-document references.** Screens, data sources and navigation are separate documents, linked only by identifier: a navigation item opens a screen (`"screen": "invoice-list"`), a step `{ "navigate": "order-detail" }` or a `link` node with `screen` leads from one screen to another, and a screen uses a data source of a data sources document with `{ "ref": "orders/list" }`. The registry reads these references from each version (`GET …/versions/{hash}/references?env=…`, contract 0.6) and says which screens are missing in an environment, that is, have no version published there (without `env`: do not exist in the application at all). References to the screen itself and values with an expression (`{{ }}`) are not checked. What happens at publication:
 
