@@ -37,6 +37,7 @@ Rules common to all components, new ones included:
 | `tree` | Tree view. |
 | `calendar` | Monthly calendar with events. |
 | `chart` | Bar, line and pie charts. |
+| `squareChart` | Compact square columns for dense time-series data. |
 | Fields | `text`, `number`, `select`, `checkbox`, `date`, `textarea`, `datetime`, `radio`, `switch`, `multiselect`, `lookup`, `file`, `repeater`, `richtext` (§ 2.26). |
 | Cell formats | `text`, `number`, `currency`, `percent`, `date`, `datetime`, `boolean`, `badge`, `markdown`. |
 | Steps | `set`, `call` (with `as` and `onError`), `refresh`, `navigate`, `toast`, `confirm`, `dialog`, `validate`, `print`, `export` (§ 2.22), `if` and `run`; named sequences in `actions` (§ 2.22b). |
@@ -272,6 +273,13 @@ Month view with the events in the days (at most three, then «+n»). When the mo
 ```
 
 `bar`, `line` and `pie` types, drawn in SVG by Quadrava (no external library) with the theme colours. Bars can be side by side or stacked (`stacked`, negatives downwards); a series can sit on a second axis on the right (`axis: "right"`, format `rightFormat`) and have its own type (`kind`), for combined charts such as bars plus a line. Every chart has a legend, values on hover and, for accessibility, an equivalent table readable by screen readers.
+
+For a denser activity view, `squareChart` draws small square columns for each category, with their height scaled to the largest value. It accepts one row per category and a numeric `valueField`; `categoryFormat`, `format`, `currency`, `decimals`, `height` and `caption` control labels and presentation. Every square has a value tooltip and the chart includes an equivalent table for assistive technology.
+
+```json
+{ "type": "squareChart", "source": "activity", "categoryField": "day", "categoryFormat": "date",
+  "valueField": "activated", "format": "number", "height": 220, "caption": "Daily activations" }
+```
 
 ### 2.18 Data table
 

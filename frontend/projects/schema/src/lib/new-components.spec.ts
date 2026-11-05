@@ -9,6 +9,13 @@ const issuesOf = (doc: unknown): string[] => {
 const table = (extra: Record<string, unknown>, columns: unknown[] = [{ field: 'numero' }]) => screen([{ type: 'table', source: 's', columns, ...extra }]);
 
 describe('schema of the new components', () => {
+  describe('square chart', () => {
+    it('accepts a square-column time series and rejects missing fields or extras', () => {
+      expect(issuesOf(screen([{ type: 'squareChart', source: 's', categoryField: 'day', valueField: 'count' }], { s: { ref: 'activity/list' } }))).toEqual([]);
+      expect(issuesOf(screen([{ type: 'squareChart', source: 's', categoryField: 'day' }], { s: { ref: 'activity/list' } })).length).toBeGreaterThan(0);
+      expect(issuesOf(screen([{ type: 'squareChart', source: 's', categoryField: 'day', valueField: 'count', extra: true }], { s: { ref: 'activity/list' } })).length).toBeGreaterThan(0);
+    });
+  });
   describe('sorting', () => {
     it('accepts sortable columns and sorting with state and default', () => {
       expect(issuesOf(table({ sort: { bind: 'state.ordinamento', default: { field: 'numero', direction: 'desc' } } }, [{ field: 'numero', sortable: true }]))).toEqual([]);

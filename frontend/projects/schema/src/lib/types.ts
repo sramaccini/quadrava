@@ -493,6 +493,19 @@ export interface ChartNode extends NodeBase {
   /** Format of the values of the right axis (as `format` if absent). */
   rightFormat?: 'number' | 'currency' | 'percent';
 }
+/** A compact square-column time series for high-density activity dashboards. */
+export interface SquareChartNode extends NodeBase {
+  type: 'squareChart';
+  source: string;
+  categoryField: string;
+  categoryFormat?: 'text' | 'date' | 'month';
+  valueField: string;
+  format?: 'number' | 'currency' | 'percent';
+  currency?: string;
+  decimals?: number;
+  height?: number;
+  caption?: string;
+}
 
 /** Column of the datatable: adds filter and grouping. */
 export interface DataColumnDefinition extends TableColumnDefinition {
@@ -671,7 +684,7 @@ export interface InputNode extends NodeBase {
   group?: string;
 }
 
-export type NodeDefinition = SectionNode | TextNode | ButtonNode | FilterBarNode | TableNode | FormNode | TabsNode | DetailNode | AlertNode | StatsNode | WizardNode | TreeNode | CalendarNode | ChartNode | DataTableNode | ServerDataTableNode | InputNode | BoxNode | GridNode | BorderNode | ImageNode | LinkNode | ProgressNode | TimelineNode | KanbanNode | CommentsNode;
+export type NodeDefinition = SectionNode | TextNode | ButtonNode | FilterBarNode | TableNode | FormNode | TabsNode | DetailNode | AlertNode | StatsNode | WizardNode | TreeNode | CalendarNode | ChartNode | SquareChartNode | DataTableNode | ServerDataTableNode | InputNode | BoxNode | GridNode | BorderNode | ImageNode | LinkNode | ProgressNode | TimelineNode | KanbanNode | CommentsNode;
 export type NodeType = NodeDefinition['type'];
 
 export interface ScreenDefinition {

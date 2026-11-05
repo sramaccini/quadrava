@@ -36,6 +36,7 @@ export * from './lib/wizard.component';
 export * from './lib/tree.component';
 export * from './lib/calendar.component';
 export * from './lib/chart.component';
+export * from './lib/square-chart.component';
 export * from './lib/data-table.component';
 export * from './lib/server-data-table.component';
 export * from './lib/tabs.component';

@@ -18,6 +18,7 @@ import { SectionComponent } from './section.component';
 import { StatsComponent } from './stats.component';
 import { CalendarComponent } from './calendar.component';
 import { ChartComponent } from './chart.component';
+import { SquareChartComponent } from './square-chart.component';
 import { DataTableComponent } from './data-table.component';
 import { ServerDataTableComponent } from './server-data-table.component';
 import { InputComponent } from './input.component';
@@ -73,6 +74,7 @@ export const STANDARD_COMPONENTS: ComponentCatalog = {
   tree: TreeComponent,
   calendar: CalendarComponent,
   chart: ChartComponent,
+  squareChart: SquareChartComponent,
   dataTable: DataTableComponent,
   serverDataTable: ServerDataTableComponent,
   input: InputComponent,

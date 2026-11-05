@@ -12,6 +12,10 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Added
+
+- `squareChart`, a compact square-column visualization for dense time-series dashboards, with accessible tabular data. Studio needs a canvas template and palette entry for the new node type.
+
 ## [0.6.0] - 2026-11-04
 
 ### Added
