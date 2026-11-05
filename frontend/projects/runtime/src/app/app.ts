@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, injec
 import { FormsModule } from '@angular/forms';
 import { RouterOutlet } from '@angular/router';
 import { NgTemplateOutlet } from '@angular/common';
-import { AppBrandComponent, IconComponent, NotificationBellComponent, QuadravaWordmarkComponent, SidebarComponent, UserMenuComponent, type UserMenuChoices, type UserMenuItem, type UserNotification } from 'components';
+import { AppBrandComponent, IconComponent, NotificationBellComponent, QuadravaWordmarkComponent, SHELL_MESSAGES, SidebarComponent, UserMenuComponent, type UserMenuChoices, type UserMenuItem, type UserNotification } from 'components';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzDrawerModule } from 'ng-zorro-antd/drawer';
 import { NzLayoutModule } from 'ng-zorro-antd/layout';
@@ -11,7 +11,6 @@ import { DefinitionSource, I18n, Notifier, ThemeService, loadCatalogs, type Visi
 import { applyDocumentBrand } from './document-brand';
 import { NavigationService } from './navigation.service';
 import { NotificationsService } from './notifications.service';
-import { SHELL_MESSAGES } from './shell-messages';
 import { APPLICATION_SETTINGS, type ApplicationSettings } from './runtime-config';
 import { SettingsDialogComponent } from './settings-dialog.component';
 import { ShellSession } from './shell-session';

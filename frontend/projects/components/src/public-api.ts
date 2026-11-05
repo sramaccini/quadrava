@@ -31,6 +31,7 @@ export * from './lib/icon.component';
 export * from './lib/sidebar.component';
 export * from './lib/user-menu.component';
 export * from './lib/messages';
+export * from './lib/shell-messages';
 export * from './lib/detail.component';
 export * from './lib/alert.component';
 export * from './lib/stats.component';

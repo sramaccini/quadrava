@@ -5,6 +5,9 @@ import type { Messages } from 'core';
  * so that a project need not copy them. They sit in the built-in layer of `I18n`: a key in the project's catalogue
  * overrides them. The keys of the application itself stay in the project: `app.title` and the names of its themes
  * (`app.theme.<theme>`), which fall back to the identifier.
+ *
+ * Part of the public API, so that an editor can list the keys a project may override (for example to translate the shell
+ * into a language the runtime does not ship): renaming or removing a key is a breaking change.
  */
 export const SHELL_MESSAGES: Record<'en' | 'it', Messages> = {
   en: {

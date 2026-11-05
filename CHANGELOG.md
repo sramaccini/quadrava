@@ -12,6 +12,12 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Added
+
+- `SHELL_MESSAGES` in the public API of `components`: the built-in texts of the runtime shell (`app.*`, English and
+  Italian), until now inside the runtime application. An editor can list the keys a project may override, for example
+  to translate the shell into another language. Renaming or removing one of them is from now on a breaking change.
+
 ### Fixed
 
 - Confirmation window: the icon is level with the first line of the message (the space NG-ZORRO keeps for a title
