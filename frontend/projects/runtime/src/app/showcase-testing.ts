@@ -33,9 +33,9 @@ import showcaseValidationSources from '../../public/examples/datasources/showcas
 import showcaseViewsSources from '../../public/examples/datasources/showcase-views.json';
 import catalogIt from '../../public/examples/i18n/it.json';
 import catalogEn from '../../public/examples/i18n/en.json';
-import { openSelect } from './select-testing';
 import { App } from './app';
 import { appConfig } from './app.config';
+import { ShellSession } from './shell-session';
 
 /** For tests only: documents served to the demo instead of `fetch`. */
 export const SHOWCASE_FILES: Record<string, unknown> = {
@@ -118,10 +118,10 @@ export async function openShowcase(path: string, user = 'operator'): Promise<Sho
   };
   fixture.detectChanges();
   await TestBed.inject(Router).navigateByUrl('/');
-  await until(() => !!el.querySelector('nz-header nz-select'), 'top bar');
+  await until(() => !!el.querySelector('nz-header lc-user-menu'), 'top bar');
   if (user !== 'operator') {
-    const options = await openSelect(el.querySelector('nz-header nz-select') as HTMLElement, settle);
-    (options.find((o) => (o.textContent ?? '').trim() === user) as HTMLElement).click();
+    TestBed.inject(ShellSession).selectProfile(user);
+    await settle();
   }
   await TestBed.inject(Router).navigateByUrl(path);
   await until(() => !!el.querySelector('main h2'), 'content');
