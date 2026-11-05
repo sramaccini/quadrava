@@ -16,6 +16,10 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 - `squareChart`, a compact square-column visualization for dense time-series dashboards, with accessible tabular data. Studio needs a canvas template and palette entry for the new node type.
 
+### Changed
+
+- The runtime user menu now contains translated profile switching, settings (theme, language and demo network speed), and sign out. The profile/theme/language/network controls have moved out of the top bar.
+
 ## [0.6.0] - 2026-11-04
 
 ### Added

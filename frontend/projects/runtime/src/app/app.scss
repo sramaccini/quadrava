@@ -1,7 +1,7 @@
 :host { display: block; min-height: 100vh; }
 .shell { min-height: 100vh; flex-direction: row; background: var(--lc-color-background); }
 .main { flex: 1; min-width: 0; flex-direction: column; background: var(--lc-color-background); }
-/* The top bar never wraps: it has a fixed height and whatever does not fit goes to the settings menu.
+/* The top bar stays compact: profile and settings choices live in the user menu.
    On the left it leaves room for the round button of the sidebar, which sticks out by 13px. */
 .bar {
   display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; height: var(--lc-header-height); line-height: 1.5715; padding: 0 16px 0 40px;
@@ -9,10 +9,7 @@
 }
 .crumb { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--lc-header-muted, var(--lc-color-muted)); }
 .spacer { flex: 1; }
-.bar label { margin-left: 8px; color: var(--lc-header-muted, var(--lc-color-muted)); white-space: nowrap; }
-/* Four choices (profile, theme, language, network) must fit in the bar even at 1200px with the sidebar open. */
-.pick { min-width: 112px; }
-.menu-button, .settings-button { flex: none; color: inherit; font-size: 18px; }
+.menu-button { flex: none; color: inherit; font-size: 18px; }
 lc-user-menu { height: 100%; flex: none; }
 nz-content { flex: 1; min-width: 0; }
 main { color: var(--lc-color-on-surface); }

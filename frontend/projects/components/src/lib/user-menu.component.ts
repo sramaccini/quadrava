@@ -10,6 +10,9 @@ export interface UserMenuItem {
   label: string;
   icon?: string;
   disabled?: boolean;
+  selected?: boolean;
+  /** One level of actions under a menu entry, for example the profile and settings choices. */
+  children?: readonly UserMenuItem[];
 }
 
 /** A group of alternatives of which one is current, such as the tenants of the user: a heading and the choices. */
@@ -61,9 +64,21 @@ export interface UserMenuChoices {
           <li nz-menu-divider></li>
         }
         @for (item of items(); track item.id) {
-          <li nz-menu-item [nzDisabled]="item.disabled === true" (click)="choose(item)">
-            <span class="row"><lc-icon [name]="item.icon" />{{ item.label }}</span>
-          </li>
+          @if (item.children?.length) {
+            <li nz-submenu [nzTitle]="item.label" [nzDisabled]="item.disabled === true" nzTriggerSubMenuAction="click">
+              <ul>
+                @for (child of item.children; track child.id) {
+                  <li nz-menu-item [nzDisabled]="child.disabled === true" [nzSelected]="child.selected === true" (click)="choose(child)">
+                    <span class="row"><lc-icon [name]="child.icon" />{{ child.label }}</span>
+                  </li>
+                }
+              </ul>
+            </li>
+          } @else {
+            <li nz-menu-item [nzDisabled]="item.disabled === true" [nzSelected]="item.selected === true" (click)="choose(item)">
+              <span class="row"><lc-icon [name]="item.icon" />{{ item.label }}</span>
+            </li>
+          }
         }
         @if (items().length) {
           <li nz-menu-divider></li>

@@ -26,7 +26,7 @@ export const BUILTIN_MESSAGES: Record<string, Messages> = {
     'lc.expandMenu': 'Espandi il menu',
     'lc.collapseMenu': 'Comprimi il menu',
     'lc.userMenu': 'Menu utente',
-    'lc.logout': 'Esci',
+    'lc.logout': 'Disconnetti',
     'lc.tenant': 'Spazio di lavoro',
     'lc.tenantSwitchFailed': 'Impossibile passare allo spazio di lavoro scelto. Riprova.',
     'lc.breadcrumb': 'Percorso',

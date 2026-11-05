@@ -1,4 +1,5 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
+import { I18n } from 'core';
 import { provideLowcodeComponents } from './provide';
 import { UserMenuComponent, type UserMenuChoices, type UserMenuItem } from './user-menu.component';
 
@@ -12,8 +13,9 @@ describe('UserMenuComponent', () => {
   };
   const menuItems = (): string[] => [...document.querySelectorAll('.ant-dropdown li.ant-dropdown-menu-item, .ant-dropdown li[nz-menu-item]')].map((li) => (li.textContent ?? '').replace(/\s+/g, ' ').trim());
 
-  async function render(items: readonly UserMenuItem[] = [{ id: 'permissions', label: '4 permissions', icon: 'safety', disabled: true }, { id: 'profile', label: 'Profile', icon: 'user' }], choices?: UserMenuChoices) {
+  async function render(items: readonly UserMenuItem[] = [{ id: 'permissions', label: '4 permissions', icon: 'safety', disabled: true }, { id: 'profile', label: 'Profile', icon: 'user' }], choices?: UserMenuChoices, locale = 'en') {
     TestBed.configureTestingModule({ providers: [provideLowcodeComponents()] });
+    TestBed.inject(I18n).setLocale(locale);
     const fixture = TestBed.createComponent(UserMenuComponent);
     fixture.componentRef.setInput('name', 'mario');
     fixture.componentRef.setInput('items', items);
@@ -54,6 +56,22 @@ describe('UserMenuComponent', () => {
   it('without other items it shows only the exit', async () => {
     await render([]);
     expect(menuItems()).toEqual(['Sign out']);
+  });
+
+  it('translates sign out to the active language', async () => {
+    await render([], undefined, 'it');
+    expect(menuItems()).toEqual(['Disconnetti']);
+  });
+
+  it('opens a nested settings group and emits the selected setting', async () => {
+    const { fixture, selected } = await render([{ id: 'settings', label: 'Settings', children: [{ id: 'theme:dark', label: 'Theme · Dark', selected: true }] }]);
+    const group = [...document.querySelectorAll<HTMLElement>('.ant-dropdown-menu-submenu-title')].find((item) => item.textContent?.trim() === 'Settings');
+    group?.click();
+    await flush(fixture);
+    const option = [...document.querySelectorAll<HTMLElement>('li[nz-menu-item]')].find((item) => item.textContent?.trim() === 'Theme · Dark');
+    expect(option ?? document.querySelector('.ant-dropdown')).toBeTruthy();
+    option?.click();
+    expect(selected).toEqual(['theme:dark']);
   });
 
   it('a group of choices comes first, marks the current one and emits only the others', async () => {
