@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 import { I18n } from 'core';
 import { NzAvatarModule } from 'ng-zorro-antd/avatar';
 import { NzDropdownModule } from 'ng-zorro-antd/dropdown';
@@ -65,7 +65,7 @@ export interface UserMenuChoices {
         }
         @for (item of items(); track item.id) {
           @if (item.children?.length) {
-            <li nz-submenu [nzTitle]="item.label" [nzDisabled]="item.disabled === true" nzTriggerSubMenuAction="click">
+            <li nz-submenu [nzTitle]="item.label" [nzDisabled]="item.disabled === true" [nzOpen]="openSubmenuId() === item.id" [nzTriggerSubMenuAction]="'click'" (nzOpenChange)="setSubmenuOpen(item.id, $event)">
               <ul>
                 @for (child of item.children; track child.id) {
                   <li nz-menu-item [nzDisabled]="child.disabled === true" [nzSelected]="child.selected === true" (click)="choose(child)">
@@ -96,6 +96,8 @@ export class UserMenuComponent {
   readonly logoutLabel = input<string>();
   readonly choices = input<UserMenuChoices>();
   protected readonly i18n = inject(I18n);
+  /** One submenu is expanded at a time; controlling it explicitly keeps click activation consistent in the dropdown. */
+  protected readonly openSubmenuId = signal<string | null>(null);
   /** Choice of an item other than sign-out. */
   readonly select = output<string>();
   readonly logout = output<void>();
@@ -106,6 +108,10 @@ export class UserMenuComponent {
 
   protected choose(item: UserMenuItem): void {
     if (!item.disabled) this.select.emit(item.id);
+  }
+
+  protected setSubmenuOpen(id: string, open: boolean): void {
+    this.openSubmenuId.set(open ? id : this.openSubmenuId() === id ? null : this.openSubmenuId());
   }
 
   protected pick(item: UserMenuItem, group: UserMenuChoices): void {

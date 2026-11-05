@@ -69,7 +69,7 @@ describe('UserMenuComponent', () => {
     group?.click();
     await flush(fixture);
     const option = [...document.querySelectorAll<HTMLElement>('li[nz-menu-item]')].find((item) => item.textContent?.trim() === 'Theme · Dark');
-    expect(option ?? document.querySelector('.ant-dropdown')).toBeTruthy();
+    expect(option).toBeTruthy();
     option?.click();
     expect(selected).toEqual(['theme:dark']);
   });
