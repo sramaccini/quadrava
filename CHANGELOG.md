@@ -12,6 +12,11 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Fixed
+
+- Confirmation window: the icon is level with the first line of the message (the space NG-ZORRO keeps for a title
+  pushed the text 8px lower).
+
 ## [0.7.0] - 2026-11-05
 
 ### Added

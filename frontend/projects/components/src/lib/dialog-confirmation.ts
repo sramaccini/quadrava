@@ -1,13 +1,21 @@
 import { DOCUMENT } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Injectable, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Injectable, ViewEncapsulation, inject } from '@angular/core';
 import { Confirmation, I18n } from 'core';
 import { NZ_MODAL_DATA, NzModalService } from 'ng-zorro-antd/modal';
 
-/** Content of the window: the message is always text (nzContent as a string would be interpreted as HTML). */
+/**
+ * Content of the window: the message is always text (nzContent as a string would be interpreted as HTML). The window has
+ * no title, so the space NG-ZORRO leaves above the content for one is removed: the first line sits level with the icon.
+ * The styles are global (no encapsulation) because they reach the content box of the modal, around this component.
+ */
 @Component({
   selector: 'lc-confirm-message',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  styles: `:host { overflow-wrap: anywhere; white-space: pre-line; }`,
+  encapsulation: ViewEncapsulation.None,
+  styles: `
+    lc-confirm-message { overflow-wrap: anywhere; white-space: pre-line; }
+    .lc-confirm .ant-modal-confirm-body .ant-modal-confirm-content { margin-top: 0; }
+  `,
   template: `{{ data.message }}`,
 })
 export class ConfirmMessageComponent {
@@ -48,6 +56,7 @@ export class DialogConfirmation extends Confirmation {
         nzMaskClosable: true,
         nzClosable: false,
         nzCentered: true,
+        nzClassName: 'lc-confirm',
         nzOnOk: () => finish(true),
         nzOnCancel: () => finish(false),
       });
