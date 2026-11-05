@@ -209,7 +209,7 @@ describe('App (demo)', () => {
   it('the page header shows the breadcrumbs from the menu and the logo sits above the menu', async () => {
     const { fixture, el } = await start();
     await until(fixture, () => rows(el) > 0, 'invoice list');
-    const crumbs = [...el.querySelectorAll('main nz-breadcrumb-item')].map((n) => (n.textContent ?? '').replace('/', '').trim());
+    const crumbs = [...el.querySelectorAll('main nz-breadcrumb-item .ant-breadcrumb-link')].map((n) => n.textContent?.trim());
     expect(crumbs).toEqual(['Invoice lookup', 'Invoice list']);
     // The Quadrava brand: icon and logotype, with the name for screen readers; with the bar collapsed the icon stays.
     const brand = el.querySelector('lc-sidebar .logo lc-quadrava-wordmark') as HTMLElement;

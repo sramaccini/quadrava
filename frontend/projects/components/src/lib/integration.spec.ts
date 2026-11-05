@@ -101,7 +101,7 @@ describe('ScreenComponent + standard catalogue', () => {
     fixture.componentRef.setInput('breadcrumb', ['Browse', 'Orders']);
     fixture.componentRef.setInput('definition', { ...screen, description: 'List of orders.' });
     await settle(fixture);
-    const crumbs = [...el.querySelectorAll('nz-breadcrumb-item')].map((n) => (n.textContent ?? '').replace('/', '').trim());
+    const crumbs = [...el.querySelectorAll('nz-breadcrumb-item .ant-breadcrumb-link')].map((n) => n.textContent?.trim());
     expect(crumbs).toEqual(['Browse', 'Orders']);
     expect(el.querySelector('header.page-header h1')?.textContent?.trim()).toBe('Orders');
     expect(el.querySelector('header.page-header .description')?.textContent?.trim()).toBe('List of orders.');

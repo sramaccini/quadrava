@@ -284,6 +284,8 @@ describe('Showcase: advanced components', () => {
       const nome = [...el.querySelectorAll('main lc-input')].find((i) => plainText(i.querySelector('nz-form-label')?.textContent) === 'Name')!.querySelector('input') as HTMLInputElement;
       nome.value = 'Anna';
       nome.dispatchEvent(new Event('change'));
+      // The name must reach the state of the screen before the group is checked again.
+      await until(() => plainText(el.querySelector('[data-node-id="summary"]')?.textContent).startsWith('Hello Anna'), 'name in the state');
       button.click();
       await until(() => [...document.querySelectorAll('.ant-message-notice')].some((n) => n.textContent?.includes('Data is correct')), 'confirmation');
     });
