@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterNextRender, computed, input, signal } from '@angular/core';
 import { I18n, formatValue, type ScreenRuntime, type Scope } from 'core';
 import type { SquareChartNode } from 'schema';
 import { BusyComponent } from './busy.component';
@@ -62,7 +62,7 @@ export class SquareChartComponent {
   readonly scope = input<Scope>({});
   protected readonly i18n = inject(I18n);
   protected readonly square = 6;
-  protected readonly width = computed(() => Math.max(300, this.rows().length * 12 + 48));
+  protected readonly width = signal(600);
   protected readonly height = computed(() => this.node().height ?? 220);
   protected readonly source = computed(() => this.runtime().source(this.node().source));
   protected readonly rows = computed<Row[]>(() => {
@@ -85,7 +85,7 @@ export class SquareChartComponent {
     const value = this.values()[index];
     const count = Math.round(value / this.maxValue() * 12);
     return Array.from({ length: 12 }, (_, level) => ({
-      x: 40 + index * 12,
+      x: 40 + index * this.band() + (this.band() - this.square) / 2,
       y: this.plotBottom() - (level + 1) * this.rowStep(),
       label: this.category(index), value: level < count ? value : 0,
       tip: `${this.category(index)}: ${this.valueText(index)}`,
@@ -93,7 +93,7 @@ export class SquareChartComponent {
   }));
   protected readonly labels = computed(() => this.rows().flatMap((_, index) => {
     const stride = Math.max(1, Math.ceil(this.rows().length / 6));
-    return index % stride === 0 || index === this.rows().length - 1 ? [{ x: 40 + index * 12 + 3, text: this.category(index) }] : [];
+    return index % stride === 0 || index === this.rows().length - 1 ? [{ x: 40 + index * this.band() + this.band() / 2, text: this.category(index) }] : [];
   }));
   protected category(index: number): string {
     const raw = this.rows()[index]?.[this.node().categoryField];
@@ -107,4 +107,20 @@ export class SquareChartComponent {
   protected readonly caption = computed(() => this.node().caption ? this.runtime().text(this.node().caption!, this.scope()) : '');
   protected readonly categoryLabel = computed(() => this.node().categoryField);
   protected readonly valueLabel = computed(() => this.node().valueField);
+
+  constructor() {
+    const host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+    const destroyRef = inject(DestroyRef);
+    afterNextRender(() => {
+      if (typeof ResizeObserver === 'undefined') return;
+      const observer = new ResizeObserver((entries) => {
+        const measured = Math.round(entries[0]?.contentRect.width ?? 0);
+        if (measured > 0) this.width.set(Math.max(280, measured));
+      });
+      observer.observe(host);
+      destroyRef.onDestroy(() => observer.disconnect());
+    });
+  }
+
+  private band(): number { return (this.width() - 48) / Math.max(1, this.rows().length); }
 }
