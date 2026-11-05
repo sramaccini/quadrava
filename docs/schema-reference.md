@@ -156,6 +156,20 @@
 | `stacked` | yes/no | Stacked bars instead of side by side (negative values stack downwards). |
 | `rightFormat` | `number`, `currency`, `percent` | Format of the values of the right axis (as format if absent). |
 
+### `squareChart`
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `source` * | text | Data source with one row per category. |
+| `categoryField` * | text | Field with the category shown along the horizontal axis. |
+| `categoryFormat` | `text`, `date`, `month` | How to show the category: text, date (YYYY-MM-DD) or month (YYYY-MM). |
+| `valueField` * | text | Numeric field whose value determines the height of each square column. |
+| `format` | `number`, `currency`, `percent` | Format of the values (number if absent). |
+| `currency` | text | ISO 4217 code for currency values (EUR if absent). |
+| `decimals` | integer 0–6 | Decimals shown with format number (up to 2 if absent). |
+| `height` | integer 120–600 | Height in pixels (220 if absent). |
+| `caption` | text | Accessible name and caption of the chart. |
+
 ### `dataTable`
 
 | Property | Type | Description |

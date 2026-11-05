@@ -1,14 +1,10 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { RouterOutlet } from '@angular/router';
 import { NgTemplateOutlet } from '@angular/common';
 import { AppBrandComponent, IconComponent, QuadravaWordmarkComponent, SidebarComponent, UserMenuComponent, type UserMenuChoices, type UserMenuItem } from 'components';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzDrawerModule } from 'ng-zorro-antd/drawer';
-import { NzDropdownModule } from 'ng-zorro-antd/dropdown';
-import { NzMenuModule } from 'ng-zorro-antd/menu';
 import { NzLayoutModule } from 'ng-zorro-antd/layout';
-import { NzSelectModule } from 'ng-zorro-antd/select';
 import { DefinitionSource, I18n, Notifier, ThemeService, loadCatalogs, type VisibleLeaf } from 'core';
 import { applyDocumentBrand } from './document-brand';
 import { NavigationService } from './navigation.service';
@@ -23,9 +19,9 @@ const LANGUAGE_KEY = 'lc.language';
 
 /**
  * Width bands of the shell, as in Ant Design Pro:
- * - wide (≥ 1200px): sidebar expanded, demo settings in the top bar;
- * - medium (768–1199px): sidebar collapsed to icons (it can be expanded), settings in a menu;
- * - narrow (< 768px): sidebar in a drawer opened by the «menu» button, settings in a menu.
+ * - wide (≥ 1200px): sidebar expanded;
+ * - medium (768–1199px): sidebar collapsed to icons (it can be expanded);
+ * - narrow (< 768px): sidebar in a drawer opened by the «menu» button.
  */
 export type Viewport = 'wide' | 'medium' | 'narrow';
 const WIDE = '(min-width: 1200px)';
@@ -60,10 +56,10 @@ function initialLanguage(settings: ApplicationSettings): string {
   return [browser, browser.slice(0, 2)].find((l) => settings.languages.includes(l)) ?? settings.defaultLanguage;
 }
 
-/** Shell of the application: top bar (profile and theme of the demo), side menu, content and notifications. */
+/** Shell of the application: top bar with the user menu, side menu, content and notifications. */
 @Component({
   selector: 'lc-root',
-  imports: [FormsModule, NgTemplateOutlet, RouterOutlet, AppBrandComponent, IconComponent, QuadravaWordmarkComponent, SidebarComponent, UserMenuComponent, NzButtonModule, NzDrawerModule, NzDropdownModule, NzLayoutModule, NzMenuModule, NzSelectModule],
+  imports: [NgTemplateOutlet, RouterOutlet, AppBrandComponent, IconComponent, QuadravaWordmarkComponent, SidebarComponent, UserMenuComponent, NzButtonModule, NzDrawerModule, NzLayoutModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './app.scss',
   templateUrl: './app.html',
@@ -88,8 +84,26 @@ export class App {
   protected readonly collapsed = signal(false);
   /** Drawer with the sidebar, only in the narrow band. */
   protected readonly drawerOpen = signal(false);
-  /** User menu items before the logout, which the component adds by itself as the last one. */
-  protected readonly userItems = computed<UserMenuItem[]>(() => [{ id: 'permessi', label: this.i18n.t('app.permissions', { n: this.session.permissionCount() }), icon: 'safety', disabled: true }]);
+  /** Profile and settings submenus before the logout, which the user menu adds by itself as the last item. */
+  protected readonly userItems = computed<UserMenuItem[]>(() => [
+    {
+      id: 'profiles',
+      label: this.i18n.t('app.changeProfile'),
+      icon: 'user',
+      disabled: !this.profiles.length,
+      children: this.profiles.map((profile) => ({ id: `profile:${profile}`, label: profile, selected: profile === this.session.username() })),
+    },
+    {
+      id: 'settings',
+      label: this.i18n.t('app.settings'),
+      icon: 'settings',
+      children: [
+        ...this.themes.map((theme) => ({ id: `theme:${theme}`, label: `${this.i18n.t('app.theme')} · ${this.i18n.t(`app.theme.${theme}`, {}, theme)}`, selected: theme === this.themeName() })),
+        ...this.languages.map((language) => ({ id: `language:${language}`, label: `${this.i18n.t('app.language')} · ${this.i18n.t(`app.lang.${language}`, {}, language)}`, selected: language === this.i18n.locale() })),
+        ...(this.profiles.length ? this.speeds.map((speed) => ({ id: `network:${speed}`, label: `${this.i18n.t('app.network')} · ${this.i18n.t(`app.network.${speed}`)}`, selected: speed === this.network.speed() })) : []),
+      ],
+    },
+  ]);
   /** Tenants of the user, first in the user menu: only when there are at least two to choose from. */
   protected readonly tenantChoices = computed<UserMenuChoices | undefined>(() => {
     const tenants = this.session.tenants();
@@ -108,6 +122,16 @@ export class App {
     return here.screen ? { screen: here.screen, params: here.params } : null;
   });
   protected readonly hrefFor = (area: string, leaf: VisibleLeaf): string => this.navigation.href(area, leaf);
+
+  /** Applies a profile, theme, language or demo network speed selected from the user menu. */
+  protected selectUserMenuItem(id: string): void {
+    const [kind, value] = id.split(':', 2);
+    if (!value) return;
+    if (kind === 'profile') this.session.selectProfile(value);
+    else if (kind === 'theme' && this.themes.includes(value)) this.themeName.set(value);
+    else if (kind === 'language' && this.languages.includes(value)) this.i18n.setLocale(value);
+    else if (kind === 'network' && this.speeds.includes(value as NetworkSpeed)) this.network.set(value as NetworkSpeed);
+  }
 
   constructor() {
     // The texts of the shell are built in; the project's catalogue overrides any of them.

@@ -280,15 +280,15 @@ npm ci
 npm run start:runtime        # builds the libraries, copies the examples, serves on http://localhost:4200
 ```
 
-In the top bar choose the **user** (`operator`, `manager`, `administrator`) and the **theme** (light, dark). The side menu is defined by `examples/navigation.json`; a selector at its top switches the area. Things to try:
+In the top-right user menu change profile (`operator`, `manager`, `administrator`), open **Settings** to choose theme, language and simulated network speed, or sign out. The side menu is defined by `examples/navigation.json`; a selector at its top switches the area. Things to try:
 
-* Switch the simulated **network** (normal, slow, very slow) in the top bar to see the activity indicators.
+* In **Settings**, switch the simulated **network** (normal, slow, very slow) to see the activity indicators.
 * Switch users: the available areas and menu entries follow the permissions of the profile. The URL of a screen you may not open shows a denial even if typed by hand.
 * *Invoice entry*: a form with validation that saves a draft and navigates to the drafts list.
 * *Expense review*: two menu entries open the same screen with different parameters; Approve and Reject only appear with the review permission.
 * **Component showcase** (visible to every profile): eleven screens, `examples/showcase-*.json`, exercising every component: basics and actions; forms; layout containers (box, grid, border layout); standalone fields; fields and forms (new field types, lookup, file upload, grid, repeatable rows, form dialogs); filters and tables; advanced tables (sorting, selection, action menus, expandable rows, totals); the data table; tabs, detail view and in-page messages; a dashboard (KPI tiles and charts); procedures and views (wizard, tree, calendar).
   Every example section has **JSON** (its definition with syntax highlighting, plus the data sources and named sequences it uses, with a copy button) and **Help** (what each component in it does, with its properties from the schema) in its header.
-* The look follows Ant Design Pro and is entirely driven by the theme: full-height light side bar with the logo above the area selector and a round collapse button on its edge, top bar with the user menu (name, avatar, sign-out as the last entry), page header with breadcrumb, title and description, cards on a light grey background. Thirteen themes are provided, to choose from in the top bar: `light`, `classic` (dark navy side bar), `dark`, `ocean`, `forest`, `sunset`, `lavender`, `slate` (compact), `sand` (serif type), `high-contrast`, `midnight`, `graphite` and `polar` (the last three dark). The round button on the side bar edge collapses it to icons (groups then open as pop-ups). *Sign out* in the user menu ends the demo session.
+* The look follows Ant Design Pro and is entirely driven by the theme: full-height light side bar with the logo above the area selector and a round collapse button on its edge, top bar with the user menu (name, avatar, profile, settings and sign-out), page header with breadcrumb, title and description, cards on a light grey background. Thirteen themes are provided, chosen under **Settings** in the user menu: `light`, `classic` (dark navy side bar), `dark`, `ocean`, `forest`, `sunset`, `lavender`, `slate` (compact), `sand` (serif type), `high-contrast`, `midnight`, `graphite` and `polar` (the last three dark). The round button on the side bar edge collapses it to icons (groups then open as pop-ups). *Sign out* in the user menu ends the demo session.
 
 The libraries are not hot-reloaded: after changing anything in `frontend/projects/<library>` run `npm run build:libs` again.
 

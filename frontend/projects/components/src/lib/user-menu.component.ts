@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 import { I18n } from 'core';
 import { NzAvatarModule } from 'ng-zorro-antd/avatar';
 import { NzDropdownModule } from 'ng-zorro-antd/dropdown';
@@ -10,6 +10,9 @@ export interface UserMenuItem {
   label: string;
   icon?: string;
   disabled?: boolean;
+  selected?: boolean;
+  /** One level of actions under a menu entry, for example the profile and settings choices. */
+  children?: readonly UserMenuItem[];
 }
 
 /** A group of alternatives of which one is current, such as the tenants of the user: a heading and the choices. */
@@ -61,9 +64,21 @@ export interface UserMenuChoices {
           <li nz-menu-divider></li>
         }
         @for (item of items(); track item.id) {
-          <li nz-menu-item [nzDisabled]="item.disabled === true" (click)="choose(item)">
-            <span class="row"><lc-icon [name]="item.icon" />{{ item.label }}</span>
-          </li>
+          @if (item.children?.length) {
+            <li nz-submenu [nzTitle]="item.label" [nzDisabled]="item.disabled === true" [nzOpen]="openSubmenuId() === item.id" [nzTriggerSubMenuAction]="'click'" (nzOpenChange)="setSubmenuOpen(item.id, $event)">
+              <ul>
+                @for (child of item.children; track child.id) {
+                  <li nz-menu-item [nzDisabled]="child.disabled === true" [nzSelected]="child.selected === true" (click)="choose(child)">
+                    <span class="row"><lc-icon [name]="child.icon" />{{ child.label }}</span>
+                  </li>
+                }
+              </ul>
+            </li>
+          } @else {
+            <li nz-menu-item [nzDisabled]="item.disabled === true" [nzSelected]="item.selected === true" (click)="choose(item)">
+              <span class="row"><lc-icon [name]="item.icon" />{{ item.label }}</span>
+            </li>
+          }
         }
         @if (items().length) {
           <li nz-menu-divider></li>
@@ -81,6 +96,8 @@ export class UserMenuComponent {
   readonly logoutLabel = input<string>();
   readonly choices = input<UserMenuChoices>();
   protected readonly i18n = inject(I18n);
+  /** One submenu is expanded at a time; controlling it explicitly keeps click activation consistent in the dropdown. */
+  protected readonly openSubmenuId = signal<string | null>(null);
   /** Choice of an item other than sign-out. */
   readonly select = output<string>();
   readonly logout = output<void>();
@@ -91,6 +108,10 @@ export class UserMenuComponent {
 
   protected choose(item: UserMenuItem): void {
     if (!item.disabled) this.select.emit(item.id);
+  }
+
+  protected setSubmenuOpen(id: string, open: boolean): void {
+    this.openSubmenuId.set(open ? id : this.openSubmenuId() === id ? null : this.openSubmenuId());
   }
 
   protected pick(item: UserMenuItem, group: UserMenuChoices): void {

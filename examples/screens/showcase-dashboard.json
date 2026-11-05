@@ -147,6 +147,16 @@
           "caption": "{{ t('showcase_dashboard.sales_invoices_trend_2026', 'Sales invoices trend, 2026') }}"
         },
         {
+          "id": "square-activity-chart",
+          "type": "squareChart",
+          "source": "sales",
+          "categoryField": "month",
+          "categoryFormat": "month",
+          "valueField": "sales",
+          "format": "currency",
+          "caption": "{{ t('showcase_dashboard.sales_activity_by_month', 'Sales activity by month, 2026') }}"
+        },
+        {
           "id": "pie-chart",
           "type": "chart",
           "kind": "pie",
