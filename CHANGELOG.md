@@ -16,6 +16,10 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 - Confirmation window: the icon is level with the first line of the message (the space NG-ZORRO keeps for a title
   pushed the text 8px lower).
+- User menu: its items are a menu for screen readers (roles menu, menuitem, separator) and work from the keyboard.
+  Opening it moves the focus to the first item; arrows, Home and End move, Enter or Space chooses, Esc closes, and the
+  focus goes back to the icon. A submenu opens with Enter or the right arrow and closes with the left arrow. Before,
+  the items could not be reached without a mouse.
 
 ## [0.7.0] - 2026-11-05
 

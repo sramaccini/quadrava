@@ -99,6 +99,52 @@ describe('UserMenuComponent', () => {
     expect(selected).toEqual([]);
   });
 
+  it('is a menu that works from the keyboard: roles, focus on the first item, arrows, Enter, focus back on the icon', async () => {
+    const { fixture, selected } = await render();
+    const menu = document.querySelector<HTMLElement>('.ant-dropdown ul[role="menu"]')!;
+    expect(menu.getAttribute('aria-label')).toBe('User menu');
+    const items = [...menu.querySelectorAll<HTMLElement>('li[nz-menu-item]')];
+    expect(items.map((i) => i.getAttribute('role'))).toEqual(['menuitem', 'menuitem', 'menuitem']);
+    expect(items[0].getAttribute('aria-disabled')).toBe('true');
+    expect(menu.querySelector('li.ant-dropdown-menu-item-divider')?.getAttribute('role')).toBe('separator');
+    const trigger = fixture.nativeElement.querySelector('button.trigger') as HTMLElement;
+    expect(trigger.getAttribute('aria-expanded')).toBe('true');
+    // The disabled item is skipped: the focus starts on «Profile».
+    for (let i = 0; i < 40 && document.activeElement !== items[1]; i++) await flush(fixture);
+    expect(document.activeElement).toBe(items[1]);
+    const press = (key: string): void => void document.activeElement!.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+    press('ArrowDown');
+    expect(document.activeElement).toBe(items[2]);
+    press('ArrowDown');
+    expect(document.activeElement).toBe(items[1]);
+    press('End');
+    expect(document.activeElement).toBe(items[2]);
+    press('Home');
+    press('Enter');
+    expect(selected).toEqual(['profile']);
+    for (let i = 0; i < 40 && document.activeElement !== trigger; i++) await flush(fixture);
+    expect(document.activeElement).toBe(trigger);
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('opens a submenu from the keyboard on its first item and closes it with the left arrow', async () => {
+    const { fixture, selected } = await render([{ id: 'settings', label: 'Settings', children: [{ id: 'theme:dark', label: 'Theme · Dark' }] }]);
+    const title = document.querySelector<HTMLElement>('.ant-dropdown [data-submenu="settings"] > .ant-dropdown-menu-submenu-title')!;
+    for (let i = 0; i < 40 && document.activeElement !== title; i++) await flush(fixture);
+    expect(title.getAttribute('role')).toBe('menuitem');
+    expect(title.getAttribute('aria-haspopup')).toBe('menu');
+    title.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    const option = (): HTMLElement | null => document.querySelector<HTMLElement>('[data-submenu-of="settings"] li[role="menuitem"]');
+    for (let i = 0; i < 40 && (!option() || document.activeElement !== option()); i++) await flush(fixture);
+    expect(document.activeElement).toBe(option());
+    option()!.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+    expect(document.activeElement).toBe(title);
+    title.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    for (let i = 0; i < 40 && document.activeElement !== option(); i++) await flush(fixture);
+    option()!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    expect(selected).toEqual(['theme:dark']);
+  });
+
   it('the name is shown as text, not as HTML', async () => {
     TestBed.configureTestingModule({ providers: [provideLowcodeComponents()] });
     const fixture = TestBed.createComponent(UserMenuComponent);
