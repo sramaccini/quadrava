@@ -1,8 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
-import { I18n } from 'core';
+import { Confirmation, I18n } from 'core';
 import { NzAvatarModule } from 'ng-zorro-antd/avatar';
 import { NzDropdownModule } from 'ng-zorro-antd/dropdown';
 import { NzMenuModule } from 'ng-zorro-antd/menu';
+import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import { IconComponent } from './icon.component';
 
 export interface UserMenuItem {
@@ -24,30 +25,28 @@ export interface UserMenuChoices {
 }
 
 /**
- * Signed-in user: icon (initial) and name, with a drop-down menu. The sign-out item (logout) is always the last one,
- * separated from the others; the other items are decided by the application. An optional group of choices (one of them
+ * Signed-in user: an icon with the initial (the name in its tooltip and accessible name), with a drop-down menu. The sign-out item (logout) is always the last one,
+ * separated from the others, and asks for confirmation first; the other items are decided by the application. An optional group of choices (one of them
  * current) comes first, under its heading. Texts arrive as values and are shown as text.
  */
 @Component({
   selector: 'lc-user-menu',
-  imports: [IconComponent, NzAvatarModule, NzDropdownModule, NzMenuModule],
+  imports: [IconComponent, NzAvatarModule, NzDropdownModule, NzMenuModule, NzTooltipModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: inline-block; }
-    .trigger { display: inline-flex; align-items: center; gap: 8px; height: 100%; padding: 0 8px; border: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; border-radius: var(--lc-radius, 6px); }
+    .trigger { display: inline-flex; align-items: center; height: 100%; padding: 0 8px; border: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; border-radius: var(--lc-radius, 6px); }
     .trigger:hover { background: rgba(127, 127, 127, 0.12); }
     nz-avatar { background: var(--lc-color-primary, #1f5fbf); color: var(--lc-color-on-primary, #fff); }
     li a, li span.row { display: flex; align-items: center; gap: 8px; }
     /* Room for the tick, so the labels of the choices stay aligned. */
     .tick { width: 14px; }
     ul { min-width: 160px; }
-    /* On narrow screens only the initial stays; the name is in the aria-label anyway. */
-    @media (max-width: 767px) { .name { display: none; } }
   `,
   template: `
-    <button type="button" class="trigger" nz-dropdown [nzDropdownMenu]="menu" nzTrigger="click" nzPlacement="bottomRight" [attr.aria-label]="i18n.t('lc.userMenu') + ' ' + name()" aria-haspopup="menu">
+    <button type="button" class="trigger" nz-dropdown [nzDropdownMenu]="menu" nzTrigger="click" nzPlacement="bottomRight" [attr.aria-label]="i18n.t('lc.userMenu') + ' ' + name()" aria-haspopup="menu"
+      nz-tooltip [nzTooltipTitle]="i18n.t('lc.user', { name: name() })" nzTooltipPlacement="bottomRight">
       <nz-avatar nzSize="small" [nzText]="initial()" />
-      <span class="name">{{ name() }}</span>
     </button>
     <nz-dropdown-menu #menu="nzDropdownMenu">
       <ul nz-menu>
@@ -83,7 +82,7 @@ export interface UserMenuChoices {
         @if (items().length) {
           <li nz-menu-divider></li>
         }
-        <li nz-menu-item class="logout" (click)="logout.emit()">
+        <li nz-menu-item class="logout" (click)="signOut()">
           <span class="row"><lc-icon name="logout" />{{ logoutLabel() ?? i18n.t('lc.logout') }}</span>
         </li>
       </ul>
@@ -96,10 +95,12 @@ export class UserMenuComponent {
   readonly logoutLabel = input<string>();
   readonly choices = input<UserMenuChoices>();
   protected readonly i18n = inject(I18n);
+  private readonly confirmation = inject(Confirmation, { optional: true });
   /** One submenu is expanded at a time; controlling it explicitly keeps click activation consistent in the dropdown. */
   protected readonly openSubmenuId = signal<string | null>(null);
   /** Choice of an item other than sign-out. */
   readonly select = output<string>();
+  /** Sign-out confirmed by the user (straight away when no `Confirmation` is provided). */
   readonly logout = output<void>();
   /** Choice of an alternative of the group other than the current one. */
   readonly choice = output<string>();
@@ -108,6 +109,10 @@ export class UserMenuComponent {
 
   protected choose(item: UserMenuItem): void {
     if (!item.disabled) this.select.emit(item.id);
+  }
+
+  protected async signOut(): Promise<void> {
+    if (!this.confirmation || (await this.confirmation.confirm(this.i18n.t('lc.logoutConfirm')))) this.logout.emit();
   }
 
   protected setSubmenuOpen(id: string, open: boolean): void {

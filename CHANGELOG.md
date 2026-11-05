@@ -12,6 +12,11 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Changed
+
+- User menu: the name of the user is in the tooltip of the icon («User: Administrator»), no longer next to it, and
+  «Sign out» asks for confirmation before ending the session.
+
 ### Added
 
 - `squareChart`, a compact square-column visualization for dense time-series dashboards, with accessible tabular data. Studio needs a canvas template and palette entry for the new node type.

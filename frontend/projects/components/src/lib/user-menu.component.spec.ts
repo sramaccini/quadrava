@@ -1,5 +1,6 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
-import { I18n } from 'core';
+import { vi } from 'vitest';
+import { Confirmation, I18n } from 'core';
 import { provideLowcodeComponents } from './provide';
 import { UserMenuComponent, type UserMenuChoices, type UserMenuItem } from './user-menu.component';
 
@@ -34,22 +35,32 @@ describe('UserMenuComponent', () => {
 
   afterEach(() => document.querySelectorAll('.cdk-overlay-container').forEach((c) => (c.innerHTML = '')));
 
-  it('shows initial and name, and logout is the last item', async () => {
+  it('shows the initial, with the name in the tooltip and the accessible name, and logout is the last item', async () => {
     const { fixture } = await render();
-    expect(fixture.nativeElement.querySelector('nz-avatar')?.textContent?.trim()).toBe('M');
-    expect(fixture.nativeElement.querySelector('.name')?.textContent?.trim()).toBe('mario');
+    const trigger = fixture.nativeElement.querySelector('button.trigger') as HTMLElement;
+    expect(trigger.textContent?.trim()).toBe('M');
+    expect(trigger.getAttribute('aria-label')).toBe('User menu mario');
+    trigger.dispatchEvent(new MouseEvent('mouseenter'));
+    for (let i = 0; i < 40 && !document.querySelector('.ant-tooltip-inner'); i++) await flush(fixture);
+    expect(document.querySelector('.ant-tooltip-inner')?.textContent?.trim()).toBe('User: mario');
     const items = menuItems();
     expect(items.at(-1)).toBe('Sign out');
     expect(items).toEqual(['4 permissions', 'Profile', 'Sign out']);
   });
 
-  it('emits the chosen item, ignores disabled ones and reports logout', async () => {
-    const { selected, logouts } = await render();
+  it('emits the chosen item, ignores disabled ones and reports logout only once confirmed', async () => {
+    const { fixture, selected, logouts } = await render();
     const all = [...document.querySelectorAll<HTMLElement>('.ant-dropdown li[nz-menu-item]')];
     all[0].click();
     all[1].click();
-    all[2].click();
     expect(selected).toEqual(['profile']);
+    const confirm = vi.spyOn(TestBed.inject(Confirmation), 'confirm').mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+    all[2].click();
+    await flush(fixture);
+    expect(confirm).toHaveBeenCalledWith('Sign out of the application?');
+    expect(logouts()).toBe(0);
+    all[2].click();
+    await flush(fixture);
     expect(logouts()).toBe(1);
   });
 
