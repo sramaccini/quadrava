@@ -7,7 +7,8 @@
 // with the keys published by the realm, issuer and expiry. With --no-auth the check is off (warning in the log). Back-end
 // errors come back as Problem (RFC 9457) with the status only, never with details; invalid data also with the field errors
 // (paths and codes, contracts/problem.yaml). /api/streams/tasks is an event stream (ADR-19): `tasks.changed` after
-// every change of the tasks, for the live boards of the showcase.
+// every change of the tasks, for the live boards of the showcase; /api/streams/notifications announces a new message of
+// the user (ADR-22) with `notifications.changed`.
 import { readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { createPublicKey, createVerify } from 'node:crypto';
@@ -40,7 +41,10 @@ const { DemoBackend } = await import('data:text/javascript;base64,' + Buffer.fro
 
 // Event streams (ADR-19): the open responses by address. An event only says that something changed; the boards read
 // their data source again.
-const streams = new Map([['/api/streams/tasks', new Set()]]);
+const streams = new Map([
+  ['/api/streams/tasks', new Set()],
+  ['/api/streams/notifications', new Set()],
+]);
 function emit(url, event) {
   for (const res of streams.get(url) ?? []) res.write(`event: ${event}\ndata: {}\n\n`);
 }

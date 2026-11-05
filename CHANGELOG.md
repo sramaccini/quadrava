@@ -12,12 +12,20 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Added
+
+- Messages for the user ([ADR-22](docs/adr-22-user-notifications.md)): with `notifications` in the navigation the top bar
+  shows a bell, before the user menu, with the number of unread messages and their list. The service of the
+  application lists them with a GET, marks them read with an optional POST (`readUrl`) and announces new ones with an
+  optional event stream (`live`, as in ADR-19). Choosing a message marks it read and opens its screen. New component
+  `lc-notification-bell` in `components`. The demo has an inbox: sending an invoice adds a message.
+
 ### Changed
 
 - User menu: the name of the user is in the tooltip of the icon («User: Administrator»), no longer next to it, and
   «Sign out» asks for confirmation before ending the session.
-- Runtime: «Settings…» in the user menu opens a dialog with one tab per setting (theme and language, applied at once;
-  the simulated network only in the demo). The demo no longer changes profile from the user menu: one signs out and
+- Runtime: «Settings…» in the user menu opens a dialog of fixed size: «General» with the theme and the language,
+  applied at once, and, only in the demo, «Debug» with the simulated network. The demo no longer changes profile from the user menu: one signs out and
   chooses the profile on the page that signs in again.
 
 ### Added

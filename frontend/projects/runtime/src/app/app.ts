@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, injec
 import { FormsModule } from '@angular/forms';
 import { RouterOutlet } from '@angular/router';
 import { NgTemplateOutlet } from '@angular/common';
-import { AppBrandComponent, IconComponent, QuadravaWordmarkComponent, SidebarComponent, UserMenuComponent, type UserMenuChoices, type UserMenuItem } from 'components';
+import { AppBrandComponent, IconComponent, NotificationBellComponent, QuadravaWordmarkComponent, SidebarComponent, UserMenuComponent, type UserMenuChoices, type UserMenuItem, type UserNotification } from 'components';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzDrawerModule } from 'ng-zorro-antd/drawer';
 import { NzLayoutModule } from 'ng-zorro-antd/layout';
@@ -10,6 +10,7 @@ import { NzSelectModule } from 'ng-zorro-antd/select';
 import { DefinitionSource, I18n, Notifier, ThemeService, loadCatalogs, type VisibleLeaf } from 'core';
 import { applyDocumentBrand } from './document-brand';
 import { NavigationService } from './navigation.service';
+import { NotificationsService } from './notifications.service';
 import { SHELL_MESSAGES } from './shell-messages';
 import { APPLICATION_SETTINGS, type ApplicationSettings } from './runtime-config';
 import { SettingsDialogComponent } from './settings-dialog.component';
@@ -61,7 +62,7 @@ function initialLanguage(settings: ApplicationSettings): string {
 /** Shell of the application: top bar with the user menu, side menu, content and notifications. */
 @Component({
   selector: 'lc-root',
-  imports: [NgTemplateOutlet, RouterOutlet, AppBrandComponent, IconComponent, QuadravaWordmarkComponent, SidebarComponent, UserMenuComponent, SettingsDialogComponent, FormsModule, NzButtonModule, NzDrawerModule, NzLayoutModule, NzSelectModule],
+  imports: [NgTemplateOutlet, RouterOutlet, AppBrandComponent, IconComponent, QuadravaWordmarkComponent, SidebarComponent, UserMenuComponent, NotificationBellComponent, SettingsDialogComponent, FormsModule, NzButtonModule, NzDrawerModule, NzLayoutModule, NzSelectModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './app.scss',
   templateUrl: './app.html',
@@ -69,6 +70,8 @@ function initialLanguage(settings: ApplicationSettings): string {
 export class App {
   protected readonly session = inject(ShellSession);
   protected readonly navigation = inject(NavigationService);
+  /** Messages of the user behind the bell (ADR-22), when the navigation names their service. */
+  protected readonly notifications = inject(NotificationsService);
   private readonly themeService = inject(ThemeService);
   protected readonly i18n = inject(I18n);
   private readonly settings = inject(APPLICATION_SETTINGS);
@@ -108,6 +111,12 @@ export class App {
     return here.screen ? { screen: here.screen, params: here.params } : null;
   });
   protected readonly hrefFor = (area: string, leaf: VisibleLeaf): string => this.navigation.href(area, leaf);
+
+  /** A message chosen from the bell: marked read and, if it names one, its screen opens. */
+  protected openNotification(item: UserNotification): void {
+    if (!item.read) void this.notifications.markRead([item.id]);
+    if (item.screen) this.navigation.openScreen(item.screen, item.params ?? {});
+  }
 
   protected selectUserMenuItem(id: string): void {
     if (id === 'settings') this.settingsOpen.set(true);

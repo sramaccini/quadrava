@@ -132,17 +132,21 @@ describe('App (demo)', () => {
     });
     (options.find((o) => (o.textContent ?? '').trim() === label) as HTMLElement).click();
   };
-  /** Opens «Settings…» from the user menu and picks an option in one of the tabs of the dialog. */
-  const chooseSetting = async (fixture: ComponentFixture<App>, tab: string, label: string): Promise<void> => {
+  /** Opens «Settings…» from the user menu and picks an option of a drop-down in one of the tabs of the dialog. */
+  const chooseSetting = async (fixture: ComponentFixture<App>, tab: string, field: string, label: string): Promise<void> => {
     const menu = fixture.debugElement.query(By.directive(UserMenuComponent)).componentInstance as UserMenuComponent;
     menu.select.emit('settings');
     await until(fixture, () => !!document.querySelector('.ant-modal .ant-tabs-tab'), 'settings dialog');
     // In jsdom a window closed before stays in the page: the last one is the open one.
     const dialog = (): Element => [...document.querySelectorAll('.ant-modal')].at(-1)!;
-    const tabs = [...dialog().querySelectorAll<HTMLElement>('.ant-tabs-tab-btn')];
-    tabs.find((t) => t.textContent?.trim() === tab)?.click();
-    await until(fixture, () => [...dialog().querySelectorAll('.ant-tabs-tabpane-active label[nz-radio]')].some((l) => l.textContent?.trim() === label), `${tab} / ${label}`);
-    ([...dialog().querySelectorAll('.ant-tabs-tabpane-active label[nz-radio]')].find((l) => l.textContent?.trim() === label) as HTMLElement).click();
+    [...dialog().querySelectorAll<HTMLElement>('.ant-tabs-tab-btn')].find((t) => t.textContent?.trim() === tab)?.click();
+    const select = (): HTMLElement | undefined => {
+      const id = [...dialog().querySelectorAll('.ant-tabs-tabpane-active label')].find((l) => l.textContent?.trim() === field)?.getAttribute('for');
+      // The label points at the input inside the drop-down (nzId).
+      return (id && (dialog().querySelector(`[id="${id}"]`)?.closest('nz-select') as HTMLElement | null)) || undefined;
+    };
+    await until(fixture, () => !!select(), `${tab} / ${field}`);
+    await choose(fixture, select()!, label);
     ([...dialog().querySelectorAll<HTMLElement>('.ant-modal-footer button')].find((b) => b.textContent?.trim() === 'Close') as HTMLElement).click();
     fixture.detectChanges();
     await fixture.whenStable();
@@ -237,17 +241,33 @@ describe('App (demo)', () => {
     expect(TestBed.inject(DemoSession).username()).toBe('manager');
   });
 
+  it('the bell counts the unread messages; choosing one marks it read and opens its screen; a new one arrives by itself', async () => {
+    const { fixture, el, url } = await start();
+    await until(fixture, () => rows(el) > 0, 'invoice list');
+    const bell = (): HTMLElement => el.querySelector('lc-notification-bell button.trigger') as HTMLElement;
+    await until(fixture, () => bell()?.getAttribute('aria-label') === 'Messages, 2 unread', 'two unread messages');
+    bell().click();
+    await until(fixture, () => !!document.querySelector('.ant-dropdown section.panel li'), 'list of messages');
+    const paid = [...document.querySelectorAll<HTMLElement>('.ant-dropdown section.panel li button')].find((b) => b.textContent?.includes('FT-2026-003 paid'))!;
+    paid.click();
+    await until(fixture, () => bell().getAttribute('aria-label') === 'Messages, 1 unread', 'one read');
+    expect(url()).toBe('/invoice-lookup/invoice-list');
+    // Sending a draft adds a message on the service, announced by its stream: no reading by hand.
+    clickLabel(el, 'main button', 'Send');
+    await until(fixture, () => bell().getAttribute('aria-label') === 'Messages, 2 unread', 'the new message');
+  });
+
   it('the settings dialog changes language at once and has the simulated network only in the demo', async () => {
     const { fixture, el } = await start();
     await until(fixture, () => rows(el) > 0, 'invoice list');
-    await chooseSetting(fixture, 'Language', 'Italiano');
+    await chooseSetting(fixture, 'General', 'Language', 'Italiano');
     await until(fixture, () => TestBed.inject(I18n).locale() === 'it', 'Italian');
     const menu = fixture.debugElement.query(By.directive(UserMenuComponent)).componentInstance as UserMenuComponent;
     menu.select.emit('settings');
     await until(fixture, () => !!document.querySelector('.ant-modal .ant-tabs-tab'), 'settings dialog');
     // In jsdom the window closed before is still in the page, without its animation: the last one is the open one.
     const dialog = [...document.querySelectorAll('.ant-modal')].at(-1) as HTMLElement;
-    expect([...dialog.querySelectorAll('.ant-tabs-tab-btn')].map((t) => t.textContent?.trim())).toEqual(['Tema', 'Lingua', 'Rete']);
+    expect([...dialog.querySelectorAll('.ant-tabs-tab-btn')].map((t) => t.textContent?.trim())).toEqual(['Generale', 'Debug']);
     TestBed.inject(I18n).setLocale('en');
   });
 
@@ -371,13 +391,13 @@ describe('App (demo)', () => {
   it('the dark theme changes the CSS variables', async () => {
     const { fixture, el } = await start();
     await until(fixture, () => rows(el) > 0, 'invoice list');
-    await chooseSetting(fixture, 'Theme', 'dark');
+    await chooseSetting(fixture, 'General', 'Theme', 'dark');
     await until(fixture, () => document.documentElement.style.getPropertyValue('--lc-color-primary') === '#6aa6ff', 'dark theme');
     expect(document.documentElement.style.getPropertyValue('color-scheme')).toBe('dark');
     // the bridge to NG-ZORRO sets its colours and loads the dark stylesheet
     await until(fixture, () => document.documentElement.style.getPropertyValue('--ant-primary-color') === '#6aa6ff', 'NG-ZORRO colours');
     expect(document.getElementById('lc-nz-dark-theme')?.getAttribute('href')).toBe('nz-dark.css');
-    await chooseSetting(fixture, 'Theme', 'light');
+    await chooseSetting(fixture, 'General', 'Theme', 'light');
     await until(fixture, () => document.documentElement.style.getPropertyValue('--ant-primary-color') === '#1f5fbf', 'light theme');
     expect(document.getElementById('lc-nz-dark-theme')).toBeNull();
   });
@@ -387,7 +407,7 @@ describe('App (demo)', () => {
     await until(fixture, () => rows(el) > 0, 'invoice list');
     expect(el.querySelector('lc-sidebar .logo lc-quadrava-wordmark')).not.toBeNull();
     expect(document.title).toBe('Quadrava');
-    await chooseSetting(fixture, 'Theme', 'classic');
+    await chooseSetting(fixture, 'General', 'Theme', 'classic');
     await until(fixture, () => !!el.querySelector('lc-sidebar .logo lc-app-brand'), 'brand of the theme');
     const brand = el.querySelector('lc-sidebar .logo lc-app-brand') as HTMLElement;
     expect(brand.querySelector('[role="img"]')?.getAttribute('aria-label')).toBe('Acme Office');

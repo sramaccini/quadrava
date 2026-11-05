@@ -5,6 +5,16 @@
     "url": "/api/menu/counters",
     "refreshSeconds": 30
   },
+  "notifications": {
+    "url": "/api/notifications",
+    "readUrl": "/api/notifications/read",
+    "live": {
+      "url": "/api/streams/notifications",
+      "events": [
+        "notifications.changed"
+      ]
+    }
+  },
   "default": "invoice-lookup",
   "areas": [
     {

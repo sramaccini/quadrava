@@ -10,7 +10,7 @@
 .crumb { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--lc-header-muted, var(--lc-color-muted)); }
 .spacer { flex: 1; }
 .menu-button { flex: none; color: inherit; font-size: 18px; }
-lc-user-menu { height: 100%; flex: none; }
+lc-user-menu, lc-notification-bell { height: 100%; flex: none; }
 nz-content { flex: 1; min-width: 0; }
 main { color: var(--lc-color-on-surface); }
 .diag { text-align: center; font-size: .8em; color: var(--lc-color-muted); background: transparent; }

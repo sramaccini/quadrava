@@ -280,9 +280,10 @@ npm ci
 npm run start:runtime        # builds the libraries, copies the examples, serves on http://localhost:4200
 ```
 
-In the top-right user menu (the name of the user is in the tooltip of its icon) open **Settings…** to choose theme, language and simulated network speed in a dialog, or sign out after a confirmation; to change profile (`operator`, `manager`, `administrator`) sign out and choose it on the page that signs in again. The side menu is defined by `examples/navigation.json`; a selector at its top switches the area. Things to try:
+In the top-right user menu (the name of the user is in the tooltip of its icon) open **Settings…** to choose theme and language (tab «General») and the simulated network speed (tab «Debug») in a dialog, or sign out after a confirmation; to change profile (`operator`, `manager`, `administrator`) sign out and choose it on the page that signs in again. The side menu is defined by `examples/navigation.json`; a selector at its top switches the area. Things to try:
 
-* In **Settings**, switch the simulated **network** (normal, slow, very slow) to see the activity indicators.
+* In **Settings…** → **Debug**, switch the simulated **network** (normal, slow, very slow) to see the activity indicators.
+* The **bell** before the user icon counts the unread messages ([ADR-22](docs/adr-22-user-notifications.md)); open it to read them, choose one to open its screen. Send a draft invoice: a new message arrives by itself, announced by an event stream.
 * Switch users: the available areas and menu entries follow the permissions of the profile. The URL of a screen you may not open shows a denial even if typed by hand.
 * *Invoice entry*: a form with validation that saves a draft and navigates to the drafts list.
 * *Expense review*: two menu entries open the same screen with different parameters; Approve and Reject only appear with the review permission.

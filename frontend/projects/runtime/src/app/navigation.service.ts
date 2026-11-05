@@ -4,6 +4,7 @@ import { NavigationEnd, Router } from '@angular/router';
 import { ExpressionEngine } from 'expressions';
 import { Authorization, DataClient, DefinitionSource, I18n, NavigationRuntime, RuntimeDiagnostics, ScreenNavigator, UserProvider, checkNavigation, type VisibleLeaf } from 'core';
 import { type NavigationDefinition } from 'schema';
+import { NotificationsService } from './notifications.service';
 
 export interface RouteLocation {
   area: string | null;
@@ -26,6 +27,7 @@ export class NavigationService {
   private readonly definitions = inject(DefinitionSource);
   private readonly data = inject(DataClient);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly notifications = inject(NotificationsService);
 
   readonly runtime = signal<NavigationRuntime | null>(null);
   /** Validation errors of the navigation document (for whoever writes it). */
@@ -61,6 +63,7 @@ export class NavigationService {
       }
       this.runtime.set(new NavigationRuntime(result.value, { authorization: this.authorization, userProvider: this.userProvider, diagnostics: this.diagnostics, i18n: this.i18n }));
       this.watchBadges(result.value.badges);
+      this.notifications.watch(result.value.notifications);
     } catch (e) {
       this.diagnostics?.report({ screen: 'navigation', source: 'navigation loading', error: e instanceof Error ? e.message : String(e) });
       this.loadFailed.set(true);

@@ -93,6 +93,22 @@ export class DemoBackend {
     { id: 4, title: 'Reminder to Walker & Co.', who: 'Marta Verdi', status: 'in-progress', priority: 'high', points: 1 },
     { id: 5, title: 'Order 1001 shipped', who: 'Luca Bianchi', status: 'done', priority: 'low', points: 2 },
   ];
+  /**
+   * Messages of the user (ADR-22), newest first. Sending invoices adds one, announced on /api/streams/notifications;
+   * /api/notifications/read marks them read.
+   */
+  private readonly notifications: { id: string; title: string; text?: string; date: string; read: boolean; screen?: string; params?: Record<string, string> }[] = [
+    { id: 'n-3', title: 'Expenses to review', text: 'Three expense reports are waiting for your review.', date: '2026-11-05T08:30:00Z', read: false, screen: 'expense-list', params: { status: 'to-review' } },
+    { id: 'n-2', title: 'Invoice FT-2026-003 paid', text: 'Walker & Co. paid 520 €.', date: '2026-11-04T15:10:00Z', read: false, screen: 'invoice-list' },
+    { id: 'n-1', title: 'Welcome to the demo', text: 'Messages from the services of the application appear here.', date: '2026-11-01T09:00:00Z', read: true },
+  ];
+  private notificationCount = 3;
+
+  private notify(title: string, text: string, screen?: string): void {
+    this.notifications.unshift({ id: `n-${++this.notificationCount}`, title, text, date: new Date().toISOString(), read: false, ...(screen ? { screen } : {}) });
+    this.emit('/api/streams/notifications', 'notifications.changed');
+  }
+
   private readonly people = [
     { id: 1, name: 'Anna Rossi' },
     { id: 2, name: 'Luca Bianchi' },
@@ -249,6 +265,7 @@ export class DemoBackend {
       const drafts = this.invoices.filter((f) => ids.includes(f.id) && f.status === 'draft');
       if (drafts.length !== ids.length) throw new Error('409');
       drafts.forEach((f) => (f.status = 'sent'));
+      if (drafts.length) this.notify(drafts.length === 1 ? `Invoice ${drafts[0].number} sent` : `${drafts.length} invoices sent`, drafts.map((f) => `${f.number} to ${f.customer}`).join(', '), 'invoice-list');
       return { sent: drafts.length };
     }
     const send = /^\/api\/invoices\/(\d+)\/send$/.exec(path);
@@ -256,6 +273,7 @@ export class DemoBackend {
       const invoice = this.invoices.find((f) => f.id === Number(send[1]));
       if (!invoice || invoice.status !== 'draft') throw new Error('409');
       invoice.status = 'sent';
+      this.notify(`Invoice ${invoice.number} sent`, `${invoice.number} to ${invoice.customer}, ${invoice.amount} €.`, 'invoice-list');
       return {};
     }
     if (path === '/api/deadlines' && req.method === 'GET') {
@@ -373,6 +391,12 @@ export class DemoBackend {
         { id: 'in-progress', name: 'In progress', tone: 'primary', wip: 3 },
         { id: 'done', name: 'Done', tone: 'success' },
       ];
+    }
+    if (path === '/api/notifications' && req.method === 'GET') return this.notifications.map((n) => ({ ...n }));
+    if (path === '/api/notifications/read' && req.method === 'POST') {
+      const ids = Array.isArray(req.body?.['ids']) ? (req.body['ids'] as unknown[]) : [];
+      this.notifications.filter((n) => ids.includes(n.id)).forEach((n) => (n.read = true));
+      return {};
     }
     if (path === '/api/menu/counters' && req.method === 'GET') {
       // Menu counters: draft invoices, expenses to review, tasks not finished.
