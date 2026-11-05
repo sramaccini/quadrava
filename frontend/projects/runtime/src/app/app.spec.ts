@@ -3,6 +3,7 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 import { UserMenuComponent } from 'components';
+import { I18n } from 'core';
 import detail from '../../public/examples/screens/order-detail.json';
 import list from '../../public/examples/screens/order-list.json';
 import navigationDoc from '../../public/examples/navigation.json';
@@ -109,7 +110,9 @@ describe('App (demo)', () => {
     fixture.detectChanges();
     await TestBed.inject(Router).navigateByUrl('/');
     if (user !== 'operator') {
-      await chooseUserMenuChild(fixture, 'Change profile…', user);
+      TestBed.inject(DemoSession).username.set(user);
+      fixture.detectChanges();
+      await fixture.whenStable();
     }
     return { fixture, el, url };
   }
@@ -129,11 +132,18 @@ describe('App (demo)', () => {
     });
     (options.find((o) => (o.textContent ?? '').trim() === label) as HTMLElement).click();
   };
-  const chooseUserMenuChild = async (fixture: ComponentFixture<App>, group: string, label: string): Promise<void> => {
+  /** Opens «Settings…» from the user menu and picks an option in one of the tabs of the dialog. */
+  const chooseSetting = async (fixture: ComponentFixture<App>, tab: string, label: string): Promise<void> => {
     const menu = fixture.debugElement.query(By.directive(UserMenuComponent)).componentInstance as UserMenuComponent;
-    const item = menu.items().find((entry) => entry.label === group)?.children?.find((entry) => entry.label === label);
-    if (!item) throw new Error(`User menu item not found: ${group} / ${label}`);
-    menu.select.emit(item.id);
+    menu.select.emit('settings');
+    await until(fixture, () => !!document.querySelector('.ant-modal .ant-tabs-tab'), 'settings dialog');
+    // In jsdom a window closed before stays in the page: the last one is the open one.
+    const dialog = (): Element => [...document.querySelectorAll('.ant-modal')].at(-1)!;
+    const tabs = [...dialog().querySelectorAll<HTMLElement>('.ant-tabs-tab-btn')];
+    tabs.find((t) => t.textContent?.trim() === tab)?.click();
+    await until(fixture, () => [...dialog().querySelectorAll('.ant-tabs-tabpane-active label[nz-radio]')].some((l) => l.textContent?.trim() === label), `${tab} / ${label}`);
+    ([...dialog().querySelectorAll('.ant-tabs-tabpane-active label[nz-radio]')].find((l) => l.textContent?.trim() === label) as HTMLElement).click();
+    ([...dialog().querySelectorAll<HTMLElement>('.ant-modal-footer button')].find((b) => b.textContent?.trim() === 'Close') as HTMLElement).click();
     fixture.detectChanges();
     await fixture.whenStable();
   };
@@ -208,22 +218,37 @@ describe('App (demo)', () => {
     expect(brand.querySelector('img')).not.toBeNull();
   });
 
-  it('the user menu shows the name and ends the session with the last item, then one can sign in again', async () => {
+  it('the user menu has the settings and a confirmed sign-out; in the demo one signs in again as another profile', async () => {
     const { fixture, el } = await start();
     await until(fixture, () => rows(el) > 0, 'invoice list');
-    expect(el.querySelector('lc-user-menu .name')?.textContent?.trim()).toBe('operator');
+    expect(el.querySelector('lc-user-menu button.trigger')?.getAttribute('aria-label')).toBe('User menu operator');
     (el.querySelector('lc-user-menu button.trigger') as HTMLButtonElement).click();
     await until(fixture, () => document.querySelectorAll('.ant-dropdown li[nz-menu-item]').length > 0, 'user menu');
-    const submenuLabels = [...document.querySelectorAll<HTMLElement>('.ant-dropdown-menu-submenu-title')].map((item) => item.textContent?.trim());
-    expect(submenuLabels).toContain('Change profile…');
-    expect(submenuLabels).toContain('Settings');
     const items = [...document.querySelectorAll<HTMLElement>('.ant-dropdown li[nz-menu-item]')];
-    expect(items.at(-1)?.textContent?.trim()).toBe('Sign out');
+    expect(items.map((i) => i.textContent?.trim())).toEqual(['Settings…', 'Sign out']);
     items.at(-1)!.click();
+    await until(fixture, () => !!document.querySelector('.ant-modal-confirm .ant-btn-primary'), 'sign-out confirmation');
+    (document.querySelector('.ant-modal-confirm .ant-btn-primary') as HTMLButtonElement).click();
     await until(fixture, () => !!el.querySelector('.signed-out'), 'session ended');
     expect(el.querySelector('lc-sidebar')).toBeNull();
+    await choose(fixture, el.querySelector('.signed-out nz-select') as HTMLElement, 'manager');
     (el.querySelector('.signed-out button') as HTMLButtonElement).click();
     await until(fixture, () => !el.querySelector('.signed-out'), 'signed in again');
+    expect(TestBed.inject(DemoSession).username()).toBe('manager');
+  });
+
+  it('the settings dialog changes language at once and has the simulated network only in the demo', async () => {
+    const { fixture, el } = await start();
+    await until(fixture, () => rows(el) > 0, 'invoice list');
+    await chooseSetting(fixture, 'Language', 'Italiano');
+    await until(fixture, () => TestBed.inject(I18n).locale() === 'it', 'Italian');
+    const menu = fixture.debugElement.query(By.directive(UserMenuComponent)).componentInstance as UserMenuComponent;
+    menu.select.emit('settings');
+    await until(fixture, () => !!document.querySelector('.ant-modal .ant-tabs-tab'), 'settings dialog');
+    // In jsdom the window closed before is still in the page, without its animation: the last one is the open one.
+    const dialog = [...document.querySelectorAll('.ant-modal')].at(-1) as HTMLElement;
+    expect([...dialog.querySelectorAll('.ant-tabs-tab-btn')].map((t) => t.textContent?.trim())).toEqual(['Tema', 'Lingua', 'Rete']);
+    TestBed.inject(I18n).setLocale('en');
   });
 
   it('a user with several tenants chooses one in the user menu; with one there is no choice', async () => {
@@ -236,7 +261,7 @@ describe('App (demo)', () => {
     expect(radios()).toEqual([]);
     trigger.click();
 
-    await chooseUserMenuChild(fixture, 'Change profile…', 'administrator');
+    TestBed.inject(DemoSession).username.set('administrator');
     trigger.click();
     await until(fixture, () => radios().length === 2, 'tenants in the user menu');
     expect(document.querySelector('.ant-dropdown .ant-dropdown-menu-item-group-title')?.textContent?.trim()).toBe('Workspace');
@@ -250,7 +275,7 @@ describe('App (demo)', () => {
     const { fixture, el } = await start();
     await until(fixture, () => areas().length > 0, 'selector');
     expect(areas()).toEqual(['Invoice entry', 'Invoice lookup', 'Component showcase']);
-    await chooseUserMenuChild(fixture, 'Change profile…', 'manager');
+    TestBed.inject(DemoSession).username.set('manager');
     await until(fixture, () => areas().length === 5, 'four areas');
     expect(areas()).toEqual(['Invoice entry', 'Invoice lookup', 'Package creation', 'Expense review', 'Component showcase']);
   });
@@ -295,7 +320,7 @@ describe('App (demo)', () => {
 
   it('expense review: item with parameters, approval and message', async () => {
     const { fixture, el, url } = await start('manager');
-    await until(fixture, () => areas().length === 5, 'four areas');
+    await until(fixture, () => areas().length === 5 && !!areaSelect(el), 'four areas');
     await choose(fixture, areaSelect(el)!, 'Expense review');
     await until(fixture, () => rows(el) > 0, 'expense list');
     expect(url()).toBe('/expense-review/expense-list?status=to-review');
@@ -346,13 +371,13 @@ describe('App (demo)', () => {
   it('the dark theme changes the CSS variables', async () => {
     const { fixture, el } = await start();
     await until(fixture, () => rows(el) > 0, 'invoice list');
-    await chooseUserMenuChild(fixture, 'Settings', 'Theme · dark');
+    await chooseSetting(fixture, 'Theme', 'dark');
     await until(fixture, () => document.documentElement.style.getPropertyValue('--lc-color-primary') === '#6aa6ff', 'dark theme');
     expect(document.documentElement.style.getPropertyValue('color-scheme')).toBe('dark');
     // the bridge to NG-ZORRO sets its colours and loads the dark stylesheet
     await until(fixture, () => document.documentElement.style.getPropertyValue('--ant-primary-color') === '#6aa6ff', 'NG-ZORRO colours');
     expect(document.getElementById('lc-nz-dark-theme')?.getAttribute('href')).toBe('nz-dark.css');
-    await chooseUserMenuChild(fixture, 'Settings', 'Theme · light');
+    await chooseSetting(fixture, 'Theme', 'light');
     await until(fixture, () => document.documentElement.style.getPropertyValue('--ant-primary-color') === '#1f5fbf', 'light theme');
     expect(document.getElementById('lc-nz-dark-theme')).toBeNull();
   });
@@ -362,7 +387,7 @@ describe('App (demo)', () => {
     await until(fixture, () => rows(el) > 0, 'invoice list');
     expect(el.querySelector('lc-sidebar .logo lc-quadrava-wordmark')).not.toBeNull();
     expect(document.title).toBe('Quadrava');
-    await chooseUserMenuChild(fixture, 'Settings', 'Theme · classic');
+    await chooseSetting(fixture, 'Theme', 'classic');
     await until(fixture, () => !!el.querySelector('lc-sidebar .logo lc-app-brand'), 'brand of the theme');
     const brand = el.querySelector('lc-sidebar .logo lc-app-brand') as HTMLElement;
     expect(brand.querySelector('[role="img"]')?.getAttribute('aria-label')).toBe('Acme Office');

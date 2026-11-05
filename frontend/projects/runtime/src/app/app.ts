@@ -1,17 +1,19 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { RouterOutlet } from '@angular/router';
 import { NgTemplateOutlet } from '@angular/common';
 import { AppBrandComponent, IconComponent, QuadravaWordmarkComponent, SidebarComponent, UserMenuComponent, type UserMenuChoices, type UserMenuItem } from 'components';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzDrawerModule } from 'ng-zorro-antd/drawer';
 import { NzLayoutModule } from 'ng-zorro-antd/layout';
+import { NzSelectModule } from 'ng-zorro-antd/select';
 import { DefinitionSource, I18n, Notifier, ThemeService, loadCatalogs, type VisibleLeaf } from 'core';
 import { applyDocumentBrand } from './document-brand';
 import { NavigationService } from './navigation.service';
 import { SHELL_MESSAGES } from './shell-messages';
 import { APPLICATION_SETTINGS, type ApplicationSettings } from './runtime-config';
+import { SettingsDialogComponent } from './settings-dialog.component';
 import { ShellSession } from './shell-session';
-import { DemoNetwork, NETWORK_SPEEDS, type NetworkSpeed } from '../demo/demo-ports';
 
 /** Languages of the demo: each has its `examples/i18n/<language>.json`. */
 
@@ -59,7 +61,7 @@ function initialLanguage(settings: ApplicationSettings): string {
 /** Shell of the application: top bar with the user menu, side menu, content and notifications. */
 @Component({
   selector: 'lc-root',
-  imports: [NgTemplateOutlet, RouterOutlet, AppBrandComponent, IconComponent, QuadravaWordmarkComponent, SidebarComponent, UserMenuComponent, NzButtonModule, NzDrawerModule, NzLayoutModule],
+  imports: [NgTemplateOutlet, RouterOutlet, AppBrandComponent, IconComponent, QuadravaWordmarkComponent, SidebarComponent, UserMenuComponent, SettingsDialogComponent, FormsModule, NzButtonModule, NzDrawerModule, NzLayoutModule, NzSelectModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './app.scss',
   templateUrl: './app.html',
@@ -73,10 +75,10 @@ export class App {
   /** Languages of the application (from its project). */
   protected readonly languages = this.settings.languages;
 
+  /** Profiles of the demo (with the back end in the browser): chosen when signing in again; empty otherwise. */
   protected readonly profiles = this.session.profiles;
-  /** Simulated network: only in the demo with the back end in the browser (where there are profiles to choose). */
-  protected readonly network = inject(DemoNetwork);
-  protected readonly speeds = Object.keys(NETWORK_SPEEDS) as NetworkSpeed[];
+  /** Profile chosen on the signed-out page of the demo, applied when signing in. */
+  protected readonly nextProfile = signal(this.session.username());
   private readonly definitions = inject(DefinitionSource);
   protected readonly themes = this.definitions.themes();
   protected readonly themeName = signal(this.themes[0]);
@@ -84,26 +86,10 @@ export class App {
   protected readonly collapsed = signal(false);
   /** Drawer with the sidebar, only in the narrow band. */
   protected readonly drawerOpen = signal(false);
-  /** Profile and settings submenus before the logout, which the user menu adds by itself as the last item. */
-  protected readonly userItems = computed<UserMenuItem[]>(() => [
-    {
-      id: 'profiles',
-      label: this.i18n.t('app.changeProfile'),
-      icon: 'user',
-      disabled: !this.profiles.length,
-      children: this.profiles.map((profile) => ({ id: `profile:${profile}`, label: profile, selected: profile === this.session.username() })),
-    },
-    {
-      id: 'settings',
-      label: this.i18n.t('app.settings'),
-      icon: 'settings',
-      children: [
-        ...this.themes.map((theme) => ({ id: `theme:${theme}`, label: `${this.i18n.t('app.theme')} · ${this.i18n.t(`app.theme.${theme}`, {}, theme)}`, selected: theme === this.themeName() })),
-        ...this.languages.map((language) => ({ id: `language:${language}`, label: `${this.i18n.t('app.language')} · ${this.i18n.t(`app.lang.${language}`, {}, language)}`, selected: language === this.i18n.locale() })),
-        ...(this.profiles.length ? this.speeds.map((speed) => ({ id: `network:${speed}`, label: `${this.i18n.t('app.network')} · ${this.i18n.t(`app.network.${speed}`)}`, selected: speed === this.network.speed() })) : []),
-      ],
-    },
-  ]);
+  /** The settings dialog (theme, language and, in the demo, the network), opened from the user menu. */
+  protected readonly settingsOpen = signal(false);
+  /** Items of the user menu before the logout, which the user menu adds by itself as the last item. */
+  protected readonly userItems = computed<UserMenuItem[]>(() => [{ id: 'settings', label: this.i18n.t('app.settingsMenu'), icon: 'settings' }]);
   /** Tenants of the user, first in the user menu: only when there are at least two to choose from. */
   protected readonly tenantChoices = computed<UserMenuChoices | undefined>(() => {
     const tenants = this.session.tenants();
@@ -123,14 +109,14 @@ export class App {
   });
   protected readonly hrefFor = (area: string, leaf: VisibleLeaf): string => this.navigation.href(area, leaf);
 
-  /** Applies a profile, theme, language or demo network speed selected from the user menu. */
   protected selectUserMenuItem(id: string): void {
-    const [kind, value] = id.split(':', 2);
-    if (!value) return;
-    if (kind === 'profile') this.session.selectProfile(value);
-    else if (kind === 'theme' && this.themes.includes(value)) this.themeName.set(value);
-    else if (kind === 'language' && this.languages.includes(value)) this.i18n.setLocale(value);
-    else if (kind === 'network' && this.speeds.includes(value as NetworkSpeed)) this.network.set(value as NetworkSpeed);
+    if (id === 'settings') this.settingsOpen.set(true);
+  }
+
+  /** Signs in again; in the demo, as the profile chosen on the signed-out page. */
+  protected signIn(): void {
+    if (this.profiles.includes(this.nextProfile())) this.session.selectProfile(this.nextProfile());
+    this.session.login();
   }
 
   constructor() {

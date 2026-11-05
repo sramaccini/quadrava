@@ -16,6 +16,7 @@ main { color: var(--lc-color-on-surface); }
 .diag { text-align: center; font-size: .8em; color: var(--lc-color-muted); background: transparent; }
 .signed-out { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; background: var(--lc-color-background); color: var(--lc-color-on-surface); text-align: center; padding: 24px; }
 .signed-out h1 { margin: 0; font-size: 24px; }
+.signed-out nz-select.profile { width: 200px; margin-bottom: 8px; }
 /* Narrow band: no sidebar next to the content (it is in the drawer), smaller margins. */
 .narrow .bar { gap: 4px; padding: 0 8px; }
 .narrow .main { --lc-content-padding: 16px; }

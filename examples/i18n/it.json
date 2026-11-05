@@ -54,7 +54,6 @@
   "app.help.wizard": "Procedura a passi (da 2 a 10): ogni passo ha etichetta, descrizione e i suoi componenti; «Avanti» si può abilitare solo quando i dati del passo sono a posto (`nextIf`). Il passo corrente si può legare allo stato (`bind`).",
   "app.help.wizard.title": "Procedura",
   "app.profile": "Profilo demo",
-  "app.settings": "Impostazioni della demo",
   "app.showcase.common": "Tutti i componenti hanno inoltre id, visibleIf, hiddenIf, enabledIf, readOnlyIf e tooltip. Il riferimento completo è in docs/schema-reference.md.",
   "app.showcase.helpTitle": "Aiuto: {title}",
   "app.showcase.properties": "Proprietà",

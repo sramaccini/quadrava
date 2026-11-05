@@ -46,6 +46,7 @@
         <span class="spacer"></span>
         <lc-user-menu [name]="session.username()" [items]="userItems()" [choices]="tenantChoices()" (select)="selectUserMenuItem($event)" (choice)="switchTenant($event)" (logout)="session.logout()" />
       </nz-header>
+      <lc-settings-dialog [(open)]="settingsOpen" [themes]="themes" [(theme)]="themeName" [languages]="languages" [demo]="profiles.length > 0" />
       <nz-content>
         <main>
           <router-outlet />
@@ -65,6 +66,15 @@
       <h1>{{ i18n.t('app.signedOutTitle') }}</h1>
       <p>{{ i18n.t('app.signedOutText') }}</p>
     }
-    <button nz-button nzType="primary" type="button" (click)="session.login()">{{ i18n.t('app.signIn') }}</button>
+    @if (profiles.length) {
+      <!-- Demo only: the profile to sign in with (a real session gets the user from the identity provider). -->
+      <label class="profile" for="lc-next-profile">{{ i18n.t('app.profile') }}</label>
+      <nz-select nzId="lc-next-profile" class="profile" [ngModel]="nextProfile()" (ngModelChange)="nextProfile.set($event)">
+        @for (p of profiles; track p) {
+          <nz-option [nzValue]="p" [nzLabel]="p" />
+        }
+      </nz-select>
+    }
+    <button nz-button nzType="primary" type="button" (click)="signIn()">{{ i18n.t('app.signIn') }}</button>
   </div>
 }

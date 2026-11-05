@@ -17,7 +17,7 @@ describe('texts of the runtime shell', () => {
     i18n.addMessages('it', { 'app.profile': 'Profilo demo' });
     i18n.setLocale('it');
     expect(i18n.t('app.language')).toBe('Lingua');
-    expect(i18n.t('app.changeProfile')).toBe('Cambia profilo…');
+    expect(i18n.t('app.settingsMenu')).toBe('Impostazioni…');
     expect(i18n.t('app.permissions', { n: 2 })).toBe('2 permessi');
     expect(i18n.t('app.profile')).toBe('Profilo demo');
   });

@@ -54,7 +54,6 @@
   "app.help.wizard": "A step-by-step procedure (2 to 10 steps): each step has a label, a description and its own components; “Next” can be enabled only when the step data is fine (`nextIf`). The current step can be bound to the state (`bind`).",
   "app.help.wizard.title": "Wizard",
   "app.profile": "Demo profile",
-  "app.settings": "Demo settings",
   "app.showcase.common": "Every component also has id, visibleIf, hiddenIf, enabledIf, readOnlyIf and tooltip. The full reference is in docs/schema-reference.md.",
   "app.showcase.helpTitle": "Help: {title}",
   "app.showcase.properties": "Properties",
