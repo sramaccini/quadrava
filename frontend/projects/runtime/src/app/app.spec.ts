@@ -128,13 +128,16 @@ describe('App (demo)', () => {
     (options.find((o) => (o.textContent ?? '').trim() === label) as HTMLElement).click();
   };
   const chooseUserMenuChild = async (fixture: ComponentFixture<App>, el: HTMLElement, group: string, label: string): Promise<void> => {
-    const openMenu = () => document.querySelector<HTMLElement>('.ant-dropdown:not(.ant-dropdown-hidden)');
-    if (!openMenu()) (el.querySelector('lc-user-menu button.trigger') as HTMLButtonElement).click();
-    await until(fixture, () => !!openMenu(), 'user menu');
-    const menu = openMenu()!;
-    clickLabel(menu, '.ant-dropdown-menu-submenu-title', group);
-    await until(fixture, () => [...menu.querySelectorAll('li[nz-menu-item]')].some((item) => item.textContent?.trim() === label), label);
-    clickLabel(menu, 'li[nz-menu-item]', label);
+    const visibleDropdowns = () => [...document.querySelectorAll<HTMLElement>('.ant-dropdown:not(.ant-dropdown-hidden)')];
+    if (!visibleDropdowns().length) (el.querySelector('lc-user-menu button.trigger') as HTMLButtonElement).click();
+    await until(fixture, () => visibleDropdowns().length > 0, 'user menu');
+    clickLabel(document.body, '.ant-dropdown:not(.ant-dropdown-hidden) .ant-dropdown-menu-submenu-title', group);
+    await until(
+      fixture,
+      () => visibleDropdowns().some((dropdown) => [...dropdown.querySelectorAll('li[nz-menu-item]')].some((item) => item.textContent?.trim() === label)),
+      label,
+    );
+    clickLabel(document.body, '.ant-dropdown:not(.ant-dropdown-hidden) li[nz-menu-item]', label);
     fixture.detectChanges();
     await fixture.whenStable();
   };
