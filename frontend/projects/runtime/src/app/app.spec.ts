@@ -1,6 +1,8 @@
 import { Location } from '@angular/common';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { Router } from '@angular/router';
+import { UserMenuComponent } from 'components';
 import detail from '../../public/examples/screens/order-detail.json';
 import list from '../../public/examples/screens/order-list.json';
 import navigationDoc from '../../public/examples/navigation.json';
@@ -107,7 +109,7 @@ describe('App (demo)', () => {
     fixture.detectChanges();
     await TestBed.inject(Router).navigateByUrl('/');
     if (user !== 'operator') {
-      await chooseUserMenuChild(fixture, el, 'Change profile…', user);
+      await chooseUserMenuChild(fixture, 'Change profile…', user);
     }
     return { fixture, el, url };
   }
@@ -127,17 +129,11 @@ describe('App (demo)', () => {
     });
     (options.find((o) => (o.textContent ?? '').trim() === label) as HTMLElement).click();
   };
-  const chooseUserMenuChild = async (fixture: ComponentFixture<App>, el: HTMLElement, group: string, label: string): Promise<void> => {
-    const visibleDropdowns = () => [...document.querySelectorAll<HTMLElement>('.ant-dropdown:not(.ant-dropdown-hidden)')];
-    if (!visibleDropdowns().length) (el.querySelector('lc-user-menu button.trigger') as HTMLButtonElement).click();
-    await until(fixture, () => visibleDropdowns().length > 0, 'user menu');
-    clickLabel(document.body, '.ant-dropdown:not(.ant-dropdown-hidden) .ant-dropdown-menu-submenu-title', group);
-    await until(
-      fixture,
-      () => visibleDropdowns().some((dropdown) => [...dropdown.querySelectorAll('li[nz-menu-item]')].some((item) => item.textContent?.trim() === label)),
-      label,
-    );
-    clickLabel(document.body, '.ant-dropdown:not(.ant-dropdown-hidden) li[nz-menu-item]', label);
+  const chooseUserMenuChild = async (fixture: ComponentFixture<App>, group: string, label: string): Promise<void> => {
+    const menu = fixture.debugElement.query(By.directive(UserMenuComponent)).componentInstance as UserMenuComponent;
+    const item = menu.items().find((entry) => entry.label === group)?.children?.find((entry) => entry.label === label);
+    if (!item) throw new Error(`User menu item not found: ${group} / ${label}`);
+    menu.select.emit(item.id);
     fixture.detectChanges();
     await fixture.whenStable();
   };
@@ -240,7 +236,7 @@ describe('App (demo)', () => {
     expect(radios()).toEqual([]);
     trigger.click();
 
-    await chooseUserMenuChild(fixture, el, 'Change profile…', 'administrator');
+    await chooseUserMenuChild(fixture, 'Change profile…', 'administrator');
     trigger.click();
     await until(fixture, () => radios().length === 2, 'tenants in the user menu');
     expect(document.querySelector('.ant-dropdown .ant-dropdown-menu-item-group-title')?.textContent?.trim()).toBe('Workspace');
@@ -254,7 +250,7 @@ describe('App (demo)', () => {
     const { fixture, el } = await start();
     await until(fixture, () => areas().length > 0, 'selector');
     expect(areas()).toEqual(['Invoice entry', 'Invoice lookup', 'Component showcase']);
-    await chooseUserMenuChild(fixture, el, 'Change profile…', 'manager');
+    await chooseUserMenuChild(fixture, 'Change profile…', 'manager');
     await until(fixture, () => areas().length === 5, 'four areas');
     expect(areas()).toEqual(['Invoice entry', 'Invoice lookup', 'Package creation', 'Expense review', 'Component showcase']);
   });
@@ -350,13 +346,13 @@ describe('App (demo)', () => {
   it('the dark theme changes the CSS variables', async () => {
     const { fixture, el } = await start();
     await until(fixture, () => rows(el) > 0, 'invoice list');
-    await chooseUserMenuChild(fixture, el, 'Settings', 'Theme · dark');
+    await chooseUserMenuChild(fixture, 'Settings', 'Theme · dark');
     await until(fixture, () => document.documentElement.style.getPropertyValue('--lc-color-primary') === '#6aa6ff', 'dark theme');
     expect(document.documentElement.style.getPropertyValue('color-scheme')).toBe('dark');
     // the bridge to NG-ZORRO sets its colours and loads the dark stylesheet
     await until(fixture, () => document.documentElement.style.getPropertyValue('--ant-primary-color') === '#6aa6ff', 'NG-ZORRO colours');
     expect(document.getElementById('lc-nz-dark-theme')?.getAttribute('href')).toBe('nz-dark.css');
-    await chooseUserMenuChild(fixture, el, 'Settings', 'Theme · light');
+    await chooseUserMenuChild(fixture, 'Settings', 'Theme · light');
     await until(fixture, () => document.documentElement.style.getPropertyValue('--ant-primary-color') === '#1f5fbf', 'light theme');
     expect(document.getElementById('lc-nz-dark-theme')).toBeNull();
   });
@@ -366,7 +362,7 @@ describe('App (demo)', () => {
     await until(fixture, () => rows(el) > 0, 'invoice list');
     expect(el.querySelector('lc-sidebar .logo lc-quadrava-wordmark')).not.toBeNull();
     expect(document.title).toBe('Quadrava');
-    await chooseUserMenuChild(fixture, el, 'Settings', 'Theme · classic');
+    await chooseUserMenuChild(fixture, 'Settings', 'Theme · classic');
     await until(fixture, () => !!el.querySelector('lc-sidebar .logo lc-app-brand'), 'brand of the theme');
     const brand = el.querySelector('lc-sidebar .logo lc-app-brand') as HTMLElement;
     expect(brand.querySelector('[role="img"]')?.getAttribute('aria-label')).toBe('Acme Office');

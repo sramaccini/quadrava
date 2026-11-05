@@ -17,6 +17,7 @@ import { I18n } from 'core';
 import { App } from './app';
 import { appConfig } from './app.config';
 import { SHOWCASE_FILES } from './showcase-testing';
+import { ShellSession } from './shell-session';
 
 /** The showcase must really work: every screen opens without errors and its examples do what they say. */
 describe('Component showcase', () => {
@@ -72,8 +73,11 @@ describe('Component showcase', () => {
     const el = fixture.nativeElement as HTMLElement;
     fixture.detectChanges();
     await TestBed.inject(Router).navigateByUrl('/');
-    await until(fixture, () => !!el.querySelector('nz-header nz-select'), 'top bar');
-    if (user !== 'operator') await pick(fixture, el.querySelector('nz-header nz-select') as HTMLElement, user);
+    await until(fixture, () => !!el.querySelector('lc-user-menu'), 'top bar');
+    if (user !== 'operator') {
+      TestBed.inject(ShellSession).selectProfile(user);
+      fixture.detectChanges();
+    }
     await TestBed.inject(Router).navigateByUrl(path);
     await until(fixture, () => !!el.querySelector('main h2'), 'content');
     return { fixture, el };

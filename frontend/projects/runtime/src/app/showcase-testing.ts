@@ -106,7 +106,7 @@ export async function openShowcase(path: string, user = 'operator'): Promise<Sho
   const el = fixture.nativeElement as HTMLElement;
   const settle = async (): Promise<void> => {
     fixture.detectChanges();
-    await fixture.whenStable();
+    await new Promise((resolve) => setTimeout(resolve, 0));
   };
   const until = async (condition: () => boolean, label: string): Promise<void> => {
     for (let i = 0; i < 200; i++) {
@@ -117,13 +117,17 @@ export async function openShowcase(path: string, user = 'operator'): Promise<Sho
     throw new Error(`timeout: ${label}\n${el.querySelector('main')?.innerHTML.slice(0, 2000)}`);
   };
   fixture.detectChanges();
+  console.log('SHOWCASE before shell navigation');
   await TestBed.inject(Router).navigateByUrl('/');
+  console.log('SHOWCASE after shell navigation', !!el.querySelector('lc-user-menu'));
   await until(() => !!el.querySelector('lc-user-menu'), 'top bar');
+  console.log('SHOWCASE after top bar');
   if (user !== 'operator') {
     TestBed.inject(ShellSession).selectProfile(user);
     await settle();
   }
   await TestBed.inject(Router).navigateByUrl(path);
+  console.log('SHOWCASE after screen navigation', path);
   await until(() => !!el.querySelector('main h2'), 'content');
   return { fixture, el, until, settle };
 }
