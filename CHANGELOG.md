@@ -12,31 +12,29 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-11-05
+
 ### Added
 
 - Messages for the user ([ADR-22](docs/adr-22-user-notifications.md)): with `notifications` in the navigation the top bar
   shows a bell, before the user menu, with the number of unread messages and their list. The service of the
   application lists them with a GET, marks them read with an optional POST (`readUrl`) and announces new ones with an
-  optional event stream (`live`, as in ADR-19). Choosing a message marks it read and opens its screen. New component
-  `lc-notification-bell` in `components`. The demo has an inbox: sending an invoice adds a message.
+  optional event stream (`live`, as in ADR-19). Choosing a message marks it read and opens its screen. Without
+  `notifications` there is no bell. New component `lc-notification-bell` in `components`. The demo has an inbox:
+  sending an invoice adds a message.
+- `squareChart`, a compact chart of square columns for dense time series on dashboards, with an equivalent table for
+  assistive technology.
+- A user menu in the top bar of the runtime (`lc-user-menu` in `components`): the name of the user in the tooltip of
+  the icon («User: Administrator»), «Settings…» and «Sign out», which asks for confirmation. «Settings…» opens a dialog
+  of fixed size: «General» with the theme and the language, applied at once, and, only in the demo, «Debug» with the
+  simulated network.
 
 ### Changed
 
-- User menu: the name of the user is in the tooltip of the icon («User: Administrator»), no longer next to it, and
-  «Sign out» asks for confirmation before ending the session.
-- Runtime: «Settings…» in the user menu opens a dialog of fixed size: «General» with the theme and the language,
-  applied at once, and, only in the demo, «Debug» with the simulated network. The demo no longer changes profile from the user menu: one signs out and
-  chooses the profile on the page that signs in again.
+- The theme, language and network controls leave the top bar of the runtime for the settings dialog. The demo no longer
+  changes profile from the top bar: one signs out and chooses the profile on the page that signs in again.
 - Screen header: the breadcrumbs are smaller (10px, spaced letters), with `›` separators and the current screen in the
   primary colour of the theme.
-
-### Added
-
-- `squareChart`, a compact square-column visualization for dense time-series dashboards, with accessible tabular data. Studio needs a canvas template and palette entry for the new node type.
-
-### Changed
-
-- The runtime user menu now contains translated profile switching, settings (theme, language and demo network speed), and sign out. The profile/theme/language/network controls have moved out of the top bar.
 
 ## [0.6.0] - 2026-11-04
 
@@ -193,7 +191,8 @@ The first versioned release.
 - **Demo back end of the stack**: the event stream `/api/streams/tasks`, so that behind the BFF the live boards of the
   showcase follow the changes of other users.
 
-[Unreleased]: https://github.com/sramaccini/quadrava/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/sramaccini/quadrava/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/sramaccini/quadrava/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/sramaccini/quadrava/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/sramaccini/quadrava/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/sramaccini/quadrava/compare/v0.4.0...v0.4.1
