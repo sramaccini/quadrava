@@ -821,12 +821,24 @@ export interface NavigationArea {
   items: NavigationItem1[];
 }
 
+/** Messages of the user (ADR-22): GET that lists them, POST that marks them read, optional event stream. */
+export interface NavigationNotifications {
+  url: string;
+  /** POST with { ids } that marks messages as read. */
+  readUrl?: string;
+  live?: { url: string; events?: string[] };
+  /** Seconds between two reads (60 if absent). */
+  refreshSeconds?: number;
+}
+
 export interface NavigationDefinition {
   schemaVersion: string;
   navigation: string;
   default?: string;
   /** Counters next to the items: GET that returns { item id: number }. */
   badges?: { url: string; refreshSeconds?: number };
+  /** Messages of the user behind a bell in the top bar (ADR-22). */
+  notifications?: NavigationNotifications;
   areas: NavigationArea[];
 }
 

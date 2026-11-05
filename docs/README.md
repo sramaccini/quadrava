@@ -16,6 +16,7 @@ Reference documents:
 - [ADR-19: data sources updated by push](adr-19-live-data-sources.md): `live` on a data source, events that only signal, the `LiveUpdates` port, streams through the BFF.
 - [ADR-20: versioned distribution](adr-20-versioned-distribution.md): semantic versions, the changelog, the release workflow, the runtime image (`docker/runtime/README.md` for its configuration).
 - [ADR-21: open core](adr-21-open-core.md): Quadrava CE (MPL-2.0) and the commercial edition (Studio, desktop app, registry) in two repositories; the CE libraries as packages.
+- [ADR-22: messages for the user](adr-22-user-notifications.md): a bell in the top bar, a list read from a service of the application, marked read with a POST, updated by an event stream.
 
 The functional specification, architecture and implementation guidelines date from 7–13 October 2026: the most recent detail is in the component catalogue and in the code.
 
