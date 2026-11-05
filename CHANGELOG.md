@@ -27,6 +27,8 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 - Runtime: «Settings…» in the user menu opens a dialog of fixed size: «General» with the theme and the language,
   applied at once, and, only in the demo, «Debug» with the simulated network. The demo no longer changes profile from the user menu: one signs out and
   chooses the profile on the page that signs in again.
+- Screen header: the breadcrumbs are smaller (10px, spaced letters), with `›` separators and the current screen in the
+  primary colour of the theme.
 
 ### Added
 

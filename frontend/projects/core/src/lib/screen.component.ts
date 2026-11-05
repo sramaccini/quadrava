@@ -17,7 +17,10 @@ import { ValidatorRegistry } from './validators';
   styles: `
     :host { display: block; }
     .page-header { padding: 16px var(--lc-content-padding, 24px) 20px; background: var(--lc-page-header-bg, #fff); color: var(--lc-page-header-text, inherit); border-bottom: 1px solid var(--lc-page-header-border, #e3e8ef); }
-    nz-breadcrumb { display: block; margin-bottom: 8px; color: var(--lc-page-header-muted, #5d6b7a); }
+    nz-breadcrumb { display: block; margin-bottom: 6px; font-size: 10px; line-height: 14px; font-weight: 500; letter-spacing: 0.06em; color: var(--lc-page-header-muted, #5d6b7a); }
+    nz-breadcrumb ::ng-deep .ant-breadcrumb-link { color: inherit; }
+    nz-breadcrumb ::ng-deep .ant-breadcrumb-separator { margin-inline: 6px; color: var(--lc-color-primary, #1677ff); opacity: 0.7; }
+    nz-breadcrumb ::ng-deep nz-breadcrumb-item:last-child .ant-breadcrumb-link { color: var(--lc-color-primary, #1677ff); font-weight: 600; }
     h1[nz-typography] { margin: 0; font-size: 24px; font-weight: 600; line-height: 1.3; color: inherit; }
     .description { margin: 4px 0 0; color: var(--lc-page-header-muted, #5d6b7a); }
     .page-body { padding: var(--lc-content-padding, 24px); }
@@ -29,7 +32,7 @@ import { ValidatorRegistry } from './validators';
         @if (rt.definition.title || breadcrumb().length) {
           <header class="page-header">
             @if (breadcrumb().length) {
-              <nz-breadcrumb [nzAutoGenerate]="false" [attr.aria-label]="i18n.t('lc.breadcrumb')">
+              <nz-breadcrumb [nzAutoGenerate]="false" nzSeparator="›" [attr.aria-label]="i18n.t('lc.breadcrumb')">
                 @for (label of breadcrumb(); track $index) {
                   <nz-breadcrumb-item>{{ label }}</nz-breadcrumb-item>
                 }
