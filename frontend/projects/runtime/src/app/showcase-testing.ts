@@ -118,7 +118,7 @@ export async function openShowcase(path: string, user = 'operator'): Promise<Sho
   };
   fixture.detectChanges();
   await TestBed.inject(Router).navigateByUrl('/');
-  await until(() => !!el.querySelector('nz-header lc-user-menu'), 'top bar');
+  await until(() => !!el.querySelector('lc-user-menu'), 'top bar');
   if (user !== 'operator') {
     TestBed.inject(ShellSession).selectProfile(user);
     await settle();
