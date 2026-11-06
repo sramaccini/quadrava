@@ -117,6 +117,8 @@ export class ScreenRuntime {
   private readonly liveTimers = new Map<string, ReturnType<typeof setTimeout>>();
   /** The action (`lowcode.action` of its span) of every span opened here: the calls that start from it name it in their baggage. */
   private readonly actions = new WeakMap<SpanContext, string>();
+  /** Current values of the fields marked `sensitive` (and of the passwords), by field: never in the technical reports. */
+  private readonly sensitiveValues = new Map<object, string[]>();
 
   constructor(
     readonly definition: ScreenDefinition,
@@ -259,6 +261,7 @@ export class ScreenRuntime {
     this.openSpan?.end(!this.firstLoadFailed, { 'lowcode.interrupted': this.pendingFirstLoad.size > 0 });
     for (const e of this.effects) e.destroy();
     this.effects.length = 0;
+    this.sensitiveValues.clear();
     for (const timer of this.liveTimers.values()) clearTimeout(timer);
     this.liveTimers.clear();
     // Once the screen is left, the reads in progress are no longer needed.
@@ -575,8 +578,28 @@ export class ScreenRuntime {
   report(source: string, error: string): void {
     const diagnostics = this.deps.diagnostics;
     if (!diagnostics) return;
-    const event = { screen: this.definition.screen, source, error };
+    const event = { screen: this.definition.screen, source: this.withoutSensitive(source), error: this.withoutSensitive(error) };
     queueMicrotask(() => diagnostics.report(event));
+  }
+
+  /**
+   * A field marked `sensitive` (or a password) tells its current value, `owner` being the field itself: from now on
+   * the technical reports of the screen show `[sensitive]` in its place, wherever it appears (an expression error, the
+   * text of a failed call). Texts of fewer than 3 characters are not tracked: replacing them would hide the report itself.
+   */
+  markSensitive(owner: object, value: unknown): void {
+    const texts = (Array.isArray(value) ? value : [value])
+      .filter((v) => typeof v === 'string' || typeof v === 'number')
+      .map((v) => String(v).trim())
+      .filter((v) => v.length >= 3);
+    if (texts.length) this.sensitiveValues.set(owner, texts);
+    else this.sensitiveValues.delete(owner);
+  }
+
+  /** The text with every current value of a sensitive field replaced (the longer ones first, so none is left half-hidden). */
+  private withoutSensitive(text: string): string {
+    const values = [...this.sensitiveValues.values()].flat().sort((a, b) => b.length - a.length);
+    return values.reduce((out, value) => out.split(value).join('[sensitive]'), text);
   }
 
   private async run(name: string, request: DataRequest, trace?: SpanContext): Promise<CallResult> {

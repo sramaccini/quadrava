@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { I18n, inputHints, passwordStrength, resolveDateLimit, transformValue, type RemoteChecks, type ScreenRuntime, type Scope } from 'core';
 import { NzButtonModule } from 'ng-zorro-antd/button';
@@ -260,6 +260,17 @@ export class FieldControlComponent {
   });
   /** Keyboard and autocomplete of the text box, from the format of the field. */
   protected readonly hints = computed(() => inputHints(this.field(), this.runtime().validatorRegistry));
+
+  /** Identity of this field among the sensitive values of the screen (not the component, which must not outlive its view). */
+  private readonly sensitiveKey = {};
+
+  constructor() {
+    // The value of a sensitive field (or of a password) never appears in the technical reports of the screen.
+    effect(() => {
+      const field = this.field();
+      if (field.sensitive || field.type === 'password') this.runtime().markSensitive(this.sensitiveKey, this.value());
+    });
+  }
   /** Days out of `minDate` / `maxDate` (compared by day); none without limits. */
   protected readonly outOfRange = computed(() => {
     const { minDate, maxDate } = this.field();

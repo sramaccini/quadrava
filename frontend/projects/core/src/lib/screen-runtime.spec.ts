@@ -114,6 +114,25 @@ describe('ScreenRuntime', () => {
     rt.destroy();
   });
 
+  it('the technical reports never contain the current value of a sensitive field', async () => {
+    const rt = fakes.runtime({ ...screen, dataSources: {} }, injector);
+    const iban = {};
+    const tags = {};
+    rt.markSensitive(iban, 'IT60X0542811101000000123456');
+    rt.markSensitive(tags, ['secret-tag', 'ab']);
+    rt.report('call save IT60X0542811101000000123456', 'no such overload for IT60X0542811101000000123456 and secret-tag, ab');
+    // A value changed is the new one that is hidden; one cleared is no longer tracked.
+    rt.markSensitive(iban, 'IT02A0301503200000003517230');
+    rt.markSensitive(tags, null);
+    rt.report('x', 'IT60X0542811101000000123456 IT02A0301503200000003517230 secret-tag');
+    await settle();
+    expect(fakes.reports).toEqual([
+      { screen: 'order-list', source: 'call save [sensitive]', error: 'no such overload for [sensitive] and [sensitive], ab' },
+      { screen: 'order-list', source: 'x', error: 'IT60X0542811101000000123456 [sensitive] secret-tag' },
+    ]);
+    rt.destroy();
+  });
+
   it('encodes the values inserted in the URL', async () => {
     const rt = fakes.runtime(screen, injector);
     const result = await rt.execute('approve', { id: 'a/b ?x' });

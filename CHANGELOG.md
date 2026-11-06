@@ -17,6 +17,9 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 - Context for the audit of the services (RF-AUD-02): every data-source call carries a W3C `baggage` header with
   `lowcode.screen` and, for the calls of an action, `lowcode.action` (its steps, as in the traces), never data values.
   `DataRequestOptions` has a new optional `baggage`; the reference BFF forwards the header.
+- Redaction at the source (RF-TEL-06): the current values of the fields marked `sensitive`, and of passwords, are
+  replaced by `[sensitive]` in the technical reports of the screen (an expression error, the text of a failed call).
+  New `ScreenRuntime.markSensitive`, called by every field.
 
 ### Changed
 

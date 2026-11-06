@@ -197,7 +197,7 @@ baggage: lowcode.screen=order-list,lowcode.action=call%20approve%2C%20refresh%20
 
 **Ingestion endpoint.** The browser does not write directly to a collector: it goes through a REST endpoint on the application's own domain, authenticated with the user's session, with size and rate limits. Checks and a second redaction of sensitive data are applied here too.
 
-**Two-level redaction.** Fields marked `sensitive` in the JSON are excluded by the runtime at the source; the ingestion endpoint then applies additional rules (for example recognisable patterns such as tax codes or IBANs). Defence in depth: an error in one level does not become a data leak.
+**Two-level redaction.** Fields marked `sensitive` in the JSON (and passwords) are excluded by the runtime at the source: every field tells the screen its current value, and a technical report that contains it (an expression error, the text of a failed call) shows `[sensitive]` in its place. Spans carry no data values at all. The ingestion endpoint then applies additional rules (for example recognisable patterns such as tax codes or IBANs). Defence in depth: an error in one level does not become a data leak.
 
 **Sampling.** `traceSampleRatio` in `provideLowcodeServices` (1 if absent): decided at the root of the trace and passed to the children and, through the `traceparent` flag, to the back end; spans that end in error are always sent. Spans are sent in batches (every 20 or after 5 seconds, at most `traceMaxPerMinute`, 300 if absent); logs and traces share the same queue logic, which also empties when the page is closed or hidden (`keepalive` requests).
 

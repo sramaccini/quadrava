@@ -111,4 +111,33 @@ describe('new field types', () => {
     const inputs = [...h.el.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('lc-form input[nz-input], lc-form textarea[nz-input]')];
     expect(inputs.map((i) => i.readOnly)).toEqual([true, true, false, true]);
   });
+
+  it('the values of sensitive fields and passwords never reach the technical reports (a failed call that repeats them)', async () => {
+    const sensitiveForm: NodeDefinition = {
+      type: 'form',
+      fields: [
+        { name: 'iban', type: 'text', label: 'IBAN', sensitive: true },
+        { name: 'pin', type: 'password', label: 'PIN' },
+        { name: 'city', type: 'text', label: 'City' },
+      ],
+      actions: [{ label: 'Save', onClick: [{ call: 'save' }] }],
+    };
+    const h = await renderScreen({
+      components: [sensitiveForm],
+      dataSources: { save: { type: 'rest' as const, method: 'POST' as const, url: '/api/save', body: '{{form}}' } },
+      respond: (r) => {
+        const body = r.body as Record<string, string>;
+        throw new Error(`rejected: ${body['iban']} ${body['pin']} ${body['city']}`);
+      },
+    });
+    const [iban, pin, city] = [...h.el.querySelectorAll<HTMLInputElement>('lc-form input')];
+    for (const [input, value] of [[iban, 'IT60X0542811101000000123456'], [pin, 'hunter22'], [city, 'Bologna']] as const) {
+      input.value = value;
+      input.dispatchEvent(new Event('input'));
+    }
+    await h.settle();
+    save(h);
+    await h.until(() => h.reports.length > 0, 'report');
+    expect(h.reports.map((r) => r.error)).toEqual(['rejected: [sensitive] [sensitive] Bologna']);
+  });
 });
