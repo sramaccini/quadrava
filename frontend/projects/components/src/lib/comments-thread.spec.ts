@@ -19,8 +19,15 @@ describe('comments thread', () => {
   });
 
   it('other field names; texts from the data stay as they are', () => {
-    const thread = threadOf([{ who: 'A', body: '{{ user.name }} **bold**', at: '2026-10-01' }], { ...node, authorField: 'who', textField: 'body', dateField: 'at' });
-    expect(thread).toEqual([{ author: 'A', initials: 'A', text: '{{ user.name }} **bold**', iso: '2026-10-01', time: new Date('2026-10-01').getTime() }]);
+    const row = { who: 'A', body: '{{ user.name }} **bold**', at: '2026-10-01' };
+    const thread = threadOf([row], { ...node, authorField: 'who', textField: 'body', dateField: 'at' });
+    expect(thread).toEqual([{ author: 'A', initials: 'A', text: '{{ user.name }} **bold**', iso: '2026-10-01', time: new Date('2026-10-01').getTime(), edited: false, row }]);
+  });
+
+  it('edited: the field of editedField has a value (a date or true)', () => {
+    const rows = [{ text: 'a', editedAt: '2026-10-03T09:00:00Z' }, { text: 'b', editedAt: null }, { text: 'c', editedAt: true }, { text: 'd', editedAt: '' }, { text: 'e' }];
+    expect(threadOf(rows, { ...node, editedField: 'editedAt' }).map((c) => c.edited)).toEqual([true, false, true, false, false]);
+    expect(threadOf(rows, node).some((c) => c.edited)).toBe(false);
   });
 
   it('mentions: the people chosen who are still in the text, once each', () => {

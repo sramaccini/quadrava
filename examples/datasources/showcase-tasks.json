@@ -37,7 +37,24 @@
     "comments": {
       "type": "rest",
       "method": "GET",
-      "url": "/api/task-comments"
+      "url": "/api/task-comments",
+      "params": {
+        "user": "{{ user.username }}"
+      }
+    },
+    "updateComment": {
+      "type": "rest",
+      "method": "PUT",
+      "url": "/api/task-comments/{{ id }}",
+      "body": {
+        "text": "{{ text }}",
+        "mentions": "{{ mentions }}"
+      }
+    },
+    "deleteComment": {
+      "type": "rest",
+      "method": "DELETE",
+      "url": "/api/task-comments/{{ id }}"
     },
     "addComment": {
       "type": "rest",

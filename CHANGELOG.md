@@ -12,6 +12,11 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Added
+
+- `comments`: changing and deleting a single comment, with `onEdit`, `editIf`, `onDelete` and `deleteIf` (the comment in
+  `row`, conditions fail-closed), and `editedField` to show «edited» next to the date.
+
 ### Fixed
 
 - `dataTable` and `serverDataTable` ignored `onClick` on a column, which their schema accepts: the value is now a link

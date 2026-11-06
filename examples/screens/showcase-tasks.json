@@ -23,6 +23,12 @@
     "addComment": {
       "ref": "showcase-tasks/addComment"
     },
+    "updateComment": {
+      "ref": "showcase-tasks/updateComment"
+    },
+    "deleteComment": {
+      "ref": "showcase-tasks/deleteComment"
+    },
     "people": {
       "ref": "showcase-tasks/people"
     },
@@ -242,7 +248,7 @@
         {
           "id": "explain-comments",
           "type": "text",
-          "text": "{{ t('showcase_tasks.the_thread_of_the_team_in_date_o', 'The thread of the team in date order. Write in Markdown, type @ followed by a name to mention a person, Ctrl+Enter or «Publish» to send.') }}"
+          "text": "{{ t('showcase_tasks.the_thread_of_the_team_in_date_o', 'The thread of the team in date order. Write in Markdown, type @ followed by a name to mention a person, Ctrl+Enter or «Publish» to send. Your own comments can be changed and deleted.') }}"
         },
         {
           "id": "comments",
@@ -257,6 +263,34 @@
             }
           ],
           "postIf": "{{ can('showcase.components.read') }}",
+          "onEdit": [
+            {
+              "call": "updateComment",
+              "args": {
+                "id": "{{ row.id }}"
+              }
+            },
+            {
+              "refresh": "comments"
+            }
+          ],
+          "editIf": "{{ row._perm.update }}",
+          "onDelete": [
+            {
+              "confirm": "{{ t('showcase_tasks.delete_the_comment', 'Delete the comment?') }}"
+            },
+            {
+              "call": "deleteComment",
+              "args": {
+                "id": "{{ row.id }}"
+              }
+            },
+            {
+              "refresh": "comments"
+            }
+          ],
+          "deleteIf": "{{ row._perm.delete }}",
+          "editedField": "editedAt",
           "mentions": {
             "source": "people",
             "valueField": "id",

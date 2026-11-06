@@ -11,6 +11,10 @@ export interface ThreadComment {
   /** The date as it came, for `<time datetime>`; empty when it is not valid. */
   iso: string;
   time: number | null;
+  /** The field of `editedField` has a value. */
+  edited: boolean;
+  /** The row as it came, for the steps of `onEdit` and `onDelete` and their conditions. */
+  row: Row;
 }
 
 const textOf = (value: unknown): string => (value === null || value === undefined || typeof value === 'object' ? '' : String(value));
@@ -25,7 +29,8 @@ export function threadOf(rows: readonly Row[], node: CommentsNode): ThreadCommen
       const iso = textOf(row[node.dateField ?? 'date']);
       const time = iso ? new Date(iso).getTime() : NaN;
       const author = textOf(row[node.authorField ?? 'author']);
-      return { author, initials: initials(author), text: textOf(row[node.textField ?? 'text']), iso: Number.isNaN(time) ? '' : iso, time: Number.isNaN(time) ? null : time };
+      const edited = node.editedField !== undefined && row[node.editedField] !== undefined && row[node.editedField] !== null && row[node.editedField] !== false && row[node.editedField] !== '';
+      return { author, initials: initials(author), text: textOf(row[node.textField ?? 'text']), iso: Number.isNaN(time) ? '' : iso, time: Number.isNaN(time) ? null : time, edited, row };
     })
     .filter((c) => c.text.trim() !== '');
   const dated = comments.filter((c) => c.time !== null).sort((a, b) => (node.order === 'desc' ? b.time! - a.time! : a.time! - b.time!));

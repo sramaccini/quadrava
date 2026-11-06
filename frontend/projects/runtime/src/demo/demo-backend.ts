@@ -115,10 +115,12 @@ export class DemoBackend {
     { id: 3, name: 'Marta Verdi' },
   ];
   /** The team's comments on the board (Markdown, as a service would store it). */
-  private readonly taskComments: { author: string; text: string; date: string; mentions: string[] }[] = [
-    { author: 'Anna Rossi', text: 'The quote for **Smith Ltd** is ready for review.', date: '2026-10-27T09:12:00Z', mentions: [] },
-    { author: 'Luca Bianchi', text: '@Anna Rossi looks good. Two notes:\n\n- the delivery date\n- the discount', date: '2026-10-27T10:40:00Z', mentions: ['1'] },
+  private readonly taskComments: { id: number; author: string; text: string; date: string; mentions: string[]; editedAt?: string }[] = [
+    { id: 1, author: 'Anna Rossi', text: 'The quote for **Smith Ltd** is ready for review.', date: '2026-10-27T09:12:00Z', mentions: [] },
+    { id: 2, author: 'Luca Bianchi', text: '@Anna Rossi looks good. Two notes:\n\n- the delivery date\n- the discount', date: '2026-10-27T10:40:00Z', mentions: ['1'], editedAt: '2026-10-27T10:52:00Z' },
+    { id: 3, author: 'operator', text: 'I will send it **tomorrow** morning.', date: '2026-10-27T11:05:00Z', mentions: [] },
   ];
+  private commentIds = 3;
   /** Transactions for the datatable: 60 deterministic rows over three accounts and six categories, from July to October 2026. */
   private readonly transactions = Array.from({ length: 60 }, (_, i) => {
     const categories = ['Rent', 'Utilities', 'Salaries', 'Customer receipts', 'Suppliers', 'Sundry expenses'];
@@ -371,13 +373,27 @@ export class DemoBackend {
       return { id: this.attachments };
     }
     if (path === '/api/tasks' && req.method === 'GET') return this.tasks.map((t) => ({ ...t }));
-    if (path === '/api/task-comments' && req.method === 'GET') return this.taskComments.map((c) => ({ ...c }));
+    // The author may change and delete their own comments: _perm says so for each row, as a service would.
+    if (path === '/api/task-comments' && req.method === 'GET') {
+      const me = String(req.query?.['user'] ?? '');
+      return this.taskComments.map((c) => ({ ...c, _perm: { update: c.author === me, delete: c.author === me } }));
+    }
     if (path === '/api/task-comments' && req.method === 'POST') {
       // A real service takes the author from the session; the demo trusts the name it receives.
-      const text = String(req.body?.['text'] ?? '').trim();
-      if (!text || text.length > 5000) throw new Error('400');
-      const mentions = Array.isArray(req.body?.['mentions']) ? (req.body['mentions'] as unknown[]).map(String) : [];
-      this.taskComments.push({ author: String(req.body?.['author'] || 'Demo'), text, date: new Date().toISOString(), mentions });
+      const text = commentText(req.body?.['text']);
+      this.taskComments.push({ id: ++this.commentIds, author: String(req.body?.['author'] || 'Demo'), text, date: new Date().toISOString(), mentions: mentionsOf(req.body?.['mentions']) });
+      return {};
+    }
+    const comment = /^\/api\/task-comments\/(\d+)$/.exec(path);
+    if (comment && (req.method === 'PUT' || req.method === 'DELETE')) {
+      const index = this.taskComments.findIndex((c) => c.id === Number(comment[1]));
+      if (index < 0) throw new Error('404');
+      if (req.method === 'DELETE') this.taskComments.splice(index, 1);
+      else {
+        const found = this.taskComments[index];
+        const mentions = [...new Set([...found.mentions, ...mentionsOf(req.body?.['mentions'])])];
+        this.taskComments[index] = { ...found, text: commentText(req.body?.['text']), mentions, editedAt: new Date().toISOString() };
+      }
       return {};
     }
     if (path === '/api/people' && req.method === 'GET') {
@@ -497,4 +513,15 @@ export class DemoBackend {
   private view(o: Order): Record<string, unknown> {
     return { ...o, _perm: { update: o.status !== 'approved' } };
   }
+}
+
+/** The Markdown of a comment, checked as a service would: not empty, at most 5000 characters. */
+function commentText(value: unknown): string {
+  const text = String(value ?? '').trim();
+  if (!text || text.length > 5000) throw new Error('400');
+  return text;
+}
+
+function mentionsOf(value: unknown): string[] {
+  return Array.isArray(value) ? value.map(String) : [];
 }

@@ -670,6 +670,16 @@ export interface CommentsNode extends NodeBase {
   /** Steps that publish a comment; they see `text` and `mentions`. */
   onPost?: Step[];
   postIf?: Expression;
+  /** Steps that save a changed comment; they see `row`, `text` and `mentions`. */
+  onEdit?: Step[];
+  /** Condition for the Edit button of each comment, with the comment in `row`. */
+  editIf?: Expression;
+  /** Steps that delete a comment, with the comment in `row`. */
+  onDelete?: Step[];
+  /** Condition for the Delete button of each comment, with the comment in `row`. */
+  deleteIf?: Expression;
+  /** Field of the row that says the comment was changed. */
+  editedField?: string;
   /** People who can be mentioned with @ (a data source searched with `search`). */
   mentions?: { source: string; valueField?: string; labelField: string; minChars?: number };
 }

@@ -646,19 +646,31 @@ A thread of comments read from a data source, with a box for writing below it. T
 { "type": "comments", "source": "comments",
   "onPost": [ { "call": "addComment" }, { "refresh": "comments" } ],
   "postIf": "{{ can('tasks.comments.create') }}",
+  "onEdit":   [ { "call": "updateComment", "args": { "id": "{{ row.id }}" } }, { "refresh": "comments" } ],
+  "editIf":   "{{ row._perm.update }}",
+  "onDelete": [ { "confirm": "Delete the comment?" },
+                { "call": "deleteComment", "args": { "id": "{{ row.id }}" } }, { "refresh": "comments" } ],
+  "deleteIf": "{{ row._perm.delete }}",
+  "editedField": "editedAt",
   "mentions": { "source": "people", "valueField": "id", "labelField": "name" } }
 
-"addComment": { "type": "rest", "method": "POST", "url": "/api/comments",
-                "body": { "text": "{{ text }}", "mentions": "{{ mentions }}" } },
+"addComment":    { "type": "rest", "method": "POST", "url": "/api/comments",
+                   "body": { "text": "{{ text }}", "mentions": "{{ mentions }}" } },
+"updateComment": { "type": "rest", "method": "PUT", "url": "/api/comments/{{ id }}",
+                   "body": { "text": "{{ text }}", "mentions": "{{ mentions }}" } },
+"deleteComment": { "type": "rest", "method": "DELETE", "url": "/api/comments/{{ id }}" },
 "people":     { "type": "rest", "method": "GET", "url": "/api/people", "params": { "q": "{{ search }}" } }
 ```
 
 ```
  AR  Anna Rossi · 27 Oct 2026, 10:12
      The quote for Smith Ltd is ready for review.
- LB  Luca Bianchi · 27 Oct 2026, 11:40
+ LB  Luca Bianchi · 27 Oct 2026, 11:40 · edited
      @Anna Rossi looks good. Two notes:
      • the delivery date
+ MV  Marta Verdi · 27 Oct 2026, 12:05
+     I will send it tomorrow.
+     Edit  Delete                ← editIf, deleteIf with the comment in «row»
 ┌ Write a comment ─────────────────────────────┐
 │ Thanks @ma▌                                  │
 │   ┌ Marta Verdi ┐  ← people of «mentions»    │
@@ -669,6 +681,7 @@ A thread of comments read from a data source, with a box for writing below it. T
 - **Thread**: one row per comment, with `authorField` (`author`), `dateField` (`date`, ISO 8601) and `textField` (`text`). Comments are in date order, oldest first so the newest sits next to the box (`order: "desc"` for the newest first); those without a valid date come last, those without text are left out. The author has a circle with the initials; the text is restricted Markdown drawn by `lc-markdown`, never HTML, and texts from the data are never evaluated. While loading the thread shows the wait (`lc-busy`); an error of the data source shows the error.
 - **Writing**: with `onPost` a labelled multi-line box appears (`postIf` decides who sees it, fail-closed: an error hides it). «Publish» or Ctrl+Enter (Cmd+Enter) runs the steps with `text` (the Markdown written, without spaces at the ends) and `mentions`; when they succeed the box is emptied and «Comment published» is announced, otherwise the text stays where it is. The steps usually end with a `refresh` of the thread. A real service takes the author from the session, not from the page (the fake service of the showcase receives `{{ user.username }}` in the body).
 - **Mentions** (`mentions`): typing `@` followed by letters (`minChars`, 1 if absent) asks the data source with `search`, like a lookup, so the same source of people serves both. The chosen person is inserted as `@` followed by `labelField` and a space; `mentions` holds, as texts, the `valueField` (`id`) of the people chosen who are still in the text when it is published, once each. The list of people is the same combobox as a text field with suggestions (§ 2.7): arrows, Enter, Escape, the number announced.
+- **Changing and deleting** (`onEdit`, `onDelete`): each comment gets «Edit» and «Delete» buttons where `editIf` and `deleteIf` say yes, with the comment in `row` (absent: always; an error: never). The service decides who may do what, for example with `_perm` in each row; the front end only follows it. «Edit» turns the comment into the same box, with its Markdown and the mentions, and moves the focus there: «Save» or Ctrl+Enter runs `onEdit` with `row`, `text` and `mentions` (the people chosen while changing it who are still in the text; those of the first version are the service's to keep). When the steps succeed the box closes and «Comment changed» is announced; «Cancel» or Escape restores the comment without running anything, and the focus goes back to «Edit». «Delete» runs `onDelete` with `row`: the confirmation is a `confirm` step of the author, so a screen can also do without it. With `editedField` a comment whose field has a value (a date or `true`) shows «edited» next to the date.
 
 In the showcase: «Vetrina: attività e avanzamento» (Showcase: tasks and progress), «Commenti» (Comments) section.
 

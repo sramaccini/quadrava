@@ -309,6 +309,11 @@
 | `order` | `asc`, `desc` | Order of the comments by date: oldest first, the newest next to the box for writing (asc, default), or newest first (desc). |
 | `onPost` | steps | Steps that publish a comment: they see text (the Markdown written, without spaces at the ends) and mentions (the values of the people mentioned who are still in the text). Without onPost the thread is read-only. The box is emptied when the steps succeed, so they usually end with a refresh of source. |
 | `postIf` | expression | Condition for showing the box for writing, for example {{ can('tasks.comments.create') }}; an error counts as false. Always shown with onPost if absent. |
+| `onEdit` | steps | Steps that save a changed comment: they see row (the comment as it came), text and mentions, as onPost. Each comment gets an Edit button (with editIf) that turns it into a box with its text; the box closes when the steps succeed, so they usually end with a refresh of source. |
+| `editIf` | expression | Condition for the Edit button of each comment, with the comment in row, for example {{ row._perm.update }}; an error counts as false. Always shown with onEdit if absent. |
+| `onDelete` | steps | Steps that delete a comment, with the comment in row; they usually start with a confirm step and end with a refresh of source. Each comment gets a Delete button (with deleteIf). |
+| `deleteIf` | expression | Condition for the Delete button of each comment, with the comment in row, for example {{ row._perm.delete }}; an error counts as false. Always shown with onDelete if absent. |
+| `editedField` | text | Field of the row that says the comment was changed (a date or true): when it has a value, edited is shown next to the date. Nothing is shown if absent. |
 | `mentions` | object | People who can be mentioned: typing @ followed by letters asks this GET data source with the search variable (as a lookup does) and the chosen person is inserted as @ followed by the label. |
 
 ## Action steps

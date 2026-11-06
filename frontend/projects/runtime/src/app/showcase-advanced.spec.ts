@@ -323,6 +323,31 @@ describe('Showcase: advanced components', () => {
       expect([...el.querySelectorAll('main lc-progress [role="progressbar"]')].map((b) => b.getAttribute('aria-valuenow'))).toEqual(['60', '82', '64']);
       await settle();
     });
+
+    it('comments: only your own can be changed and deleted; a changed one says so', { timeout: 20000 }, async () => {
+      const { el, until, settle } = await openShowcase('/showcase/showcase-tasks');
+      const articles = () => [...el.querySelectorAll<HTMLElement>('main lc-comments article')];
+      const button = (a: HTMLElement, text: string) => [...a.querySelectorAll('button')].find((b) => plainText(b.textContent) === text) as HTMLButtonElement | undefined;
+      await until(() => articles().length === 3, 'comments');
+      expect(articles().map((a) => !!button(a, 'Edit'))).toEqual([false, false, true]);
+      expect(plainText(articles()[1].querySelector('header')?.textContent)).toContain('edited');
+      button(articles()[2], 'Edit')!.click();
+      const box = () => articles()[2]?.querySelector('textarea') as HTMLTextAreaElement | null;
+      await until(() => !!box(), 'edit box');
+      box()!.value = 'I will send it **today**.';
+      box()!.dispatchEvent(new Event('input'));
+      await settle();
+      button(articles()[2], 'Save')!.click();
+      await until(() => !box() && plainText(articles()[2].querySelector('lc-markdown')?.textContent) === 'I will send it today.', 'changed');
+      expect(plainText(articles()[2].querySelector('header')?.textContent)).toContain('edited');
+      // Delete asks first.
+      button(articles()[2], 'Delete')!.click();
+      await until(() => !!document.querySelector('.ant-modal-confirm-btns'), 'confirmation');
+      expect(document.querySelector('.ant-modal-confirm-content')?.textContent).toContain('Delete the comment?');
+      ([...document.querySelectorAll('.ant-modal-confirm-btns')].at(-1)!.querySelectorAll('button')[1] as HTMLButtonElement).click();
+      await until(() => articles().length === 2, 'deleted');
+      await settle();
+    });
   });
 
   describe('menu', () => {
