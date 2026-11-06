@@ -102,12 +102,17 @@ proxy=/etc/nginx/quadrava/bff.conf
 rm -f "$proxy"
 if [ -n "${QUADRAVA_BFF_URL:-}" ]; then
   printf '%s' "$QUADRAVA_BFF_URL" | grep -Eq '^https?://[A-Za-z0-9.-]+(:[0-9]{1,5})?$' || fail "QUADRAVA_BFF_URL: scheme, host and port only, not: $QUADRAVA_BFF_URL"
+  # The largest request body (an upload from a file field): nginx refuses a larger one with 413. 100m matches the
+  # largest maxSizeKb of a file field (102400); 0 leaves the size to the BFF.
+  max_body=${QUADRAVA_MAX_BODY_SIZE:-100m}
+  printf '%s' "$max_body" | grep -Eq '^[0-9]{1,6}[kKmMgG]?$' || fail "QUADRAVA_MAX_BODY_SIZE: a size such as 100m, 512k or 0, not: $max_body"
   # The paths of the BFF (contracts/bff.yaml) and of the services it forwards. No buffering: event streams pass as they
   # arrive (ADR-19); the forwarded headers let the BFF build its own addresses (login callback, return check).
   for prefix in /bff/ /logout /oauth2/ /login/oauth2/ /api/ /registry/ /authz/ /telemetry/; do
     cat >> "$proxy" <<EOF
 location ^~ $prefix {
     proxy_pass $QUADRAVA_BFF_URL;
+    client_max_body_size $max_body;
     proxy_http_version 1.1;
     proxy_set_header Host \$http_host;
     proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
@@ -119,5 +124,5 @@ location ^~ $prefix {
 }
 EOF
   done
-  echo "quadrava: BFF paths forwarded to $QUADRAVA_BFF_URL"
+  echo "quadrava: BFF paths forwarded to $QUADRAVA_BFF_URL (request bodies up to $max_body)"
 fi

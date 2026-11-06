@@ -12,6 +12,12 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Fixed
+
+- The runtime image forwarded to the BFF request bodies of at most 1 MB, the default of nginx, so a larger upload from a
+  `file` field got 413 though `maxSizeKb` allows up to 100 MB. `QUADRAVA_MAX_BODY_SIZE` sets the limit (`100m` if
+  absent; request Q11 of OpenDevTrack).
+
 ## [0.8.0] - 2026-11-06
 
 ### Added

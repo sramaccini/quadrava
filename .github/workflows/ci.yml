@@ -95,7 +95,10 @@ jobs:
           curl -fsS http://localhost:8081/runtime-config.json | grep -q '"examples"'
           curl -fsS http://localhost:8081/some/screen | grep -q '<lc-root'
           curl -fsS http://localhost:8082/runtime-config.json | grep -q '"registry"'
+          # Uploads up to the largest file field pass nginx; the limit is a setting of the image.
+          docker exec registry grep -q 'client_max_body_size 100m;' /etc/nginx/quadrava/bff.conf
           if docker run --rm -e QUADRAVA_REGISTRY_APP='bad"name' quadrava-runtime:ci; then echo 'a wrong value must stop the container'; exit 1; fi
+          if docker run --rm -e QUADRAVA_BFF_URL=http://bff.test:8080 -e QUADRAVA_MAX_BODY_SIZE=10mb quadrava-runtime:ci; then echo 'a wrong size must stop the container'; exit 1; fi
       - if: failure()
         run: docker logs demo; docker logs registry
 
