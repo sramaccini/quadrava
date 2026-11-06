@@ -26,8 +26,10 @@ export interface NavigateEvent {
   imports: [FormsModule, NgTemplateOutlet, IconComponent, NzButtonModule, NzDropdownModule, NzInputModule, NzMenuModule, NzSelectModule, NzTooltipModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
-    :host { display: block; position: sticky; top: 0; z-index: 2; align-self: flex-start; height: 100vh; flex: none; }
-    .side { box-sizing: border-box; height: 100%; width: var(--lc-sider-width, 256px); display: flex; flex-direction: column; overflow-x: hidden; overflow-y: auto;
+    /* The column stretches to the height of the page with the colour of the menu (a full-page capture shows it whole);
+       the menu stays in view while the page scrolls. */
+    :host { display: block; z-index: 2; align-self: stretch; flex: none; background: var(--lc-sider-bg, #fff); box-shadow: inset -1px 0 0 var(--lc-sider-border, #e3e8ef); }
+    .side { position: sticky; top: 0; box-sizing: border-box; height: 100vh; width: var(--lc-sider-width, 256px); display: flex; flex-direction: column; overflow-x: hidden; overflow-y: auto;
       background: var(--lc-sider-bg, #fff); color: var(--lc-sider-text, #1b2430); border-right: 1px solid var(--lc-sider-border, #e3e8ef);
       transition: width 0.2s; }
     .side.collapsed { width: var(--lc-sider-collapsed-width, 80px); }

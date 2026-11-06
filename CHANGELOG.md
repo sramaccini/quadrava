@@ -18,6 +18,11 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
   common properties of the components and of the fields, several steps); a test keeps it so. They are the help of the
   property panel of an editor, of «Aiuto» in the showcase and of `docs/schema-reference.md`.
 
+### Fixed
+
+- The column of the side menu runs the whole height of the page: a full-page capture or a print showed it only one
+  window tall, with an empty gap below. The menu still stays in view while the page scrolls.
+
 ## [0.10.0] - 2026-11-06
 
 ### Added
