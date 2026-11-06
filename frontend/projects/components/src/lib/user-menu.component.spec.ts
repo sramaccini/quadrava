@@ -126,6 +126,8 @@ describe('UserMenuComponent', () => {
     expect(selected).toEqual(['profile']);
     for (let i = 0; i < 40 && document.activeElement !== trigger; i++) await flush(fixture);
     expect(document.activeElement).toBe(trigger);
+    // The dropdown reports that it is closed after its closing animation, not together with the focus.
+    for (let i = 0; i < 40 && trigger.getAttribute('aria-expanded') !== 'false'; i++) await flush(fixture);
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
   });
 
