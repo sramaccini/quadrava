@@ -7,7 +7,7 @@
 // --services-only  does not start the runtime (to start it separately, for example from the IDE)
 // --rebuild        rebuilds the jars even if they already exist
 //
-// Quadrava CE has no registry: the BFF forwards /registry to LOWCODE_REGISTRY_URL (http://localhost:8081 if absent), so a
+// Quadrava CE has no registry: the BFF forwards /registry to LC_REGISTRY_URL (http://localhost:8081 if absent), so a
 // registry that follows contracts/registry.yaml can be started next to the stack. The logs of every process are in
 // ../.stack/logs. Ctrl+C stops everything except Keycloak, which stays up to restart quickly
 // (to stop it: cd idp && docker compose down). For local development only.

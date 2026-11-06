@@ -1,7 +1,7 @@
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { Authorization, DataClient, DefinitionSource, RuntimeDiagnostics } from 'core';
-import { HttpAuthorization, HttpDataClient, HttpDiagnostics, LOWCODE_SERVICES_CONFIG, RegistryDefinitions } from 'services';
+import { HttpAuthorization, HttpDataClient, HttpDiagnostics, LC_SERVICES_CONFIG, RegistryDefinitions } from 'services';
 import { vi } from 'vitest';
 import navigationDoc from '../../public/examples/navigation.json';
 import { ExampleDefinitions } from '../demo/example-definitions';
@@ -64,7 +64,7 @@ describe('runtime configuration: where the definitions come from', () => {
     expect(TestBed.inject(ShellSession)).toBeInstanceOf(BffShellSession);
     expect(TestBed.inject(ShellSession).profiles).toEqual([]);
     // Without tenantSwitchUrl there is no tenant choice.
-    expect(TestBed.inject(LOWCODE_SERVICES_CONFIG).tenantSwitchUrl).toBeNull();
+    expect(TestBed.inject(LC_SERVICES_CONFIG).tenantSwitchUrl).toBeNull();
     expect(TestBed.inject(ShellSession).tenants()).toEqual([]);
   });
 
@@ -75,7 +75,7 @@ describe('runtime configuration: where the definitions come from', () => {
     const config = await loadRuntimeConfig();
     expect(config.services).toEqual({ source: 'bff', appId: 'demo', tenantSwitchUrl: '/bff/tenant' });
     TestBed.configureTestingModule({ providers: appConfigFor(config).providers });
-    expect(TestBed.inject(LOWCODE_SERVICES_CONFIG).tenantSwitchUrl).toBe('/bff/tenant');
+    expect(TestBed.inject(LC_SERVICES_CONFIG).tenantSwitchUrl).toBe('/bff/tenant');
     for (const wrong of ['https://other.example/tenant', '//other.example/tenant', 7]) {
       serve(bff(wrong));
       expect((await loadRuntimeConfig()).services).toEqual({ source: 'bff', appId: 'demo' });
@@ -88,7 +88,7 @@ describe('runtime configuration: where the definitions come from', () => {
     serve(bff('error'));
     const config = await loadRuntimeConfig();
     TestBed.configureTestingModule({ providers: appConfigFor(config).providers });
-    expect(TestBed.inject(LOWCODE_SERVICES_CONFIG).logLevel).toBe('error');
+    expect(TestBed.inject(LC_SERVICES_CONFIG).logLevel).toBe('error');
     serve(bff('verbose'));
     expect((await loadRuntimeConfig()).services).toEqual({ source: 'bff', appId: 'demo' });
   });

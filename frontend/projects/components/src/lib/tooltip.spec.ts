@@ -1,13 +1,13 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { Authorization, DataClient, Notifier, ScreenComponent, ScreenNavigator, UserProvider } from 'core';
 import type { NodeDefinition, ScreenDefinition } from 'schema';
-import { provideLowcodeComponents } from './provide';
+import { provideLcComponents } from './provide';
 
 describe('optional tooltip', () => {
   async function render(components: NodeDefinition[]): Promise<{ fixture: ComponentFixture<ScreenComponent>; el: HTMLElement }> {
     TestBed.configureTestingModule({
       providers: [
-        provideLowcodeComponents(),
+        provideLcComponents(),
         { provide: Authorization, useValue: { can: () => true } },
         { provide: UserProvider, useValue: { user: () => ({ username: 'mario' }) } },
         { provide: ScreenNavigator, useValue: { navigate: () => undefined } },

@@ -62,7 +62,7 @@ export class DemoDiagnostics extends RuntimeDiagnostics {
   readonly events = signal<{ screen: string; source: string; error: string }[]>([]);
 
   report(event: { screen: string; source: string; error: string }): void {
-    console.warn('[lowcode]', event.screen, event.source, event.error);
+    console.warn('[lc]', event.screen, event.source, event.error);
     this.events.update((all) => [...all.slice(-49), event]);
   }
 }

@@ -52,7 +52,7 @@ paths:
         '429': { $ref: '#/components/responses/Problem' }
 components:
   securitySchemes:
-    cookieAuth: { type: apiKey, in: cookie, name: LOWCODE_SESSION }
+    cookieAuth: { type: apiKey, in: cookie, name: LC_SESSION }
     bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
   responses:
     Problem:

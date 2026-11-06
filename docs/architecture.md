@@ -1,4 +1,4 @@
-# LowCode Platform — Architecture
+# Quadrava — Architecture
 
 Simone Ramaccini · 7 October 2026
 
@@ -166,17 +166,17 @@ Traces start in the runtime, follow the REST call thanks to the `traceparent` he
 
 | Span | Opened by | Ends | Attributes |
 | --- | --- | --- | --- |
-| `screen.open` | `ScreenRuntime`, when the screen is created | When every GET data source has finished its first read (at once if there are none) | `lowcode.screen`, `lowcode.datasources` (how many) |
-| `action.run` | `runSteps`, for every sequence a component starts (button, row action, form) | When the sequence finishes; error if a step fails | `lowcode.screen`, `lowcode.action` (`call save, refresh elenco`) |
-| `http.client` | The HTTP interceptor, for every same-origin call | On the response; a cancelled call is not an error | `http.request.method`, `http.response.status_code`, `lowcode.datasource` (data calls) or `url.path` without the query (platform calls: registry, authorization) |
+| `screen.open` | `ScreenRuntime`, when the screen is created | When every GET data source has finished its first read (at once if there are none) | `lc.screen`, `lc.datasources` (how many) |
+| `action.run` | `runSteps`, for every sequence a component starts (button, row action, form) | When the sequence finishes; error if a step fails | `lc.screen`, `lc.action` (`call save, refresh elenco`) |
+| `http.client` | The HTTP interceptor, for every same-origin call | On the response; a cancelled call is not an error | `http.request.method`, `http.response.status_code`, `lc.datasource` (data calls) or `url.path` without the query (platform calls: registry, authorization) |
 
 An example: the user presses *Approva* on an order.
 
 ```text
-action.run  lowcode.action = "call approve, refresh orders"     trace 4bf9…, span a1…
-├─ http.client  POST, lowcode.datasource = approva, 200         span b2…  → traceparent 00-4bf9…-b2…-01
+action.run  lc.action = "call approve, refresh orders"     trace 4bf9…, span a1…
+├─ http.client  POST, lc.datasource = approva, 200         span b2…  → traceparent 00-4bf9…-b2…-01
 │    └─ (back end) spans of the orders service, same trace 4bf9…
-└─ http.client  GET, lowcode.datasource = orders, 200           span c3…
+└─ http.client  GET, lc.datasource = orders, 200           span c3…
 ```
 
 The parent travels explicitly: the action passes its span to the calls of its steps (also inside `run` and `onError`), the screen passes its own to the first reads. The `traceparent` of each call carries the identity of its `http.client` span, so the back-end spans are its children. The calls to the telemetry endpoint are not traced. The `RuntimeTracer` port is optional: without it (demo, tests) nothing is traced.
@@ -186,7 +186,7 @@ The parent travels explicitly: the action passes its span to the calls of its st
 ```text
 POST /api/orders/4242/approve
 traceparent: 00-4bf9…-b2…-01
-baggage: lowcode.screen=order-list,lowcode.action=call%20approve%2C%20refresh%20orders
+baggage: lc.screen=order-list,lc.action=call%20approve%2C%20refresh%20orders
 ```
 
 | Signal | Origin | Path |
@@ -199,9 +199,9 @@ baggage: lowcode.screen=order-list,lowcode.action=call%20approve%2C%20refresh%20
 
 **Two-level redaction.** Fields marked `sensitive` in the JSON (and passwords) are excluded by the runtime at the source: every field tells the screen its current value, and a technical report that contains it (an expression error, the text of a failed call) shows `[sensitive]` in its place. Spans carry no data values at all. The ingestion endpoint then applies additional rules (for example recognisable patterns such as tax codes or IBANs). Defence in depth: an error in one level does not become a data leak.
 
-**Sampling.** `traceSampleRatio` in `provideLowcodeServices` (1 if absent): decided at the root of the trace and passed to the children and, through the `traceparent` flag, to the back end; spans that end in error are always sent. Spans are sent in batches (every 20 or after 5 seconds, at most `traceMaxPerMinute`, 300 if absent); logs and traces share the same queue logic, which also empties when the page is closed or hidden (`keepalive` requests).
+**Sampling.** `traceSampleRatio` in `provideLcServices` (1 if absent): decided at the root of the trace and passed to the children and, through the `traceparent` flag, to the back end; spans that end in error are always sent. Spans are sent in batches (every 20 or after 5 seconds, at most `traceMaxPerMinute`, 300 if absent); logs and traces share the same queue logic, which also empties when the page is closed or hidden (`keepalive` requests).
 
-**Log level.** Every technical report has a weight (`error`, `warn`, `info`; OTLP severity 17, 13, 9). `logLevel` in `provideLowcodeServices` leaves out the lighter ones: `warn` if absent, `error` for errors only, `info` for everything, `off` for no logs (the traces are still sent). It is chosen per environment in `runtime-config.json` (`services.logLevel`; `QUADRAVA_LOG_LEVEL` in the container image): for example `info` in development and `error` in production.
+**Log level.** Every technical report has a weight (`error`, `warn`, `info`; OTLP severity 17, 13, 9). `logLevel` in `provideLcServices` leaves out the lighter ones: `warn` if absent, `error` for errors only, `info` for everything, `off` for no logs (the traces are still sent). It is chosen per environment in `runtime-config.json` (`services.logLevel`; `QUADRAVA_LOG_LEVEL` in the container image): for example `info` in development and `error` in production.
 
 **Audit.** The audit trail is written by the back end when the operation happens, in a store whose immutability and retention are defined by the customer. The front end never writes the audit directly, because it is not a trustworthy source. The link between technical trace and audit is the correlation identifier, which lets you move from an audit entry to the full trace.
 

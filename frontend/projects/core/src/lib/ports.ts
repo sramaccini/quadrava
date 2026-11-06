@@ -57,8 +57,8 @@ export interface DataRequestOptions {
   /** Span of the action or of the screen opening the call starts from: the HTTP span becomes its child. */
   trace?: SpanContext;
   /**
-   * Context of the call for the audit of the services (W3C Baggage): `lowcode.screen` and, for the calls of an action,
-   * `lowcode.action` (its steps, as in the traces). Names from the definition, never data values.
+   * Context of the call for the audit of the services (W3C Baggage): `lc.screen` and, for the calls of an action,
+   * `lc.action` (its steps, as in the traces). Names from the definition, never data values.
    */
   baggage?: Readonly<Record<string, string>>;
 }

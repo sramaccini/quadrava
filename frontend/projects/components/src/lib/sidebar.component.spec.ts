@@ -2,7 +2,7 @@ import { signal } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { NavigationRuntime, type Authorization, type UserProvider, type VisibleLeaf } from 'core';
 import type { NavigationDefinition } from 'schema';
-import { provideLowcodeComponents } from './provide';
+import { provideLcComponents } from './provide';
 import { openSelect, stubViewportHeight } from './select-testing';
 import { SidebarComponent, type NavigateEvent } from './sidebar.component';
 
@@ -47,7 +47,7 @@ describe('SidebarComponent', () => {
 
   async function render(granted: string[]) {
     permissions.set(new Set(granted));
-    TestBed.configureTestingModule({ providers: [provideLowcodeComponents()] });
+    TestBed.configureTestingModule({ providers: [provideLcComponents()] });
     const nav = new NavigationRuntime(definition, {
       authorization: { can: (p: string) => permissions().has(p) } as Authorization,
       userProvider: { user: () => ({}) } as UserProvider,

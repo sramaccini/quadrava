@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { DestroyRef, Injectable, inject } from '@angular/core';
 import { RuntimeTracer, type SpanAttributes, type SpanContext, type TraceSpan } from 'core';
-import { LOWCODE_SERVICES_CONFIG } from './config';
+import { LC_SERVICES_CONFIG } from './config';
 import { redact } from './diagnostics';
 import { OtlpQueue, attribute, runtimeResource, unixNano } from './otlp';
 import { newSpanContext } from './trace';
@@ -27,7 +27,7 @@ interface FinishedSpan {
  */
 @Injectable({ providedIn: 'root' })
 export class HttpTracer extends RuntimeTracer {
-  private readonly config = inject(LOWCODE_SERVICES_CONFIG);
+  private readonly config = inject(LC_SERVICES_CONFIG);
   private readonly queue = new OtlpQueue<FinishedSpan>(
     inject(HttpClient),
     `${this.config.telemetryBase}/traces`,
@@ -38,7 +38,7 @@ export class HttpTracer extends RuntimeTracer {
           resource: runtimeResource(this.config.appId),
           scopeSpans: [
             {
-              scope: { name: 'lowcode.runtime' },
+              scope: { name: 'lc.runtime' },
               spans: spans.map((span) => ({
                 traceId: span.context.traceId,
                 spanId: span.context.spanId,

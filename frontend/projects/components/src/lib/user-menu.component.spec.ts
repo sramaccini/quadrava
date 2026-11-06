@@ -1,7 +1,7 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { vi } from 'vitest';
 import { Confirmation, I18n } from 'core';
-import { provideLowcodeComponents } from './provide';
+import { provideLcComponents } from './provide';
 import { UserMenuComponent, type UserMenuChoices, type UserMenuItem } from './user-menu.component';
 
 describe('UserMenuComponent', () => {
@@ -15,7 +15,7 @@ describe('UserMenuComponent', () => {
   const menuItems = (): string[] => [...document.querySelectorAll('.ant-dropdown li.ant-dropdown-menu-item, .ant-dropdown li[nz-menu-item]')].map((li) => (li.textContent ?? '').replace(/\s+/g, ' ').trim());
 
   async function render(items: readonly UserMenuItem[] = [{ id: 'permissions', label: '4 permissions', icon: 'safety', disabled: true }, { id: 'profile', label: 'Profile', icon: 'user' }], choices?: UserMenuChoices, locale = 'en') {
-    TestBed.configureTestingModule({ providers: [provideLowcodeComponents()] });
+    TestBed.configureTestingModule({ providers: [provideLcComponents()] });
     TestBed.inject(I18n).setLocale(locale);
     const fixture = TestBed.createComponent(UserMenuComponent);
     fixture.componentRef.setInput('name', 'mario');
@@ -150,7 +150,7 @@ describe('UserMenuComponent', () => {
   });
 
   it('the name is shown as text, not as HTML', async () => {
-    TestBed.configureTestingModule({ providers: [provideLowcodeComponents()] });
+    TestBed.configureTestingModule({ providers: [provideLcComponents()] });
     const fixture = TestBed.createComponent(UserMenuComponent);
     fixture.componentRef.setInput('name', '<img src=x onerror=alert(1)>');
     await flush(fixture);

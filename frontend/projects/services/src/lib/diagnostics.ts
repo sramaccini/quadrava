@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { DestroyRef, Injectable, inject } from '@angular/core';
 import { RuntimeDiagnostics, type DiagnosticSeverity } from 'core';
-import { LOWCODE_SERVICES_CONFIG, type LogLevel } from './config';
+import { LC_SERVICES_CONFIG, type LogLevel } from './config';
 import { OtlpQueue, attribute, runtimeResource, unixNano } from './otlp';
 
 interface Event {
@@ -36,7 +36,7 @@ export function redact(text: string): string {
  */
 @Injectable({ providedIn: 'root' })
 export class HttpDiagnostics extends RuntimeDiagnostics {
-  private readonly config = inject(LOWCODE_SERVICES_CONFIG);
+  private readonly config = inject(LC_SERVICES_CONFIG);
   private readonly queue = new OtlpQueue<{ time: number; event: Event }>(
     inject(HttpClient),
     `${this.config.telemetryBase}/logs`,
@@ -47,7 +47,7 @@ export class HttpDiagnostics extends RuntimeDiagnostics {
           resource: runtimeResource(this.config.appId),
           scopeLogs: [
             {
-              scope: { name: 'lowcode.runtime' },
+              scope: { name: 'lc.runtime' },
               logRecords: batch.map(({ time, event }) => ({
                 timeUnixNano: unixNano(time),
                 severityNumber: SEVERITY[event.severity ?? 'error'].number,

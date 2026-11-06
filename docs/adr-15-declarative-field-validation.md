@@ -31,7 +31,7 @@ const staffNumber: ValidatorDescriptor = {
 
 `validate(value, params, context)` is a pure function: it returns `null` when the value is valid, or a failure `{ params? }` whose parameters fill the translated message (`lc.validation.<name>`, Italian and English in `messages.ts`). The context gives the values of the sibling fields (the form, or the row of a repeater) and their labels, for the rules across fields. It never sees the screen runtime.
 
-The built-in validators are the standard set `STANDARD_VALIDATORS` in `core`; the `ValidatorRegistry` (root service) holds them plus those of the application, provided with `provideValidators(...)` (a multi-provider, like `provideLowcodeComponents(extra)`; a validator with the same name replaces the built-in one).
+The built-in validators are the standard set `STANDARD_VALIDATORS` in `core`; the `ValidatorRegistry` (root service) holds them plus those of the application, provided with `provideValidators(...)` (a multi-provider, like `provideLcComponents(extra)`; a validator with the same name replaces the built-in one).
 
 The same descriptor powers:
 

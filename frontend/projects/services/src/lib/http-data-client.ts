@@ -2,7 +2,7 @@ import { HttpClient, HttpContext, HttpErrorResponse, HttpParams } from '@angular
 import { Injectable, inject } from '@angular/core';
 import { DataClient, fieldErrorsOf, type DataRequest, type DataRequestOptions } from 'core';
 import { DataError } from './errors';
-import { LOWCODE_TRACE } from './interceptor';
+import { LC_TRACE } from './interceptor';
 import { isSameOriginRelative } from './trace';
 
 /** Multipart body: every entry of the body is a text part (objects as JSON), the file is the `field` part. */
@@ -48,7 +48,7 @@ export class HttpDataClient extends DataClient {
           .request(request.method, request.url, {
             params: toParams(request.query),
             // For the HTTP span: the data source (instead of the URL) and the span the call starts from; for the audit, the screen and action.
-            context: new HttpContext().set(LOWCODE_TRACE, { source: options.source, parent: options.trace, baggage: options.baggage }),
+            context: new HttpContext().set(LC_TRACE, { source: options.source, parent: options.trace, baggage: options.baggage }),
             // With a file the request is multipart (the browser sets the Content-Type with the boundary by itself).
             body: request.method === 'GET' || request.method === 'DELETE' ? undefined : request.file ? toFormData(request.body, request.file) : request.body,
           })

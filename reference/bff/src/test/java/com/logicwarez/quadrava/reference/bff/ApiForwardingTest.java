@@ -155,7 +155,7 @@ class ApiForwardingTest {
         mvc.perform(get("/registry/apps/demo/documents/screen/order-list/published").queryParam("env", "production")
                         .with(oauth2Login())
                         .header("traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
-                        .header("baggage", "lowcode.screen=order-list,lowcode.action=call%20approve")
+                        .header("baggage", "lc.screen=order-list,lc.action=call%20approve")
                         .header("Authorization", "Bearer from-the-browser")
                         .cookie(new Cookie("JSESSIONID", "session")))
                 .andExpect(status().isOk())
@@ -171,7 +171,7 @@ class ApiForwardingTest {
         assertThat(r.uri()).isEqualTo("/registry/apps/demo/documents/screen/order-list/published?env=production");
         assertThat(r.headers().get("Authorization")).containsExactly("Bearer test-token");
         assertThat(r.headers().get("Traceparent")).containsExactly("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01");
-        assertThat(r.headers().get("Baggage")).containsExactly("lowcode.screen=order-list,lowcode.action=call%20approve");
+        assertThat(r.headers().get("Baggage")).containsExactly("lc.screen=order-list,lc.action=call%20approve");
         assertThat(r.headers()).doesNotContainKey("Cookie");
     }
 

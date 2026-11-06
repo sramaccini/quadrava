@@ -4,7 +4,7 @@
 //   node tools/conformance-telemetry.mjs --telemetry http://localhost:8083
 //        [--token <JWT> | --user <user> --password <password>] [--issuer …] [--max-bytes 1000000]
 //
-// It sends test data only (service «lowcode-conformance»). Exits with code 1 if a check fails.
+// It sends test data only (service «lc-conformance»). Exits with code 1 if a check fails.
 import { call as httpCall, expect, isProblem, parseArgs, suite, tokenFromArgs } from './conformance-lib.mjs';
 
 const args = parseArgs();
@@ -14,7 +14,7 @@ const token = await tokenFromArgs(args);
 const call = (method, path, options = {}) => httpCall(base, method, path, { token, ...options });
 const { check, report } = suite();
 
-const resource = { attributes: [{ key: 'service.name', value: { stringValue: 'lowcode-conformance' } }] };
+const resource = { attributes: [{ key: 'service.name', value: { stringValue: 'lc-conformance' } }] };
 const now = String(BigInt(Date.now()) * 1_000_000n);
 const traces = {
   resourceSpans: [

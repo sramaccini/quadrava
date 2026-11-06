@@ -116,7 +116,7 @@ export class ScreenRuntime {
   private firstLoadFailed = false;
   /** Reads already scheduled by an event of a live data source. */
   private readonly liveTimers = new Map<string, ReturnType<typeof setTimeout>>();
-  /** The action (`lowcode.action` of its span) of every span opened here: the calls that start from it name it in their baggage. */
+  /** The action (`lc.action` of its span) of every span opened here: the calls that start from it name it in their baggage. */
   private readonly actions = new WeakMap<SpanContext, string>();
   /** Current values of the fields marked `sensitive` (and of the passwords), by field: never in the technical reports. */
   private readonly sensitiveValues = new Map<object, string[]>();
@@ -155,7 +155,7 @@ export class ScreenRuntime {
     const checks = remoteSources(definition.components);
     const reads = Object.entries(definition.dataSources ?? {}).filter(([name, source]) => inlineDataSource(source)?.method === 'GET' && !checks.has(name));
     for (const [name] of reads) this.pendingFirstLoad.add(name);
-    this.openSpan = this.startSpan('screen.open', { 'lowcode.datasources': reads.length });
+    this.openSpan = this.startSpan('screen.open', { 'lc.datasources': reads.length });
     if (reads.length === 0) this.openSpan?.end(true);
     // Every GET data source loads by itself and reloads when the resolved request changes (URL and parameters: filters,
     // page, sorting…). A state change that does not touch the request (a selection, a step, a chosen node) does not
@@ -259,7 +259,7 @@ export class ScreenRuntime {
   }
 
   destroy(): void {
-    this.openSpan?.end(!this.firstLoadFailed, { 'lowcode.interrupted': this.pendingFirstLoad.size > 0 });
+    this.openSpan?.end(!this.firstLoadFailed, { 'lc.interrupted': this.pendingFirstLoad.size > 0 });
     for (const e of this.effects) e.destroy();
     this.effects.length = 0;
     this.sensitiveValues.clear();
@@ -278,8 +278,8 @@ export class ScreenRuntime {
     const tracer = this.deps.tracer;
     if (!tracer) return null;
     try {
-      const span = tracer.start(name, { 'lowcode.screen': this.definition.screen, ...attributes }, parent);
-      const action = attributes['lowcode.action'];
+      const span = tracer.start(name, { 'lc.screen': this.definition.screen, ...attributes }, parent);
+      const action = attributes['lc.action'];
       if (typeof action === 'string') this.actions.set(span.context, action);
       return span;
     } catch {
@@ -290,7 +290,7 @@ export class ScreenRuntime {
   /** Context of a call for the audit of the services: the screen and, if it starts from the span of an action, the action. */
   private baggage(trace?: SpanContext): Record<string, string> {
     const action = trace && this.actions.get(trace);
-    return action ? { 'lowcode.screen': this.definition.screen, 'lowcode.action': action } : { 'lowcode.screen': this.definition.screen };
+    return action ? { 'lc.screen': this.definition.screen, 'lc.action': action } : { 'lc.screen': this.definition.screen };
   }
 
   private firstLoadDone(name: string, ok: boolean): void {

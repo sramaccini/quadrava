@@ -1,7 +1,7 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { NotificationBellComponent } from './notification-bell.component';
 import type { UserNotification } from './notifications';
-import { provideLowcodeComponents } from './provide';
+import { provideLcComponents } from './provide';
 
 describe('NotificationBellComponent', () => {
   const flush = async (fixture: ComponentFixture<unknown>): Promise<void> => {
@@ -17,7 +17,7 @@ describe('NotificationBellComponent', () => {
   ];
 
   async function render(items: readonly UserNotification[] = ITEMS, canMarkRead = true) {
-    TestBed.configureTestingModule({ providers: [provideLowcodeComponents()] });
+    TestBed.configureTestingModule({ providers: [provideLcComponents()] });
     const fixture = TestBed.createComponent(NotificationBellComponent);
     fixture.componentRef.setInput('items', items);
     fixture.componentRef.setInput('canMarkRead', canMarkRead);

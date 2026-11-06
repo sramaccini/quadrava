@@ -77,7 +77,7 @@ The main ones are in the DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In short:
 - NG-ZORRO animates a form message out: right after a change the old text is still in the DOM; tests wait for the new one (`until`).
 - CEL: `has(state.x)` for keys that do not exist yet; `dyn(...)` in mixed parameter maps of `t()`; `{n, number}` for numbers in messages.
 - In tests: `stubViewportHeight` + wait for the options of `nz-select`; `Element.scrollTo` stubbed; closed dialogs stay in the DOM.
-- `provideNzIcons` is not cumulative: a second call replaces the icons of `provideLowcodeComponents` (Studio repeats them).
+- `provideNzIcons` is not cumulative: a second call replaces the icons of `provideLcComponents` (Studio repeats them).
 - NG-ZORRO 22: `NzTooltipModule` (not `NzToolTipModule`), `nz-tabs` (not `nz-tabset`), no `nzAutosize` on textareas (`field-sizing: content` is used). Angular has no `.capture` event modifier: `addEventListener(..., true)`.
 - `nz-input` (NG-ZORRO 22) has a `readonly` input that writes the attribute: bind `[readonly]`, never `[readOnly]`. A field is drawn in `lc-field-control`, shared by form and `input`.
 - After `build:libs` restart the dev servers: one left running while `dist` is rebuilt fails («module 'components' could not be found») until restarted.
@@ -89,7 +89,7 @@ The main ones are in the DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In short:
 
 ## 7. Known limits / debt
 
-- Runtime: in `bff` mode it uses `provideLowcodeServices` (session, authorization, data client, telemetry) and `BffShellSession`; in the demo the fake ports and `DemoShellSession`. The demo's data logic lives in `runtime/src/demo/demo-backend.ts`, used by `MockDataClient` and by `tools/demo-api.mjs`.
+- Runtime: in `bff` mode it uses `provideLcServices` (session, authorization, data client, telemetry) and `BffShellSession`; in the demo the fake ports and `DemoShellSession`. The demo's data logic lives in `runtime/src/demo/demo-backend.ts`, used by `MockDataClient` and by `tools/demo-api.mjs`.
 - BFF: routes `/registry`, `/authz`, `/telemetry`, `/api`; CSRF for SPAs; OIDC logout. Tried live on 13 October 2026 (also with `npm run stack`).
 - Telemetry (15 October 2026): traces `screen.open`, `action.run`, `http.client` and logs of the technical reports, both OTLP/HTTP JSON in batches, also sent when the page closes. Since 6 November 2026 every data-source call also carries the W3C `baggage` header with screen and action (RF-AUD-02), forwarded by the reference BFF. Also since 6 November 2026 the current values of `sensitive` fields and passwords are replaced by `[sensitive]` in the technical reports (RF-TEL-06; the spans carry no data values). The technical reports have a weight (`error`, `warn`, `info`) and each environment chooses which to send (`services.logLevel` in `runtime-config.json`, RF-TEL-07).
 - Registry: CE has the contract (`registry.yaml` 0.7: protected environments, and so the approval before publishing, are a choice of each registry's configuration) and its kit (`--protected-env none` for a registry without them), not an implementation; the runtime (`registry` definitions) and the CLI (`quadrava publish`) work with any registry that follows it. The stack runs without one.

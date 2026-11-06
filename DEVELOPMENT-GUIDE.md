@@ -14,7 +14,7 @@ npm ci
 npm run build:libs        # mandatory before running or testing any app
 ```
 
-**Why `build:libs`?** The `tsconfig` paths map `@lowcode/*` to `./dist/*`, so apps and their tests consume the *built* libraries. After changing a library, rebuild it (`npm run build:libs`); stale `dist` output causes confusing errors (for example NG01354 in templates).
+**Why `build:libs`?** The `tsconfig` paths map each library (`core`, `components`, …) to `./dist/<name>`, so apps and their tests consume the *built* libraries. After changing a library, rebuild it (`npm run build:libs`); stale `dist` output causes confusing errors (for example NG01354 in templates).
 
 ## 2. Workspace structure
 
@@ -107,7 +107,7 @@ Example: adding a `progress` node.
    * Write regex patterns from a script file, not a shell heredoc (double backslashes get collapsed).
 2. **Component.** Create `projects/components/src/lib/progress.component.ts`: standalone, `ChangeDetectionStrategy.OnPush`, inputs through `input()` / `input.required()`. Resolve expressions through the screen runtime from `core`; never evaluate strings yourself. Keep data logic in pure functions (see `table-data.ts`, `chart-geometry.ts`) so it can be tested without rendering. If the node writes to the screen state (`bind`), give the state an initial value in `ScreenRuntime.seedFilters`, so expressions and data sources never see a missing key.
    * If it reads a data source, wrap its content in `<lc-busy [busy]="source().status === 'loading'" [empty]="…no data yet…">`: the shared activity indicator (delay, minimum time, "taking longer than usual", `aria-busy` and the live announcement). Do not draw a loading state of your own, and do not show "no results" while loading.
-3. **Register.** Add it to `STANDARD_COMPONENTS` (and export it from `public-api.ts`). Application-specific components are registered with `provideLowcodeComponents(extra)`.
+3. **Register.** Add it to `STANDARD_COMPONENTS` (and export it from `public-api.ts`). Application-specific components are registered with `provideLcComponents(extra)`.
 4. **Tests.** Cover rendering, expression-driven state (`visibleIf`, `enabledIf`, `can()`), the fail-closed behaviour, and any action it triggers.
 5. **Example.** Add the usage to a showcase screen in `examples/showcase-*.json` and run `npm run validate:examples`.
 6. **Studio.** Quadrava Studio, the visual editor of the commercial edition, lives in its own repository and builds on the published packages: a new type needs a template and a palette entry there. Say it in the changelog line («new component `progress`»), so that the commercial edition adds them when it moves to the version. Properties need nothing: its panel reads them from the schema.
@@ -128,7 +128,7 @@ Field validation (ADR-15, component catalogue § 2.29) runs on validators: pure 
 1. **Import per component** (`NzCardModule`, `NzTableModule`, ...) in the standalone component; never import a whole bundle.
 2. **Icons are registered, not fetched.** Add the icon to `ICON_TYPES` in `icon.component.ts` (that map also decides which JSON icon names are accepted). An unregistered icon would trigger a network request.
 3. **Strings in modals and messages are HTML.** `NzModalService` and `NzMessageService` render strings as HTML. Pass dynamic text through a component (`ConfirmMessageComponent` with `NZ_MODAL_DATA`) or `escapeHtml` (see `NzNotifier`). Never pass a JSON value through unescaped.
-4. **Modals need the module provider.** `NzModalService` is provided through `importProvidersFrom(NzModalModule)` in `provideLowcodeComponents`; do not add `NzMessageModule` (it does not exist; the service is root-provided).
+4. **Modals need the module provider.** `NzModalService` is provided through `importProvidersFrom(NzModalModule)` in `provideLcComponents`; do not add `NzMessageModule` (it does not exist; the service is root-provided).
 5. **Forms:** NG-ZORRO controls use `ngModel`, so form elements carry `ngNoForm` to avoid the NG01352 / NG01354 errors, and validation stays in the platform (CEL rules), not in Angular validators.
 6. **Dates:** never create a new `Date` inside a template binding with `ngModel`; it loops change detection. Use a `computed` map (see `dates` in `filter-bar.component.ts`).
 7. **Tables:** do not use `nzScroll` (it adds a measuring row); wrap in an `overflow-x: auto` container. Paginate on the server with `nz-pagination`, not the table's built-in paging.
@@ -185,7 +185,7 @@ Everything external to the interpreter is an abstract class used as a DI token: 
 
 **Run from Studio.** With `?studio=<origin>` (Studio's «Run project», ADR-16) the runtime, if `runtime-config.json` lists that origin in `studio.origins`, asks `window.opener` for the project (`core/studio-link.ts`: snapshot, messages, `SnapshotDefinitions`) and starts on it, whatever its `definitions`; the ports stay those of the configuration. The tab remembers its Studio for reloads (sessionStorage). A configuration for production should not list any Studio.
 
-**Choosing the implementations.** The runtime chooses them at start-up from `runtime-config.json`: without `services` it plugs in the demo fakes and `DemoShellSession` (profiles chosen when signing in again, simulated network in the settings dialog); with `services: { source: 'bff', appId }` it calls `provideLowcodeServices` and uses `BffShellSession` (user name, permission count, logout). An optional `tenantSwitchUrl` (a path of the same origin, for example `/bff/tenant`) turns on the tenant choice in the user menu for users with more than one tenant (ADR-18); an optional `logLevel` (`error`, `warn`, `info` or `off`; `warn` if absent) chooses which technical reports this environment sends to telemetry. In a `provideAppInitializer` callback call every `inject()` before the first `await`: afterwards the injection context is gone (NG0203) and the app does not start.
+**Choosing the implementations.** The runtime chooses them at start-up from `runtime-config.json`: without `services` it plugs in the demo fakes and `DemoShellSession` (profiles chosen when signing in again, simulated network in the settings dialog); with `services: { source: 'bff', appId }` it calls `provideLcServices` and uses `BffShellSession` (user name, permission count, logout). An optional `tenantSwitchUrl` (a path of the same origin, for example `/bff/tenant`) turns on the tenant choice in the user menu for users with more than one tenant (ADR-18); an optional `logLevel` (`error`, `warn`, `info` or `off`; `warn` if absent) chooses which technical reports this environment sends to telemetry. In a `provideAppInitializer` callback call every `inject()` before the first `await`: afterwards the injection context is gone (NG0203) and the app does not start.
 
 **Adding a port.** Declare the abstract class in `core`, inject it where needed, provide a fake in `runtime/demo`, and a real implementation in `services` (or `components` when it is UI). Components must depend on the abstraction only.
 
@@ -204,7 +204,7 @@ Everything external to the interpreter is an abstract class used as a DI token: 
 Vitest runs in jsdom through `ng test`. Conventions:
 
 * One `*.spec.ts` beside the unit; describe behaviour, not implementation.
-* Use `provideLowcodeComponents()` in any test that renders NG-ZORRO components (otherwise icons and the modal service are missing).
+* Use `provideLcComponents()` in any test that renders NG-ZORRO components (otherwise icons and the modal service are missing).
 * `settle(fixture)` flushes microtasks and change detection; prefer it to arbitrary timeouts.
 * `select-testing.ts` provides `stubViewportHeight()` and `openSelect(...)`: `nz-select` options use CDK virtual scroll and render nothing in jsdom unless the viewport height is stubbed; wait for the options before clicking them.
 * `components/src/lib/screen-testing.ts` renders a screen with the standard catalogue and recording fakes (`renderScreen`, with `requests`, `toasts`, `navigations`, `reports`, `settle`, `until`). `runtime/src/app/showcase-testing.ts` opens a demo screen with the showcase documents (`openShowcase`); it also stubs `Element.scrollTo`, which jsdom lacks and the select option list calls.
@@ -265,6 +265,6 @@ Real focus handling and the dark theme are not covered yet (the application shel
 * `DefinitionSource.messages(locale)` returns a catalogue (key → text): the demo reads `examples/i18n`, the registry the published `messages` document. A new language needs its catalogue in both places (`publish:examples` publishes the files).
 * Layout containers (`box`, `grid`, `border`) read the position of each child from the child itself (`grow`, `span`, `region`, declared on every node in the schema). Inside them `--lc-input-max: none` lets fields fill the cell; a new container that holds nodes must also be added to `seedFilters` in `ScreenRuntime` (so that the state of nested fields exists before the first load) and to `LAYOUT_CONTAINERS` in the editor's `schema-info.ts`.
 * After `npm run build:libs` restart the dev servers: they do not reload `dist`, and one left running while `dist` is rebuilt fails with "module 'components' could not be found" until restarted.
-* `provideNzIcons` is not cumulative: a second call replaces the icons registered by `provideLowcodeComponents`. An app that registers its own icons must repeat `Object.values(ICON_TYPES).map((i) => i.icon)` (Quadrava Studio does).
+* `provideNzIcons` is not cumulative: a second call replaces the icons registered by `provideLcComponents`. An app that registers its own icons must repeat `Object.values(ICON_TYPES).map((i) => i.icon)` (Quadrava Studio does).
 * Developer diagnostics are not translated and are written in English: schema and expression issues, the technical detail of loading errors, and the messages of the `services` library. Everything the end user reads is translatable: a screen or a menu that cannot be loaded shows `lc.screenNotFound` (404 or 403 from the definition source), `lc.screenLoadFailed` or `lc.navigationLoadFailed`, and the detail goes to `RuntimeDiagnostics`. A `DefinitionSource` puts the HTTP code in the error's `status` so that the two cases can be told apart.
 * Adding a language means adding `examples/i18n/<code>.json` (same keys as `it.json`), an entry in `LANGUAGES` of the demo, and, for the platform strings, a block in `components/src/lib/messages.ts` and a NG-ZORRO locale in `provide.ts`.

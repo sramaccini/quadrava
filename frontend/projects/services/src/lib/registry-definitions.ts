@@ -82,7 +82,7 @@ export class RegistryDefinitions extends DefinitionSource {
   }
 }
 
-/** The runtime loads screens, navigation and themes from the registry. Requires `HttpClient` (see `provideLowcodeServices`). */
+/** The runtime loads screens, navigation and themes from the registry. Requires `HttpClient` (see `provideLcServices`). */
 export function provideRegistryDefinitions(config: RegistryDefinitionsConfig): Provider[] {
   return [{ provide: REGISTRY_DEFINITIONS_CONFIG, useValue: config }, RegistryDefinitions, { provide: DefinitionSource, useExisting: RegistryDefinitions }];
 }

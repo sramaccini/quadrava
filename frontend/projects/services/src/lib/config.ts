@@ -3,7 +3,7 @@ import { InjectionToken } from '@angular/core';
 /** Lightest technical reports sent to telemetry (`off`: none). */
 export type LogLevel = 'error' | 'warn' | 'info' | 'off';
 
-export interface LowcodeServicesConfig {
+export interface LcServicesConfig {
   /** Identifier of the application, passed to the authorization service and to telemetry. */
   appId: string;
   /** BFF endpoint with the data of the authenticated user. */
@@ -51,9 +51,9 @@ export interface ResolvedServicesConfig {
   logLevel: LogLevel;
 }
 
-export const LOWCODE_SERVICES_CONFIG = new InjectionToken<ResolvedServicesConfig>('LOWCODE_SERVICES_CONFIG');
+export const LC_SERVICES_CONFIG = new InjectionToken<ResolvedServicesConfig>('LC_SERVICES_CONFIG');
 
-export function resolveConfig(config: LowcodeServicesConfig): ResolvedServicesConfig {
+export function resolveConfig(config: LcServicesConfig): ResolvedServicesConfig {
   return {
     appId: config.appId,
     sessionUrl: config.sessionUrl ?? '/bff/user',
@@ -71,7 +71,7 @@ export function resolveConfig(config: LowcodeServicesConfig): ResolvedServicesCo
 }
 
 /** Redirection to another page (login). Replaceable in tests. */
-export const LOWCODE_REDIRECT = new InjectionToken<(url: string) => void>('LOWCODE_REDIRECT', {
+export const LC_REDIRECT = new InjectionToken<(url: string) => void>('LC_REDIRECT', {
   providedIn: 'root',
   factory: () => (url: string) => globalThis.location.assign(url),
 });

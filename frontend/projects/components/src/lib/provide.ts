@@ -95,7 +95,7 @@ export const STANDARD_COMPONENTS: ComponentCatalog = {
  * The NG-ZORRO language and the `lc.*` texts follow the active language of the `I18n` service (Italian and English built in).
  * To change the confirmation, provide `Confirmation` after this call.
  */
-export function provideLowcodeComponents(extra: ComponentCatalog = {}): (Provider | EnvironmentProviders)[] {
+export function provideLcComponents(extra: ComponentCatalog = {}): (Provider | EnvironmentProviders)[] {
   return [
     provideComponentCatalog({ ...STANDARD_COMPONENTS, ...extra }),
     { provide: Confirmation, useExisting: DialogConfirmation },

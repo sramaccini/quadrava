@@ -128,7 +128,7 @@ node adapter/server.mjs --port 8085 --upstream http://127.0.0.1:8099 --no-auth
 ```bash
 node adapter/server.mjs --port 8085 --authz http://localhost:8082        # tokens of the quadrava realm, permissions checked
 # BFF: forward /api to the adapter (application.yml of reference/bff, route prefix /api)
-LOWCODE_API_URL=http://localhost:8085 java -jar bff/target/*.jar
+LC_API_URL=http://localhost:8085 java -jar bff/target/*.jar
 ```
 
 The runtime loads the project like the examples: with the runtime image, mount this folder at

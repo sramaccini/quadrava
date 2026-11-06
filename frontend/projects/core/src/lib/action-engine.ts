@@ -61,7 +61,7 @@ export function describeSteps(steps: Step[]): string {
  */
 export async function runSteps(runtime: ScreenRuntime, steps: Step[], scope: Scope = {}, options: StepOptions = {}): Promise<boolean> {
   // Every sequence started by a component is an action: a span, whose children are the HTTP calls of the steps.
-  const span = runtime.startSpan('action.run', { 'lowcode.action': describeSteps(steps) });
+  const span = runtime.startSpan('action.run', { 'lc.action': describeSteps(steps) });
   const ok = await runSequence(runtime, steps, scope, { depth: 0, trace: span?.context, onFieldErrors: options.onFieldErrors });
   span?.end(ok);
   return ok;

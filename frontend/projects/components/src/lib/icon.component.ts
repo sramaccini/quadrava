@@ -54,7 +54,7 @@ import { NzIconModule } from 'ng-zorro-antd/icon';
 
 /**
  * Built-in icon set: name used in the JSON → Ant Design icon. Icons are registered one by one
- * (`provideLowcodeComponents`): an unknown name shows nothing and never causes icons to be loaded from the network.
+ * (`provideLcComponents`): an unknown name shows nothing and never causes icons to be loaded from the network.
  */
 export const ICON_TYPES: Record<string, { type: string; icon: IconDefinition }> = {
   help: { type: 'question-circle', icon: QuestionCircleOutline },

@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { NavigationRuntime, type Authorization, type UserProvider } from 'core';
 import type { ThemeBrand } from 'schema';
 import { AppBrandComponent } from './app-brand.component';
-import { provideLowcodeComponents } from './provide';
+import { provideLcComponents } from './provide';
 import { SidebarComponent } from './sidebar.component';
 
 /** A side bar with the brand of a theme, as the previews of Studio put it: without saying whether it is collapsed. */
@@ -26,7 +26,7 @@ class BrandInSidebar {
 
 describe('brand of the application inside the side bar', () => {
   it('follows the collapsed state of the bar by itself: the icon when collapsed', async () => {
-    TestBed.configureTestingModule({ providers: [provideLowcodeComponents()] });
+    TestBed.configureTestingModule({ providers: [provideLcComponents()] });
     const fixture = TestBed.createComponent(BrandInSidebar);
     fixture.detectChanges();
     await fixture.whenStable();

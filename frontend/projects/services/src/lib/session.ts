@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { UserProvider } from 'core';
 import { firstValueFrom } from 'rxjs';
-import { LOWCODE_REDIRECT, LOWCODE_SERVICES_CONFIG } from './config';
+import { LC_REDIRECT, LC_SERVICES_CONFIG } from './config';
 
 /** `refused`: the BFF answered 401 again right after a login, so no other login is started (no loop). */
 export type SessionState = 'unknown' | 'authenticated' | 'expired' | 'refused';
@@ -48,8 +48,8 @@ interface BffUser {
 @Injectable({ providedIn: 'root' })
 export class HttpSession extends UserProvider {
   private readonly http = inject(HttpClient);
-  private readonly config = inject(LOWCODE_SERVICES_CONFIG);
-  private readonly redirect = inject(LOWCODE_REDIRECT);
+  private readonly config = inject(LC_SERVICES_CONFIG);
+  private readonly redirect = inject(LC_REDIRECT);
   private readonly info = signal<BffUser | null>(null);
 
   readonly state = signal<SessionState>('unknown');

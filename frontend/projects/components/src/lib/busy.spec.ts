@@ -2,7 +2,7 @@ import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
 import { BUSY_DELAY_MS, BUSY_MIN_VISIBLE_MS, BUSY_SLOW_MS, BusyComponent } from './busy.component';
-import { provideLowcodeComponents } from './provide';
+import { provideLcComponents } from './provide';
 import { renderScreen } from './screen-testing';
 
 @Component({
@@ -19,7 +19,7 @@ describe('Activity indicator (lc-busy)', () => {
 
   async function mount() {
     vi.useFakeTimers();
-    TestBed.configureTestingModule({ providers: [provideLowcodeComponents()] });
+    TestBed.configureTestingModule({ providers: [provideLcComponents()] });
     const fixture = TestBed.createComponent(Host);
     const el = fixture.nativeElement as HTMLElement;
     const advance = async (ms: number) => {

@@ -2,7 +2,7 @@ import { signal } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { Authorization, DataClient, Notifier, ScreenComponent, ScreenNavigator, UserProvider, type DataRequest } from 'core';
 import type { ScreenDefinition } from 'schema';
-import { provideLowcodeComponents } from './provide';
+import { provideLcComponents } from './provide';
 import { openSelect, stubViewportHeight } from './select-testing';
 
 const screen: ScreenDefinition = {
@@ -57,7 +57,7 @@ describe('ScreenComponent + standard catalogue', () => {
     toasts = [];
     TestBed.configureTestingModule({
       providers: [
-        provideLowcodeComponents(),
+        provideLcComponents(),
         { provide: Authorization, useValue: { can: (p: string) => permissions().has(p) } },
         { provide: UserProvider, useValue: { user: () => ({ username: 'u' }) } },
         { provide: ScreenNavigator, useValue: { navigate: () => undefined } },

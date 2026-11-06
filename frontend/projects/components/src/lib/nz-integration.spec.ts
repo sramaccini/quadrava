@@ -4,7 +4,7 @@ import { NzMessageService } from 'ng-zorro-antd/message';
 import type { NodeDefinition, ScreenDefinition, ThemeDefinition } from 'schema';
 import { iconType, IconComponent } from './icon.component';
 import { NzNotifier } from './notifier';
-import { provideLowcodeComponents } from './provide';
+import { provideLcComponents } from './provide';
 import { openSelect, stubViewportHeight } from './select-testing';
 import { parseIsoDate, toIsoDate } from './shared';
 import { themeToNzVars } from './theme-bridge';
@@ -37,7 +37,7 @@ describe('integration with NG-ZORRO', () => {
     toasts = [];
     TestBed.configureTestingModule({
       providers: [
-        provideLowcodeComponents(),
+        provideLcComponents(),
         { provide: Authorization, useValue: { can: () => true } },
         { provide: UserProvider, useValue: { user: () => ({ username: 'u' }) } },
         { provide: ScreenNavigator, useValue: { navigate: () => undefined } },
@@ -73,7 +73,7 @@ describe('integration with NG-ZORRO', () => {
     });
 
     it('applying a dark theme loads the dark stylesheet; a light one removes it', async () => {
-      TestBed.configureTestingModule({ providers: [provideLowcodeComponents()] });
+      TestBed.configureTestingModule({ providers: [provideLcComponents()] });
       const themes = TestBed.inject(ThemeService);
       themes.apply(theme('dark'));
       TestBed.tick();
@@ -95,7 +95,7 @@ describe('integration with NG-ZORRO', () => {
       expect(iconType('home')).toBe('home');
       expect(iconType('file-plus')).toBe('file-add');
       expect(iconType('../../evil')).toBeNull();
-      TestBed.configureTestingModule({ providers: [provideLowcodeComponents()] });
+      TestBed.configureTestingModule({ providers: [provideLcComponents()] });
       const known = TestBed.createComponent(IconComponent);
       known.componentRef.setInput('name', 'home');
       known.detectChanges();
@@ -107,7 +107,7 @@ describe('integration with NG-ZORRO', () => {
     });
 
     it('the notifier uses NG-ZORRO messages and does not interpret HTML', async () => {
-      TestBed.configureTestingModule({ providers: [provideLowcodeComponents()] });
+      TestBed.configureTestingModule({ providers: [provideLcComponents()] });
       const messages = TestBed.inject(NzMessageService);
       const info = vi.spyOn(messages, 'info');
       const error = vi.spyOn(messages, 'error');

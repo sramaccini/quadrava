@@ -1,9 +1,9 @@
 import { provideHttpClient, withFetch } from '@angular/common/http';
 import { ApplicationConfig, provideBrowserGlobalErrorListeners, type EnvironmentProviders, type Provider } from '@angular/core';
 import { provideRouter } from '@angular/router';
-import { NzNotifier, SectionTools, provideLowcodeComponents } from 'components';
+import { NzNotifier, SectionTools, provideLcComponents } from 'components';
 import { Authorization, DataClient, DefinitionSource, LiveUpdates, Notifier, RuntimeDiagnostics, ScreenNavigator, SETTINGS_VALUES, SnapshotDefinitions, UserProvider, type ProjectSnapshot } from 'core';
-import { provideLowcodeServices, provideRegistryDefinitions } from 'services';
+import { provideLcServices, provideRegistryDefinitions } from 'services';
 import { DemoDiagnostics, DemoLiveUpdates, DemoSession, MockDataClient } from '../demo/demo-ports';
 import { ExampleDefinitions } from '../demo/example-definitions';
 import { routes } from './app.routes';
@@ -32,7 +32,7 @@ function definitions(config: RuntimeConfig, settings: ApplicationSettings, proje
 function ports(config: RuntimeConfig): (Provider | EnvironmentProviders)[] {
   if (config.services?.source === 'bff') {
     const { appId, tenantSwitchUrl, logLevel } = config.services;
-    return [provideLowcodeServices({ appId, tenantSwitchUrl, logLevel }), { provide: ShellSession, useExisting: BffShellSession }];
+    return [provideLcServices({ appId, tenantSwitchUrl, logLevel }), { provide: ShellSession, useExisting: BffShellSession }];
   }
   return [
     provideHttpClient(withFetch()),
@@ -53,7 +53,7 @@ export function appConfigFor(config: RuntimeConfig, settings: ApplicationSetting
       // The settings of the application, `settings` in the expressions (for example the base address of a service).
       { provide: SETTINGS_VALUES, useValue: () => settings.settings ?? {} },
       provideRouter(routes),
-      provideLowcodeComponents(),
+      provideLcComponents(),
       ...definitions(config, settings, project),
       ...ports(config),
       { provide: ScreenNavigator, useExisting: RouterNavigator },

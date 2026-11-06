@@ -29,14 +29,14 @@ quadrava:
     # APIs forwarded by the BFF to the services, with the user's token. Only these prefixes and these hosts.
     routes:
       - prefix: /registry
-        target: ${LOWCODE_REGISTRY_URL:http://localhost:8081}
+        target: ${LC_REGISTRY_URL:http://localhost:8081}
       - prefix: /authz
-        target: ${LOWCODE_AUTHZ_URL:http://localhost:8082}
+        target: ${LC_AUTHZ_URL:http://localhost:8082}
       - prefix: /telemetry
-        target: ${LOWCODE_TELEMETRY_URL:http://localhost:8083}
+        target: ${LC_TELEMETRY_URL:http://localhost:8083}
       # Back end of the application: in the demo the sample server (frontend/tools/demo-api.mjs).
       - prefix: /api
-        target: ${LOWCODE_API_URL:http://localhost:8084}
+        target: ${LC_API_URL:http://localhost:8084}
     # Applications the user may return to after the login (/bff/login?return=...).
     frontend-origins:
       - http://localhost:4200
@@ -44,7 +44,7 @@ quadrava:
       # The runtime image in front of this BFF (docker/runtime/README.md, «Against the local stack»).
       - http://localhost:8090
     # After a login without a return page, and when opening the BFF root.
-    home: ${LOWCODE_HOME:http://localhost:4200/}
+    home: ${LC_HOME:http://localhost:4200/}
     # Signing out also closes the session in Keycloak.
     end-session-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/quadrava}/protocol/openid-connect/logout
     # Optional tenants (contracts/bff.yaml): the user switches with POST /bff/tenant, the services receive X-Tenant.

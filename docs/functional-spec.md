@@ -1,10 +1,10 @@
-# LowCode Platform — Functional Specification
+# Quadrava — Functional Specification
 
 Simone Ramaccini · 7 October 2026
 
 ## 1. Purpose and vision
 
-The LowCode Platform lets you build business and administrative applications by describing the user interface in JSON, instead of writing front-end code every time. It is aimed at teams that have to produce many similar applications (lists, filters, forms, detail views) without redoing authentication, permissions and tracing each time.
+Quadrava lets you build business and administrative applications by describing the user interface in JSON, instead of writing front-end code every time. It is aimed at teams that have to produce many similar applications (lists, filters, forms, detail views) without redoing authentication, permissions and tracing each time.
 
 A simple picture: the platform works like a box of building bricks with its instruction booklet. The **JSON** is the booklet (it says which pieces are needed and where they go), the **runtime** is whoever assembles the pieces by reading the booklet, and the **visual editor** is the tool that lets you write the booklet by dragging pieces instead of typing it by hand.
 

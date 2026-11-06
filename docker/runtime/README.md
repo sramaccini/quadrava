@@ -76,7 +76,7 @@ docker run -d --name quadrava-runtime -p 8090:8080 \
   -e QUADRAVA_BFF_URL=http://host.docker.internal:8080 quadrava-runtime
 ```
 
-With a registry that follows `contracts/registry.yaml` behind the BFF (`LOWCODE_REGISTRY_URL`) and the examples
+With a registry that follows `contracts/registry.yaml` behind the BFF (`LC_REGISTRY_URL`) and the examples
 published in it (`npm run publish:examples`), the variables take the definitions from there instead:
 `-e QUADRAVA_REGISTRY_APP=demo -e QUADRAVA_REGISTRY_ENV=development -e QUADRAVA_NAVIGATION=invoicing
 -e QUADRAVA_THEMES=light,classic,dark -e QUADRAVA_LANGUAGES=en,it`.

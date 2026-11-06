@@ -515,7 +515,7 @@ describe('tracce', () => {
   it('opening the screen is a span that closes after the first reads, of which it is the parent', async () => {
     const rt = fakes.runtime(screen, injector);
     const open = fakes.spans[0];
-    expect(open).toMatchObject({ name: 'screen.open', attributes: { 'lowcode.screen': 'order-list', 'lowcode.datasources': 1 } });
+    expect(open).toMatchObject({ name: 'screen.open', attributes: { 'lc.screen': 'order-list', 'lc.datasources': 1 } });
     expect(open.ok).toBeUndefined();
     await settle();
     expect(fakes.requestOptions[0]).toMatchObject({ source: 'orders', trace: open.context });
@@ -549,7 +549,7 @@ describe('tracce', () => {
     const ok = await runSteps(rt, [{ run: 'save' }, { refresh: 'orders' }, { toast: 'done' }]);
     const action = fakes.spans.find((s) => s.name === 'action.run')!;
     expect(ok).toBe(true);
-    expect(action).toMatchObject({ attributes: { 'lowcode.screen': 'order-list', 'lowcode.action': 'run save, refresh orders, toast' }, ok: true });
+    expect(action).toMatchObject({ attributes: { 'lc.screen': 'order-list', 'lc.action': 'run save, refresh orders, toast' }, ok: true });
     const fromAction = fakes.requestOptions.filter((o) => o?.trace === action.context).map((o) => o?.source);
     expect(fromAction).toEqual(['approve', 'orders']);
     rt.destroy();
@@ -571,9 +571,9 @@ describe('tracce', () => {
   it('every call carries the screen for the audit, and the calls of an action carry the action too', async () => {
     const rt = fakes.runtime({ ...screen, actions: { save: [{ call: 'approve', args: { id: '{{row.id}}' } }] } }, injector);
     await settle();
-    expect(fakes.requestOptions[0]?.baggage).toEqual({ 'lowcode.screen': 'order-list' });
+    expect(fakes.requestOptions[0]?.baggage).toEqual({ 'lc.screen': 'order-list' });
     await runSteps(rt, [{ run: 'save' }], { row: { id: 4242 } });
-    expect(fakes.requestOptions.at(-1)?.baggage).toEqual({ 'lowcode.screen': 'order-list', 'lowcode.action': 'run save' });
+    expect(fakes.requestOptions.at(-1)?.baggage).toEqual({ 'lc.screen': 'order-list', 'lc.action': 'run save' });
     expect(JSON.stringify(fakes.requestOptions.map((o) => o?.baggage))).not.toContain('4242');
     rt.destroy();
   });
@@ -581,7 +581,7 @@ describe('tracce', () => {
   it('without a tracer the calls still carry the screen, not the action', async () => {
     const rt = new ScreenRuntime(screen, { ...fakes.deps, tracer: null }, injector);
     await runSteps(rt, [{ call: 'approve', args: { id: 1 } }]);
-    expect(fakes.requestOptions.at(-1)?.baggage).toEqual({ 'lowcode.screen': 'order-list' });
+    expect(fakes.requestOptions.at(-1)?.baggage).toEqual({ 'lc.screen': 'order-list' });
     rt.destroy();
   });
 

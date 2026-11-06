@@ -2,7 +2,7 @@ import { signal } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { Authorization, DataClient, Notifier, RuntimeDiagnostics, ScreenComponent, ScreenNavigator, UserProvider, type DataRequest } from 'core';
 import type { NodeDefinition, ScreenDefinition } from 'schema';
-import { provideLowcodeComponents } from './provide';
+import { provideLcComponents } from './provide';
 
 /** For tests only: mounts a screen with the standard catalogue and fake ports that record everything. */
 export interface ScreenHarness {
@@ -34,7 +34,7 @@ export async function renderScreen(options: {
   const respond = options.respond ?? (() => ({}));
   TestBed.configureTestingModule({
     providers: [
-      provideLowcodeComponents(),
+      provideLcComponents(),
       { provide: Authorization, useValue: { can: (p: string) => permissions().has(p) } },
       { provide: UserProvider, useValue: { user: () => ({ username: 'u' }) } },
       { provide: ScreenNavigator, useValue: { navigate: (screen: string, params: Record<string, unknown>) => navigations.push({ screen, params }) } },

@@ -4,12 +4,12 @@ import { ApplicationInitStatus } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Authorization, DataClient, RuntimeDiagnostics, RuntimeTracer, UserProvider } from 'core';
 import { HttpAuthorization } from './authorization';
-import { LOWCODE_REDIRECT, LOWCODE_SERVICES_CONFIG, resolveConfig, type LogLevel } from './config';
+import { LC_REDIRECT, LC_SERVICES_CONFIG, resolveConfig, type LogLevel } from './config';
 import { HttpDiagnostics, redact } from './diagnostics';
 import { DataError } from './errors';
 import { HttpDataClient } from './http-data-client';
-import { lowcodeHttpInterceptor } from './interceptor';
-import { provideLowcodeServices } from './provide';
+import { lcHttpInterceptor } from './interceptor';
+import { provideLcServices } from './provide';
 import { HttpSession } from './session';
 import { isSameOriginRelative, newSpanContext, traceparent } from './trace';
 import { HttpTracer } from './tracer';
@@ -19,10 +19,10 @@ function setup(overrides: Partial<Parameters<typeof resolveConfig>[0]> = {}) {
   sessionStorage.clear();
   TestBed.configureTestingModule({
     providers: [
-      provideHttpClient(withInterceptors([lowcodeHttpInterceptor])),
+      provideHttpClient(withInterceptors([lcHttpInterceptor])),
       provideHttpClientTesting(),
-      { provide: LOWCODE_SERVICES_CONFIG, useValue: resolveConfig({ appId: 'demo', ...overrides }) },
-      { provide: LOWCODE_REDIRECT, useValue: (url: string) => redirects.push(url) },
+      { provide: LC_SERVICES_CONFIG, useValue: resolveConfig({ appId: 'demo', ...overrides }) },
+      { provide: LC_REDIRECT, useValue: (url: string) => redirects.push(url) },
       { provide: Authorization, useExisting: HttpAuthorization },
       { provide: UserProvider, useExisting: HttpSession },
       { provide: DataClient, useExisting: HttpDataClient },
@@ -405,10 +405,10 @@ describe('HttpTracer', () => {
 
   it('the call of a data source carries screen and action in the W3C baggage header, percent-encoded', async () => {
     const { http } = setup();
-    const baggageOf = { 'lowcode.screen': 'order-list', 'lowcode.action': 'call approve, refresh orders' };
+    const baggageOf = { 'lc.screen': 'order-list', 'lc.action': 'call approve, refresh orders' };
     const p = TestBed.inject(HttpDataClient).request({ method: 'POST', url: '/api/orders/4242/approve', body: {} }, { source: 'approve', baggage: baggageOf });
     const req = http.expectOne('/api/orders/4242/approve');
-    expect(req.request.headers.get('baggage')).toBe('lowcode.screen=order-list,lowcode.action=call%20approve%2C%20refresh%20orders');
+    expect(req.request.headers.get('baggage')).toBe('lc.screen=order-list,lc.action=call%20approve%2C%20refresh%20orders');
     req.flush({});
     await p;
   });
@@ -425,7 +425,7 @@ describe('HttpTracer', () => {
   it('the call of a data source is a client span child of the starting span, without URL', async () => {
     const { http } = setup();
     const tracer = TestBed.inject(HttpTracer);
-    const action = tracer.start('action.run', { 'lowcode.action': 'call approve' });
+    const action = tracer.start('action.run', { 'lc.action': 'call approve' });
     const p = TestBed.inject(HttpDataClient).request({ method: 'POST', url: '/api/orders/4242/approve', body: {} }, { source: 'approve', trace: action.context });
     const req = http.expectOne('/api/orders/4242/approve');
     const header = req.request.headers.get('traceparent')!;
@@ -440,7 +440,7 @@ describe('HttpTracer', () => {
     const [httpSpan, actionSpan] = spansOf(sent.request.body);
     expect(httpSpan).toMatchObject({ name: 'http.client', kind: 3, traceId: action.context.traceId, parentSpanId: action.context.spanId, status: { code: 2 } });
     expect(header).toContain(httpSpan['spanId'] as string);
-    expect(attrs(httpSpan)).toEqual({ 'http.request.method': 'POST', 'lowcode.datasource': 'approve', 'http.response.status_code': '409' });
+    expect(attrs(httpSpan)).toEqual({ 'http.request.method': 'POST', 'lc.datasource': 'approve', 'http.response.status_code': '409' });
     expect(actionSpan).toMatchObject({ name: 'action.run', kind: 1, status: { code: 2 } });
     expect(JSON.stringify(sent.request.body)).not.toContain('4242');
     expect(sent.request.body.resourceSpans[0].resource.attributes).toContainEqual({ key: 'quadrava.app', value: { stringValue: 'demo' } });
@@ -480,12 +480,12 @@ describe('HttpTracer', () => {
     void TestBed.inject(HttpTracer).flush();
     const [span] = spansOf(http.expectOne('/telemetry/v1/traces').request.body);
     expect(span['status']).toEqual({});
-    expect(attrs(span)['lowcode.cancelled']).toBe(true);
+    expect(attrs(span)['lc.cancelled']).toBe(true);
   });
 
   it('when the page closes it empties the queue with keepalive', () => {
     const { http } = setup();
-    TestBed.inject(HttpTracer).start('screen.open', { 'lowcode.screen': 'list' }).end(true);
+    TestBed.inject(HttpTracer).start('screen.open', { 'lc.screen': 'list' }).end(true);
     globalThis.dispatchEvent(new Event('pagehide'));
     expect(http.expectOne('/telemetry/v1/traces').request.keepalive).toBe(true);
   });
@@ -498,10 +498,10 @@ describe('HttpTracer', () => {
   });
 });
 
-describe('provideLowcodeServices', () => {
+describe('provideLcServices', () => {
   it('at start-up it loads the session and then the permissions', async () => {
     TestBed.configureTestingModule({
-      providers: [provideLowcodeServices({ appId: 'demo' }), provideHttpClientTesting(), { provide: LOWCODE_REDIRECT, useValue: () => undefined }],
+      providers: [provideLcServices({ appId: 'demo' }), provideHttpClientTesting(), { provide: LC_REDIRECT, useValue: () => undefined }],
     });
     const http = TestBed.inject(HttpTestingController);
     const ready = TestBed.inject(ApplicationInitStatus).donePromise;

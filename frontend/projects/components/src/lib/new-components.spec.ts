@@ -4,7 +4,7 @@ import { Authorization, DataClient, Notifier, ScreenComponent, ScreenNavigator, 
 import type { NodeDefinition, ScreenDefinition } from 'schema';
 import { DialogConfirmation } from './dialog-confirmation';
 import { NzModalService } from 'ng-zorro-antd/modal';
-import { provideLowcodeComponents } from './provide';
+import { provideLcComponents } from './provide';
 
 const plain = (text: string | null | undefined): string => (text ?? '').replace(/[  \s]+/g, ' ').trim();
 
@@ -25,7 +25,7 @@ describe('new catalogue components', () => {
     respond = () => ({});
     TestBed.configureTestingModule({
       providers: [
-        provideLowcodeComponents(),
+        provideLcComponents(),
         { provide: Authorization, useValue: { can: (p: string) => permissions().has(p) } },
         { provide: UserProvider, useValue: { user: () => ({ username: 'u' }) } },
         { provide: ScreenNavigator, useValue: { navigate: () => undefined } },
@@ -52,7 +52,7 @@ describe('new catalogue components', () => {
     toasts = [];
     TestBed.configureTestingModule({
       providers: [
-        provideLowcodeComponents(),
+        provideLcComponents(),
         { provide: Authorization, useValue: { can: (p: string) => permissions().has(p) } },
         { provide: UserProvider, useValue: { user: () => ({ username: 'u' }) } },
         { provide: ScreenNavigator, useValue: { navigate: () => undefined } },
@@ -162,7 +162,7 @@ describe('new catalogue components', () => {
       permissions.set(new Set());
       TestBed.configureTestingModule({
         providers: [
-          provideLowcodeComponents(),
+          provideLcComponents(),
           { provide: Authorization, useValue: { can: () => true } },
           { provide: UserProvider, useValue: { user: () => ({}) } },
           { provide: ScreenNavigator, useValue: { navigate: () => undefined } },
@@ -277,7 +277,7 @@ describe('new catalogue components', () => {
     };
     const ask = (message: string): Promise<boolean> => TestBed.inject(DialogConfirmation).confirm(message);
 
-    beforeEach(() => TestBed.configureTestingModule({ providers: [provideLowcodeComponents()] }));
+    beforeEach(() => TestBed.configureTestingModule({ providers: [provideLcComponents()] }));
     afterEach(() => {
       document.body.querySelectorAll('.cdk-overlay-container, .stub').forEach((n) => n.remove());
     });

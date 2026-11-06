@@ -12,17 +12,34 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking.** The word «lowcode» is gone from the code: names, tokens, telemetry attributes and environment variables
+  use `lc`, the prefix already used by tags, CSS variables and message keys. Old names are not kept as aliases.
+
+  | Before | After |
+  | --- | --- |
+  | `provideLowcodeComponents`, `provideLowcodeServices` | `provideLcComponents`, `provideLcServices` |
+  | `LowcodeServicesConfig` | `LcServicesConfig` |
+  | `LOWCODE_SERVICES_CONFIG`, `LOWCODE_REDIRECT`, `LOWCODE_TRACE` | `LC_SERVICES_CONFIG`, `LC_REDIRECT`, `LC_TRACE` |
+  | `lowcodeHttpInterceptor` | `lcHttpInterceptor` |
+  | span and baggage attributes `lowcode.screen`, `lowcode.action`, `lowcode.datasource`, `lowcode.datasources`, `lowcode.cancelled`, `lowcode.interrupted`; OTLP scope `lowcode.runtime` | `lc.screen`, `lc.action`, `lc.datasource`, `lc.datasources`, `lc.cancelled`, `lc.interrupted`; `lc.runtime` |
+  | reference BFF variables `LOWCODE_REGISTRY_URL`, `LOWCODE_AUTHZ_URL`, `LOWCODE_TELEMETRY_URL`, `LOWCODE_API_URL`, `LOWCODE_HOME` | `LC_REGISTRY_URL`, `LC_AUTHZ_URL`, `LC_TELEMETRY_URL`, `LC_API_URL`, `LC_HOME` |
+  | session cookie named in the contracts `LOWCODE_SESSION` | `LC_SESSION` |
+
+  Dashboards and queries on the telemetry attributes, and deployments that set the BFF variables, need the new names.
+
 ### Added
 
 - Context for the audit of the services (RF-AUD-02): every data-source call carries a W3C `baggage` header with
-  `lowcode.screen` and, for the calls of an action, `lowcode.action` (its steps, as in the traces), never data values.
+  `lc.screen` and, for the calls of an action, `lc.action` (its steps, as in the traces), never data values.
   `DataRequestOptions` has a new optional `baggage`; the reference BFF forwards the header.
 - Redaction at the source (RF-TEL-06): the current values of the fields marked `sensitive`, and of passwords, are
   replaced by `[sensitive]` in the technical reports of the screen (an expression error, the text of a failed call).
   New `ScreenRuntime.markSensitive`, called by every field.
 - Log level per environment (RF-TEL-07): the technical reports have a weight (`error`, `warn` for a missing
   translation key or a table sorted only on the current page, `info`), sent as the OTLP severity; `logLevel` in
-  `provideLowcodeServices` and `services.logLevel` in `runtime-config.json` (`QUADRAVA_LOG_LEVEL` in the image) leave
+  `provideLcServices` and `services.logLevel` in `runtime-config.json` (`QUADRAVA_LOG_LEVEL` in the image) leave
   out the lighter ones (`warn` if absent, `off` for none). `RuntimeDiagnostics.report` receives an optional `severity`.
 
 ### Changed

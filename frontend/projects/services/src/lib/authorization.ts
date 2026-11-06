@@ -2,7 +2,7 @@ import { HttpClient, HttpResponse } from '@angular/common/http';
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { Authorization } from 'core';
 import { firstValueFrom } from 'rxjs';
-import { LOWCODE_SERVICES_CONFIG } from './config';
+import { LC_SERVICES_CONFIG } from './config';
 
 interface Capabilities {
   permissions: string[];
@@ -24,7 +24,7 @@ type Status = 'idle' | 'loading' | 'ready' | 'error';
 @Injectable({ providedIn: 'root' })
 export class HttpAuthorization extends Authorization {
   private readonly http = inject(HttpClient);
-  private readonly config = inject(LOWCODE_SERVICES_CONFIG);
+  private readonly config = inject(LC_SERVICES_CONFIG);
   private readonly permissions = signal<ReadonlySet<string>>(new Set());
   private timer: ReturnType<typeof setTimeout> | undefined;
   private generation = 0;

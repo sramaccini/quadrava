@@ -2,7 +2,7 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { Authorization, DataClient, I18n, Notifier, ScreenComponent, ScreenNavigator, UserProvider } from 'core';
 import { NzI18nService } from 'ng-zorro-antd/i18n';
 import type { NodeDefinition, ScreenDefinition } from 'schema';
-import { provideLowcodeComponents } from './provide';
+import { provideLcComponents } from './provide';
 
 describe('language and translations in the components', () => {
   let i18n: I18n;
@@ -10,7 +10,7 @@ describe('language and translations in the components', () => {
   async function render(components: NodeDefinition[], data: unknown = {}): Promise<{ fixture: ComponentFixture<ScreenComponent>; el: HTMLElement }> {
     TestBed.configureTestingModule({
       providers: [
-        provideLowcodeComponents(),
+        provideLcComponents(),
         { provide: Authorization, useValue: { can: () => true } },
         { provide: UserProvider, useValue: { user: () => ({ username: 'mario' }) } },
         { provide: ScreenNavigator, useValue: { navigate: () => undefined } },
