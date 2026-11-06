@@ -13,7 +13,7 @@ import { NZ_MODAL_DATA, NzModalService } from 'ng-zorro-antd/modal';
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   styles: `
-    lc-confirm-message { overflow-wrap: anywhere; white-space: pre-line; }
+    lc-confirm-message { display: block; overflow-wrap: anywhere; white-space: pre-line; }
     .lc-confirm .ant-modal-confirm-body .ant-modal-confirm-content { margin-top: 0; }
   `,
   template: `{{ data.message }}`,
