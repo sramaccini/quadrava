@@ -73,9 +73,18 @@ export abstract class Notifier {
   abstract toast(message: string, kind?: 'info' | 'error'): void;
 }
 
-/** Receiver of the technical reports (expression and action errors). It never receives data values. */
+/**
+ * Weight of a technical report: `error`, something did not work (an expression, a call, a step); `warn`, it works but the
+ * definition should be fixed (a missing translation key); `info`, for information only.
+ */
+export type DiagnosticSeverity = 'error' | 'warn' | 'info';
+
+/**
+ * Receiver of the technical reports (expression and action errors). It never receives data values. `severity` is
+ * missing for errors.
+ */
 export abstract class RuntimeDiagnostics {
-  abstract report(event: { screen: string; source: string; error: string }): void;
+  abstract report(event: { screen: string; source: string; error: string; severity?: DiagnosticSeverity }): void;
 }
 
 /** Identity of a span (W3C Trace Context): `traceId` of 32 hex digits, `spanId` of 16. */

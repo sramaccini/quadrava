@@ -20,6 +20,10 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 - Redaction at the source (RF-TEL-06): the current values of the fields marked `sensitive`, and of passwords, are
   replaced by `[sensitive]` in the technical reports of the screen (an expression error, the text of a failed call).
   New `ScreenRuntime.markSensitive`, called by every field.
+- Log level per environment (RF-TEL-07): the technical reports have a weight (`error`, `warn` for a missing
+  translation key or a table sorted only on the current page, `info`), sent as the OTLP severity; `logLevel` in
+  `provideLowcodeServices` and `services.logLevel` in `runtime-config.json` (`QUADRAVA_LOG_LEVEL` in the image) leave
+  out the lighter ones (`warn` if absent, `off` for none). `RuntimeDiagnostics.report` receives an optional `severity`.
 
 ### Changed
 

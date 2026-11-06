@@ -9,6 +9,7 @@ import {
   LiveUpdates,
   Notifier,
   RuntimeDiagnostics,
+  type DiagnosticSeverity,
   RuntimeTracer,
   ScreenNavigator,
   UserProvider,
@@ -344,7 +345,7 @@ export class ScreenRuntime {
   private reportMissingKey(key: string): void {
     if (this.missingKeys.has(key)) return;
     this.missingKeys.add(key);
-    this.report('t()', `missing translation key: ${key}`);
+    this.report('t()', `missing translation key: ${key}`, 'warn');
   }
 
   /**
@@ -572,13 +573,13 @@ export class ScreenRuntime {
   }
 
   /**
-   * Reports a technical problem. Sending is deferred: expression errors arise while templates render,
-   * where writing to a signal is forbidden, and the port implementations might do it.
+   * Reports a technical problem (an error unless `severity` says otherwise). Sending is deferred: expression errors arise
+   * while templates render, where writing to a signal is forbidden, and the port implementations might do it.
    */
-  report(source: string, error: string): void {
+  report(source: string, error: string, severity: DiagnosticSeverity = 'error'): void {
     const diagnostics = this.deps.diagnostics;
     if (!diagnostics) return;
-    const event = { screen: this.definition.screen, source: this.withoutSensitive(source), error: this.withoutSensitive(error) };
+    const event = { screen: this.definition.screen, source: this.withoutSensitive(source), error: this.withoutSensitive(error), ...(severity === 'error' ? {} : { severity }) };
     queueMicrotask(() => diagnostics.report(event));
   }
 

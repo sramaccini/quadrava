@@ -248,7 +248,7 @@ export class TableComponent {
     if (!sort || this.serverSorted()) return rows;
     if (this.paged() && !this.reportedLocalSort) {
       this.reportedLocalSort = true;
-      this.runtime().report(`table ${this.node().source}`, 'sorting without sort.bind with server paging: only the current page is sorted');
+      this.runtime().report(`table ${this.node().source}`, 'sorting without sort.bind with server paging: only the current page is sorted', 'warn');
     }
     return sortRows(rows, sort, this.i18n.intlLocale());
   });

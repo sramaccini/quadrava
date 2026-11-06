@@ -114,6 +114,19 @@ describe('ScreenRuntime', () => {
     rt.destroy();
   });
 
+  it('a missing translation key is a warning, reported once; a broken expression is an error', async () => {
+    const rt = fakes.runtime({ ...screen, dataSources: {} }, injector);
+    expect(rt.text("{{ t('no.such.key') }}")).toBe('no.such.key');
+    rt.text("{{ t('no.such.key') }}");
+    rt.text('{{ 1 + }}');
+    await settle();
+    expect(fakes.reports.map((r) => [r.source, r.severity])).toEqual([
+      ['t()', 'warn'],
+      ['1 +', undefined],
+    ]);
+    rt.destroy();
+  });
+
   it('the technical reports never contain the current value of a sensitive field', async () => {
     const rt = fakes.runtime({ ...screen, dataSources: {} }, injector);
     const iban = {};

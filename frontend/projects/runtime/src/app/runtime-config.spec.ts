@@ -82,6 +82,17 @@ describe('runtime configuration: where the definitions come from', () => {
     }
   });
 
+  it('the log level of the environment reaches the services; an unknown one is left out', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const bff = (logLevel: unknown) => ({ ...registry, services: { source: 'bff', appId: 'demo', logLevel } });
+    serve(bff('error'));
+    const config = await loadRuntimeConfig();
+    TestBed.configureTestingModule({ providers: appConfigFor(config).providers });
+    expect(TestBed.inject(LOWCODE_SERVICES_CONFIG).logLevel).toBe('error');
+    serve(bff('verbose'));
+    expect((await loadRuntimeConfig()).services).toEqual({ source: 'bff', appId: 'demo' });
+  });
+
   it('registry: menu and themes come from the versions published in the environment', async () => {
     TestBed.configureTestingModule({ providers: [...appConfigFor(registry).providers, provideHttpClientTesting()] });
     const source = TestBed.inject(DefinitionSource);

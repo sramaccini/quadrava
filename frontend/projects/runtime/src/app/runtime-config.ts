@@ -1,5 +1,5 @@
 import { InjectionToken } from '@angular/core';
-import type { RegistryDefinitionsConfig } from 'services';
+import type { LogLevel, RegistryDefinitionsConfig } from 'services';
 
 /**
  * Configuration read at start-up from `runtime-config.json` (public folder): where screens,
@@ -16,7 +16,7 @@ export interface RuntimeConfig {
    * Ports of the runtime: `demo` (fake profiles, data and reports in the browser) or `bff` (session, permissions,
    * data and telemetry through the BFF, `services` library). When missing: demo.
    */
-  services?: { source: 'demo' } | { source: 'bff'; appId: string; tenantSwitchUrl?: string };
+  services?: { source: 'demo' } | { source: 'bff'; appId: string; tenantSwitchUrl?: string; logLevel?: LogLevel };
   /**
    * Origins of Quadrava Studio allowed to open this runtime with their project («Run project», ADR-16), for example
    * `http://localhost:4201`. Without them a runtime ignores `?studio=` (fail-closed).
@@ -112,6 +112,12 @@ export async function loadRuntimeConfig(url = 'runtime-config.json'): Promise<Ru
     if (tenantSwitchUrl !== undefined && !(typeof tenantSwitchUrl === 'string' && tenantSwitchUrl.startsWith('/') && !tenantSwitchUrl.startsWith('//'))) {
       console.warn('[runtime-config] tenantSwitchUrl must be a path of the same origin: tenant choice disabled');
       delete services!['tenantSwitchUrl'];
+    }
+    // The technical reports sent from this environment: an unknown level is left out (the default, warn, applies).
+    const logLevel = services?.['logLevel'];
+    if (logLevel !== undefined && !['error', 'warn', 'info', 'off'].includes(logLevel as string)) {
+      console.warn('[runtime-config] logLevel must be error, warn, info or off: using warn');
+      delete services!['logLevel'];
     }
     const definitions = config?.definitions as Record<string, unknown> | undefined;
     if (definitions?.['source'] === 'registry') {

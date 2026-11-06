@@ -1,5 +1,8 @@
 import { InjectionToken } from '@angular/core';
 
+/** Lightest technical reports sent to telemetry (`off`: none). */
+export type LogLevel = 'error' | 'warn' | 'info' | 'off';
+
 export interface LowcodeServicesConfig {
   /** Identifier of the application, passed to the authorization service and to telemetry. */
   appId: string;
@@ -26,6 +29,11 @@ export interface LowcodeServicesConfig {
   traceSampleRatio?: number;
   /** Maximum number of spans sent per minute (300 when absent). */
   traceMaxPerMinute?: number;
+  /**
+   * Lightest technical reports sent to telemetry: `error` only the errors, `warn` also the warnings (when absent),
+   * `info` everything, `off` none (the traces are still sent). Chosen per environment (`runtime-config.json`).
+   */
+  logLevel?: LogLevel;
 }
 
 export interface ResolvedServicesConfig {
@@ -40,6 +48,7 @@ export interface ResolvedServicesConfig {
   telemetryMaxPerMinute: number;
   traceSampleRatio: number;
   traceMaxPerMinute: number;
+  logLevel: LogLevel;
 }
 
 export const LOWCODE_SERVICES_CONFIG = new InjectionToken<ResolvedServicesConfig>('LOWCODE_SERVICES_CONFIG');
@@ -57,6 +66,7 @@ export function resolveConfig(config: LowcodeServicesConfig): ResolvedServicesCo
     telemetryMaxPerMinute: config.telemetryMaxPerMinute ?? 30,
     traceSampleRatio: config.traceSampleRatio ?? 1,
     traceMaxPerMinute: config.traceMaxPerMinute ?? 300,
+    logLevel: config.logLevel ?? 'warn',
   };
 }
 

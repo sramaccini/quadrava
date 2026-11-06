@@ -8,6 +8,7 @@ import {
   FormDialog,
   Notifier,
   RuntimeDiagnostics,
+  type DiagnosticSeverity,
   RuntimeTracer,
   ScreenNavigator,
   UserProvider,
@@ -40,7 +41,7 @@ export class Fakes {
   spans: RecordedSpan[] = [];
   toasts: { message: string; kind?: string }[] = [];
   navigations: { screen: string; params: Record<string, unknown> }[] = [];
-  reports: { screen: string; source: string; error: string }[] = [];
+  reports: { screen: string; source: string; error: string; severity?: DiagnosticSeverity }[] = [];
   /** Confirmation messages requested and answers to give in order (when they run out, the user gives up). */
   confirmations: string[] = [];
   confirmAnswers: boolean[] = [];
@@ -92,7 +93,7 @@ export class Fakes {
         };
       },
     } as RuntimeTracer,
-    diagnostics: { report: (e: { screen: string; source: string; error: string }) => this.reports.push(e) } as RuntimeDiagnostics,
+    diagnostics: { report: (e: { screen: string; source: string; error: string; severity?: DiagnosticSeverity }) => this.reports.push(e) } as RuntimeDiagnostics,
   };
 
   runtime(definition: ScreenDefinition, injector: Injector, params: Record<string, unknown> = {}): ScreenRuntime {

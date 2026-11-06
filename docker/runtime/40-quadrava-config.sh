@@ -87,6 +87,12 @@ elif [ -n "${QUADRAVA_REGISTRY_APP:-}" ]; then
     path QUADRAVA_TENANT_SWITCH_URL "$QUADRAVA_TENANT_SWITCH_URL"
     services="$services, \"tenantSwitchUrl\": \"$QUADRAVA_TENANT_SWITCH_URL\""
   fi
+  if [ -n "${QUADRAVA_LOG_LEVEL:-}" ]; then
+    case "$QUADRAVA_LOG_LEVEL" in
+      error | warn | info | off) services="$services, \"logLevel\": \"$QUADRAVA_LOG_LEVEL\"" ;;
+      *) fail "QUADRAVA_LOG_LEVEL: error, warn, info or off, not: $QUADRAVA_LOG_LEVEL" ;;
+    esac
+  fi
   config="{\n  \"definitions\": { $definitions },\n  \"services\": { $services }"
   if [ -n "${QUADRAVA_STUDIO_ORIGINS:-}" ]; then
     config="$config,\n  \"studio\": { \"origins\": $(origins "$QUADRAVA_STUDIO_ORIGINS") }"

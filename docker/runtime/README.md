@@ -30,6 +30,7 @@ At start-up the image writes `runtime-config.json`, the file the runtime reads b
 | `QUADRAVA_REGISTRY_BASE` | Base path of the registry APIs on the same origin | `/registry` (runtime default) |
 | `QUADRAVA_APP_ID` | Identifier of the application towards the BFF services | `QUADRAVA_REGISTRY_APP` |
 | `QUADRAVA_TENANT_SWITCH_URL` | Path that switches the tenant (ADR-18); without it no choice is shown | |
+| `QUADRAVA_LOG_LEVEL` | Lightest technical reports sent to telemetry: `error`, `warn`, `info` or `off` (traces are still sent) | `warn` |
 | `QUADRAVA_STUDIO_ORIGINS` | Origins of Quadrava Studio allowed to open this runtime with their project (ADR-16) | none |
 | `QUADRAVA_BFF_URL` | Address of the BFF (`http://bff:8080`): nginx forwards its paths to it | not forwarded |
 | `QUADRAVA_MAX_BODY_SIZE` | Largest request body forwarded to the BFF, as nginx writes it (`100m`, `512k`, `0` for no limit of nginx): an upload from a `file` field that is larger gets 413 | `100m` (the largest `maxSizeKb`) |

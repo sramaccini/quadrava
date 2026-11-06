@@ -192,7 +192,7 @@ baggage: lowcode.screen=order-list,lowcode.action=call%20approve%2C%20refresh%20
 | Signal | Origin | Path |
 | --- | --- | --- |
 | Traces | Screen opened, action run, API call | Runtime, then REST ingestion endpoint (OTLP/HTTP), then collector and observability system |
-| Logs | Errors, warnings, application events with configurable level | Same path, batched and also sent when the page closes |
+| Logs | Technical reports: errors and warnings (a missing translation key, a table sorted only on the current page), level chosen per environment | Same path, batched and also sent when the page closes |
 | Context for audit | Screen, action, correlation identifier | Headers of REST calls (`traceparent` and W3C baggage), recorded by the back end |
 
 **Ingestion endpoint.** The browser does not write directly to a collector: it goes through a REST endpoint on the application's own domain, authenticated with the user's session, with size and rate limits. Checks and a second redaction of sensitive data are applied here too.
@@ -200,6 +200,8 @@ baggage: lowcode.screen=order-list,lowcode.action=call%20approve%2C%20refresh%20
 **Two-level redaction.** Fields marked `sensitive` in the JSON (and passwords) are excluded by the runtime at the source: every field tells the screen its current value, and a technical report that contains it (an expression error, the text of a failed call) shows `[sensitive]` in its place. Spans carry no data values at all. The ingestion endpoint then applies additional rules (for example recognisable patterns such as tax codes or IBANs). Defence in depth: an error in one level does not become a data leak.
 
 **Sampling.** `traceSampleRatio` in `provideLowcodeServices` (1 if absent): decided at the root of the trace and passed to the children and, through the `traceparent` flag, to the back end; spans that end in error are always sent. Spans are sent in batches (every 20 or after 5 seconds, at most `traceMaxPerMinute`, 300 if absent); logs and traces share the same queue logic, which also empties when the page is closed or hidden (`keepalive` requests).
+
+**Log level.** Every technical report has a weight (`error`, `warn`, `info`; OTLP severity 17, 13, 9). `logLevel` in `provideLowcodeServices` leaves out the lighter ones: `warn` if absent, `error` for errors only, `info` for everything, `off` for no logs (the traces are still sent). It is chosen per environment in `runtime-config.json` (`services.logLevel`; `QUADRAVA_LOG_LEVEL` in the container image): for example `info` in development and `error` in production.
 
 **Audit.** The audit trail is written by the back end when the operation happens, in a store whose immutability and retention are defined by the customer. The front end never writes the audit directly, because it is not a trustworthy source. The link between technical trace and audit is the correlation identifier, which lets you move from an audit entry to the full trace.
 

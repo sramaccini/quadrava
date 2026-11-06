@@ -4,7 +4,7 @@ import { ApplicationInitStatus } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Authorization, DataClient, RuntimeDiagnostics, RuntimeTracer, UserProvider } from 'core';
 import { HttpAuthorization } from './authorization';
-import { LOWCODE_REDIRECT, LOWCODE_SERVICES_CONFIG, resolveConfig } from './config';
+import { LOWCODE_REDIRECT, LOWCODE_SERVICES_CONFIG, resolveConfig, type LogLevel } from './config';
 import { HttpDiagnostics, redact } from './diagnostics';
 import { DataError } from './errors';
 import { HttpDataClient } from './http-data-client';
@@ -364,6 +364,24 @@ describe('HttpDiagnostics', () => {
     for (let i = 0; i < 5; i++) diag.report({ screen: 's', source: 'x', error: 'e' });
     void diag.flush();
     expect(http.expectOne('/telemetry/v1/logs').request.body.resourceLogs[0].scopeLogs[0].logRecords).toHaveLength(2);
+  });
+
+  it('sends the weight of every report and leaves out those lighter than the level of the environment', async () => {
+    const send = (level: LogLevel | undefined) => {
+      TestBed.resetTestingModule();
+      const { http } = setup({ logLevel: level });
+      const diag = TestBed.inject(HttpDiagnostics);
+      diag.report({ screen: 's', source: 'x', error: 'broken' });
+      diag.report({ screen: 's', source: 't()', error: 'missing translation key: a.b', severity: 'warn' });
+      diag.report({ screen: 's', source: 'y', error: 'note', severity: 'info' });
+      void diag.flush();
+      const sent = http.match('/telemetry/v1/logs');
+      return sent.length ? (sent[0].request.body.resourceLogs[0].scopeLogs[0].logRecords as { severityNumber: number; severityText: string }[]).map((r) => `${r.severityText} ${r.severityNumber}`) : [];
+    };
+    expect(send(undefined)).toEqual(['ERROR 17', 'WARN 13']);
+    expect(send('info')).toEqual(['ERROR 17', 'WARN 13', 'INFO 9']);
+    expect(send('error')).toEqual(['ERROR 17']);
+    expect(send('off')).toEqual([]);
   });
 
   it('does not throw if the endpoint is down', async () => {
