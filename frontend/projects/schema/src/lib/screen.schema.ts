@@ -15,6 +15,7 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
   "properties": {
     "schemaVersion": {
       "type": "string",
+      "description": "Version of the format of the screen, for example 1.0.",
       "pattern": "^\\d+\\.\\d+$"
     },
     "screen": {
@@ -22,7 +23,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
       "description": "Stable identifier of the screen."
     },
     "title": {
-      "type": "string"
+      "type": "string",
+      "description": "Title shown at the top of the screen: plain text or an expression such as {{ t('orders.title', 'Orders') }}. No heading if absent."
     },
     "requires": {
       "$ref": "#/$defs/permission",
@@ -50,6 +52,7 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
     },
     "components": {
       "type": "array",
+      "description": "Components of the screen, from the top.",
       "items": {
         "$ref": "#/$defs/node"
       }
@@ -270,7 +273,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
           "description": "Name of the data source to run."
         },
         "args": {
-          "type": "object"
+          "type": "object",
+          "description": "Variables for url, params and body of the data source, resolved before the call, for example { \"id\": \"{{ row.id }}\" }."
         },
         "onError": {
           "$ref": "#/$defs/steps",
@@ -351,10 +355,12 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
       "additionalProperties": false,
       "properties": {
         "navigate": {
-          "$ref": "#/$defs/id"
+          "$ref": "#/$defs/id",
+          "description": "Identifier of the screen to open, in the area of the menu that contains it (the current one if it is in several)."
         },
         "params": {
-          "type": "object"
+          "type": "object",
+          "description": "Parameters of the screen opened, resolved before navigating, for example { \"id\": \"{{ row.id }}\" }; the screen reads them as params."
         }
       }
     },
@@ -366,7 +372,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
       "additionalProperties": false,
       "properties": {
         "toast": {
-          "type": "string"
+          "type": "string",
+          "description": "Message shown to the user for a few seconds: plain text or an expression such as {{ t('orders.saved', 'Order saved') }}."
         }
       }
     },
@@ -379,6 +386,7 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
       "properties": {
         "set": {
           "type": "object",
+          "description": "Writes a value in the screen state.",
           "required": [
             "path",
             "value"
@@ -386,9 +394,12 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
           "additionalProperties": false,
           "properties": {
             "path": {
-              "type": "string"
+              "type": "string",
+              "description": "Path in the screen state, for example state.wizardStep."
             },
-            "value": {}
+            "value": {
+              "description": "Value written: any JSON value, or an expression such as {{ state.wizardStep + 1 }}."
+            }
           }
         }
       }
@@ -397,7 +408,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
       "type": "object",
       "properties": {
         "id": {
-          "$ref": "#/$defs/id"
+          "$ref": "#/$defs/id",
+          "description": "Identifier in kebab-case. It does not change once published."
         },
         "label": {
           "type": "string",
@@ -494,6 +506,7 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
       "properties": {
         "name": {
           "type": "string",
+          "description": "Name of the field: the key of its value in the data sent (form.name).",
           "pattern": "^[a-zA-Z][A-Za-z0-9]*$"
         },
         "type": {
@@ -518,13 +531,16 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
           "description": "Field type. textarea: multi-line text (`rows`); datetime: date and time YYYY-MM-DDTHH:mm (local time); radio: choice among `options`; switch: on/off toggle; multiselect: list of values from `options`. lookup: value chosen among the rows of a data source searched while typing (`lookup`). file: a file chosen by the user (`accept`, `maxSizeKb`, `upload`). repeater: list of rows, each with the fields of `fields` (`minRows`, `maxRows`, `addLabel`). richtext: formatted text written with a toolbar (bold, italic, headings, lists, quotes, links); the value is restricted Markdown, never HTML (`rows` for the height). password: masked text with a button that shows it; with newPassword a strength meter (`minStrength`). tags: a free list of short texts (the labels of an issue), written with Enter or a comma; `options` and `suggest` only suggest (`minItems`, `maxItems`)."
         },
         "label": {
-          "type": "string"
+          "type": "string",
+          "description": "Label of the field: plain text or an expression such as {{ t('orders.customer', 'Customer') }}. The name if absent."
         },
         "required": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "The field must have a value (an empty list counts as no value). Not required if absent."
         },
         "options": {
           "type": "array",
+          "description": "Values of select, multiselect and radio (suggestions for tags), in order; shown translated with optionKey, otherwise as they are.",
           "items": {
             "type": "string"
           }
@@ -534,13 +550,16 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
           "description": "The value never appears in traces and logs."
         },
         "visibleIf": {
-          "$ref": "#/$defs/expression"
+          "$ref": "#/$defs/expression",
+          "description": "Condition for showing the field; an error hides it. A hidden field is not checked."
         },
         "hiddenIf": {
-          "$ref": "#/$defs/expression"
+          "$ref": "#/$defs/expression",
+          "description": "Condition for hiding the field; an error hides it. A hidden field is not checked."
         },
         "readOnlyIf": {
-          "$ref": "#/$defs/expression"
+          "$ref": "#/$defs/expression",
+          "description": "Condition for making the field read-only; an error makes it read-only."
         },
         "validate": {
           "type": "object",
@@ -876,7 +895,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                       "switch",
                       "lookup",
                       "file"
-                    ]
+                    ],
+                    "description": "Type of a field of the rows: one of the simple types."
                   }
                 }
               }
@@ -1173,7 +1193,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
       ],
       "properties": {
         "id": {
-          "$ref": "#/$defs/id"
+          "$ref": "#/$defs/id",
+          "description": "Identifier in kebab-case. It does not change once published."
         },
         "type": {
           "enum": [
@@ -1204,19 +1225,24 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
             "timeline",
             "kanban",
             "comments"
-          ]
+          ],
+          "description": "Type of component; the other properties depend on it."
         },
         "visibleIf": {
-          "$ref": "#/$defs/expression"
+          "$ref": "#/$defs/expression",
+          "description": "Condition for showing the component, for example {{ can('orders.order.approve') }}; an error hides it."
         },
         "hiddenIf": {
-          "$ref": "#/$defs/expression"
+          "$ref": "#/$defs/expression",
+          "description": "Condition for hiding the component; an error hides it."
         },
         "enabledIf": {
-          "$ref": "#/$defs/expression"
+          "$ref": "#/$defs/expression",
+          "description": "Condition for using a button or a field; an error disables it. Enabled if absent."
         },
         "readOnlyIf": {
-          "$ref": "#/$defs/expression"
+          "$ref": "#/$defs/expression",
+          "description": "Condition for making a field read-only; an error makes it read-only."
         },
         "tooltip": {
           "type": "string",
@@ -1431,7 +1457,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                 "description": "Sorting. With server paging the service does it: the table writes { field, direction } in the `bind` state; otherwise it sorts the loaded rows in the page.",
                 "properties": {
                   "bind": {
-                    "$ref": "#/$defs/statePath"
+                    "$ref": "#/$defs/statePath",
+                    "description": "State that receives the sorting chosen, { field, direction }: a data source with server paging reads it in its params."
                   },
                   "default": {
                     "$ref": "#/$defs/sortSpec",
@@ -1448,7 +1475,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                 "description": "Row selection: the keys of the chosen rows are in the `bind` state; bulk actions see the whole rows in `selection`.",
                 "properties": {
                   "bind": {
-                    "$ref": "#/$defs/statePath"
+                    "$ref": "#/$defs/statePath",
+                    "description": "State that receives the keys of the chosen rows."
                   },
                   "key": {
                     "type": "string",
@@ -1479,6 +1507,7 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                 "properties": {
                   "components": {
                     "type": "array",
+                    "description": "Components drawn under an expanded row; they see the row as row.",
                     "minItems": 1,
                     "items": {
                       "$ref": "#/$defs/node"
@@ -3015,19 +3044,24 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
       "additionalProperties": false,
       "properties": {
         "id": {
-          "$ref": "#/$defs/id"
+          "$ref": "#/$defs/id",
+          "description": "Identifier in kebab-case. It does not change once published."
         },
         "label": {
-          "type": "string"
+          "type": "string",
+          "description": "Text of the tab: plain text or an expression such as {{ t('orders.lines', 'Lines') }}."
         },
         "visibleIf": {
-          "$ref": "#/$defs/expression"
+          "$ref": "#/$defs/expression",
+          "description": "Condition for showing the tab; an error hides it."
         },
         "hiddenIf": {
-          "$ref": "#/$defs/expression"
+          "$ref": "#/$defs/expression",
+          "description": "Condition for hiding the tab; an error hides it."
         },
         "components": {
           "type": "array",
+          "description": "Components of the tab, from the top.",
           "items": {
             "$ref": "#/$defs/node"
           }
@@ -3045,7 +3079,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
           "description": "Name of the field in the row returned by the service."
         },
         "label": {
-          "type": "string"
+          "type": "string",
+          "description": "Heading of the column: plain text or an expression such as {{ t('orders.total', 'Total') }}."
         },
         "format": {
           "enum": [
@@ -3074,10 +3109,12 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
           "description": "For format badge: colour for every value; values not listed are neutral."
         },
         "visibleIf": {
-          "$ref": "#/$defs/expression"
+          "$ref": "#/$defs/expression",
+          "description": "Condition for showing the column (the same for every row); an error hides it."
         },
         "hiddenIf": {
-          "$ref": "#/$defs/expression"
+          "$ref": "#/$defs/expression",
+          "description": "Condition for hiding the column (the same for every row); an error hides it."
         },
         "tooltip": {
           "type": "string",
@@ -3160,13 +3197,15 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
       "additionalProperties": false,
       "properties": {
         "field": {
-          "type": "string"
+          "type": "string",
+          "description": "Field the rows are sorted by."
         },
         "direction": {
           "enum": [
             "asc",
             "desc"
-          ]
+          ],
+          "description": "Direction: asc (ascending) or desc (descending)."
         }
       }
     },
@@ -3188,10 +3227,12 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
           "description": "Window with a form: the onSubmit steps see the values in `form`. If they succeed the window closes and the sequence goes on; if the user cancels the sequence stops silently.",
           "properties": {
             "title": {
-              "type": "string"
+              "type": "string",
+              "description": "Title of the window: plain text or an expression."
             },
             "fields": {
               "type": "array",
+              "description": "Fields of the form in the window, as in a form.",
               "minItems": 1,
               "items": {
                 "$ref": "#/$defs/field"
@@ -3203,14 +3244,17 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
             },
             "columns": {
               "type": "integer",
+              "description": "Columns of the field grid (1 if absent); with more than one the window is wider.",
               "minimum": 1,
               "maximum": 4
             },
             "submitLabel": {
-              "type": "string"
+              "type": "string",
+              "description": "Text of the button that confirms (Confirm, translated, if absent)."
             },
             "onSubmit": {
               "type": "array",
+              "description": "Steps run when the form is confirmed and valid; they see the values as form. The window closes when they succeed.",
               "minItems": 1,
               "items": {
                 "$ref": "#/$defs/step"
@@ -3229,16 +3273,20 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
       "description": "An indicator: label and big value. The value comes from a field of the data source record (`field`) or from an expression (`value`, which sees the record as `row`).",
       "properties": {
         "id": {
-          "$ref": "#/$defs/id"
+          "$ref": "#/$defs/id",
+          "description": "Identifier in kebab-case. It does not change once published."
         },
         "label": {
-          "type": "string"
+          "type": "string",
+          "description": "Label of the indicator: plain text or an expression."
         },
         "field": {
-          "type": "string"
+          "type": "string",
+          "description": "Field of the record of the data source with the value."
         },
         "value": {
-          "$ref": "#/$defs/expression"
+          "$ref": "#/$defs/expression",
+          "description": "Expression that gives the value instead of field; it sees the record as row."
         },
         "format": {
           "enum": [
@@ -3250,7 +3298,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
             "datetime",
             "boolean",
             "badge"
-          ]
+          ],
+          "description": "How to show the value, as for the columns: number, currency, percent, date, datetime, boolean, badge or text (default)."
         },
         "currency": {
           "type": "string",
@@ -3271,7 +3320,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
           "description": "Prefix of the translation keys for the shown values: the text is t('<prefix>.<value>'), with the value as a fallback. Badge colours stay tied to the original value."
         },
         "tone": {
-          "$ref": "#/$defs/tone"
+          "$ref": "#/$defs/tone",
+          "description": "Colour of the value, from the theme (neutral if absent)."
         },
         "caption": {
           "type": "string",
@@ -3282,10 +3332,12 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
           "description": "Help text shown on mouse hover or with the focus. Text only (never HTML); it can contain {{ }}."
         },
         "visibleIf": {
-          "$ref": "#/$defs/expression"
+          "$ref": "#/$defs/expression",
+          "description": "Condition for showing the indicator; it sees the record as row. An error hides it."
         },
         "hiddenIf": {
-          "$ref": "#/$defs/expression"
+          "$ref": "#/$defs/expression",
+          "description": "Condition for hiding the indicator; it sees the record as row. An error hides it."
         }
       },
       "anyOf": [
@@ -3316,16 +3368,20 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
       "additionalProperties": false,
       "properties": {
         "id": {
-          "$ref": "#/$defs/id"
+          "$ref": "#/$defs/id",
+          "description": "Identifier in kebab-case. It does not change once published."
         },
         "label": {
-          "type": "string"
+          "type": "string",
+          "description": "Name of the step in the bar of the steps: plain text or an expression."
         },
         "description": {
-          "type": "string"
+          "type": "string",
+          "description": "Short text under the name of the step: plain text or an expression."
         },
         "components": {
           "type": "array",
+          "description": "Components of the step, from the top.",
           "items": {
             "$ref": "#/$defs/node"
           }
@@ -3348,7 +3404,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
           "description": "Numeric field of the rows."
         },
         "label": {
-          "type": "string"
+          "type": "string",
+          "description": "Name of the series in the legend and in the table of the data: plain text or an expression. The field if absent."
         },
         "tone": {
           "$ref": "#/$defs/tone",
@@ -3457,6 +3514,7 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
             },
             "columns": {
               "type": "array",
+              "description": "Columns of the file, in order.",
               "minItems": 1,
               "items": {
                 "type": "object",

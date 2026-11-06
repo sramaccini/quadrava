@@ -7,10 +7,10 @@
 | Property | Type | Description |
 | --- | --- | --- |
 | `id` | id | Identifier in kebab-case. It does not change once published. |
-| `visibleIf` | expression | CEL expression in double braces, for example {{can('orders.order.approve') && row.status == 'sent'}}. Variables: user, state, params, settings and data (the last answer of each GET data source of the screen, by name); where they apply, row, form, value, error and the responses of the previous calls (as). Functions: can(permission), t(key, text), fmtNumber, fmtCurrency, fmtDate, plural, isValid and has() of CEL. |
-| `hiddenIf` | expression | CEL expression in double braces, for example {{can('orders.order.approve') && row.status == 'sent'}}. Variables: user, state, params, settings and data (the last answer of each GET data source of the screen, by name); where they apply, row, form, value, error and the responses of the previous calls (as). Functions: can(permission), t(key, text), fmtNumber, fmtCurrency, fmtDate, plural, isValid and has() of CEL. |
-| `enabledIf` | expression | CEL expression in double braces, for example {{can('orders.order.approve') && row.status == 'sent'}}. Variables: user, state, params, settings and data (the last answer of each GET data source of the screen, by name); where they apply, row, form, value, error and the responses of the previous calls (as). Functions: can(permission), t(key, text), fmtNumber, fmtCurrency, fmtDate, plural, isValid and has() of CEL. |
-| `readOnlyIf` | expression | CEL expression in double braces, for example {{can('orders.order.approve') && row.status == 'sent'}}. Variables: user, state, params, settings and data (the last answer of each GET data source of the screen, by name); where they apply, row, form, value, error and the responses of the previous calls (as). Functions: can(permission), t(key, text), fmtNumber, fmtCurrency, fmtDate, plural, isValid and has() of CEL. |
+| `visibleIf` | expression | Condition for showing the component, for example {{ can('orders.order.approve') }}; an error hides it. |
+| `hiddenIf` | expression | Condition for hiding the component; an error hides it. |
+| `enabledIf` | expression | Condition for using a button or a field; an error disables it. Enabled if absent. |
+| `readOnlyIf` | expression | Condition for making a field read-only; an error makes it read-only. |
 | `tooltip` | text | Help text shown on mouse hover or with the focus. Text only (never HTML); it can contain {{ }}. |
 | `grow` | integer 0–12 | Inside a box: share of the free space the component takes compared with its siblings (0 or absent = only the space it needs). |
 | `span` | integer 1–12 | Inside a grid: columns taken (1 if absent, never more than those of the grid). |
@@ -323,7 +323,7 @@
 | Property | Type | Description |
 | --- | --- | --- |
 | `call` * | text | Name of the data source to run. |
-| `args` | object |  |
+| `args` | object | Variables for url, params and body of the data source, resolved before the call, for example { "id": "{{ row.id }}" }. |
 | `onError` | steps | Steps run if the call fails (instead of the default message). They see error.status: the HTTP code of the response (0 if the service cannot be reached), for example {{ error.status == 409 }}. The server message is not there: it could contain internal details. |
 | `as` |  | Name under which the following steps of the same sequence see the service response, for example "created" and then {{ created.id }}. It cannot be the name of an existing variable (user, state, params, settings, data, row, form, error…). |
 
@@ -337,20 +337,20 @@
 
 | Property | Type | Description |
 | --- | --- | --- |
-| `navigate` * | id | Identifier in kebab-case. It does not change once published. |
-| `params` | object |  |
+| `navigate` * | id | Identifier of the screen to open, in the area of the menu that contains it (the current one if it is in several). |
+| `params` | object | Parameters of the screen opened, resolved before navigating, for example { "id": "{{ row.id }}" }; the screen reads them as params. |
 
 ### `toast`
 
 | Property | Type | Description |
 | --- | --- | --- |
-| `toast` * | text |  |
+| `toast` * | text | Message shown to the user for a few seconds: plain text or an expression such as {{ t('orders.saved', 'Order saved') }}. |
 
 ### `set`
 
 | Property | Type | Description |
 | --- | --- | --- |
-| `set` * | object |  |
+| `set` * | object | Writes a value in the screen state. |
 
 ### `confirm`
 
@@ -400,15 +400,15 @@
 
 | Property | Type | Description |
 | --- | --- | --- |
-| `name` * | text |  |
+| `name` * | text | Name of the field: the key of its value in the data sent (form.name). |
 | `type` * | `text`, `number`, `select`, `checkbox`, `date`, `textarea`, `datetime`, `radio`, `switch`, `multiselect`, `lookup`, `file`, `repeater`, `richtext`, `password`, `tags` | Field type. textarea: multi-line text (`rows`); datetime: date and time YYYY-MM-DDTHH:mm (local time); radio: choice among `options`; switch: on/off toggle; multiselect: list of values from `options`. lookup: value chosen among the rows of a data source searched while typing (`lookup`). file: a file chosen by the user (`accept`, `maxSizeKb`, `upload`). repeater: list of rows, each with the fields of `fields` (`minRows`, `maxRows`, `addLabel`). richtext: formatted text written with a toolbar (bold, italic, headings, lists, quotes, links); the value is restricted Markdown, never HTML (`rows` for the height). password: masked text with a button that shows it; with newPassword a strength meter (`minStrength`). tags: a free list of short texts (the labels of an issue), written with Enter or a comma; `options` and `suggest` only suggest (`minItems`, `maxItems`). |
-| `label` | text |  |
-| `required` | yes/no |  |
-| `options` | list of text |  |
+| `label` | text | Label of the field: plain text or an expression such as {{ t('orders.customer', 'Customer') }}. The name if absent. |
+| `required` | yes/no | The field must have a value (an empty list counts as no value). Not required if absent. |
+| `options` | list of text | Values of select, multiselect and radio (suggestions for tags), in order; shown translated with optionKey, otherwise as they are. |
 | `sensitive` | yes/no | The value never appears in traces and logs. |
-| `visibleIf` | expression | CEL expression in double braces, for example {{can('orders.order.approve') && row.status == 'sent'}}. Variables: user, state, params, settings and data (the last answer of each GET data source of the screen, by name); where they apply, row, form, value, error and the responses of the previous calls (as). Functions: can(permission), t(key, text), fmtNumber, fmtCurrency, fmtDate, plural, isValid and has() of CEL. |
-| `hiddenIf` | expression | CEL expression in double braces, for example {{can('orders.order.approve') && row.status == 'sent'}}. Variables: user, state, params, settings and data (the last answer of each GET data source of the screen, by name); where they apply, row, form, value, error and the responses of the previous calls (as). Functions: can(permission), t(key, text), fmtNumber, fmtCurrency, fmtDate, plural, isValid and has() of CEL. |
-| `readOnlyIf` | expression | CEL expression in double braces, for example {{can('orders.order.approve') && row.status == 'sent'}}. Variables: user, state, params, settings and data (the last answer of each GET data source of the screen, by name); where they apply, row, form, value, error and the responses of the previous calls (as). Functions: can(permission), t(key, text), fmtNumber, fmtCurrency, fmtDate, plural, isValid and has() of CEL. |
+| `visibleIf` | expression | Condition for showing the field; an error hides it. A hidden field is not checked. |
+| `hiddenIf` | expression | Condition for hiding the field; an error hides it. A hidden field is not checked. |
+| `readOnlyIf` | expression | Condition for making the field read-only; an error makes it read-only. |
 | `validate` | object | CEL rule of the field: rule must be true, otherwise message is shown. For several rules, warnings or conditions use validation. |
 | `minLength` | integer 0–100000 | For text, textarea and richtext: minimum number of characters. |
 | `maxLength` | integer 1–100000 | For text, textarea and richtext: maximum number of characters. |

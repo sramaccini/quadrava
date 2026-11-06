@@ -13,7 +13,8 @@ export const THEME_SCHEMA: Record<string, unknown> = {
   ],
   "properties": {
     "schemaVersion": {
-      "const": "1.0"
+      "const": "1.0",
+      "description": "Version of the format."
     },
     "theme": {
       "type": "string",
@@ -22,6 +23,7 @@ export const THEME_SCHEMA: Record<string, unknown> = {
     },
     "label": {
       "type": "string",
+      "description": "Name of the theme for people, for example in an editor (at most 80 characters). The runtime shell names a theme with the key app.theme. followed by its identifier, in the catalogue.",
       "maxLength": 80
     },
     "mode": {
@@ -105,7 +107,8 @@ export const THEME_SCHEMA: Record<string, unknown> = {
       }
     },
     "tokens": {
-      "$ref": "#/$defs/tokens"
+      "$ref": "#/$defs/tokens",
+      "description": "Design tokens of the theme, applied as CSS variables."
     }
   },
   "additionalProperties": false,
@@ -122,6 +125,7 @@ export const THEME_SCHEMA: Record<string, unknown> = {
       "properties": {
         "colors": {
           "type": "object",
+          "description": "Base colours; the others derive from them when absent.",
           "required": [
             "primary",
             "onPrimary",
@@ -132,31 +136,40 @@ export const THEME_SCHEMA: Record<string, unknown> = {
           ],
           "properties": {
             "primary": {
-              "$ref": "#/$defs/color"
+              "$ref": "#/$defs/color",
+              "description": "Colour of buttons, links and the active item of the menu: #rgb, #rrggbb (also with transparency), rgb() or hsl()."
             },
             "onPrimary": {
-              "$ref": "#/$defs/color"
+              "$ref": "#/$defs/color",
+              "description": "Colour of text on the primary colour: #rgb, #rrggbb (also with transparency), rgb() or hsl()."
             },
             "background": {
-              "$ref": "#/$defs/color"
+              "$ref": "#/$defs/color",
+              "description": "Colour of the page behind the components: #rgb, #rrggbb (also with transparency), rgb() or hsl()."
             },
             "surface": {
-              "$ref": "#/$defs/color"
+              "$ref": "#/$defs/color",
+              "description": "Colour of cards, sections and bars: #rgb, #rrggbb (also with transparency), rgb() or hsl()."
             },
             "onSurface": {
-              "$ref": "#/$defs/color"
+              "$ref": "#/$defs/color",
+              "description": "Colour of text: #rgb, #rrggbb (also with transparency), rgb() or hsl()."
             },
             "mutedText": {
-              "$ref": "#/$defs/color"
+              "$ref": "#/$defs/color",
+              "description": "Colour of secondary text (hints, dates); the text colour if absent: #rgb, #rrggbb (also with transparency), rgb() or hsl()."
             },
             "border": {
-              "$ref": "#/$defs/color"
+              "$ref": "#/$defs/color",
+              "description": "Colour of borders and separators: #rgb, #rrggbb (also with transparency), rgb() or hsl()."
             },
             "danger": {
-              "$ref": "#/$defs/color"
+              "$ref": "#/$defs/color",
+              "description": "Colour of errors and dangerous actions (#c62828 if absent): #rgb, #rrggbb (also with transparency), rgb() or hsl()."
             },
             "success": {
-              "$ref": "#/$defs/color"
+              "$ref": "#/$defs/color",
+              "description": "Colour of positive outcomes (#2e7d32 if absent): #rgb, #rrggbb (also with transparency), rgb() or hsl()."
             },
             "warning": {
               "$ref": "#/$defs/color",
@@ -167,9 +180,11 @@ export const THEME_SCHEMA: Record<string, unknown> = {
         },
         "typography": {
           "type": "object",
+          "description": "Font and base size of the text.",
           "properties": {
             "fontFamily": {
               "type": "string",
+              "description": "Font family, as in CSS, for example Inter, system-ui, sans-serif (system-ui, sans-serif if absent).",
               "pattern": "^[A-Za-z0-9 ,'\"-]{1,200}$"
             },
             "baseSize": {
@@ -183,6 +198,7 @@ export const THEME_SCHEMA: Record<string, unknown> = {
         },
         "shape": {
           "type": "object",
+          "description": "Shape of the components.",
           "properties": {
             "radius": {
               "type": "number",
@@ -197,7 +213,8 @@ export const THEME_SCHEMA: Record<string, unknown> = {
           "enum": [
             "compact",
             "comfortable"
-          ]
+          ],
+          "description": "Spacing and height of the controls: compact or comfortable (default)."
         },
         "layout": {
           "type": "object",
@@ -205,6 +222,7 @@ export const THEME_SCHEMA: Record<string, unknown> = {
           "properties": {
             "sider": {
               "type": "object",
+              "description": "Side menu. Each colour falls back on the base colours.",
               "properties": {
                 "tone": {
                   "enum": [
@@ -214,22 +232,28 @@ export const THEME_SCHEMA: Record<string, unknown> = {
                   "description": "Style of the menu: light or dark."
                 },
                 "background": {
-                  "$ref": "#/$defs/color"
+                  "$ref": "#/$defs/color",
+                  "description": "Colour of the side menu (surface if absent): #rgb, #rrggbb (also with transparency), rgb() or hsl()."
                 },
                 "text": {
-                  "$ref": "#/$defs/color"
+                  "$ref": "#/$defs/color",
+                  "description": "Colour of the items of the menu (the text colour if absent): #rgb, #rrggbb (also with transparency), rgb() or hsl()."
                 },
                 "mutedText": {
-                  "$ref": "#/$defs/color"
+                  "$ref": "#/$defs/color",
+                  "description": "Colour of the group titles of the menu (mutedText if absent): #rgb, #rrggbb (also with transparency), rgb() or hsl()."
                 },
                 "activeBackground": {
-                  "$ref": "#/$defs/color"
+                  "$ref": "#/$defs/color",
+                  "description": "Colour of the background of the active item (a light shade of primary if absent): #rgb, #rrggbb (also with transparency), rgb() or hsl()."
                 },
                 "activeText": {
-                  "$ref": "#/$defs/color"
+                  "$ref": "#/$defs/color",
+                  "description": "Colour of the active item (primary if absent): #rgb, #rrggbb (also with transparency), rgb() or hsl()."
                 },
                 "border": {
-                  "$ref": "#/$defs/color"
+                  "$ref": "#/$defs/color",
+                  "description": "Colour of the edge of the menu (border if absent): #rgb, #rrggbb (also with transparency), rgb() or hsl()."
                 },
                 "width": {
                   "type": "number",
@@ -248,15 +272,19 @@ export const THEME_SCHEMA: Record<string, unknown> = {
             },
             "header": {
               "type": "object",
+              "description": "Top bar. Each colour falls back on the base colours.",
               "properties": {
                 "background": {
-                  "$ref": "#/$defs/color"
+                  "$ref": "#/$defs/color",
+                  "description": "Colour of the top bar (surface if absent): #rgb, #rrggbb (also with transparency), rgb() or hsl()."
                 },
                 "text": {
-                  "$ref": "#/$defs/color"
+                  "$ref": "#/$defs/color",
+                  "description": "Colour of the text of the top bar (the text colour if absent): #rgb, #rrggbb (also with transparency), rgb() or hsl()."
                 },
                 "border": {
-                  "$ref": "#/$defs/color"
+                  "$ref": "#/$defs/color",
+                  "description": "Colour of the lower edge of the top bar (border if absent): #rgb, #rrggbb (also with transparency), rgb() or hsl()."
                 },
                 "height": {
                   "type": "number",
@@ -269,24 +297,30 @@ export const THEME_SCHEMA: Record<string, unknown> = {
             },
             "pageHeader": {
               "type": "object",
+              "description": "Header of the screen, with title and breadcrumbs. Each colour falls back on the base colours.",
               "properties": {
                 "background": {
-                  "$ref": "#/$defs/color"
+                  "$ref": "#/$defs/color",
+                  "description": "Colour of the header of the screen (surface if absent): #rgb, #rrggbb (also with transparency), rgb() or hsl()."
                 },
                 "text": {
-                  "$ref": "#/$defs/color"
+                  "$ref": "#/$defs/color",
+                  "description": "Colour of the title of the screen (the text colour if absent): #rgb, #rrggbb (also with transparency), rgb() or hsl()."
                 },
                 "mutedText": {
-                  "$ref": "#/$defs/color"
+                  "$ref": "#/$defs/color",
+                  "description": "Colour of the breadcrumbs (mutedText if absent): #rgb, #rrggbb (also with transparency), rgb() or hsl()."
                 },
                 "border": {
-                  "$ref": "#/$defs/color"
+                  "$ref": "#/$defs/color",
+                  "description": "Colour of the lower edge of the header (border if absent): #rgb, #rrggbb (also with transparency), rgb() or hsl()."
                 }
               },
               "additionalProperties": false
             },
             "content": {
               "type": "object",
+              "description": "Area of the screen under the header.",
               "properties": {
                 "padding": {
                   "type": "number",

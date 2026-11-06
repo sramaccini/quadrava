@@ -114,7 +114,7 @@ The main ones are in the DEVELOPMENT-GUIDE (§ 4, 5, 6b, 9). In short:
 4. Conformance kits in CI against the reference services (today they are run by hand, for example after `npm run stack`).
 5. e2e in Firefox and WebKit.
 6. Bring the project documents (architecture § 9, functional specification, guidelines) up to date with the October status.
-7. Operational roles: a user with several roles may need to work as one of them at a time (a «change role» in the shell, like the tenant choice of ADR-18). To be discussed: where the roles of the user come from (`/bff/user`, authz), whether the BFF switches them in the session, and what the permissions follow. Also for the shell: Studio does not edit `notifications` of the navigation yet.
+7. Operational roles: a user with several roles may need to work as one of them at a time (a «change role» in the shell, like the tenant choice of ADR-18). To be discussed: where the roles of the user come from (`/bff/user`, authz), whether the BFF switches them in the session, and what the permissions follow.
 8. Validation, what is left: remote rules in filters; field errors of the services deeper than one level of rows; a check of passwords against leaked lists (a service with k-anonymity) if a customer needs it.
 
 ## 8b. What was missing and proposed optimisations (13 October 2026)

@@ -12,6 +12,12 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Changed
+
+- Every property of the JSON schemas has a description (about a hundred had none: the navigation, the theme, the
+  common properties of the components and of the fields, several steps); a test keeps it so. They are the help of the
+  property panel of an editor, of «Aiuto» in the showcase and of `docs/schema-reference.md`.
+
 ## [0.10.0] - 2026-11-06
 
 ### Added

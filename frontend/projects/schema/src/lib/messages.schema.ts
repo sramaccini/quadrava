@@ -14,7 +14,8 @@ export const MESSAGES_SCHEMA: Record<string, unknown> = {
   "additionalProperties": false,
   "properties": {
     "schemaVersion": {
-      "const": "1.0"
+      "const": "1.0",
+      "description": "Version of the format."
     },
     "messages": {
       "type": "string",
