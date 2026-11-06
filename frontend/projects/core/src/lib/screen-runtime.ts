@@ -178,7 +178,7 @@ export class ScreenRuntime {
               if (built.ok) {
                 void this.run(name, built.request, first ? this.openSpan?.context : undefined).then((result) => {
                   // A read cancelled because outdated leaves the outcome to the one that replaced it.
-                  if (first && (result.ok || result.error !== 'annullata')) this.firstLoadDone(name, result.ok);
+                  if (first && (result.ok || result.error !== 'cancelled')) this.firstLoadDone(name, result.ok);
                 });
               } else {
                 this.setSource(name, { status: 'error', data: null, error: built.error });
@@ -510,7 +510,7 @@ export class ScreenRuntime {
       }
       return { ok: true, data: await shared };
     } catch (e) {
-      if (signal?.aborted) return { ok: false, error: 'annullata' };
+      if (signal?.aborted) return { ok: false, error: 'cancelled' };
       const error = e instanceof Error ? e.message : String(e);
       this.report(`data source ${name}`, error);
       return { ok: false, error, status: statusOf(e) };
@@ -622,7 +622,7 @@ export class ScreenRuntime {
       return { ok: true, data };
     } catch (e) {
       // Cancelled because outdated: not an error to report or to show.
-      if (controller?.signal.aborted) return { ok: false, error: 'annullata' };
+      if (controller?.signal.aborted) return { ok: false, error: 'cancelled' };
       const error = e instanceof Error ? e.message : String(e);
       const fieldErrors = fieldErrorsOf(e);
       // Data rejected field by field is an answer for the user, not a technical problem: it is not reported.

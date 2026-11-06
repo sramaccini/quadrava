@@ -8,7 +8,7 @@ import { Fakes } from './testing';
 /** Error like the one of the services data client: with the HTTP code and without the server text. */
 class HttpError extends Error {
   constructor(readonly status: number) {
-    super(`Richiesta fallita (${status})`);
+    super(`Request failed (${status})`);
   }
 }
 

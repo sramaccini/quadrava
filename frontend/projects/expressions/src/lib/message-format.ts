@@ -89,7 +89,7 @@ function parseOptions(src: string): Map<string, string> {
     while (i < src.length && !/[\s{]/.test(src[i])) i++;
     const selector = src.slice(start, i);
     while (i < src.length && /\s/.test(src[i])) i++;
-    if (src[i] !== '{') throw new Error('corpo mancante');
+    if (src[i] !== '{') throw new Error('missing body');
     const close = findClose(src, i);
     table.set(selector, src.slice(i + 1, close));
     i = close + 1;

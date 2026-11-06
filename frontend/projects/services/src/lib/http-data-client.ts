@@ -28,7 +28,7 @@ function toParams(query: Record<string, unknown> | undefined): HttpParams {
 }
 
 function abortError(): DOMException {
-  return new DOMException('Richiesta annullata', 'AbortError');
+  return new DOMException('Request cancelled', 'AbortError');
 }
 
 /** Runs the REST calls of the data sources. Relative URLs only: the browser talks to the BFF, never to arbitrary hosts. */

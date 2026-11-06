@@ -10,7 +10,7 @@ export class DataError extends Error {
     readonly correlationId?: string,
     readonly fieldErrors: readonly FieldError[] = [],
   ) {
-    super(`Richiesta fallita (${status})`);
+    super(`Request failed (${status})`);
     this.name = 'DataError';
   }
 }

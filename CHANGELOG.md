@@ -30,6 +30,9 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 - Every property of the JSON schemas has a description (about a hundred had none: the navigation, the theme, the
   common properties of the components and of the fields, several steps); a test keeps it so. They are the help of the
   property panel of an editor, of «Aiuto» in the showcase and of `docs/schema-reference.md`.
+- The last developer diagnostics still in Italian are in English: the error of a failed call (`Request failed (status)`),
+  of a cancelled one (`Request cancelled`; `CallResult.error` is `cancelled`) and of a plural or select message without a
+  body (`missing body`).
 
 ### Fixed
 

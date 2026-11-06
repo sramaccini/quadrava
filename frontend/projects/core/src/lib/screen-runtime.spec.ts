@@ -379,7 +379,7 @@ describe('runSteps', () => {
       controller.abort();
       throw new DOMException('cancelled', 'AbortError');
     };
-    expect(await rt.query('approve', { id: 1 }, {}, undefined, controller.signal)).toEqual({ ok: false, error: 'annullata' });
+    expect(await rt.query('approve', { id: 1 }, {}, undefined, controller.signal)).toEqual({ ok: false, error: 'cancelled' });
     await Promise.resolve();
     expect(fakes.reports).toEqual([]);
     rt.destroy();
