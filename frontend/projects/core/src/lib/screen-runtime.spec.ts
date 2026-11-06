@@ -2,6 +2,7 @@ import { Injector } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import type { ScreenDefinition } from 'schema';
 import { runSteps } from './action-engine';
+import { ScreenRuntime } from './screen-runtime';
 import { Fakes } from './testing';
 
 const screen: ScreenDefinition = {
@@ -532,6 +533,23 @@ describe('tracce', () => {
     const action = fakes.spans.find((s) => s.name === 'action.run')!;
     expect(action.ok).toBe(false);
     expect(JSON.stringify(fakes.spans)).not.toContain('4242');
+    rt.destroy();
+  });
+
+  it('every call carries the screen for the audit, and the calls of an action carry the action too', async () => {
+    const rt = fakes.runtime({ ...screen, actions: { save: [{ call: 'approve', args: { id: '{{row.id}}' } }] } }, injector);
+    await settle();
+    expect(fakes.requestOptions[0]?.baggage).toEqual({ 'lowcode.screen': 'order-list' });
+    await runSteps(rt, [{ run: 'save' }], { row: { id: 4242 } });
+    expect(fakes.requestOptions.at(-1)?.baggage).toEqual({ 'lowcode.screen': 'order-list', 'lowcode.action': 'run save' });
+    expect(JSON.stringify(fakes.requestOptions.map((o) => o?.baggage))).not.toContain('4242');
+    rt.destroy();
+  });
+
+  it('without a tracer the calls still carry the screen, not the action', async () => {
+    const rt = new ScreenRuntime(screen, { ...fakes.deps, tracer: null }, injector);
+    await runSteps(rt, [{ call: 'approve', args: { id: 1 } }]);
+    expect(fakes.requestOptions.at(-1)?.baggage).toEqual({ 'lowcode.screen': 'order-list' });
     rt.destroy();
   });
 

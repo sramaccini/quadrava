@@ -181,6 +181,14 @@ action.run  lowcode.action = "call approve, refresh orders"     trace 4bf9…, s
 
 The parent travels explicitly: the action passes its span to the calls of its steps (also inside `run` and `onError`), the screen passes its own to the first reads. The `traceparent` of each call carries the identity of its `http.client` span, so the back-end spans are its children. The calls to the telemetry endpoint are not traced. The `RuntimeTracer` port is optional: without it (demo, tests) nothing is traced.
 
+**Context for audit.** Every same-origin call of a data source also carries a W3C `baggage` header with the screen and, for the calls of an action, the action, so the back end can record who did what from where without reading the traces. The runtime puts them in `DataRequestOptions.baggage`, the services interceptor writes the header (values percent-encoded) and the reference BFF forwards it with `traceparent`. Like the span attributes, they are names from the definition, never data values; the action is known when the call starts from its span, so without a tracer only the screen is sent.
+
+```text
+POST /api/orders/4242/approve
+traceparent: 00-4bf9…-b2…-01
+baggage: lowcode.screen=order-list,lowcode.action=call%20approve%2C%20refresh%20orders
+```
+
 | Signal | Origin | Path |
 | --- | --- | --- |
 | Traces | Screen opened, action run, API call | Runtime, then REST ingestion endpoint (OTLP/HTTP), then collector and observability system |

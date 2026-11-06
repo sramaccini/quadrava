@@ -47,8 +47,8 @@ export class HttpDataClient extends DataClient {
         const subscription = this.http
           .request(request.method, request.url, {
             params: toParams(request.query),
-            // For the HTTP span: the data source (instead of the URL) and the span the call starts from.
-            context: new HttpContext().set(LOWCODE_TRACE, { source: options.source, parent: options.trace }),
+            // For the HTTP span: the data source (instead of the URL) and the span the call starts from; for the audit, the screen and action.
+            context: new HttpContext().set(LOWCODE_TRACE, { source: options.source, parent: options.trace, baggage: options.baggage }),
             // With a file the request is multipart (the browser sets the Content-Type with the boundary by itself).
             body: request.method === 'GET' || request.method === 'DELETE' ? undefined : request.file ? toFormData(request.body, request.file) : request.body,
           })

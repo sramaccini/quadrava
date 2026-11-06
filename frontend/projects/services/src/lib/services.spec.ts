@@ -385,6 +385,25 @@ describe('HttpTracer', () => {
   const attrs = (span: Record<string, unknown>) =>
     Object.fromEntries((span['attributes'] as { key: string; value: Record<string, unknown> }[]).map((a) => [a.key, Object.values(a.value)[0]]));
 
+  it('the call of a data source carries screen and action in the W3C baggage header, percent-encoded', async () => {
+    const { http } = setup();
+    const baggageOf = { 'lowcode.screen': 'order-list', 'lowcode.action': 'call approve, refresh orders' };
+    const p = TestBed.inject(HttpDataClient).request({ method: 'POST', url: '/api/orders/4242/approve', body: {} }, { source: 'approve', baggage: baggageOf });
+    const req = http.expectOne('/api/orders/4242/approve');
+    expect(req.request.headers.get('baggage')).toBe('lowcode.screen=order-list,lowcode.action=call%20approve%2C%20refresh%20orders');
+    req.flush({});
+    await p;
+  });
+
+  it('a request without context has no baggage header, and one set by the caller is left as it is', () => {
+    const { http } = setup();
+    const client = TestBed.inject(HttpClient);
+    client.get('/api/a').subscribe();
+    client.get('/api/b', { headers: { baggage: 'k=v' } }).subscribe();
+    expect(http.expectOne('/api/a').request.headers.has('baggage')).toBe(false);
+    expect(http.expectOne('/api/b').request.headers.get('baggage')).toBe('k=v');
+  });
+
   it('the call of a data source is a client span child of the starting span, without URL', async () => {
     const { http } = setup();
     const tracer = TestBed.inject(HttpTracer);

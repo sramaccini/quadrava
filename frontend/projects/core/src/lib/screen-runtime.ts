@@ -115,6 +115,8 @@ export class ScreenRuntime {
   private firstLoadFailed = false;
   /** Reads already scheduled by an event of a live data source. */
   private readonly liveTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  /** The action (`lowcode.action` of its span) of every span opened here: the calls that start from it name it in their baggage. */
+  private readonly actions = new WeakMap<SpanContext, string>();
 
   constructor(
     readonly definition: ScreenDefinition,
@@ -272,10 +274,19 @@ export class ScreenRuntime {
     const tracer = this.deps.tracer;
     if (!tracer) return null;
     try {
-      return tracer.start(name, { 'lowcode.screen': this.definition.screen, ...attributes }, parent);
+      const span = tracer.start(name, { 'lowcode.screen': this.definition.screen, ...attributes }, parent);
+      const action = attributes['lowcode.action'];
+      if (typeof action === 'string') this.actions.set(span.context, action);
+      return span;
     } catch {
       return null;
     }
+  }
+
+  /** Context of a call for the audit of the services: the screen and, if it starts from the span of an action, the action. */
+  private baggage(trace?: SpanContext): Record<string, string> {
+    const action = trace && this.actions.get(trace);
+    return action ? { 'lowcode.screen': this.definition.screen, 'lowcode.action': action } : { 'lowcode.screen': this.definition.screen };
   }
 
   private firstLoadDone(name: string, ok: boolean): void {
@@ -482,7 +493,7 @@ export class ScreenRuntime {
       this.report(`call ${name}`, built.error);
       return { ok: false, error: built.error };
     }
-    const options: DataRequestOptions = { source: name, trace, signal };
+    const options: DataRequestOptions = { source: name, trace, signal, baggage: this.baggage(trace) };
     try {
       if (built.request.method !== 'GET' || signal) return { ok: true, data: await this.deps.data.request(built.request, options) };
       const key = `${name} ${JSON.stringify(built.request)}`;
@@ -581,7 +592,7 @@ export class ScreenRuntime {
       this.inflight.set(name, controller);
     }
     try {
-      const data = await this.deps.data.request(request, { signal: controller?.signal, source: name, trace });
+      const data = await this.deps.data.request(request, { signal: controller?.signal, source: name, trace, baggage: this.baggage(trace) });
       // An older response must not overwrite a newer one.
       if (this.sequence.get(name) === seq) this.setSource(name, { status: 'ready', data });
       return { ok: true, data };

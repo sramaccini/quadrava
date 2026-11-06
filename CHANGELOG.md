@@ -12,6 +12,12 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Added
+
+- Context for the audit of the services (RF-AUD-02): every data-source call carries a W3C `baggage` header with
+  `lowcode.screen` and, for the calls of an action, `lowcode.action` (its steps, as in the traces), never data values.
+  `DataRequestOptions` has a new optional `baggage`; the reference BFF forwards the header.
+
 ### Changed
 
 - Every property of the JSON schemas has a description (about a hundred had none: the navigation, the theme, the

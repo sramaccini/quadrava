@@ -27,7 +27,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * user. The browser talks only to the BFF: no tokens in the browser, no arbitrary hosts.
  *
  * <ul>
- *   <li>Only a few headers reach the service (format, conditional cache, language, {@code traceparent}): never the
+ *   <li>Only a few headers reach the service (format, conditional cache, language, {@code traceparent},
+ *       {@code baggage} with screen and action for the audit): never the
  *       session cookies nor any {@code Authorization} from the browser. The tenant of the session, if any, goes in
  *       {@code X-Tenant}.</li>
  *   <li>Only status, body and a few safe headers (type, ETag, cache, file name, permissions version) go back to the browser.</li>
@@ -42,7 +43,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class ApiForwardingFilter extends OncePerRequestFilter {
 
     private static final List<String> REQUEST_HEADERS = List.of(
-            "Accept", "Accept-Language", "Content-Type", "If-None-Match", "If-Match", "If-Modified-Since", "traceparent", "tracestate");
+            "Accept", "Accept-Language", "Content-Type", "If-None-Match", "If-Match", "If-Modified-Since", "traceparent", "tracestate", "baggage");
     private static final List<String> RESPONSE_HEADERS = List.of(
             "Content-Type", "ETag", "Cache-Control", "Last-Modified", "Content-Disposition", "X-Permissions-Version");
     private static final Set<String> BODY_METHODS = Set.of("POST", "PUT", "PATCH", "DELETE");

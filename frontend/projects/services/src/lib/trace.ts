@@ -18,6 +18,15 @@ export function traceparent(context: SpanContext): string {
   return `00-${context.traceId}-${context.spanId}-${context.sampled ? '01' : '00'}`;
 }
 
+/**
+ * `baggage` header (W3C Baggage) with the context of a call for the audit of the services: `key=value` pairs separated by
+ * commas, values percent-encoded. Null if there is nothing to send.
+ */
+export function baggage(entries: Readonly<Record<string, string>> | undefined): string | null {
+  const pairs = Object.entries(entries ?? {}).map(([key, value]) => `${key}=${encodeURIComponent(value)}`);
+  return pairs.length ? pairs.join(',') : null;
+}
+
 /** True only for URLs relative to the same origin: internal headers are not sent to third parties. */
 export function isSameOriginRelative(url: string): boolean {
   return url.startsWith('/') && !url.startsWith('//') && !url.includes('\\');
