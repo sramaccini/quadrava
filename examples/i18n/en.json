@@ -280,6 +280,7 @@
   "showcase_dashboard.sales_activity_by_month": "Sales activity by month, 2026",
   "showcase_dashboard.showcase_dashboard": "Showcase: dashboard",
   "showcase_dashboard.to_be_collected": "To be collected",
+  "showcase_dashboard.to_collect_alert": "Some sales invoices are still to be collected. This message reads data.summary, the answer of the data source of the indicators, from outside them.",
   "showcase_datatable.account": "Account",
   "showcase_datatable.account_transactions": "Account transactions",
   "showcase_datatable.category": "Category",

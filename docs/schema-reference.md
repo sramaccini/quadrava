@@ -320,7 +320,7 @@
 | `call` * | text | Name of the data source to run. |
 | `args` | object |  |
 | `onError` | steps | Steps run if the call fails (instead of the default message). They see error.status: the HTTP code of the response (0 if the service cannot be reached), for example {{ error.status == 409 }}. The server message is not there: it could contain internal details. |
-| `as` |  | Name under which the following steps of the same sequence see the service response, for example "created" and then {{ created.id }}. It cannot be the name of an existing variable (user, state, params, row, form, error…). |
+| `as` |  | Name under which the following steps of the same sequence see the service response, for example "created" and then {{ created.id }}. It cannot be the name of an existing variable (user, state, params, settings, data, row, form, error…). |
 
 ### `refresh`
 

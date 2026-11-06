@@ -28,6 +28,13 @@
       "title": "{{ t('showcase_dashboard.indicators', 'Indicators') }}",
       "components": [
         {
+          "id": "to-collect-alert",
+          "type": "alert",
+          "kind": "info",
+          "visibleIf": "{{ data.summary.toCollect > 0 }}",
+          "text": "{{ t('showcase_dashboard.to_collect_alert', 'Some sales invoices are still to be collected. This message reads data.summary, the answer of the data source of the indicators, from outside them.') }}"
+        },
+        {
           "id": "kpi-invoices",
           "type": "stats",
           "source": "summary",

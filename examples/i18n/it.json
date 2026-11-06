@@ -280,6 +280,7 @@
   "showcase_dashboard.sales_activity_by_month": "Attività di vendita per mese, 2026",
   "showcase_dashboard.showcase_dashboard": "Vetrina: cruscotto",
   "showcase_dashboard.to_be_collected": "Da incassare",
+  "showcase_dashboard.to_collect_alert": "Ci sono fatture di vendita ancora da incassare. Questo messaggio legge data.summary, la risposta del data source degli indicatori, da fuori.",
   "showcase_datatable.account": "Conto",
   "showcase_datatable.account_transactions": "Movimenti dei conti",
   "showcase_datatable.category": "Categoria",

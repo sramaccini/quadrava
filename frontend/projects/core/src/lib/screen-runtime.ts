@@ -82,6 +82,17 @@ export class ScreenRuntime {
   /** How many times each data source was asked to reload (refresh step): components that query it themselves follow it. */
   readonly refreshCount = signal<Record<string, number>>({});
   /** True if the user has the permission required by the screen (`requires`). */
+  /**
+   * Last answers of the GET data sources of the screen, by name: `data` in expressions (ADR-23). A data source not yet
+   * answered or failed is missing (an expression that reads it fails closed); while reloading it keeps the previous one.
+   */
+  readonly data = computed<Record<string, unknown>>(() => {
+    const out: Record<string, unknown> = {};
+    for (const [name, source] of Object.entries(this.dataSources())) {
+      if (source.data !== null && source.data !== undefined && inlineDataSource(this.definition.dataSources?.[name])?.method === 'GET') out[name] = source.data;
+    }
+    return out;
+  });
   readonly allowed = computed(() => !this.definition.requires || this.deps.authorization.can(this.definition.requires));
 
   private readonly effects: EffectRef[] = [];
@@ -115,7 +126,10 @@ export class ScreenRuntime {
     this.engine = new ExpressionEngine(
       { can: (permission) => deps.authorization.can(permission) },
       {
-        onError: (info) => this.report(info.source, info.error),
+        // A data source that has not answered yet is not a fault of the expression that reads it (ADR-23).
+        onError: (info) => {
+          if (!this.awaitingData(info.error)) this.report(info.source, info.error);
+        },
         validate: (name, value, params) => validators.check(name, value, params),
         i18n: deps.i18n
           ? {
@@ -270,7 +284,13 @@ export class ScreenRuntime {
     if (this.pendingFirstLoad.size === 0) this.openSpan?.end(!this.firstLoadFailed);
   }
 
-  /** Evaluation context: user, state, parameters and variables of the current point. */
+  /** The error of an expression is only `data.<name>` of a GET data source that has not answered yet (or has failed, reported on its own). */
+  private awaitingData(error: string): boolean {
+    const name = /^No such key: ([A-Za-z][A-Za-z0-9_]*)$/.exec(error)?.[1];
+    return !!name && inlineDataSource(this.definition.dataSources?.[name])?.method === 'GET' && !(name in untracked(() => this.data()));
+  }
+
+  /** Evaluation context: user, state, parameters, settings, data of the data sources and variables of the current point. */
   context(scope: Scope = {}): Scope {
     const user = this.deps.userProvider.user();
     return {
@@ -278,6 +298,7 @@ export class ScreenRuntime {
       state: this.state(),
       params: this.params,
       settings: this.deps.settings?.() ?? {},
+      data: this.data(),
       ...scope,
     };
   }

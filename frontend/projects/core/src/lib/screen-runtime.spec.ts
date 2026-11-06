@@ -158,6 +158,45 @@ describe('ScreenRuntime', () => {
     expect(rt.isVisible({ visibleIf: '{{row._perm.update}}' }, { row: { _perm: { update: false } } })).toBe(false);
     rt.destroy();
   });
+
+  it('the expressions read the answers of the GET data sources as data, fail-closed until they arrive (ADR-23)', async () => {
+    fakes.respond = (r) => {
+      if (r.url === '/api/issues/7') return { title: 'Bug', _perm: { comment: true } };
+      if (r.url === '/api/broken') throw new Error('500');
+      return { id: 'c1' };
+    };
+    const rt = fakes.runtime(
+      {
+        schemaVersion: '1.0',
+        screen: 'issue',
+        dataSources: {
+          issue: { type: 'rest', method: 'GET', url: '/api/issues/7' },
+          broken: { type: 'rest', method: 'GET', url: '/api/broken' },
+          post: { type: 'rest', method: 'POST', url: '/api/issues/7/comments' },
+        },
+        components: [],
+      },
+      injector,
+    );
+    const canComment = { visibleIf: '{{ data.issue._perm.comment }}' };
+    // Not yet answered: the condition fails and shows nothing.
+    expect(rt.isVisible(canComment)).toBe(false);
+    await settle();
+    expect(rt.isVisible(canComment)).toBe(true);
+    expect(rt.text('{{ data.issue.title }}')).toBe('Bug');
+    // A failed data source is not there; has() tells.
+    expect(rt.text("{{ has(data.broken) ? 'yes' : 'no' }}")).toBe('no');
+    // The answer of a write is not data: the steps see it with `as`.
+    await rt.execute('post', {});
+    expect(Object.keys(rt.data())).toEqual(['issue']);
+    // Waiting for a data source is not a technical report; a failed load is, once, and so is a mistake in the expression.
+    expect(fakes.reports.filter((r) => r.error.includes('No such key: issue'))).toEqual([]);
+    expect(fakes.reports.filter((r) => r.source === 'data source broken')).toHaveLength(1);
+    rt.isVisible({ visibleIf: '{{ data.issue.missing }}' });
+    await settle();
+    expect(fakes.reports.some((r) => r.error === 'No such key: missing')).toBe(true);
+    rt.destroy();
+  });
 });
 
 describe('ScreenRuntime: language and translations', () => {

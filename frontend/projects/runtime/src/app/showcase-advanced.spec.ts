@@ -368,6 +368,9 @@ describe('Showcase: advanced components', () => {
       await until(() => values().length === 4 && values()[0] !== '…', 'indicators');
       expect(values()).toEqual(['€11,275.00', '€5,975.00', '10', '€2,818.75']);
       expect([...el.querySelectorAll('main lc-stats .caption')].map((c) => plainText(c.textContent))).toEqual(['+12.5% on last month', 'out of 14']);
+      // The message outside the indicators reads the same answer as data.summary (ADR-23).
+      await until(() => !!el.querySelector('main [data-node-id="to-collect-alert"] .ant-alert'), 'alert from data.summary');
+      expect(plainText(el.querySelector('main [data-node-id="to-collect-alert"]')?.textContent)).toContain('Some sales invoices are still to be collected');
       // No expression errors while the data arrive.
       await new Promise((r) => setTimeout(r, 0));
       expect(TestBed.inject(DemoDiagnostics).events()).toEqual([]);

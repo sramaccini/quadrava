@@ -14,6 +14,16 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ### Added
 
+- The data of the screen's data sources in expressions ([ADR-23](docs/adr-23-data-in-expressions.md)): `data.<name>`
+  is the last answer of a GET data source of the screen, the same the components show, so a component outside a form
+  can depend on what the form loaded (`postIf: "{{ data.issue._perm.comment }}"`). Missing until it arrives, so a
+  condition on it grants nothing meanwhile, without a technical report; `has(data.issue)` tells. Example: a message
+  of the dashboard of the demo. Request Q9 of OpenDevTrack.
+
+### Changed
+
+- `data` is a reserved name: the `as` of a `call` step cannot be `data` any more (no published example used it).
+
 - `SHELL_MESSAGES` in the public API of `components`: the built-in texts of the runtime shell (`app.*`, English and
   Italian), until now inside the runtime application. An editor can list the keys a project may override, for example
   to translate the shell into another language. Renaming or removing one of them is from now on a breaking change.

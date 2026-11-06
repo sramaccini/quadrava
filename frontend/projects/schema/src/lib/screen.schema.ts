@@ -320,12 +320,13 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                   "var",
                   "void",
                   "while",
-                  "settings"
+                  "settings",
+                  "data"
                 ]
               }
             }
           ],
-          "description": "Name under which the following steps of the same sequence see the service response, for example \"created\" and then {{ created.id }}. It cannot be the name of an existing variable (user, state, params, row, form, error…)."
+          "description": "Name under which the following steps of the same sequence see the service response, for example \"created\" and then {{ created.id }}. It cannot be the name of an existing variable (user, state, params, settings, data, row, form, error…)."
         }
       }
     },

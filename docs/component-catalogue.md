@@ -433,7 +433,7 @@ Steps are a sequence: what has to happen before a call (`validate`, `confirm`, `
 "components": [{ "type": "button", "label": "Save", "onClick": { "run": "saveOrder" } }]
 ```
 
-- **`as` in the `call` step**: the following steps of the same sequence see the response under that name (`{{ created.id }}`). The name cannot be that of an existing variable (`user`, `state`, `params`, `row`, `form`, `error`…).
+- **`as` in the `call` step**: the following steps of the same sequence see the response under that name (`{{ created.id }}`). The name cannot be that of an existing variable (`user`, `state`, `params`, `settings`, `data`, `row`, `form`, `error`…).
 - **`if`** with `then` and `else` (optional): one step or a list of steps per branch. The condition must yield true or false; if it cannot be evaluated (or yields something else) the sequence stops with the generic warning and the technical diagnostic, without running either branch (fail-closed).
 - **`actions` and `run`**: named sequences of the screen, called from buttons, row actions, forms… with the variables of the place where they are called (`row`, `form`). Variables created inside (`as`) stay theirs. A sequence that does not exist, or calls nested more than eight levels deep (a cycle), stop the sequence. The editor suggests the names in `run` and flags missing ones.
 - **`error.status` in `onError`**: the HTTP status of the response (0 if the service cannot be reached), to behave differently according to the error. The server's message is not available: it might contain internal details.

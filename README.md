@@ -199,7 +199,7 @@ A GET data source can also follow changes made by others with `live`: an event s
            "live": { "url": "/api/streams/tasks", "events": ["tasks.changed"] } }
 ```
 
-**Expressions** are written in [CEL](https://github.com/google/cel-spec) inside `{{ ... }}` and see these variables: `user` (`name`, `username`, `email`, `roles`, `tenant`), `state`, `params`, `row`, `form`, `value`, and the function `can('domain.resource.action')`. Visibility (`visibleIf`, `hiddenIf`), read-only (`readOnlyIf`), enablement (`enabledIf`) and permissions (`requires`) all use them.
+**Expressions** are written in [CEL](https://github.com/google/cel-spec) inside `{{ ... }}` and see these variables: `user` (`name`, `username`, `email`, `roles`, `tenant`), `state`, `params`, `settings`, `data` (the last answer of each GET data source of the screen, by name: `data.issue._perm.comment`, missing until it arrives; ADR-23), `row`, `form`, `value`, and the function `can('domain.resource.action')`. Visibility (`visibleIf`, `hiddenIf`), read-only (`readOnlyIf`), enablement (`enabledIf`) and permissions (`requires`) all use them.
 
 **Permissions** always have three lowercase parts, `domain.resource.action` (for example `orders.iban.read`). The schema rejects any other shape. Record-level permissions arrive as `row._perm.update` / `form._perm.update`.
 
