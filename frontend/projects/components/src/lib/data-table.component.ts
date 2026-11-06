@@ -40,6 +40,9 @@ type NzSortOrder = 'ascend' | 'descend' | null;
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: block; }
+    .cell-link { padding: 0; border: 0; background: none; font: inherit; color: var(--ant-primary-color, var(--lc-color-primary, #1f5fbf)); cursor: pointer; text-align: inherit; }
+    .cell-link:hover, .cell-link:focus-visible { text-decoration: underline; }
+    .cell-link:disabled { cursor: not-allowed; opacity: 0.6; }
     .toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; padding-bottom: var(--lc-gap, 12px); }
     .toolbar label { color: var(--lc-color-muted, #5d6b7a); }
     .toolbar nz-select { min-width: 260px; }
@@ -167,7 +170,15 @@ type NzSortOrder = 'ascend' | 'descend' | null;
                     @for (column of columns(); track column.field; let first = $first) {
                       <td [nzAlign]="numeric(column) ? 'right' : 'left'" [style.padding-left.px]="first && item.level ? 16 + item.level * 24 : null">
                         @if (cell(item.row, column); as view) {
-                          @if (link(column, item.row); as url) {
+                          @if (column.onClick) {
+                            <button type="button" class="cell-link" [disabled]="busy()" (click)="run({ onClick: column.onClick }, item.row)">
+                              @if (view.tone) {
+                                <nz-tag [nzColor]="color(view.tone)">{{ view.text }}</nz-tag>
+                              } @else {
+                                {{ view.text }}
+                              }
+                            </button>
+                          } @else if (link(column, item.row); as url) {
                             <a class="cell-link" [href]="url">
                               @if (view.tone) {
                                 <nz-tag [nzColor]="color(view.tone)">{{ view.text }}</nz-tag>

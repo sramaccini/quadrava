@@ -12,6 +12,11 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Fixed
+
+- `dataTable` and `serverDataTable` ignored `onClick` on a column, which their schema accepts: the value is now a link
+  that runs the steps with the row in `row`, as in `table`.
+
 ## [0.9.0] - 2026-11-06
 
 ### Added

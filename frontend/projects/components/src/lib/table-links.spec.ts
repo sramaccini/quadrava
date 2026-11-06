@@ -62,4 +62,22 @@ describe('links of the rows (href)', () => {
     expect(columnTexts(h.el, 0)).toEqual(['report.pdf']);
     await h.until(() => h.reports.some((r) => r.source === 'href'), 'reported');
   });
+
+  for (const type of ['table', 'dataTable', 'serverDataTable']) {
+    it(`${type}: the value of a column with onClick is a button that runs the steps with the row`, async () => {
+      const server = type === 'serverDataTable';
+      const h = await renderScreen({
+        components: [{ type, source: 'data', columns: [{ field: 'filename', label: 'File', onClick: [{ toast: 'open {{ row.id }}' }] }] } as NodeDefinition],
+        dataSources: server ? { data: { type: 'rest', method: 'POST', url: '/api/search', body: '{{ request }}' } } : dataSources,
+        respond: () => (server ? { items: rows, total: 1, totals: {} } : rows),
+      });
+      await h.until(() => !!h.el.querySelector('td button.cell-link'), 'rows');
+      const cell = h.el.querySelector<HTMLButtonElement>('td button.cell-link')!;
+      expect(plain(cell.textContent)).toBe('report.pdf');
+      cell.click();
+      await h.until(() => h.toasts.length === 1, 'steps of the cell');
+      expect(h.toasts).toEqual(['open 7']);
+      expect(h.reports).toEqual([]);
+    });
+  }
 });
