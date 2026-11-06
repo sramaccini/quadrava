@@ -358,6 +358,18 @@ export class ScreenRuntime {
     return result.value === null || result.value === undefined ? '' : String(result.value);
   }
 
+  /**
+   * Address of a link of the screen (`href` of a column or of a row action): the values of the expressions encoded, as in
+   * the URL of a data source, and only a path of the same origin. Null, and reported, when it does not resolve: the link
+   * opens nothing.
+   */
+  href(template: string, scope: Scope = {}): string | null {
+    const url = this.resolveUrl(template, this.context(scope));
+    if (url.ok) return url.value;
+    this.report('href', url.error);
+    return null;
+  }
+
   /** Resolves recursively the expressions in the strings of a value (args, params). Expressions in error become `undefined`. */
   resolveValue(value: unknown, scope: Scope = {}): unknown {
     const ctx = this.context(scope);

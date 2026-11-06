@@ -110,6 +110,14 @@ Columns with `sortable: true` show the sort arrows. A click cycles through ascen
 
 `rowActionsInline: n` shows only the first `n` visible actions as buttons; the others go into a «⋯» menu (`0` = all in the menu). Without the property they all stay buttons. Disabled actions stay visible and disabled in the menu too.
 
+A row action runs steps (`onClick`) or, with `href`, is a link to a relative path of the application built from the row, for example to download an attachment ([ADR-24](adr-24-links-from-the-rows.md)):
+
+```json
+"rowActions": [{ "label": "Download", "href": "/api/issues/{{ params.issue }}/attachments/{{ row.id }}/content" }]
+```
+
+The values of `{{ }}` are encoded and the address must stay a path of the same origin; one that does not resolve, or a disabled action, opens nothing.
+
 ### 2.4 Expandable detail rows
 
 ```json
@@ -122,6 +130,7 @@ Every row has a button that opens below it an area with the nodes of `expand.com
 
 - Cell format `number` with `decimals` (0 to 6), right-aligned and with digit grouping according to the language.
 - `onClick` on a column: the value becomes a link that runs the steps with the row in `row` (for example `navigate` to the detail).
+- `href` on a column (`table`, `dataTable`, `serverDataTable`): the value becomes a link to a relative path of the application built from the row, as for the row actions above; not together with `onClick`. A service that answers with `Content-Disposition: attachment` makes the browser download the file without leaving the screen.
 - `aggregate` on a column (`sum`, `avg`, `min`, `max`, `count`): a totals row appears at the bottom of the table, computed on the loaded rows and with the same format as the column.
 
 ### 2.6 New field types

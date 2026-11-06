@@ -117,6 +117,9 @@ export interface ActionDefinition {
   onClick: Step[];
 }
 
+/** Action on a row of a table: it runs steps or opens a relative path of the application, with the row in `row`. */
+export type RowActionDefinition = (Omit<ActionDefinition, 'onClick'> & { onClick: Step[]; href?: never }) | (Omit<ActionDefinition, 'onClick'> & { href: string; onClick?: never });
+
 export interface FieldDefinition {
   name: string;
   type: 'text' | 'number' | 'select' | 'checkbox' | 'date' | 'textarea' | 'datetime' | 'radio' | 'switch' | 'multiselect' | 'lookup' | 'file' | 'repeater' | 'richtext' | 'password';
@@ -274,6 +277,8 @@ export interface TableColumnDefinition extends ColumnDefinition {
   sortable?: boolean;
   /** The value becomes a link that runs the steps with the row in `row`. */
   onClick?: Step[];
+  /** The value becomes a link to this relative path of the application, with the row in `row` (not with `onClick`). */
+  href?: string;
   /** Value of the column in the totals row, computed on the loaded rows. */
   aggregate?: Aggregate;
 }
@@ -336,7 +341,7 @@ export interface TableNode extends NodeBase {
   selection?: { bind: StatePath; key?: string };
   /** Actions on the selected rows; expressions see `selection`. */
   bulkActions?: ActionDefinition[];
-  rowActions?: ActionDefinition[];
+  rowActions?: RowActionDefinition[];
   /** How many visible row actions to show as buttons; the others go into the «⋯» menu (0 = all in the menu). */
   rowActionsInline?: number;
   /** Area that opens under the row; its nodes see the row as `row`. */
@@ -522,7 +527,7 @@ export interface DataTableNode extends NodeBase {
   groupBy?: string[];
   defaultSort?: SortSpec;
   pageSize?: number;
-  rowActions?: ActionDefinition[];
+  rowActions?: RowActionDefinition[];
   rowActionsInline?: number;
 }
 
@@ -539,7 +544,7 @@ export interface ServerDataTableNode extends NodeBase {
   pageSize?: number;
   /** State where the current request (without the page) is written. */
   bind?: StatePath;
-  rowActions?: ActionDefinition[];
+  rowActions?: RowActionDefinition[];
   rowActionsInline?: number;
 }
 

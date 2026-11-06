@@ -269,6 +269,15 @@ describe('Component showcase', () => {
       expect(invoice[4]).toBe('No');
       expect(invoice[5]).toBe('Sent');
     });
+
+    it('the links of the rows open a path of the application built from the row', async () => {
+      const { fixture, el } = await open('/showcase/showcase-tables');
+      await until(fixture, () => rows(el, 3) === 3, 'attachments');
+      const table = el.querySelectorAll('main nz-table')[3];
+      const paths = ['/examples/images/tasks.svg', '/examples/i18n/en.json', '/examples/i18n/it.json'];
+      expect([...table.querySelectorAll('td a.cell-link')].map((a) => a.getAttribute('href'))).toEqual(paths);
+      expect([...table.querySelectorAll('td .actions a')].map((a) => [plain(a.textContent), a.getAttribute('href')])).toEqual(paths.map((p) => ['Download', p]));
+    });
   });
 
   describe('tabs, detail and messages', () => {

@@ -131,6 +131,19 @@ describe('ScreenRuntime', () => {
     expect(fakes.requests).toHaveLength(0);
   });
 
+  it('resolves the href of a link: values encoded, only a path of the same origin, a failure reported', async () => {
+    const rt = fakes.runtime(screen, injector);
+    expect(rt.href('/api/issues/{{ row.key }}/attachments/{{ row.id }}/content', { row: { key: 'QD-1', id: 'a/b ?x' } })).toBe('/api/issues/QD-1/attachments/a%2Fb%20%3Fx/content');
+    // A value cannot turn the path into another origin or climb out of it.
+    expect(rt.href('/{{ row.to }}', { row: { to: '/evil.example' } })).toBe('/%2Fevil.example');
+    for (const template of ['https://evil.example/x', '//evil.example/x', '/api/../admin', '/api/{{ row.missing }}']) {
+      expect(rt.href(template, { row: {} }), template).toBeNull();
+    }
+    await settle();
+    expect(fakes.reports.filter((r) => r.source === 'href')).toHaveLength(4);
+    rt.destroy();
+  });
+
   it('does not allow writing into __proto__ through the state', () => {
     const rt = fakes.runtime(screen, injector);
     rt.setState('__proto__.polluted', true);

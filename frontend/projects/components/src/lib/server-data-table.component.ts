@@ -221,7 +221,15 @@ function asLevel(data: unknown, page: number, previous?: Level): Level {
                       @for (column of columns(); track column.field; let first = $first) {
                         <td [nzAlign]="numeric(column) ? 'right' : 'left'" [style.padding-left.px]="first && item.level ? 16 + item.level * 24 : null">
                           @if (format(item.row[column.field], column); as view) {
-                            @if (view.tone) {
+                            @if (link(column, item.row); as url) {
+                              <a class="cell-link" [href]="url">
+                                @if (view.tone) {
+                                  <nz-tag [nzColor]="color(view.tone)">{{ view.text }}</nz-tag>
+                                } @else {
+                                  {{ view.text }}
+                                }
+                              </a>
+                            } @else if (view.tone) {
                               <nz-tag [nzColor]="color(view.tone)">{{ view.text }}</nz-tag>
                             } @else {
                               {{ view.text }}
@@ -516,6 +524,11 @@ export class ServerDataTableComponent {
   protected color(tone: NonNullable<FormattedValue['tone']>): string {
     return TONE_COLORS[tone];
   }
+
+  /** Address of the value of a column with `href`, with the row in `row`; null without one or when it does not resolve. */
+  protected link(column: DataColumnDefinition, row: Row): string | null {
+    return column.href ? this.runtime().href(column.href, { ...this.scope(), row }) : null;
+  }
   protected numeric(column: ColumnDefinition): boolean {
     return column.format === 'number' || column.format === 'currency' || column.format === 'percent';
   }
@@ -598,7 +611,7 @@ export class ServerDataTableComponent {
   }
 
   /** Row action. If it changes the data, the sequence ends with `refresh` on the table's data source, which repeats the requests. */
-  protected async run(action: ActionDefinition, row: Row): Promise<void> {
+  protected async run(action: Pick<ActionDefinition, 'onClick'>, row: Row): Promise<void> {
     if (this.busy()) return;
     this.busy.set(true);
     try {

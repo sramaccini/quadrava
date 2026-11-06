@@ -15,6 +15,9 @@
     },
     "invoices": {
       "ref": "showcase-tables/invoices"
+    },
+    "attachments": {
+      "ref": "showcase-tables/attachments"
     }
   },
   "components": [
@@ -217,6 +220,41 @@
                 "paid": "success"
               },
               "valueKey": "values.status"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "section-downloads",
+      "type": "section",
+      "title": "{{ t('showcase_tables.downloads_title', 'Links from the rows: open or download a file') }}",
+      "components": [
+        {
+          "id": "txt-downloads",
+          "type": "text",
+          "text": "{{ t('showcase_tables.downloads_text', 'The name of the file and the Download action are links to a path of the application built from the row (href). Here they open files of the example project; a service that answers with Content-Disposition: attachment makes the browser download them, without leaving the screen.') }}"
+        },
+        {
+          "id": "attachment-table",
+          "type": "table",
+          "source": "attachments",
+          "columns": [
+            {
+              "field": "file",
+              "label": "{{ t('showcase_tables.file', 'File') }}",
+              "href": "/examples/{{ row.folder }}/{{ row.file }}"
+            },
+            {
+              "field": "kind",
+              "label": "{{ t('showcase_tables.kind', 'Kind') }}"
+            }
+          ],
+          "rowActions": [
+            {
+              "id": "btn-download",
+              "label": "{{ t('showcase_tables.download', 'Download') }}",
+              "href": "/examples/{{ row.folder }}/{{ row.file }}"
             }
           ]
         }

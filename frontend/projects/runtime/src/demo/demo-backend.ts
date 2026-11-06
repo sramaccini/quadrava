@@ -463,6 +463,14 @@ export class DemoBackend {
         criterion === 'status' ? ['draft', 'sent', 'paid'] : criterion === 'type' ? ['sales', 'purchase'] : criterion === 'customer' ? this.customers.map((c) => c.name.split(' ')[0].toLowerCase()) : [];
       return values.filter((v) => v.startsWith(start)).slice(0, 8).map((v) => ({ insert: `${criterion}:${v} `, label: `${criterion}:${v}` }));
     }
+    // Files of the example project, for the links of the rows (href): the folder and the name build the path.
+    if (path === '/api/attachments' && req.method === 'GET') {
+      return [
+        { id: 1, folder: 'images', file: 'tasks.svg', kind: 'Image' },
+        { id: 2, folder: 'i18n', file: 'en.json', kind: 'Translations' },
+        { id: 3, folder: 'i18n', file: 'it.json', kind: 'Translations' },
+      ];
+    }
     if (path === '/api/packages' && req.method === 'GET') return this.packages.map((p) => ({ ...p }));
     if (path === '/api/packages' && req.method === 'POST') {
       const body = req.body ?? {};

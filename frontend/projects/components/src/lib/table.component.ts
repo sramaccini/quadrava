@@ -125,6 +125,14 @@ const DEFAULT_PAGE_SIZE = 10;
                             {{ view.text }}
                           }
                         </button>
+                      } @else if (link(column, row); as url) {
+                        <a class="cell-link" [href]="url">
+                          @if (view.tone) {
+                            <nz-tag [nzColor]="color(view.tone)">{{ view.text }}</nz-tag>
+                          } @else {
+                            {{ view.text }}
+                          }
+                        </a>
                       } @else if (view.tone) {
                         <nz-tag [nzColor]="color(view.tone)">{{ view.text }}</nz-tag>
                       } @else {
@@ -326,6 +334,11 @@ export class TableComponent {
     return TONE_COLORS[tone];
   }
 
+  /** Address of the value of a column with `href`, with the row in `row`; null without one or when it does not resolve. */
+  protected link(column: TableColumnDefinition, row: Record<string, unknown>): string | null {
+    return column.href ? this.runtime().href(column.href, { ...this.scope(), row }) : null;
+  }
+
   protected order(column: TableColumnDefinition): NzSortOrder {
     const sort = this.sort();
     if (!column.sortable || sort?.field !== column.field) return null;
@@ -429,7 +442,7 @@ export class TableComponent {
     return scope;
   }
 
-  protected async run(action: ActionDefinition, row: Record<string, unknown>): Promise<void> {
+  protected async run(action: Pick<ActionDefinition, 'onClick'>, row: Record<string, unknown>): Promise<void> {
     if (this.busy()) return;
     this.busy.set(true);
     try {

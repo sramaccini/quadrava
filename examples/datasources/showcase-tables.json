@@ -30,6 +30,11 @@
       "params": {
         "status": "sent"
       }
+    },
+    "attachments": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/attachments"
     }
   }
 }

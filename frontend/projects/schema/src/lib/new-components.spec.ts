@@ -35,6 +35,30 @@ describe('schema of the new components', () => {
     });
   });
 
+  describe('links of the rows (href)', () => {
+    const download = '/api/issues/{{ params.issue }}/attachments/{{ row.id }}/content';
+    it('accepts a relative path on a column and on a row action of every table', () => {
+      expect(issuesOf(table({}, [{ field: 'filename', href: download }]))).toEqual([]);
+      for (const type of ['table', 'dataTable', 'serverDataTable']) {
+        const node = { type, source: 's', columns: [{ field: 'filename', href: download }], rowActions: [{ id: 'btn-download', label: 'Download', href: download }, { id: 'btn-open', label: 'Open', onClick: [{ toast: 'ok' }] }] };
+        expect(issuesOf(screen([node])), type).toEqual([]);
+      }
+    });
+
+    it('rejects other addresses, href together with onClick, and a row action with neither', () => {
+      for (const href of ['https://example.com/x', '//example.com/x', 'javascript:alert(1)', 'api/x']) {
+        expect(issuesOf(table({}, [{ field: 'filename', href }])).length, href).toBeGreaterThan(0);
+      }
+      expect(issuesOf(table({}, [{ field: 'filename', href: download, onClick: [{ toast: 'ok' }] }])).length).toBeGreaterThan(0);
+      expect(issuesOf(table({ rowActions: [{ label: 'Both', href: download, onClick: [{ toast: 'ok' }] }] })).length).toBeGreaterThan(0);
+      expect(issuesOf(table({ rowActions: [{ label: 'None' }] })).length).toBeGreaterThan(0);
+    });
+
+    it('href is for the rows only: the actions of a form still need their steps', () => {
+      expect(issuesOf(table({ bulkActions: [{ label: 'Download', href: download }] })).length).toBeGreaterThan(0);
+    });
+  });
+
   describe('selection and bulk actions', () => {
     it('accepts selection with key and bulk actions', () => {
       expect(issuesOf(table({ selection: { bind: 'state.scelte', key: 'codice' }, bulkActions: [{ label: 'Invia', onClick: [{ toast: 'ok' }] }] }))).toEqual([]);

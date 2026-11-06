@@ -12,6 +12,21 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Added
+
+- Links from the rows of a table ([ADR-24](docs/adr-24-links-from-the-rows.md)): `href` on a column of `table`,
+  `dataTable` and `serverDataTable` and on a row action, a relative path of the application built from the row, for
+  example to download an attachment (request Q10 of OpenDevTrack). The values are encoded and the address must stay a
+  path of the same origin; one that does not resolve opens nothing and is reported. `ScreenRuntime.href()` resolves
+  them. Example in the «Filters and tables» showcase.
+
+### Changed
+
+- The items of `rowActions` have their own schema (`rowAction`: `onClick` or `href`) and type
+  (`RowActionDefinition`); the actions of forms, of the selection and of toolbars keep `onClick` required. Code that
+  read `onClick` of a row action must handle its absence.
+- The description of an expression in the screen schema lists the variables and functions it sees today.
+
 ### Fixed
 
 - The runtime image forwarded to the BFF request bodies of at most 1 MB, the default of nginx, so a larger upload from a

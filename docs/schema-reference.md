@@ -54,7 +54,7 @@
 | --- | --- | --- |
 | `source` * | text | Name of the data source that provides the rows. |
 | `columns` * | list of tableColumn | Columns of the table, in order: field, header, format. |
-| `rowActions` | list of action | Actions on a row, in the last column: expressions see the row as `row`. |
+| `rowActions` | list of rowAction | Actions on a row, in the last column: expressions see the row as `row`. |
 | `sort` | object | Sorting. With server paging the service does it: the table writes { field, direction } in the `bind` state; otherwise it sorts the loaded rows in the page. |
 | `selection` | object | Row selection: the keys of the chosen rows are in the `bind` state; bulk actions see the whole rows in `selection`. |
 | `bulkActions` | list of action | Actions on the selected rows, above the table. Expressions see `selection` (list of the chosen rows). |
@@ -179,7 +179,7 @@
 | `groupBy` | list of text | Initial grouping columns (groupable), in order. |
 | `defaultSort` | sortSpec | Initial sorting (field and direction); then the user changes it from the headers. |
 | `pageSize` | integer 5–100 | Items per page, group headers included (10 if absent). |
-| `rowActions` | list of action | Actions on a row, in the last column: expressions see the row as `row`. |
+| `rowActions` | list of rowAction | Actions on a row, in the last column: expressions see the row as `row`. |
 | `rowActionsInline` | integer 0–10 | How many (visible) row actions to show as buttons; the others go into the «⋯» menu. 0 = all in the menu; if missing, all buttons. |
 | `refreshable` | yes/no | «Refresh» button in the table footer, on the left (pages are on the right): it reloads the data source like the refresh step. Absent if false or not given. |
 
@@ -193,7 +193,7 @@
 | `defaultSort` | sortSpec | Initial sorting (field and direction), sent to the service; then the user changes it from the headers. |
 | `pageSize` | integer 5–200 | Rows (or groups) per page and rows loaded on every «show more» inside a group (20 if absent). |
 | `bind` | state path | State where the table writes the current request (without the page), for other components, for example an export button. |
-| `rowActions` | list of action | Actions on a row, in the last column: expressions see the row as `row`. |
+| `rowActions` | list of rowAction | Actions on a row, in the last column: expressions see the row as `row`. |
 | `rowActionsInline` | integer 0–10 | How many (visible) row actions to show as buttons; the others go into the «⋯» menu. 0 = all in the menu; if missing, all buttons. |
 | `refreshable` | yes/no | «Refresh» button in the table footer, on the left (pages are on the right): it reloads the data source like the refresh step. Absent if false or not given. |
 

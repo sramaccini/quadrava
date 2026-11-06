@@ -18,6 +18,7 @@ Reference documents:
 - [ADR-21: open core](adr-21-open-core.md): Quadrava CE (MPL-2.0) and the commercial edition (Studio, desktop app, registry) in two repositories; the CE libraries as packages.
 - [ADR-22: messages for the user](adr-22-user-notifications.md): a bell in the top bar, a list read from a service of the application, marked read with a POST, updated by an event stream.
 - [ADR-23: the data of the screen's data sources in expressions](adr-23-data-in-expressions.md): `data.<name>`, the last answer of a GET data source, read by any expression of the screen; fail-closed until it arrives.
+- [ADR-24: links from the rows of a table](adr-24-links-from-the-rows.md): `href` on a column and on a row action, a relative path built from the row (for example a download), with the rules of the URL of a data source.
 
 The functional specification, architecture and implementation guidelines date from 7–13 October 2026: the most recent detail is in the component catalogue and in the code.
 

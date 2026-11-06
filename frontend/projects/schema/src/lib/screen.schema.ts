@@ -393,41 +393,96 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
         }
       }
     },
-    "action": {
+    "actionProps": {
       "type": "object",
-      "required": [
-        "label",
-        "onClick"
-      ],
-      "additionalProperties": false,
       "properties": {
         "id": {
           "$ref": "#/$defs/id"
         },
         "label": {
-          "type": "string"
+          "type": "string",
+          "description": "Text of the action; it can contain {{ }}."
         },
         "visibleIf": {
-          "$ref": "#/$defs/expression"
+          "$ref": "#/$defs/expression",
+          "description": "The action is shown only when the expression is true."
         },
         "hiddenIf": {
-          "$ref": "#/$defs/expression"
+          "$ref": "#/$defs/expression",
+          "description": "The action is hidden when the expression is true."
         },
         "enabledIf": {
-          "$ref": "#/$defs/expression"
+          "$ref": "#/$defs/expression",
+          "description": "The action can be used only when the expression is true."
         },
         "onClick": {
           "type": "array",
           "minItems": 1,
           "items": {
             "$ref": "#/$defs/step"
-          }
+          },
+          "description": "Steps run on click, in order."
         },
         "tooltip": {
           "type": "string",
           "description": "Help text shown on mouse hover or with the focus. Text only (never HTML); it can contain {{ }}."
         }
       }
+    },
+    "action": {
+      "type": "object",
+      "$ref": "#/$defs/actionProps",
+      "required": [
+        "label",
+        "onClick"
+      ],
+      "properties": {
+        "label": true,
+        "onClick": true
+      },
+      "unevaluatedProperties": false
+    },
+    "rowAction": {
+      "type": "object",
+      "$ref": "#/$defs/actionProps",
+      "$comment": "The properties of actionProps are listed again as true: when a branch of oneOf fails, Ajv forgets the properties evaluated through $ref, and unevaluatedProperties would refuse them.",
+      "required": [
+        "label"
+      ],
+      "properties": {
+        "id": true,
+        "label": true,
+        "visibleIf": true,
+        "hiddenIf": true,
+        "enabledIf": true,
+        "onClick": true,
+        "tooltip": true,
+        "href": {
+          "type": "string",
+          "pattern": "^/(?!/)",
+          "description": "Relative path of the application that the action opens, with the row in `row`, for example a download: /api/issues/{{ params.issue }}/attachments/{{ row.id }}/content. The values of {{ }} are encoded, so they cannot add segments; an address that does not resolve to a path of the same origin opens nothing."
+        }
+      },
+      "oneOf": [
+        {
+          "required": [
+            "onClick"
+          ],
+          "properties": {
+            "onClick": true
+          }
+        },
+        {
+          "required": [
+            "href"
+          ],
+          "properties": {
+            "href": true
+          }
+        }
+      ],
+      "unevaluatedProperties": false,
+      "description": "Action on a row: it runs steps (onClick) or opens a relative path of the application (href)."
     },
     "field": {
       "type": "object",
@@ -1361,7 +1416,7 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
               "rowActions": {
                 "type": "array",
                 "items": {
-                  "$ref": "#/$defs/action"
+                  "$ref": "#/$defs/rowAction"
                 },
                 "description": "Actions on a row, in the last column: expressions see the row as `row`."
               },
@@ -2070,7 +2125,7 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
               "rowActions": {
                 "type": "array",
                 "items": {
-                  "$ref": "#/$defs/action"
+                  "$ref": "#/$defs/rowAction"
                 },
                 "description": "Actions on a row, in the last column: expressions see the row as `row`."
               },
@@ -2143,7 +2198,7 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
               "rowActions": {
                 "type": "array",
                 "items": {
-                  "$ref": "#/$defs/action"
+                  "$ref": "#/$defs/rowAction"
                 },
                 "description": "Actions on a row, in the last column: expressions see the row as `row`."
               },
@@ -3043,6 +3098,21 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
             "count"
           ],
           "description": "Value of the column in the totals row (sum, average, minimum, maximum, count), computed on the loaded rows."
+        },
+        "href": {
+          "type": "string",
+          "pattern": "^/(?!/)",
+          "description": "Relative path of the application that the value opens, with the row in `row`, for example a download: /api/issues/{{ params.issue }}/attachments/{{ row.id }}/content. The values of {{ }} are encoded, so they cannot add segments; an address that does not resolve to a path of the same origin opens nothing."
+        }
+      },
+      "not": {
+        "required": [
+          "onClick",
+          "href"
+        ],
+        "properties": {
+          "onClick": true,
+          "href": true
         }
       }
     },
