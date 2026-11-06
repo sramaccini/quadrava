@@ -72,7 +72,7 @@
     "expression": {
       "type": "string",
       "pattern": "^\\{\\{[\\s\\S]+\\}\\}$",
-      "description": "CEL expression in double braces, for example {{can('orders.order.approve') && row.status == 'sent'}}. Available variables: user, state, params, row, form, value. Available function: can(permission)."
+      "description": "CEL expression in double braces, for example {{can('orders.order.approve') && row.status == 'sent'}}. Variables: user, state, params, settings and data (the last answer of each GET data source of the screen, by name); where they apply, row, form, value, error and the responses of the previous calls (as). Functions: can(permission), t(key, text), fmtNumber, fmtCurrency, fmtDate, plural, isValid and has() of CEL."
     },
     "dataSource": {
       "type": "object",
