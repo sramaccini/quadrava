@@ -108,10 +108,12 @@ describe('UserMenuComponent', () => {
     expect(items[0].getAttribute('aria-disabled')).toBe('true');
     expect(menu.querySelector('li.ant-dropdown-menu-item-divider')?.getAttribute('role')).toBe('separator');
     const trigger = fixture.nativeElement.querySelector('button.trigger') as HTMLElement;
-    expect(trigger.getAttribute('aria-expanded')).toBe('true');
     // The disabled item is skipped: the focus starts on «Profile».
     for (let i = 0; i < 40 && document.activeElement !== items[1]; i++) await flush(fixture);
     expect(document.activeElement).toBe(items[1]);
+    // The dropdown reports that it is open together with the focus, not with its first rendering.
+    await flush(fixture);
+    expect(trigger.getAttribute('aria-expanded')).toBe('true');
     const press = (key: string): void => void document.activeElement!.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
     press('ArrowDown');
     expect(document.activeElement).toBe(items[2]);
