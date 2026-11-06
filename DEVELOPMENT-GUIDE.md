@@ -58,7 +58,7 @@ runtime ──► components ──► core ──► expressions
 | `npm run release:check` | Checks that the workspace, its lock file and every library carry one semantic version and that `CHANGELOG.md` has its section (ADR-20); `node tools/release.mjs --tag v1.2.3 --notes <file>` also checks a tag and writes the notes of the release |
 | `npx ng build runtime` | Production build (budgets: warning 2.5 MB, error 4 MB initial) |
 | `npm run deploy:config` | Before `ng build` on a static host: writes the runtime's `studio.origins` from `RUNTIME_STUDIO_ORIGINS` (comma separated), the Studios allowed to open it with «Run project» (ADR-16); stops on an address that is not http(s) |
-| `npm run e2e` | Playwright end-to-end tests (`e2e/`, including the axe-core accessibility check of every showcase screen) in Chromium against the demo; starts `ng serve runtime` on port 4300 (`E2E_PORT` to change it) unless a server is already running there. Needs `npm run demo:prepare` and, once, `npx playwright install chromium` |
+| `npm run e2e` | Playwright end-to-end tests (`e2e/`, including the axe-core accessibility check of every showcase screen) in Chromium, Firefox and WebKit against the demo (`--project=chromium` for one of them); starts `ng serve runtime` on port 4300 (`E2E_PORT` to change it) unless a server is already running there. Needs `npm run demo:prepare` and, once, `npx playwright install chromium firefox webkit` |
 
 Before opening a pull request, all of these must pass: `schema:check`, `schema:docs:check`, `validate:examples`, `notices:check`, `build:libs`, `test:libs`, runtime tests, the production build, `npm run e2e`. CI (`.github/workflows/ci.yml`) runs the same checks on every push to `main` and every pull request, in four jobs: `frontend` (which starts with `release:check`), `e2e`, `image` (builds the runtime image and starts it, as the demo and with a registry configuration) and `java` (`mvn -B verify`). When the e2e job fails, the Playwright report and traces are uploaded as the `playwright-report` artifact (open a trace with `npx playwright show-trace <trace.zip>`).
 
@@ -249,7 +249,7 @@ Real focus handling and the dark theme are not covered yet (the application shel
 
 * The collapsed side menu opens groups in a popup.
 * Logout from the apps is a JSON call (`Accept: application/json`, CSRF header) answered with `{"redirect": …}`: with `csrf().spa()` a form field would need the masked token.
-* The Playwright suite runs in Chromium only.
+* The Playwright suite runs in Chromium, Firefox and WebKit. On a Windows machine whose security settings block programs downloaded outside a store (Smart App Control), Playwright's Firefox does not start (`spawn UNKNOWN`): run `--project=chromium --project=webkit` there and leave Firefox to CI.
 * jsdom has no `document.execCommand`: the rich text toolbar is tested end to end (`e2e/showcase-input.spec.ts`); unit tests cover the Markdown ↔ DOM conversions and the value flow.
 * Inside a CEL single-quoted string a real newline is a syntax error: write `\n` in `t()` fallbacks (in screen JSON, `\\n`).
 * `validate:examples` checks translation keys and CEL expressions (with `checkScreenExpressions` of `core`, as Studio does); the runtime test `i18n-examples.spec.ts` also checks that no text of the examples is left untranslated.

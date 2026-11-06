@@ -17,7 +17,11 @@ export default defineConfig({
     locale: 'en-GB',
     trace: 'retain-on-failure',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
+    { name: 'webkit', use: { ...devices['Desktop Safari'] } },
+  ],
   webServer: {
     command: `node node_modules/@angular/cli/bin/ng.js serve runtime --port ${port}`,
     url: `http://localhost:${port}`,

@@ -262,7 +262,7 @@ Frontend libraries, from the bottom up:
 | UI library | NG-ZORRO (`ng-zorro-antd`) 22.1 on Angular CDK, date-fns for dates, Italian locale |
 | Validation | JSON Schema 2020-12 with Ajv 8 (strict) |
 | Expressions | CEL via `@marcbachmann/cel-js` 8 |
-| Tests (front end) | Vitest 5 through `ng test`, jsdom; Playwright for end-to-end tests in Chromium |
+| Tests (front end) | Vitest 5 through `ng test`, jsdom; Playwright for end-to-end tests in Chromium, Firefox and WebKit |
 | Telemetry | OpenTelemetry-style signals sent as OTLP/HTTP JSON |
 | Back end (reference) | Spring Boot 4.1.1, Java 21 |
 | Identity | Keycloak 26.8, OIDC with PKCE through the BFF |
@@ -356,7 +356,7 @@ npx ng test runtime --watch=false     # end-to-end demo tests (needs `npm run de
 npm run schema:check                  # generated schema constants and precompiled validators are in sync
 npm run schema:docs:check             # docs/schema-reference.md is in sync (npm run schema:docs regenerates it)
 npm run validate:examples             # examples are valid
-npx playwright install chromium       # once: the browser used by the end-to-end tests
+npx playwright install chromium firefox webkit   # once: the browsers used by the end-to-end tests
 npm run e2e                           # Playwright end-to-end tests in a real browser (needs `npm run demo:prepare`)
 npm run conformance:registry -- --user operator --password operator --reviewer-user manager --reviewer-password manager
                                       # --protected-env none: a registry without protected environments
@@ -370,7 +370,7 @@ npm run conformance:bff -- --bff http://localhost:8080 --return http://localhost
 
 `npm run e2e` starts the demo itself (`ng serve runtime` on port 4300, override with `E2E_PORT`; outside CI a server already running on that port is reused) and runs the suites in `frontend/e2e/` against the in-browser fake back end.
 
-Every push to `main` and every pull request runs [`.github/workflows/ci.yml`](.github/workflows/ci.yml) on GitHub Actions: the front-end job (`schema:check`, `validate:examples`, `build:libs`, the tests of every project, the production build of the runtime), the end-to-end job (Playwright in Chromium; report uploaded as an artifact when it fails), the image job (builds the runtime image and starts it) and the Java job (`mvn -B verify`). A `v*` tag starts [`.github/workflows/release.yml`](.github/workflows/release.yml), which publishes the runtime image and the GitHub release ([ADR-20](docs/adr-20-versioned-distribution.md)).
+Every push to `main` and every pull request runs [`.github/workflows/ci.yml`](.github/workflows/ci.yml) on GitHub Actions: the front-end job (`schema:check`, `validate:examples`, `build:libs`, the tests of every project, the production build of the runtime), the end-to-end job (Playwright in Chromium, Firefox and WebKit; report uploaded as an artifact when it fails), the image job (builds the runtime image and starts it) and the Java job (`mvn -B verify`). A `v*` tag starts [`.github/workflows/release.yml`](.github/workflows/release.yml), which publishes the runtime image and the GitHub release ([ADR-20](docs/adr-20-versioned-distribution.md)).
 
 At the time of writing there are **750 automated tests**: schema 95, expressions 46, core 200, components 243, services 44, runtime 113, CLI 9. The Java modules add 28 (`mvn verify`: authz 7, bff 15, telemetry 6).
 
