@@ -286,7 +286,7 @@ export const STANDARD_VALIDATORS: readonly ValidatorDescriptor[] = [
   },
   {
     name: 'minItems',
-    appliesTo: ['multiselect'],
+    appliesTo: ['multiselect', 'tags'],
     validate: (value, params) => {
       const min = numberParam(params, 'minItems', (n) => Number.isInteger(n) && n >= 1);
       return Array.isArray(value) && value.length >= min ? null : { params: { min } };
@@ -294,7 +294,7 @@ export const STANDARD_VALIDATORS: readonly ValidatorDescriptor[] = [
   },
   {
     name: 'maxItems',
-    appliesTo: ['multiselect'],
+    appliesTo: ['multiselect', 'tags'],
     validate: (value, params) => {
       const max = numberParam(params, 'maxItems', (n) => Number.isInteger(n) && n >= 1);
       return Array.isArray(value) && value.length <= max ? null : { params: { max } };

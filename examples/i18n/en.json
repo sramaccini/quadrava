@@ -332,6 +332,8 @@
   "showcase_fields.notes": "Notes",
   "showcase_fields.notes_for_the_courier": "Notes for the courier",
   "showcase_fields.notify_via": "Notify via",
+  "showcase_fields.labels": "Labels",
+  "showcase_fields.labels_tooltip": "Any text is a label: type it and press Enter or a comma. The labels already used by the team are suggested while typing.",
   "showcase_fields.order_lines": "Order lines",
   "showcase_fields.order_saved_with_other": "Order saved with {n, plural, one {# line} other {# lines}}",
   "showcase_fields.pdfs_or_images_up_to_20_mb_the_f": "PDFs or images up to 20 MB. The file goes straight to the service as a real file (multipart), the service answers with an id and the form then saves the id with the name.",

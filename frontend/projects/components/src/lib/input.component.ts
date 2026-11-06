@@ -125,7 +125,7 @@ export class InputComponent implements OnInit {
       const n = Number(value);
       value = Number.isFinite(n) ? n : null;
     }
-    if (field.type === 'multiselect' && Array.isArray(value) && value.length === 0) value = null;
+    if ((field.type === 'multiselect' || field.type === 'tags') && Array.isArray(value) && value.length === 0) value = null;
     this.touched.set(true);
     this.serverError.set(null);
     this.runtime().setState(this.path(), value);

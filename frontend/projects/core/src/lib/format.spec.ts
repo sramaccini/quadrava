@@ -4,6 +4,13 @@ import { formatValue } from './format';
 const plain = (text: string): string => text.replace(/[  ]/g, ' ');
 
 describe('formatValue', () => {
+  it('a list of texts (the tags of a row) is shown as its items separated by commas, each translated', () => {
+    expect(formatValue(['bug', 'ui'], {}).text).toBe('bug, ui');
+    expect(formatValue(['bug', 'ui'], { valueKey: 'labels' }, 'en-GB', { yes: 'Yes', no: 'No', translate: (key, raw) => (key === 'labels.bug' ? 'Bug' : raw) }).text).toBe('Bug, ui');
+    expect(plain(formatValue([1000, 2], { format: 'number' }).text)).toBe('1,000, 2');
+    expect(formatValue([], {}).text).toBe('');
+  });
+
   it('by default formats in British English: amounts, numbers, percentages, dates and Yes/No', () => {
     expect(plain(formatValue(12500, { format: 'currency' }).text)).toBe('€12,500.00');
     expect(plain(formatValue(12500.5, { format: 'number' }).text)).toBe('12,500.5');

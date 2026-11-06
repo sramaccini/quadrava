@@ -122,7 +122,7 @@ export type RowActionDefinition = (Omit<ActionDefinition, 'onClick'> & { onClick
 
 export interface FieldDefinition {
   name: string;
-  type: 'text' | 'number' | 'select' | 'checkbox' | 'date' | 'textarea' | 'datetime' | 'radio' | 'switch' | 'multiselect' | 'lookup' | 'file' | 'repeater' | 'richtext' | 'password';
+  type: 'text' | 'number' | 'select' | 'checkbox' | 'date' | 'textarea' | 'datetime' | 'radio' | 'switch' | 'multiselect' | 'lookup' | 'file' | 'repeater' | 'richtext' | 'password' | 'tags';
   /** For `repeater`: the fields of every row (simple types only). */
   fields?: FieldDefinition[];
   /** For `repeater`: minimum and maximum rows. */
@@ -140,7 +140,7 @@ export interface FieldDefinition {
   uploadAs?: 'multipart' | 'base64';
   /** For `lookup`: data source searched while typing (variable `search`), value field and text field. */
   lookup?: { source: string; valueField?: string; labelField: string; minChars?: number };
-  /** For `text`: suggestions from a data source while typing (variables `search` and `word`); the value stays free text. */
+  /** For `text` and `tags`: suggestions from a data source while typing (variables `search` and `word`); the value stays free text. */
   suggest?: { source: string; valueField?: string; labelField?: string; descriptionField?: string; minChars?: number; replace?: 'word' | 'all' };
   /** Columns taken in the form grid (1 if absent). */
   span?: number;
@@ -181,7 +181,7 @@ export interface FieldDefinition {
   /** For password: a new password (strength meter, autocomplete new-password) and its minimum strength (0–4). */
   newPassword?: boolean;
   minStrength?: number;
-  /** For multiselect: minimum and maximum number of choices. */
+  /** For multiselect and tags: minimum and maximum number of choices. */
   minItems?: number;
   maxItems?: number;
   /** Messages that replace the standard ones, by constraint. */

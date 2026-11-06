@@ -332,6 +332,8 @@
   "showcase_fields.notes": "Note",
   "showcase_fields.notes_for_the_courier": "Note per il corriere",
   "showcase_fields.notify_via": "Avvisi via",
+  "showcase_fields.labels": "Etichette",
+  "showcase_fields.labels_tooltip": "Qualsiasi testo è un'etichetta: scrivila e premi Invio o la virgola. Mentre scrivi sono suggerite le etichette già usate dal gruppo.",
   "showcase_fields.order_lines": "Righe dell’ordine",
   "showcase_fields.order_saved_with_other": "Ordine salvato con {n, plural, one {# riga} other {# righe}}",
   "showcase_fields.pdfs_or_images_up_to_20_mb_the_f": "PDF o immagini fino a 20 MB. Il file parte subito verso il servizio come file vero (multipart), il servizio risponde con un id e il form salva poi l’id insieme al nome.",

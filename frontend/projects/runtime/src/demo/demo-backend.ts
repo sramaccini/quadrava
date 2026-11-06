@@ -396,6 +396,11 @@ export class DemoBackend {
       }
       return {};
     }
+    // Labels already used by the team, suggested by the tags field of the showcase.
+    if (path === '/api/labels' && req.method === 'GET') {
+      const q = String(req.query?.['q'] ?? '').toLowerCase();
+      return ['fragile', 'gift', 'heavy', 'refrigerated', 'returnable', 'oversize'].filter((name) => name.startsWith(q)).map((name) => ({ name }));
+    }
     if (path === '/api/people' && req.method === 'GET') {
       const q = String(req.query?.['q'] ?? '').toLowerCase();
       return this.people.filter((p) => !q || p.name.toLowerCase().split(' ').some((part) => part.startsWith(q)));

@@ -28,6 +28,9 @@
     },
     "articles": {
       "ref": "showcase-fields/articles"
+    },
+    "labels": {
+      "ref": "showcase-fields/labels"
     }
   },
   "components": [
@@ -50,6 +53,9 @@
             "urgent": false,
             "channels": [
               "email"
+            ],
+            "labels": [
+              "fragile"
             ]
           },
           "fields": [
@@ -93,6 +99,17 @@
               ],
               "optionKey": "values.channel",
               "required": true
+            },
+            {
+              "name": "labels",
+              "type": "tags",
+              "label": "{{ t('showcase_fields.labels', 'Labels') }}",
+              "tooltip": "{{ t('showcase_fields.labels_tooltip', 'Any text is a label: type it and press Enter or a comma. The labels already used by the team are suggested while typing.') }}",
+              "suggest": {
+                "source": "labels",
+                "valueField": "name"
+              },
+              "maxItems": 5
             }
           ],
           "actions": [

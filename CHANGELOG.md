@@ -16,6 +16,13 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 - `comments`: changing and deleting a single comment, with `onEdit`, `editIf`, `onDelete` and `deleteIf` (the comment in
   `row`, conditions fail-closed), and `editedField` to show «edited» next to the date.
+- Field type `tags`: a free list of short texts (the labels of an issue), with suggestions from `options` and from a
+  data source (`suggest`), `minItems` and `maxItems`; in the form, the filter bar, `input` and `fieldsFrom`.
+
+### Changed
+
+- A list of texts or numbers in a table cell or in the detail is shown as its items separated by commas and a space
+  (`bug, ui`), each formatted and translated as a single value; it was `bug,ui`.
 
 ### Fixed
 

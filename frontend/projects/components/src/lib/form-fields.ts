@@ -4,8 +4,8 @@ import type { FieldDefinition, FieldsFromDefinition } from 'schema';
 export const MAX_DATA_FIELDS = 50;
 
 /** Types a row can ask for without a model in `types`: the simple controls, whose rules the row cannot change. */
-const PLAIN_TYPES: ReadonlySet<string> = new Set(['text', 'textarea', 'number', 'date', 'datetime', 'checkbox', 'switch', 'select', 'multiselect', 'radio']);
-const CHOICE_TYPES: ReadonlySet<string> = new Set(['select', 'multiselect', 'radio']);
+const PLAIN_TYPES: ReadonlySet<string> = new Set(['text', 'textarea', 'number', 'date', 'datetime', 'checkbox', 'switch', 'select', 'multiselect', 'radio', 'tags']);
+const CHOICE_TYPES: ReadonlySet<string> = new Set(['select', 'multiselect', 'radio', 'tags']);
 const NAME = /^[A-Za-z][A-Za-z0-9_]{0,63}$/;
 
 /**

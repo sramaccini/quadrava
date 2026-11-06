@@ -12,6 +12,7 @@ import type { FieldDefinition } from 'schema';
 import { FileFieldComponent } from './file-field.component';
 import { IconComponent } from './icon.component';
 import { LookupComponent } from './lookup.component';
+import { TagsFieldComponent } from './tags-field.component';
 import { RepeaterComponent } from './repeater.component';
 import { RichTextEditorComponent } from './rich-text-editor.component';
 import { SuggestInputComponent } from './suggest-input.component';
@@ -30,7 +31,7 @@ import { parseIsoDate, parseIsoDateTime, toIsoDate, toIsoDateTime } from './shar
  */
 @Component({
   selector: 'lc-field-control',
-  imports: [FormsModule, LookupComponent, FileFieldComponent, IconComponent, RepeaterComponent, RichTextEditorComponent, SuggestInputComponent, NzButtonModule, NzInputModule, NzSelectModule, NzCheckboxModule, NzDatePickerModule, NzRadioModule, NzSwitchModule],
+  imports: [FormsModule, LookupComponent, FileFieldComponent, IconComponent, RepeaterComponent, RichTextEditorComponent, SuggestInputComponent, TagsFieldComponent, NzButtonModule, NzInputModule, NzSelectModule, NzCheckboxModule, NzDatePickerModule, NzRadioModule, NzSwitchModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: block; }
@@ -125,6 +126,20 @@ import { parseIsoDate, parseIsoDateTime, toIsoDate, toIsoDateTime } from './shar
             <nz-option [nzValue]="option" [nzLabel]="optionLabel(option)" />
           }
         </nz-select>
+      }
+      @case ('tags') {
+        <lc-tags-field
+          [inputId]="inputId()"
+          [field]="f"
+          [runtime]="runtime()"
+          [scope]="scope()"
+          [value]="value()"
+          [disabled]="disabled()"
+          [placeholder]="placeholder()"
+          [optionLabel]="labelOf"
+          [emptyAsNull]="variant() === 'filter'"
+          (valueChange)="valueChange.emit($event)"
+        />
       }
       @case ('password') {
         <div class="password">
@@ -277,6 +292,9 @@ export class FieldControlComponent {
     const key = this.field().optionKey;
     return key ? this.i18n.t(`${key}.${option}`, {}, option) : option;
   }
+
+  /** {@link optionLabel} for the tags field, bound to this control. */
+  protected readonly labelOf = (option: string): string => this.optionLabel(option);
 
   /** Checkbox or switch: in a filter, off means «no filter». */
   protected toggled(on: boolean): void {

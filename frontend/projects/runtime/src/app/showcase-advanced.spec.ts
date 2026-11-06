@@ -121,6 +121,12 @@ describe('Showcase: advanced components', () => {
       (radios[2].querySelector('input') as HTMLInputElement).click();
       (form.querySelector('nz-switch button') as HTMLButtonElement).click();
       await pick(until, settle, form.querySelector('nz-select')!, ['Text message']);
+      // Labels: free texts, added with a comma.
+      const tags = form.querySelectorAll('nz-select')[1] as HTMLElement;
+      const typed = tags.querySelector('input') as HTMLInputElement;
+      typed.value = 'gift,';
+      typed.dispatchEvent(new Event('input', { bubbles: true }));
+      await until(() => [...tags.querySelectorAll('.ant-select-selection-item-content')].map((t) => t.textContent?.trim()).join() === 'fragile,gift', 'labels');
       ([...form.querySelectorAll('button')].find((b) => b.textContent?.trim() === 'Send') as HTMLButtonElement).click();
       await until(() => !!document.querySelector('.ant-message-notice'), 'message');
       expect(document.querySelector('.ant-message-notice')?.textContent).toContain('Priority high, express shipping, notifications on 2 channels');

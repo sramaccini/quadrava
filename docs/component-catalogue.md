@@ -38,7 +38,7 @@ Rules common to all components, new ones included:
 | `calendar` | Monthly calendar with events. |
 | `chart` | Bar, line and pie charts. |
 | `squareChart` | Compact square columns for dense time-series data. |
-| Fields | `text`, `number`, `select`, `checkbox`, `date`, `textarea`, `datetime`, `radio`, `switch`, `multiselect`, `lookup`, `file`, `repeater`, `richtext` (§ 2.26). |
+| Fields | `text`, `number`, `select`, `checkbox`, `date`, `textarea`, `datetime`, `radio`, `switch`, `multiselect`, `tags`, `lookup`, `file`, `repeater`, `richtext` (§ 2.26). |
 | Cell formats | `text`, `number`, `currency`, `percent`, `date`, `datetime`, `boolean`, `badge`, `markdown`. |
 | Steps | `set`, `call` (with `as` and `onError`), `refresh`, `navigate`, `toast`, `confirm`, `dialog`, `validate`, `print`, `export` (§ 2.22), `if` and `run`; named sequences in `actions` (§ 2.22b). |
 | Shell | Side bar (`lc-sidebar`, with search, counters and keyboard support: § 2.25; the application brand is inserted with an `lcBrand` element, otherwise logo and name), messages of the user (`lc-notification-bell`: a bell with the unread count and the list, ADR-22; `notificationsOf` keeps only well-formed messages), user menu (`lc-user-menu`: an icon with the initial and the name in its tooltip, application items, an optional group of choices with the current one ticked, such as the tenants of ADR-18, and sign-out last, after a confirmation; a menu for screen readers and the keyboard: arrows, Home, End, Enter, Esc, submenus with the side arrows), responsive top bar, `lc-quadrava-wordmark` logotype, syntax-highlighted code viewer `lc-code-view`, tools in section headers (`SectionTools`: «JSON» and «Aiuto» in the demo showcase). |
@@ -142,8 +142,31 @@ Every row has a button that opens below it an area with the nodes of `expand.com
 | `radio` | one of the values of `options` | radio buttons, translated with `optionKey` |
 | `switch` | `true` / `false` | switch |
 | `multiselect` | list of values from `options` | becomes a list parameter in filters |
+| `tags` | list of free texts | `options` and `suggest` only suggest; becomes a list parameter in filters |
 
-They work in the form and, where it makes sense, in the filter bar (`switch`, `multiselect`, `datetime`, `radio`; there `textarea` behaves like `text`).
+They work in the form and, where it makes sense, in the filter bar (`switch`, `multiselect`, `tags`, `datetime`, `radio`; there `textarea` behaves like `text`).
+
+**Tags** (`tags`): a free list of short texts, such as the labels of an issue. Enter or a comma adds what was typed; the
+cross on a tag removes it. The tags are kept without spaces at the ends and each once, without regard to case (the
+first one written wins). `options` (translated with `optionKey`) and `suggest` (a GET data source asked with
+`search` while typing, as for a text field, § 2.7) are only suggestions: any text is a tag. `minItems` and
+`maxItems` count the tags (at `maxItems` the field takes no more). In tables and in the detail a list of texts is shown
+as its items separated by commas.
+
+```json
+{ "name": "labels", "type": "tags", "label": "Labels", "maxItems": 5,
+  "suggest": { "source": "labels", "valueField": "name" } }
+
+"labels": { "type": "rest", "method": "GET", "url": "/api/labels", "params": { "q": "{{ search }}" } }
+```
+
+```
+Labels
+┌──────────────────────────────────────────────┐
+│ [fragile ×] [gift ×] ref▌                    │
+│   ┌ refrigerated ┐  ← rows of «suggest»       │
+└──────────────────────────────────────────────┘
+```
 
 ### 2.7 Field with search on a data source (lookup)
 
@@ -561,7 +584,7 @@ Fields are checked by rules written in the JSON (ADR-15): the common cases as pr
 | number | `min`, `max`, `step` (from `min`), `decimals`, `integer` |
 | date, datetime | `minDate`, `maxDate`: a date, or relative to the day (`today`, `today+30d`, `today-18y`; units d, w, m, y); days outside cannot be chosen in the calendar |
 | password | `minLength`, `maxLength`, `pattern`, `newPassword` (strength meter), `minStrength` (0–4) |
-| multiselect | `minItems`, `maxItems` |
+| multiselect, tags | `minItems`, `maxItems` |
 | all | `required`, `validate` (one CEL rule, as before), `messages` (a text per constraint) |
 
 **Formats.** `email`, `url` (http and https), `phone` (international, 6 to 15 digits), `iban` (country length and check digits), `bic`, `uuid`, `alphanumeric`; national ones with `country` fixed or from an expression: `vatNumber` (IT, DE, FR, ES, NL, BE, AT, PT, PL, SE; without a country the prefix decides), `taxCode` (IT codice fiscale with omocodia, ES NIF/NIE, PT NIF, NL BSN), `companyId` (IT partita IVA, FR SIREN/SIRET, ES CIF, PT NIPC, BE enterprise number, NL KvK), `postalCode` (the ten countries of `vatNumber`). Check digits are verified where an algorithm is published. A format also sets the keyboard and autocomplete of the text box (email, telephone, postal code).
@@ -708,7 +731,7 @@ One screen serves forms whose fields are data: the custom fields of a project, t
 ```
 
 - **Rows**: `nameField` (`name`), `labelField` (`label`), `typeField` (`type`), `optionsField` (`options`, values or `{ value, label }`) and `requiredField` (`required`, true or false). Labels and options are data: shown as they are, never evaluated or translated; without a label the name is shown. At most 50 fields; rows without a valid name (letters, digits and `_`, starting with a letter), with a name already seen or with an unknown type are left out.
-- **Types**: a row can ask for the simple controls (`text`, `textarea`, `number`, `date`, `datetime`, `checkbox`, `switch`, `select`, `multiselect`, `radio`) or for a model of `types`: a field of the screen, with its control and rules (a lookup and its source, `maxLength`, `readOnlyIf`…). The row gives name, label, options and required; the rest comes from the model, and the row cannot loosen it.
+- **Types**: a row can ask for the simple controls (`text`, `textarea`, `number`, `date`, `datetime`, `checkbox`, `switch`, `select`, `multiselect`, `radio`, `tags`) or for a model of `types`: a field of the screen, with its control and rules (a lookup and its source, `maxLength`, `readOnlyIf`…). The row gives name, label, options and required; the rest comes from the model, and the row cannot loosen it.
 - **Values**: with `into` the values of the data fields live in that object (`form.custom.contract`), so they cannot clash with those of the screen and travel to the service as they arrived from it. Without `into` they sit next to the others, and a row cannot take the name of a field of the screen.
 - **Checks**: required flags and the rules of the models apply as for the other fields when an action runs. The field errors of the service land on the data fields too, with the path inside the object (`/custom/contract`): this is where the rules that depend on other fields belong (required only for one kind of issue, for example).
 - **Loading**: while the fields load the form shows the wait (`lc-busy`) and its actions are disabled; if their source fails the form shows the error and keeps the fields of the screen.

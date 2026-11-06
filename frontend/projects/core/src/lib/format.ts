@@ -43,6 +43,10 @@ const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
  */
 export function formatValue(value: unknown, spec: FormatSpec, locale = 'en-GB', labels: FormatLabels = { yes: 'Yes', no: 'No' }): FormattedValue {
   if (value === null || value === undefined) return { text: '' };
+  // A list of texts or numbers (the tags of a row): its items, each formatted, separated by commas.
+  if (Array.isArray(value) && spec.format !== 'badge' && value.every((item) => typeof item === 'string' || typeof item === 'number')) {
+    return { text: value.map((item) => formatValue(item, spec, locale, labels).text).join(', ') };
+  }
   try {
     switch (spec.format) {
       case 'number': {
