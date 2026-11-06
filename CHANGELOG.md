@@ -12,6 +12,11 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Fixed
+
+- The round button that collapses the side menu is back on the edge of the menu: in 0.11.0 it ended up at the top
+  right of the page, which became a little wider than the window. It still stays in view while the page scrolls.
+
 ## [0.11.0] - 2026-11-06
 
 ### Changed

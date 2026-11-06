@@ -18,9 +18,16 @@ test('the menu column runs the whole height of the page and the menu stays in vi
   const colours = await column.evaluate((el) => [getComputedStyle(el).backgroundColor, getComputedStyle(el.querySelector('aside')!).backgroundColor]);
   expect(colours[0]).toBe(colours[1]);
 
-  // The menu itself is one window tall and follows the scrolling.
+  // The round button sits on the right edge of the menu (half outside it), and the page does not get wider than the window.
+  const toggle = page.getByRole('button', { name: 'Collapse the menu' });
+  const toggleBox = await toggle.boundingBox();
+  expect(Math.abs(toggleBox!.x + toggleBox!.width / 2 - (columnBox!.x + columnBox!.width))).toBeLessThan(2);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
+
+  // The menu itself is one window tall and follows the scrolling, with its button.
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
   await expect.poll(async () => Math.abs((await menu.boundingBox())?.y ?? 99)).toBeLessThan(1);
   expect(Math.round((await menu.boundingBox())!.height)).toBe(768);
+  expect(Math.abs((await toggle.boundingBox())!.y - toggleBox!.y)).toBeLessThan(1);
 });

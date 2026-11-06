@@ -27,9 +27,10 @@ export interface NavigateEvent {
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     /* The column stretches to the height of the page with the colour of the menu (a full-page capture shows it whole);
-       the menu stays in view while the page scrolls. */
+       the menu and its round button stay in view while the page scrolls (.pin, which also places the button). */
     :host { display: block; z-index: 2; align-self: stretch; flex: none; background: var(--lc-sider-bg, #fff); box-shadow: inset -1px 0 0 var(--lc-sider-border, #e3e8ef); }
-    .side { position: sticky; top: 0; box-sizing: border-box; height: 100vh; width: var(--lc-sider-width, 256px); display: flex; flex-direction: column; overflow-x: hidden; overflow-y: auto;
+    .pin { position: sticky; top: 0; height: 100vh; }
+    .side { box-sizing: border-box; height: 100%; width: var(--lc-sider-width, 256px); display: flex; flex-direction: column; overflow-x: hidden; overflow-y: auto;
       background: var(--lc-sider-bg, #fff); color: var(--lc-sider-text, #1b2430); border-right: 1px solid var(--lc-sider-border, #e3e8ef);
       transition: width 0.2s; }
     .side.collapsed { width: var(--lc-sider-collapsed-width, 80px); }
@@ -93,144 +94,146 @@ export interface NavigateEvent {
       border: 1px solid var(--lc-sider-border, #d5dbe3); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); }
   `,
   template: `
-    <aside class="side" [class.collapsed]="collapsed()">
-      <div class="logo">
-        <!-- A brand of the application itself (element with the lcBrand attribute) replaces logo and name. -->
-        <ng-content select="[lcBrand]">
-          @if (logo(); as src) {
-            <img [src]="src" alt="" />
-          } @else {
-            <span class="mark" aria-hidden="true"><lc-icon name="package" /></span>
-          }
-          <span class="name">{{ brand() }}</span>
-        </ng-content>
-      </div>
-      @if (areas().length > 1) {
-        @if (!collapsed()) {
-          <!-- The same grid icon as the collapsed bar; the «Area» label becomes its tooltip (and stays for screen readers). -->
-          <div class="area">
-            <span class="area-mark" aria-hidden="true" nz-tooltip [nzTooltipTitle]="i18n.t('lc.area')" nzTooltipPlacement="right"><lc-icon name="sections" /></span>
-            <label class="visually-hidden" [for]="selectId">{{ i18n.t('lc.area') }}</label>
-            <nz-select [nzId]="selectId" [ngModel]="current()?.id" (ngModelChange)="areaChange.emit($event)">
-              @for (u of areas(); track u.id) {
-                <nz-option [nzValue]="u.id" [nzLabel]="u.label" />
-              }
-            </nz-select>
-          </div>
-        } @else {
-          <!-- When collapsed the selector becomes an icon (always the same grid: it stands for the areas) with a drop-down menu. -->
-          <div class="area-icon">
-            <button nz-button nzType="text" class="area-trigger" type="button" nz-dropdown nzTrigger="click" nzPlacement="bottomLeft" [nzDropdownMenu]="areaMenu"
-              [attr.aria-label]="i18n.t('lc.area') + ': ' + (current()?.label ?? '')" aria-haspopup="menu"
-              nz-tooltip [nzTooltipTitle]="i18n.t('lc.area') + ': ' + (current()?.label ?? '')" nzTooltipPlacement="right">
-              <lc-icon name="sections" />
-            </button>
-            <nz-dropdown-menu #areaMenu="nzDropdownMenu">
-              <ul nz-menu nzSelectable>
-                @for (u of areas(); track u.id) {
-                  <li nz-menu-item [nzSelected]="u.id === current()?.id" (click)="areaChange.emit(u.id)">
-                    <span class="uc-row"><lc-icon [name]="u.icon ?? 'list'" />{{ u.label }}</span>
-                  </li>
-                }
-              </ul>
-            </nz-dropdown-menu>
-          </div>
-        }
-      }
-
-      <ng-template #leafContent let-leaf>
-        <lc-icon [name]="leaf.icon" />
-        <span class="label">{{ leaf.label }}</span>
-        @if (badges()[leaf.id]; as n) {
-          <span class="badge" aria-hidden="true">{{ n > 99 ? '99+' : n }}</span>
-          <span class="visually-hidden">, {{ i18n.t('lc.badge', { n }) }}</span>
-        }
-      </ng-template>
-      @if (current() && !collapsed()) {
-        <div class="search" role="search">
-          <input
-            nz-input
-            nzSize="small"
-            type="search"
-            [id]="searchId"
-            [placeholder]="i18n.t('lc.menuSearch')"
-            [attr.aria-label]="i18n.t('lc.menuSearch')"
-            [attr.aria-controls]="query() ? searchId + '-results' : null"
-            [value]="query()"
-            (input)="query.set($any($event.target).value)"
-            (keydown)="searchKey($event)"
-          />
+    <div class="pin">
+      <aside class="side" [class.collapsed]="collapsed()">
+        <div class="logo">
+          <!-- A brand of the application itself (element with the lcBrand attribute) replaces logo and name. -->
+          <ng-content select="[lcBrand]">
+            @if (logo(); as src) {
+              <img [src]="src" alt="" />
+            } @else {
+              <span class="mark" aria-hidden="true"><lc-icon name="package" /></span>
+            }
+            <span class="name">{{ brand() }}</span>
+          </ng-content>
         </div>
-      }
-      @if (current(); as uc) {
-        @if (query().trim() && !collapsed()) {
-          <ul class="results" [id]="searchId + '-results'" [attr.aria-label]="i18n.t('lc.menuResults')">
-            @for (r of results(); track r.leaf.id) {
-              <li>
-                <a [href]="hrefFor()(uc.id, r.leaf)" (click)="go($event, r.leaf); query.set('')" (keydown)="resultKey($event)">
-                  <span>{{ r.leaf.label }}</span>
-                  @if (r.where) {
-                    &ngsp;<span class="where">{{ r.where }}</span>
+        @if (areas().length > 1) {
+          @if (!collapsed()) {
+            <!-- The same grid icon as the collapsed bar; the «Area» label becomes its tooltip (and stays for screen readers). -->
+            <div class="area">
+              <span class="area-mark" aria-hidden="true" nz-tooltip [nzTooltipTitle]="i18n.t('lc.area')" nzTooltipPlacement="right"><lc-icon name="sections" /></span>
+              <label class="visually-hidden" [for]="selectId">{{ i18n.t('lc.area') }}</label>
+              <nz-select [nzId]="selectId" [ngModel]="current()?.id" (ngModelChange)="areaChange.emit($event)">
+                @for (u of areas(); track u.id) {
+                  <nz-option [nzValue]="u.id" [nzLabel]="u.label" />
+                }
+              </nz-select>
+            </div>
+          } @else {
+            <!-- When collapsed the selector becomes an icon (always the same grid: it stands for the areas) with a drop-down menu. -->
+            <div class="area-icon">
+              <button nz-button nzType="text" class="area-trigger" type="button" nz-dropdown nzTrigger="click" nzPlacement="bottomLeft" [nzDropdownMenu]="areaMenu"
+                [attr.aria-label]="i18n.t('lc.area') + ': ' + (current()?.label ?? '')" aria-haspopup="menu"
+                nz-tooltip [nzTooltipTitle]="i18n.t('lc.area') + ': ' + (current()?.label ?? '')" nzTooltipPlacement="right">
+                <lc-icon name="sections" />
+              </button>
+              <nz-dropdown-menu #areaMenu="nzDropdownMenu">
+                <ul nz-menu nzSelectable>
+                  @for (u of areas(); track u.id) {
+                    <li nz-menu-item [nzSelected]="u.id === current()?.id" (click)="areaChange.emit(u.id)">
+                      <span class="uc-row"><lc-icon [name]="u.icon ?? 'list'" />{{ u.label }}</span>
+                    </li>
                   }
-                </a>
-              </li>
-            } @empty {
-              <li class="empty" role="status">{{ i18n.t('lc.menuNoResults') }}</li>
-            }
-          </ul>
-        } @else {
-        <nav [attr.aria-label]="i18n.t('lc.menu') + ' ' + uc.label" (keydown)="navKey($event)">
-          <!-- The highlighted item is decided only by the open screen (nzSelected): NG-ZORRO does not change it by itself on click. -->
-          <ul nz-menu nzMode="inline" [nzTheme]="tone()" [nzInlineCollapsed]="collapsed()" [nzInlineIndent]="18" [nzSelectable]="false">
-            @for (g1 of uc.items; track g1.id) {
-              @if (g1.kind === 'group') {
-                <li nz-submenu class="group" [attr.data-group]="g1.id" [nzTitle]="g1.label" [nzIcon]="type(g1.icon)" [nzOpen]="isExpanded(g1.id)" (nzOpenChange)="setOpen(g1.id, $event)">
-                  <ul>
-                    @for (g2 of g1.children; track g2.id) {
-                      @if (g2.kind === 'group') {
-                        <li nz-submenu class="group" [attr.data-group]="g2.id" [nzTitle]="g2.label" [nzIcon]="type(g2.icon)" [nzOpen]="isExpanded(g2.id)" (nzOpenChange)="setOpen(g2.id, $event)">
-                          <ul>
-                            @for (l3 of leaves(g2.children); track l3.id) {
-                              <li nz-menu-item [nzSelected]="isActive(l3)" (click)="go($event, l3)">
-                <a class="leaf" [href]="hrefFor()(uc.id, l3)" [attr.aria-current]="isActive(l3) ? 'page' : null" [attr.title]="collapsed() ? l3.label : null" [attr.aria-label]="collapsed() ? leafLabel(l3) : null">
-                  <ng-container [ngTemplateOutlet]="leafContent" [ngTemplateOutletContext]="{ $implicit: l3 }" />
-                </a>
-              </li>
-                            }
-                          </ul>
-                        </li>
-                      } @else {
-                        @let l2 = g2;
-                        <li nz-menu-item [nzSelected]="isActive(l2)" (click)="go($event, l2)">
-                <a class="leaf" [href]="hrefFor()(uc.id, l2)" [attr.aria-current]="isActive(l2) ? 'page' : null" [attr.title]="collapsed() ? l2.label : null" [attr.aria-label]="collapsed() ? leafLabel(l2) : null">
-                  <ng-container [ngTemplateOutlet]="leafContent" [ngTemplateOutletContext]="{ $implicit: l2 }" />
-                </a>
-              </li>
-                      }
-                    }
-                  </ul>
-                </li>
-              } @else {
-                @let l1 = g1;
-                <li nz-menu-item [nzSelected]="isActive(l1)" (click)="go($event, l1)">
-                <a class="leaf" [href]="hrefFor()(uc.id, l1)" [attr.aria-current]="isActive(l1) ? 'page' : null" [attr.title]="collapsed() ? l1.label : null" [attr.aria-label]="collapsed() ? leafLabel(l1) : null">
-                  <ng-container [ngTemplateOutlet]="leafContent" [ngTemplateOutletContext]="{ $implicit: l1 }" />
-                </a>
-              </li>
-              }
-            }
-          </ul>
-        </nav>
+                </ul>
+              </nz-dropdown-menu>
+            </div>
+          }
         }
-      } @else if (!collapsed()) {
-        <p class="empty">{{ i18n.t('lc.noFunctions') }}</p>
+
+        <ng-template #leafContent let-leaf>
+          <lc-icon [name]="leaf.icon" />
+          <span class="label">{{ leaf.label }}</span>
+          @if (badges()[leaf.id]; as n) {
+            <span class="badge" aria-hidden="true">{{ n > 99 ? '99+' : n }}</span>
+            <span class="visually-hidden">, {{ i18n.t('lc.badge', { n }) }}</span>
+          }
+        </ng-template>
+        @if (current() && !collapsed()) {
+          <div class="search" role="search">
+            <input
+              nz-input
+              nzSize="small"
+              type="search"
+              [id]="searchId"
+              [placeholder]="i18n.t('lc.menuSearch')"
+              [attr.aria-label]="i18n.t('lc.menuSearch')"
+              [attr.aria-controls]="query() ? searchId + '-results' : null"
+              [value]="query()"
+              (input)="query.set($any($event.target).value)"
+              (keydown)="searchKey($event)"
+            />
+          </div>
+        }
+        @if (current(); as uc) {
+          @if (query().trim() && !collapsed()) {
+            <ul class="results" [id]="searchId + '-results'" [attr.aria-label]="i18n.t('lc.menuResults')">
+              @for (r of results(); track r.leaf.id) {
+                <li>
+                  <a [href]="hrefFor()(uc.id, r.leaf)" (click)="go($event, r.leaf); query.set('')" (keydown)="resultKey($event)">
+                    <span>{{ r.leaf.label }}</span>
+                    @if (r.where) {
+                      &ngsp;<span class="where">{{ r.where }}</span>
+                    }
+                  </a>
+                </li>
+              } @empty {
+                <li class="empty" role="status">{{ i18n.t('lc.menuNoResults') }}</li>
+              }
+            </ul>
+          } @else {
+          <nav [attr.aria-label]="i18n.t('lc.menu') + ' ' + uc.label" (keydown)="navKey($event)">
+            <!-- The highlighted item is decided only by the open screen (nzSelected): NG-ZORRO does not change it by itself on click. -->
+            <ul nz-menu nzMode="inline" [nzTheme]="tone()" [nzInlineCollapsed]="collapsed()" [nzInlineIndent]="18" [nzSelectable]="false">
+              @for (g1 of uc.items; track g1.id) {
+                @if (g1.kind === 'group') {
+                  <li nz-submenu class="group" [attr.data-group]="g1.id" [nzTitle]="g1.label" [nzIcon]="type(g1.icon)" [nzOpen]="isExpanded(g1.id)" (nzOpenChange)="setOpen(g1.id, $event)">
+                    <ul>
+                      @for (g2 of g1.children; track g2.id) {
+                        @if (g2.kind === 'group') {
+                          <li nz-submenu class="group" [attr.data-group]="g2.id" [nzTitle]="g2.label" [nzIcon]="type(g2.icon)" [nzOpen]="isExpanded(g2.id)" (nzOpenChange)="setOpen(g2.id, $event)">
+                            <ul>
+                              @for (l3 of leaves(g2.children); track l3.id) {
+                                <li nz-menu-item [nzSelected]="isActive(l3)" (click)="go($event, l3)">
+                  <a class="leaf" [href]="hrefFor()(uc.id, l3)" [attr.aria-current]="isActive(l3) ? 'page' : null" [attr.title]="collapsed() ? l3.label : null" [attr.aria-label]="collapsed() ? leafLabel(l3) : null">
+                    <ng-container [ngTemplateOutlet]="leafContent" [ngTemplateOutletContext]="{ $implicit: l3 }" />
+                  </a>
+                </li>
+                              }
+                            </ul>
+                          </li>
+                        } @else {
+                          @let l2 = g2;
+                          <li nz-menu-item [nzSelected]="isActive(l2)" (click)="go($event, l2)">
+                  <a class="leaf" [href]="hrefFor()(uc.id, l2)" [attr.aria-current]="isActive(l2) ? 'page' : null" [attr.title]="collapsed() ? l2.label : null" [attr.aria-label]="collapsed() ? leafLabel(l2) : null">
+                    <ng-container [ngTemplateOutlet]="leafContent" [ngTemplateOutletContext]="{ $implicit: l2 }" />
+                  </a>
+                </li>
+                        }
+                      }
+                    </ul>
+                  </li>
+                } @else {
+                  @let l1 = g1;
+                  <li nz-menu-item [nzSelected]="isActive(l1)" (click)="go($event, l1)">
+                  <a class="leaf" [href]="hrefFor()(uc.id, l1)" [attr.aria-current]="isActive(l1) ? 'page' : null" [attr.title]="collapsed() ? l1.label : null" [attr.aria-label]="collapsed() ? leafLabel(l1) : null">
+                    <ng-container [ngTemplateOutlet]="leafContent" [ngTemplateOutletContext]="{ $implicit: l1 }" />
+                  </a>
+                </li>
+                }
+              }
+            </ul>
+          </nav>
+          }
+        } @else if (!collapsed()) {
+          <p class="empty">{{ i18n.t('lc.noFunctions') }}</p>
+        }
+      </aside>
+      @if (showToggle()) {
+        <button nz-button nzShape="circle" class="toggle" type="button" [attr.aria-label]="collapsed() ? i18n.t('lc.expandMenu') : i18n.t('lc.collapseMenu')" [attr.aria-expanded]="!collapsed()" (click)="collapsed.set(!collapsed())">
+          <lc-icon [name]="collapsed() ? 'right' : 'left'" />
+        </button>
       }
-    </aside>
-    @if (showToggle()) {
-      <button nz-button nzShape="circle" class="toggle" type="button" [attr.aria-label]="collapsed() ? i18n.t('lc.expandMenu') : i18n.t('lc.collapseMenu')" [attr.aria-expanded]="!collapsed()" (click)="collapsed.set(!collapsed())">
-        <lc-icon [name]="collapsed() ? 'right' : 'left'" />
-      </button>
-    }
+    </div>
   `,
 })
 export class SidebarComponent {
