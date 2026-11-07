@@ -1,4 +1,5 @@
 import { checkScreenExpressions } from '../../core/src/lib/expression-check';
+import { checkNavigation } from '../../core/src/lib/navigation-check';
 import { unknownSourceReferences } from '../../core/src/lib/source-references';
 import { ExpressionEngine } from '../../expressions/src/public-api';
 import {
@@ -10,6 +11,7 @@ import {
   validateTheme,
   type ValidationResult,
 } from '../../schema/validation/src/public-api';
+import type { NavigationDefinition } from '../../schema/src/public-api';
 import type { ProjectFile } from './project';
 
 /** The kinds of document of a project; `messages` is a catalogue of `i18n/`, published as a messages document. */
@@ -47,7 +49,7 @@ const isObject = (value: unknown): value is Json => typeof value === 'object' &&
 
 /**
  * Checks a project as the runtime and Studio would read it: every document against its schema, the identifiers against
- * the file names, the references to data sources, the patterns of the fields, the CEL expressions, the themes and the
+ * the file names, the navigation (unique identifiers, default area, screens of the project), the references to data sources, the patterns of the fields, the CEL expressions, the themes and the
  * languages of the manifest, and the translation catalogues (the same keys in every language, every `t('…')` known).
  * Returns the documents (for publishing) and the problems; it never throws.
  */
@@ -85,12 +87,28 @@ export function validateProject(files: ProjectFile[]): { documents: ProjectDocum
     documents.push({ kind, file, id, doc });
   }
 
+  checkNavigationDocument(documents, issues);
   checkReferences(documents, issues);
   checkPatterns(documents, issues);
   checkExpressions(documents, issues);
   checkManifest(documents, issues);
   checkCatalogues(documents, files, issues);
   return { documents, issues };
+}
+
+/**
+ * The navigation as the runtime checks it at start-up, where a problem refuses the whole menu: unique identifiers, a
+ * `default` that is an area, screens that are in screens/ (user menu and settings included).
+ */
+function checkNavigationDocument(documents: ProjectDocument[], issues: Issue[]): void {
+  const navigation = documents.find((d) => d.kind === 'navigation');
+  if (!navigation) return;
+  const screens = new Set(documents.filter((d) => d.kind === 'screen').map((d) => d.id));
+  for (const issue of checkNavigation(navigation.doc as NavigationDefinition, new ExpressionEngine({ can: () => false }), screens)) {
+    // The expressions are checked with the other documents (checkExpressions), with their text in the message.
+    if (issue.message.startsWith('invalid expression')) continue;
+    issues.push({ file: navigation.file, path: issue.path, message: issue.message });
+  }
 }
 
 /**

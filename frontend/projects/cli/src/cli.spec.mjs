@@ -88,6 +88,16 @@ describe('quadrava validate', () => {
     assert.match(stderr, /themes\/broken\.json: not valid JSON/);
   });
 
+  it('reports a navigation the runtime would refuse: a default that is not an area, an unknown screen', async () => {
+    const dir = project((d) =>
+      change(d, 'navigation.json', (n) => ({ ...n, default: 'invoice-list', settings: [...(n.settings ?? []), { id: 'nowhere', label: 'Nowhere', screen: 'no-such-screen' }] })),
+    );
+    const { code, stderr } = await run(['validate', dir]);
+    assert.equal(code, 1);
+    assert.match(stderr, /navigation\.json \/default: unknown default area "invoice-list"/);
+    assert.match(stderr, /navigation\.json \/settings\/\d+\/screen: unknown screen "no-such-screen"/);
+  });
+
   it('reports a missing manifest and a data source reference that does not resolve', async () => {
     const dir = project((d) => {
       rmSync(join(d, 'project.json'));

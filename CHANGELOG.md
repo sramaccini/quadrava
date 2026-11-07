@@ -25,6 +25,9 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 - Chart: with many categories the labels that do not fit are left out of the axis, keeping the first, the last and
   others at an even step between, and dates that do not fit pass to a short form («7 Oct»); the tooltip and the table
   for screen readers keep the full label (request Q14 of OpenDevTrack). The showcase dashboard has a thirty-day chart.
+- `quadrava validate` checks the navigation as the runtime does at start-up: unique identifiers, a `default` that is
+  an area, screens that are in the project (user menu and settings included). Before, a `default` naming a screen
+  passed and the runtime then refused the whole menu.
 
 - `npm run conformance:bff` signs in by itself with `--user` and `--password` (through the Keycloak login page of the
   development realm) instead of the cookies of a signed-in browser. `npm run conformance` runs the kits of
