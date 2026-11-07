@@ -1,6 +1,6 @@
 # Quadrava — Implementation Guidelines
 
-Simone Ramaccini · 7 October 2026, updated on 7 November 2026 (Quadrava CE 0.11.1)
+Simone Ramaccini · 7 October 2026, updated on 7 November 2026 (Quadrava CE 0.12.0)
 
 > The rules are the target. Where a check is not automated yet, section 12 says so; the day-to-day path for a change
 > (commands, a new component step by step, the known traps) is in [DEVELOPMENT-GUIDE.md](../DEVELOPMENT-GUIDE.md).
