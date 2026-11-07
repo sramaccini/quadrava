@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input, model } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, model } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { I18n, type VisibleLeaf } from 'core';
 import { NzButtonModule } from 'ng-zorro-antd/button';
@@ -13,7 +13,8 @@ import { ScreenView } from './pages/screen-view.component';
  * (ADR-25: each one a screen of the application, drawn when its tab is first opened) and, only in the demo, «Debug» (the
  * simulated network). A choice of «General» applies at once, behind the dialog; the screens of the sections save with
  * their own actions; «Close» is the only button of the dialog. The dialog keeps the same size whatever the tab, larger
- * when the application has sections.
+ * when the application has sections. The open tab is `tab`: `general`, the id of a section or `debug`; an unknown
+ * one shows «General».
  */
 @Component({
   selector: 'lc-settings-dialog',
@@ -28,7 +29,7 @@ import { ScreenView } from './pages/screen-view.component';
   template: `
     <nz-modal [nzVisible]="open()" [nzTitle]="i18n.t('app.settings')" [nzFooter]="footer" [nzWidth]="sections().length ? 720 : 480" [nzBodyStyle]="{ height: sections().length ? 'min(60vh, 520px)' : '220px', overflow: 'auto' }" nzCentered (nzOnCancel)="open.set(false)">
       <ng-container *nzModalContent>
-        <nz-tabs>
+        <nz-tabs [nzSelectedIndex]="selectedIndex()" (nzSelectedIndexChange)="select($event)">
           <nz-tab [nzTitle]="i18n.t('app.general')">
             <div class="tab">
               <label for="lc-setting-theme">{{ i18n.t('app.theme') }}</label>
@@ -82,7 +83,17 @@ export class SettingsDialogComponent {
   readonly sections = input<readonly VisibleLeaf[]>([]);
   /** The demo with the back end in the browser: adds the «Debug» tab with the simulated network. */
   readonly demo = input(false);
+  /** The open tab. */
+  readonly tab = model('general');
   protected readonly i18n = inject(I18n);
   protected readonly network = inject(DemoNetwork);
   protected readonly speeds = Object.keys(NETWORK_SPEEDS) as NetworkSpeed[];
+  /** The tabs in order: «General», the sections, «Debug» in the demo. */
+  private readonly tabs = computed(() => ['general', ...this.sections().map((s) => s.id), ...(this.demo() ? ['debug'] : [])]);
+  protected readonly selectedIndex = computed(() => Math.max(0, this.tabs().indexOf(this.tab())));
+
+  protected select(index: number): void {
+    const tab = this.tabs()[index] ?? 'general';
+    if (tab !== this.tab()) this.tab.set(tab);
+  }
 }

@@ -6,6 +6,13 @@ import { Authorization, DataClient, DefinitionSource, I18n, NavigationRuntime, R
 import { type NavigationDefinition } from 'schema';
 import { NotificationsService } from './notifications.service';
 
+/**
+ * Query parameter of the shell with the open tab of the settings dialog (`general`, the id of a section of the
+ * application, `debug` in the demo), so a link can open it (for example from a mail) and a reload keeps it. It is not a
+ * parameter of the screen.
+ */
+export const SETTINGS_PARAM = 'settings';
+
 export interface RouteLocation {
   area: string | null;
   screen: string | null;
@@ -14,7 +21,8 @@ export interface RouteLocation {
 
 /**
  * Connects menu and router. The URL is `/<area>/<screen>?<parameters>`: it is the only source of the current position,
- * so Back, bookmarks and shared links work.
+ * so Back, bookmarks and shared links work. It is also the only source of the settings dialog: `?settings=<tab>` when
+ * it is open.
  */
 @Injectable({ providedIn: 'root' })
 export class NavigationService {
@@ -37,6 +45,8 @@ export class NavigationService {
   /** Counters of the menu items (item id → number), if the navigation has them. */
   readonly badges = signal<Record<string, number>>({});
   readonly current = signal<RouteLocation>({ area: null, screen: null, params: {} });
+  /** Tab of the settings dialog in the URL (`SETTINGS_PARAM`); null when the dialog is closed. */
+  readonly settingsTab = signal<string | null>(null);
   private readonly lastScreen = new Map<string, { screen: string; params: Record<string, string> }>();
 
   constructor() {
@@ -106,6 +116,8 @@ export class NavigationService {
     const segments = tree.root.children['primary']?.segments.map((s) => s.path) ?? [];
     const params: Record<string, string> = {};
     for (const [key, value] of Object.entries(tree.queryParams)) params[key] = String(Array.isArray(value) ? value[0] : value);
+    this.settingsTab.set(params[SETTINGS_PARAM] || null);
+    delete params[SETTINGS_PARAM];
     const here: RouteLocation = { area: segments[0] ?? null, screen: segments[1] ?? null, params };
     this.current.set(here);
     if (here.area && here.screen) this.lastScreen.set(here.area, { screen: here.screen, params });
@@ -118,6 +130,12 @@ export class NavigationService {
 
   open(area: string, screen: string, params: Record<string, unknown> = {}): void {
     void this.router.navigate([area, screen], { queryParams: params });
+  }
+
+  /** Opens the settings dialog on a tab, or closes it (null), by changing only that parameter of the URL. */
+  showSettings(tab: string | null): void {
+    if (tab === this.settingsTab()) return;
+    void this.router.navigate([], { queryParams: { [SETTINGS_PARAM]: tab }, queryParamsHandling: 'merge', replaceUrl: true });
   }
 
   /** Screen change requested by an action (`navigate`): stays in the current area if the screen belongs to it. */
@@ -139,11 +157,12 @@ export class NavigationService {
     if (leaf) this.open(area, leaf.screen, leaf.params);
   }
 
-  /** Initial destination for the current user. */
+  /** Initial destination for the current user; an open settings dialog (`?settings=`) stays open there. */
   openDefault(): boolean {
     const target = this.runtime()?.defaultTarget();
     if (!target) return false;
-    void this.router.navigate([target.area, target.leaf.screen], { queryParams: target.leaf.params, replaceUrl: true });
+    const tab = this.settingsTab();
+    void this.router.navigate([target.area, target.leaf.screen], { queryParams: { ...target.leaf.params, ...(tab ? { [SETTINGS_PARAM]: tab } : {}) }, replaceUrl: true });
     return true;
   }
 }

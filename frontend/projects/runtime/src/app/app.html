@@ -49,7 +49,8 @@
         }
         <lc-user-menu [name]="session.username()" [items]="userItems()" [choices]="tenantChoices()" (select)="selectUserMenuItem($event)" (choice)="switchTenant($event)" (logout)="session.logout()" />
       </nz-header>
-      <lc-settings-dialog [(open)]="settingsOpen" [themes]="themes" [(theme)]="themeName" [languages]="languages" [sections]="settingsSections()" [demo]="profiles.length > 0" />
+      <!-- A navigate step from a section goes to a URL without ?settings=, so the dialog closes. -->
+      <lc-settings-dialog [open]="settingsOpen()" (openChange)="settingsOpenChange($event)" [tab]="settingsTab()" (tabChange)="navigation.showSettings($event)" [themes]="themes" [(theme)]="themeName" [languages]="languages" [sections]="settingsSections()" [demo]="profiles.length > 0" />
       <nz-content>
         <main>
           <router-outlet />

@@ -12,6 +12,14 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Added
+
+- An address opens the settings dialog on a tab: `?settings=<tab>` (`general`, the `id` of a section of the
+  application, `debug` in the demo), for example `/?settings=notification-settings` from a mail (ADR-25, request Q15 of
+  OpenDevTrack). It works after the sign-in and from the root (over the default screen), a reload keeps the dialog
+  open, changing tab updates the address and closing removes it. `settings` is now a parameter of the shell: a screen
+  no longer receives a query parameter with that name.
+
 ## [0.12.0] - 2026-11-07
 
 ### Added

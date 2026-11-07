@@ -91,8 +91,12 @@ export class App {
   protected readonly collapsed = signal(false);
   /** Drawer with the sidebar, only in the narrow band. */
   protected readonly drawerOpen = signal(false);
-  /** The settings dialog (theme, language and, in the demo, the network), opened from the user menu. */
-  protected readonly settingsOpen = signal(false);
+  /**
+   * The settings dialog (theme, language, the sections of the application and, in the demo, the network), opened from
+   * the user menu or from an address with `?settings=<tab>`: the URL says whether it is open and on which tab.
+   */
+  protected readonly settingsOpen = computed(() => this.navigation.settingsTab() !== null);
+  protected readonly settingsTab = computed(() => this.navigation.settingsTab() ?? 'general');
   /** Items of the application in the user menu (ADR-25), already filtered for the user. */
   private readonly appItems = computed(() => this.navigation.runtime()?.userMenu() ?? []);
   /** Sections of the application in the settings dialog (ADR-25). */
@@ -131,9 +135,14 @@ export class App {
   }
 
   protected selectUserMenuItem(id: string): void {
-    if (id === 'settings') this.settingsOpen.set(true);
+    if (id === 'settings') this.navigation.showSettings('general');
     const item = id.startsWith(APP_ITEM) ? this.appItems().find((i) => APP_ITEM + i.id === id) : undefined;
     if (item) this.navigation.openScreen(item.screen, item.params);
+  }
+
+  /** The dialog closed by the user: the parameter leaves the URL. */
+  protected settingsOpenChange(open: boolean): void {
+    if (!open) this.navigation.showSettings(null);
   }
 
   /** Signs in again; in the demo, as the profile chosen on the signed-out page. */
@@ -156,11 +165,6 @@ export class App {
       } catch {
         // Storage not available (private browsing, blockers): the choice holds only for this session.
       }
-    });
-    // A screen of a settings section that navigates (a navigate step) leaves the dialog: it closes.
-    effect(() => {
-      this.navigation.current();
-      untracked(() => this.settingsOpen.set(false));
     });
     // The browser tab shows the brand of the theme too: its name as title and its icons (Quadrava's without a brand).
     effect(() => applyDocumentBrand(document, this.brand()));

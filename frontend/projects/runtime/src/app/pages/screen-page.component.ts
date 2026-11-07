@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
-import { NavigationService } from '../navigation.service';
+import { NavigationService, SETTINGS_PARAM } from '../navigation.service';
 import { ScreenView } from './screen-view.component';
 
-/** Router page: the screen named in the URL, with the query parameters and its path in the menu. */
+/** Router page: the screen named in the URL, with the query parameters (not those of the shell) and its path in the menu. */
 @Component({
   selector: 'lc-screen-page',
   imports: [ScreenView],
@@ -26,8 +26,12 @@ export class ScreenPage {
   });
 
   protected readonly name = computed(() => this.pathParams().get('screen') ?? '');
-  protected readonly params = computed<Record<string, unknown>>(() => {
-    const query = this.queryParams();
-    return Object.fromEntries(query.keys.map((key) => [key, query.get(key)]));
-  });
+  /** The same parameters keep the same object: opening or closing the settings does not touch the screen. */
+  protected readonly params = computed<Record<string, unknown>>(
+    () => {
+      const query = this.queryParams();
+      return Object.fromEntries(query.keys.filter((key) => key !== SETTINGS_PARAM).map((key) => [key, query.get(key)]));
+    },
+    { equal: (a, b) => Object.keys(a).length === Object.keys(b).length && Object.entries(a).every(([key, value]) => b[key] === value) },
+  );
 }

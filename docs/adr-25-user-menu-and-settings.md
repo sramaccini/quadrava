@@ -48,6 +48,12 @@ user menu                         settings dialog
   router does (schema, expressions, references to data sources). It is drawn when its tab is first opened, so its reads
   start then. The dialog is larger when there are sections, and keeps its size from tab to tab. A screen that navigates
   closes the dialog.
+- **An address for the settings.** The URL says whether the dialog is open and on which tab: `?settings=general`, the
+  `id` of a section (`?settings=notification-settings`) or `debug` in the demo. A link (for example in a mail) opens the
+  dialog on that tab, after the sign-in if needed, over the screen of the address or, from the root, over the default
+  one; a reload keeps it; changing tab updates the address, closing the dialog removes the parameter. An unknown tab, or
+  a section the user does not have, shows «General». `settings` is a parameter of the shell: the screen does not
+  receive it, so a screen cannot use a parameter with that name. Added on 7 November 2026 (request Q15 of OpenDevTrack).
 - **Visibility, fail-closed, as the side menu.** An item without the permission in `requires`, or whose `visibleIf` is
   false or fails, is left out. As for the menu, it is only a convenience: the screen checks its `requires` again, the
   services check everything.

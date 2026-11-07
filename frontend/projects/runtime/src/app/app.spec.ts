@@ -107,12 +107,12 @@ describe('App (demo)', () => {
     throw new Error(`timeout: ${label}\nURL: ${TestBed.inject(Location).path()}\n${(fixture.nativeElement as HTMLElement).innerHTML.slice(0, 1800)}`);
   }
 
-  async function start(user = 'operator'): Promise<{ fixture: ComponentFixture<App>; el: HTMLElement; url: () => string }> {
+  async function start(user = 'operator', path = '/'): Promise<{ fixture: ComponentFixture<App>; el: HTMLElement; url: () => string }> {
     const fixture = TestBed.createComponent(App);
     const el = fixture.nativeElement as HTMLElement;
     const url = (): string => TestBed.inject(Location).path();
     fixture.detectChanges();
-    await TestBed.inject(Router).navigateByUrl('/');
+    await TestBed.inject(Router).navigateByUrl(path);
     if (user !== 'operator') {
       TestBed.inject(DemoSession).username.set(user);
       fixture.detectChanges();
@@ -280,6 +280,32 @@ describe('App (demo)', () => {
     const saved = (await TestBed.inject(DataClient).request({ method: 'GET', url: '/api/me/notification-preferences' })) as { channels: Record<string, unknown> };
     expect(saved.channels['transitionedApp']).toBe(true);
     expect(saved.channels['mentionedEmail']).toBe('instant');
+  });
+
+  it('an address with ?settings= opens the dialog on that tab, over the default screen; the tab and the closing follow in the URL', async () => {
+    const { fixture, el, url } = await start('operator', '/?settings=notification-settings');
+    await until(fixture, () => rows(el) > 0, 'invoice list');
+    // The default screen opens under the dialog; the parameter belongs to the shell, not to the screen.
+    expect(url()).toBe('/invoice-lookup/invoice-list?settings=notification-settings');
+    expect(heading(el)).toBe('Invoices');
+    const dialog = (): Element | undefined => [...document.querySelectorAll('.ant-modal')].at(-1);
+    const activeTab = (): string | undefined => dialog()?.querySelector('.ant-tabs-tab-active')?.textContent?.trim();
+    await until(fixture, () => activeTab() === 'Notifications', 'the Notifications tab');
+    await until(fixture, () => !!dialog()?.querySelector('lc-screen-view nz-form-item'), 'the screen of the section');
+    ([...dialog()!.querySelectorAll<HTMLElement>('.ant-tabs-tab-btn')].find((t) => t.textContent?.trim() === 'General') as HTMLElement).click();
+    await until(fixture, () => url().endsWith('?settings=general'), 'the tab in the URL');
+    ([...dialog()!.querySelectorAll<HTMLElement>('.ant-modal-footer button')].find((b) => b.textContent?.trim() === 'Close') as HTMLElement).click();
+    await until(fixture, () => url() === '/invoice-lookup/invoice-list', 'closed');
+    expect(rows(el)).toBeGreaterThan(0);
+  });
+
+  it('an unknown tab in the address shows General; a screen of the address keeps its own parameters', async () => {
+    const { fixture, el, url } = await start('operator', '/invoice-entry/invoice-list?status=draft&settings=no-such-section');
+    await until(fixture, () => rows(el) > 0, 'drafts');
+    const activeTab = (): string | undefined => [...document.querySelectorAll('.ant-modal')].at(-1)?.querySelector('.ant-tabs-tab-active')?.textContent?.trim();
+    await until(fixture, () => activeTab() === 'General', 'General');
+    expect(url()).toContain('status=draft');
+    expect(TestBed.inject(NavigationService).current().params).toEqual({ status: 'draft' });
   });
 
   it('the bell counts the unread messages; choosing one marks it read and opens its screen; a new one arrives by itself', async () => {
