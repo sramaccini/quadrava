@@ -26,7 +26,21 @@ export interface KanbanLane {
 export interface KanbanBoard {
   columns: KanbanColumn[];
   lanes: KanbanLane[];
+  /** The board is divided into lanes (with `laneField`). */
+  laned: boolean;
 }
+
+/** A lane as defined: value of the lane field and header (already resolved). */
+export interface KanbanLaneDefinition {
+  value: string;
+  label: string;
+}
+
+/**
+ * How the board is divided: null for no lanes; otherwise the lane field and the lanes in order, or null for the lanes
+ * found in the data.
+ */
+export type KanbanLaning = { field: string; lanes: readonly KanbanLaneDefinition[] | null } | null;
 
 const valueOf = (row: Row, field: string): string => {
   const value = row[field];
@@ -67,28 +81,47 @@ export function columnsOf(list: unknown, fields: NonNullable<KanbanNode['columns
 }
 
 /**
- * The board: columns in the order given (their labels already resolved) and, with `laneField`, lanes in the order of
- * `lanes` (or of appearance in the data, with the cards without a value in a last lane labelled `noLane`). Rows whose
- * column, or lane when `lanes` is given, is not listed are left out. Inside a cell the cards keep the order of the data:
- * the service decides it.
+ * Lanes that come from the result of a `lanes` expression: the value is a text (a number becomes one), the label a text
+ * (the value if absent); items without a value, and values already seen, are left out. Labels are shown as they are.
+ */
+export function lanesOf(list: unknown): KanbanLaneDefinition[] {
+  if (!Array.isArray(list)) return [];
+  const seen = new Set<string>();
+  const lanes: KanbanLaneDefinition[] = [];
+  for (const item of list) {
+    if (item === null || typeof item !== 'object') continue;
+    const value = valueOf(item as Row, 'value');
+    if (value === '' || seen.has(value)) continue;
+    seen.add(value);
+    lanes.push({ value, label: valueOf(item as Row, 'label') || value });
+  }
+  return lanes;
+}
+
+/**
+ * The board: columns in the order given (their labels already resolved) and, with a lane field, lanes in the order
+ * given (or of appearance in the data, with the cards without a value in a last lane labelled `noLane`). Rows whose
+ * column, or lane when the lanes are given, is not listed are left out. Inside a cell the cards keep the order of the
+ * data: the service decides it.
  */
 export function kanbanBoard(
   rows: readonly Row[],
   node: KanbanNode,
   columnDefs: readonly KanbanColumnDefinition[],
-  label: (text: string) => string,
+  laning: KanbanLaning,
   noLane: string,
 ): KanbanBoard {
   const columnIndex = new Map(columnDefs.map((c, i) => [c.value, i]));
   const shown = rows.filter((row) => columnIndex.has(valueOf(row, node.columnField)));
+  const laneField = laning?.field ?? null;
 
   let laneDefs: { value: string | null; label: string }[];
-  if (!node.laneField) {
+  if (laneField === null) {
     laneDefs = [{ value: null, label: '' }];
-  } else if (node.lanes) {
-    laneDefs = node.lanes.map((l) => ({ value: l.value, label: label(l.label) }));
+  } else if (laning!.lanes) {
+    laneDefs = [...laning!.lanes];
   } else {
-    const seen = [...new Set(shown.map((row) => valueOf(row, node.laneField!)))];
+    const seen = [...new Set(shown.map((row) => valueOf(row, laneField)))];
     const named = seen.filter((v) => v !== '').map((v) => ({ value: v, label: v }));
     laneDefs = seen.includes('') ? [...named, { value: '', label: noLane }] : named;
   }
@@ -97,7 +130,7 @@ export function kanbanBoard(
   const laneIndex = new Map(lanes.map((l, i) => [l.value, i]));
   const counts = columnDefs.map(() => 0);
   for (const row of shown) {
-    const lane = lanes[node.laneField ? (laneIndex.get(valueOf(row, node.laneField)) ?? -1) : 0];
+    const lane = lanes[laneField !== null ? (laneIndex.get(valueOf(row, laneField)) ?? -1) : 0];
     if (!lane) continue;
     const column = columnIndex.get(valueOf(row, node.columnField))!;
     lane.cells[column].push(row);
@@ -113,7 +146,7 @@ export function kanbanBoard(
     count: counts[i],
     overLimit: c.limit !== undefined && counts[i] > c.limit,
   }));
-  return { columns, lanes };
+  return { columns, lanes, laned: laneField !== null };
 }
 
 /** Key of a card: the value of `keyField` (`id` if absent), or null. */

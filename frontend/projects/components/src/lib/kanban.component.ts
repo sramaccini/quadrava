@@ -10,7 +10,7 @@ import { NzTagModule } from 'ng-zorro-antd/tag';
 import type { KanbanNode, Tone } from 'schema';
 import { TONE_COLORS } from './display.component';
 import { IconComponent } from './icon.component';
-import { cardKey, columnsOf, initials, kanbanBoard, placement, type KanbanLane } from './kanban-board';
+import { cardKey, columnsOf, initials, kanbanBoard, lanesOf, placement, type KanbanLane, type KanbanLaning } from './kanban-board';
 
 type Row = Record<string, unknown>;
 
@@ -22,7 +22,9 @@ type Row = Record<string, unknown>;
  * target one in `to` and the keys of the new neighbours in `beforeId` and `afterId` (usually a call and a refresh).
  * `moveIf` decides which cards can be moved (fail-closed). The real move is done by the service: the card changes
  * place when the reloaded data says so, and screen readers then hear where it is. The columns can also come from an
- * expression or from a data source (`columnsFrom`), so one screen serves several boards.
+ * expression or from a data source (`columnsFrom`), so one screen serves several boards; `laneField` and `lanes` can be
+ * expressions too, so one board can be grouped in several ways. With `onOpen` the title of a card is a button that runs
+ * the steps with the row in `row` (a click elsewhere on the card does the same); a drag does not open the card.
  */
 @Component({
   selector: 'lc-kanban',
@@ -54,6 +56,10 @@ type Row = Record<string, unknown>;
     ul.drop-end::after { content: ''; height: 3px; border-radius: 2px; background: var(--lc-color-primary, #1f5fbf); }
     .text { flex: 1; min-width: 0; }
     .title { display: block; font-weight: 600; overflow-wrap: anywhere; }
+    button.title { padding: 0; border: 0; background: transparent; color: var(--lc-color-primary, #1f5fbf); font: inherit; font-weight: 600; text-align: start; cursor: pointer; }
+    button.title:hover { text-decoration: underline; }
+    button.title:focus-visible { outline: 2px solid var(--lc-color-primary, #1f5fbf); outline-offset: 2px; border-radius: 2px; }
+    .card.openable { cursor: pointer; }
     .description { display: block; margin-top: 2px; font-size: 12px; color: var(--lc-color-muted, #5d6b7a); overflow-wrap: anywhere; }
     .badges { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
     .badges nz-tag { margin: 0; }
@@ -69,7 +75,7 @@ type Row = Record<string, unknown>;
     } @else {
       <lc-busy [busy]="loading()">
       @let b = board();
-      @if (node().laneField) {
+      @if (b.laned) {
         <div class="board lanes" [style.--lc-kanban-columns]="b.columns.length">
           @for (column of b.columns; track column.value) {
             <div class="head" [class.over-limit]="column.overLimit" [style.--lc-kanban-tone]="color(column.tone)">
@@ -140,13 +146,19 @@ type Row = Record<string, unknown>;
             class="card"
             [class.busy]="busy() === row"
             [class.drop-before]="dropGap()?.lane === lane && dropGap()?.column === column && dropGap()?.gap === i"
+            [class.openable]="openable()"
             [attr.draggable]="movable"
             [attr.data-index]="i"
             (dragstart)="dragStart($event, row)"
             (dragend)="dragEnd()"
+            (click)="cardClick($event, row)"
           >
             <span class="text">
-              <span class="title">{{ title }}</span>
+              @if (openable()) {
+                <button type="button" class="title" (click)="open(row)">{{ title }}</button>
+              } @else {
+                <span class="title">{{ title }}</span>
+              }
               @if (node().descriptionField) {
                 &ngsp;<span class="description">{{ text(row, node().descriptionField!) }}</span>
               }
@@ -155,7 +167,7 @@ type Row = Record<string, unknown>;
                   @for (badge of node().badges; track $index) {
                     @let value = text(row, badge.field);
                     @if (value) {
-                      <nz-tag [nzColor]="color(badge.tones?.[value] ?? 'neutral')">{{ value }}</nz-tag>
+                      <nz-tag [nzColor]="color(badge.tones?.[value] ?? 'neutral')">{{ badge.valueKey ? i18n.t(badge.valueKey + '.' + value, {}, value) : value }}</nz-tag>
                     }
                   }
                 </span>
@@ -248,9 +260,31 @@ export class KanbanComponent {
     return (node.columns ?? []).map((c) => ({ ...c, label: this.runtime().text(c.label, this.scope()) }));
   });
 
-  protected readonly board = computed(() =>
-    kanbanBoard(rowsOf(this.source().data), this.node(), this.columnDefs(), (text) => this.runtime().text(text, this.scope()), this.i18n.t('lc.kanbanNoLane')),
-  );
+  /**
+   * The lanes: the field (or the result of its expression: an empty text or null is the board without lanes) and the
+   * list (labels with {{ }}), or the result of its expression (labels as they are; an empty list or null for the lanes
+   * in the data: the branches of a CEL condition must have the same type, so `cond ? [...] : []`). An
+   * expression that fails gives lanes with no cards: fail-closed.
+   */
+  private readonly laning = computed<KanbanLaning>(() => {
+    const node = this.node();
+    const raw = node.laneField;
+    if (!raw) return null;
+    const field = raw.includes('{{') ? this.runtime().resolveValue(raw, this.scope()) : raw;
+    if (field === null || field === '') return null;
+    if (typeof field !== 'string') return { field: '', lanes: [] };
+    const lanes = node.lanes;
+    if (lanes === undefined) return { field, lanes: null };
+    if (typeof lanes !== 'string') return { field, lanes: lanes.map((l) => ({ value: l.value, label: this.runtime().text(l.label, this.scope()) })) };
+    const list = this.runtime().resolveValue(lanes, this.scope());
+    if (list === null || (Array.isArray(list) && list.length === 0)) return { field, lanes: null };
+    return { field, lanes: lanesOf(list) };
+  });
+
+  protected readonly board = computed(() => kanbanBoard(rowsOf(this.source().data), this.node(), this.columnDefs(), this.laning(), this.i18n.t('lc.kanbanNoLane')));
+
+  /** Cards open with `onOpen`. */
+  protected readonly openable = computed(() => !!this.node().onOpen?.length);
 
   protected text(row: Row, field: string): string {
     const value = row[field];
@@ -267,6 +301,17 @@ export class KanbanComponent {
 
   protected cardScope(row: Row): Scope {
     return { ...this.scope(), row };
+  }
+
+  /** Runs `onOpen` with the card in `row`. */
+  protected open(row: Row): void {
+    void runSteps(this.runtime(), this.node().onOpen ?? [], { ...this.scope(), row });
+  }
+
+  /** A click on the card opens it, except on its buttons (the title already does, «Move» has its menu). */
+  protected cardClick(event: MouseEvent, row: Row): void {
+    if (!this.openable() || (event.target as Element | null)?.closest?.('button, a')) return;
+    this.open(row);
   }
 
   protected isOver(lane: KanbanLane, column: string): boolean {

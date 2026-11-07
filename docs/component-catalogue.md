@@ -495,6 +495,11 @@ What **must** happen regardless (checks, rules, audit, several calls to keep con
   "columns": [ { "value": "to-do", "label": "To do" }, { "value": "doing", "label": "Doing", "tone": "primary", "limit": 3 } ],
   "onMove": [ { "call": "move", "args": { "id": "{{ row.id }}", "status": "{{ to }}", "beforeId": "{{ beforeId }}", "afterId": "{{ afterId }}" } },
               { "refresh": "tasks" } ] }
+
+{ "type": "kanban", "source": "issues", "columnField": "status", "titleField": "title", "laneField": "{{ state.groupBy }}",
+  "badges": [ { "field": "priority", "valueKey": "values.priority", "tones": { "high": "danger" } } ],
+  "columnsFrom": { "source": "statuses" },
+  "onOpen": [ { "navigate": "issue-detail", "params": { "id": "{{ row.id }}" } } ] }
 ```
 
 - **timeline**: the data-source rows in date order (`order`: `desc` by default, `asc`); a date without a time counts as a local day; rows without a valid date are not shown.
@@ -503,7 +508,9 @@ What **must** happen regardless (checks, rules, audit, several calls to keep con
   - **Swimlanes** (`laneField`): the board is divided into horizontal lanes, one per value of the field (in order of appearance, cards without a value in a last lane «No group»), or the ones listed in `lanes` with their headers. The column headers stay at the top; each lane has a header with its count that collapses it (`aria-expanded`). A card moves only within its lane; every cell is a region named «lane — column».
   - **Limits** (`columns[].limit`): the header shows «3/5»; above the limit the column is tinted and its header says «over the limit» next to a warning icon (not only colour). The count includes every lane; moves are not blocked.
   - **Columns from data**: instead of a fixed list, `columns` can be an expression that returns the list (`"{{ settings.board.columns }}"`), or `columnsFrom` reads it from a data source (`{ "source": "statuses", "valueField": "id", "labelField": "name", "toneField": "tone", "limitField": "wip" }`; without the field names it reads `value`, `label`, `tone` and `limit`). One screen then serves boards with different workflows. Labels that come from data are shown as they are, never evaluated; unknown tones and limits that are not positive whole numbers are ignored, as are rows without a value or with a value already seen. In a CEL list all the values of a column must have the same type, so a limit is written as text: `{'value': 'doing', 'label': 'Doing', 'limit': '3'}`. While the columns load the board shows the wait; if their source fails the board shows the error.
-  - **Rich cards**: `badges` (labels with the value of a field, coloured by `tones`), `avatarField` (initials of a person in a circle, the full name in the tooltip and for screen readers), `footerFields` (values at the bottom, with an optional label). Empty values show nothing.
+  - **Swimlanes chosen on the screen**: `laneField` can be an expression that returns the name of the field (`"{{ state.groupBy }}"`, with an `input` that writes `state.groupBy`), and `lanes` an expression that returns the list of `{value, label}` (labels shown as they are). An empty text gives the board without lanes; an empty list the lanes found in the data, which suits a CEL condition because both branches must have the same type: `{{ state.groupBy == 'priority' ? [{'value': 'high', 'label': t('values.priority.high', 'High')}] : [] }}`. An expression that fails shows no cards (fail-closed).
+  - **Opening a card** (`onOpen`): the title of the card becomes a button that runs the steps with the row in `row`, usually `navigate` to the detail screen; it is reached with Tab and pressed with Enter or Space. A click elsewhere on the card does the same; the «Move» button and dragging a card do not open it.
+  - **Rich cards**: `badges` (labels with the value of a field, coloured by `tones`; `valueKey` shows the translation of the value, `<prefix>.<value>`, as in table columns, while the tones stay tied to the stored value), `avatarField` (initials of a person in a circle, the full name in the tooltip and for screen readers), `footerFields` (values at the bottom, with an optional label). Empty values show nothing.
 
 ### 2.25 Menu: search, counters, keyboard
 

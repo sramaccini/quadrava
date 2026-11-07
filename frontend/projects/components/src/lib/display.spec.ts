@@ -1,3 +1,4 @@
+import { I18n } from 'core';
 import type { NodeDefinition } from 'schema';
 import { safeImageSrc } from './display.component';
 import { plain, renderScreen } from './screen-testing';
@@ -287,6 +288,90 @@ describe('image, link, progress, timeline and kanban', () => {
       await h.until(() => h.el.querySelectorAll('lc-kanban .card').length === 4, 'cards');
       expect([...h.el.querySelectorAll('lc-kanban h3')].map((x) => plain(x.textContent))).toEqual(['Doing {{ 1 + 1 }} 1/1', 'Backlog 3']);
       expect(h.reports).toEqual([]);
+    });
+
+    it('with onOpen the title is a button: a click on it or on the card opens it with the row; «Move» and a drag do not', async () => {
+      const h = await renderScreen({
+        components: [kanban({ onOpen: [{ navigate: 'task-detail', params: { id: '{{ row.id }}' } }] })],
+        dataSources,
+        respond: (r) => (r.method === 'GET' ? rows : {}),
+      });
+      await h.until(() => h.el.querySelectorAll('lc-kanban .card').length === 2, 'cards');
+      const card = column(h.el, 'To do').querySelector('.card') as HTMLElement;
+      const title = card.querySelector('button.title') as HTMLButtonElement;
+      expect([title.type, plain(title.textContent)]).toEqual(['button', 'Quote']);
+      title.click();
+      await h.until(() => h.navigations.length === 1, 'opened from the title');
+      (column(h.el, 'In progress').querySelector('.description') as HTMLElement).click();
+      await h.until(() => h.navigations.length === 2, 'opened from the card');
+      expect(h.navigations).toEqual([
+        { screen: 'task-detail', params: { id: 1 } },
+        { screen: 'task-detail', params: { id: 2 } },
+      ]);
+      (card.querySelector('button[aria-label^="Move"]') as HTMLButtonElement).click();
+      dragEvent('dragstart', card);
+      dragEvent('dragover', column(h.el, 'Done'));
+      dragEvent('drop', column(h.el, 'Done'));
+      await h.until(() => h.toasts.length === 1, 'moved');
+      expect(h.navigations).toHaveLength(2);
+      expect(h.reports).toEqual([]);
+    });
+
+    it('without onOpen the title is text and a click on the card does nothing', async () => {
+      const h = await renderScreen({ components: [kanban()], dataSources, respond: (r) => (r.method === 'GET' ? rows : {}) });
+      await h.until(() => h.el.querySelectorAll('lc-kanban .card').length === 2, 'cards');
+      expect(h.el.querySelector('lc-kanban .card button.title')).toBeNull();
+      (h.el.querySelector('lc-kanban .card') as HTMLElement).click();
+      await h.settle();
+      expect(h.navigations).toEqual([]);
+    });
+
+    it('badges with valueKey show the translation, with the tone of the stored value; a missing key shows the value', async () => {
+      const rows = [{ id: 1, title: 'Quote', status: 'to-do', priority: 'high', kind: 'bug' }];
+      const h = await renderScreen({
+        components: [kanban({ badges: [{ field: 'priority', tones: { high: 'danger' }, valueKey: 'values.priority' }, { field: 'kind', valueKey: 'values.kind' }] })],
+        dataSources,
+        respond: () => rows,
+      });
+      h.fixture.debugElement.injector.get(I18n).addMessages('en', { 'values.priority.high': 'Urgent' });
+      await h.until(() => plain(h.el.querySelector('lc-kanban nz-tag')?.textContent) === 'Urgent', 'translated');
+      const tags = [...h.el.querySelectorAll('lc-kanban nz-tag')];
+      expect(tags.map((t) => plain(t.textContent))).toEqual(['Urgent', 'bug']);
+      expect(tags[0].className).toContain('ant-tag-has-color');
+    });
+
+    it('laneField and lanes as expressions: one board grouped in several ways; an empty list leaves the lanes to the data', async () => {
+      const h = await renderScreen({
+        components: [
+          kanban({
+            laneField: '{{ state.groupBy }}',
+            lanes: "{{ state.groupBy == 'who' ? [{'value': 'Luca', 'label': 'Only Luca'}] : [] }}",
+          }),
+        ],
+        dataSources,
+        respond: () => ranked,
+      });
+      // An empty text: the board without lanes.
+      h.fixture.componentInstance.runtime()!.setState('state.groupBy', '');
+      await h.until(() => h.el.querySelectorAll('lc-kanban .card').length === 4, 'cards');
+      expect(h.el.querySelector('lc-kanban .lane')).toBeNull();
+      h.fixture.componentInstance.runtime()!.setState('state.groupBy', 'who');
+      await h.until(() => h.el.querySelectorAll('lc-kanban .lane').length === 1, 'listed lanes');
+      expect(plain(h.el.querySelector('lc-kanban .lane')?.textContent)).toBe('Only Luca 2');
+      h.fixture.componentInstance.runtime()!.setState('state.groupBy', 'status');
+      await h.until(() => h.el.querySelectorAll('lc-kanban .lane').length === 2, 'lanes from the data');
+      expect([...h.el.querySelectorAll('lc-kanban .lane')].map((l) => plain(l.textContent))).toEqual(['to-do 3', 'in-progress 1']);
+      h.fixture.componentInstance.runtime()!.setState('state.groupBy', '');
+      await h.until(() => !h.el.querySelector('lc-kanban .lane'), 'no lanes again');
+      expect(h.el.querySelectorAll('lc-kanban .card')).toHaveLength(4);
+    });
+
+    it('a lane expression that fails shows no cards (fail-closed)', async () => {
+      const h = await renderScreen({ components: [kanban({ laneField: '{{ 1 + }}' })], dataSources, respond: () => ranked });
+      await h.until(() => h.requests.length > 0, 'loaded');
+      await h.settle();
+      expect(h.el.querySelectorAll('lc-kanban .card')).toHaveLength(0);
+      expect(h.el.querySelectorAll('lc-kanban .head')).toHaveLength(3);
     });
 
     it('columns from an expression: the list that it returns', async () => {

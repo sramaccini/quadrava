@@ -1,5 +1,5 @@
 import type { KanbanColumnDefinition, KanbanNode } from 'schema';
-import { columnsOf, initials, kanbanBoard, placement } from './kanban-board';
+import { columnsOf, initials, kanbanBoard, lanesOf, placement, type KanbanLaning } from './kanban-board';
 
 describe('kanban board', () => {
   const node = (extra: Partial<KanbanNode> = {}): KanbanNode => ({
@@ -20,10 +20,9 @@ describe('kanban board', () => {
     { id: 4, title: 'D', status: 'archived', who: 'Anna' },
     { id: 5, title: 'E', status: 'to-do' },
   ];
-  const label = (text: string) => text.toUpperCase();
   const titles = (cells: Record<string, unknown>[][]) => cells.map((cell) => cell.map((r) => r['title']));
-  // The columns arrive with their labels already resolved; `label` is for the headers of the lanes.
-  const boardOf = (n: KanbanNode) => kanbanBoard(rows, n, n.columns as KanbanColumnDefinition[], label, 'No group');
+  // Columns and lanes arrive already resolved (labels included).
+  const boardOf = (n: KanbanNode, laning: KanbanLaning = null) => kanbanBoard(rows, n, n.columns as KanbanColumnDefinition[], laning, 'No group');
 
   it('without lanes: one lane, columns with counts and the limit exceeded', () => {
     const board = boardOf(node());
@@ -33,11 +32,13 @@ describe('kanban board', () => {
     ]);
     expect(board.lanes).toHaveLength(1);
     expect(board.lanes[0].value).toBeNull();
+    expect(board.laned).toBe(false);
     expect(titles(board.lanes[0].cells)).toEqual([['A', 'E'], ['B', 'C']]);
   });
 
   it('lanes from the data in order of appearance, the cards without a value last', () => {
-    const board = boardOf(node({ laneField: 'who' }));
+    const board = boardOf(node(), { field: 'who', lanes: null });
+    expect(board.laned).toBe(true);
     expect(board.lanes.map((l) => [l.label, l.count])).toEqual([['Anna', 2], ['Luca', 1], ['No group', 1]]);
     expect(titles(board.lanes[0].cells)).toEqual([['A'], ['C']]);
     // The limit counts the cards of every lane.
@@ -45,9 +46,21 @@ describe('kanban board', () => {
   });
 
   it('listed lanes: their order and headers; rows of other lanes left out', () => {
-    const board = boardOf(node({ laneField: 'who', lanes: [{ value: 'Luca', label: 'Luca B.' }, { value: 'Marta', label: 'Marta' }] }));
-    expect(board.lanes.map((l) => [l.label, l.count])).toEqual([['LUCA B.', 1], ['MARTA', 0]]);
+    const board = boardOf(node(), { field: 'who', lanes: [{ value: 'Luca', label: 'Luca B.' }, { value: 'Marta', label: 'Marta' }] });
+    expect(board.lanes.map((l) => [l.label, l.count])).toEqual([['Luca B.', 1], ['Marta', 0]]);
     expect(board.columns.map((c) => c.count)).toEqual([0, 1]);
+    // No lanes listed (a lane expression that failed): lanes with no cards.
+    const empty = boardOf(node(), { field: '', lanes: [] });
+    expect([empty.laned, empty.lanes.length, empty.columns.map((c) => c.count)]).toEqual([true, 0, [0, 0]]);
+  });
+
+  it('lanes from data: texts, the value as label if absent; no value or repeated values left out', () => {
+    expect(lanesOf([{ value: 'high', label: 'High' }, { value: 2 }, { value: '' }, { value: 'high', label: 'Again' }, null, { label: '{{ x }}', value: 'x' }])).toEqual([
+      { value: 'high', label: 'High' },
+      { value: '2', label: '2' },
+      { value: 'x', label: '{{ x }}' },
+    ]);
+    expect(lanesOf('not a list')).toEqual([]);
   });
 
   it('placement: the keys of the neighbours in the new place, null at the ends', () => {

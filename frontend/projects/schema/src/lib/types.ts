@@ -642,21 +642,23 @@ export interface KanbanNode extends NodeBase {
   keyField?: string;
   /** Name of the person of the card, shown with the initials. */
   avatarField?: string;
-  /** Coloured labels on the card. */
-  badges?: { field: string; tones?: Record<string, Tone> }[];
+  /** Coloured labels on the card; `valueKey` translates the shown value (`<prefix>.<value>`), the tones stay tied to the stored one. */
+  badges?: { field: string; tones?: Record<string, Tone>; valueKey?: string }[];
   /** Values at the bottom of the card. */
   footerFields?: { field: string; label?: string }[];
   /** Columns, or an expression that returns them; `limit` is the maximum number of cards (work in progress). */
   columns?: KanbanColumnDefinition[] | Expression;
   /** Columns read from a data source instead of `columns`. */
   columnsFrom?: { source: string; valueField?: string; labelField?: string; toneField?: string; limitField?: string };
-  /** Field that decides the swimlane; `lanes` gives order and headers. */
+  /** Field that decides the swimlane, or an expression that returns its name; `lanes` gives order and headers (or an expression). */
   laneField?: string;
-  lanes?: { value: string; label: string }[];
+  lanes?: { value: string; label: string }[] | Expression;
   /** Cards can also change place within their column. */
   reorder?: boolean;
   moveIf?: Expression;
   onMove?: Step[];
+  /** Steps that open a card (usually `navigate`), with the row in `row`. */
+  onOpen?: Step[];
 }
 
 /** Thread of comments of a data source, in restricted Markdown, with a box for writing and mentions. */

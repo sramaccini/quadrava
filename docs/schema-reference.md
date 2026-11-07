@@ -292,11 +292,12 @@
 | `footerFields` | list of object | Values at the bottom of the card, for example the story points or the due date (at most 4). |
 | `columns` | list of object or expression | Columns of the board, in order (at most 10); or an expression that returns them as a list of {value, label, tone, limit}, for example {{ params.board == "bugs" ? [...] : [...] }}, so one screen serves several boards. In a CEL list all the values of a column are texts ('limit': '5'); labels returned by an expression are shown as they are. |
 | `columnsFrom` | object | Columns read from a data source instead of `columns`, for boards whose columns are data (for example the statuses of a workflow). |
-| `laneField` | text | Field of the row that decides the swimlane (for example the assignee): the board is divided into horizontal lanes that can be collapsed. A card moves only within its lane. |
-| `lanes` | list of object | Lanes in order, with their headers; rows whose value is not a lane are not shown. Without it every value of `laneField` in the data is a lane, in order of appearance, and the cards without a value go to a last lane «No group». |
+| `laneField` | text | Field of the row that decides the swimlane (for example the assignee): the board is divided into horizontal lanes that can be collapsed. A card moves only within its lane. It can be an expression that returns the name of the field, for example {{ state.groupBy }}, so one board can be grouped in several ways; an empty text or null gives the board without lanes, an error a board with no cards. |
+| `lanes` | list of object or expression | Lanes in order, with their headers; rows whose value is not a lane are not shown. Without it every value of `laneField` in the data is a lane, in order of appearance, and the cards without a value go to a last lane «No group». It can be an expression that returns the list of {value, label} (labels shown as they are) or an empty list for the lanes from the data, for example {{ state.groupBy == 'priority' ? [...] : [] }}; an error shows no cards. |
 | `reorder` | yes/no | Cards can also change place within their column: they are dropped between other cards, or moved up and down from the «Move» menu, and onMove runs for these moves too (false if absent: only moves to another column). |
 | `moveIf` | expression | Condition for moving a card (it sees the row in row), for example a permission. |
 | `onMove` | list of step | Steps that move a card (usually call and refresh): they see the row in row, the starting column in from, the target one in to, and the keys (keyField) of the cards that will be before and after it in beforeId and afterId (null at the ends of the column). |
+| `onOpen` | list of step | Steps that open a card (usually navigate to its detail screen): they see the row in row. The title of the card becomes a button, so a card opens with a click on it or from the keyboard; dragging a card does not open it. |
 
 ### `comments`
 

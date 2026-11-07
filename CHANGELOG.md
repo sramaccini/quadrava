@@ -12,6 +12,16 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Added
+
+- Kanban: `onOpen` opens a card. Its title becomes a button that runs the steps with the row in `row` (usually
+  `navigate` to the detail screen); a click elsewhere on the card does the same, the «Move» button and dragging do not.
+- Kanban: `badges[].valueKey` translates the shown value, as in table columns (`values.priority` shows
+  `t('values.priority.high')` instead of `high`); the tones stay tied to the stored value.
+- Kanban: `laneField` and `lanes` can be expressions, so one board can be grouped in several ways
+  (`"laneField": "{{ state.groupBy }}"`). An empty text gives the board without lanes, an empty list the lanes found in
+  the data; an expression that fails shows no cards.
+
 ### Fixed
 
 - The round button that collapses the side menu is back on the edge of the menu: in 0.11.0 it ended up at the top

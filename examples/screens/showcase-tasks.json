@@ -112,7 +112,8 @@
               "tones": {
                 "high": "danger",
                 "normal": "primary"
-              }
+              },
+              "valueKey": "values.priority"
             }
           ],
           "footerFields": [
@@ -159,6 +160,11 @@
             {
               "toast": "{{ t('showcase_tasks.moved', '“{title}” moved', {'title': row.title}) }}"
             }
+          ],
+          "onOpen": [
+            {
+              "toast": "{{ t('showcase_tasks.opened', 'You opened “{title}”', {'title': row.title}) }}"
+            }
           ]
         },
         {
@@ -191,7 +197,22 @@
           "id": "lanes-title",
           "type": "text",
           "style": "heading",
-          "text": "{{ t('showcase_tasks.board_by_person', 'The same tasks by person (swimlanes)') }}"
+          "text": "{{ t('showcase_tasks.board_in_lanes', 'The same tasks in swimlanes') }}"
+        },
+        {
+          "id": "group-by",
+          "type": "input",
+          "field": {
+            "name": "groupBy",
+            "type": "select",
+            "label": "{{ t('showcase_tasks.group_by', 'Group by') }}",
+            "options": [
+              "who",
+              "priority"
+            ],
+            "optionKey": "showcase_tasks.group_by"
+          },
+          "default": "who"
         },
         {
           "id": "kanban-lanes",
@@ -199,14 +220,15 @@
           "source": "tasks",
           "columnField": "status",
           "titleField": "title",
-          "laneField": "who",
+          "laneField": "{{ state.groupBy }}",
           "badges": [
             {
               "field": "priority",
               "tones": {
                 "high": "danger",
                 "normal": "primary"
-              }
+              },
+              "valueKey": "values.priority"
             }
           ],
           "columnsFrom": {
@@ -236,7 +258,8 @@
             {
               "toast": "{{ t('showcase_tasks.moved', '“{title}” moved', {'title': row.title}) }}"
             }
-          ]
+          ],
+          "lanes": "{{ state.groupBy == 'priority' ? [{'value': 'high', 'label': t('values.priority.high', 'High')}, {'value': 'normal', 'label': t('values.priority.normal', 'Normal')}, {'value': 'low', 'label': t('values.priority.low', 'Low')}] : [] }}"
         }
       ]
     },
