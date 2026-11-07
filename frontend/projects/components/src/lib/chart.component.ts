@@ -3,7 +3,7 @@ import { I18n, formatValue, type ScreenRuntime, type Scope } from 'core';
 import { BusyComponent } from './busy.component';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
 import type { ChartNode, ColumnDefinition, Tone } from 'schema';
-import { niceScale, pieSlices } from './chart-geometry';
+import { niceScale, pieSlices, visibleLabels } from './chart-geometry';
 import { numeric } from './table-data';
 
 type Row = Record<string, unknown>;
@@ -24,6 +24,9 @@ const TONE_VARS: Record<Tone, string> = {
   danger: PALETTE[2],
 };
 const PAD = { left: 64, right: 12, top: 12, bottom: 30 };
+/** Estimated width of a character of the axis labels (11px): there is no measuring in SVG before drawing. */
+const CHAR_WIDTH = 6.5;
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
 type Side = 'left' | 'right';
 
 interface Mark {
@@ -44,7 +47,9 @@ interface Line {
  * Bar, line or pie (doughnut) chart drawn in SVG by the platform, with the theme colours. Bars side by side
  * or stacked, series on a second axis on the right, combined charts (bars and lines together).
  * Every element shows its value on mouse hover; the legend is text; for screen readers the drawing is
- * hidden and the data is in an equivalent table.
+ * hidden and the data is in an equivalent table. Category labels that do not fit are left out of the axis
+ * (the first, the last and others at an even step stay), dates get a shorter form there; the tooltip and
+ * the table keep the full label.
  */
 @Component({
   selector: 'lc-chart',
@@ -95,8 +100,8 @@ interface Line {
               <text class="axis right" [attr.x]="width() - pad().right + 8" [attr.y]="y(tick, 'right') + 4" text-anchor="start">{{ short(tick, 'right') }}</text>
             }
           }
-          @for (label of categories(); track $index; let i = $index) {
-            <text class="axis" [attr.x]="center(i)" [attr.y]="height() - 10" text-anchor="middle">{{ label }}</text>
+          @for (label of axisLabels(); track label.index) {
+            <text class="axis category" [attr.x]="center(label.index)" [attr.y]="height() - 10" text-anchor="middle">{{ label.text }}</text>
           }
           @for (bar of bars(); track $index) {
             <rect class="mark" [attr.x]="bar.x" [attr.y]="bar.y" [attr.width]="bar.width" [attr.height]="bar.height" [attr.fill]="bar.color" rx="2"><title>{{ bar.tip }}</title></rect>
@@ -173,11 +178,16 @@ export class ChartComponent {
     return Array.isArray(items) ? (items as Row[]) : [];
   });
 
-  /** Labels of the categories, formatted or translated. */
-  protected readonly categories = computed(() =>
+  /** Raw values of the categories, as text. */
+  private readonly categoryValues = computed(() =>
     this.rows().map((row) => {
       const raw = row[this.node().categoryField];
-      const value = raw === null || raw === undefined ? '' : String(raw);
+      return raw === null || raw === undefined ? '' : String(raw);
+    }),
+  );
+  /** Labels of the categories, formatted or translated. */
+  protected readonly categories = computed(() =>
+    this.categoryValues().map((value) => {
       const format = this.node().categoryFormat;
       const locale = this.i18n.intlLocale();
       if (format === 'month' && /^\d{4}-\d{2}$/.test(value)) {
@@ -188,6 +198,26 @@ export class ChartComponent {
       return key ? this.i18n.t(`${key}.${value}`, {}, value) : value;
     }),
   );
+  /**
+   * Labels drawn on the category axis: only those that fit (`visibleLabels`). Dates that do not fit in their
+   * full form pass to day and short month (for example «7 Nov»), still left out where they do not fit.
+   */
+  protected readonly axisLabels = computed(() => {
+    const band = this.band();
+    const fitting = (labels: string[]): { index: number; text: string }[] =>
+      visibleLabels(labels.map((label) => label.length * CHAR_WIDTH), band).map((index) => ({ index, text: labels[index] }));
+    const full = fitting(this.categories());
+    if (full.length === this.rows().length || this.node().categoryFormat !== 'date') return full;
+    const locale = this.i18n.intlLocale();
+    return fitting(
+      this.categoryValues().map((value, i) => {
+        const dateOnly = DATE_ONLY.test(value);
+        const date = new Date(dateOnly ? `${value}T00:00:00Z` : value);
+        if (!value || Number.isNaN(date.getTime())) return this.categories()[i];
+        return new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', ...(dateOnly ? { timeZone: 'UTC' } : {}) }).format(date);
+      }),
+    );
+  });
   /** Values per series (rows in order); non-numeric ones count as null. */
   protected readonly values = computed(() => this.node().series.map((s) => this.rows().map((row) => numeric(row[s.field]))));
   protected readonly seriesLabels = computed(() => this.node().series.map((s) => (s.label ? this.runtime().text(s.label, this.scope()) : s.field)));

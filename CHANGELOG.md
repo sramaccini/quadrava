@@ -22,6 +22,9 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
   «Expenses to review» in the user menu.
 - **The chosen language reaches the services**: the interceptor of `services` sends `Accept-Language` with the language
   of the user on every call to the same origin (BFF contract 0.4: the BFF forwards it; the reference BFF already did).
+- Chart: with many categories the labels that do not fit are left out of the axis, keeping the first, the last and
+  others at an even step between, and dates that do not fit pass to a short form («7 Oct»); the tooltip and the table
+  for screen readers keep the full label (request Q14 of OpenDevTrack). The showcase dashboard has a thirty-day chart.
 
 - `npm run conformance:bff` signs in by itself with `--user` and `--password` (through the Keycloak login page of the
   development realm) instead of the cookies of a signed-in browser. `npm run conformance` runs the kits of

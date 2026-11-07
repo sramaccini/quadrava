@@ -11,6 +11,9 @@
     "sales": {
       "ref": "showcase-dashboard/sales"
     },
+    "daily": {
+      "ref": "showcase-dashboard/daily"
+    },
     "byStatus": {
       "ref": "showcase-dashboard/byStatus"
     }
@@ -152,6 +155,27 @@
           "format": "currency",
           "height": 220,
           "caption": "{{ t('showcase_dashboard.sales_invoices_trend_2026', 'Sales invoices trend, 2026') }}"
+        },
+        {
+          "id": "daily-chart",
+          "type": "chart",
+          "kind": "line",
+          "source": "daily",
+          "categoryField": "day",
+          "categoryFormat": "date",
+          "series": [
+            {
+              "field": "issued",
+              "label": "{{ t('showcase_dashboard.issued', 'Issued') }}"
+            },
+            {
+              "field": "paid",
+              "label": "{{ t('showcase_dashboard.paid', 'Paid') }}",
+              "tone": "success"
+            }
+          ],
+          "height": 220,
+          "caption": "{{ t('showcase_dashboard.invoices_per_day_october_2026', 'Invoices issued and paid per day, October 2026: the axis shows only the dates that fit, hover a point for its day') }}"
         },
         {
           "id": "square-activity-chart",

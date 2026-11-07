@@ -410,18 +410,24 @@ describe('Showcase: advanced components', () => {
       expect(TestBed.inject(DemoDiagnostics).events()).toEqual([]);
     });
 
-    it('charts: bars for two series over twelve months, line, and pie by status translated', async () => {
+    it('charts: bars for two series over twelve months, lines (thirty days with the labels that fit), and pie by status translated', async () => {
       const { el, until } = await openShowcase('/showcase/showcase-dashboard');
       const charts = (): Element[] => [...el.querySelectorAll('main lc-chart')];
-      await until(() => charts().length === 4 && charts()[0].querySelectorAll('rect.mark').length === 24 && charts()[3].querySelectorAll('path.mark').length === 3, 'charts');
+      await until(() => charts().length === 5 && charts()[0].querySelectorAll('rect.mark').length === 24 && charts()[4].querySelectorAll('path.mark').length === 3, 'charts');
       // Combined: 24 stacked bar pieces (12 columns) and the margin line on the right axis.
       expect(new Set([...charts()[1].querySelectorAll('rect.mark')].map((r) => r.getAttribute('x'))).size).toBe(12);
       expect(charts()[1].querySelectorAll('circle')).toHaveLength(12);
       expect(charts()[1].querySelector('text.axis.right')?.textContent?.trim()).toMatch(/%$/);
       expect([...charts()[1].querySelectorAll('.legend li')].map((li) => li.textContent?.trim())).toEqual(['Sales invoices', 'Purchase invoices', 'Margin (right axis)']);
       expect(charts()[2].querySelectorAll('circle')).toHaveLength(12);
-      expect([...charts()[3].querySelectorAll('.legend li')].map((li) => li.textContent?.trim())).toEqual(['Draft', 'Sent', 'Paid']);
-      expect(charts()[3].querySelector('text.total')?.textContent?.trim()).toBe('14');
+      // Thirty days: two series of points, only some dates on the axis, from the first to the last.
+      expect(charts()[3].querySelectorAll('circle')).toHaveLength(60);
+      const days = [...charts()[3].querySelectorAll('text.category')].map((t) => t.textContent?.trim());
+      expect(days.length).toBeLessThan(30);
+      expect([days[0], days.at(-1)]).toEqual(['1 Oct', '30 Oct']);
+      expect(charts()[3].querySelectorAll('table tbody tr')).toHaveLength(30);
+      expect([...charts()[4].querySelectorAll('.legend li')].map((li) => li.textContent?.trim())).toEqual(['Draft', 'Sent', 'Paid']);
+      expect(charts()[4].querySelector('text.total')?.textContent?.trim()).toBe('14');
       expect(charts()[0].querySelector('table caption')?.textContent).toContain('Sales and purchase invoices by month');
       expect(TestBed.inject(DemoDiagnostics).events()).toEqual([]);
     });

@@ -69,3 +69,18 @@ export function pieSlices(values: number[], cx: number, cy: number, outer: numbe
     };
   });
 }
+
+/**
+ * Indices of the category labels that fit on the axis without overlapping: all of them when they fit, otherwise
+ * the first, the last and others at an even step between. `widths` are the widths of the labels, `band` the room
+ * of a category, `gap` the space kept between two labels. With room for only one label, only the first.
+ */
+export function visibleLabels(widths: number[], band: number, gap = 8): number[] {
+  const count = widths.length;
+  if (!count) return [];
+  const step = Math.max(1, Math.ceil((Math.max(...widths) + gap) / Math.max(band, 1)));
+  if (step === 1) return widths.map((_, i) => i);
+  const intervals = Math.floor((count - 1) / step);
+  if (!intervals) return [0];
+  return Array.from({ length: intervals + 1 }, (_, k) => Math.round((k * (count - 1)) / intervals));
+}

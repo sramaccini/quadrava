@@ -306,6 +306,13 @@ Month view with the events in the days (at most three, then «+n»). When the mo
 
 `bar`, `line` and `pie` types, drawn in SVG by Quadrava (no external library) with the theme colours. Bars can be side by side or stacked (`stacked`, negatives downwards); a series can sit on a second axis on the right (`axis: "right"`, format `rightFormat`) and have its own type (`kind`), for combined charts such as bars plus a line. Every chart has a legend, values on hover and, for accessibility, an equivalent table readable by screen readers.
 
+Many categories (thirty days, a sprint at half width) do not crowd the axis: the labels that do not fit are left out, keeping the first, the last and others at an even step between, and dates that do not fit in full pass to day and short month («7 Oct»). The full label stays in the tooltip and in the table. The showcase dashboard has an example with thirty days.
+
+```
+thirty days in 600 px, axis:      1 Oct   4 Oct   7 Oct   11 Oct   14 Oct   17 Oct   20 Oct   24 Oct   27 Oct   30 Oct
+tooltip of the point of the 12th: 12/10/2026 · Issued: 2
+```
+
 For a denser activity view, `squareChart` draws small square columns for each category, with their height scaled to the largest value. It accepts one row per category and a numeric `valueField`; `categoryFormat`, `format`, `currency`, `decimals`, `height` and `caption` control labels and presentation. Every square has a value tooltip and the chart includes an equivalent table for assistive technology.
 
 ```json

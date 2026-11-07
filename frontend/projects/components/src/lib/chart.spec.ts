@@ -1,5 +1,5 @@
 import type { NodeDefinition } from 'schema';
-import { niceScale, pieSlices } from './chart-geometry';
+import { niceScale, pieSlices, visibleLabels } from './chart-geometry';
 import { plain, renderScreen, type ScreenHarness } from './screen-testing';
 
 describe('charts', () => {
@@ -16,6 +16,20 @@ describe('charts', () => {
     expect(slices[0].path).toMatch(/^M100\.00,20\.00 A80,80 0 0 1 180\.00,100\.00/);
     expect(slices[2].path).toBe('');
     expect(pieSlices([5], 100, 100, 80, 40)[0].path).toContain('A80,80 0 1 1');
+  });
+
+  it('category labels: all when they fit, otherwise first, last and an even step between', () => {
+    expect(visibleLabels([20, 20, 20], 40)).toEqual([0, 1, 2]);
+    // 31 labels of 60 px in bands of 20 px: one label every 4 bands at least.
+    const shown = visibleLabels(Array(31).fill(60), 20);
+    expect(shown[0]).toBe(0);
+    expect(shown.at(-1)).toBe(30);
+    const steps = shown.slice(1).map((v, i) => v - shown[i]);
+    expect(Math.min(...steps)).toBeGreaterThanOrEqual(4);
+    expect(Math.max(...steps) - Math.min(...steps)).toBeLessThanOrEqual(1);
+    // Room for only one label.
+    expect(visibleLabels([200, 200], 30)).toEqual([0]);
+    expect(visibleLabels([], 30)).toEqual([]);
   });
 
   const rows = [
@@ -67,6 +81,31 @@ describe('charts', () => {
     expect(plain(h.el.querySelector('lc-chart text.total')?.textContent)).toBe('€3,600.00');
     expect(plain(h.el.querySelector('lc-chart path.mark title')?.textContent)).toBe('Jan 26: €1,200.00 (33.3%)');
     expect([...h.el.querySelectorAll('lc-chart .legend li')].map((li) => plain(li.textContent))).toEqual(['Jan 26', 'Feb 26', 'Mar 26']);
+  });
+
+  it('thirty days: only the labels that fit, in short form on the axis, full in the tooltip and in the table', async () => {
+    const days = Array.from({ length: 30 }, (_, i) => ({ day: `2026-10-${String(i + 1).padStart(2, '0')}`, issued: i }));
+    const h = await renderScreen({
+      components: [{ type: 'chart', kind: 'line', source: 'sales', categoryField: 'day', categoryFormat: 'date', series: [{ field: 'issued', label: 'Issued' }] } as NodeDefinition],
+      dataSources,
+      respond: () => days,
+    });
+    await h.until(() => h.el.querySelectorAll('lc-chart circle').length === 30, 'points');
+    const labels = [...h.el.querySelectorAll('lc-chart text.category')].map((t) => plain(t.textContent));
+    expect(labels.length).toBeGreaterThan(2);
+    expect(labels.length).toBeLessThan(30);
+    expect(labels[0]).toBe('1 Oct');
+    expect(labels.at(-1)).toBe('30 Oct');
+    expect(plain(h.el.querySelector('lc-chart circle title')?.textContent)).toBe('01/10/2026: 0');
+    const table = h.el.querySelector('lc-chart table') as HTMLTableElement;
+    expect(table.tBodies[0].rows).toHaveLength(30);
+    expect(plain(table.tBodies[0].rows[29].cells[0].textContent)).toBe('30/10/2026');
+  });
+
+  it('few categories: every label on the axis, in full', async () => {
+    const h = await render('bar');
+    await h.until(() => h.el.querySelectorAll('lc-chart text.category').length > 0, 'labels');
+    expect([...h.el.querySelectorAll('lc-chart text.category')].map((t) => plain(t.textContent))).toEqual(['Jan 26', 'Feb 26', 'Mar 26']);
   });
 
   describe('stacked, dual axis, combined', () => {

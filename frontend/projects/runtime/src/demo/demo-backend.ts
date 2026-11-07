@@ -333,6 +333,13 @@ export class DemoBackend {
         return { month: `2026-${String(i + 1).padStart(2, '0')}`, sales, purchases, margin: Math.round(((sales - purchases) / sales) * 1000) / 10 };
       });
     }
+    if (path === '/api/daily-invoices' && req.method === 'GET') {
+      // Thirty days of October 2026: invoices issued and paid per day, quieter at the weekend.
+      return Array.from({ length: 30 }, (_, i) => {
+        const weekend = [3, 4].includes(i % 7);
+        return { day: `2026-10-${String(i + 1).padStart(2, '0')}`, issued: weekend ? 1 + (i % 2) : 6 + ((i * 7) % 5), paid: weekend ? i % 2 : 4 + ((i * 5) % 6) };
+      });
+    }
     if (path === '/api/invoices-by-status' && req.method === 'GET') {
       const count = (status: string): number => this.invoices.filter((f) => f.status === status).length;
       return ['draft', 'sent', 'paid'].map((status) => ({ status, number: count(status) }));

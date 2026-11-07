@@ -13,6 +13,11 @@
       "method": "GET",
       "url": "/api/monthly-sales"
     },
+    "daily": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/daily-invoices"
+    },
     "byStatus": {
       "type": "rest",
       "method": "GET",
