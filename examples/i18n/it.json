@@ -585,5 +585,10 @@
   "values.type.business": "Business",
   "values.type.private": "Privato",
   "values.type.purchase": "Passiva",
-  "values.type.sales": "Attiva"
+  "values.type.sales": "Attiva",
+  "nav.my_expense_review": "Note spese da rivedere",
+  "nav.notification_settings": "Notifiche",
+  "notification_settings.description": "Come l'applicazione ti avvisa del tuo lavoro: nell'applicazione, per email subito o in un riepilogo giornaliero.",
+  "notification_settings.email": "Indirizzo email",
+  "notification_settings.saved": "Preferenze salvate"
 }

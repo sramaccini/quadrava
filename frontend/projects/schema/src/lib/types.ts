@@ -856,6 +856,10 @@ export interface NavigationDefinition {
   badges?: { url: string; refreshSeconds?: number };
   /** Messages of the user behind a bell in the top bar (ADR-22). */
   notifications?: NavigationNotifications;
+  /** Items of the application in the user menu, each opening a screen (ADR-25). */
+  userMenu?: NavigationLeaf[];
+  /** Sections of the application in the settings dialog, each drawing a screen in a tab (ADR-25). */
+  settings?: NavigationLeaf[];
   areas: NavigationArea[];
 }
 

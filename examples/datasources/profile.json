@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "1.0",
+  "datasources": "profile",
+  "description": "Calls about the signed-in user: the preferences of the messages, shown in the settings dialog.",
+  "sources": {
+    "preferences": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/me/notification-preferences"
+    },
+    "preferenceFields": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/me/notification-preferences/fields"
+    },
+    "savePreferences": {
+      "type": "rest",
+      "method": "PUT",
+      "url": "/api/me/notification-preferences",
+      "body": "{{form}}"
+    }
+  }
+}

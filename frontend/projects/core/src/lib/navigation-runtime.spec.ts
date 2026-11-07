@@ -113,6 +113,46 @@ describe('NavigationRuntime', () => {
   });
 });
 
+describe('NavigationRuntime: user menu and settings', () => {
+  const withExtras: NavigationDefinition = {
+    ...definition,
+    userMenu: [
+      { id: 'profile', label: 'Profile', icon: 'user', screen: 'profile', params: { tab: 1 } },
+      { id: 'billing', label: 'Billing', screen: 'billing', requires: 'billing.account.read' },
+      { id: 'broken-item', label: 'Broken', screen: 'z', visibleIf: '{{user.missing == 1}}' },
+    ],
+    settings: [
+      { id: 'alerts', label: "{{ t('settings.alerts', 'Alerts') }}", screen: 'alert-settings' },
+      { id: 'admin', label: 'Admin', screen: 'admin-settings', visibleIf: "{{'administrator' in user.roles}}" },
+    ],
+  };
+
+  it('keeps the items the user may see, with their labels and parameters as texts', () => {
+    const permissions = signal(new Set<string>());
+    const authorization = { can: (p: string) => permissions().has(p) } as Authorization;
+    const nav = new NavigationRuntime(withExtras, { authorization, userProvider: { user: () => ({ roles: [] }) } as UserProvider });
+    expect(nav.userMenu()).toEqual([{ kind: 'leaf', id: 'profile', label: 'Profile', icon: 'user', screen: 'profile', params: { tab: '1' } }]);
+    expect(nav.settings().map((s) => [s.id, s.label])).toEqual([['alerts', 'Alerts']]);
+    // A permission granted later shows the item; an error in visibleIf keeps it hidden.
+    permissions.set(new Set(['billing.account.read']));
+    expect(nav.userMenu().map((i) => i.id)).toEqual(['profile', 'billing']);
+  });
+
+  it('a navigation without them has none', () => {
+    const { nav } = setup([]);
+    expect(nav.userMenu()).toEqual([]);
+    expect(nav.settings()).toEqual([]);
+  });
+
+  it('checkNavigation looks at their screens and identifiers too', () => {
+    const engine = new ExpressionEngine({ can: () => false });
+    const screens = new Set(['invoice-new', 'order-list', 'invoice-list', 'x', 'y', 'profile', 'billing', 'z', 'alert-settings']);
+    const issues = checkNavigation({ ...withExtras, settings: [...withExtras.settings!, { id: 'profile', label: 'Again', screen: 'profile' }] }, engine, screens);
+    expect(issues.map((i) => i.path)).toEqual(expect.arrayContaining(['/settings/1/screen', '/settings/2']));
+    expect(issues.find((i) => i.path === '/settings/1/screen')?.message).toBe('unknown screen "admin-settings"');
+  });
+});
+
 describe('checkNavigation', () => {
   const engine = new ExpressionEngine({ can: () => false });
 

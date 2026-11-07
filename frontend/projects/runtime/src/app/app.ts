@@ -19,6 +19,9 @@ import { ShellSession } from './shell-session';
 
 const LANGUAGE_KEY = 'lc.language';
 
+/** Prefix of the identifiers of the application's items in the user menu. */
+const APP_ITEM = 'app:';
+
 /**
  * Width bands of the shell, as in Ant Design Pro:
  * - wide (≥ 1200px): sidebar expanded;
@@ -90,8 +93,18 @@ export class App {
   protected readonly drawerOpen = signal(false);
   /** The settings dialog (theme, language and, in the demo, the network), opened from the user menu. */
   protected readonly settingsOpen = signal(false);
-  /** Items of the user menu before the logout, which the user menu adds by itself as the last item. */
-  protected readonly userItems = computed<UserMenuItem[]>(() => [{ id: 'settings', label: this.i18n.t('app.settingsMenu'), icon: 'settings' }]);
+  /** Items of the application in the user menu (ADR-25), already filtered for the user. */
+  private readonly appItems = computed(() => this.navigation.runtime()?.userMenu() ?? []);
+  /** Sections of the application in the settings dialog (ADR-25). */
+  protected readonly settingsSections = computed(() => this.navigation.runtime()?.settings() ?? []);
+  /**
+   * Items of the user menu before the logout, which the user menu adds by itself as the last item: those of the
+   * application first (with a prefix, so they never clash with the built-in ones), then the settings.
+   */
+  protected readonly userItems = computed<UserMenuItem[]>(() => [
+    ...this.appItems().map((item) => ({ id: APP_ITEM + item.id, label: item.label, icon: item.icon })),
+    { id: 'settings', label: this.i18n.t('app.settingsMenu'), icon: 'settings' },
+  ]);
   /** Tenants of the user, first in the user menu: only when there are at least two to choose from. */
   protected readonly tenantChoices = computed<UserMenuChoices | undefined>(() => {
     const tenants = this.session.tenants();
@@ -119,6 +132,8 @@ export class App {
 
   protected selectUserMenuItem(id: string): void {
     if (id === 'settings') this.settingsOpen.set(true);
+    const item = id.startsWith(APP_ITEM) ? this.appItems().find((i) => APP_ITEM + i.id === id) : undefined;
+    if (item) this.navigation.openScreen(item.screen, item.params);
   }
 
   /** Signs in again; in the demo, as the profile chosen on the signed-out page. */
@@ -141,6 +156,11 @@ export class App {
       } catch {
         // Storage not available (private browsing, blockers): the choice holds only for this session.
       }
+    });
+    // A screen of a settings section that navigates (a navigate step) leaves the dialog: it closes.
+    effect(() => {
+      this.navigation.current();
+      untracked(() => this.settingsOpen.set(false));
     });
     // The browser tab shows the brand of the theme too: its name as title and its icons (Quadrava's without a brand).
     effect(() => applyDocumentBrand(document, this.brand()));

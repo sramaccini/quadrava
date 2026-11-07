@@ -585,5 +585,10 @@
   "values.type.business": "Business",
   "values.type.private": "Private",
   "values.type.purchase": "Purchase",
-  "values.type.sales": "Sales"
+  "values.type.sales": "Sales",
+  "nav.my_expense_review": "Expenses to review",
+  "nav.notification_settings": "Notifications",
+  "notification_settings.description": "How the application tells you about your work: in the application, by email at once, or in a daily summary.",
+  "notification_settings.email": "Email address",
+  "notification_settings.saved": "Preferences saved"
 }

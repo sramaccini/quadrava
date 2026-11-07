@@ -103,6 +103,20 @@ export class DemoBackend {
     { id: 'n-1', title: 'Welcome to the demo', text: 'Messages from the services of the application appear here.', date: '2026-11-01T09:00:00Z', read: true },
   ];
   private notificationCount = 3;
+  /**
+   * Preferences of the messages of the user (ADR-25, the «Notifications» section of the settings): for every kind of
+   * message, in the application (on or off) and by email (off, at once, daily summary).
+   */
+  private preferences: Record<string, unknown> = {
+    mentionedApp: true,
+    mentionedEmail: 'instant',
+    assignedApp: true,
+    assignedEmail: 'instant',
+    commentedApp: true,
+    commentedEmail: 'daily',
+    transitionedApp: false,
+    transitionedEmail: 'off',
+  };
 
   private notify(title: string, text: string, screen?: string): void {
     this.notifications.unshift({ id: `n-${++this.notificationCount}`, title, text, date: new Date().toISOString(), read: false, ...(screen ? { screen } : {}) });
@@ -414,6 +428,22 @@ export class DemoBackend {
       ];
     }
     if (path === '/api/notifications' && req.method === 'GET') return this.notifications.map((n) => ({ ...n }));
+    // The fields of the preferences, as the service describes them: a row per kind of message, the labels are data.
+    if (path === '/api/me/notification-preferences/fields' && req.method === 'GET') {
+      const email = ['off', 'instant', 'daily'].map((value) => ({ value, label: { off: 'Off', instant: 'At once', daily: 'Daily summary' }[value] }));
+      const kinds: [string, string][] = [['mentioned', 'Mentioned'], ['assigned', 'Assigned to me'], ['commented', 'Commented'], ['transitioned', 'Status changed']];
+      return kinds.flatMap(([key, label]) => [
+        { key: `${key}App`, label: `${label}: in the application`, type: 'switch' },
+        { key: `${key}Email`, label: `${label}: by email`, type: 'select', options: email, required: true },
+      ]);
+    }
+    if (path === '/api/me/notification-preferences') {
+      if (req.method === 'PUT') {
+        const channels = (req.body ?? {})['channels'];
+        if (channels !== null && typeof channels === 'object') this.preferences = { ...this.preferences, ...(channels as Record<string, unknown>) };
+      }
+      if (req.method === 'GET' || req.method === 'PUT') return { email: 'demo.user@example.com', channels: { ...this.preferences } };
+    }
     if (path === '/api/notifications/read' && req.method === 'POST') {
       const ids = Array.isArray(req.body?.['ids']) ? (req.body['ids'] as unknown[]) : [];
       this.notifications.filter((n) => ids.includes(n.id)).forEach((n) => (n.read = true));

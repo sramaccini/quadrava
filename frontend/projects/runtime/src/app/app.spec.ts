@@ -3,7 +3,7 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 import { UserMenuComponent } from 'components';
-import { I18n } from 'core';
+import { DataClient, I18n } from 'core';
 import detail from '../../public/examples/screens/order-detail.json';
 import list from '../../public/examples/screens/order-list.json';
 import navigationDoc from '../../public/examples/navigation.json';
@@ -12,6 +12,8 @@ import newInvoice from '../../public/examples/screens/invoice-new.json';
 import newPackage from '../../public/examples/screens/package-new.json';
 import packages from '../../public/examples/screens/package-list.json';
 import expenses from '../../public/examples/screens/expense-list.json';
+import notificationSettings from '../../public/examples/screens/notification-settings.json';
+import profileSources from '../../public/examples/datasources/profile.json';
 import ordersSources from '../../public/examples/datasources/orders.json';
 import expensesSources from '../../public/examples/datasources/expenses.json';
 import invoicesSources from '../../public/examples/datasources/invoices.json';
@@ -66,6 +68,8 @@ describe('App (demo)', () => {
     'examples/screens/package-new.json': newPackage,
     'examples/screens/package-list.json': packages,
     'examples/screens/expense-list.json': expenses,
+    'examples/screens/notification-settings.json': notificationSettings,
+    'examples/datasources/profile.json': profileSources,
     'examples/themes/light.json': light,
     'examples/themes/dark.json': dark,
     'examples/themes/classic.json': classic,
@@ -241,6 +245,43 @@ describe('App (demo)', () => {
     expect(TestBed.inject(DemoSession).username()).toBe('manager');
   });
 
+  it('the items of the application in the user menu follow the permissions and open their screen', async () => {
+    const { fixture, el, url } = await start('manager');
+    await until(fixture, () => rows(el) > 0, 'invoice list');
+    (el.querySelector('lc-user-menu button.trigger') as HTMLButtonElement).click();
+    await until(fixture, () => document.querySelectorAll('.ant-dropdown li[nz-menu-item]').length > 0, 'user menu');
+    const items = [...document.querySelectorAll<HTMLElement>('.ant-dropdown li[nz-menu-item]')];
+    // Before the built-in items; the operator, without expenses.expense.read, does not have it (test above).
+    expect(items.map((i) => i.textContent?.trim())).toEqual(['Expenses to review', 'Settings…', 'Sign out']);
+    items[0].click();
+    await until(fixture, () => url().endsWith('/expense-list?status=to-review'), 'expenses to review');
+  });
+
+  it('a section of the application in the settings draws its screen: values read, a change saved', async () => {
+    const { fixture, el } = await start();
+    await until(fixture, () => rows(el) > 0, 'invoice list');
+    const menu = fixture.debugElement.query(By.directive(UserMenuComponent)).componentInstance as UserMenuComponent;
+    menu.select.emit('settings');
+    await until(fixture, () => !!document.querySelector('.ant-modal .ant-tabs-tab'), 'settings dialog');
+    const dialog = (): Element => [...document.querySelectorAll('.ant-modal')].at(-1)!;
+    ([...dialog().querySelectorAll<HTMLElement>('.ant-tabs-tab-btn')].find((t) => t.textContent?.trim() === 'Notifications') as HTMLElement).click();
+    const field = (label: string): HTMLElement | undefined =>
+      [...dialog().querySelectorAll<HTMLElement>('nz-form-item')].find((item) => item.querySelector('label')?.textContent?.trim() === label);
+    await until(fixture, () => !!field('Status changed: in the application'), 'fields of the section');
+    const email = field('Email address')!.querySelector('input') as HTMLInputElement;
+    expect(email.value).toBe('demo.user@example.com');
+    expect(email.readOnly).toBe(true);
+    // The values come from the service: "Status changed" is off in the application; switching it on and saving.
+    const toggle = field('Status changed: in the application')!.querySelector('nz-switch button') as HTMLButtonElement;
+    expect(toggle.classList.contains('ant-switch-checked')).toBe(false);
+    toggle.click();
+    ([...dialog().querySelectorAll<HTMLElement>('lc-screen-view button')].find((b) => b.textContent?.trim() === 'Save') as HTMLElement).click();
+    await until(fixture, () => toast()?.textContent?.includes('Preferences saved') === true, 'saved');
+    const saved = (await TestBed.inject(DataClient).request({ method: 'GET', url: '/api/me/notification-preferences' })) as { channels: Record<string, unknown> };
+    expect(saved.channels['transitionedApp']).toBe(true);
+    expect(saved.channels['mentionedEmail']).toBe('instant');
+  });
+
   it('the bell counts the unread messages; choosing one marks it read and opens its screen; a new one arrives by itself', async () => {
     const { fixture, el, url } = await start();
     await until(fixture, () => rows(el) > 0, 'invoice list');
@@ -267,7 +308,7 @@ describe('App (demo)', () => {
     await until(fixture, () => !!document.querySelector('.ant-modal .ant-tabs-tab'), 'settings dialog');
     // In jsdom the window closed before is still in the page, without its animation: the last one is the open one.
     const dialog = [...document.querySelectorAll('.ant-modal')].at(-1) as HTMLElement;
-    expect([...dialog.querySelectorAll('.ant-tabs-tab-btn')].map((t) => t.textContent?.trim())).toEqual(['Generale', 'Debug']);
+    expect([...dialog.querySelectorAll('.ant-tabs-tab-btn')].map((t) => t.textContent?.trim())).toEqual(['Generale', 'Notifications', 'Debug']);
     TestBed.inject(I18n).setLocale('en');
   });
 

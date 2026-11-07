@@ -49,7 +49,7 @@ export interface NavigationLocation {
  * Menu filtered for the current user. Rules (all fail-closed):
  * - an item is visible if the user has `requires` and `visibleIf` is true (error => hidden);
  * - a group without visible items disappears, and an area without visible items does not appear.
- * `areas` is a computed: it updates itself if the permissions change (signal-based Authorization).
+ * `areas`, `userMenu` and `settings` are computed: they update themselves if the permissions change (signal-based Authorization).
  * The menu is only a convenience: enforcement stays in the screen (`requires`) and in the back end.
  */
 export class NavigationRuntime {
@@ -58,6 +58,12 @@ export class NavigationRuntime {
   readonly areas = computed<VisibleArea[]>(() =>
     this.definition.areas.map((u) => this.filterArea(u)).filter((u): u is VisibleArea => u !== null),
   );
+
+  /** Items of the application in the user menu that the user may see (ADR-25). */
+  readonly userMenu = computed<VisibleLeaf[]>(() => this.leaves(this.definition.userMenu));
+
+  /** Sections of the application in the settings dialog that the user may see (ADR-25). */
+  readonly settings = computed<VisibleLeaf[]>(() => this.leaves(this.definition.settings));
 
   constructor(
     readonly definition: NavigationDefinition,
@@ -161,6 +167,10 @@ export class NavigationRuntime {
       }
     }
     return result;
+  }
+
+  private leaves(items: readonly NavigationLeaf[] | undefined): VisibleLeaf[] {
+    return (items ?? []).filter((item) => this.allowed(item)).map((item) => toLeaf(item, this.text(item.label)));
   }
 
   private allowed(node: { requires?: string; visibleIf?: string }): boolean {

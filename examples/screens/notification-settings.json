@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "notification-settings",
+  "dataSources": {
+    "preferences": {
+      "ref": "profile/preferences"
+    },
+    "preferenceFields": {
+      "ref": "profile/preferenceFields"
+    },
+    "savePreferences": {
+      "ref": "profile/savePreferences"
+    }
+  },
+  "components": [
+    {
+      "id": "preferences-intro",
+      "type": "text",
+      "text": "{{ t('notification_settings.description', 'How the application tells you about your work: in the application, by email at once, or in a daily summary.') }}"
+    },
+    {
+      "id": "preferences-form",
+      "type": "form",
+      "source": "preferences",
+      "columns": 2,
+      "fields": [
+        {
+          "name": "email",
+          "label": "{{ t('notification_settings.email', 'Email address') }}",
+          "type": "text",
+          "span": 2,
+          "readOnlyIf": "{{ true }}"
+        }
+      ],
+      "fieldsFrom": {
+        "source": "preferenceFields",
+        "into": "channels",
+        "nameField": "key"
+      },
+      "actions": [
+        {
+          "id": "btn-save-preferences",
+          "label": "{{ t('common.save', 'Save') }}",
+          "onClick": [
+            {
+              "call": "savePreferences",
+              "onError": {
+                "toast": "{{ t('common.saving_failed', 'Saving failed') }}"
+              }
+            },
+            {
+              "toast": "{{ t('notification_settings.saved', 'Preferences saved') }}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

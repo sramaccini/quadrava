@@ -9,7 +9,7 @@ export interface NavigationIssue {
 
 /**
  * Consistency checks the schema cannot do: unique identifiers, existing `default`,
- * existing screens (if the list of the published ones is passed) and valid `visibleIf` expressions.
+ * existing screens (if the list of the published ones is passed, user menu and settings included) and valid `visibleIf` expressions.
  * Used at start-up and in the editor; it runs nothing.
  */
 export function checkNavigation(definition: NavigationDefinition, engine: ExpressionEngine, knownScreens?: ReadonlySet<string>): NavigationIssue[] {
@@ -39,6 +39,9 @@ export function checkNavigation(definition: NavigationDefinition, engine: Expres
     claim(area.id, here);
     walk(area.items, `${here}/items`);
   });
+  // The items of the user menu and the sections of the settings open screens too (ADR-25).
+  walk(definition.userMenu ?? [], '/userMenu');
+  walk(definition.settings ?? [], '/settings');
 
   if (definition.default && !definition.areas.some((u) => u.id === definition.default)) {
     issues.push({ path: '/default', message: `unknown default area "${definition.default}"` });

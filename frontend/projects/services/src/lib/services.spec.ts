@@ -2,7 +2,7 @@ import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApplicationInitStatus } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { Authorization, DataClient, RuntimeDiagnostics, RuntimeTracer, UserProvider } from 'core';
+import { Authorization, DataClient, I18n, RuntimeDiagnostics, RuntimeTracer, UserProvider } from 'core';
 import { HttpAuthorization } from './authorization';
 import { LC_REDIRECT, LC_SERVICES_CONFIG, resolveConfig, type LogLevel } from './config';
 import { HttpDiagnostics, redact } from './diagnostics';
@@ -60,6 +60,22 @@ describe('interceptor', () => {
     client.get('https://third.test/b').subscribe();
     expect(http.expectOne('/api/a').request.headers.get('traceparent')).toMatch(/^00-/);
     expect(http.expectOne('https://third.test/b').request.headers.has('traceparent')).toBe(false);
+  });
+
+  it('sends the language chosen by the user to the same origin, not to third parties, and keeps one already set', () => {
+    const { http } = setup();
+    TestBed.inject(I18n).setLocale('it');
+    const client = TestBed.inject(HttpClient);
+    client.get('/api/a').subscribe();
+    client.get('https://third.test/b').subscribe();
+    client.get('/api/c', { headers: { 'Accept-Language': 'fr' } }).subscribe();
+    expect(http.expectOne('/api/a').request.headers.get('Accept-Language')).toBe('it');
+    expect(http.expectOne('https://third.test/b').request.headers.has('Accept-Language')).toBe(false);
+    expect(http.expectOne('/api/c').request.headers.get('Accept-Language')).toBe('fr');
+    // A change of language holds from the next call.
+    TestBed.inject(I18n).setLocale('en');
+    client.get('/api/d').subscribe();
+    expect(http.expectOne('/api/d').request.headers.get('Accept-Language')).toBe('en');
   });
 
   it('on 401 clears the session and redirects to the login only once', async () => {

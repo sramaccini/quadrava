@@ -15,6 +15,26 @@
       ]
     }
   },
+  "userMenu": [
+    {
+      "id": "my-expense-review",
+      "label": "{{ t('nav.my_expense_review', 'Expenses to review') }}",
+      "icon": "euro",
+      "screen": "expense-list",
+      "params": {
+        "status": "to-review"
+      },
+      "requires": "expenses.expense.read"
+    }
+  ],
+  "settings": [
+    {
+      "id": "notification-settings",
+      "label": "{{ t('nav.notification_settings', 'Notifications') }}",
+      "icon": "bell",
+      "screen": "notification-settings"
+    }
+  ],
   "default": "invoice-lookup",
   "areas": [
     {

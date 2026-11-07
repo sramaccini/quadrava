@@ -96,6 +96,7 @@ The whole application is a JSON document built from a few concepts, always the s
 | RF-DEF-24 | The user receives messages in a bell of the top bar, with the unread count and a link to a screen (ADR-22) | S | Done |
 | RF-DEF-25 | Expressions read the answers of the data sources of the screen (ADR-23); a table row can be a link to a path of the application, for example a download (ADR-24) | S | Done |
 | RF-DEF-26 | A user who works for several organisations chooses the current one (tenant) in the user menu (ADR-18) | S | Done |
+| RF-DEF-27 | The application adds its own items to the user menu and its own sections to the settings dialog (for example the preferences of the messages); the services receive the language chosen by the user (ADR-25) | S | Done |
 
 ## 5. Runtime and authentication
 

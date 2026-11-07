@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Quadrava - BFF contract
-  version: 0.3.0
+  version: 0.4.0
   description: >
     What the Quadrava runtime and Studio expect from the Backend for Frontend (BFF) that serves them. The BFF does the
     OpenID Connect login, keeps the tokens on the server and gives the browser only a session cookie; it forwards the
@@ -29,6 +29,9 @@ info:
       reloads the permissions.
 
     - **Errors** are in Problem format (problem.yaml, RFC 9457).
+
+    - **Language.** Every call carries `Accept-Language` with the language the user chose in the application (for
+      example `it`); the BFF passes it on to the services, which may use it for their labels and messages (0.4).
 
     - **Event streams.** A data source with `live` opens a `GET` with `Accept: text/event-stream` on the same origin. When
       the service answers `text/event-stream`, the BFF passes every event on as it arrives (no buffering, no time limit on

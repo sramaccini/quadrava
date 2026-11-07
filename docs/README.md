@@ -19,6 +19,7 @@ Reference documents:
 - [ADR-22: messages for the user](adr-22-user-notifications.md): a bell in the top bar, a list read from a service of the application, marked read with a POST, updated by an event stream.
 - [ADR-23: the data of the screen's data sources in expressions](adr-23-data-in-expressions.md): `data.<name>`, the last answer of a GET data source, read by any expression of the screen; fail-closed until it arrives.
 - [ADR-24: links from the rows of a table](adr-24-links-from-the-rows.md): `href` on a column and on a row action, a relative path built from the row (for example a download), with the rules of the URL of a data source.
+- [ADR-25: items of the application in the user menu and in the settings](adr-25-user-menu-and-settings.md): `userMenu` and `settings` in the navigation, a section of the settings is a screen of the application, the chosen language sent to the services in `Accept-Language`.
 
 The functional specification, architecture and implementation guidelines date from 7–13 October 2026: the most recent detail is in the component catalogue and in the code.
 

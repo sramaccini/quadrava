@@ -14,6 +14,15 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ### Added
 
+- **Items of the application in the user menu and sections in the settings dialog** (ADR-25): `userMenu` and
+  `settings` in the navigation, with the shape of a menu item (label, icon, screen with parameters, `requires`,
+  `visibleIf`). An item opens its screen; a section is a tab of the settings that draws a screen of the application,
+  for example a form read with a GET and saved with a PUT. `NavigationRuntime` gains `userMenu()` and `settings()`,
+  and `checkNavigation` checks their identifiers and screens. The demo has «Notifications» in the settings and
+  «Expenses to review» in the user menu.
+- **The chosen language reaches the services**: the interceptor of `services` sends `Accept-Language` with the language
+  of the user on every call to the same origin (BFF contract 0.4: the BFF forwards it; the reference BFF already did).
+
 - `npm run conformance:bff` signs in by itself with `--user` and `--password` (through the Keycloak login page of the
   development realm) instead of the cookies of a signed-in browser. `npm run conformance` runs the kits of
   authorization, telemetry and BFF against the local stack, and CI runs it on every push against the reference

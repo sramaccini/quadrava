@@ -1,6 +1,6 @@
 import { HttpContextToken, HttpErrorResponse, HttpEvent, HttpInterceptorFn, HttpResponse } from '@angular/common/http';
 import { Injector, inject } from '@angular/core';
-import type { SpanAttributes, SpanContext } from 'core';
+import { I18n, type SpanAttributes, type SpanContext } from 'core';
 import { finalize, tap } from 'rxjs';
 import { HttpAuthorization } from './authorization';
 import { LC_SERVICES_CONFIG } from './config';
@@ -16,7 +16,8 @@ export const LC_TRACE = new HttpContextToken<{ source?: string; parent?: SpanCon
 
 /**
  * For calls to the same origin: opens the HTTP span and puts its identity in `traceparent` (the services continue
- * the same trace) and the screen and action of the call in `baggage`, watches `X-Permissions-Version` (if it changes, reloads the permissions) and on 401 redirects to the login.
+ * the same trace) and the screen and action of the call in `baggage`, sends the language chosen by the user in `Accept-Language`
+ * (the browser would send its own), watches `X-Permissions-Version` (if it changes, reloads the permissions) and on 401 redirects to the login.
  * Sends to telemetry are not traced: they would generate more spans.
  */
 export const lcHttpInterceptor: HttpInterceptorFn = (req, next) => {
@@ -29,7 +30,12 @@ export const lcHttpInterceptor: HttpInterceptorFn = (req, next) => {
   const attributes: SpanAttributes = source ? { 'http.request.method': req.method, 'lc.datasource': source } : { 'http.request.method': req.method, 'url.path': req.url.split(/[?#]/)[0] };
   const span = untraced ? null : injector.get(HttpTracer).start('http.client', attributes, parent, 'client');
   const audit = req.headers.has('baggage') ? null : baggage(context);
-  const headers: Record<string, string> = { ...(span ? { traceparent: traceparent(span.context) } : {}), ...(audit ? { baggage: audit } : {}) };
+  const language = req.headers.has('Accept-Language') ? null : injector.get(I18n, null)?.locale();
+  const headers: Record<string, string> = {
+    ...(span ? { traceparent: traceparent(span.context) } : {}),
+    ...(audit ? { baggage: audit } : {}),
+    ...(language ? { 'Accept-Language': language } : {}),
+  };
   const traced = Object.keys(headers).length ? req.clone({ setHeaders: headers }) : req;
   return next(traced).pipe(
     tap({
