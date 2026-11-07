@@ -1,6 +1,10 @@
 # Quadrava — Implementation Guidelines
 
-Simone Ramaccini · 7 October 2026
+Simone Ramaccini · 7 October 2026, updated on 7 November 2026 (Quadrava CE 0.11.1)
+
+> The rules are the target. Where a check is not automated yet, section 12 says so; the day-to-day path for a change
+> (commands, a new component step by step, the known traps) is in [DEVELOPMENT-GUIDE.md](../DEVELOPMENT-GUIDE.md).
+> Quadrava Studio and the registry are the commercial edition (ADR-21): their rules live in their own repository.
 
 ## 1. Purpose and audience
 
@@ -8,28 +12,29 @@ These guidelines explain **how** to build the platform consistently with the fun
 
 | Audience | Main sections |
 | --- | --- |
-| Developers of runtime, editor, BFF, registry | 2, 3, 4, 7, 8, 9, 10, 11, 12 |
+| Developers of runtime, libraries, CLI, BFF and reference services | 2, 3, 4, 7, 8, 9, 10, 11, 12 |
 | Those adding components to the catalogue | 6, 8, 9, 10, 11 |
 | Authors of applications in JSON | 5, 8, 9 |
 | Code reviewers | 13 |
 
 ## 2. Stack and reference versions
 
-The current stable version of every component is used; exact versions are pinned in the repository and updated through a regular process. Items marked "to be confirmed" depend on decisions still open.
+The current stable version of every component is used; exact versions are pinned in the repository (`package.json`, `.nvmrc`, `pom.xml`) and updated through a regular process.
 
 | Area | Choice | Notes |
 | --- | --- | --- |
-| Front end (runtime and editor) | Angular 22.2.1 (latest version), standalone components, signals, TypeScript 6.0.x in strict mode | No NgModule for new code. TypeScript 7 cannot be used: Angular 22.2 declares compatibility with 6.0 |
-| UI library | NG-ZORRO 22.x (Ant Design for Angular), with Angular CDK and date-fns | For all standard components (ADR-11). Compatible with Angular 22; the platform theme reaches its --ant-\* variables through the provideLcComponents bridge. Italian locale and date adapter included |
-| Schema validation | JSON Schema with Ajv | The same schema serves editor, registry and runtime |
-| JSON text editor | Monaco with an associated schema | Real-time suggestions and errors |
-| Expressions | CEL | Confirmed: cel-js 8, after the proof of concept (architecture, section 5) |
+| Front end (runtime and libraries) | Angular 22.2, standalone components, signals, zoneless, TypeScript 6.0 in strict mode; Node 24 | No NgModule for new code. TypeScript 7 cannot be used: Angular 22.2 declares compatibility with 6.0 |
+| UI library | NG-ZORRO 22.x (Ant Design for Angular), with Angular CDK and date-fns | For all standard components (ADR-11). Compatible with Angular 22; the platform theme reaches its --ant-\* variables through the provideLcComponents bridge. English and Italian locales and the date adapter included |
+| Schema validation | JSON Schema with Ajv, validators precompiled (Ajv standalone) | The same schema serves editor, registry, CLI and runtime; no `unsafe-eval` in the browser |
+| Expressions | CEL, `@marcbachmann/cel-js` 8 | With limits on size and depth of an expression (`expressions/engine.ts`) |
 | Telemetry | OTLP/HTTP JSON export written in `services` (no OpenTelemetry SDK, ADR-05) | To the ingestion endpoint |
 | Identity | OIDC with Authorization Code and PKCE; Keycloak 26.8.0 (latest version) | No provider-specific logic |
-| Reference implementation (BFF, registry, authz, ingestion) | Spring Boot 4.1.1 on Java 21, multi-module Maven, Spring Security as OAuth2 client and resource server | Choice confirmed |
-| End-to-end tests | Playwright | Run against the example applications |
-| Code quality | ESLint and Prettier with platform rules | The security rules (section 10) are blocking |
-| Repository organisation | Monorepo with an incremental build tool (for example Nx) | To be confirmed |
+| Reference implementation (BFF, authz, telemetry ingestion) | Spring Boot 4.1.1 on Java 21, multi-module Maven, Spring Security as OAuth2 client and resource server | Not for production |
+| Unit and component tests | Vitest through `ng test`, jsdom | One `*.spec.ts` next to the unit |
+| End-to-end tests | Playwright in Chromium, Firefox and WebKit, with axe-core | Run against the demo |
+| Code quality | Strict TypeScript, Prettier, `.editorconfig` | No linter yet: the security rules of section 10 are checked by review |
+| Repository organisation | One repository, an Angular CLI workspace in `frontend` | No incremental build tool: the build of the libraries takes about a minute |
+| Distribution | Container image of the runtime on GHCR, packages `@sramaccini/quadrava-*` on GitHub Packages (ADR-20, ADR-21) | One version for everything, `CHANGELOG.md` |
 
 ## 3. Repository structure
 
@@ -38,28 +43,30 @@ The structure makes the architectural boundaries visible: the front end in `fron
 ```text
 /frontend         Angular workspace (projects in /frontend/projects)
   /projects
-    /runtime      application that interprets the JSON
-    /editor       visual editor
-    /schema       JSON Schemas of screens, themes and navigation; generated types
-    /core         interpreter, state, action engine
-    /expressions  sandboxed expression evaluator
-    /services     authentication, authorization, telemetry, HTTP client
-    /components   catalogue: one folder per component
-  /tools          example validation scripts
-/contracts        OpenAPI specifications: authz, telemetry, registry
+    /runtime      application that interprets the JSON (the demo and the BFF mode)
+    /schema       JSON Schemas of screens, data sources, navigation, themes, messages, project; types and validators
+    /expressions  sandboxed CEL evaluator and message format
+    /core         interpreter, state, action engine, ports
+    /components   catalogue on NG-ZORRO, shell (side menu, top bar)
+    /services     real ports: session, authorization, data client, telemetry, live updates
+    /cli          Quadrava CLI: validate and publish a project
+  /e2e            Playwright suites
+  /tools          scripts: schemas, examples, conformance kits, stack, release, notices
+/contracts        OpenAPI specifications: bff, authz, telemetry, registry, problem
 /reference        Spring Boot reference implementation (not for production)
-  /bff            OIDC session, tokens server-side only
-  /registry       application registry
+  /bff            OIDC session, tokens server-side only, forwarding of the APIs
   /authz          example authorization service
   /telemetry      example ingestion endpoint
+/docker           runtime container image
 /idp              Keycloak for local development
-/examples         reference JSON applications, used in tests
+/examples         the example project (screens, data sources, navigation, themes, translations), used in tests
+/samples          sample projects for the runtime image
 /docs             documentation and architectural decisions
 ```
 
-**Dependency rules.** Dependencies go in one direction only: `components` depends on `core`, `core` on `schema` and `expressions`. No library depends on an application. This rule is enforced by an automatic check in the pipeline, not left to review.
+**Dependency rules.** Dependencies go in one direction only: `runtime` → `components` → `core` → `expressions` / `schema`, and `runtime` → `services` → `core`. No library depends on an application. Today a cycle breaks the build of the libraries (each one is built from the `dist` of the ones below); an explicit check in the pipeline is still to be added.
 
-**Contracts are the source.** Client and server types for authz, telemetry and registry are generated from the OpenAPI specifications in `contracts`, never written by hand.
+**Contracts are the source.** A change starts from the OpenAPI specification in `contracts`, then the code. Types are not generated from them yet: what keeps code and contract together is the conformance kits (`npm run conformance`, in CI against the reference services) and the tests.
 
 **The reference implementation is not a production service.** The product boundary, on the back-end side, is the REST interface plus this reference implementation. It must pass the same conformance tests that a customer back end must pass, and it is not designed for production loads or security requirements.
 
@@ -86,8 +93,8 @@ A well-written application reads like a table of contents: screens with clear na
 | --- | --- | --- |
 | `can('orders.order.approve')` | Checking roles by hand, for example `user.roles` contains 'admin' | Roles change; permissions are the contract with the back end |
 | Short, one-line expressions | Long expressions with many nested conditions | If it cannot be read at a glance, the logic belongs in the back end or in a data source |
-| `$ref` to a shared fragment | Copying the same block into several screens | One fix, one place |
-| Translation keys for texts | Texts written directly in the JSON | Allows internationalisation without changing the logic |
+| Data sources in a data sources document, used by reference (`{ "ref": "orders/list" }`) | Copying the same call into several screens | One fix, one place |
+| `{{ t('orders.approve', 'Approve') }}` for texts | Texts written directly in the JSON | Allows internationalisation without changing the logic; the second argument is the text when the key is missing |
 | `"sensitive": true` on personal fields | Forgetting the marking | Without it the value could end up in the logs |
 | An explicit `onError` in every action that changes data | Leaving the error to the default behaviour | The user must know what happened and how to continue |
 | Stable, meaningful `id`s | Random or reused identifiers | They serve telemetry, tests and comments |
@@ -98,15 +105,15 @@ A well-written application reads like a table of contents: screens with clear na
 
 ```json
 // Avoid: role written by hand, error not handled
-{ "label": "Approva",
+{ "label": "Approve",
   "visibleIf": "{{user.roles.contains('admin')}}",
   "onClick": [ { "call": "approveOrder" } ] }
 
 // Prefer: permission, correct state, error handled
-{ "id": "btn-approve", "label": "@orders.approva",
+{ "id": "btn-approve", "label": "{{ t('orders.approve', 'Approve') }}",
   "visibleIf": "{{can('orders.order.approve') && row.status == 'submitted'}}",
   "onClick": [ { "call": "approveOrder", "args": { "id": "{{row.id}}" },
-                 "onError": { "toast": "@errori.approvazione" } } ] }
+                 "onError": { "toast": "{{ t('errors.approval', 'Approval failed') }}" } } ] }
 ```
 
 **Permission names.** Always `domain.resource.action`, exactly three parts in lower-case letters and digits (for example `orders.order.approve`, `orders.iban.read`). The schema rejects any other format. In row or form expressions the permissions of the single record are read as `row._perm.update` or `form._perm.update`.
@@ -119,23 +126,22 @@ A well-written application reads like a table of contents: screens with clear na
 
 A component is complete only when it has schema, code, tests, an example and documentation. The order below avoids discovering at the end that something is missing.
 
-1. **Define the schema.** Create the component's JSON Schema in `libs/schema`: properties, events, insertion points. From here editor and validation work on their own.
-2. **Write the Angular component.** Standalone, `OnPush`, with inputs derived from the schema; built with NG-ZORRO components imported one module at a time (for example NzTableModule), not with hand-styled native elements; no direct HTTP calls.
-3. **Wire up permissions.** Support `hiddenIf`, `readOnlyIf` and `enabledIf` through the platform's shared directive, not with logic of its own.
+1. **Define the schema.** Add the node to `schema/src/lib/schemas/screen.schema.json` (every property with a `description`), its type in `types.ts`, then `npm run schema:sync` and `npm run schema:docs`. From here editor and validation work on their own.
+2. **Write the Angular component.** Standalone, `OnPush`, with `input()`; built with NG-ZORRO components imported one module at a time (for example NzTableModule), not with hand-styled native elements; no direct HTTP calls; data logic in pure functions.
+3. **Wire up permissions.** `visibleIf`, `hiddenIf` and `requires` are applied by `lc-node`; `enabledIf` and `readOnlyIf` are read through the screen runtime (`isEnabled`), not with logic of its own.
 4. **Wire up telemetry.** Emit events only through the telemetry service; never write data values to the logs.
 5. **Ensure accessibility.** Keyboard navigation, labels, contrast and announcements for assistive technologies according to WCAG 2.2 level AA.
 6. **Register the component.** A single registration call, see below.
 7. **Write the tests.** Component test, contract test between schema and component, and a case in the example applications.
-8. **Add an example and the documentation.** A commented JSON fragment in `examples`.
+8. **Add an example and the documentation.** A showcase example in `examples/screens` with its texts in `en.json` and `it.json`, the entry in `docs/component-catalogue.md` and a line in `CHANGELOG.md` (Studio adds its template in the commercial repository).
 9. **Ask for review.** Mandatory, by a platform reviewer.
 
 ```ts
-registerComponent({
-  type: 'filterBar',
-  schema: filterBarSchema,        // the component's JSON Schema
-  component: FilterBarComponent,  // standalone Angular component
-  since: '1.0'                    // schema version in which it appears
-});
+// components/src/lib/provide.ts: the standard catalogue
+export const STANDARD_COMPONENTS: ComponentCatalog = { /* … */ kanban: KanbanComponent };
+
+// an application adds its own components to the catalogue
+provideLcComponents({ signature: SignatureComponent });
 ```
 
 **Custom components from application teams.** They follow the same path; in addition they must be registered by the platform through review, not loaded from an address chosen by the application author.
@@ -152,13 +158,13 @@ registerComponent({
 
 | Rule | Detail |
 | --- | --- |
-| A single client | All calls go through the platform's HTTP client; direct use of `fetch` or `HttpClient` in components is blocked by a code-analysis rule |
-| Uniform error model | Every error has `code`, `message`, `correlationId` and, where useful, `details`; the interface never shows the raw technical error |
-| 401 | The client starts session renewal or returns to sign-in; it does not show a generic error |
-| 403 | Uniform message, permission refresh request, re-evaluation of the interface |
-| 5xx and network errors | Generic message for the user; the correlation identifier is visible for support |
-| Retries | Only for read requests, with increasing back-off and a maximum number of attempts; never for operations that change data, unless there is an idempotency key |
-| Timeouts and cancellation | Every call has a configurable timeout and is cancelled when the screen is left |
+| A single client | All calls go through the `DataClient` port (`HttpDataClient` and `lcHttpInterceptor` in `services`); components never use `fetch` or `HttpClient` (checked by review: there is no linter rule yet) |
+| Uniform error model | Errors are Problems (RFC 9457, `contracts/problem.yaml`); the runtime keeps the status, the correlation identifier and the field errors (`DataError`), never the server's text |
+| 401 | The session is marked expired and the browser goes to the login of the BFF (once: no loop) |
+| 403 | Generic message; the permissions are reloaded when `X-Permissions-Version` changes. Target: a refresh on the 403 itself |
+| 5xx and network errors | Generic message for the user; the correlation identifier goes to the technical report |
+| Retries | None today. Target: only for reads, with back-off; never for writes without an idempotency key |
+| Timeouts and cancellation | Reads in progress are cancelled when the screen is left or the request changes; no timeout of its own yet (the browser's applies) |
 | Per-screen state | A store with signals, immutable; derived values with `computed`; no global state shared across screens |
 | Data cache | Explicit, with invalidation declared by the action (`refresh`), never implicit |
 
@@ -168,13 +174,13 @@ registerComponent({
 | --- | --- |
 | Tokens never go into `localStorage` or `sessionStorage` | They are readable by any injected script (XSS) |
 | In BFF mode the session cookie is `HttpOnly`, `Secure` and `SameSite`, with CSRF protection on requests that change data | The browser must not be able to read the session or send it cross-site |
-| In SPA mode the token stays only in memory and is short-lived | Limits the damage in case of compromise |
+| In SPA mode (not implemented: BFF only today) the token would stay only in memory and be short-lived | Limits the damage in case of compromise |
 | The front end never takes security decisions | Hiding is user experience; the back end always checks and filters |
 | Conditions use permissions (`can`), never roles | Permissions are the contract with the back end |
 | Capabilities are loaded after login and renewed when the permission version changes | Avoids both continuous requests and stale interfaces |
 | For every permission condition there is a test with at least one user who has the permission and one who does not | An untested rule cannot be considered working |
 | Logout clears the application state and the capabilities in memory | No data stays visible to the next user of the same browser |
-| Calls to hosts not in the allowed list are rejected | Prevents a tampered JSON from sending data elsewhere |
+| Data-source URLs are relative to the same origin; the BFF forwards only its configured prefixes to its configured hosts | Prevents a tampered JSON from sending data elsewhere |
 
 ## 9. Telemetry, logs and sensitive data
 
@@ -188,7 +194,7 @@ The ground rule: record **what happened**, never **which data was involved**. It
 | Data values | Never in attributes, error messages or logs |
 | `sensitive` fields | Excluded at the source by the runtime; the ingestion endpoint applies a second redaction |
 | Propagation | Every REST call carries `traceparent` and the context (screen, action) in the baggage |
-| Log levels | `error` and `warn` always sent; `info` and `debug` according to per-environment configuration |
+| Log levels | Every technical report is `error`, `warn` or `info`; each environment chooses the lightest to send (`services.logLevel`, `warn` if absent) |
 | Sampling | Configurable; errors are never discarded |
 | Audit | Produced only by the back end; the front end neither writes audit nor replaces it with logs |
 
@@ -196,7 +202,7 @@ The ground rule: record **what happened**, never **which data was involved**. It
 
 The JSON document is untrusted input. The rules below are checked by the pipeline, not only by review.
 
-**Ajv and CSP.** Ajv generates the validator with `new Function`: in the browser it must be compiled ahead of time (Ajv standalone) or validation must happen on publication, otherwise `unsafe-eval` is needed in the CSP, which is not allowed in production. Data-source URLs are relative: absolute URLs, `//`, `\` and `..` are rejected, and parameters are encoded with `encodeURIComponent`. Server errors are not shown to the user.
+**Ajv and CSP.** Ajv generates the validator with `new Function`: in the browser the validators are compiled ahead of time (Ajv standalone, `validators.generated.ts`), so the CSP needs no `unsafe-eval`. Data-source URLs are relative: absolute URLs, `//`, `\` and `..` are rejected, and parameters are encoded with `encodeURIComponent`. Server errors are not shown to the user.
 
 | Rule | How it is checked |
 | --- | --- |
@@ -215,21 +221,21 @@ The JSON document is untrusted input. The rules below are checked by the pipelin
 
 The example applications in `examples` are the common thread: every test level uses them, so a change that breaks them shows up immediately.
 
-**Useful commands.** From the `frontend` folder: `npm run validate:examples` checks the example project with the Quadrava CLI (schemas, references, CEL expressions, translations); `npm test` runs all the tests; the demo application starts with a single command and uses simulated data with three profiles (operator, manager, administrator) to try out permissions and menus. For every change to permissions or the menu, add a test that covers both the user with the permission and the one without.
+**Useful commands.** From the `frontend` folder: `npm run validate:examples` checks the example project with the Quadrava CLI (schemas, references, CEL expressions, translations); `npm run test:libs` runs the tests of the libraries and `npx ng test runtime --watch=false` those of the demo; `npm run e2e` the Playwright suites; the demo application starts with a single command and uses simulated data with three profiles (operator, manager, administrator) to try out permissions and menus. For every change to permissions or the menu, add a test that covers both the user with the permission and the one without.
 
 **Component and showcase tests.** Every component has three levels of tests: the schema (`schema/new-components.spec.ts`), the component mounted in a screen with fake ports (`renderScreen` in `components/screen-testing.ts`) and the demo showcase (`openShowcase` in `runtime/showcase-testing.ts`), which also checks that technical diagnostics stay empty. What jsdom cannot see (layout, real focus, colours, timing) is checked in the browser on the demo before every commit; data-table performance has tests with 20,000 and 50,000 rows.
 
 | Level | What it checks | Tools |
 | --- | --- | --- |
-| Unit | Expression evaluator, action engine, schema migrations, HTTP client | Angular and TypeScript unit test frameworks |
+| Unit | Expression evaluator, action engine, HTTP client, pure data functions | Vitest through `ng test` |
 | Schema contract | Every component accepts and rejects exactly what its schema declares | Ajv and tests generated from the schemas |
-| REST contract | Services follow the OpenAPI specifications; the reference implementation and customer back ends pass the same conformance tests | Contract tests generated from `contracts` |
+| REST contract | Services follow the OpenAPI specifications; the reference implementation and customer back ends pass the same conformance tests | Conformance kits in `frontend/tools` (`npm run conformance`), written by hand from `contracts` |
 | Component | Rendering, events, permissions, accessibility | Angular component tests, automatic accessibility checks |
 | Runtime integration | Loading an example app, interpretation, calls to simulated APIs | Runtime with a simulated back end |
 | End-to-end | Complete journeys on example apps, with the **permission matrix**: the same journey with different users, checking what they see and can do | Playwright |
 | Security | XSS payloads in data, hostile JSON, edge-case expressions, disallowed hosts | Dedicated tests and automatic scans |
-| Migrations | Every schema version migrates the example apps and the result stays valid and working | Regression tests on migrations |
-| Telemetry | Traces carry the expected attributes and sensitive fields do not appear | Tests with a simulated collector |
+| Migrations | Every schema version migrates the example apps and the result stays valid and working (none yet: there is only version 1.0) | Regression tests on migrations |
+| Telemetry | Traces carry the expected attributes and sensitive fields do not appear | Tests of `core` and `services` with a fake tracer and exporter |
 
 ## 12. Continuous integration, versioning and release
 
@@ -243,7 +249,19 @@ The example applications in `examples` are the common thread: every test level u
 | End-to-end and accessibility | Journeys on example apps and accessibility checks | Yes |
 | Artefact publication | Packages, images and documentation, with version and hash | No, it happens once the pipeline is green |
 
-**Versions.** The platform follows semantic versioning. `schemaVersion` has its own version: an incompatible schema change requires a major version and an automatic migration, both mandatory. The runtime supports the current and the previous version.
+**Where the pipeline stands (November 2026).** `.github/workflows/ci.yml` runs on every push and pull request; `release.yml` repeats it before publishing a `v*` tag.
+
+| Stage | Today |
+| --- | --- |
+| Quality | Strict TypeScript in the build; versions and changelog consistent (`release:check`). No linter, no formatting check, no explicit check of the dependency rules |
+| Unit and component tests | All the projects, including the runtime with the showcase |
+| Schema and example validation | `schema:check`, `schema:docs:check`, `validate:examples` |
+| REST contracts | `mvn verify` of the reference implementation and the conformance kits against it (`npm run conformance`); the BFF test reads `contracts/bff.yaml`, the other OpenAPI files have no automatic validation yet |
+| Security | Licences of the dependencies inventoried (`notices:check`); no vulnerability scan, SBOM or secret scanning in the pipeline yet |
+| End-to-end and accessibility | Playwright in three browsers with axe-core |
+| Artefacts | Runtime image built and started in CI; published with the packages on a `v*` tag |
+
+**Versions.** The platform follows semantic versioning (ADR-20), with one version for workspace and libraries; before 1.0.0 a minor version may break, and the changelog says how. `schemaVersion` has its own version: an incompatible schema change requires a major version and an automatic migration, both mandatory. The runtime supports the current and the previous version.
 
 **Contracts and reference implementation.** The OpenAPI specifications and the reference implementation are versioned together: a contract change without updating the reference implementation and the conformance tests is not accepted.
 

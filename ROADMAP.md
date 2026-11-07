@@ -13,7 +13,7 @@ Since 0.4.0 the stack runs without a registry: the runtime behind the BFF loads 
 
 **Not verified / known limits:**
 
-* The end-to-end suite runs in Chromium only; automatic accessibility checks find only part of the problems (keyboard and screen-reader checks by hand are still needed).
+* Automatic accessibility checks (axe-core in Chromium, Firefox and WebKit) find only part of the problems: keyboard and screen-reader checks by hand are still needed.
 * The registry contract does not require a server-side check of the CEL expressions (the CLI and the runtime check them, fail-closed); an implementation can add one.
 * Component limits are listed in the catalogue (§ 3).
 

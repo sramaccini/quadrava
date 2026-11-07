@@ -1,6 +1,6 @@
 # Quadrava — Architecture
 
-Simone Ramaccini · 7 October 2026
+Simone Ramaccini · 7 October 2026, updated on 7 November 2026 (Quadrava CE 0.11.1)
 
 > Written when the visual editor and the registry were part of this repository. Since ADR-21 (Quadrava CE 0.4.0) they are the commercial edition: this document describes the platform as a whole; in Quadrava CE the registry is its contract (`contracts/registry.yaml`) with its conformance kit.
 
@@ -18,7 +18,7 @@ The platform is made of three parts (editor, registry, runtime) that revolve aro
 | Controlled escape hatch | Custom components registrable through a contract | Unforeseen cases do not force anyone to leave the platform |
 | Governable by construction | JSON that can be versioned, compared and reviewed | History, diff, review and rollback as with code |
 
-**Product boundary.** On the back-end side the platform delivers only the REST interfaces (OpenAPI specifications for authorization, telemetry, registry and what the runtime expects from the BFF) and a reference implementation of them. The reference implementation demonstrates the contracts and serves as a test bench: it is not a production service. Every customer implementation must pass the same conformance tests (proposal: a contract test kit shipped with the platform).
+**Product boundary.** On the back-end side the platform delivers only the REST interfaces (OpenAPI specifications for authorization, telemetry, registry and what the runtime expects from the BFF) and a reference implementation of them. The reference implementation demonstrates the contracts and serves as a test bench: it is not a production service. Every customer implementation must pass the same conformance tests: the kits in `frontend/tools` (`npm run conformance:*`), which run in CI against the reference implementation.
 
 ## 2. Overview
 
@@ -63,11 +63,11 @@ The language has three levels, so that the core stays small and stable while the
 
 **JSON Schema as the engine of the editor.** Since every component describes its properties with a schema, the editor generates the property panel and the validation on its own: adding a component requires no change to the editor.
 
-**Versioning.** Every document carries `schemaVersion`. Migrations are pure "version N to N+1" functions, applied by the registry on publication and by the runtime on load if needed. The proposal is for the runtime to support the current and the previous version, with older ones migrated automatically.
+**Versioning.** Every document carries `schemaVersion`. Migrations are pure "version N to N+1" functions, applied by the registry on publication and by the runtime on load if needed; the runtime supports the current and the previous version, with older ones migrated automatically. Today there is only version 1.0, so no migration exists yet: changes so far have been compatible, or announced as breaking in the changelog before 1.0.0.
 
-**Validation in three places.** In the editor while writing, on publication in the registry (it blocks invalid documents) and on load in the runtime (defence in depth).
+**Validation in three places.** In the editor while writing, on publication in the registry (it blocks invalid documents) and on load in the runtime (defence in depth). The Quadrava CLI (`quadrava validate`) applies the same checks in the CI of a project: schemas, expressions, references and translations.
 
-**Reuse.** Reusable fragments (for example a shared block of filters) referenced with `$ref`, to avoid duplication across screens.
+**Reuse.** Data sources live in data sources documents and screens use them by reference (`{ "ref": "orders/list" }`, ADR-14). Reusable fragments of components (for example a shared block of filters) are not available yet.
 
 **Binding and expressions.** Dynamic values use the `{{ ... }}` syntax; everything between double braces is an expression in the language chosen in section 5.
 
@@ -81,7 +81,7 @@ The runtime is an Angular application (current version, standalone components an
 
 | Module | Responsibility |
 | --- | --- |
-| Loader | Downloads the definition from the registry, validates it, migrates it if needed |
+| Loader | Downloads the definition from the registry (or reads the files of a project), validates it, resolves its data source references |
 | Interpreter | Turns the tree of JSON nodes into Angular components, looking them up in the catalogue by type |
 | State | Keeps the screen state (filters, selection, form values) in a reactive store; exposes `state` to expressions |
 | Data layer | Runs the declared data sources, with caching, invalidation and paging; knows nothing about the UI |
@@ -94,13 +94,13 @@ The runtime is an Angular application (current version, standalone components an
 
 **Isolation between screens.** Every screen has its own state and its own expression context: screens communicate only through declared navigation parameters, not by sharing implicit variables.
 
-**Addresses and code structure.** Every screen has a URL like `/<area>/<screen>?parameters`, handled by the Angular Router: Back, bookmarks and shared links work. The code is split into libraries: `schema` (JSON Schema and types), `expressions` (CEL), `core` (interpreter and abstract ports: `Authorization`, `UserProvider`, `DataClient`, `ScreenNavigator`, `Notifier`, `RuntimeDiagnostics`, `RuntimeTracer`), `components` (catalogue, `lc-sidebar` side menu and bridge to NG-ZORRO) and the `runtime` app. The core knows neither the router nor the back end, and of the UI library it uses only the screen shell (title and refusal message): it obtains them through the ports, replaceable in tests and in the demo. `Authorization` must be signal-based, so that the interface updates when permissions change; every failing condition denies (fail-closed) and the error is reported to `RuntimeDiagnostics` asynchronously, never during rendering.
+**Addresses and code structure.** Every screen has a URL like `/<area>/<screen>?parameters`, handled by the Angular Router: Back, bookmarks and shared links work. The code is split into libraries: `schema` (JSON Schema, types and precompiled validators), `expressions` (CEL), `core` (interpreter and abstract ports: `Authorization`, `UserProvider`, `DataClient`, `ScreenNavigator`, `Notifier`, `RuntimeDiagnostics`, `RuntimeTracer`, `Confirmation`, `FormDialog`, `LiveUpdates`), `components` (catalogue, shell with the `lc-sidebar` side menu, bridge to NG-ZORRO), `services` (the real ports for the BFF mode: session, authorization, data client, telemetry, live updates), the `cli` and the `runtime` app. They are published as `@sramaccini/quadrava-*` packages, which the commercial edition builds on (ADR-21). The core knows neither the router nor the back end, and of the UI library it uses only the screen shell (title and refusal message): it obtains them through the ports, replaceable in tests and in the demo. `Authorization` must be signal-based, so that the interface updates when permissions change; every failing condition denies (fail-closed) and the error is reported to `RuntimeDiagnostics` asynchronously, never during rendering.
 
-**October 2026 updates.** Two new ports: `Confirmation` (the `confirm` step) and `FormDialog` (the `dialog` step, a window with a form); without an implementation the two steps do not proceed. `DataRequest` can carry a `file`: the HTTP client then sends a multipart body (`FormData`), up to 100 MB, instead of base64 inside the JSON. A GET data source reloads by itself only when the resolved request (URL and parameters) changes, not on every state change; `ScreenRuntime.query` runs a data source without touching its shared state (lookup fields use it). The component catalogue, with specifications and limits, is `docs/component-catalogue.md` in the repository.
+**Ports for steps and live data.** `Confirmation` (the `confirm` step) and `FormDialog` (the `dialog` step, a window with a form): without an implementation the two steps do not proceed. `LiveUpdates` makes a data source with `live` read again when its event stream announces a change (ADR-19). `DataRequest` can carry a `file`: the HTTP client then sends a multipart body (`FormData`), up to 100 MB, instead of base64 inside the JSON. A GET data source reloads by itself only when the resolved request (URL and parameters) changes, not on every state change; `ScreenRuntime.query` runs a data source without touching its shared state (lookup fields use it). The component catalogue, with specifications and limits, is `docs/component-catalogue.md` in the repository.
 
 ## 5. Expression language
 
-The proposal is a lightweight, deterministic and typed language, without heavy rule engines. Expressions serve a few purposes: conditions (visibility, enablement), computed values and validations.
+The language is lightweight, deterministic and typed, without heavy rule engines. Expressions serve a few purposes: conditions (visibility, enablement), computed values and validations.
 
 **Requirements.** No access to the network, the DOM or arbitrary code; execution always terminates (no unbounded loops); readable errors with position; verifiable at publication time; an implementation available in JavaScript for the runtime and, preferably, in Java to share the same rules with the back end.
 
@@ -110,9 +110,9 @@ The proposal is a lightweight, deterministic and typed language, without heavy r
 | JSONata | Very expressive for querying and transforming JSON; excellent for mapping API responses | A broader language, therefore harder to sandbox and to check statically |
 | JSONLogic | Rules themselves in JSON, very easy to sandbox | Hard to read as soon as rules grow; limited |
 
-**Proposal.** Use CEL for all predicates (visibility, enablement, validation), with the built-in functions `can`, `user` and `state`. For transforming data-source responses, start with a declarative mapping (rename, selection, type conversion) and introduce JSONata only if a real case requires it, so as not to have two languages from the start.
+**Decision (ADR-04).** CEL for all predicates and computed values (visibility, enablement, validation, texts), with `can`, `t`, the formatting functions and `isValid`, and the variables `user`, `state`, `params`, `settings` and `data` (ADR-23). For transforming data-source responses, start with a declarative mapping (rename, selection, type conversion) and introduce JSONata only if a real case requires it, so as not to have two languages from the start.
 
-**Validated by a proof of concept (passed)**: the chosen JavaScript implementation (cel-js) does not use eval, evaluates expressions deterministically, allows static checking in the editor and works with the rule "if the expression fails, the condition is false". Behaviour on very large lists remains to be measured.
+**Validated by a proof of concept (passed)**: the chosen JavaScript implementation (cel-js) does not use eval, evaluates expressions deterministically, allows static checking in the editor and works with the rule "if the expression fails, the condition is false". Expressions have limits on size and depth (1,000 nodes, depth 32, lists and maps of 100 items written in the expression); behaviour on very large data lists remains to be measured.
 
 ## 6. Authentication
 
@@ -138,7 +138,7 @@ sequenceDiagram
 
 The BFF is the only one that talks to the provider and holds the tokens; only the session cookie reaches the browser.
 
-There are two modes, chosen per application: **BFF** (recommended for regulated contexts) and **SPA with tokens in memory** (simpler, more exposed). In both, no screen is shown before authentication and the JSON never contains secrets. Renewal and logout are handled by the runtime's authentication service, with a clean return to the sign-in screen on expiry; in BFF mode the service forwards API calls adding the token and can enforce the list of allowed hosts.
+Two modes were planned: **BFF** (recommended for regulated contexts) and **SPA with tokens in memory** (simpler, more exposed). Only the BFF mode is implemented: `contracts/bff.yaml` says what the runtime expects from it and the reference BFF implements it. In both, no screen is shown before authentication and the JSON never contains secrets. Renewal and logout are handled by the runtime's authentication service, with a clean return to the sign-in screen on expiry; in BFF mode the service forwards API calls adding the token and can enforce the list of allowed hosts.
 
 ## 7. Authorization
 
@@ -154,7 +154,7 @@ The application back end implements a REST contract published by the platform as
 
 **Caching and refresh.** Capabilities are kept in memory by the runtime. The back end includes in every response a header with the current version of the user's permissions; if the runtime notices a version different from the cached one, it reloads the capabilities. This avoids both continuous requests and interfaces that go stale.
 
-**Handling 403.** The HTTP client intercepts every 403, shows a uniform message, requests a permission refresh and re-evaluates the interface.
+**Handling 403.** A refused call shows a generic message; the permissions are reloaded when the `X-Permissions-Version` header of any response changes. A refresh triggered by the 403 itself is still to be done.
 
 **Two complementary defences.** The front end hides and disables according to permissions; the back end always checks the request and filters outgoing data, so even a tampered JSON or a direct call cannot obtain what it is not entitled to.
 
@@ -170,11 +170,11 @@ Traces start in the runtime, follow the REST call thanks to the `traceparent` he
 | `action.run` | `runSteps`, for every sequence a component starts (button, row action, form) | When the sequence finishes; error if a step fails | `lc.screen`, `lc.action` (`call save, refresh elenco`) |
 | `http.client` | The HTTP interceptor, for every same-origin call | On the response; a cancelled call is not an error | `http.request.method`, `http.response.status_code`, `lc.datasource` (data calls) or `url.path` without the query (platform calls: registry, authorization) |
 
-An example: the user presses *Approva* on an order.
+An example: the user presses *Approve* on an order.
 
 ```text
 action.run  lc.action = "call approve, refresh orders"     trace 4bf9…, span a1…
-├─ http.client  POST, lc.datasource = approva, 200         span b2…  → traceparent 00-4bf9…-b2…-01
+├─ http.client  POST, lc.datasource = approve, 200         span b2…  → traceparent 00-4bf9…-b2…-01
 │    └─ (back end) spans of the orders service, same trace 4bf9…
 └─ http.client  GET, lc.datasource = orders, 200           span c3…
 ```
@@ -253,7 +253,7 @@ Themes and translation catalogues are not referenced by identifier, so they have
 
 In a platform that interprets documents, the document itself is untrusted input: the defences are built on this assumption.
 
-**Validation in the browser and CSP.** Ajv compiles schemas with `new Function`, so browser-side validation requires `unsafe-eval` in the Content Security Policy, which is not acceptable in production. The options are: compile the schemas ahead of time (Ajv standalone), or validate only on publication and in the editor. CEL (cel-js) does not use eval. Server responses are never shown to the user: the runtime shows a generic message.
+**Validation in the browser and CSP.** Ajv compiles schemas with `new Function`, which would require `unsafe-eval` in the Content Security Policy. The validators are therefore compiled ahead of time (Ajv standalone, `validators.generated.ts`), so the browser needs no `unsafe-eval`. CEL (cel-js) does not use eval. Server responses are never shown to the user: the runtime shows a generic message.
 
 | Threat | Countermeasure |
 | --- | --- |
@@ -262,7 +262,7 @@ In a platform that interprets documents, the document itself is untrusted input:
 | Token theft | BFF mode with HttpOnly, Secure and SameSite cookies; in SPA mode tokens only in memory, never in localStorage |
 | CSRF in BFF mode | SameSite cookies and anti-CSRF tokens for requests that change data |
 | Privilege escalation from the front end | The back end checks every request and filters data: the JSON cannot grant anything |
-| Calls to arbitrary hosts declared in the JSON | List of allowed hosts per environment, enforced by the HTTP client or the BFF |
+| Calls to arbitrary hosts declared in the JSON | Data-source URLs are relative to the same origin; the BFF forwards only its configured prefixes to its configured hosts |
 | Malicious custom components | Controlled and reviewed registration; no code loaded from arbitrary URLs; integrity verified |
 | Personal data leaking into logs | Two-level redaction (runtime and ingestion) |
 | Unauthorised publication | Dedicated permission and review phase; every publication is recorded in the audit |
@@ -275,15 +275,15 @@ Each decision lists the alternatives considered and its status. "Proposed" means
 | ID | Decision | Rejected alternatives | Reason | Status |
 | --- | --- | --- | --- | --- |
 | ADR-01 | On the back-end side the platform provides only REST interfaces and a reference implementation | Providing complete production back-end services | Keeps the product focused; back ends depend on the customer's context | Accepted |
-| ADR-02 | The runtime interprets the JSON | Generating Angular code from the JSON | Immediate changes and faithful preview; security is recovered through validation | Proposed |
-| ADR-03 | Tokens handled with the BFF pattern, with SPA mode as an option | Tokens only in the browser | Safer for regulated contexts | Proposed |
+| ADR-02 | The runtime interprets the JSON | Generating Angular code from the JSON | Immediate changes and faithful preview; security is recovered through validation | Accepted |
+| ADR-03 | Tokens handled with the BFF pattern, with SPA mode as an option | Tokens only in the browser | Safer for regulated contexts | Accepted for the BFF (`contracts/bff.yaml`); the SPA mode is not implemented |
 | ADR-04 | CEL for predicates | JSONata, JSONLogic | Safe, typed, verifiable; the same rules on the Java side too | Accepted |
 | ADR-05 | OpenTelemetry with OTLP/HTTP ingestion; in the browser a small exporter of its own (spans and logs as OTLP/HTTP JSON in batches) instead of the OpenTelemetry SDK | Proprietary log protocol; the OpenTelemetry SDK for browsers | Standard, existing tools, propagation to the back end. The runtime needs three kinds of span with explicit parents and attributes chosen one by one (no data values): a few hundred lines without new dependencies, where the SDK would add weight and automatic instrumentation that could put URLs with data into the attributes | Accepted, amended (15 October 2026) |
-| ADR-06 | Audit written by the back end | Audit sent by the front end | The front end is not a trustworthy source | Proposed |
-| ADR-07 | A JSON Schema for every catalogue component | Descriptors in a custom format | The editor generates panels and validation automatically | Proposed |
+| ADR-06 | Audit written by the back end | Audit sent by the front end | The front end is not a trustworthy source | Accepted: the runtime gives the context (`traceparent`, `baggage`) |
+| ADR-07 | A JSON Schema for every catalogue component | Descriptors in a custom format | The editor generates panels and validation automatically | Accepted |
 | ADR-08 | Editor preview in an isolated iframe | Preview in the same page | Isolation and fidelity to production | Accepted (13 October 2026) |
 | ADR-09 | Editor history as immutable versions of the document | Changes as JSON Patch operations (initial proposal) | Simple, reliable undo/redo; diffs and JSON Patch operations are derived by difference between versions when needed (comparisons, locks) | Accepted, amended (13 October 2026) |
-| ADR-10 | Immutable versions in the registry, publication as a pointer | Overwriting the current version | Simple rollback, reliable history | Proposed |
+| ADR-10 | Immutable versions in the registry, publication as a pointer | Overwriting the current version | Simple rollback, reliable history | Accepted (`contracts/registry.yaml`) |
 | ADR-11 | NG-ZORRO UI library (Ant Design for Angular) for all standard components | Angular CDK only with in-house components; Angular Material; PrimeNG | Tables, forms, tabs, menus, dialogs and pickers already complete with keyboard, focus and accessibility support; aligned with Angular 22 with signals and without zones; the theme stays a token document, translated into the library's variables by a bridge. We accept the Ant Design look and that strings passed to modals and messages are interpreted as HTML (mitigated by passing text made harmless) | Accepted |
 | ADR-12 | Mozilla Public License 2.0 for code, schemas, contracts, documentation and examples; contributions under a CLA; the brand excluded (TRADEMARKS.md) | Apache-2.0 (the recommendation of the licence evaluation); MIT; AGPL with a commercial licence; source-available licences (BSL, FSL) | Usable inside closed commercial products, while changes to Quadrava's own files come back (file-level copyleft); the CLA keeps the option of other licence terms later | Accepted (16 October 2026) |
 | ADR-13 | Studio as a multi-document workspace: every document in its own window (move, resize, maximize, minimize) with its own store, created in an environment injector per window; the side panels are drawn with the injector of the active window | One document per kind with a mode selector (the previous design); tabs instead of windows; one global store holding all the documents; a window library or the CDK drag and drop | Several screens, navigations and themes side by side, as in an IDE. An injector per window keeps every component unchanged (they inject their store) and isolates history, draft and previews; closing a window destroys its injector. Windows and resizing in pointer events: a few hundred lines, no new dependency. The windows never move in the page (only their z-index changes), so the preview iframes do not reload | Accepted (18 October 2026) |
@@ -312,4 +312,4 @@ Each decision lists the alternatives considered and its status. "Proposed" means
 | Dependence on a single identity provider | Limits adoption | Standard OIDC, no provider-specific logic in the runtime |
 | The UI library changes incompatibly between major versions | All standard components depend on its look and its interfaces | Version pinned in the repository and updated through a regular process; use stays confined to the components library (plus the screen shell in the core); component tests cover the expected behaviour |
 
-**Open points to close**, in order of impact: multi-tenant and environment model; runtime delivery form (standalone application or component embeddable in another shell); exact format of the authorization contract for lists with many per-row permissions; audit retention and immutability policy; quantitative performance targets.
+**Open points to close**, in order of impact: the tenant of an application in the registry (the user's tenant is chosen in the BFF session, ADR-18); operational roles (working as one of several roles at a time); exact format of the authorization contract for lists with many per-row permissions; audit retention and immutability policy; quantitative performance targets. Closed since October: the environments and their protection (registry contract 0.7) and the delivery form of the runtime (a standalone application in a container image, ADR-20).
