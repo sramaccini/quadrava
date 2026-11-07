@@ -2,14 +2,15 @@
 // behaves as the runtime expects.
 //
 //   node tools/conformance-bff.mjs --bff http://localhost:8080 --return http://localhost:4200/
-//        [--cookie "<session cookies of a signed-in browser>"]
+//        [--cookie "<session cookies of a signed-in browser>" | --user <user> --password <password>]
 //        [--session-url /bff/user] [--login-url /bff/login] [--logout-url /logout] [--tenant-url /bff/tenant]
 //
 // Without --cookie only the checks that need no session run. With it (copied from a signed-in browser, for example
-// "JSESSIONID=…"), the checks of the user and, last, of the logout run too: that session ends. The checks of the
+// "JSESSIONID=…"), or with --user and --password (the kit signs in through the Keycloak login page, local realm only),
+// the checks of the user and, last, of the logout run too: that session ends. The checks of the
 // tenants (optional part of the contract) run only if the user of the session lists them.
 // Exits with code 1 if a check fails.
-import { expect, isProblem, parseArgs, suite } from './conformance-lib.mjs';
+import { bffLogin, expect, isProblem, parseArgs, suite } from './conformance-lib.mjs';
 
 const args = parseArgs();
 const base = (args.bff ?? 'http://localhost:8080').replace(/\/+$/, '');
@@ -18,7 +19,7 @@ const sessionUrl = args['session-url'] ?? '/bff/user';
 const loginUrl = args['login-url'] ?? '/bff/login';
 const logoutUrl = args['logout-url'] ?? '/logout';
 const tenantUrl = args['tenant-url'] ?? '/bff/tenant';
-const session = args.cookie ?? null;
+const session = args.cookie ?? (args.user ? await bffLogin(base, args.user, args.password, returnTo) : null);
 const { check, report } = suite();
 
 /** A call as the browser makes it: cookies by hand, redirects not followed. */

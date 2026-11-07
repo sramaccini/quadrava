@@ -24,6 +24,48 @@ export async function tokenFromArgs(args, prefix = '') {
   return tokenFor(args.issuer ?? 'http://localhost:8180/realms/quadrava', args[`${prefix}user`], args[`${prefix}password`]);
 }
 
+/**
+ * Signs in to a BFF as a browser does, through the Keycloak login page (local realm only): the login of the BFF, the
+ * form of Keycloak with user and password, the return to the BFF. Returns the session cookies of the BFF
+ * ("JSESSIONID=…"), the value that the kits otherwise take from a signed-in browser with --cookie.
+ */
+export async function bffLogin(bff, user, password, returnTo) {
+  const jars = new Map();
+  const remember = (url, response) => {
+    const jar = jars.get(new URL(url).origin) ?? new Map();
+    for (const line of response.headers.getSetCookie()) {
+      const [pair] = line.split(';');
+      const at = pair.indexOf('=');
+      jar.set(pair.slice(0, at).trim(), pair.slice(at + 1));
+    }
+    jars.set(new URL(url).origin, jar);
+  };
+  const cookies = (url) => [...(jars.get(new URL(url).origin) ?? new Map())].map(([k, v]) => `${k}=${v}`).join('; ');
+  const step = async (url, init = {}) => {
+    const response = await fetch(url, { ...init, redirect: 'manual', headers: { ...(init.headers ?? {}), Cookie: cookies(url) } });
+    remember(url, response);
+    return { response, next: response.headers.get('location') ? new URL(response.headers.get('location'), url).href : null };
+  };
+
+  let { response, next } = await step(`${bff}/bff/login?return=${encodeURIComponent(returnTo)}`, { headers: { Accept: 'text/html' } });
+  // Redirects up to the login page of Keycloak.
+  for (let i = 0; next && i < 5; i++) ({ response, next } = await step(next, { headers: { Accept: 'text/html' } }));
+  const page = await response.text();
+  const action = /<form[^>]*id="kc-form-login"[^>]*action="([^"]+)"/.exec(page)?.[1];
+  if (!action) throw new Error(`no Keycloak login form (HTTP ${response.status})`);
+  ({ response, next } = await step(action.replaceAll('&amp;', '&'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ username: user, password: password ?? '' }),
+  }));
+  if (!next) throw new Error(`login refused for ${user} (HTTP ${response.status})`);
+  // Back to the BFF (the code), which ends on the return page: only the cookies of the BFF matter.
+  for (let i = 0; next && new URL(next).origin === new URL(bff).origin && i < 5; i++) ({ next } = await step(next, { headers: { Accept: 'text/html' } }));
+  const session = cookies(bff);
+  if (!session) throw new Error(`no session cookie from the BFF for ${user}`);
+  return session;
+}
+
 /** HTTP call: status, headers and body (JSON when it is JSON). */
 export async function call(base, method, path, { body, raw, token, headers = {} } = {}) {
   const response = await fetch(base + path, {

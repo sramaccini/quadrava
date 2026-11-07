@@ -365,12 +365,14 @@ npm run conformance:authz -- --authz http://localhost:8080 --cookie "<cookies>" 
                                       # a BFF that answers /authz on the session (cookies of a signed-in browser)
 npm run conformance:telemetry -- --user operator --password operator
 npm run conformance:bff -- --bff http://localhost:8080 --return http://localhost:4200/
+                                      # --user administrator --password administrator: signed in through Keycloak
+npm run conformance                   # authorization, telemetry and BFF against the local stack (npm run stack)
                                       # conformance kits: check a service (reference or customer) against its contract
 ```
 
 `npm run e2e` starts the demo itself (`ng serve runtime` on port 4300, override with `E2E_PORT`; outside CI a server already running on that port is reused) and runs the suites in `frontend/e2e/` against the in-browser fake back end.
 
-Every push to `main` and every pull request runs [`.github/workflows/ci.yml`](.github/workflows/ci.yml) on GitHub Actions: the front-end job (`schema:check`, `validate:examples`, `build:libs`, the tests of every project, the production build of the runtime), the end-to-end job (Playwright in Chromium, Firefox and WebKit; report uploaded as an artifact when it fails), the image job (builds the runtime image and starts it) and the Java job (`mvn -B verify`). A `v*` tag starts [`.github/workflows/release.yml`](.github/workflows/release.yml), which publishes the runtime image and the GitHub release ([ADR-20](docs/adr-20-versioned-distribution.md)).
+Every push to `main` and every pull request runs [`.github/workflows/ci.yml`](.github/workflows/ci.yml) on GitHub Actions: the front-end job (`schema:check`, `validate:examples`, `build:libs`, the tests of every project, the production build of the runtime), the end-to-end job (Playwright in Chromium, Firefox and WebKit; report uploaded as an artifact when it fails), the image job (builds the runtime image and starts it), the Java job (`mvn -B verify`) and the conformance job (Keycloak in Docker and the reference services started, then `npm run conformance`). A `v*` tag starts [`.github/workflows/release.yml`](.github/workflows/release.yml), which publishes the runtime image and the GitHub release ([ADR-20](docs/adr-20-versioned-distribution.md)).
 
 At the time of writing there are **750 automated tests**: schema 95, expressions 46, core 200, components 243, services 44, runtime 113, CLI 9. The Java modules add 28 (`mvn verify`: authz 7, bff 15, telemetry 6).
 
@@ -378,7 +380,7 @@ The unit tests run in jsdom, so layout, real focus handling and pixel-level rend
 
 The Playwright suite (19 tests) checks in a real browser what jsdom cannot see: the standalone fields showcase, the rich text editor (toolbar commands are executed by the browser), the border layout at 1400 px and 375 px, and **accessibility** with axe-core (WCAG 2.1 A/AA, no serious or critical violation) on all twelve showcase screens.
 
-The conformance kits pass against the reference services: authorization 11 of 11, telemetry 6 of 6; the registry kit (17 checks) is for any registry that follows the contract. They found real deviations in the authorization and telemetry services, now fixed: unchecked permission format and batch size, a 500 on a missing `checks`, non-OTLP bodies accepted, errors without a Problem body.
+The conformance kits pass against the reference services, in CI on every push: authorization 11 of 11, telemetry 6 of 6, BFF 13 of 13 (signed in, with two tenants); the registry kit (17 checks) is for any registry that follows the contract. They found real deviations in the authorization and telemetry services, now fixed: unchecked permission format and batch size, a 500 on a missing `checks`, non-OTLP bodies accepted, errors without a Problem body.
 
 ## Security model
 

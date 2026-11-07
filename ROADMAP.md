@@ -19,6 +19,4 @@ Since 0.4.0 the stack runs without a registry: the runtime behind the BFF loads 
 
 **Next steps:**
 
-* Conformance kits in CI against the reference services (today they are run by hand, for example after `npm run stack`).
-* Firefox and WebKit in the end-to-end suite.
 * The full list of what was done and what remains is in [HANDOFF.md](HANDOFF.md).

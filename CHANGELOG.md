@@ -12,6 +12,13 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Added
+
+- `npm run conformance:bff` signs in by itself with `--user` and `--password` (through the Keycloak login page of the
+  development realm) instead of the cookies of a signed-in browser. `npm run conformance` runs the kits of
+  authorization, telemetry and BFF against the local stack, and CI runs it on every push against the reference
+  services (job «conformance»).
+
 ## [0.11.1] - 2026-11-07
 
 ### Added
