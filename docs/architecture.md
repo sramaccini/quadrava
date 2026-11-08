@@ -1,6 +1,6 @@
 # Quadrava — Architecture
 
-Simone Ramaccini · 7 October 2026, updated on 7 November 2026 (Quadrava CE 0.12.1)
+Simone Ramaccini · 7 October 2026, updated on 8 November 2026 (Quadrava CE 0.13.0)
 
 > Written when the visual editor and the registry were part of this repository. Since ADR-21 (Quadrava CE 0.4.0) they are the commercial edition: this document describes the platform as a whole; in Quadrava CE the registry is its contract (`contracts/registry.yaml`) with its conformance kit.
 
