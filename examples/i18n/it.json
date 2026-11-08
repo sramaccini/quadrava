@@ -593,5 +593,15 @@
   "nav.notification_settings": "Notifiche",
   "notification_settings.description": "Come l'applicazione ti avvisa del tuo lavoro: nell'applicazione, per email subito o in un riepilogo giornaliero.",
   "notification_settings.email": "Indirizzo email",
-  "notification_settings.saved": "Preferenze salvate"
+  "notification_settings.saved": "Preferenze salvate",
+  "showcase_form.widths_title": "Larghezza dei campi e disposizione a flusso",
+  "showcase_form.widths_intro": "Ogni campo dice quanto è largo (width: xs, s, m, l) e, con layout flow, i campi si affiancano finché ci stanno; un campo senza width prende una riga intera.",
+  "showcase_form.widths_code": "Codice",
+  "showcase_form.widths_issue_date": "Data di emissione",
+  "showcase_form.widths_amount": "Importo",
+  "showcase_form.widths_customer": "Cliente",
+  "showcase_form.widths_street": "Via",
+  "showcase_form.widths_postcode": "CAP",
+  "showcase_form.widths_town": "Città",
+  "showcase_form.widths_description": "Descrizione"
 }

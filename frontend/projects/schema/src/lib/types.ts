@@ -120,6 +120,9 @@ export interface ActionDefinition {
 /** Action on a row of a table: it runs steps or opens a relative path of the application, with the row in `row`. */
 export type RowActionDefinition = (Omit<ActionDefinition, 'onClick'> & { onClick: Step[]; href?: never }) | (Omit<ActionDefinition, 'onClick'> & { href: string; onClick?: never });
 
+/** Sizes of an input: about 8, 16, 32 and 48 characters. */
+export type FieldWidth = 'xs' | 's' | 'm' | 'l';
+
 export interface FieldDefinition {
   name: string;
   type: 'text' | 'number' | 'select' | 'checkbox' | 'date' | 'textarea' | 'datetime' | 'radio' | 'switch' | 'multiselect' | 'lookup' | 'file' | 'repeater' | 'richtext' | 'password' | 'tags';
@@ -144,6 +147,8 @@ export interface FieldDefinition {
   suggest?: { source: string; valueField?: string; labelField?: string; descriptionField?: string; minChars?: number; replace?: 'word' | 'all' };
   /** Columns taken in the form grid (1 if absent). */
   span?: number;
+  /** Width of the input, from the sizes of the theme; without it the whole cell (in a `flow` form a whole line). */
+  width?: FieldWidth;
   /** Visible rows of a `textarea` field (4 if absent). */
   rows?: number;
   label?: string;
@@ -373,6 +378,8 @@ export interface FormNode extends NodeBase {
   actions?: ActionDefinition[];
   /** Columns of the field grid (1 if absent). */
   columns?: number;
+  /** `grid` (the default): the fields in the columns; `flow`: one after the other while they fit, by their `width`. */
+  layout?: 'grid' | 'flow';
   /** Rules across fields, checked with those of the fields. */
   validation?: FormValidationRule[];
 }

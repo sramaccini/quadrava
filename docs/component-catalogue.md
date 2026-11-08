@@ -223,9 +223,38 @@ status:paid customer:▌        → Enter: only the word at the cursor is replac
 - The `DataClient` port receives the file in `DataRequest.file`; `HttpDataClient` sends it as `FormData`.
 - The file name is always shown as text.
 
-### 2.9 Column grid in the form
+### 2.9 Column grid, field widths and flow in the form
 
 `columns` (1–4) on the form and `span` on the field (how many columns it takes). When space is tight (less than 600 px of available width) the form goes back to one column.
+
+**Width of a field.** Without `width` the input takes its whole cell. With `width` it takes one of four sizes, the same in every screen, and never more than the room it has:
+
+| `width` | About | For |
+| --- | --- | --- |
+| `xs` | 8 characters (6rem) | postcodes, short codes, quantities |
+| `s` | 16 characters (10rem) | dates, amounts, codes |
+| `m` | 32 characters (18rem) | names, emails |
+| `l` | 48 characters (28rem) | addresses |
+
+The theme can change the sizes with the variables `--lc-field-width-xs`, `-s`, `-m` and `-l`. `width` holds for the fields of `form`, `input` and `filterBar` too (a filter with `width` loses the minimum of 160 px of the filters).
+
+**Flow** (`"layout": "flow"`): the fields sit one after the other on the same line while they fit, then on the next, each as wide as its `width`; a field without `width` takes a whole line (its input at most 560 px). `columns` and `span` are not used. The showcase «Forms» has an example.
+
+```json
+{ "type": "form", "layout": "flow", "fields": [
+  { "name": "code", "type": "text", "label": "Code", "width": "xs" },
+  { "name": "issueDate", "type": "date", "label": "Issue date", "width": "s" },
+  { "name": "amount", "type": "number", "label": "Amount", "width": "s" },
+  { "name": "customer", "type": "text", "label": "Customer", "width": "m" },
+  { "name": "description", "type": "textarea", "label": "Description" } ] }
+```
+
+```
+Code      Issue date     Amount         Customer
+[______]  [__________]  [__________]   [__________________]
+Description
+[____________________________________________________]
+```
 
 ### 2.10 Repeatable rows in the form
 

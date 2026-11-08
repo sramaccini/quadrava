@@ -12,6 +12,15 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Added
+
+- Fields: `width` (`xs`, `s`, `m`, `l`: about 8, 16, 32 and 48 characters) makes an input narrower than its cell, in
+  `form`, `input` and `filterBar`; the theme can change the sizes (`--lc-field-width-xs` … `-l`). Without it nothing
+  changes.
+- Form: `layout: "flow"` places the fields one after the other on the same line while they fit, each as wide as its
+  `width`, a field without `width` on a line of its own; `columns` and `span` are not used there. The showcase «Forms»
+  has an example. Quadrava Studio: the two properties appear in the property panel from the schema.
+
 ## [0.12.1] - 2026-11-07
 
 ### Added

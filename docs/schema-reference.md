@@ -72,6 +72,7 @@
 | `fieldsFrom` | object | Fields read from a data source, after those of `fields`, so that one screen serves forms whose fields are data. Checked like the other fields when an action runs; the actions wait for them to load. |
 | `actions` | list of action | Buttons under the fields: on click the form checks the visible fields and, if they are valid, runs the steps, which see the values in `form`. |
 | `columns` | integer 1–4 | Columns of the field grid (1 if absent). With little space the form goes back to one column. |
+| `layout` | `grid`, `flow` | How the fields are placed: grid (the default) in the columns of `columns`, each field taking `span` of them; flow, one after the other on the same line while they fit, then on the next: a field with `width` takes that width, one without it a whole line. In flow `columns` and `span` are not used. |
 | `validation` | list of formRule | Rules across fields, checked with those of the fields: each says the fields it checks (fields), and the message goes to them. For example [{ "after": "start", "fields": ["end"] }, { "sameAs": "email", "fields": ["emailConfirm"] }, { "atLeastOne": ["phone", "email"] }]. |
 
 ### `tabs`
@@ -439,6 +440,7 @@
 | `maxSizeKb` | integer 1–102400 | For type file: maximum size in KB (1024 if absent). Up to 102400 with multipart upload; base64 content is limited to 10240. |
 | `upload` | text | For type file: data source (POST) to which the file is sent right away. In multipart the file is the "file" part of the request and the `file` variable has name, type and size; in base64 it also has content. |
 | `span` | integer 1–4 | Columns taken by the field in the form grid (1 if absent). |
+| `width` | `xs`, `s`, `m`, `l` | Width of the input: xs (about 8 characters: postcodes, quantities), s (about 16: dates, amounts, codes), m (about 32: names, emails), l (about 48: addresses). The input never exceeds its cell or the screen; the theme can change the sizes (--lc-field-width-xs … -l). Without it the input takes the whole cell, or in a form with layout flow a whole line. |
 | `fields` | list of values | For type repeater: the fields of every row (text, number, select, checkbox, date, textarea, switch, lookup, file; no nested rows). Validation rules see the row in `item`. |
 | `minRows` | integer 0–50 | For type repeater: minimum rows (0 if absent). |
 | `maxRows` | integer 1–200 | For type repeater: maximum rows (50 if absent). |

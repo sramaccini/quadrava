@@ -17,7 +17,8 @@ import { nextId } from './shared';
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     nz-form-item { margin-bottom: 0; }
-    lc-field-control { min-width: 160px; }
+    /* A filter is at least 160px wide, unless its field says how wide it is (width). */
+    lc-field-control:not(.sized) { min-width: 160px; }
   `,
   template: `
     <form nz-form ngNoForm nzLayout="inline" role="search" (submit)="$event.preventDefault()">

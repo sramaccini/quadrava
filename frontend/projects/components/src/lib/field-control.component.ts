@@ -8,7 +8,7 @@ import { NzInputModule } from 'ng-zorro-antd/input';
 import { NzRadioModule } from 'ng-zorro-antd/radio';
 import { NzSelectModule } from 'ng-zorro-antd/select';
 import { NzSwitchModule } from 'ng-zorro-antd/switch';
-import type { FieldDefinition } from 'schema';
+import type { FieldDefinition, FieldWidth } from 'schema';
 import { FileFieldComponent } from './file-field.component';
 import { IconComponent } from './icon.component';
 import { LookupComponent } from './lookup.component';
@@ -17,6 +17,9 @@ import { RepeaterComponent } from './repeater.component';
 import { RichTextEditorComponent } from './rich-text-editor.component';
 import { SuggestInputComponent } from './suggest-input.component';
 import { parseIsoDate, parseIsoDateTime, toIsoDate, toIsoDateTime } from './shared';
+
+/** Sizes of an input (`width`), changed by the theme with `--lc-field-width-xs` … `-l`. */
+const FIELD_WIDTHS: Record<FieldWidth, string> = { xs: '6rem', s: '10rem', m: '18rem', l: '28rem' };
 
 /**
  * The control of a field (without label or error message, which stay with the host): used by the form, the
@@ -27,14 +30,17 @@ import { parseIsoDate, parseIsoDateTime, toIsoDate, toIsoDateTime } from './shar
  * (`min`, `max`, `step`) and of dates (days out of `minDate` / `maxDate` cannot be chosen); its `transform` is applied
  * when leaving the field. A password field has a button that shows its text and, for a new password, a strength meter
  * (segments and text, announced politely); the estimate never sends the password anywhere. A text field with `suggest`
- * proposes words from a data source while typing (`lc-suggest-input`).
+ * proposes words from a data source while typing (`lc-suggest-input`). With `width` the control takes one of the sizes
+ * of the theme, never more than the room it has.
  */
 @Component({
   selector: 'lc-field-control',
   imports: [FormsModule, LookupComponent, FileFieldComponent, IconComponent, RepeaterComponent, RichTextEditorComponent, SuggestInputComponent, TagsFieldComponent, NzButtonModule, NzInputModule, NzSelectModule, NzCheckboxModule, NzDatePickerModule, NzRadioModule, NzSwitchModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { '[class.sized]': '!!field().width', '[style.--lc-field-width]': 'width()' },
   styles: `
     :host { display: block; }
+    :host(.sized) { width: var(--lc-field-width); max-width: 100%; }
     nz-select, nz-date-picker { width: 100%; }
     .password { position: relative; }
     .password input { padding-right: 40px; }
@@ -215,6 +221,11 @@ import { parseIsoDate, parseIsoDateTime, toIsoDate, toIsoDateTime } from './shar
 })
 export class FieldControlComponent {
   readonly field = input.required<FieldDefinition>();
+  /** The size of `width`, from the theme; null without it. */
+  protected readonly width = computed(() => {
+    const width = this.field().width;
+    return width ? `var(--lc-field-width-${width}, ${FIELD_WIDTHS[width]})` : null;
+  });
   readonly runtime = input.required<ScreenRuntime>();
   readonly scope = input<Scope>({});
   readonly value = input<unknown>(null);

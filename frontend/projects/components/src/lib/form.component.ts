@@ -19,6 +19,8 @@ import { nextId } from './shared';
  * service (Problem with `errors`) go to their fields, or to the cells of a repeater, until those change.
  * With `fieldsFrom` more fields come from a data source, after those of the screen: their labels and options are data,
  * shown as they are; their values sit in the object `into` when it is given. The actions wait for those fields.
+ * The fields sit in a grid (`columns`, `span`) or, with `layout: "flow"`, one after the other while they fit: a field
+ * with `width` takes that width, one without it a whole line.
  */
 @Component({
   selector: 'lc-form',
@@ -37,6 +39,13 @@ import { nextId } from './shared';
       form.grid { grid-template-columns: minmax(0, 1fr); }
       form.grid > nz-form-item { grid-column: auto; }
     }
+    /* Flow: the fields with a width side by side while they fit, the others on a line of their own. */
+    form.flow { max-width: none; display: flex; flex-wrap: wrap; align-items: flex-start; column-gap: 16px; }
+    /* A column, so the item is as wide as the wider of label and input (a wrapping row would add them up). */
+    form.flow > nz-form-item { flex: 0 1 auto; min-width: 0; flex-flow: column nowrap; }
+    form.flow > nz-form-item.line { flex-basis: 100%; }
+    form.flow > nz-form-item.line lc-field-control { max-width: 560px; }
+    form.flow > .actions { flex-basis: 100%; }
     .actions { display: flex; gap: var(--lc-gap, 12px); }
   `,
   template: `
@@ -44,11 +53,11 @@ import { nextId } from './shared';
       <div role="alert"><nz-alert nzType="error" [nzMessage]="error" nzShowIcon /></div>
     }
     <lc-busy [busy]="fieldsLoading()">
-    <form nz-form ngNoForm nzLayout="vertical" novalidate [class.grid]="columns() > 1" [class.wide]="hasRows()" [style.--lc-form-columns]="columns()" (submit)="$event.preventDefault()">
+    <form nz-form ngNoForm nzLayout="vertical" novalidate [class.grid]="!flow() && columns() > 1" [class.flow]="flow()" [class.wide]="hasRows()" [style.--lc-form-columns]="columns()" (submit)="$event.preventDefault()">
       @for (item of items(); track item.key) {
         @let field = item.field;
         @if (runtime().isVisible(field, fieldScope())) {
-          <nz-form-item [style.--lc-field-span]="span(field)">
+          <nz-form-item [style.--lc-field-span]="span(field)" [class.line]="flow() && !field.width">
             @if (field.type !== 'checkbox') {
               <nz-form-label [nzFor]="id + item.key" [id]="id + item.key + '-label'" [nzRequired]="required(item)" [nzTooltipTitle]="field.tooltip ? runtime().text(field.tooltip, fieldScope()) : undefined" [nzTooltipIcon]="'question-circle'">{{ item.label ?? (runtime().text(field.label, fieldScope()) || field.name) }}</nz-form-label>
             }
@@ -118,6 +127,9 @@ export class FormComponent {
 
   /** The form contains repeatable rows. */
   protected readonly hasRows = computed(() => this.node().fields.some((f) => f.type === 'repeater'));
+
+  /** Fields one after the other by their width, instead of the grid. */
+  protected readonly flow = computed(() => this.node().layout === 'flow');
 
   /** Columns of the grid (from 1 to 4). */
   protected readonly columns = computed(() => Math.min(4, Math.max(1, this.node().columns ?? 1)));

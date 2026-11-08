@@ -258,6 +258,72 @@
           ]
         }
       ]
+    },
+    {
+      "id": "section-widths",
+      "type": "section",
+      "title": "{{ t('showcase_form.widths_title', 'Field widths and flow layout') }}",
+      "components": [
+        {
+          "id": "widths-intro",
+          "type": "text",
+          "text": "{{ t('showcase_form.widths_intro', 'Each field says how wide it is (width: xs, s, m, l) and, with layout flow, the fields sit side by side while they fit; a field without width takes a whole line.') }}"
+        },
+        {
+          "id": "widths-form",
+          "type": "form",
+          "layout": "flow",
+          "fields": [
+            {
+              "name": "code",
+              "type": "text",
+              "label": "{{ t('showcase_form.widths_code', 'Code') }}",
+              "width": "xs"
+            },
+            {
+              "name": "issueDate",
+              "type": "date",
+              "label": "{{ t('showcase_form.widths_issue_date', 'Issue date') }}",
+              "width": "s"
+            },
+            {
+              "name": "amount",
+              "type": "number",
+              "label": "{{ t('showcase_form.widths_amount', 'Amount') }}",
+              "width": "s"
+            },
+            {
+              "name": "customer",
+              "type": "text",
+              "label": "{{ t('showcase_form.widths_customer', 'Customer') }}",
+              "width": "m"
+            },
+            {
+              "name": "street",
+              "type": "text",
+              "label": "{{ t('showcase_form.widths_street', 'Street') }}",
+              "width": "l"
+            },
+            {
+              "name": "postcode",
+              "type": "text",
+              "label": "{{ t('showcase_form.widths_postcode', 'Postcode') }}",
+              "width": "xs"
+            },
+            {
+              "name": "town",
+              "type": "text",
+              "label": "{{ t('showcase_form.widths_town', 'Town') }}",
+              "width": "m"
+            },
+            {
+              "name": "description",
+              "type": "textarea",
+              "label": "{{ t('showcase_form.widths_description', 'Description') }}"
+            }
+          ]
+        }
+      ]
     }
   ]
 }
