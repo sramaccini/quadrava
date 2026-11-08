@@ -8,13 +8,27 @@ test('the menu column runs the whole height of the page and the menu stays in vi
   await expect(page.getByRole('heading', { name: 'Fields and forms', level: 1 })).toBeVisible();
   const column = page.locator('lc-sidebar');
   const menu = column.getByRole('complementary');
-  const pageHeight = await page.evaluate(() => document.documentElement.scrollHeight);
-  expect(pageHeight).toBeGreaterThan(768);
+  // The data sources of the demo answer with a delay: the page is complete when its height stops changing.
+  let last = -1;
+  await expect
+    .poll(async () => {
+      const height = await page.evaluate(() => document.documentElement.scrollHeight);
+      const stable = height === last;
+      last = height;
+      return stable;
+    }, { intervals: [300] })
+    .toBe(true);
 
   // The column (with the colour of the menu) is as tall as the page: a full-page capture shows no gap below the menu.
+  // Page and column are measured at the same moment.
+  const [pageHeight, columnTop, columnHeight] = await page.evaluate(() => {
+    const box = document.querySelector('lc-sidebar')!.getBoundingClientRect();
+    return [document.documentElement.scrollHeight, box.top, box.height];
+  });
+  expect(pageHeight).toBeGreaterThan(768);
+  expect(Math.abs(columnTop)).toBeLessThan(1);
+  expect(Math.abs(columnHeight - pageHeight)).toBeLessThan(2);
   const columnBox = await column.boundingBox();
-  expect(Math.abs(columnBox!.y)).toBeLessThan(1);
-  expect(Math.abs(columnBox!.height - pageHeight)).toBeLessThan(2);
   const colours = await column.evaluate((el) => [getComputedStyle(el).backgroundColor, getComputedStyle(el.querySelector('aside')!).backgroundColor]);
   expect(colours[0]).toBe(colours[1]);
 
