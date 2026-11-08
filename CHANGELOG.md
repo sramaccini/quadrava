@@ -12,6 +12,12 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Fixed
+
+- A `select`, `multiselect` or `radio` field whose value is not among its `options` (a status added by the service,
+  for example) showed an empty field, «—» when read only. The value is now shown as it is, after the options, translated
+  with `optionKey` like them (request of OpenDevTrack).
+
 ## [0.13.0] - 2026-11-08
 
 ### Added

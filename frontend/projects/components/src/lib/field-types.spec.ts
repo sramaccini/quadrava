@@ -50,6 +50,28 @@ describe('new field types', () => {
     expect(h.requests[0].body).toEqual({ note: 'First line\nSecond line', when: '2026-10-07T14:30', priority: 'high', urgent: true, channels: ['email', 'sms'] });
   });
 
+  it('a value outside the options (a status added by the service) is shown as it is, not as an empty field', async () => {
+    const outside: NodeDefinition = {
+      type: 'form',
+      initial: { status: 'triage', channels: ['email', 'fax'], priority: 'urgent' },
+      fields: [
+        { name: 'status', type: 'select', label: 'Status', options: ['open', 'closed'], optionKey: 'values.status', readOnlyIf: '{{ true }}' },
+        { name: 'channels', type: 'multiselect', label: 'Channels', options: ['email', 'sms'] },
+        { name: 'priority', type: 'radio', label: 'Priority', options: ['low', 'high'] },
+      ],
+    };
+    const h = await renderScreen({ components: [outside] });
+    const selects = h.el.querySelectorAll('nz-select');
+    expect(plain(selects[0].querySelector('.ant-select-selection-item')?.textContent)).toBe('triage');
+    expect([...selects[1].querySelectorAll('.ant-select-selection-item-content')].map((t) => plain(t.textContent))).toEqual(['email', 'fax']);
+    const radios = [...h.el.querySelectorAll<HTMLElement>('nz-radio-group label')];
+    expect(radios.map((r) => plain(r.textContent))).toEqual(['low', 'high', 'urgent']);
+    expect(radios[2].querySelector('input')?.checked).toBe(true);
+    // Among the choices of the select the value comes after the options, once.
+    const options = await openSelect(selects[1], settleWith(h));
+    expect(options.map((o) => plain(o.textContent))).toEqual(['email', 'sms', 'fax']);
+  });
+
   it('required: an empty text area and a multiple selection without values block submitting', async () => {
     const h = await renderScreen({ components: [{ ...form, initial: { channels: [] } } as NodeDefinition], dataSources });
     save(h);

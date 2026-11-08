@@ -146,6 +146,8 @@ Every row has a button that opens below it an area with the nodes of `expand.com
 
 They work in the form and, where it makes sense, in the filter bar (`switch`, `multiselect`, `tags`, `datetime`, `radio`; there `textarea` behaves like `text`).
 
+**A value outside the options.** When the value of a `select`, `multiselect` or `radio` field is not among its `options` (for example a status a service added, `triage` where the options are `open` and `closed`), it is shown as it is, after the options, translated with `optionKey` like them (`values.status.triage`) or else as the value itself, instead of an empty field. The user can keep it or choose an option; the service checks the value anyway.
+
 **Tags** (`tags`): a free list of short texts, such as the labels of an issue. Enter or a comma adds what was typed; the
 cross on a tag removes it. The tags are kept without spaces at the ends and each once, without regard to case (the
 first one written wins). `options` (translated with `optionKey`) and `suggest` (a GET data source asked with

@@ -30,7 +30,8 @@ const FIELD_WIDTHS: Record<FieldWidth, string> = { xs: '6rem', s: '10rem', m: '1
  * (`min`, `max`, `step`) and of dates (days out of `minDate` / `maxDate` cannot be chosen); its `transform` is applied
  * when leaving the field. A password field has a button that shows its text and, for a new password, a strength meter
  * (segments and text, announced politely); the estimate never sends the password anywhere. A text field with `suggest`
- * proposes words from a data source while typing (`lc-suggest-input`). With `width` the control takes one of the sizes
+ * proposes words from a data source while typing (`lc-suggest-input`). A value of a select, multiselect or radio
+ * field that is not among its options (a status added by the service) is shown as it is, as one more option. With `width` the control takes one of the sizes
  * of the theme, never more than the room it has.
  */
 @Component({
@@ -58,7 +59,7 @@ const FIELD_WIDTHS: Record<FieldWidth, string> = { xs: '6rem', s: '10rem', m: '1
     @switch (f.type) {
       @case ('select') {
         <nz-select [nzId]="inputId()" nzAllowClear [nzPlaceHolder]="placeholder()" [nzDisabled]="disabled()" [ngModel]="selected()" (ngModelChange)="valueChange.emit($event)">
-          @for (option of f.options ?? []; track option) {
+          @for (option of choices(); track option) {
             <nz-option [nzValue]="option" [nzLabel]="optionLabel(option)" />
           }
         </nz-select>
@@ -102,13 +103,13 @@ const FIELD_WIDTHS: Record<FieldWidth, string> = { xs: '6rem', s: '10rem', m: '1
         @if (variant() === 'filter') {
           <nz-radio-group [attr.id]="inputId()" role="radiogroup" [attr.aria-label]="label()" [nzDisabled]="disabled()" [ngModel]="selected() ?? ''" (ngModelChange)="valueChange.emit($event)">
             <label nz-radio-button nzValue="">{{ placeholder() }}</label>
-            @for (option of f.options ?? []; track option) {
+            @for (option of choices(); track option) {
               <label nz-radio-button [nzValue]="option">{{ optionLabel(option) }}</label>
             }
           </nz-radio-group>
         } @else {
           <nz-radio-group [attr.id]="inputId()" role="radiogroup" [attr.aria-label]="label()" [nzDisabled]="disabled()" [ngModel]="selected()" (ngModelChange)="valueChange.emit($event)">
-            @for (option of f.options ?? []; track option) {
+            @for (option of choices(); track option) {
               <label nz-radio [nzValue]="option">{{ optionLabel(option) }}</label>
             }
           </nz-radio-group>
@@ -128,7 +129,7 @@ const FIELD_WIDTHS: Record<FieldWidth, string> = { xs: '6rem', s: '10rem', m: '1
       }
       @case ('multiselect') {
         <nz-select [nzId]="inputId()" nzMode="multiple" nzAllowClear [nzPlaceHolder]="placeholder()" [nzDisabled]="disabled()" [ngModel]="list()" (ngModelChange)="multiple($event)">
-          @for (option of f.options ?? []; track option) {
+          @for (option of choices(); track option) {
             <nz-option [nzValue]="option" [nzLabel]="optionLabel(option)" />
           }
         </nz-select>
@@ -268,6 +269,16 @@ export class FieldControlComponent {
   protected readonly selected = computed(() => {
     const value = this.value();
     return value === null || value === undefined || value === '' ? null : String(value);
+  });
+  /**
+   * Options of a select, multiselect or radio field, followed by the current values that are not among them (for
+   * example a status the service added): shown as they are, translated like the others, instead of an empty field.
+   */
+  protected readonly choices = computed(() => {
+    const options = this.field().options ?? [];
+    const current = this.field().type === 'multiselect' ? this.list() : this.selected() === null ? [] : [this.selected()!];
+    const outside = current.filter((value) => !options.includes(value));
+    return outside.length ? [...options, ...new Set(outside)] : options;
   });
   /** Keyboard and autocomplete of the text box, from the format of the field. */
   protected readonly hints = computed(() => inputHints(this.field(), this.runtime().validatorRegistry));
