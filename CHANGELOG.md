@@ -20,6 +20,9 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ### Added
 
+- `optionKeys` on fields and `valueKeys` on table columns and stats: the catalogue key of a single value that cannot be
+  part of a key, such as `*` for every event (`{ "*": "values.events.all" }`), before `optionKey` and `valueKey`
+  (request Q16 of OpenDevTrack). The «Sent by» field of the flow form in the showcase «Forms» has one.
 - The runtime image sends a Content-Security-Policy with the files of the runtime (scripts, data and frames from the same
   origin only) and, with `QUADRAVA_HSTS` (`max-age=31536000`), `Strict-Transport-Security` on every answer; the
   answers of the BFF keep their own headers (request Q18 of OpenDevTrack). The production build of the runtime no

@@ -53,11 +53,11 @@ export function dataItems(list: unknown, from: FieldsFromDefinition, taken: Read
     const required = r[from.requiredField ?? 'required'] === true || model.required === true;
     // Options of the row replace those of the model, and their labels are data: the translations of the model do not apply.
     const ownOptions = CHOICE_TYPES.has(model.type) && options !== null;
-    const { optionKey, ...rules } = model;
+    const { optionKey, optionKeys, ...rules } = model;
     const field: FieldDefinition = {
       ...rules,
       name,
-      ...(ownOptions ? { options: options.map((o) => o.value) } : optionKey ? { optionKey } : {}),
+      ...(ownOptions ? { options: options.map((o) => o.value) } : { ...(optionKey ? { optionKey } : {}), ...(optionKeys ? { optionKeys } : {}) }),
       ...(required ? { required: true } : {}),
     };
     items.push({

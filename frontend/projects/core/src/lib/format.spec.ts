@@ -1,4 +1,4 @@
-import { formatValue } from './format';
+import { formatValue, valueTranslationKey } from './format';
 
 // Intl uses non-breaking spaces in some languages (Italian): texts are compared regardless of the kind of space.
 const plain = (text: string): string => text.replace(/[  ]/g, ' ');
@@ -9,6 +9,19 @@ describe('formatValue', () => {
     expect(formatValue(['bug', 'ui'], { valueKey: 'labels' }, 'en-GB', { yes: 'Yes', no: 'No', translate: (key, raw) => (key === 'labels.bug' ? 'Bug' : raw) }).text).toBe('Bug, ui');
     expect(plain(formatValue([1000, 2], { format: 'number' }).text)).toBe('1,000, 2');
     expect(formatValue([], {}).text).toBe('');
+  });
+
+  it('a value that cannot be part of a key (such as *) is translated with its own key in valueKeys, before valueKey', () => {
+    const translate = (key: string, raw: string): string => ({ 'values.events.all': 'Every event', 'values.events.push': 'Push' })[key] ?? raw;
+    const labels = { yes: 'Yes', no: 'No', translate };
+    const spec = { valueKey: 'values.events', valueKeys: { '*': 'values.events.all' } };
+    expect(formatValue('*', spec, 'en-GB', labels).text).toBe('Every event');
+    expect(formatValue('push', spec, 'en-GB', labels).text).toBe('Push');
+    expect(formatValue(['*', 'tag'], spec, 'en-GB', labels).text).toBe('Every event, tag');
+    // A missing key shows the value; the keys are own properties only.
+    expect(formatValue('*', { valueKeys: { '*': 'values.missing' } }, 'en-GB', labels).text).toBe('*');
+    expect(valueTranslationKey('toString', undefined, { '*': 'values.events.all' })).toBeNull();
+    expect(valueTranslationKey('push', 'values.events')).toBe('values.events.push');
   });
 
   it('by default formats in British English: amounts, numbers, percentages, dates and Yes/No', () => {

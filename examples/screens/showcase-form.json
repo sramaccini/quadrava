@@ -317,12 +317,16 @@
               "type": "multiselect",
               "label": "{{ t('showcase_form.widths_channels', 'Sent by') }}",
               "options": [
+                "*",
                 "email",
                 "post"
               ],
               "optionKey": "values.channel",
               "readOnlyIf": "{{ true }}",
-              "width": "m"
+              "width": "m",
+              "optionKeys": {
+                "*": "values.channel.any"
+              }
             },
             {
               "name": "customer",
@@ -396,7 +400,7 @@
             "status": "sent",
             "sentOn": "2026-11-02",
             "channels": [
-              "email"
+              "*"
             ]
           }
         }

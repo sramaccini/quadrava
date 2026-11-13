@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { I18n, inputHints, passwordStrength, resolveDateLimit, transformValue, type RemoteChecks, type ScreenRuntime, type Scope } from 'core';
+import { I18n, inputHints, passwordStrength, resolveDateLimit, transformValue, valueTranslationKey, type RemoteChecks, type ScreenRuntime, type Scope } from 'core';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzCheckboxModule } from 'ng-zorro-antd/checkbox';
 import { NzDatePickerModule } from 'ng-zorro-antd/date-picker';
@@ -271,7 +271,7 @@ export class FieldControlComponent {
   readonly placeholder = input('—');
   /** Label that is data (a field of `fieldsFrom`), shown as it is; otherwise the label of the field, resolved by the screen. */
   readonly labelText = input<string | null>(null);
-  /** Labels of options that are data, by value; otherwise `optionKey` or the value. */
+  /** Labels of options that are data, by value; otherwise `optionKeys`, `optionKey` or the value. */
   readonly optionLabels = input<Readonly<Record<string, string>> | null>(null);
   readonly valueChange = output<unknown>();
 
@@ -337,12 +337,13 @@ export class FieldControlComponent {
     return this.labelText() ?? (this.runtime().text(f.label, this.scope()) || f.name);
   }
 
-  /** Label of an option: from the data, translated with `optionKey` (`<prefix>.<value>`), otherwise the value itself. */
+  /** Label of an option: from the data, translated with its key in `optionKeys` or with `optionKey` (`<prefix>.<value>`), otherwise the value itself. */
   protected optionLabel(option: string): string {
     const own = this.optionLabels();
     if (own) return Object.hasOwn(own, option) ? own[option] : option;
-    const key = this.field().optionKey;
-    return key ? this.i18n.t(`${key}.${option}`, {}, option) : option;
+    const f = this.field();
+    const key = valueTranslationKey(option, f.optionKey, f.optionKeys);
+    return key ? this.i18n.t(key, {}, option) : option;
   }
 
   /** {@link optionLabel} for the tags field, bound to this control. */

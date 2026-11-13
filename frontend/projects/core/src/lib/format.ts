@@ -7,9 +7,18 @@ export interface FormattedValue {
   tone?: Tone;
 }
 
-type FormatSpec = Pick<ColumnDefinition, 'format' | 'currency' | 'badges' | 'valueKey' | 'decimals'>;
+type FormatSpec = Pick<ColumnDefinition, 'format' | 'currency' | 'badges' | 'valueKey' | 'valueKeys' | 'decimals'>;
 
-/** Language-dependent words: yes/no and the translation of values (`valueKey`). */
+/**
+ * Catalogue key of a value to show: its own key in `keys` (for a value that cannot be part of a key, such as `*`),
+ * otherwise `<prefix>.<value>`; null without either. Used for the options of fields and the values of columns.
+ */
+export function valueTranslationKey(value: string, prefix?: string, keys?: Readonly<Record<string, string>>): string | null {
+  if (keys && Object.hasOwn(keys, value)) return keys[value];
+  return prefix ? `${prefix}.${value}` : null;
+}
+
+/** Language-dependent words: yes/no and the translation of values (`valueKey`, `valueKeys`). */
 export interface FormatLabels {
   yes: string;
   no: string;
@@ -93,7 +102,8 @@ export function formatValue(value: unknown, spec: FormatSpec, locale = 'en-GB', 
 }
 
 function translated(raw: string, spec: FormatSpec, labels: FormatLabels): string {
-  return spec.valueKey && labels.translate ? labels.translate(`${spec.valueKey}.${raw}`, raw) : raw;
+  const key = valueTranslationKey(raw, spec.valueKey, spec.valueKeys);
+  return key && labels.translate ? labels.translate(key, raw) : raw;
 }
 
 function toNumber(value: unknown): number | null {

@@ -157,6 +157,8 @@ export interface FieldDefinition {
   options?: string[];
   /** Prefix of the translation keys of the option labels (`<prefix>.<value>`). */
   optionKey?: string;
+  /** Translation keys of single option labels, by value (a value such as `*` cannot be part of a key); before `optionKey`. */
+  optionKeys?: Record<string, string>;
   /** The value never appears in traces and logs. */
   sensitive?: boolean;
   visibleIf?: Expression;
@@ -266,6 +268,8 @@ export interface ColumnDefinition {
   format?: CellFormat;
   /** Prefix of the translation keys of the shown values (`<prefix>.<value>`); badges stay tied to the original value. */
   valueKey?: string;
+  /** Translation keys of single shown values, by value (a value such as `*` cannot be part of a key); before `valueKey`. */
+  valueKeys?: Record<string, string>;
   /** Decimals for `number` (up to 2 if absent). */
   decimals?: number;
   /** ISO 4217 code for `currency` (EUR if absent). */
@@ -419,6 +423,7 @@ export interface StatItem {
   currency?: string;
   decimals?: number;
   valueKey?: string;
+  valueKeys?: Record<string, string>;
   tone?: Tone;
   caption?: string;
   tooltip?: string;

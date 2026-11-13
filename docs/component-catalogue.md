@@ -148,6 +148,13 @@ They work in the form and, where it makes sense, in the filter bar (`switch`, `m
 
 **A value outside the options.** When the value of a `select`, `multiselect` or `radio` field is not among its `options` (for example a status a service added, `triage` where the options are `open` and `closed`), it is shown as it is, after the options, translated with `optionKey` like them (`values.status.triage`) or else as the value itself, instead of an empty field. The user can keep it or choose an option; the service checks the value anyway.
 
+**A value that cannot be part of a key.** Catalogue keys hold letters, digits, `.`, `-` and `_`: an option such as `*` (every event) has no `<prefix>.<value>` key. `optionKeys` gives such values a key of their own, before `optionKey`; on table columns and stats `valueKeys` does the same before `valueKey`. A missing key shows the value.
+
+```json
+{ "name": "events", "type": "multiselect", "options": ["*", "push", "tag"],
+  "optionKey": "values.events", "optionKeys": { "*": "values.events.all" } }
+```
+
 **Tags** (`tags`): a free list of short texts, such as the labels of an issue. Enter or a comma adds what was typed; the
 cross on a tag removes it. The tags are kept without spaces at the ends and each once, without regard to case (the
 first one written wins). `options` (translated with `optionKey`) and `suggest` (a GET data source asked with

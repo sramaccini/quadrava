@@ -67,7 +67,7 @@ export class TagsFieldComponent {
   readonly disabled = input(false);
   readonly inputId = input<string | null>(null);
   readonly placeholder = input('—');
-  /** Label of an option of `options` (translated with `optionKey`, or from the data). */
+  /** Label of an option of `options` (translated with `optionKeys` or `optionKey`, or from the data). */
   readonly optionLabel = input<(option: string) => string>((option) => option);
   /** In a filter, no tag means «no filter» (null). */
   readonly emptyAsNull = input(false);

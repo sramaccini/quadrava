@@ -1,3 +1,4 @@
+import { I18n } from 'core';
 import type { NodeDefinition } from 'schema';
 import { plain, renderScreen, type ScreenHarness } from './screen-testing';
 import { openSelect, stubViewportHeight } from './select-testing';
@@ -70,6 +71,23 @@ describe('new field types', () => {
     // Among the choices of the select the value comes after the options, once.
     const options = await openSelect(selects[1], settleWith(h));
     expect(options.map((o) => plain(o.textContent))).toEqual(['email', 'sms', 'fax']);
+  });
+
+  it('optionKeys translates an option whose value cannot be part of a key (such as *), before optionKey', async () => {
+    const events: NodeDefinition = {
+      type: 'form',
+      initial: { events: ['*'], scope: '*' },
+      fields: [
+        { name: 'events', type: 'multiselect', label: 'Events', options: ['*', 'push'], optionKey: 'values.events', optionKeys: { '*': 'values.events.all' } },
+        { name: 'scope', type: 'radio', label: 'Scope', options: ['*', 'mine'], optionKeys: { '*': 'values.events.all' } },
+      ],
+    };
+    const h = await renderScreen({ components: [events] });
+    h.fixture.debugElement.injector.get(I18n).addMessages('en', { 'values.events.all': 'Every event', 'values.events.push': 'Push' });
+    await h.until(() => plain(h.el.querySelector('.ant-select-selection-item-content')?.textContent) === 'Every event', 'translated');
+    expect([...h.el.querySelectorAll<HTMLElement>('nz-radio-group label')].map((r) => plain(r.textContent))).toEqual(['Every event', 'mine']);
+    const options = await openSelect(h.el.querySelector('nz-select') as Element, settleWith(h));
+    expect(options.map((o) => plain(o.textContent))).toEqual(['Every event', 'Push']);
   });
 
   it('required: an empty text area and a multiple selection without values block submitting', async () => {

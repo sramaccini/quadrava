@@ -612,5 +612,6 @@
   "showcase_form.widths_status": "Stato (deciso dal flusso)",
   "showcase_form.widths_sent_on": "Inviata il",
   "showcase_form.widths_channels": "Inviata per",
-  "values.channel.post": "Posta"
+  "values.channel.post": "Posta",
+  "values.channel.any": "Qualsiasi canale"
 }

@@ -38,7 +38,7 @@ describe('form fields from a data source', () => {
     it('a model gives the control and its rules; the row replaces name, label, options and required', () => {
       const user: FieldDefinition = { name: 'user', type: 'lookup', label: 'Not used', lookup: { source: 'members', labelField: 'name' }, readOnlyIf: '{{ !can("x.y.z") }}' };
       const text: FieldDefinition = { name: 'text', type: 'text', maxLength: 1000 };
-      const choice: FieldDefinition = { name: 'choice', type: 'select', options: ['a', 'b'], optionKey: 'values.choice' };
+      const choice: FieldDefinition = { name: 'choice', type: 'select', options: ['a', 'b', '*'], optionKey: 'values.choice', optionKeys: { '*': 'values.all' } };
       const [owner, note, pick, picked] = dataItems(
         [
           { name: 'owner', type: 'user', label: 'Owner', required: true },
@@ -53,8 +53,8 @@ describe('form fields from a data source', () => {
       expect(note.field).toEqual({ name: 'note', type: 'text', maxLength: 1000 });
       expect(note.label).toBe('note');
       // Options of the model, translated by the screen; options of the row, which are data.
-      expect([pick.field.options, pick.field.optionKey, pick.optionLabels]).toEqual([['a', 'b'], 'values.choice', null]);
-      expect([picked.field.options, picked.field.optionKey, picked.optionLabels]).toEqual([['c'], undefined, { c: 'c' }]);
+      expect([pick.field.options, pick.field.optionKey, pick.field.optionKeys, pick.optionLabels]).toEqual([['a', 'b', '*'], 'values.choice', { '*': 'values.all' }, null]);
+      expect([picked.field.options, picked.field.optionKey, picked.field.optionKeys, picked.optionLabels]).toEqual([['c'], undefined, undefined, { c: 'c' }]);
     });
 
     it('values kept in the object, or next to the others', () => {

@@ -433,6 +433,7 @@
 | `validation` | list of fieldRule | Advanced validation: rules checked in order after the flat constraints, each with an optional message, condition (when) and severity (a warning does not block). For example [{ "format": "vatNumber", "country": "{{form.country}}" }, { "required": true, "when": "{{form.company}}" }]. |
 | `tooltip` | text | Help text shown on mouse hover or with the focus. Text only (never HTML); it can contain {{ }}. |
 | `optionKey` | text | Prefix of the translation keys for the option labels: the label of an option is t('<prefix>.<value>'), with the value as a fallback. |
+| `optionKeys` | object | Translation keys of single option labels, by value, for values that cannot be part of a key, for example {"*": "values.events.all"}: the label of * is then t('values.events.all'). They come before optionKey; a missing key shows the value. |
 | `rows` | integer 2–20 | Visible rows of a textarea field (4 if absent). |
 | `lookup` | object | For type lookup: GET data source queried with the `search` variable (for example "params": { "q": "{{ search }}" }). |
 | `suggest` | object | For type text and tags: suggestions from a GET data source while typing; the value stays free text (for example a query). For tags the data source sees the text typed in search and word, and a suggestion is added as a tag. The data source sees `search` (the whole text) and `word` (the word at the cursor, delimited by spaces, brackets and commas), for example "params": { "q": "{{ search }}", "word": "{{ word }}" }; choosing a suggestion replaces that word. |

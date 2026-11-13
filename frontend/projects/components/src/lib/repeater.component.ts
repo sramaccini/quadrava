@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { I18n, inputHints, transformValue, type RemoteChecks, type ScreenRuntime, type Scope } from 'core';
+import { I18n, inputHints, transformValue, valueTranslationKey, type RemoteChecks, type ScreenRuntime, type Scope } from 'core';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzCheckboxModule } from 'ng-zorro-antd/checkbox';
 import { NzDatePickerModule } from 'ng-zorro-antd/date-picker';
@@ -184,7 +184,8 @@ export class RepeaterComponent {
   }
 
   protected optionLabel(sub: FieldDefinition, option: string): string {
-    return sub.optionKey ? this.i18n.t(`${sub.optionKey}.${option}`, {}, option) : option;
+    const key = valueTranslationKey(option, sub.optionKey, sub.optionKeys);
+    return key ? this.i18n.t(key, {}, option) : option;
   }
 
   protected text(row: Row, sub: FieldDefinition): string {
