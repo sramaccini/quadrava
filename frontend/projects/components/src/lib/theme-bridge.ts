@@ -1,5 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import { effect, inject, provideEnvironmentInitializer, type EnvironmentProviders } from '@angular/core';
+import { CSP_NONCE, effect, inject, provideEnvironmentInitializer, type EnvironmentProviders } from '@angular/core';
 import { generate } from '@ant-design/colors';
 import { ThemeService } from 'core';
 import type { ThemeDefinition } from 'schema';
@@ -126,18 +126,22 @@ export const NZ_DARK_SURFACES_CSS = `
 
 /**
  * Connects the platform theme to NG-ZORRO: on every theme change it sets the `--ant-*` variables and,
- * for dark themes, loads the NG-ZORRO dark stylesheet (removed when switching to a light theme).
+ * for dark themes, loads the NG-ZORRO dark stylesheet (removed when switching to a light theme). Its style elements carry
+ * the nonce of the page (`ngCspNonce` on the root element, `CSP_NONCE`), so a policy without 'unsafe-inline' allows them.
  */
 export function provideNzThemeBridge(): EnvironmentProviders {
   return provideEnvironmentInitializer(() => {
     const themes = inject(ThemeService);
     const doc = inject(DOCUMENT);
-    if (!doc.getElementById(A11Y_STYLE_ID)) {
+    const nonce = inject(CSP_NONCE, { optional: true });
+    const addStyle = (id: string, css: string): void => {
       const style = doc.createElement('style');
-      style.id = A11Y_STYLE_ID;
-      style.textContent = NZ_CONTRAST_CSS;
+      style.id = id;
+      if (nonce) style.nonce = nonce;
+      style.textContent = css;
       doc.head.appendChild(style);
-    }
+    };
+    if (!doc.getElementById(A11Y_STYLE_ID)) addStyle(A11Y_STYLE_ID, NZ_CONTRAST_CSS);
     effect(() => {
       const theme = themes.current();
       if (!theme) return;
@@ -152,12 +156,7 @@ export function provideNzThemeBridge(): EnvironmentProviders {
           link.href = NZ_DARK_STYLESHEET;
           doc.head.appendChild(link);
         }
-        if (!doc.getElementById(DARK_SURFACES_ID)) {
-          const surfaces = doc.createElement('style');
-          surfaces.id = DARK_SURFACES_ID;
-          surfaces.textContent = NZ_DARK_SURFACES_CSS;
-          doc.head.appendChild(surfaces);
-        }
+        if (!doc.getElementById(DARK_SURFACES_ID)) addStyle(DARK_SURFACES_ID, NZ_DARK_SURFACES_CSS);
       } else {
         existing?.remove();
         doc.getElementById(DARK_SURFACES_ID)?.remove();

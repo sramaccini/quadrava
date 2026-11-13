@@ -104,9 +104,19 @@ jobs:
           curl -fsSI http://localhost:8081/some/screen | grep -qi "^content-security-policy: default-src 'self'; script-src 'self';"
           curl -fsSI http://localhost:8081/runtime-config.json | grep -qi '^x-frame-options: SAMEORIGIN'
           if curl -fsSI http://localhost:8081/ | grep -qi '^strict-transport-security'; then echo 'no HSTS without QUADRAVA_HSTS'; exit 1; fi
-          docker run -d --name hsts -p 8083:8080 -e QUADRAVA_HSTS='max-age=31536000; includeSubDomains' quadrava-runtime:ci
+          # The nonce of the style elements: the same in the header and in the page, another in the next answer.
+          page=$(curl -fsSi http://localhost:8081/some/screen)
+          nonce=$(printf '%s' "$page" | grep -io "'nonce-[0-9a-f]*'" | head -1 | tr -d "'" | cut -c7-)
+          test -n "$nonce"
+          printf '%s' "$page" | grep -q "<lc-root ngCspNonce=\"$nonce\""
+          if curl -fsS http://localhost:8081/ | grep -q "ngCspNonce=\"$nonce\""; then echo 'a nonce must not be used twice'; exit 1; fi
+          printf '%s' "$page" | grep -qi "img-src 'self' data:;"
+          docker run -d --name hsts -p 8083:8080 -e QUADRAVA_HSTS='max-age=31536000; includeSubDomains' \
+            -e QUADRAVA_CSP_IMG_SRC='https://cdn.example.com https://*.images.example' quadrava-runtime:ci
           sleep 2
           curl -fsSI http://localhost:8083/ | grep -qi '^strict-transport-security: max-age=31536000; includeSubDomains'
+          curl -fsSI http://localhost:8083/ | grep -qi "img-src 'self' data: https://cdn.example.com https://\*.images.example;"
+          if docker run --rm -e QUADRAVA_CSP_IMG_SRC=http://x.example quadrava-runtime:ci; then echo 'a wrong image source must stop the container'; exit 1; fi
           if docker run --rm -e QUADRAVA_HSTS=forever quadrava-runtime:ci; then echo 'a wrong HSTS must stop the container'; exit 1; fi
           if docker run --rm -e QUADRAVA_REGISTRY_APP='bad"name' quadrava-runtime:ci; then echo 'a wrong value must stop the container'; exit 1; fi
           if docker run --rm -e QUADRAVA_BFF_URL=http://bff.test:8080 -e QUADRAVA_MAX_BODY_SIZE=10mb quadrava-runtime:ci; then echo 'a wrong size must stop the container'; exit 1; fi

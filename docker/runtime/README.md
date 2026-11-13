@@ -34,6 +34,7 @@ At start-up the image writes `runtime-config.json`, the file the runtime reads b
 | `QUADRAVA_STUDIO_ORIGINS` | Origins of Quadrava Studio allowed to open this runtime with their project (ADR-16) | none |
 | `QUADRAVA_BFF_URL` | Address of the BFF (`http://bff:8080`): nginx forwards its paths to it | not forwarded |
 | `QUADRAVA_MAX_BODY_SIZE` | Largest request body forwarded to the BFF, as nginx writes it (`100m`, `512k`, `0` for no limit of nginx): an upload from a `file` field that is larger gets 413 | `100m` (the largest `maxSizeKb`) |
+| `QUADRAVA_CSP_IMG_SRC` | Further image sources of the Content-Security-Policy, separated by spaces: `https://host` (with `*.` and a port) or `https:` for any | same origin and `data:` only |
 | `QUADRAVA_HSTS` | `Strict-Transport-Security` on every answer, as `max-age=<seconds>` with optional `; includeSubDomains` and `; preload` (`max-age=31536000`): only for a deployment reached over https | not sent |
 
 A file mounted at `/etc/quadrava/runtime-config.json` must be readable by the user 101 (or by group 0). The image runs
@@ -76,17 +77,26 @@ plus `Strict-Transport-Security` with `QUADRAVA_HSTS`. The files of the runtime 
 `runtime-config.json`) also have a Content-Security-Policy:
 
 ```
-default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'
+default-src 'self'; script-src 'self'; style-src 'self' 'nonce-…'; style-src-attr 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'
 ```
 
-Everything comes from the origin of the page, as the browser talks only to the BFF: no inline scripts and no `eval`
-(the validators are precompiled, and the build does not inline the critical CSS, which would need an inline script).
-Inline styles are allowed because Angular and NG-ZORRO add style elements; images may also come from `https:` and
-`data:` addresses (a logo, a photo from the data). Only the same origin may frame the pages; Quadrava Studio opens the
-runtime in a window of its own, which the policy does not limit. The answers of the BFF forwarded with
-`QUADRAVA_BFF_URL` keep their own headers and get no Content-Security-Policy from nginx. A deployment that needs another
-policy (an image or a font from a given host) puts its own `nginx.conf` over `/etc/nginx/conf.d/quadrava.conf` and
-`/etc/nginx/snippets/quadrava-security-headers.conf`.
+- **Everything from the origin of the page**, as the browser talks only to the BFF: no inline scripts and no `eval`
+  (the validators are precompiled, and the build does not inline the critical CSS, which would need an inline script).
+- **Style elements need the nonce of the answer.** nginx writes a new random value (`$request_id`) in the header and in
+  `index.html` (`<lc-root ngCspNonce="…">`, so the page is served with `Cache-Control: no-store`); Angular, NG-ZORRO
+  and the theme put it on the style elements they add. A style element injected by anyone else is refused.
+- **Style attributes stay allowed** (`style-src-attr 'unsafe-inline'`): NG-ZORRO writes some in its templates (the list
+  of `nz-tree`), which Quadrava cannot change. An attribute holds declarations for its own element, not selectors that
+  could read the page, and scripts are not affected: a scanner that reports `unsafe-inline` for styles (ZAP 10055)
+  reports this accepted rest.
+- **Images** from the same origin and `data:` addresses; `QUADRAVA_CSP_IMG_SRC` adds hosts for an installation that
+  shows images from elsewhere (`https://cdn.example.com https://*.images.example`, or `https:` for any).
+- **Frames**: only the same origin may frame the pages; Quadrava Studio opens the runtime in a window of its own, which
+  the policy does not limit.
+
+The answers of the BFF forwarded with `QUADRAVA_BFF_URL` keep their own headers and get no Content-Security-Policy from
+nginx. A deployment that needs another policy (a font from a given host) puts its own files over
+`/etc/nginx/conf.d/quadrava.conf` and `/etc/nginx/snippets/quadrava-security-headers.conf`.
 
 ## Against the local stack
 

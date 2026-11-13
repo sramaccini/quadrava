@@ -398,7 +398,7 @@ The conformance kits pass against the reference services, in CI on every push: a
 * **URLs in components** are restricted: images accept relative, `https` and `data:image` addresses only; links accept screens, relative paths and `https` (opened with `noopener noreferrer`); never `javascript:` or other protocols.
 * **CSV exports** neutralise cells that a spreadsheet would run as formulas.
 
-Content-Security-Policy of the runtime, which the runtime image sends (`docker/runtime/README.md`, «Security headers») and a deployment of the web build should send too: `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'` (`unsafe-inline` styles are needed by Angular and NG-ZORRO; the build does not inline the critical CSS, which would need an inline script).
+Content-Security-Policy of the runtime, which the runtime image sends (`docker/runtime/README.md`, «Security headers»): `default-src 'self'; script-src 'self'; style-src 'self' 'nonce-…'; style-src-attr 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'`, with a new nonce in every answer, also written in `index.html` as `<lc-root ngCspNonce="…">` (Angular, NG-ZORRO and the theme put it on their style elements). A deployment of the web build that cannot add a nonce sends `style-src 'self' 'unsafe-inline'` instead.
 
 ## License
 

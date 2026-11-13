@@ -29,8 +29,10 @@ RUN mv /usr/share/nginx/html/runtime-config.json /usr/share/nginx/runtime-config
 COPY LICENSE NOTICE /usr/share/doc/quadrava/
 COPY docker/runtime/nginx.conf /etc/nginx/conf.d/quadrava.conf
 COPY docker/runtime/security-headers.conf /etc/nginx/snippets/quadrava-security-headers.conf
-# Without QUADRAVA_HSTS no Strict-Transport-Security: the start-up script rewrites this file.
-RUN touch /etc/nginx/quadrava/hsts.inc
+# Without QUADRAVA_HSTS no Strict-Transport-Security, without QUADRAVA_CSP_IMG_SRC images from the same origin and data:
+# addresses only: the start-up script rewrites these files.
+RUN touch /etc/nginx/quadrava/hsts.inc \
+ && printf '%s\n' "map \$request_id \$quadrava_img_src { default \"'self' data:\"; }" > /etc/nginx/quadrava/img-src.map
 COPY docker/runtime/40-quadrava-config.sh /docker-entrypoint.d/
 RUN chmod +x /docker-entrypoint.d/40-quadrava-config.sh
 # Not root: nginx runs as the user nginx (101), with the pid in /tmp. The start-up script writes only the served

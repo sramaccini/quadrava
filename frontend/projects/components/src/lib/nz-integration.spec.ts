@@ -1,3 +1,4 @@
+import { CSP_NONCE } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { Authorization, DataClient, Notifier, ScreenComponent, ScreenNavigator, ThemeService, UserProvider, type DataRequest } from 'core';
 import { NzMessageService } from 'ng-zorro-antd/message';
@@ -87,6 +88,16 @@ describe('integration with NG-ZORRO', () => {
       TestBed.tick();
       expect(document.getElementById('lc-nz-dark-theme')).toBeNull();
       expect(document.getElementById('lc-nz-dark-surfaces')).toBeNull();
+    });
+
+    it('its style elements carry the nonce of the page, for a Content-Security-Policy without unsafe-inline', () => {
+      document.getElementById('lc-nz-contrast')?.remove();
+      TestBed.configureTestingModule({ providers: [provideLcComponents(), { provide: CSP_NONCE, useValue: 'r4nd0m' }] });
+      const themes = TestBed.inject(ThemeService);
+      themes.apply(theme('dark'));
+      TestBed.tick();
+      expect((document.getElementById('lc-nz-contrast') as HTMLStyleElement).nonce).toBe('r4nd0m');
+      expect((document.getElementById('lc-nz-dark-surfaces') as HTMLStyleElement).nonce).toBe('r4nd0m');
     });
   });
 

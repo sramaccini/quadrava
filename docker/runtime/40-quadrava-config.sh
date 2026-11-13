@@ -114,6 +114,18 @@ if [ -n "${QUADRAVA_HSTS:-}" ]; then
   echo "quadrava: Strict-Transport-Security $QUADRAVA_HSTS"
 fi
 
+# Image sources of the Content-Security-Policy: the same origin and data: addresses, plus QUADRAVA_CSP_IMG_SRC for an
+# installation that shows images from other hosts (https: for any, or https://host, https://*.host, with a port).
+img_src="'self' data:"
+set -f  # https://*.host is not a file name
+for item in ${QUADRAVA_CSP_IMG_SRC:-}; do
+  printf '%s' "$item" | grep -Eq '^(https:|https://(\*\.)?[A-Za-z0-9.-]+(:[0-9]{1,5})?)$' || fail "QUADRAVA_CSP_IMG_SRC: https: or https://host, separated by spaces, not: $item"
+  img_src="$img_src $item"
+done
+set +f
+printf 'map $request_id $quadrava_img_src { default "%s"; }\n' "$img_src" > /etc/nginx/quadrava/img-src.map
+[ -z "${QUADRAVA_CSP_IMG_SRC:-}" ] || echo "quadrava: images also from $QUADRAVA_CSP_IMG_SRC"
+
 proxy=/etc/nginx/quadrava/bff.conf
 rm -f "$proxy"
 if [ -n "${QUADRAVA_BFF_URL:-}" ]; then

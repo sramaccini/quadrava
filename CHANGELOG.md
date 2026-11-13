@@ -12,6 +12,19 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Changed
+
+- The Content-Security-Policy of the runtime image is tighter (request Q21 of OpenDevTrack): images only from the same
+  origin and `data:` addresses, plus the new `QUADRAVA_CSP_IMG_SRC` (`https://cdn.example.com`, `https:` for any); an
+  installation that shows images from other hosts sets it. Style elements need the nonce of the answer, which nginx
+  writes in `index.html` (`ngCspNonce`, served with `no-store`); style attributes stay allowed for NG-ZORRO
+  (`style-src-attr 'unsafe-inline'`, the reason is in `docker/runtime/README.md`).
+
+### Fixed
+
+- The style elements of the theme (contrast rules, dark surfaces) carry the nonce of the page (`CSP_NONCE`), so a
+  policy without `'unsafe-inline'` allows them.
+
 ## [0.14.0] - 2026-11-13
 
 ### Changed
