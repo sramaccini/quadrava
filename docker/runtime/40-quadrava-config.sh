@@ -8,6 +8,7 @@
 set -eu
 
 html=/usr/share/nginx/html
+# Written in place (cat, not cp): the file belongs to the user of nginx, its folder does not.
 target="$html/runtime-config.json"
 mounted=/etc/quadrava/runtime-config.json
 
@@ -58,7 +59,7 @@ origins() {
 }
 
 if [ -f "$mounted" ]; then
-  cp "$mounted" "$target"
+  cat "$mounted" > "$target"
   echo "quadrava: configuration from $mounted"
 elif [ -n "${QUADRAVA_REGISTRY_APP:-}" ]; then
   app=$QUADRAVA_REGISTRY_APP
@@ -100,7 +101,7 @@ elif [ -n "${QUADRAVA_REGISTRY_APP:-}" ]; then
   printf "$config\n}\n" > "$target"
   echo "quadrava: definitions of $app ($env) from the registry, services through the BFF"
 else
-  cp /usr/share/nginx/runtime-config.default.json "$target"
+  cat /usr/share/nginx/runtime-config.default.json > "$target"
   echo "quadrava: demo with the examples"
 fi
 

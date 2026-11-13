@@ -12,6 +12,12 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Changed
+
+- The runtime image runs nginx as the user `nginx` (101, group 0), not root, still on port 8080: it works with
+  `runAsNonRoot` in Kubernetes and with any user id in group 0 (OpenShift). A configuration mounted at
+  `/etc/quadrava/runtime-config.json` must be readable by that user (request Q20 of OpenDevTrack).
+
 ### Added
 
 - The runtime image sends a Content-Security-Policy with the files of the runtime (scripts, data and frames from the same

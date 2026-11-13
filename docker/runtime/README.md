@@ -1,7 +1,7 @@
 # Runtime image
 
 The runtime of Quadrava CE as a container image (ADR-20, `docs/adr-20-versioned-distribution.md`): the built application
-served by nginx on port 8080. It is configured when the container starts, so an application that uses Quadrava never
+served by nginx on port 8080, as the user `nginx` (101), not root. It is configured when the container starts, so an application that uses Quadrava never
 builds Angular: it runs the image of a version and points it at its definitions.
 
 ```bash
@@ -35,6 +35,10 @@ At start-up the image writes `runtime-config.json`, the file the runtime reads b
 | `QUADRAVA_BFF_URL` | Address of the BFF (`http://bff:8080`): nginx forwards its paths to it | not forwarded |
 | `QUADRAVA_MAX_BODY_SIZE` | Largest request body forwarded to the BFF, as nginx writes it (`100m`, `512k`, `0` for no limit of nginx): an upload from a `file` field that is larger gets 413 | `100m` (the largest `maxSizeKb`) |
 | `QUADRAVA_HSTS` | `Strict-Transport-Security` on every answer, as `max-age=<seconds>` with optional `; includeSubDomains` and `; preload` (`max-age=31536000`): only for a deployment reached over https | not sent |
+
+A file mounted at `/etc/quadrava/runtime-config.json` must be readable by the user 101 (or by group 0). The image runs
+without root (`runAsNonRoot` in Kubernetes) and with any user id in group 0 (OpenShift); it writes only the served
+`runtime-config.json`, `/etc/nginx/quadrava` and the cache of nginx.
 
 Names accept letters, digits, `.`, `-` and `_`; paths must start with a single `/`; origins and the BFF address are
 scheme, host and port only. Any other value stops the container with a message, instead of starting with another

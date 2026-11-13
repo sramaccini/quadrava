@@ -97,6 +97,9 @@ jobs:
           curl -fsS http://localhost:8082/runtime-config.json | grep -q '"registry"'
           # Uploads up to the largest file field pass nginx; the limit is a setting of the image.
           docker exec registry grep -q 'client_max_body_size 100m;' /etc/nginx/quadrava/bff.conf
+          # nginx runs without root (master and workers).
+          test "$(docker exec demo id -u)" = 101
+          if docker exec demo ps -o user= | grep -q root; then echo 'nginx must not run as root'; exit 1; fi
           # The policy of the page on the files of the runtime; Strict-Transport-Security only when asked.
           curl -fsSI http://localhost:8081/some/screen | grep -qi "^content-security-policy: default-src 'self'; script-src 'self';"
           curl -fsSI http://localhost:8081/runtime-config.json | grep -qi '^x-frame-options: SAMEORIGIN'

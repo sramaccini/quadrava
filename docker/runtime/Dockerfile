@@ -33,5 +33,13 @@ COPY docker/runtime/security-headers.conf /etc/nginx/snippets/quadrava-security-
 RUN touch /etc/nginx/quadrava/hsts.inc
 COPY docker/runtime/40-quadrava-config.sh /docker-entrypoint.d/
 RUN chmod +x /docker-entrypoint.d/40-quadrava-config.sh
+# Not root: nginx runs as the user nginx (101), with the pid in /tmp. The start-up script writes only the served
+# configuration and /etc/nginx/quadrava; the files of the application stay read-only. Group 0 with the same rights, so
+# that a platform that runs the container with another user id (OpenShift) works too.
+RUN sed -i -e '/^user /d' -e 's,^pid .*,pid /tmp/nginx.pid;,' /etc/nginx/nginx.conf \
+ && touch /usr/share/nginx/html/runtime-config.json \
+ && chown -R 101:0 /var/cache/nginx /etc/nginx/quadrava /usr/share/nginx/html/runtime-config.json \
+ && chmod -R g=u /var/cache/nginx /etc/nginx/quadrava /usr/share/nginx/html/runtime-config.json
+USER 101:0
 ENV QUADRAVA_VERSION=${VERSION}
 EXPOSE 8080
