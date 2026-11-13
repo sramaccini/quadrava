@@ -1,6 +1,6 @@
 # Quadrava — Functional Specification
 
-Simone Ramaccini · 7 October 2026, status updated on 12 November 2026 (Quadrava CE 0.13.1)
+Simone Ramaccini · 7 October 2026, status updated on 13 November 2026 (Quadrava CE 0.14.0)
 
 > Every requirement has a **Status**: *Done*; *Partial* (what is missing is said); *Not yet*; *Back end* (it belongs to the
 > customer's services, the platform gives the contract and the context); *Commercial edition* (Quadrava Studio and the
