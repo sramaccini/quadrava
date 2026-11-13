@@ -426,6 +426,7 @@ A field used on its own, outside forms and filters: text box, number, drop-down,
 - Free text (text, number, text area) is written to the state when leaving the field or on Enter, so data sources are not reloaded on every keystroke; the other types on every choice. A cleared field is `null`; numbers arrive as numbers.
 - `onChange`: steps run after every change, with the new value in `value`.
 - `required`, constraints and rules (§ 2.29) give their errors and warnings after the first change. The node also accepts `enabledIf` and `readOnlyIf`, which add to those of the field.
+- A field that cannot be changed (`readOnlyIf`, `enabledIf`) keeps the colour of its text on the grey background of a locked field, so its value stays readable (WCAG 1.4.3).
 - In the editor palette every type is an item of the «Fields» group (Text box, Drop-down list…); names of new fields are not repeated within the screen.
 
 To put several fields side by side: a `section` with `layout: "row"` (200 to 360 px wide each, wrapping when space runs out) or a `box` or a `grid` (§ 2.21).

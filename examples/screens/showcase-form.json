@@ -293,6 +293,38 @@
               "width": "s"
             },
             {
+              "name": "status",
+              "type": "select",
+              "label": "{{ t('showcase_form.widths_status', 'Status (set by the workflow)') }}",
+              "options": [
+                "draft",
+                "sent",
+                "paid"
+              ],
+              "optionKey": "values.status",
+              "readOnlyIf": "{{ true }}",
+              "width": "s"
+            },
+            {
+              "name": "sentOn",
+              "type": "date",
+              "label": "{{ t('showcase_form.widths_sent_on', 'Sent on') }}",
+              "readOnlyIf": "{{ true }}",
+              "width": "s"
+            },
+            {
+              "name": "channels",
+              "type": "multiselect",
+              "label": "{{ t('showcase_form.widths_channels', 'Sent by') }}",
+              "options": [
+                "email",
+                "post"
+              ],
+              "optionKey": "values.channel",
+              "readOnlyIf": "{{ true }}",
+              "width": "m"
+            },
+            {
               "name": "customer",
               "type": "text",
               "label": "{{ t('showcase_form.widths_customer', 'Customer') }}",
@@ -359,7 +391,14 @@
                 }
               ]
             }
-          ]
+          ],
+          "initial": {
+            "status": "sent",
+            "sentOn": "2026-11-02",
+            "channels": [
+              "email"
+            ]
+          }
         }
       ]
     }

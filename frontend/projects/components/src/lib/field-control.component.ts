@@ -42,6 +42,25 @@ const FIELD_WIDTHS: Record<FieldWidth, string> = { xs: '6rem', s: '10rem', m: '1
   styles: `
     :host { display: block; }
     :host(.sized) { width: var(--lc-field-width); max-width: 100%; }
+    /*
+     * A field that cannot be changed (readOnlyIf) is read only, not unavailable: NG-ZORRO draws it disabled, with its
+     * value in a pale grey (about 1.6:1). The value keeps the colour of the text (WCAG 1.4.3); the grey background and the
+     * cursor still say it cannot be changed. The selectors match the specificity of NG-ZORRO's.
+     */
+    :host ::ng-deep .ant-select.ant-select-disabled .ant-select-selector,
+    :host ::ng-deep .ant-select.ant-select-disabled .ant-select-selection-item,
+    :host ::ng-deep .ant-select.ant-select-disabled .ant-select-selection-item-content,
+    :host ::ng-deep .ant-picker.ant-picker-disabled .ant-picker-input > input[disabled],
+    :host ::ng-deep .ant-radio-wrapper.ant-radio-wrapper-disabled span,
+    :host ::ng-deep .ant-radio-button-wrapper.ant-radio-button-wrapper-disabled,
+    :host ::ng-deep .ant-checkbox-wrapper.ant-checkbox-wrapper-disabled span,
+    :host ::ng-deep .ant-input.ant-input-disabled,
+    :host ::ng-deep .ant-input[disabled],
+    :host ::ng-deep .ant-input-number.ant-input-number-disabled input {
+      color: var(--lc-color-on-surface, rgba(0, 0, 0, 0.88));
+      -webkit-text-fill-color: currentColor;
+    }
+    :host ::ng-deep .ant-select.ant-select-disabled .ant-select-selection-placeholder { color: var(--lc-color-muted, #5d6b7a); }
     nz-select, nz-date-picker { width: 100%; }
     .password { position: relative; }
     .password input { padding-right: 40px; }

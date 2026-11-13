@@ -16,6 +16,9 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 - The buttons of a form, of a wizard and of a comment wrap when they do not fit instead of widening the page
   (WCAG 1.4.10, reflow; request Q17 of OpenDevTrack). The flow form of the showcase «Forms» has a row of four.
+- A select, multiselect, radio, checkbox, date or text field that cannot be changed (`readOnlyIf`, `enabledIf`) keeps
+  the colour of its text instead of the pale grey of NG-ZORRO, so the value stays readable (WCAG 1.4.3, contrast;
+  request Q19 of OpenDevTrack). The flow form of the showcase «Forms» has three read-only fields.
 
 ## [0.13.1] - 2026-11-12
 

@@ -608,5 +608,9 @@
   "showcase_form.widths_save_draft": "Salva come bozza",
   "showcase_form.widths_send": "Salva e invia in approvazione",
   "showcase_form.widths_discard": "Annulla le modifiche",
-  "showcase_form.widths_done": "Solo un esempio: non viene inviato nulla"
+  "showcase_form.widths_done": "Solo un esempio: non viene inviato nulla",
+  "showcase_form.widths_status": "Stato (deciso dal flusso)",
+  "showcase_form.widths_sent_on": "Inviata il",
+  "showcase_form.widths_channels": "Inviata per",
+  "values.channel.post": "Posta"
 }

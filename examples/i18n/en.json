@@ -608,5 +608,9 @@
   "showcase_form.widths_save_draft": "Save as draft",
   "showcase_form.widths_send": "Save and send for approval",
   "showcase_form.widths_discard": "Discard changes",
-  "showcase_form.widths_done": "Only an example: nothing is sent"
+  "showcase_form.widths_done": "Only an example: nothing is sent",
+  "showcase_form.widths_status": "Status (set by the workflow)",
+  "showcase_form.widths_sent_on": "Sent on",
+  "showcase_form.widths_channels": "Sent by",
+  "values.channel.post": "Post"
 }
