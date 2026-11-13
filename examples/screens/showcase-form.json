@@ -321,6 +321,44 @@
               "type": "textarea",
               "label": "{{ t('showcase_form.widths_description', 'Description') }}"
             }
+          ],
+          "actions": [
+            {
+              "id": "btn-widths-save",
+              "label": "{{ t('showcase_form.widths_save', 'Save') }}",
+              "onClick": [
+                {
+                  "toast": "{{ t('showcase_form.widths_done', 'Only an example: nothing is sent') }}"
+                }
+              ]
+            },
+            {
+              "id": "btn-widths-save-draft",
+              "label": "{{ t('showcase_form.widths_save_draft', 'Save as draft') }}",
+              "onClick": [
+                {
+                  "toast": "{{ t('showcase_form.widths_done', 'Only an example: nothing is sent') }}"
+                }
+              ]
+            },
+            {
+              "id": "btn-widths-send",
+              "label": "{{ t('showcase_form.widths_send', 'Save and send for approval') }}",
+              "onClick": [
+                {
+                  "toast": "{{ t('showcase_form.widths_done', 'Only an example: nothing is sent') }}"
+                }
+              ]
+            },
+            {
+              "id": "btn-widths-discard",
+              "label": "{{ t('showcase_form.widths_discard', 'Discard changes') }}",
+              "onClick": [
+                {
+                  "toast": "{{ t('showcase_form.widths_done', 'Only an example: nothing is sent') }}"
+                }
+              ]
+            }
           ]
         }
       ]

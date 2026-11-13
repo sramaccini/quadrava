@@ -46,7 +46,8 @@ import { nextId } from './shared';
     form.flow > nz-form-item.line { flex-basis: 100%; }
     form.flow > nz-form-item.line lc-field-control { max-width: 560px; }
     form.flow > .actions { flex-basis: 100%; }
-    .actions { display: flex; gap: var(--lc-gap, 12px); }
+    /* The buttons wrap when they do not fit, instead of widening the page (WCAG 1.4.10, reflow). */
+    .actions { display: flex; flex-wrap: wrap; gap: var(--lc-gap, 12px); }
   `,
   template: `
     @if (fieldsFailure(); as error) {

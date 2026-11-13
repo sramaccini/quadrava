@@ -603,5 +603,10 @@
   "showcase_form.widths_street": "Via",
   "showcase_form.widths_postcode": "CAP",
   "showcase_form.widths_town": "Città",
-  "showcase_form.widths_description": "Descrizione"
+  "showcase_form.widths_description": "Descrizione",
+  "showcase_form.widths_save": "Salva",
+  "showcase_form.widths_save_draft": "Salva come bozza",
+  "showcase_form.widths_send": "Salva e invia in approvazione",
+  "showcase_form.widths_discard": "Annulla le modifiche",
+  "showcase_form.widths_done": "Solo un esempio: non viene inviato nulla"
 }

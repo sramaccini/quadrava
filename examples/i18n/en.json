@@ -603,5 +603,10 @@
   "showcase_form.widths_street": "Street",
   "showcase_form.widths_postcode": "Postcode",
   "showcase_form.widths_town": "Town",
-  "showcase_form.widths_description": "Description"
+  "showcase_form.widths_description": "Description",
+  "showcase_form.widths_save": "Save",
+  "showcase_form.widths_save_draft": "Save as draft",
+  "showcase_form.widths_send": "Save and send for approval",
+  "showcase_form.widths_discard": "Discard changes",
+  "showcase_form.widths_done": "Only an example: nothing is sent"
 }

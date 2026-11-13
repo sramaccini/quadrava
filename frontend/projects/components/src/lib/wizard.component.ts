@@ -18,7 +18,7 @@ import { nextId } from './shared';
     :host { display: block; }
     nz-steps { margin-bottom: 20px; }
     .body { display: flex; flex-direction: column; gap: var(--lc-gap, 12px); }
-    .nav { display: flex; gap: var(--lc-gap, 12px); margin-top: 20px; }
+    .nav { display: flex; flex-wrap: wrap; gap: var(--lc-gap, 12px); margin-top: 20px; }
     .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   `,
   template: `

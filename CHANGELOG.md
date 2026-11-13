@@ -12,6 +12,11 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Fixed
+
+- The buttons of a form, of a wizard and of a comment wrap when they do not fit instead of widening the page
+  (WCAG 1.4.10, reflow; request Q17 of OpenDevTrack). The flow form of the showcase «Forms» has a row of four.
+
 ## [0.13.1] - 2026-11-12
 
 ### Fixed

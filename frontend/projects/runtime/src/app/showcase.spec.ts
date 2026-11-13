@@ -209,8 +209,8 @@ describe('Component showcase', () => {
       expect(main(el)).toContain('Contract number');
       expect(main(el)).toContain('Due date');
       await type(fixture, el, 'custom.contract', '1042');
-      // The Save of the last section, after the one of the order.
-      [...el.querySelectorAll<HTMLButtonElement>('main button')].filter((b) => b.textContent?.trim() === 'Save').at(-1)!.click();
+      // The Save of the form of the custom fields.
+      [...el.querySelectorAll<HTMLButtonElement>('[data-node-id="ticket-form"] button')].find((b) => b.textContent?.trim() === 'Save')!.click();
       await until(fixture, () => main(el).includes('The value is not in the expected format'), 'field error of the service');
     });
   });

@@ -39,7 +39,7 @@ type Row = Record<string, unknown>;
     .compose label { font-weight: 600; }
     .editing { display: flex; flex-direction: column; gap: 6px; }
     .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
-    .buttons { display: flex; gap: 8px; }
+    .buttons { display: flex; flex-wrap: wrap; gap: 8px; }
     .hint { font-size: 12px; color: var(--lc-color-muted, #5d6b7a); }
     .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   `,
