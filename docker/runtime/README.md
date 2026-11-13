@@ -34,6 +34,7 @@ At start-up the image writes `runtime-config.json`, the file the runtime reads b
 | `QUADRAVA_STUDIO_ORIGINS` | Origins of Quadrava Studio allowed to open this runtime with their project (ADR-16) | none |
 | `QUADRAVA_BFF_URL` | Address of the BFF (`http://bff:8080`): nginx forwards its paths to it | not forwarded |
 | `QUADRAVA_MAX_BODY_SIZE` | Largest request body forwarded to the BFF, as nginx writes it (`100m`, `512k`, `0` for no limit of nginx): an upload from a `file` field that is larger gets 413 | `100m` (the largest `maxSizeKb`) |
+| `QUADRAVA_HSTS` | `Strict-Transport-Security` on every answer, as `max-age=<seconds>` with optional `; includeSubDomains` and `; preload` (`max-age=31536000`): only for a deployment reached over https | not sent |
 
 Names accept letters, digits, `.`, `-` and `_`; paths must start with a single `/`; origins and the BFF address are
 scheme, host and port only. Any other value stops the container with a message, instead of starting with another
@@ -63,6 +64,25 @@ The browser talks only to the BFF, on the origin of the page (`contracts/bff.yam
 
 `runtime-config.json` and `index.html` are served with `Cache-Control: no-cache`; the bundles, which have the hash of
 their content in the name, are cached for a year.
+
+## Security headers
+
+Every answer has `X-Content-Type-Options: nosniff`, `Referrer-Policy: same-origin` and `X-Frame-Options: SAMEORIGIN`,
+plus `Strict-Transport-Security` with `QUADRAVA_HSTS`. The files of the runtime (`index.html`, the bundles,
+`runtime-config.json`) also have a Content-Security-Policy:
+
+```
+default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'
+```
+
+Everything comes from the origin of the page, as the browser talks only to the BFF: no inline scripts and no `eval`
+(the validators are precompiled, and the build does not inline the critical CSS, which would need an inline script).
+Inline styles are allowed because Angular and NG-ZORRO add style elements; images may also come from `https:` and
+`data:` addresses (a logo, a photo from the data). Only the same origin may frame the pages; Quadrava Studio opens the
+runtime in a window of its own, which the policy does not limit. The answers of the BFF forwarded with
+`QUADRAVA_BFF_URL` keep their own headers and get no Content-Security-Policy from nginx. A deployment that needs another
+policy (an image or a font from a given host) puts its own `nginx.conf` over `/etc/nginx/conf.d/quadrava.conf` and
+`/etc/nginx/snippets/quadrava-security-headers.conf`.
 
 ## Against the local stack
 

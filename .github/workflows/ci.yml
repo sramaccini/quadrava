@@ -97,6 +97,14 @@ jobs:
           curl -fsS http://localhost:8082/runtime-config.json | grep -q '"registry"'
           # Uploads up to the largest file field pass nginx; the limit is a setting of the image.
           docker exec registry grep -q 'client_max_body_size 100m;' /etc/nginx/quadrava/bff.conf
+          # The policy of the page on the files of the runtime; Strict-Transport-Security only when asked.
+          curl -fsSI http://localhost:8081/some/screen | grep -qi "^content-security-policy: default-src 'self'; script-src 'self';"
+          curl -fsSI http://localhost:8081/runtime-config.json | grep -qi '^x-frame-options: SAMEORIGIN'
+          if curl -fsSI http://localhost:8081/ | grep -qi '^strict-transport-security'; then echo 'no HSTS without QUADRAVA_HSTS'; exit 1; fi
+          docker run -d --name hsts -p 8083:8080 -e QUADRAVA_HSTS='max-age=31536000; includeSubDomains' quadrava-runtime:ci
+          sleep 2
+          curl -fsSI http://localhost:8083/ | grep -qi '^strict-transport-security: max-age=31536000; includeSubDomains'
+          if docker run --rm -e QUADRAVA_HSTS=forever quadrava-runtime:ci; then echo 'a wrong HSTS must stop the container'; exit 1; fi
           if docker run --rm -e QUADRAVA_REGISTRY_APP='bad"name' quadrava-runtime:ci; then echo 'a wrong value must stop the container'; exit 1; fi
           if docker run --rm -e QUADRAVA_BFF_URL=http://bff.test:8080 -e QUADRAVA_MAX_BODY_SIZE=10mb quadrava-runtime:ci; then echo 'a wrong size must stop the container'; exit 1; fi
       - if: failure()

@@ -28,6 +28,9 @@ RUN mv /usr/share/nginx/html/runtime-config.json /usr/share/nginx/runtime-config
  && rm /etc/nginx/conf.d/default.conf
 COPY LICENSE NOTICE /usr/share/doc/quadrava/
 COPY docker/runtime/nginx.conf /etc/nginx/conf.d/quadrava.conf
+COPY docker/runtime/security-headers.conf /etc/nginx/snippets/quadrava-security-headers.conf
+# Without QUADRAVA_HSTS no Strict-Transport-Security: the start-up script rewrites this file.
+RUN touch /etc/nginx/quadrava/hsts.inc
 COPY docker/runtime/40-quadrava-config.sh /docker-entrypoint.d/
 RUN chmod +x /docker-entrypoint.d/40-quadrava-config.sh
 ENV QUADRAVA_VERSION=${VERSION}

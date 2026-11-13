@@ -398,7 +398,7 @@ The conformance kits pass against the reference services, in CI on every push: a
 * **URLs in components** are restricted: images accept relative, `https` and `data:image` addresses only; links accept screens, relative paths and `https` (opened with `noopener noreferrer`); never `javascript:` or other protocols.
 * **CSV exports** neutralise cells that a spreadsheet would run as formulas.
 
-Recommended Content-Security-Policy for the runtime served behind the BFF: `default-src 'self'; img-src 'self' https: data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; frame-ancestors 'self'` (`unsafe-inline` styles are needed by Angular's inlined critical CSS and NG-ZORRO).
+Content-Security-Policy of the runtime, which the runtime image sends (`docker/runtime/README.md`, «Security headers») and a deployment of the web build should send too: `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'` (`unsafe-inline` styles are needed by Angular and NG-ZORRO; the build does not inline the critical CSS, which would need an inline script).
 
 ## License
 

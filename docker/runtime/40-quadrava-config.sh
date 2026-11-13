@@ -104,6 +104,15 @@ else
   echo "quadrava: demo with the examples"
 fi
 
+# Strict-Transport-Security, only for a deployment reached over https: the browser then refuses http for the time given.
+hsts=/etc/nginx/quadrava/hsts.inc
+: > "$hsts"
+if [ -n "${QUADRAVA_HSTS:-}" ]; then
+  printf '%s' "$QUADRAVA_HSTS" | grep -Eq '^max-age=[0-9]{1,9}(; ?includeSubDomains)?(; ?preload)?$' || fail "QUADRAVA_HSTS: a value such as max-age=31536000 or max-age=31536000; includeSubDomains, not: $QUADRAVA_HSTS"
+  printf 'add_header Strict-Transport-Security "%s" always;\n' "$QUADRAVA_HSTS" > "$hsts"
+  echo "quadrava: Strict-Transport-Security $QUADRAVA_HSTS"
+fi
+
 proxy=/etc/nginx/quadrava/bff.conf
 rm -f "$proxy"
 if [ -n "${QUADRAVA_BFF_URL:-}" ]; then

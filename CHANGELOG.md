@@ -12,6 +12,13 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Added
+
+- The runtime image sends a Content-Security-Policy with the files of the runtime (scripts, data and frames from the same
+  origin only) and, with `QUADRAVA_HSTS` (`max-age=31536000`), `Strict-Transport-Security` on every answer; the
+  answers of the BFF keep their own headers (request Q18 of OpenDevTrack). The production build of the runtime no
+  longer inlines the critical CSS, whose loader was an inline script that such a policy blocks.
+
 ### Fixed
 
 - The buttons of a form, of a wizard and of a comment wrap when they do not fit instead of widening the page
