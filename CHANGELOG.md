@@ -12,6 +12,15 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Added
+
+- A call refused because the login is too old for it (`401` with the Problem `urn:problem:authz:recent-login-required`,
+  as authz-library 2.4.0 answers on the paths of `authz.bff.recent-login`) no longer reads as an expired session: the
+  runtime asks «For this action, sign in again» (`lc.session.recentLogin`) and goes to `/bff/login` with `max_age`, so
+  the identity provider asks for the password even inside its own session, then back to the page. What the user was
+  typing is not kept (it would have to be saved in the browser): the action is done again. BFF contract 0.5:
+  `max_age` on `/bff/login` and the Problem type; the reference BFF ignores `max_age` (request Q23 of OpenDevTrack).
+
 ## [0.16.0] - 2026-11-18
 
 ### Added

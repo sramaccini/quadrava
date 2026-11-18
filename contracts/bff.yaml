@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Quadrava - BFF contract
-  version: 0.4.0
+  version: 0.5.0
   description: >
     What the Quadrava runtime and Studio expect from the Backend for Frontend (BFF) that serves them. The BFF does the
     OpenID Connect login, keeps the tokens on the server and gives the browser only a session cookie; it forwards the
@@ -19,6 +19,12 @@ info:
       navigates to the login with the current page as return address. A `401` again within 30 seconds of a login the
       runtime started does not start another one: the page says that signing in did not work, so that a BFF refusing
       the session it has just created does not send the browser round in a circle with the identity provider.
+
+    - **Recent login required (optional).** For a sensitive action a BFF may want a login younger than a given age. A call
+      from an older session answers `401` with the Problem type `urn:problem:authz:recent-login-required` and `maxAge`
+      (seconds). The runtime does not treat it as an expired session: it asks the user to sign in again and goes to
+      `/bff/login` with `max_age`, so that the identity provider asks for the credentials even inside its own session.
+      What the user was typing is not kept; the action is done again after the return.
 
     - **CSRF.** The BFF puts a token in the `XSRF-TOKEN` cookie, readable by the page (not `HttpOnly`), at the latest with
       the first response of a session. Every write (`POST`, `PUT`, `PATCH`, `DELETE`) carries it back in the
@@ -87,6 +93,14 @@ paths:
           required: false
           description: Absolute address of the page to go back to after the login; its origin must be one of the applications.
           schema: { type: string, format: uri }
+        - name: max_age
+          in: query
+          required: false
+          description: >
+            Maximum age in seconds of the authentication at the identity provider (OIDC `max_age`): with it the BFF
+            always goes to the identity provider, which asks for the credentials again if its own login is older, even
+            when a session exists. Sent by the runtime after a `recent-login-required` Problem; `0` asks always.
+          schema: { type: integer, minimum: 0, maximum: 999999999 }
       responses:
         '302':
           description: To the login of the identity provider (or straight back, if the session already exists).
@@ -160,7 +174,9 @@ components:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }
     Unauthorized:
-      description: Session missing or expired.
+      description: >
+        Session missing or expired. With the Problem type `urn:problem:authz:recent-login-required` and `maxAge`
+        (seconds), the session is valid but its login is too old for this call (optional).
     Forbidden:
       description: CSRF token missing or wrong.
     NotFound:

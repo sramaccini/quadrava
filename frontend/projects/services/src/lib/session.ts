@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { UserProvider } from 'core';
+import { Confirmation, I18n, UserProvider } from 'core';
 import { firstValueFrom } from 'rxjs';
 import { LC_REDIRECT, LC_SERVICES_CONFIG } from './config';
 
@@ -11,18 +11,22 @@ export type SessionState = 'unknown' | 'authenticated' | 'expired' | 'refused';
 const LOGIN_RETRY_MS = 30_000;
 /** Only the time the last login started, per tab: it outlives the page, which the login replaces. */
 const LOGIN_STARTED_KEY = 'lc.loginStartedAt';
+/** The same for the last login asked again for a sensitive action (`max_age`). */
+const RECENT_LOGIN_STARTED_KEY = 'lc.recentLoginStartedAt';
+/** Problem type of a call whose session is valid but whose login is too old for it (contracts/bff.yaml). */
+export const RECENT_LOGIN_REQUIRED = 'urn:problem:authz:recent-login-required';
 
-function loginStartedAt(): number {
+function startedAt(key: string): number {
   try {
-    return Number(globalThis.sessionStorage?.getItem(LOGIN_STARTED_KEY)) || 0;
+    return Number(globalThis.sessionStorage?.getItem(key)) || 0;
   } catch {
     return 0;
   }
 }
 
-function rememberLoginStart(): void {
+function rememberStart(key: string): void {
   try {
-    globalThis.sessionStorage?.setItem(LOGIN_STARTED_KEY, String(Date.now()));
+    globalThis.sessionStorage?.setItem(key, String(Date.now()));
   } catch {
     // Storage not available: the guard is lost, the login still works.
   }
@@ -44,13 +48,20 @@ interface BffUser {
   currentTenant?: unknown;
 }
 
+/** Text of the request to sign in again, when the catalogue of the platform is not there. */
+const RECENT_LOGIN_TEXT = 'For this action, sign in again. What you have not saved will be lost.';
+
 /** Current user, read from the BFF. Tokens stay in the BFF: the browser has only the session cookie. */
 @Injectable({ providedIn: 'root' })
 export class HttpSession extends UserProvider {
   private readonly http = inject(HttpClient);
   private readonly config = inject(LC_SERVICES_CONFIG);
   private readonly redirect = inject(LC_REDIRECT);
+  private readonly confirmation = inject(Confirmation, { optional: true });
+  private readonly i18n = inject(I18n, { optional: true });
   private readonly info = signal<BffUser | null>(null);
+  /** A login for a sensitive action is being asked: the other calls refused at the same time do not ask again. */
+  private reauthenticating = false;
 
   readonly state = signal<SessionState>('unknown');
   /** Tenants offered to the user: only the well-formed ones; none when the BFF has no tenants. */
@@ -89,7 +100,7 @@ export class HttpSession extends UserProvider {
   markExpired(): void {
     if (this.state() === 'expired' || this.state() === 'refused') return;
     this.info.set(null);
-    if (Date.now() - loginStartedAt() < LOGIN_RETRY_MS) {
+    if (Date.now() - startedAt(LOGIN_STARTED_KEY) < LOGIN_RETRY_MS) {
       this.state.set('refused');
       return;
     }
@@ -99,8 +110,29 @@ export class HttpSession extends UserProvider {
 
   /** Goes to the login of the BFF, which then returns to this page. Also asked by the user, after `refused`. */
   login(): void {
-    rememberLoginStart();
+    rememberStart(LOGIN_STARTED_KEY);
     this.redirect(`${this.config.loginUrl}?return=${encodeURIComponent(globalThis.location?.href ?? '/')}`);
+  }
+
+  /**
+   * The session is valid but its login is too old for a sensitive action (`recent-login-required`): the user is told and,
+   * if they agree, signs in again with `max_age`, so that the identity provider asks for the credentials even inside its
+   * own session, and comes back to this page to do the action again. It is not an expired session: the user stays, and
+   * the guard of the logins is not touched. A second request within 30 seconds of such a login asks nothing (a BFF that
+   * keeps refusing would send the browser round in a circle); the call simply fails.
+   */
+  async reauthenticate(maxAge: number): Promise<void> {
+    if (this.reauthenticating || Date.now() - startedAt(RECENT_LOGIN_STARTED_KEY) < LOGIN_RETRY_MS) return;
+    this.reauthenticating = true;
+    try {
+      const message = this.i18n?.t('lc.session.recentLogin', {}, RECENT_LOGIN_TEXT) ?? RECENT_LOGIN_TEXT;
+      if (this.confirmation && !(await this.confirmation.confirm(message))) return;
+      rememberStart(RECENT_LOGIN_STARTED_KEY);
+      const age = Number.isInteger(maxAge) && maxAge >= 0 ? maxAge : 0;
+      this.redirect(`${this.config.loginUrl}?return=${encodeURIComponent(globalThis.location?.href ?? '/')}&max_age=${age}`);
+    } finally {
+      this.reauthenticating = false;
+    }
   }
 
   /**

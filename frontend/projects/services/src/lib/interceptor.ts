@@ -4,7 +4,7 @@ import { I18n, type SpanAttributes, type SpanContext } from 'core';
 import { finalize, tap } from 'rxjs';
 import { HttpAuthorization } from './authorization';
 import { LC_SERVICES_CONFIG } from './config';
-import { HttpSession } from './session';
+import { HttpSession, RECENT_LOGIN_REQUIRED } from './session';
 import { baggage, isSameOriginRelative, traceparent } from './trace';
 import { HttpTracer } from './tracer';
 
@@ -48,10 +48,33 @@ export const lcHttpInterceptor: HttpInterceptorFn = (req, next) => {
       },
       error: (error: unknown) => {
         span?.end(false, { 'http.response.status_code': error instanceof HttpErrorResponse ? error.status : 0 });
-        if (error instanceof HttpErrorResponse && error.status === 401) injector.get(HttpSession).markExpired();
+        if (error instanceof HttpErrorResponse && error.status === 401) {
+          const maxAge = recentLoginAge(error.error);
+          if (maxAge === null) injector.get(HttpSession).markExpired();
+          else void injector.get(HttpSession).reauthenticate(maxAge);
+        }
       },
     }),
     // Call cancelled (read superseded, screen left): not an error.
     finalize(() => span?.end(true, { 'lc.cancelled': true })),
   );
 };
+
+/**
+ * The `maxAge` of a 401 that asks for a recent login (Problem `urn:problem:authz:recent-login-required`), 0 when it has
+ * none; null for any other 401, which is an expired session. The body may arrive parsed, as text or as a Blob (a
+ * download): a Blob is read as an expired session, the only case a download cannot tell.
+ */
+export function recentLoginAge(body: unknown): number | null {
+  let problem: unknown = body;
+  if (typeof body === 'string') {
+    try {
+      problem = JSON.parse(body);
+    } catch {
+      return null;
+    }
+  }
+  if (problem === null || typeof problem !== 'object' || (problem as { type?: unknown }).type !== RECENT_LOGIN_REQUIRED) return null;
+  const age = (problem as { maxAge?: unknown }).maxAge;
+  return typeof age === 'number' && Number.isInteger(age) && age >= 0 ? age : 0;
+}

@@ -1,20 +1,20 @@
 import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { ApplicationInitStatus } from '@angular/core';
+import { ApplicationInitStatus, type Provider } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { Authorization, DataClient, I18n, RuntimeDiagnostics, RuntimeTracer, UserProvider } from 'core';
+import { Authorization, Confirmation, DataClient, I18n, RuntimeDiagnostics, RuntimeTracer, UserProvider } from 'core';
 import { HttpAuthorization } from './authorization';
 import { LC_REDIRECT, LC_SERVICES_CONFIG, resolveConfig, type LogLevel } from './config';
 import { HttpDiagnostics, redact } from './diagnostics';
 import { DataError } from './errors';
 import { HttpDataClient } from './http-data-client';
-import { lcHttpInterceptor } from './interceptor';
+import { lcHttpInterceptor, recentLoginAge } from './interceptor';
 import { provideLcServices } from './provide';
 import { HttpSession } from './session';
 import { isSameOriginRelative, newSpanContext, traceparent } from './trace';
 import { HttpTracer } from './tracer';
 
-function setup(overrides: Partial<Parameters<typeof resolveConfig>[0]> = {}) {
+function setup(overrides: Partial<Parameters<typeof resolveConfig>[0]> = {}, extra: Provider[] = []) {
   const redirects: string[] = [];
   sessionStorage.clear();
   TestBed.configureTestingModule({
@@ -27,6 +27,7 @@ function setup(overrides: Partial<Parameters<typeof resolveConfig>[0]> = {}) {
       { provide: UserProvider, useExisting: HttpSession },
       { provide: DataClient, useExisting: HttpDataClient },
       { provide: RuntimeDiagnostics, useExisting: HttpDiagnostics },
+      ...extra,
     ],
   });
   return { http: TestBed.inject(HttpTestingController), redirects };
@@ -87,6 +88,59 @@ describe('interceptor', () => {
     http.expectOne('/api/b').flush({}, { status: 401, statusText: 'Unauthorized' });
     expect(TestBed.inject(HttpSession).state()).toBe('expired');
     expect(redirects).toEqual(['/bff/login?return=' + encodeURIComponent(location.href)]);
+  });
+});
+
+describe('recent login', () => {
+  const problem = { type: 'urn:problem:authz:recent-login-required', title: 'Recent login required', status: 401, maxAge: 900 };
+  const confirming = (answer: boolean, asked: string[]) => ({ provide: Confirmation, useValue: { confirm: async (m: string) => (asked.push(m), answer) } });
+
+  it('reads the age of a recent-login Problem; any other 401 is an expired session', () => {
+    expect(recentLoginAge(problem)).toBe(900);
+    expect(recentLoginAge(JSON.stringify(problem))).toBe(900);
+    expect(recentLoginAge({ type: problem.type })).toBe(0);
+    expect(recentLoginAge({ type: problem.type, maxAge: -1 })).toBe(0);
+    expect(recentLoginAge({ type: 'about:blank', status: 401 })).toBeNull();
+    expect(recentLoginAge('not json')).toBeNull();
+    expect(recentLoginAge(null)).toBeNull();
+  });
+
+  it('asks the user, then signs in again with max_age and back to this page; the session is not expired', async () => {
+    const asked: string[] = [];
+    const { http, redirects } = setup({}, [confirming(true, asked)]);
+    const session = TestBed.inject(HttpSession);
+    const client = TestBed.inject(HttpClient);
+    client.post('/api/admin/roles', {}).subscribe({ error: () => undefined });
+    client.post('/api/admin/users', {}).subscribe({ error: () => undefined });
+    http.expectOne('/api/admin/roles').flush(problem, { status: 401, statusText: 'Unauthorized' });
+    http.expectOne('/api/admin/users').flush(problem, { status: 401, statusText: 'Unauthorized' });
+    await new Promise((r) => setTimeout(r));
+    expect(asked).toEqual(['For this action, sign in again. What you have not saved will be lost.']);
+    expect(redirects).toEqual([`/bff/login?return=${encodeURIComponent(location.href)}&max_age=900`]);
+    expect(session.state()).not.toBe('expired');
+    // The guard of the ordinary logins is untouched: a later 401 of an expired session still goes to the login.
+    expect(sessionStorage.getItem('lc.loginStartedAt')).toBeNull();
+  });
+
+  it('nothing happens if the user does not want to sign in again', async () => {
+    const asked: string[] = [];
+    const { http, redirects } = setup({}, [confirming(false, asked)]);
+    TestBed.inject(HttpClient).post('/api/admin/roles', {}).subscribe({ error: () => undefined });
+    http.expectOne('/api/admin/roles').flush(problem, { status: 401, statusText: 'Unauthorized' });
+    await new Promise((r) => setTimeout(r));
+    expect(asked).toHaveLength(1);
+    expect(redirects).toEqual([]);
+  });
+
+  it('a second request right after such a login asks nothing, so a BFF that keeps refusing does not loop', async () => {
+    const asked: string[] = [];
+    const { http, redirects } = setup({}, [confirming(true, asked)]);
+    sessionStorage.setItem('lc.recentLoginStartedAt', String(Date.now() - 5_000));
+    TestBed.inject(HttpClient).post('/api/admin/roles', {}).subscribe({ error: () => undefined });
+    http.expectOne('/api/admin/roles').flush(problem, { status: 401, statusText: 'Unauthorized' });
+    await new Promise((r) => setTimeout(r));
+    expect(asked).toEqual([]);
+    expect(redirects).toEqual([]);
   });
 });
 
