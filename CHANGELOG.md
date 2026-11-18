@@ -12,6 +12,8 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-11-18
+
 ### Added
 
 - `formFields` in the expressions of a form: only the values of its fields (`fields`, and `fieldsFrom` in its `into`
@@ -426,7 +428,8 @@ The first versioned release.
 - **Demo back end of the stack**: the event stream `/api/streams/tasks`, so that behind the BFF the live boards of the
   showcase follow the changes of other users.
 
-[Unreleased]: https://github.com/sramaccini/quadrava/compare/v0.15.0...HEAD
+[Unreleased]: https://github.com/sramaccini/quadrava/compare/v0.16.0...HEAD
+[0.16.0]: https://github.com/sramaccini/quadrava/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/sramaccini/quadrava/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/sramaccini/quadrava/compare/v0.13.1...v0.14.0
 [0.13.1]: https://github.com/sramaccini/quadrava/compare/v0.13.0...v0.13.1
