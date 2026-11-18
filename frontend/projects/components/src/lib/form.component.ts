@@ -8,11 +8,12 @@ import type { ActionDefinition, FieldDefinition, FormNode } from 'schema';
 import { BusyComponent } from './busy.component';
 import { FieldControlComponent } from './field-control.component';
 import { checkValue, personalValues, repeaterRows, validationEnv } from './field-validation';
-import { dataItems, itemValue, screenItems, withItemValue, type FormItem } from './form-fields';
+import { dataItems, itemValue, screenItems, withItemValue, type FormItem, ownValues } from './form-fields';
 import { nextId } from './shared';
 
 /**
- * Form: initial values come from the `source` data source (if it returns an object); actions receive `form` in the scope.
+ * Form: initial values come from the `source` data source (if it returns an object); actions receive `form` in the scope,
+ * the whole record, and `formFields`, only the values of the fields of the form ({@link ownValues}).
  * The fields are checked with their rules and with the rules of the form across fields (`validation`) after the first
  * submit attempt: errors block the actions, warnings only inform. Remote rules run while the user types, their outcome
  * shows as soon as it is known, and the form waits for those in progress before sending. Field errors returned by the
@@ -163,7 +164,11 @@ export class FormComponent {
     return Math.min(this.columns(), Math.max(1, field.span ?? 1));
   }
 
-  protected readonly fieldScope = computed<Scope>(() => ({ ...this.scope(), form: this.values() }));
+  protected readonly fieldScope = computed<Scope>(() => ({
+    ...this.scope(),
+    form: this.values(),
+    formFields: ownValues(this.values(), this.items(), this.node().fieldsFrom?.into),
+  }));
 
   /** Rules of the form across fields, by the field they check. */
   private readonly crossRules = computed(() => formRules(this.node().validation));

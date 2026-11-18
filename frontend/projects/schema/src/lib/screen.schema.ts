@@ -293,6 +293,7 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                   "params",
                   "row",
                   "form",
+                  "formFields",
                   "value",
                   "search",
                   "lookupKey",

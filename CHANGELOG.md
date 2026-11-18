@@ -12,6 +12,13 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Added
+
+- `formFields` in the expressions of a form: only the values of its fields (`fields`, and `fieldsFrom` in its `into`
+  object), without the rest of the record read by `source`, so `"body": "{{ formFields }}"` sends only what the form
+  edits (request Q22 of OpenDevTrack). `{{ form }}` does not change; `as` cannot take the name `formFields`. The
+  order form of the examples uses it.
+
 ## [0.15.0] - 2026-11-13
 
 ### Changed

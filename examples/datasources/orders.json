@@ -21,7 +21,7 @@
       "type": "rest",
       "method": "PUT",
       "url": "/api/orders/{{params.id}}",
-      "body": "{{form}}"
+      "body": "{{formFields}}"
     },
     "approve": {
       "type": "rest",

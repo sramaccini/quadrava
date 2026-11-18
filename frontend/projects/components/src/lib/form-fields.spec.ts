@@ -1,6 +1,6 @@
 import type { DataRequest } from 'core';
 import type { FieldDefinition, NodeDefinition } from 'schema';
-import { dataItems, itemValue, MAX_DATA_FIELDS, withItemValue } from './form-fields';
+import { dataItems, itemValue, MAX_DATA_FIELDS, withItemValue, ownValues, screenItems } from './form-fields';
 import { plain, renderScreen, type ScreenHarness } from './screen-testing';
 
 describe('form fields from a data source', () => {
@@ -55,6 +55,15 @@ describe('form fields from a data source', () => {
       // Options of the model, translated by the screen; options of the row, which are data.
       expect([pick.field.options, pick.field.optionKey, pick.field.optionKeys, pick.optionLabels]).toEqual([['a', 'b', '*'], 'values.choice', { '*': 'values.all' }, null]);
       expect([picked.field.options, picked.field.optionKey, picked.field.optionKeys, picked.optionLabels]).toEqual([['c'], undefined, undefined, { c: 'c' }]);
+    });
+
+    it('formFields: only the fields of the form, the data fields in their object, nothing else of the record', () => {
+      const items = [...screenItems([{ name: 'title', type: 'text' }, { name: 'due', type: 'date' }]), ...dataItems([{ name: 'size', type: 'number' }], { source: 'fields', into: 'custom' })];
+      const record = { key: 'ODT-7', _perm: { edit: true }, createdAt: '2026-11-01', title: 'Fix', custom: { size: 3 } };
+      expect(ownValues(record, items, 'custom')).toEqual({ title: 'Fix', due: null, custom: { size: 3 } });
+      // Without into the data fields sit next to the others.
+      const flat = [...screenItems([{ name: 'title', type: 'text' }]), ...dataItems([{ name: 'size', type: 'number' }], { source: 'fields' })];
+      expect(ownValues({ ...record, size: 5 }, flat, undefined)).toEqual({ title: 'Fix', size: 5 });
     });
 
     it('values kept in the object, or next to the others', () => {

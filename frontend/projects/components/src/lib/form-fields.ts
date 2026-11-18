@@ -85,6 +85,24 @@ function optionsOf(raw: unknown): { value: string; label: string }[] | null {
   return options;
 }
 
+/**
+ * The values of the fields of the form only (`formFields` in the expressions): those of `fields` and of the data fields,
+ * these inside the object of `fieldsFrom.into` when there is one. What else the record of `source` holds (keys, dates
+ * written by the service, permissions) is left out, so that `"body": "{{ formFields }}"` sends only what the form edits.
+ */
+export function ownValues(values: Readonly<Record<string, unknown>>, items: readonly FormItem[], into: string | undefined): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const item of items) {
+    if (item.label !== null && into) continue;
+    out[item.field.name] = values[item.field.name] ?? null;
+  }
+  if (into) {
+    const holder = values[into];
+    out[into] = holder !== null && typeof holder === 'object' && !Array.isArray(holder) ? holder : {};
+  }
+  return out;
+}
+
 /** The value of an item among the values of the form: inside the object of `fieldsFrom.into` for the data fields. */
 export function itemValue(values: Readonly<Record<string, unknown>>, item: FormItem, into: string | undefined): unknown {
   if (item.label === null || !into) return values[item.field.name];
