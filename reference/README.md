@@ -8,7 +8,7 @@ Implements the contracts in `../contracts` to demonstrate them and to serve as a
 | `authz` | 8082 | `authz.yaml`, as a separate service called with the access token |
 | `telemetry` | 8083 | `telemetry.yaml` |
 
-**The BFF** is built on [authz-library](https://github.com/sramaccini/authz-library) 2.5 (ADR-26). The library does
+**The BFF** is built on [authz-library](https://github.com/sramaccini/authz-library) 2.6 (ADR-26). The library does
 the login, the session and the endpoints of `bff.yaml` and `authz.yaml`. The BFF adds the forwarding and the
 configuration of the users.
 

@@ -14,7 +14,7 @@
   <description>Backend For Frontend on authz-library: OIDC session with Keycloak in Redis, tokens on the server side only.</description>
 
   <properties>
-    <authz-library.version>2.5.0</authz-library.version>
+    <authz-library.version>2.6.0</authz-library.version>
   </properties>
 
   <!-- authz-library is published on GitHub Packages, which asks for a token even for reading (DEVELOPMENT-GUIDE § 2). -->

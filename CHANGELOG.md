@@ -12,6 +12,10 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Changed
+
+- The reference BFF uses authz-library 2.6.0: `/bff/user` has the e-mail of the user again, from the token of Keycloak.
+
 ## [0.18.0] - 2026-11-19
 
 ### Added

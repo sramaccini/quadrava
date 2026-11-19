@@ -37,6 +37,6 @@ The reference BFF also kept its sessions in memory. A restart signed everybody o
   (DEVELOPMENT-GUIDE § 1). CI uses the token of the workflow.
 - The stack needs Redis. Keycloak must answer before the BFF starts, because the BFF reads its discovery document at
   start-up.
-- `/bff/user` no longer has the user's e-mail. The library takes it from the resolver, which knows only the user name.
-  The contract leaves the e-mail optional.
+- The e-mail of the user in `/bff/user` comes from the token of Keycloak: the resolver knows only the user name, and
+  since 2.6.0 the library takes the `email` claim when the resolver gives none.
 - The roles of the example are written twice, in the BFF and in the `authz` service, and must be kept equal by hand.
