@@ -129,16 +129,17 @@ jobs:
           from http.server import BaseHTTPRequestHandler, HTTPServer
           class Echo(BaseHTTPRequestHandler):
               def do_GET(self):
-                  body = ''.join(f'{k}: {v}
-' for k, v in self.headers.items()).encode()
+                  body = ''.join(f'{k}: {v}\n' for k, v in self.headers.items()).encode()
                   self.send_response(200)
                   self.send_header('Content-Length', str(len(body)))
                   self.end_headers()
                   self.wfile.write(body)
           HTTPServer(('0.0.0.0', 9099), Echo).serve_forever()
           PY
-          docker run -d --name own -p 8084:8080 --add-host bff.test:host-gateway             -e QUADRAVA_BFF_URL=http://bff.test:9099 quadrava-runtime:ci
-          docker run -d --name trusted -p 8085:8080 --add-host bff.test:host-gateway             -e QUADRAVA_BFF_URL=http://bff.test:9099 -e QUADRAVA_TRUST_FORWARDED=true quadrava-runtime:ci
+          docker run -d --name own -p 8084:8080 --add-host bff.test:host-gateway \
+            -e QUADRAVA_BFF_URL=http://bff.test:9099 quadrava-runtime:ci
+          docker run -d --name trusted -p 8085:8080 --add-host bff.test:host-gateway \
+            -e QUADRAVA_BFF_URL=http://bff.test:9099 -e QUADRAVA_TRUST_FORWARDED=true quadrava-runtime:ci
           sleep 3
           tls='-H X-Forwarded-Proto:https -H X-Forwarded-Host:app.example'
           curl -fsS $tls http://localhost:8084/bff/user | grep -qi '^x-forwarded-proto: http$'
