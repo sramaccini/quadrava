@@ -12,6 +12,8 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+## [0.18.0] - 2026-11-19
+
 ### Added
 
 - The `download` step saves as a file the answer of a GET data source (request Q24 of OpenDevTrack):
@@ -473,7 +475,8 @@ The first versioned release.
 - **Demo back end of the stack**: the event stream `/api/streams/tasks`, so that behind the BFF the live boards of the
   showcase follow the changes of other users.
 
-[Unreleased]: https://github.com/sramaccini/quadrava/compare/v0.17.0...HEAD
+[Unreleased]: https://github.com/sramaccini/quadrava/compare/v0.18.0...HEAD
+[0.18.0]: https://github.com/sramaccini/quadrava/compare/v0.17.0...v0.18.0
 [0.17.0]: https://github.com/sramaccini/quadrava/compare/v0.16.0...v0.17.0
 [0.16.0]: https://github.com/sramaccini/quadrava/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/sramaccini/quadrava/compare/v0.14.0...v0.15.0
