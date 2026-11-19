@@ -1,6 +1,6 @@
-import { HttpClient, HttpContext, HttpErrorResponse, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpErrorResponse, HttpParams, HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { DataClient, fieldErrorsOf, type DataRequest, type DataRequestOptions } from 'core';
+import { DataClient, fieldErrorsOf, fileNameFromDisposition, type DataRequest, type DataRequestOptions, type DownloadedFile } from 'core';
 import { DataError } from './errors';
 import { LC_TRACE } from './interceptor';
 import { isSameOriginRelative } from './trace';
@@ -27,6 +27,16 @@ function toParams(query: Record<string, unknown> | undefined): HttpParams {
   return params;
 }
 
+/** The body of an error answer: a download receives it as a Blob, read here as JSON (a Problem) when it is one. */
+async function errorBody(body: unknown): Promise<unknown> {
+  if (!(body instanceof Blob)) return body;
+  try {
+    return JSON.parse(await body.text());
+  } catch {
+    return null;
+  }
+}
+
 function abortError(): DOMException {
   return new DOMException('Request cancelled', 'AbortError');
 }
@@ -43,6 +53,7 @@ export class HttpDataClient extends DataClient {
     const signal = options.signal;
     if (signal?.aborted) throw abortError();
     try {
+      if (options.download) return await this.file(request, options);
       return await new Promise((resolve, reject) => {
         const subscription = this.http
           .request(request.method, request.url, {
@@ -66,11 +77,30 @@ export class HttpDataClient extends DataClient {
     } catch (e) {
       if (e instanceof DOMException && e.name === 'AbortError') throw e;
       if (e instanceof HttpErrorResponse) {
-        const problem = e.error as { correlationId?: unknown } | null;
+        const body = await errorBody(e.error);
+        const problem = body as { correlationId?: unknown } | null;
         const fromBody = typeof problem?.correlationId === 'string' ? problem.correlationId : undefined;
-        throw new DataError(e.status, fromBody ?? e.headers?.get('X-Correlation-Id') ?? undefined, fieldErrorsOf(e.error));
+        throw new DataError(e.status, fromBody ?? e.headers?.get('X-Correlation-Id') ?? undefined, fieldErrorsOf(body));
       }
       throw new DataError(0);
     }
+  }
+
+  /** A GET whose answer is a file: the body as it is, with its type, and the name of `Content-Disposition`. */
+  private file(request: DataRequest, options: DataRequestOptions): Promise<DownloadedFile> {
+    return new Promise((resolve, reject) => {
+      this.http
+        .get(request.url, {
+          params: toParams(request.query),
+          context: new HttpContext().set(LC_TRACE, { source: options.source, parent: options.trace, baggage: options.baggage }),
+          observe: 'response',
+          responseType: 'blob',
+        })
+        .subscribe({
+          next: (response: HttpResponse<Blob>) =>
+            resolve({ blob: response.body ?? new Blob([]), fileName: fileNameFromDisposition(response.headers.get('Content-Disposition')) }),
+          error: reject,
+        });
+    });
   }
 }

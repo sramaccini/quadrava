@@ -8,11 +8,11 @@ export interface SourceReference {
 /** Objects whose `source` names a data source of the screen: fields, boards, forms, comments, exports. */
 const NESTED = new Set(['lookup', 'suggest', 'columnsFrom', 'fieldsFrom', 'mentions', 'export']);
 /** Properties whose value is the name of a data source: steps and remote rules. */
-const NAMED = new Set(['call', 'refresh', 'remote']);
+const NAMED = new Set(['call', 'download', 'refresh', 'remote']);
 
 /**
  * Every place where a screen names one of its data sources: the `source` of the components, of the nested parts that
- * read data (`lookup`, `suggest`, `columnsFrom`, `fieldsFrom`, `mentions`, `export`), the `call` and `refresh` steps,
+ * read data (`lookup`, `suggest`, `columnsFrom`, `fieldsFrom`, `mentions`, `export`), the `call`, `download` and `refresh` steps,
  * the `remote` rules and the `upload` of file fields. Used by Studio and by `quadrava validate`; it runs nothing.
  */
 export function sourceReferences(screen: unknown): SourceReference[] {

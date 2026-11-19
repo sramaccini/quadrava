@@ -1,3 +1,4 @@
+import type { DownloadedFile } from './download';
 import type { FieldError } from './field-errors';
 import type { EvalContext } from 'expressions';
 import type { DataSourceDefinition } from 'schema';
@@ -18,3 +19,5 @@ export interface DataSourceState {
 /** Outcome of a call. On error `status` is the HTTP code (0 if the service does not answer or the request does not start). */
 /** Outcome of a call. A failure can carry the field errors of the service's Problem (contracts/problem.yaml). */
 export type CallResult = { ok: true; data: unknown } | { ok: false; error: string; status?: number; fieldErrors?: readonly FieldError[] };
+/** Result of a download: the file and the last segment of its address (for a name), or the error as for a call. */
+export type DownloadResult = { ok: true; file: DownloadedFile; urlName?: string } | { ok: false; error: string; status?: number };

@@ -61,6 +61,12 @@ export interface DataRequestOptions {
    * `lc.action` (its steps, as in the traces). Names from the definition, never data values.
    */
   baggage?: Readonly<Record<string, string>>;
+  /**
+   * The response is a file to save (the `download` step): the client answers with a `DownloadedFile` (the body as it
+   * is, and the name of `Content-Disposition`) instead of the parsed body. A client that ignores it answers as usual,
+   * and the runtime saves that answer as JSON.
+   */
+  download?: boolean;
 }
 
 /** Screen change. */

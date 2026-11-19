@@ -1,3 +1,5 @@
+import { saveBlob } from './download';
+
 /** UTF-8 byte order mark (BOM): without it, Excel opens the file with the wrong encoding. */
 const BOM = String.fromCharCode(0xfeff);
 
@@ -31,13 +33,5 @@ export function rowsOf(data: unknown): Record<string, unknown>[] {
 
 /** Makes the browser download a file. */
 export function downloadText(fileName: string, mime: string, content: string): void {
-  const url = URL.createObjectURL(new Blob([content], { type: mime }));
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = fileName;
-  link.rel = 'noopener';
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 0);
+  saveBlob(fileName, new Blob([content], { type: mime }));
 }

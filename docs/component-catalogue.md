@@ -40,7 +40,7 @@ Rules common to all components, new ones included:
 | `squareChart` | Compact square columns for dense time-series data. |
 | Fields | `text`, `number`, `select`, `checkbox`, `date`, `textarea`, `datetime`, `radio`, `switch`, `multiselect`, `tags`, `lookup`, `file`, `repeater`, `richtext` (§ 2.26). |
 | Cell formats | `text`, `number`, `currency`, `percent`, `date`, `datetime`, `boolean`, `badge`, `markdown`. |
-| Steps | `set`, `call` (with `as` and `onError`), `refresh`, `navigate`, `toast`, `confirm`, `dialog`, `validate`, `print`, `export` (§ 2.22), `if` and `run`; named sequences in `actions` (§ 2.22b). |
+| Steps | `set`, `call` (with `as` and `onError`), `refresh`, `navigate`, `toast`, `confirm`, `dialog`, `validate`, `print`, `export` and `download` (§ 2.22), `if` and `run`; named sequences in `actions` (§ 2.22b). |
 | Shell | Side bar (`lc-sidebar`, with search, counters and keyboard support: § 2.25; the application brand is inserted with an `lcBrand` element, otherwise logo and name), messages of the user (`lc-notification-bell`: a bell with the unread count and the list, ADR-22; `notificationsOf` keeps only well-formed messages), user menu (`lc-user-menu`: an icon with the initial and the name in its tooltip, application items (in the runtime those of `userMenu` of the navigation, ADR-25), an optional group of choices with the current one ticked, such as the tenants of ADR-18, and sign-out last, after a confirmation; a menu for screen readers and the keyboard: arrows, Home, End, Enter, Esc, submenus with the side arrows), responsive top bar, `lc-quadrava-wordmark` logotype, syntax-highlighted code viewer `lc-code-view`, tools in section headers (`SectionTools`: «JSON» and «Aiuto» in the demo showcase). |
 
 ## 2. Added in October 2026
@@ -70,7 +70,7 @@ Built in this order, one per commit, each with tests (schema, component and show
 | 19 | Service-driven data table, for very large tables | table | done |
 | 20 | Standalone fields (`input`) and row sections | fields | done |
 | 21 | Layout containers: box, grid, border (with resizable sides) | layout | done |
-| 22 | validate, print and export (CSV) steps | actions | done |
+| 22 | validate, print, export (CSV) and download steps | actions | done |
 | 23 | Image, link, progress | visualisation | done |
 | 24 | Timeline and kanban | visualisation | done |
 | 25 | Menu: search, counters, keyboard | shell | done |
@@ -476,7 +476,7 @@ Three containers that decide only **where** their children go (no frame or backg
 
 Common rules: a hidden child (`visibleIf`) takes no space; inside containers fields fill the cell (outside they stay at most 560 px wide); sections side by side stretch to the row height. Containers nest freely (a box inside a border region, a grid in a section…). In the editor they are in the «Struttura e testi» group; the border starts with three sample areas (north, west, centre).
 
-### 2.22 validate, print and export steps
+### 2.22 validate, print, export and download steps
 
 ```json
 "onClick": [
@@ -484,6 +484,7 @@ Common rules: a hidden child (`visibleIf`) takes no space; inside containers fie
   { "call": "save", "args": { "name": "{{ state.name }}" } },
   { "export": { "source": "invoices", "fileName": "invoices",
                 "columns": [ { "field": "number", "label": "{{ t('common.number', 'Numero') }}" }, { "field": "amount" } ] } },
+  { "download": "exportUser", "args": { "username": "{{ row.username }}" }, "fileName": "{{ row.username }}.json" },
   { "print": true }
 ]
 ```
@@ -491,6 +492,18 @@ Common rules: a hidden child (`visibleIf`) takes no space; inside containers fie
 - **validate**: checks the standalone fields of the given group (`group` of `input` nodes, `default` if not given; `*` = all those on screen). Every field shows its own errors; if one is invalid the warning «Controlla i campi evidenziati» (check the highlighted fields) appears and the sequence stops. A hidden field does not count.
 - **print**: opens the browser's print dialog; the runtime's print stylesheet hides menu, top bar, buttons and pagination.
 - **export**: runs the data source (GET; `args` as in `call`) and downloads the rows (a list, or the `items` of a paged response) as CSV for Excel in Italian: semicolons, CRLF line endings, UTF-8 BOM. Headers go through `t()`; values are the raw ones (unformatted numbers). Cells starting with `=`, `+`, `-`, `@` (or tab and carriage return) are prefixed with an apostrophe: a spreadsheet does not run them as formulas. The file name is cleaned up and gets `.csv`.
+- **download**: saves as a file the answer of a GET data source (`args` as in `call`), such as an export the service
+  writes itself (a JSON, a PDF, a ZIP).
+  - **Behaves like `call`**: it goes through the runtime with the session, the trace and `onError` (which sees
+    `error.status`). An expired session, or a service that asks for a recent login, signs the user in again; a link
+    with `href` (ADR-24) cannot do that, because the browser follows it by itself.
+  - **The file**: its type is the one of the answer. Its name is the one the service gives in `Content-Disposition`
+    (`filename*`, then `filename`), else `fileName` (with `{{ }}`), else the last segment of the address. Folders and
+    characters a file name cannot have are removed.
+  - **Accessibility**: screen readers hear «Download started» (`lc.downloadStarted`). The browser shows the file in its
+    own bar.
+  - **Size**: the file passes through the memory of the page. For very large files a link with `href` is lighter.
+  - In the showcase, «Download JSON» on the containers page saves the invoices as the service sends them.
 
 ### 2.22b Before and after a call: response, conditions, named sequences, errors
 
@@ -516,6 +529,7 @@ Steps are a sequence: what has to happen before a call (`validate`, `confirm`, `
 - **`if`** with `then` and `else` (optional): one step or a list of steps per branch. The condition must yield true or false; if it cannot be evaluated (or yields something else) the sequence stops with the generic warning and the technical diagnostic, without running either branch (fail-closed).
 - **`actions` and `run`**: named sequences of the screen, called from buttons, row actions, forms… with the variables of the place where they are called (`row`, `form`). Variables created inside (`as`) stay theirs. A sequence that does not exist, or calls nested more than eight levels deep (a cycle), stop the sequence. The editor suggests the names in `run` and flags missing ones.
 - **`error.status` in `onError`**: the HTTP status of the response (0 if the service cannot be reached), to behave differently according to the error. The server's message is not available: it might contain internal details.
+  A 401 runs neither `onError` nor the default message: the session handles it (it signs the user in again, after an expired session or when the service asks for a recent login) and says so itself.
 
 What **must** happen regardless (checks, rules, audit, several calls to keep consistent) does not belong in the interface, which can be bypassed: it belongs in the service, in the BFF or in an endpoint that combines them. Steps serve the user experience. The «Componenti base» showcase has an example of each (section «Sequenze e risposte»).
 

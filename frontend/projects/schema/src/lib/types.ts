@@ -45,7 +45,16 @@ export interface CallStep {
   args?: Record<string, unknown>;
   /** Name under which the following steps see the response. */
   as?: string;
-  /** Steps if the call fails; they see `error.status`. */
+  /** Steps if the call fails; they see `error.status`. Not run on a 401, which the session handles. */
+  onError?: Step | Step[];
+}
+/** Saves as a file the answer of a GET data source, called like `call`. */
+export interface DownloadStep {
+  download: string;
+  args?: Record<string, unknown>;
+  /** Name of the file when the service gives none (`Content-Disposition`); it can contain `{{ }}`. */
+  fileName?: string;
+  /** Steps if the download fails; they see `error.status`. Not run on a 401. */
   onError?: Step | Step[];
 }
 /** Conditional step. */
@@ -98,7 +107,7 @@ export interface PrintStep {
 export interface ExportStep {
   export: { source: string; fileName?: string; args?: Record<string, unknown>; columns: { field: string; label?: string }[] };
 }
-export type Step = CallStep | RefreshStep | NavigateStep | ToastStep | SetStep | ConfirmStep | DialogStep | ValidateStep | PrintStep | ExportStep | IfStep | RunStep;
+export type Step = CallStep | DownloadStep | RefreshStep | NavigateStep | ToastStep | SetStep | ConfirmStep | DialogStep | ValidateStep | PrintStep | ExportStep | IfStep | RunStep;
 
 export interface ConditionalProps {
   visibleIf?: Expression;

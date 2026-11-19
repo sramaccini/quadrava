@@ -132,6 +132,20 @@ describe('recent login', () => {
     expect(redirects).toEqual([]);
   });
 
+  it('a download receives the Problem as a file: it is read, and the user signs in again with max_age', async () => {
+    const asked: string[] = [];
+    const { http, redirects } = setup({}, [confirming(true, asked)]);
+    const session = TestBed.inject(HttpSession);
+    const p = TestBed.inject(HttpDataClient).request({ method: 'GET', url: '/api/admin/users/ada/export' }, { download: true });
+    const blob = new Blob([JSON.stringify(problem)], { type: 'application/problem+json' });
+    http.expectOne('/api/admin/users/ada/export').flush(blob, { status: 401, statusText: 'Unauthorized' });
+    await expect(p).rejects.toMatchObject({ status: 401 });
+    await new Promise((r) => setTimeout(r, 10));
+    expect(asked).toHaveLength(1);
+    expect(redirects).toEqual([`/bff/login?return=${encodeURIComponent(location.href)}&max_age=900`]);
+    expect(session.state()).not.toBe('expired');
+  });
+
   it('a second request right after such a login asks nothing, so a BFF that keeps refusing does not loop', async () => {
     const asked: string[] = [];
     const { http, redirects } = setup({}, [confirming(true, asked)]);
@@ -326,6 +340,29 @@ describe('HttpDataClient', () => {
     expect(req.request.params.toString()).toBe('status=sent&page=0&t=a&t=b');
     req.flush([{ id: 1 }]);
     expect(await p).toEqual([{ id: 1 }]);
+  });
+
+  it('download: the body as a file with its type, and the name of Content-Disposition', async () => {
+    const { http } = setup();
+    const p = TestBed.inject(HttpDataClient).request({ method: 'GET', url: '/api/admin/users/ada/export', query: { full: true } }, { download: true });
+    const req = http.expectOne((r) => r.url === '/api/admin/users/ada/export');
+    expect(req.request.responseType).toBe('blob');
+    expect(req.request.params.toString()).toBe('full=true');
+    req.flush(new Blob(['{"username":"ada"}'], { type: 'application/json' }), {
+      headers: { 'Content-Disposition': "attachment; filename=\"ada.json\"; filename*=UTF-8''ad%C3%A0.json" },
+    });
+    const file = (await p) as { blob: Blob; fileName?: string };
+    expect(file.fileName).toBe('adà.json');
+    expect(file.blob.type).toBe('application/json');
+    expect(await file.blob.text()).toBe('{"username":"ada"}');
+  });
+
+  it('download: an error answer read as a Problem, with its field errors and correlation', async () => {
+    const { http } = setup();
+    const p = TestBed.inject(HttpDataClient).request({ method: 'GET', url: '/api/export' }, { download: true });
+    const body = { title: 'Invalid', status: 422, correlationId: 'c-1', errors: [{ path: '/from', code: 'tooOld' }] };
+    http.expectOne('/api/export').flush(new Blob([JSON.stringify(body)]), { status: 422, statusText: 'Unprocessable' });
+    await expect(p).rejects.toMatchObject({ status: 422, correlationId: 'c-1', fieldErrors: [{ path: '/from', code: 'tooOld' }] });
   });
 
   it('sends the body only for the methods that allow it', async () => {

@@ -12,6 +12,24 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Added
+
+- The `download` step saves as a file the answer of a GET data source (request Q24 of OpenDevTrack):
+  `{ "download": "exportUser", "args": {...}, "fileName": "..." }`.
+  - It is called like `call`, so an expired session, a recent login and `onError` work as for any action. A link with
+    `href` cannot do this.
+  - The name comes from `Content-Disposition`, else from `fileName`, else from the address, made safe.
+  - Screen readers hear «Download started».
+  - `DataRequestOptions.download` and `DownloadedFile` are new in the public API of `core`. A data client that ignores
+    them still works: its answer is saved as JSON.
+- The services read the Problem of an error that arrives as a file, so a 401 that asks for a recent login also works
+  on a download.
+
+### Changed
+
+- A 401 no longer runs the `onError` of a step, nor its default message: the session already signs the user in again
+  and says so. OpenDevTrack noticed a «Saving failed» under the request to sign in again (Q23).
+
 ### Changed
 
 - The reference BFF is built on authz-library 2.5 (ADR-26).

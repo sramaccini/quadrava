@@ -19,8 +19,9 @@ import {
   type SpanContext,
   type TraceSpan,
 } from './ports';
+import { isDownloadedFile, lastPathSegment } from './download';
 import type { I18n } from './i18n';
-import type { CallResult, DataSourceState, Scope } from './types';
+import type { CallResult, DataSourceState, DownloadResult, Scope } from './types';
 import { fieldErrorsOf, pointerSegments, type FieldError } from './field-errors';
 import { remoteSources } from './validation';
 import { ValidatorRegistry } from './validators';
@@ -511,6 +512,33 @@ export class ScreenRuntime {
       return { ok: true, data: await shared };
     } catch (e) {
       if (signal?.aborted) return { ok: false, error: 'cancelled' };
+      const error = e instanceof Error ? e.message : String(e);
+      this.report(`data source ${name}`, error);
+      return { ok: false, error, status: statusOf(e) };
+    }
+  }
+
+  /**
+   * Runs a GET data source whose answer is a file to save (the `download` step), without touching its shared state. The
+   * file comes with the name the service gave and, as a last resort, the last segment of the address. A data client
+   * that does not know downloads answers with data, which becomes a JSON file.
+   */
+  async download(name: string, args: Record<string, unknown> = {}, scope: Scope = {}, trace?: SpanContext): Promise<DownloadResult> {
+    const built = this.build(name, args, scope);
+    if (!built.ok) {
+      this.report(`download ${name}`, built.error);
+      return { ok: false, error: built.error };
+    }
+    if (built.request.method !== 'GET') {
+      const error = 'a download needs a GET data source';
+      this.report(`download ${name}`, error);
+      return { ok: false, error };
+    }
+    try {
+      const data = await this.deps.data.request(built.request, { source: name, trace, baggage: this.baggage(trace), download: true });
+      const file = isDownloadedFile(data) ? data : { blob: new Blob([JSON.stringify(data ?? null)], { type: 'application/json' }) };
+      return { ok: true, file, urlName: lastPathSegment(built.request.url) };
+    } catch (e) {
       const error = e instanceof Error ? e.message : String(e);
       this.report(`data source ${name}`, error);
       return { ok: false, error, status: statusOf(e) };

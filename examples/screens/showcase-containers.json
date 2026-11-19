@@ -69,6 +69,17 @@
               ]
             },
             {
+              "id": "btn-download",
+              "type": "button",
+              "label": "{{ t('showcase_containers.download_json', 'Download JSON') }}",
+              "onClick": [
+                {
+                  "download": "invoices",
+                  "fileName": "invoices.json"
+                }
+              ]
+            },
+            {
               "id": "btn-print",
               "type": "button",
               "label": "{{ t('showcase_containers.print', 'Print') }}",

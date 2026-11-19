@@ -1,5 +1,6 @@
 import type { Step } from 'schema';
 import { csvFileName, downloadText, rowsOf, toCsv } from './csv';
+import { announceDownload, safeFileName, saveBlob } from './download';
 import type { FieldError } from './field-errors';
 import type { SpanContext } from './ports';
 import type { ScreenRuntime } from './screen-runtime';
@@ -7,6 +8,12 @@ import type { Scope } from './types';
 
 const GENERIC_ERROR = 'Operation failed';
 const genericError = (runtime: ScreenRuntime): string => runtime.systemText('lc.operationFailed', GENERIC_ERROR);
+
+/**
+ * A 401 is the session's business: the services sign the user in again (an expired session, or an action that needs a
+ * recent login) and say so. The step only stops: no onError, no message of its own on top.
+ */
+const handledBySession = (status: number | undefined): boolean => status === 401;
 
 /** How many named sequences (`run`) can call one another: beyond that it is almost certainly a cycle. */
 const MAX_RUN_DEPTH = 8;
@@ -43,6 +50,7 @@ export function describeSteps(steps: Step[]): string {
   return steps
     .map((step) => {
       if ('call' in step) return named('call', step.call);
+      if ('download' in step) return named('download', step.download);
       if ('run' in step) return named('run', step.run);
       if ('refresh' in step) return named('refresh', step.refresh);
       if ('navigate' in step) return named('navigate', step.navigate);
@@ -89,6 +97,7 @@ async function runStep(runtime: ScreenRuntime, step: Step, scope: Scope, run: Ru
     const result = await runtime.execute(step.call, args, scope, undefined, run.trace);
     // With `as` the following steps see the response under that name.
     if (result.ok) return { ok: true, scope: step.as ? { ...scope, [step.as]: result.data } : scope };
+    if (handledBySession(result.status)) return { ok: false };
     // The server message is not shown to the user: it could contain internal details. The onError steps
     // see only the code (error.status) and how many field errors the form shows (error.fields).
     // A form places them on its fields; started elsewhere (a button), they go to the standalone fields.
@@ -97,6 +106,25 @@ async function runStep(runtime: ScreenRuntime, step: Step, scope: Scope, run: Ru
     const fallback = fields ? runtime.systemText('lc.checkFields', 'Check the highlighted fields') : genericError(runtime);
     const handler = step.onError === undefined ? [{ toast: fallback }] : asList(step.onError);
     await runSequence(runtime, handler, { ...scope, error: { status: result.status ?? 0, fields } }, run);
+    return { ok: false };
+  }
+  if ('download' in step) {
+    const args = (runtime.resolveValue(step.args ?? {}, scope) ?? {}) as Record<string, unknown>;
+    const result = await runtime.download(step.download, args, scope, run.trace);
+    if (result.ok) {
+      // The name of the service wins, then the one of the definition, then the end of the address.
+      const fileName =
+        safeFileName(result.file.fileName) ??
+        safeFileName(step.fileName ? runtime.text(step.fileName, scope) : undefined) ??
+        safeFileName(result.urlName) ??
+        'download';
+      saveBlob(fileName, result.file.blob);
+      announceDownload(runtime.systemText('lc.downloadStarted', 'Download started'));
+      return { ok: true };
+    }
+    if (handledBySession(result.status)) return { ok: false };
+    const handler = step.onError === undefined ? [{ toast: genericError(runtime) }] : asList(step.onError);
+    await runSequence(runtime, handler, { ...scope, error: { status: result.status ?? 0, fields: 0 } }, run);
     return { ok: false };
   }
   if ('if' in step) {
@@ -124,13 +152,13 @@ async function runStep(runtime: ScreenRuntime, step: Step, scope: Scope, run: Ru
 /** The steps that neither change variables nor call other steps. */
 async function runSimpleStep(
   runtime: ScreenRuntime,
-  step: Exclude<Step, { call: string } | { if: string } | { run: string }>,
+  step: Exclude<Step, { call: string } | { download: string } | { if: string } | { run: string }>,
   scope: Scope,
   trace: SpanContext | undefined,
 ): Promise<boolean> {
   if ('refresh' in step) {
     const result = await runtime.refresh(step.refresh, trace);
-    if (!result.ok) runtime.toast(genericError(runtime), 'error');
+    if (!result.ok && !handledBySession(result.status)) runtime.toast(genericError(runtime), 'error');
     return result.ok;
   }
   if ('navigate' in step) {
@@ -165,7 +193,7 @@ async function runSimpleStep(
     const args = (runtime.resolveValue(spec.args ?? {}, scope) ?? {}) as Record<string, unknown>;
     const result = await runtime.query(spec.source, args, scope, trace);
     if (!result.ok) {
-      runtime.toast(genericError(runtime), 'error');
+      if (!handledBySession(result.status)) runtime.toast(genericError(runtime), 'error');
       return false;
     }
     const header = spec.columns.map((c) => (c.label ? runtime.text(c.label, scope) : c.field));

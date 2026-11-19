@@ -15,6 +15,7 @@ export * from './lib/remote-checks';
 export * from './lib/field-errors';
 export * from './lib/data-source-loading';
 export * from './lib/csv';
+export * from './lib/download';
 export * from './lib/markdown';
 export * from './lib/action-engine';
 export * from './lib/navigation-runtime';

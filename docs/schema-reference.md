@@ -326,7 +326,7 @@
 | --- | --- | --- |
 | `call` * | text | Name of the data source to run. |
 | `args` | object | Variables for url, params and body of the data source, resolved before the call, for example { "id": "{{ row.id }}" }. |
-| `onError` | steps | Steps run if the call fails (instead of the default message). They see error.status: the HTTP code of the response (0 if the service cannot be reached), for example {{ error.status == 409 }}. The server message is not there: it could contain internal details. |
+| `onError` | steps | Steps run if the call fails (instead of the default message). They see error.status: the HTTP code of the response (0 if the service cannot be reached), for example {{ error.status == 409 }}. The server message is not there: it could contain internal details. Not run on a 401: the runtime signs the user in again (session expired, or an action that needs a recent login). |
 | `as` |  | Name under which the following steps of the same sequence see the service response, for example "created" and then {{ created.id }}. It cannot be the name of an existing variable (user, state, params, settings, data, row, form, error…). |
 
 ### `refresh`
@@ -383,6 +383,15 @@
 | Property | Type | Description |
 | --- | --- | --- |
 | `export` * | object | Downloads as CSV the rows of a GET data source (a list, or the items of a paged response): semicolon separator, UTF-8 with BOM for Excel, cells starting with = + - @ neutralised. |
+
+### `download`
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `download` * | text | GET data source whose answer is a file to save, called by the runtime like call: with the session, the CSRF rules, a new sign-in when the service asks for a recent login, and onError. The type of the file is the one of the answer. |
+| `args` | object | Variables for url and params of the data source (as in call). |
+| `fileName` | text | Name of the file when the service gives none in Content-Disposition; it can contain {{ }}. Without either, the last segment of the address. Folders and characters a file name cannot have are removed. |
+| `onError` | steps | Steps run if the download fails (instead of the default message). They see error.status, as in call. Not run on a 401: the runtime signs the user in again. |
 
 ### `if`
 

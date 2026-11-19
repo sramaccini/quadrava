@@ -49,9 +49,15 @@ export const lcHttpInterceptor: HttpInterceptorFn = (req, next) => {
       error: (error: unknown) => {
         span?.end(false, { 'http.response.status_code': error instanceof HttpErrorResponse ? error.status : 0 });
         if (error instanceof HttpErrorResponse && error.status === 401) {
-          const maxAge = recentLoginAge(error.error);
-          if (maxAge === null) injector.get(HttpSession).markExpired();
-          else void injector.get(HttpSession).reauthenticate(maxAge);
+          const session = injector.get(HttpSession);
+          const decide = (body: unknown) => {
+            const maxAge = recentLoginAge(body);
+            if (maxAge === null) session.markExpired();
+            else void session.reauthenticate(maxAge);
+          };
+          // A download receives the Problem as a Blob: read first, then decided as for any other call.
+          if (error.error instanceof Blob) void error.error.text().then(decide, () => decide(null));
+          else decide(error.error);
         }
       },
     }),
@@ -62,8 +68,8 @@ export const lcHttpInterceptor: HttpInterceptorFn = (req, next) => {
 
 /**
  * The `maxAge` of a 401 that asks for a recent login (Problem `urn:problem:authz:recent-login-required`), 0 when it has
- * none; null for any other 401, which is an expired session. The body may arrive parsed, as text or as a Blob (a
- * download): a Blob is read as an expired session, the only case a download cannot tell.
+ * none; null for any other 401, which is an expired session. The body may arrive parsed or as text (a download's Blob
+ * is read as text before).
  */
 export function recentLoginAge(body: unknown): number | null {
   let problem: unknown = body;
