@@ -20,6 +20,10 @@ jobs:
   ci:
     name: Checks
     uses: ./.github/workflows/ci.yml
+    # The Java jobs read authz-library from GitHub Packages: a called workflow cannot get more than this.
+    permissions:
+      contents: read
+      packages: read
 
   release:
     name: Image and release
