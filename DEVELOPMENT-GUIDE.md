@@ -5,8 +5,28 @@ How to work on Quadrava Community Edition (CE): set up, build, test, extend and 
 ## 1. Prerequisites and setup
 
 * Node.js 24 and npm (pinned in `.nvmrc` and in `engines` of `frontend/package.json`; `nvm use` or `fnm use` from the repository root picks it).
-* JDK 21 and Maven 3.9+ (only for `reference/`).
-* Docker (only for the Keycloak in `idp/`).
+* JDK 25 and Maven 3.9+ (only for `reference/`).
+* Docker (only for Keycloak and Redis in `idp/`).
+
+The reference BFF is built on [authz-library](https://github.com/sramaccini/authz-library) (ADR-26). The library is
+published on GitHub Packages, which asks for a token even to read a public package. Do this once:
+
+1. Create a classic personal access token with only the `read:packages` scope.
+2. Put it in `~/.m2/settings.xml`, never in the repository:
+
+```xml
+<settings>
+  <servers>
+    <server>
+      <id>github-authz</id>
+      <username>your-github-user</username>
+      <password>the-token</password>
+    </server>
+  </servers>
+</settings>
+```
+
+CI uses the token of the workflow (`packages: read`).
 
 ```bash
 cd frontend

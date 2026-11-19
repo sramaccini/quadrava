@@ -32,6 +32,7 @@
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": false,
       "serviceAccountsEnabled": false,
+      "frontchannelLogout": false,
       "redirectUris": [
         "http://localhost:8080/login/oauth2/code/keycloak",
         "http://localhost:8090/login/oauth2/code/keycloak"
@@ -43,7 +44,10 @@
       ],
       "attributes": {
         "pkce.code.challenge.method": "S256",
-        "post.logout.redirect.uris": "http://localhost:8080/*##http://localhost:8090/*"
+        "post.logout.redirect.uris": "http://localhost:4200/*##http://localhost:4201/*##http://localhost:8090/*",
+        "backchannel.logout.url": "http://host.docker.internal:8080/bff/backchannel-logout",
+        "backchannel.logout.session.required": "true",
+        "backchannel.logout.revoke.offline.tokens": "false"
       }
     },
     {

@@ -11,16 +11,33 @@
 
   <artifactId>quadrava-reference-bff</artifactId>
   <name>Quadrava reference - bff</name>
-  <description>Backend For Frontend: OIDC session with Keycloak, tokens on the server side only.</description>
+  <description>Backend For Frontend on authz-library: OIDC session with Keycloak in Redis, tokens on the server side only.</description>
+
+  <properties>
+    <authz-library.version>2.5.0</authz-library.version>
+  </properties>
+
+  <!-- authz-library is published on GitHub Packages, which asks for a token even for reading (DEVELOPMENT-GUIDE § 2). -->
+  <repositories>
+    <repository>
+      <id>github-authz</id>
+      <url>https://maven.pkg.github.com/sramaccini/authz-library</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
 
   <dependencies>
+    <!-- Login, session in Redis, /bff/* and /authz/* of the contracts, token relay, back-channel logout. -->
     <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-webmvc</artifactId>
+      <groupId>com.logicwarez.authz</groupId>
+      <artifactId>authz-bff</artifactId>
+      <version>${authz-library.version}</version>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-oauth2-client</artifactId>
+      <artifactId>spring-boot-starter-webmvc</artifactId>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>

@@ -1,4 +1,5 @@
-# Keycloak for local development. Development only: HTTP, sample credentials, embedded database.
+# Keycloak and Redis for local development. Development only: HTTP, sample credentials, embedded database, Redis
+# without a password.
 services:
   keycloak:
     image: quay.io/keycloak/keycloak:26.8.0
@@ -9,5 +10,13 @@ services:
       KC_HTTP_PORT: 8180
     ports:
       - "8180:8180"
+    # The back-channel logout: Keycloak calls the BFF, which runs on the host (port 8080).
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./realm-quadrava.json:/opt/keycloak/data/import/realm-quadrava.json:ro
+  # The sessions of the BFF (Spring Session): they survive a restart of the BFF, and Keycloak can close them.
+  redis:
+    image: redis:8.2
+    ports:
+      - "6379:6379"

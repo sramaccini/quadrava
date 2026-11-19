@@ -48,7 +48,7 @@ Contributor documentation: [DEVELOPMENT-GUIDE.md](DEVELOPMENT-GUIDE.md). Status 
 | **Libraries** (`schema`, `expressions`, `core`, `components`, `services`) | JSON Schema and types, expression evaluator, interpreter, NG-ZORRO component catalogue, HTTP/session/authorization/telemetry services | Working, tested |
 | **CLI** (`frontend/projects/cli`) | `quadrava validate` checks a project as the runtime reads it; `quadrava publish` publishes it in a registry | Published with every version |
 | **Contracts** (`contracts/`) | OpenAPI 3.1: BFF, authorization, telemetry ingestion, registry (any implementation that follows it serves the runtime) | Defined and validated, with conformance kits |
-| **Reference implementation** (`reference/`) | Spring Boot BFF, authorization and telemetry services that implement the contracts | Compiles and its unit tests pass (JDK 21, Maven 3.9), in CI too |
+| **Reference implementation** (`reference/`) | Spring Boot BFF, authorization and telemetry services that implement the contracts | Compiles and its unit tests pass (JDK 25, Maven 3.9), in CI too |
 | **Identity provider** (`idp/`) | Keycloak with a sample realm for local development | Ready |
 | **Examples** (`examples/`) | Reference applications used by tests and by the demo | Working |
 
@@ -264,7 +264,7 @@ Frontend libraries, from the bottom up:
 | Expressions | CEL via `@marcbachmann/cel-js` 8 |
 | Tests (front end) | Vitest 5 through `ng test`, jsdom; Playwright for end-to-end tests in Chromium, Firefox and WebKit |
 | Telemetry | OpenTelemetry-style signals sent as OTLP/HTTP JSON |
-| Back end (reference) | Spring Boot 4.1.1, Java 21 |
+| Back end (reference) | Spring Boot 4.1.2, Java 25; BFF on authz-library with Redis |
 | Identity | Keycloak 26.8, OIDC with PKCE through the BFF |
 | Node.js | 24 (pinned in `.nvmrc` and in `engines` of `frontend/package.json`) |
 
@@ -305,7 +305,7 @@ The product is **Quadrava**; this repository is its **Community Edition (CE)**.
 
 ## Run the full stack
 
-Prerequisites: Node.js 24, JDK 21, Maven 3.9+, Docker.
+Prerequisites: Node.js 24, JDK 25, Maven 3.9+ with a GitHub token for authz-library ([DEVELOPMENT-GUIDE § 1](DEVELOPMENT-GUIDE.md)), Docker.
 
 **One command:**
 
@@ -313,16 +313,17 @@ Prerequisites: Node.js 24, JDK 21, Maven 3.9+, Docker.
 cd frontend && npm run stack
 ```
 
-`tools/stack.mjs` starts Keycloak in Docker, builds the Java modules when their jars are missing (`-- --rebuild` forces it), starts authorization, telemetry, BFF and the demo back end waiting for each to answer, then serves the runtime (http://localhost:4200) behind the BFF with the example project from its files (`-- --services-only` skips it). Logs go to `.stack/logs/`; Ctrl+C stops everything except Keycloak (`cd idp && docker compose down`). Keycloak imports `idp/realm-quadrava.json` only when its container is created: after changing the realm, recreate it (`docker compose down`, then `up -d`). The runtime image can run in front of the same stack on port 8090 ([docker/runtime/README.md](docker/runtime/README.md)).
+`tools/stack.mjs` starts Keycloak and Redis in Docker, builds the Java modules when their jars are missing (`-- --rebuild` forces it), starts authorization, telemetry, BFF and the demo back end waiting for each to answer, then serves the runtime (http://localhost:4200) behind the BFF with the example project from its files (`-- --services-only` skips it). Logs go to `.stack/logs/`; Ctrl+C stops everything except Keycloak and Redis (`cd idp && docker compose down`). Keycloak imports `idp/realm-quadrava.json` only when its container is created: after changing the realm, recreate it (`docker compose down`, then `up -d`). The runtime image can run in front of the same stack on port 8090 ([docker/runtime/README.md](docker/runtime/README.md)).
 
 **Step by step:**
 
-1. Identity provider: `cd idp && docker compose up` (console at http://localhost:8180, user `admin`, password `admin`).
+1. Identity provider and session store: `cd idp && docker compose up`. The Keycloak console is at http://localhost:8180 (user `admin`, password `admin`); Redis is on port 6379.
 2. Reference implementation: `cd reference && mvn verify`, then `mvn -pl <module> spring-boot:run` for each module (or `java -jar <module>/target/*.jar`). Ports: bff 8080, authz 8082, telemetry 8083.
 3. Demo application back end: `cd frontend && npm run demo-api` (port 8084). It serves the data of the demo screens (the same logic as the in-browser demo, `projects/runtime/src/demo/demo-backend.ts`) and accepts only access tokens signed by the local Keycloak realm (RS256, issuer, expiry); `--no-auth` switches the check off. Like a Spring Boot service with springdoc, it publishes its OpenAPI description at `/v3/api-docs` (description only, no token, CORS open) and, behind the BFF, at `/api/v3/api-docs`: a tool can import data sources from it.
-4. Front end through the BFF: `npm run start:runtime:bff` (port 4200). The dev server proxies `/registry`, `/api`, `/authz`, `/telemetry`, `/bff`, `/oauth2` and `/logout` to the BFF, which keeps the session, adds the user's access token to the forwarded calls (with `traceparent` and `baggage`: screen and action, for the audit) and protects writes with CSRF (`XSRF-TOKEN` cookie, `X-XSRF-TOKEN` header). BFF routes (`quadrava.bff.routes`): `/registry` → a registry (`LC_REGISTRY_URL`, port 8081 if absent), `/authz` → authorization, `/telemetry` → telemetry, `/api` → the application back end.
-   * **Runtime** (`projects/runtime/config/bff/runtime-config.json`): without a session it goes straight to the Keycloak login and comes back; then it loads the example project, the user's permissions from the authorization service, the data from `/api`, and sends diagnostics to the telemetry service. The header shows the user menu with the name, the number of permissions and *Sign out*: logout closes the BFF session and the Keycloak session (OIDC end-session), so the next login asks for the password again.
-   * After login the BFF returns only to the origins listed in `quadrava.bff.frontend-origins`; a visit to the BFF root goes to `quadrava.bff.home` (the runtime).
+4. Front end through the BFF: `npm run start:runtime:bff` (port 4200). The dev server proxies `/registry`, `/api`, `/authz`, `/telemetry`, `/bff`, `/oauth2` and `/logout` to the BFF, which keeps the session, adds the user's access token to the forwarded calls (with `traceparent` and `baggage`: screen and action, for the audit) and protects writes with CSRF (`XSRF-TOKEN` cookie, `X-XSRF-TOKEN` header). BFF routes (`quadrava.bff.routes`): `/registry` → a registry (`LC_REGISTRY_URL`, port 8081 if absent), `/telemetry` → telemetry, `/api` → the application back end. The BFF answers `/authz` itself, with the permissions of the session.
+   * **Runtime** (`projects/runtime/config/bff/runtime-config.json`): without a session it goes straight to the Keycloak login and comes back; then it loads the example project, the user's permissions from the BFF (the roles of each user are in its configuration, `quadrava.bff.users`), the data from `/api`, and sends diagnostics to the telemetry service. The header shows the user menu with the name, the number of permissions and *Sign out*: logout closes the BFF session and the Keycloak session (OIDC end-session), so the next login asks for the password again.
+   * After login the BFF returns only to the origins listed in `authz.bff.frontend.allowed-origins`. Without a return page it goes to `authz.bff.frontend.login-success-url` (the runtime).
+   * Signing out in Keycloak (from another application or from the console) also closes the BFF session (back-channel logout).
    * **Tenants** (optional, [ADR-18](docs/adr-18-tenant-selection.md)): when the BFF lists several tenants for the user and `runtime-config.json` has `services.tenantSwitchUrl`, the user menu offers them under *Workspace*; choosing one is a POST to the BFF, then the page reloads. Applications without tenants see nothing. In the in-browser demo the *administrator* profile has two offices.
 5. Validate the examples against the schemas: `cd frontend && npm run validate:examples`.
 

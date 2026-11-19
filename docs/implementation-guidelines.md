@@ -29,7 +29,7 @@ The current stable version of every component is used; exact versions are pinned
 | Expressions | CEL, `@marcbachmann/cel-js` 8 | With limits on size and depth of an expression (`expressions/engine.ts`) |
 | Telemetry | OTLP/HTTP JSON export written in `services` (no OpenTelemetry SDK, ADR-05) | To the ingestion endpoint |
 | Identity | OIDC with Authorization Code and PKCE; Keycloak 26.8.0 (latest version) | No provider-specific logic |
-| Reference implementation (BFF, authz, telemetry ingestion) | Spring Boot 4.1.1 on Java 21, multi-module Maven, Spring Security as OAuth2 client and resource server | Not for production |
+| Reference implementation (BFF, authz, telemetry ingestion) | Spring Boot 4.1.2 on Java 25, multi-module Maven, Spring Security as OAuth2 client and resource server; the BFF on authz-library with Spring Session in Redis (ADR-26) | Not for production |
 | Unit and component tests | Vitest through `ng test`, jsdom | One `*.spec.ts` next to the unit |
 | End-to-end tests | Playwright in Chromium, Firefox and WebKit, with axe-core | Run against the demo |
 | Code quality | Strict TypeScript, Prettier, `.editorconfig` | No linter yet: the security rules of section 10 are checked by review |

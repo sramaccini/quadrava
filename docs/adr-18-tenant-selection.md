@@ -40,7 +40,7 @@ runtime                                   BFF
   expressions as `user.tenant` (empty without tenants). Permissions stay in the authorization contract: the BFF or the
   services take the tenant of the session into account.
 - **The reference BFF** reads the tenants from its configuration (`quadrava.bff.tenants`, each with the users who may
-  use it), keeps the current one in the session, remembers the last one per user in memory, and forwards it to the
+  use it), keeps the current one in the session (authz-library, ADR-26), remembers the last one per user in memory, and forwards it to the
   services in the `X-Tenant` header (one sent by the browser never passes). The conformance kit
   (`npm run conformance:bff`) checks the tenant part only when the user of the session lists tenants.
 - **The demo** gives the administrator profile two offices, so the choice can be tried without a back end; there

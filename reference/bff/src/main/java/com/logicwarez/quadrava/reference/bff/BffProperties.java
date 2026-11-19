@@ -2,28 +2,29 @@ package com.logicwarez.quadrava.reference.bff;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * Configuration of the BFF.
+ * Configuration of the reference BFF. Login, session, return pages and logout are configured under {@code authz.bff}
+ * (authz-library); here only what the library leaves to the application: the forwarded APIs and who may do what.
  *
  * @param routes          forwarded APIs: every path prefix goes to one service only. No other host can be reached from
  *                        the browser through the BFF.
- * @param frontendOrigins origins of the applications (runtime, editor) the user may return to after the login.
  * @param maxBodyBytes    maximum size of a forwarded body (files go up to 100 MB).
- * @param home            where the user goes after a login without a return page, and whoever opens the BFF root.
- * @param endSessionUri   Keycloak OIDC logout, to close its session too when signing out.
+ * @param users           roles of every user, by login name. A user who is not listed cannot sign in (fail-closed).
+ * @param rolePermissions permissions of every role (domain.resource.action), the same map as the reference authz service.
  * @param tenants         tenants the users may work on (optional, contracts/bff.yaml): none = no choice.
  */
 @ConfigurationProperties("quadrava.bff")
-public record BffProperties(List<Route> routes, List<String> frontendOrigins, Long maxBodyBytes, String home, String endSessionUri,
-                           List<Tenant> tenants) {
+public record BffProperties(List<Route> routes, Long maxBodyBytes, Map<String, List<String>> users,
+                            Map<String, List<String>> rolePermissions, List<Tenant> tenants) {
 
     public BffProperties {
         routes = routes == null ? List.of() : List.copyOf(routes);
-        frontendOrigins = frontendOrigins == null ? List.of() : List.copyOf(frontendOrigins);
         maxBodyBytes = maxBodyBytes == null ? 110L * 1024 * 1024 : maxBodyBytes;
-        home = home == null ? "/" : home;
+        users = users == null ? Map.of() : Map.copyOf(users);
+        rolePermissions = rolePermissions == null ? Map.of() : Map.copyOf(rolePermissions);
         tenants = tenants == null ? List.of() : List.copyOf(tenants);
     }
 

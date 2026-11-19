@@ -14,12 +14,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import com.logicwarez.authz.bff.BffControllers;
+import com.logicwarez.authz.session.SessionContext;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.yaml.snakeyaml.Yaml;
 
-/** The contract contracts/bff.yaml is readable and consistent, and the BFF exposes what it describes. */
+/**
+ * The contract contracts/bff.yaml is readable and consistent, and the BFF exposes what it describes: the endpoints are
+ * those of authz-library, so a release of the library that drifts from the contract fails here.
+ */
 class ContractTest {
 
     private static final Path CONTRACT = Path.of("..", "..", "contracts", "bff.yaml");
@@ -53,7 +58,7 @@ class ContractTest {
     void theEndpointsOfTheApplicationsAreInTheContract() throws IOException {
         Map<String, Object> paths = (Map<String, Object>) contract().get("paths");
         List<String> undocumented = new ArrayList<>();
-        for (Class<?> controller : List.of(UserController.class, LoginController.class, TenantController.class)) {
+        for (Class<?> controller : List.of(BffControllers.LoginController.class, BffControllers.SessionController.class)) {
             for (Method method : controller.getDeclaredMethods()) {
                 String verb = null;
                 String[] path = null;
@@ -64,8 +69,7 @@ class ContractTest {
                     verb = "post";
                     path = post.path().length > 0 ? post.path() : post.value();
                 }
-                // The root only redirects people who open the BFF in the browser: not a call of the applications.
-                if (verb == null || path[0].equals("/")) {
+                if (verb == null) {
                     continue;
                 }
                 if (!(paths.get(path[0]) instanceof Map<?, ?> ops) || !ops.containsKey(verb)) {
@@ -74,8 +78,6 @@ class ContractTest {
             }
         }
         assertThat(undocumented).isEmpty();
-        // The logout is Spring Security's, not a controller method.
-        assertThat(paths).containsKey("/logout");
     }
 
     @Test
@@ -83,10 +85,10 @@ class ContractTest {
     void theUserHasOnlyFieldsOfTheContract() throws IOException {
         Map<String, Object> schemas = (Map<String, Object>) ((Map<String, Object>) contract().get("components")).get("schemas");
         Map<String, Object> properties = (Map<String, Object>) ((Map<String, Object>) schemas.get("User")).get("properties");
-        List<String> fields = Arrays.stream(UserController.UserInfo.class.getRecordComponents()).map(RecordComponent::getName).toList();
+        List<String> fields = Arrays.stream(BffControllers.SessionController.UserView.class.getRecordComponents()).map(RecordComponent::getName).toList();
         assertThat(properties.keySet()).containsAll(fields);
         Map<String, Object> tenant = (Map<String, Object>) ((Map<String, Object>) schemas.get("Tenant")).get("properties");
-        List<String> tenantFields = Arrays.stream(UserController.TenantInfo.class.getRecordComponents()).map(RecordComponent::getName).toList();
+        List<String> tenantFields = Arrays.stream(SessionContext.Tenant.class.getRecordComponents()).map(RecordComponent::getName).toList();
         assertThat(tenant.keySet()).containsAll(tenantFields);
     }
 }

@@ -12,6 +12,22 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Changed
+
+- The reference BFF is built on authz-library 2.5 (ADR-26).
+  - Sessions are kept in Redis, so they survive a restart.
+  - Keycloak closes them with the back-channel logout.
+  - The user's access token stays in the session and is renewed (token relay).
+  - The roles of each user (`quadrava.bff.users`) and the permissions of each role (`quadrava.bff.role-permissions`)
+    are in its configuration. A user who is not listed cannot sign in.
+  - `/authz` is answered by the BFF from the session, so it is no longer forwarded.
+  - `quadrava.bff.frontend-origins` and `quadrava.bff.home` become `authz.bff.frontend.allowed-origins` and
+    `authz.bff.frontend.login-success-url`.
+  - `/bff/user` adds `roles` and no longer has the e-mail.
+  - The BFF root no longer redirects.
+- `reference/` needs Java 25 (Spring Boot 4.1.2) and a GitHub token to read authz-library from GitHub Packages.
+  `idp/docker-compose.yml` also starts Redis.
+
 ## [0.17.0] - 2026-11-18
 
 ### Added

@@ -20,6 +20,7 @@ Reference documents:
 - [ADR-23: the data of the screen's data sources in expressions](adr-23-data-in-expressions.md): `data.<name>`, the last answer of a GET data source, read by any expression of the screen; fail-closed until it arrives.
 - [ADR-24: links from the rows of a table](adr-24-links-from-the-rows.md): `href` on a column and on a row action, a relative path built from the row (for example a download), with the rules of the URL of a data source.
 - [ADR-25: items of the application in the user menu and in the settings](adr-25-user-menu-and-settings.md): `userMenu` and `settings` in the navigation, a section of the settings is a screen of the application, the chosen language sent to the services in `Accept-Language`.
+- [ADR-26: the reference BFF on authz-library](adr-26-reference-bff-on-authz-library.md): login, session in Redis, back-channel logout and token relay from the library; roles and permissions of the users in the configuration of the BFF, not in the token.
 
 The functional specification, architecture and implementation guidelines date from 7–13 October 2026: the most recent detail is in the component catalogue and in the code.
 

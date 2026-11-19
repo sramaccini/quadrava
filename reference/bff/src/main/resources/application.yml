@@ -1,9 +1,25 @@
 server:
   port: 8080
+  servlet:
+    session:
+      # Inactivity timeout (sliding); the absolute limit is authz.bff.session.absolute-timeout.
+      timeout: 30m
 
 spring:
   application:
     name: quadrava-reference-bff
+  # The sessions are kept in Redis (Spring Session), so that Keycloak can close them with the back-channel logout.
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: 500ms
+  session:
+    data:
+      redis:
+        namespace: quadrava-bff
+        # indexed: sessions found by user, for the back-channel logout and the revocation.
+        repository-type: indexed
   security:
     oauth2:
       client:
@@ -14,39 +30,85 @@ spring:
             authorization-grant-type: authorization_code
             redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
             scope: openid,profile,email
-        # Explicit addresses instead of discovery at start-up (issuer-uri): the BFF starts even if Keycloak is not up
-        # yet. They are the standard Keycloak ones under the realm issuer.
         provider:
           keycloak:
-            authorization-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/quadrava}/protocol/openid-connect/auth
-            token-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/quadrava}/protocol/openid-connect/token
-            jwk-set-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/quadrava}/protocol/openid-connect/certs
-            user-info-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/quadrava}/protocol/openid-connect/userinfo
+            # Discovery at start-up: the logout address and the keys of the logout tokens come from Keycloak, which
+            # must be up before the BFF (npm run stack waits for it).
+            issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/quadrava}
             user-name-attribute: preferred_username
+
+authz:
+  bff:
+    oidc:
+      registration-id: keycloak
+    frontend:
+      # After a login without a return page, after a failed login (with ?error=) and after signing out.
+      login-success-url: ${LC_HOME:http://localhost:4200/}
+      login-failure-url: ${LC_HOME:http://localhost:4200/}
+      post-logout-url: ${LC_HOME:http://localhost:4200/}
+      # Applications the user may return to after the login (/bff/login?return=...) and Origin allowed on writes.
+      allowed-origins:
+        - http://localhost:4200
+        - http://localhost:4201
+        # The runtime image in front of this BFF (docker/runtime/README.md, «Against the local stack»).
+        - http://localhost:8090
+    session:
+      absolute-timeout: 10h
+    # The access token of the user stays in the session, for the services behind the routes.
+    token-relay:
+      enabled: true
+    # Keycloak closes the sessions of the BFF when it closes its own (sign-out elsewhere, administrator).
+    backchannel-logout:
+      enabled: true
 
 quadrava:
   bff:
-    # APIs forwarded by the BFF to the services, with the user's token. Only these prefixes and these hosts.
+    # APIs forwarded by the BFF to the services, with the user's token. Only these prefixes and these hosts. The
+    # permissions (/authz/capabilities, /authz/check) are answered by the BFF itself, from the session.
     routes:
       - prefix: /registry
         target: ${LC_REGISTRY_URL:http://localhost:8081}
-      - prefix: /authz
-        target: ${LC_AUTHZ_URL:http://localhost:8082}
       - prefix: /telemetry
         target: ${LC_TELEMETRY_URL:http://localhost:8083}
       # Back end of the application: in the demo the sample server (frontend/tools/demo-api.mjs).
       - prefix: /api
         target: ${LC_API_URL:http://localhost:8084}
-    # Applications the user may return to after the login (/bff/login?return=...).
-    frontend-origins:
-      - http://localhost:4200
-      - http://localhost:4201
-      # The runtime image in front of this BFF (docker/runtime/README.md, «Against the local stack»).
-      - http://localhost:8090
-    # After a login without a return page, and when opening the BFF root.
-    home: ${LC_HOME:http://localhost:4200/}
-    # Signing out also closes the session in Keycloak.
-    end-session-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/quadrava}/protocol/openid-connect/logout
+    # Roles of the users of the realm (idp/realm-quadrava.json). A user who is not listed cannot sign in.
+    users:
+      operator: [operator]
+      manager: [manager]
+      administrator: [administrator]
+    # Permissions of the roles (domain.resource.action): the same map as the reference authz service.
+    role-permissions:
+      operator:
+        - showcase.components.read
+        - invoices.invoice.read
+        - invoices.invoice.create
+        - orders.order.read
+      manager:
+        - showcase.components.read
+        - invoices.invoice.read
+        - invoices.invoice.create
+        - orders.order.read
+        - orders.order.write
+        - orders.order.approve
+        - packages.package.read
+        - packages.package.create
+        - expenses.expense.read
+        - expenses.expense.review
+      administrator:
+        - showcase.components.read
+        - invoices.invoice.read
+        - invoices.invoice.create
+        - orders.order.read
+        - orders.order.write
+        - orders.order.approve
+        - orders.iban.read
+        - orders.iban.write
+        - packages.package.read
+        - packages.package.create
+        - expenses.expense.read
+        - expenses.expense.review
     # Optional tenants (contracts/bff.yaml): the user switches with POST /bff/tenant, the services receive X-Tenant.
     # Without users a tenant is offered to everybody. The runtime shows the choice only with services.tenantSwitchUrl.
     # tenants:

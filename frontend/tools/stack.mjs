@@ -1,5 +1,5 @@
 // Starts the whole development stack, with the real login, in one command:
-//   Keycloak (Docker) → authorization, telemetry, BFF (Java jars) → demo back end → runtime (4200) behind the BFF,
+//   Keycloak and Redis (Docker) → authorization, telemetry, BFF (Java jars) → demo back end → runtime (4200) behind the BFF,
 //   with the example project from its files.
 //
 //   npm run stack [-- --services-only] [-- --rebuild]
@@ -9,7 +9,7 @@
 //
 // Quadrava CE has no registry: the BFF forwards /registry to LC_REGISTRY_URL (http://localhost:8081 if absent), so a
 // registry that follows contracts/registry.yaml can be started next to the stack. The logs of every process are in
-// ../.stack/logs. Ctrl+C stops everything except Keycloak, which stays up to restart quickly
+// ../.stack/logs. Ctrl+C stops everything except Keycloak and Redis, which stay up to restart quickly
 // (to stop it: cd idp && docker compose down). For local development only.
 import { spawn, spawnSync } from 'node:child_process';
 import { createWriteStream, existsSync, mkdirSync, readdirSync } from 'node:fs';
@@ -36,7 +36,7 @@ function stop(code = 0) {
   process.exit(code);
 }
 process.on('SIGINT', () => {
-  say('stopping the processes (Keycloak stays up: cd idp && docker compose down to stop it)');
+  say('stopping the processes (Keycloak and Redis stay up: cd idp && docker compose down to stop them)');
   stop(0);
 });
 
@@ -83,8 +83,8 @@ const jar = (module) => {
 
 mkdirSync(logs, { recursive: true });
 
-// 1. Keycloak
-say('starting Keycloak (Docker)…');
+// 1. Keycloak, and Redis for the sessions of the BFF
+say('starting Keycloak and Redis (Docker)…');
 if (spawnSync('docker', ['version'], { stdio: 'ignore', shell: windows }).status !== 0) fail('Docker is not available: start Docker Desktop');
 run('docker', ['compose', 'up', '-d'], join(root, 'idp'));
 await ready('Keycloak', 'http://localhost:8180/realms/quadrava/.well-known/openid-configuration', 180);

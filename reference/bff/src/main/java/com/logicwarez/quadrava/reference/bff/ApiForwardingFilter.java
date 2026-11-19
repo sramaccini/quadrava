@@ -15,10 +15,9 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import com.logicwarez.authz.session.SessionContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -31,7 +30,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
  *       {@code baggage} with screen and action for the audit): never the
  *       session cookies nor any {@code Authorization} from the browser. The tenant of the session, if any, goes in
  *       {@code X-Tenant}.</li>
- *   <li>Only status, body and a few safe headers (type, ETag, cache, file name, permissions version) go back to the browser.</li>
+ *   <li>Only status, body and a few safe headers (type, ETag, cache, file name) go back to the browser. Not the
+ *       {@code X-Permissions-Version} of a service: the permissions are those of the session, and the BFF writes their
+ *       version on every answer.</li>
  *   <li>The body is streamed, within {@link BffProperties#maxBodyBytes()} (files go up to 100 MB). An event stream
  *       ({@code text/event-stream}, the data sources with {@code live}) is passed on as it arrives, flushed after every
  *       read, and stays open as long as the service keeps it.</li>
@@ -45,21 +46,19 @@ public class ApiForwardingFilter extends OncePerRequestFilter {
     private static final List<String> REQUEST_HEADERS = List.of(
             "Accept", "Accept-Language", "Content-Type", "If-None-Match", "If-Match", "If-Modified-Since", "traceparent", "tracestate", "baggage");
     private static final List<String> RESPONSE_HEADERS = List.of(
-            "Content-Type", "ETag", "Cache-Control", "Last-Modified", "Content-Disposition", "X-Permissions-Version");
+            "Content-Type", "ETag", "Cache-Control", "Last-Modified", "Content-Disposition");
     private static final Set<String> BODY_METHODS = Set.of("POST", "PUT", "PATCH", "DELETE");
 
     private final BffProperties properties;
     private final AccessTokens tokens;
-    private final Tenants tenants;
     private final HttpClient http = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(5))
             .followRedirects(HttpClient.Redirect.NEVER)
             .build();
 
-    public ApiForwardingFilter(BffProperties properties, AccessTokens tokens, Tenants tenants) {
+    public ApiForwardingFilter(BffProperties properties, AccessTokens tokens) {
         this.properties = properties;
         this.tokens = tokens;
-        this.tenants = tenants;
     }
 
     @Override
@@ -82,8 +81,8 @@ public class ApiForwardingFilter extends OncePerRequestFilter {
             problem(response, HttpStatus.CONTENT_TOO_LARGE, "Body too large");
             return;
         }
-        Authentication user = SecurityContextHolder.getContext().getAuthentication();
-        Optional<String> token = user == null ? Optional.empty() : tokens.forRequest(user, request, response);
+        Optional<SessionContext> session = SessionContext.from(request);
+        Optional<String> token = session.isEmpty() ? Optional.empty() : tokens.forRequest(request, response);
         if (token.isEmpty()) {
             problem(response, HttpStatus.UNAUTHORIZED, "Session expired");
             return;
@@ -100,7 +99,7 @@ public class ApiForwardingFilter extends OncePerRequestFilter {
         }
         upstream.header("Authorization", "Bearer " + token.get());
         // The tenant of the session, if any: the one from the browser never passes (it is not in REQUEST_HEADERS).
-        tenants.current(request.getSession(false), Tenants.username(user)).ifPresent(t -> upstream.header("X-Tenant", t.id()));
+        Optional.ofNullable(session.get().tenantId()).ifPresent(t -> upstream.header("X-Tenant", t));
         String method = request.getMethod();
         if (BODY_METHODS.contains(method)) {
             InputStream body = request.getInputStream();
