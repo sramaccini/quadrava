@@ -12,6 +12,12 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Added
+
+- Runtime image: `QUADRAVA_TRUST_FORWARDED=true` passes the `X-Forwarded-Proto` and `X-Forwarded-Host` of a TLS
+  terminator in front to the BFF. Before, the BFF always got the scheme of the image (`http`), and built the login
+  callback on http behind https.
+
 ### Changed
 
 - The reference BFF uses authz-library 2.6.0: `/bff/user` has the e-mail of the user again, from the token of Keycloak.

@@ -126,6 +126,28 @@ set +f
 printf 'map $request_id $quadrava_img_src { default "%s"; }\n' "$img_src" > /etc/nginx/quadrava/img-src.map
 [ -z "${QUADRAVA_CSP_IMG_SRC:-}" ] || echo "quadrava: images also from $QUADRAVA_CSP_IMG_SRC"
 
+# The scheme and host the BFF builds its addresses on (login callback, return check). Behind a TLS terminator this image
+# is reached over http: with QUADRAVA_TRUST_FORWARDED=true the X-Forwarded-Proto and X-Forwarded-Host of the proxy in
+# front pass through, when they are a valid scheme and host. Only behind a proxy that sets them: a browser could
+# otherwise choose them.
+forwarded=/etc/nginx/quadrava/forwarded.map
+case "${QUADRAVA_TRUST_FORWARDED:-false}" in
+  true)
+    cat > "$forwarded" <<'EOF'
+map $http_x_forwarded_proto $quadrava_forwarded_proto { https https; http http; default $scheme; }
+map $http_x_forwarded_host $quadrava_forwarded_host { "~^[A-Za-z0-9.-]+(:[0-9]{1,5})?$" $http_x_forwarded_host; default $http_host; }
+EOF
+    echo "quadrava: X-Forwarded-Proto and X-Forwarded-Host of the proxy in front passed to the BFF"
+    ;;
+  false)
+    cat > "$forwarded" <<'EOF'
+map $request_id $quadrava_forwarded_proto { default $scheme; }
+map $request_id $quadrava_forwarded_host { default $http_host; }
+EOF
+    ;;
+  *) fail "QUADRAVA_TRUST_FORWARDED: true or false, not: $QUADRAVA_TRUST_FORWARDED" ;;
+esac
+
 proxy=/etc/nginx/quadrava/bff.conf
 rm -f "$proxy"
 if [ -n "${QUADRAVA_BFF_URL:-}" ]; then
@@ -144,8 +166,8 @@ location ^~ $prefix {
     proxy_http_version 1.1;
     proxy_set_header Host \$http_host;
     proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto \$scheme;
-    proxy_set_header X-Forwarded-Host \$http_host;
+    proxy_set_header X-Forwarded-Proto \$quadrava_forwarded_proto;
+    proxy_set_header X-Forwarded-Host \$quadrava_forwarded_host;
     proxy_set_header Connection "";
     proxy_buffering off;
     proxy_read_timeout 1h;

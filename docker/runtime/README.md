@@ -33,6 +33,7 @@ At start-up the image writes `runtime-config.json`, the file the runtime reads b
 | `QUADRAVA_LOG_LEVEL` | Lightest technical reports sent to telemetry: `error`, `warn`, `info` or `off` (traces are still sent) | `warn` |
 | `QUADRAVA_STUDIO_ORIGINS` | Origins of Quadrava Studio allowed to open this runtime with their project (ADR-16) | none |
 | `QUADRAVA_BFF_URL` | Address of the BFF (`http://bff:8080`): nginx forwards its paths to it | not forwarded |
+| `QUADRAVA_TRUST_FORWARDED` | `true` behind a proxy that sets `X-Forwarded-Proto` and `X-Forwarded-Host` (a TLS terminator): they pass to the BFF instead of the scheme and host of this image | `false` |
 | `QUADRAVA_MAX_BODY_SIZE` | Largest request body forwarded to the BFF, as nginx writes it (`100m`, `512k`, `0` for no limit of nginx): an upload from a `file` field that is larger gets 413 | `100m` (the largest `maxSizeKb`) |
 | `QUADRAVA_CSP_IMG_SRC` | Further image sources of the Content-Security-Policy, separated by spaces: `https://host` (with `*.` and a port) or `https:` for any | same origin and `data:` only |
 | `QUADRAVA_HSTS` | `Strict-Transport-Security` on every answer, as `max-age=<seconds>` with optional `; includeSubDomains` and `; preload` (`max-age=31536000`): only for a deployment reached over https | not sent |
@@ -62,8 +63,11 @@ The browser talks only to the BFF, on the origin of the page (`contracts/bff.yam
 - **This image as the front**: with `QUADRAVA_BFF_URL`, nginx forwards `/bff/`, `/logout`, `/oauth2/`,
   `/login/oauth2/`, `/api/`, `/registry/`, `/authz/` and `/telemetry/` to the BFF, without buffering (event streams,
   ADR-19), with `Host` and the `X-Forwarded-*` headers so that the BFF builds its own addresses (the login callback on the
-  address of this image). Behind a TLS terminator, the terminator must set `X-Forwarded-Proto` itself and the BFF must
-  honour it (for Spring Boot: `server.forward-headers-strategy=framework`). The address of this image must be among the
+  address of this image). Behind a TLS terminator this image is reached over http: set `QUADRAVA_TRUST_FORWARDED=true`, so that
+  the `X-Forwarded-Proto` and `X-Forwarded-Host` of the terminator reach the BFF (one scheme, `http` or `https`, and one
+  host; any other value is replaced by those of this image), and have the BFF honour them (for Spring Boot:
+  `server.forward-headers-strategy=framework`). Only behind a proxy that sets both: without one, the browser could
+  choose them. The address of this image must be among the
   redirect URIs of the identity provider and the return pages the BFF accepts. nginx resolves the host of the BFF
   when it starts: it must already be known then (in Docker Compose, `depends_on` the BFF).
 
