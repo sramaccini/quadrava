@@ -12,6 +12,18 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Added
+
+- `core`: `ScreenTitle`, the resolved title of the screen on display (a signal, empty between screens). The runtime
+  uses it for the browser tab, which now reads «Screen title · Brand».
+
+### Fixed
+
+- Accessibility: the selection checkboxes of `table` and `serverDataTable` have a name («Select F-1», «Select all
+  rows», «Select the visible rows»); required fields of `form` carry `aria-required` and a field with an error or a
+  warning points to its message with `aria-describedby`; the close button of the dialogs is named in the language of
+  the user instead of the English «Close» of NG-ZORRO.
+
 ## [0.19.1] - 2026-11-24
 
 ### Fixed

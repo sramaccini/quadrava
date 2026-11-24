@@ -4,6 +4,7 @@ import { BusyComponent } from './busy.component';
 import { TableFooterComponent } from './table-footer.component';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzButtonModule } from 'ng-zorro-antd/button';
+import { NzCheckboxModule } from 'ng-zorro-antd/checkbox';
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
@@ -24,7 +25,7 @@ const DEFAULT_PAGE_SIZE = 10;
  */
 @Component({
   selector: 'lc-table',
-  imports: [BusyComponent, TableFooterComponent, NodeHostComponent, RowActionsComponent, IconComponent, NzTableModule, NzTagModule, NzButtonModule, NzAlertModule, NzTooltipModule],
+  imports: [BusyComponent, TableFooterComponent, NodeHostComponent, RowActionsComponent, IconComponent, NzCheckboxModule, NzTableModule, NzTagModule, NzButtonModule, NzAlertModule, NzTooltipModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     /* Selected rows: colours of the theme, readable also on hover (the default of the table may be dark). */
@@ -42,6 +43,8 @@ const DEFAULT_PAGE_SIZE = 10;
     .menu-row { display: inline-flex; align-items: center; gap: 8px; }
     .bulk { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding-bottom: var(--lc-gap, 12px); }
     .bulk .count { color: var(--lc-color-muted, #5d6b7a); margin-right: 4px; }
+    /* The selection checkboxes carry their name as hidden text: no space for it. */
+    .select-box .ant-checkbox + span { padding: 0; }
     .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   `,
   template: `
@@ -81,7 +84,9 @@ const DEFAULT_PAGE_SIZE = 10;
                 <th class="expand-cell"><span class="visually-hidden">{{ i18n.t('lc.details') }}</span></th>
               }
               @if (node().selection) {
-                <th nzWidth="48px" [nzChecked]="allSelected()" [nzIndeterminate]="someSelected()" [nzLabel]="i18n.t('lc.selectAll')" (nzCheckedChange)="selectAll($event)"></th>
+                <th nzWidth="48px" class="ant-table-selection-column">
+                  <label nz-checkbox class="select-box" [nzChecked]="allSelected()" [nzIndeterminate]="someSelected()" (nzCheckedChange)="selectAll($event)"><span class="visually-hidden">{{ i18n.t('lc.selectAll') }}</span></label>
+                </th>
               }
               @for (column of columns(); track column.field) {
                 <th
@@ -120,7 +125,9 @@ const DEFAULT_PAGE_SIZE = 10;
                   </td>
                 }
                 @if (node().selection) {
-                  <td [nzChecked]="isSelected(row)" [nzLabel]="i18n.t('lc.selectRow')" (nzCheckedChange)="toggle(row, $event)"></td>
+                  <td class="ant-table-selection-column">
+                    <label nz-checkbox class="select-box" [nzChecked]="isSelected(row)" (nzCheckedChange)="toggle(row, $event)"><span class="visually-hidden">{{ rowName(row) }}</span></label>
+                  </td>
                 }
                 @for (column of columns(); track column.field) {
                   <td [nzAlign]="numeric(column) ? 'right' : 'left'">
@@ -332,6 +339,13 @@ export class TableComponent {
     } finally {
       this.busy.set(false);
     }
+  }
+
+  /** Name of the checkbox of a row: «Select» and the value of the first column (or the key). */
+  protected rowName(row: Row): string {
+    const first = this.columns()[0];
+    const text = first ? this.cell(row, first).text : '';
+    return this.i18n.t('lc.selectRowNamed', { label: text || String(row[this.key()] ?? '') });
   }
 
   protected cell(row: Record<string, unknown>, column: ColumnDefinition): FormattedValue {

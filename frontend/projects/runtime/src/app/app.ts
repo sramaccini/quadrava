@@ -7,7 +7,7 @@ import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzDrawerModule } from 'ng-zorro-antd/drawer';
 import { NzLayoutModule } from 'ng-zorro-antd/layout';
 import { NzSelectModule } from 'ng-zorro-antd/select';
-import { DefinitionSource, I18n, Notifier, ThemeService, loadCatalogs, type VisibleLeaf } from 'core';
+import { DefinitionSource, I18n, Notifier, ScreenTitle, ThemeService, loadCatalogs, type VisibleLeaf } from 'core';
 import { applyDocumentBrand } from './document-brand';
 import { NavigationService } from './navigation.service';
 import { NotificationsService } from './notifications.service';
@@ -117,6 +117,7 @@ export class App {
   private readonly notifier = inject(Notifier);
   /** Logo and name of the application at the top left, from the theme (null: the Quadrava logo). */
   protected readonly brand = computed(() => this.themeService.current()?.brand ?? null);
+  private readonly screenTitle = inject(ScreenTitle);
   /** Style of the menu: the theme says it (light or dark sidebar). */
   protected readonly siderTone = computed(() => {
     const theme = this.themeService.current();
@@ -166,8 +167,9 @@ export class App {
         // Storage not available (private browsing, blockers): the choice holds only for this session.
       }
     });
-    // The browser tab shows the brand of the theme too: its name as title and its icons (Quadrava's without a brand).
-    effect(() => applyDocumentBrand(document, this.brand()));
+    // The browser tab shows the brand of the theme too: its name as title, after the title of the screen, and its icons
+    // (Quadrava's without a brand).
+    effect(() => applyDocumentBrand(document, this.brand(), this.screenTitle.current()));
     // When the band changes the bar adapts: collapsed in the medium one, expanded in the wide one, drawer closed otherwise.
     // Within the same band the user's choice holds.
     effect(() => {

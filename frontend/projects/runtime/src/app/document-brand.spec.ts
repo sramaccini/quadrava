@@ -26,6 +26,15 @@ describe('applyDocumentBrand', () => {
     expect([href('svg'), href('png32'), href('appleTouch')]).toEqual(['images/icon.svg', 'images/icon-32.png', 'images/icon-180.png']);
   });
 
+  it('with the title of the screen, the tab reads «Screen · Brand»', () => {
+    applyDocumentBrand(doc, { name: 'Acme Office' }, 'Invoices');
+    expect(doc.title).toBe('Invoices · Acme Office');
+    applyDocumentBrand(doc, null, 'Invoices');
+    expect(doc.title).toBe(`Invoices · ${QUADRAVA_TAB.title}`);
+    applyDocumentBrand(doc, { name: 'Acme Office' }, '');
+    expect(doc.title).toBe('Acme Office');
+  });
+
   it('leaves out the kinds of icon the brand does not give, and those with a refused address', () => {
     applyDocumentBrand(doc, { icons: { svg: 'data:image/svg+xml;base64,PHN2Zy8+', png32: 'javascript:alert(1)' } });
     expect(href('svg')).toBe('data:image/svg+xml;base64,PHN2Zy8+');

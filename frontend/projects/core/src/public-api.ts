@@ -27,3 +27,4 @@ export * from './lib/catalog';
 export * from './lib/studio-link';
 export * from './lib/node-host.component';
 export * from './lib/screen.component';
+export * from './lib/screen-title';

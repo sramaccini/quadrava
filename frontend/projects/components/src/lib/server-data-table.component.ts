@@ -118,6 +118,8 @@ function asLevel(data: unknown, page: number, previous?: Level): Level {
     .bulk { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding-bottom: var(--lc-gap, 12px); }
     .bulk .selected { color: var(--lc-color-muted, #5d6b7a); margin-right: 4px; }
     lc-icon.lead { margin-inline-end: 8px; }
+    /* The selection checkboxes carry their name as hidden text: no space for it. */
+    .select-box .ant-checkbox + span { padding: 0; }
     .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   `,
   template: `
@@ -165,7 +167,9 @@ function asLevel(data: unknown, page: number, previous?: Level): Level {
             <thead>
               <tr>
                 @if (node().selection) {
-                  <th nzWidth="48px" [nzChecked]="allVisibleSelected()" [nzIndeterminate]="someVisibleSelected()" [nzDisabled]="!visibleRows().length" [nzLabel]="i18n.t('lc.selectVisible')" (nzCheckedChange)="selectVisible($event)"></th>
+                  <th nzWidth="48px" class="ant-table-selection-column">
+                    <label nz-checkbox class="select-box" [nzChecked]="allVisibleSelected()" [nzIndeterminate]="someVisibleSelected()" [nzDisabled]="!visibleRows().length" (nzCheckedChange)="selectVisible($event)"><span class="visually-hidden">{{ i18n.t('lc.selectVisible') }}</span></label>
+                  </th>
                 }
                 @for (column of columns(); track column.field) {
                   <th
@@ -257,7 +261,9 @@ function asLevel(data: unknown, page: number, previous?: Level): Level {
                   @case ('row') {
                     <tr [class.ant-table-row-selected]="isSelected(item.row)">
                       @if (node().selection) {
-                        <td [nzChecked]="isSelected(item.row)" [nzLabel]="i18n.t('lc.selectRow')" (nzCheckedChange)="toggleRow(item.row, $event)"></td>
+                        <td class="ant-table-selection-column">
+                          <label nz-checkbox class="select-box" [nzChecked]="isSelected(item.row)" (nzCheckedChange)="toggleRow(item.row, $event)"><span class="visually-hidden">{{ rowName(item.row) }}</span></label>
+                        </td>
                       }
                       @for (column of columns(); track column.field; let first = $first) {
                         <td [nzAlign]="numeric(column) ? 'right' : 'left'" [style.padding-left.px]="first && item.level ? 16 + item.level * 24 : null">
@@ -473,6 +479,13 @@ export class ServerDataTableComponent {
 
   protected isSelected(row: Row): boolean {
     return this.node().selection ? this.selectedKeys().includes(row[this.key()]) : false;
+  }
+
+  /** Name of the checkbox of a row: «Select» and the value of the first column (or the key). */
+  protected rowName(row: Row): string {
+    const first = this.columns()[0];
+    const text = first ? this.format(row[first.field], first).text : '';
+    return this.i18n.t('lc.selectRowNamed', { label: text || String(row[this.key()] ?? '') });
   }
 
   protected toggleRow(row: Row, checked: boolean): void {

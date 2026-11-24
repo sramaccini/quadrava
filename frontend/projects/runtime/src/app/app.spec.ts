@@ -473,7 +473,7 @@ describe('App (demo)', () => {
     const { fixture, el } = await start();
     await until(fixture, () => rows(el) > 0, 'invoice list');
     expect(el.querySelector('lc-sidebar .logo lc-quadrava-wordmark')).not.toBeNull();
-    expect(document.title).toBe('Quadrava');
+    expect(document.title).toBe('Invoices · Quadrava');
     await chooseSetting(fixture, 'General', 'Theme', 'classic');
     await until(fixture, () => !!el.querySelector('lc-sidebar .logo lc-app-brand'), 'brand of the theme');
     const brand = el.querySelector('lc-sidebar .logo lc-app-brand') as HTMLElement;
@@ -481,7 +481,7 @@ describe('App (demo)', () => {
     // The classic theme has a dark side bar: the logo for dark backgrounds.
     expect(brand.querySelector('img')?.getAttribute('src')).toBe(classic.brand.logoOnDark);
     expect(el.querySelector('lc-sidebar .logo lc-quadrava-wordmark')).toBeNull();
-    expect(document.title).toBe('Acme Office');
+    expect(document.title).toBe('Invoices · Acme Office');
     expect(document.head.querySelector('link[data-lc-icon="svg"]')?.getAttribute('href')).toBe(classic.brand.icons.svg);
     // The theme gives only the SVG icon: the Quadrava PNG ones are left out.
     expect(document.head.querySelector('link[data-lc-icon="png32"]')).toBeNull();

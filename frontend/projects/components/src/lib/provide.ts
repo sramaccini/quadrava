@@ -1,4 +1,5 @@
-import { effect, importProvidersFrom, inject, provideEnvironmentInitializer, type EnvironmentProviders, type Provider } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
+import { DestroyRef, effect, importProvidersFrom, inject, provideEnvironmentInitializer, type EnvironmentProviders, type Provider } from '@angular/core';
 import { Confirmation, FormDialog, I18n, provideComponentCatalog, type ComponentCatalog } from 'core';
 import { enGB as dateEnglish, it as dateItalian, type Locale } from 'date-fns/locale';
 import { NzDateAdapter, provideNzDateFnsAdapter } from 'ng-zorro-antd/core/time';
@@ -14,6 +15,7 @@ import { DialogForm } from './dialog-form';
 import { FilterBarComponent } from './filter-bar.component';
 import { FormComponent } from './form.component';
 import { ICON_TYPES } from './icon.component';
+import { localizeDialogClose } from './dialog-close';
 import { SectionComponent } from './section.component';
 import { StatsComponent } from './stats.component';
 import { CalendarComponent } from './calendar.component';
@@ -110,6 +112,8 @@ export function provideLcComponents(extra: ComponentCatalog = {}): (Provider | E
       const nz = inject(NzI18nService);
       const dates = inject(NzDateAdapter);
       for (const [locale, messages] of Object.entries(BUILTIN_MESSAGES)) i18n.addMessages(locale, messages, 'builtin');
+      const closeNames = localizeDialogClose(inject(DOCUMENT), () => i18n.t('lc.close'));
+      inject(DestroyRef).onDestroy(() => closeNames?.disconnect());
       effect(() => {
         nz.setLocale(NZ_LOCALES[i18n.locale()] ?? ENGLISH);
         dates.setLocale(DATE_LOCALES[i18n.locale()] ?? dateEnglish);

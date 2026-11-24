@@ -114,7 +114,8 @@ describe('Component showcase', () => {
     f.dispatchEvent(new Event('input'));
   };
 
-  it('the area appears in the menu and the screens open without errors', async () => {
+  // Four screens, one after the other: more time than a single one.
+  it('the area appears in the menu and the screens open without errors', { timeout: 15000 }, async () => {
     const diagnostics = TestBed.inject(DemoDiagnostics);
     for (const [path, titolo] of [
       ['/showcase/showcase-basics', 'Basic components'],

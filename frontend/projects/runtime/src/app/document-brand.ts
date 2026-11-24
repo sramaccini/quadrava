@@ -17,10 +17,12 @@ const LINKS: Record<keyof ThemeBrandIcons, { rel: string; type?: string; sizes?:
 /**
  * Shows the brand of the theme in the browser tab: the name as title and its icons. Without a name or without icons, the
  * Quadrava ones. With icons, a kind the theme does not give (or with an address the image rules refuse) is left out, so
- * the tab never mixes the application's icons with Quadrava's.
+ * the tab never mixes the application's icons with Quadrava's. With the title of the screen on display the tab reads
+ * «Screen · Brand» (WCAG 2.4.2).
  */
-export function applyDocumentBrand(doc: Document, brand: ThemeBrand | null | undefined): void {
-  doc.title = brand?.name ?? QUADRAVA_TAB.title;
+export function applyDocumentBrand(doc: Document, brand: ThemeBrand | null | undefined, screenTitle = ''): void {
+  const name = brand?.name ?? QUADRAVA_TAB.title;
+  doc.title = screenTitle ? `${screenTitle} · ${name}` : name;
   const icons: ThemeBrandIcons = brand?.icons ?? QUADRAVA_TAB.icons;
   for (const kind of Object.keys(LINKS) as (keyof ThemeBrandIcons)[]) {
     const raw = icons[kind];

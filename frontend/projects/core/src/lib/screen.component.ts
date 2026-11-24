@@ -7,6 +7,7 @@ import { SETTINGS_VALUES, Authorization, Confirmation, DataClient, FormDialog, L
 import { I18n } from './i18n';
 import { NodeHostComponent } from './node-host.component';
 import { ScreenRuntime } from './screen-runtime';
+import { ScreenTitle } from './screen-title';
 import { ValidatorRegistry } from './validators';
 
 /** Shows an already validated screen: creates the runtime, checks `requires` and draws the top-level components. */
@@ -81,8 +82,16 @@ export class ScreenComponent {
   protected readonly i18n = inject(I18n);
   private readonly validators = inject(ValidatorRegistry);
   private readonly settings = inject(SETTINGS_VALUES);
+  private readonly screenTitle = inject(ScreenTitle);
 
   constructor() {
+    // The title of the screen, for the application (the browser tab).
+    effect(() => {
+      const rt = this.runtime();
+      const title = rt?.definition.title ? rt.text(rt.definition.title) : '';
+      untracked(() => this.screenTitle.current.set(title));
+    });
+    inject(DestroyRef).onDestroy(() => this.screenTitle.current.set(''));
     effect(() => {
       const definition = this.definition();
       const params = this.params();

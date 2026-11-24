@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, input, output, signal, untracked } from '@angular/core';
+import { afterEveryRender, ChangeDetectionStrategy, Component, computed, DestroyRef, effect, ElementRef, inject, input, output, signal, untracked } from '@angular/core';
 import { codeMessage, formRules, I18n, isRequired, NO_PROBLEM, pointerSegments, RemoteChecks, rowsOf, runSteps, transformValue, type CompiledRule, type FieldCheck, type FieldError, type ScreenRuntime, type Scope } from 'core';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzButtonModule } from 'ng-zorro-antd/button';
@@ -62,7 +62,7 @@ import { nextId } from './shared';
       @for (item of items(); track item.key) {
         @let field = item.field;
         @if (runtime().isVisible(field, fieldScope())) {
-          <nz-form-item [style.--lc-field-span]="span(field)" [class.line]="flow() && (!field.width || field.width === 'full')" [class.full]="field.width === 'full'">
+          <nz-form-item [attr.data-lc-input]="id + item.key" [attr.data-lc-required]="required(item) ? '' : null" [style.--lc-field-span]="span(field)" [class.line]="flow() && (!field.width || field.width === 'full')" [class.full]="field.width === 'full'">
             @if (field.type !== 'checkbox') {
               <nz-form-label [nzFor]="id + item.key" [id]="id + item.key + '-label'" [nzRequired]="required(item)" [nzTooltipTitle]="field.tooltip ? runtime().text(field.tooltip, fieldScope()) : undefined" [nzTooltipIcon]="'question-circle'">{{ item.label ?? (runtime().text(field.label, fieldScope()) || field.name) }}</nz-form-label>
             }
@@ -129,6 +129,33 @@ export class FormComponent {
   protected readonly i18n = inject(I18n);
 
   protected readonly id = nextId('lc-form') + '-';
+
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+
+  /**
+   * After every render: the control of a required field says so (aria-required), and the control of a field with a
+   * message (error or warning) points to it (aria-describedby), keeping any description of its own. The controls are drawn
+   * by several components (inputs, selects, pickers): they are found by the id given to them. An attribute is written
+   * only when it changes: some controls watch their own DOM, and a write would render them again.
+   */
+  private readonly ariaLinks = afterEveryRender(() => {
+    const set = (element: HTMLElement, name: string, value: string | null): void => {
+      if (element.getAttribute(name) === value) return;
+      if (value === null) element.removeAttribute(name);
+      else element.setAttribute(name, value);
+    };
+    for (const item of this.host.querySelectorAll<HTMLElement>('nz-form-item[data-lc-input]')) {
+      const id = item.dataset['lcInput']!;
+      const control = item.querySelector<HTMLElement>(`[id="${CSS.escape(id)}"]`);
+      if (!control) continue;
+      set(control, 'aria-required', item.hasAttribute('data-lc-required') ? 'true' : null);
+      const message = item.querySelector<HTMLElement>('.ant-form-item-explain-error, .ant-form-item-explain-warning');
+      const own = (control.getAttribute('aria-describedby') ?? '').split(' ').filter((ref) => ref && ref !== id + '-message');
+      if (message) set(message, 'id', id + '-message');
+      const refs = message ? [...own, id + '-message'] : own;
+      set(control, 'aria-describedby', refs.length ? refs.join(' ') : null);
+    }
+  });
   protected readonly values = signal<Record<string, unknown>>({});
   protected readonly busy = signal(false);
   protected readonly submitted = signal(false);
