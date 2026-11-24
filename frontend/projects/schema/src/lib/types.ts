@@ -569,6 +569,10 @@ export interface ServerDataTableNode extends NodeBase {
   pageSize?: number;
   /** State where the current request (without the page) is written. */
   bind?: StatePath;
+  /** Row selection: keys in the `bind` state (field `key`, id if absent), kept across pages and groups. */
+  selection?: { bind: StatePath; key?: string };
+  /** Actions on the selected rows; expressions see `selection`. */
+  bulkActions?: ActionDefinition[];
   rowActions?: RowActionDefinition[];
   rowActionsInline?: number;
 }

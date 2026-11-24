@@ -2288,6 +2288,31 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
               "refreshable": {
                 "type": "boolean",
                 "description": "«Refresh» button in the table footer, on the left (pages are on the right): it reloads the data source like the refresh step. Absent if false or not given."
+              },
+              "selection": {
+                "type": "object",
+                "required": [
+                  "bind"
+                ],
+                "additionalProperties": false,
+                "description": "Row selection: the keys of the chosen rows are in the `bind` state; bulk actions see the whole rows in `selection`. The selection stays across pages, sorting, groups and open groups, and is emptied when the filters change.",
+                "properties": {
+                  "bind": {
+                    "$ref": "#/$defs/statePath",
+                    "description": "State that receives the keys of the chosen rows."
+                  },
+                  "key": {
+                    "type": "string",
+                    "description": "Field that identifies the row (id if absent)."
+                  }
+                }
+              },
+              "bulkActions": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/action"
+                },
+                "description": "Actions on the selected rows, above the table, with the count of the chosen rows and a button that empties the selection. Expressions see `selection` (list of the chosen rows, also those of other pages)."
               }
             }
           }

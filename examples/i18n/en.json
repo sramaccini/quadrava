@@ -295,6 +295,8 @@
   "showcase_datatable.details": "Details",
   "showcase_datatable.large_volumes_20_000_transactions": "Large volumes: 20,000 transactions",
   "showcase_datatable.same_interface_but_filters_sorti": "Same interface, but filters, sorting, groups, totals and pages are computed by the service: the browser receives only the page and the groups in view. Opening a group loads its rows page by page.",
+  "showcase_datatable.reconcile": "Reconcile",
+  "showcase_datatable.reconciled": "{n, plural, one {# transaction reconciled} other {# transactions reconciled}} (only an example)",
   "showcase_datatable.server_side_200_000_transactions": "Server side: 200,000 transactions",
   "showcase_datatable.showcase_data_table": "Showcase: data table",
   "showcase_datatable.sixty_transactions_loaded_once": "Sixty transactions loaded once: filter from the icon in the headers, sort with the arrows, pick one or more columns to group by. Each group shows the number of transactions and the balance.",

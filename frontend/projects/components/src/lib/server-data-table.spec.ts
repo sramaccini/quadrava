@@ -150,3 +150,79 @@ describe('serverDataTable', () => {
     expect(h.el.querySelector('lc-server-data-table tr.group-row button.toggle')?.getAttribute('aria-expanded')).toBe('true');
   });
 });
+
+describe('serverDataTable: selection and bulk actions', () => {
+  let restore: () => void;
+  beforeAll(() => (restore = stubViewportHeight()));
+  afterAll(() => restore());
+
+  const rows: Row[] = Array.from({ length: 12 }, (_, i) => ({ id: i + 1, account: ['Bank', 'Cash'][i % 2], note: `Transaction ${i + 1}` }));
+  const node = {
+    type: 'serverDataTable',
+    source: 'search',
+    pageSize: 5,
+    columns: [
+      { field: 'note', label: 'Notes', filter: 'text' },
+      { field: 'account', label: 'Account', groupable: true },
+    ],
+    selection: { bind: 'state.chosen' },
+    bulkActions: [{ label: 'Move', enabledIf: '{{ size(selection) > 0 }}', onClick: [{ toast: "{{ 'moved ' + string(size(selection)) }}" }] }],
+  } as NodeDefinition;
+  const dataSources = { search: { type: 'rest' as const, method: 'POST' as const, url: '/api/search', body: '{{ request }}' } };
+  const boxes = (h: ScreenHarness): HTMLInputElement[] => [...h.el.querySelectorAll<HTMLInputElement>('lc-server-data-table tbody input[type="checkbox"]')];
+  const all = (h: ScreenHarness): HTMLInputElement => h.el.querySelector('lc-server-data-table thead input[type="checkbox"]') as HTMLInputElement;
+  const selected = (h: ScreenHarness): string => plain(h.el.querySelector('lc-server-data-table .bulk .selected')?.textContent);
+  const button = (h: ScreenHarness, text: string): HTMLButtonElement => [...h.el.querySelectorAll<HTMLButtonElement>('lc-server-data-table .bulk button')].find((b) => plain(b.textContent) === text)!;
+
+  it('the selection stays across pages and the bulk actions see the rows of every page', async () => {
+    const h = await renderScreen({ components: [node], dataSources, respond: fakeServer(rows) });
+    await h.until(() => boxes(h).length === 5, 'first page');
+    expect(selected(h)).toBe('No rows selected');
+    expect(button(h, 'Move').disabled).toBe(true);
+    boxes(h)[0].click();
+    boxes(h)[1].click();
+    await h.settle();
+    (h.el.querySelectorAll('lc-server-data-table .ant-pagination-item')[1] as HTMLElement).click();
+    await h.until(() => plain(h.el.querySelector('lc-server-data-table tbody tr td:nth-child(2)')?.textContent) === 'Transaction 6', 'second page');
+    expect(boxes(h).some((b) => b.checked)).toBe(false);
+    all(h).click();
+    await h.settle();
+    expect(selected(h)).toBe('7 rows selected');
+    (h.el.querySelectorAll('lc-server-data-table .ant-pagination-item')[0] as HTMLElement).click();
+    await h.until(() => plain(h.el.querySelector('lc-server-data-table tbody tr td:nth-child(2)')?.textContent) === 'Transaction 1', 'back to the first page');
+    expect(boxes(h).map((b) => b.checked)).toEqual([true, true, false, false, false]);
+    button(h, 'Move').click();
+    await h.until(() => h.toasts.length === 1, 'bulk action');
+    expect(h.toasts).toEqual(['moved 7']);
+    button(h, 'Clear selection').click();
+    await h.settle();
+    expect(selected(h)).toBe('No rows selected');
+    expect(boxes(h).some((b) => b.checked)).toBe(false);
+  });
+
+  it('rows chosen in a group stay chosen when it closes; a change of the filters empties the selection', async () => {
+    const h = await renderScreen({ components: [{ ...node, groupBy: ['account'] } as NodeDefinition], dataSources, respond: fakeServer(rows) });
+    await h.until(() => h.el.querySelectorAll('lc-server-data-table tr.group-row').length === 2, 'groups');
+    const toggle = (): HTMLButtonElement => h.el.querySelector('lc-server-data-table tr.group-row button.toggle') as HTMLButtonElement;
+    toggle().click();
+    await h.until(() => boxes(h).length === 5, 'open group');
+    boxes(h)[0].click();
+    await h.settle();
+    toggle().click();
+    await h.settle();
+    expect(boxes(h)).toHaveLength(0);
+    expect(selected(h)).toBe('1 row selected');
+    button(h, 'Move').click();
+    await h.until(() => h.toasts.length === 1, 'bulk action');
+    expect(h.toasts).toEqual(['moved 1']);
+    const filter = h.el.querySelector('lc-server-data-table nz-filter-trigger') as HTMLElement;
+    (filter.querySelector('.ant-dropdown-trigger, span') as HTMLElement | null)?.click();
+    filter.click();
+    await h.until(() => !!document.querySelector('.filter-panel input[type="search"]'), 'filter open');
+    const input = document.querySelector<HTMLInputElement>('.filter-panel input[type="search"]')!;
+    input.value = 'Transaction 1';
+    input.dispatchEvent(new Event('input'));
+    await h.until(() => selected(h) === 'No rows selected', 'selection emptied by the filter');
+    document.querySelectorAll('.cdk-overlay-container').forEach((c) => (c.innerHTML = ''));
+  });
+});

@@ -12,6 +12,7 @@ import { NzInputModule } from 'ng-zorro-antd/input';
 import { NzSelectModule } from 'ng-zorro-antd/select';
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzTagModule } from 'ng-zorro-antd/tag';
+import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import type { ActionDefinition, ColumnDefinition, DataColumnDefinition, ServerDataTableNode, SortSpec } from 'schema';
 import { IconComponent } from './icon.component';
 import { RowActionsComponent } from './row-actions.component';
@@ -79,12 +80,14 @@ function asLevel(data: unknown, page: number, previous?: Level): Level {
  * `request` variable (see `ServerTableRequest`) for the first level, for the content of every group the user
  * opens (rows in pages, with «show more») and for the values of the choice filters. Responses arriving out of order are
  * discarded; the `refresh` step on the data source repeats the requests.
+ * With `selection` the keys of the chosen rows go to the state, and the rows themselves are remembered, so that the
+ * selection stays across pages and groups (the bulk actions see them in `selection`); a change of the filters empties it.
  */
 @Component({
   selector: 'lc-server-data-table',
   imports: [
     BusyComponent, TableFooterComponent, FormsModule, IconComponent, RowActionsComponent, NzAlertModule, NzButtonModule, NzCheckboxModule, NzDatePickerModule, NzDropdownModule, NzInputModule,
-    NzSelectModule, NzTableModule, NzTagModule,
+    NzSelectModule, NzTableModule, NzTagModule, NzTooltipModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
@@ -109,6 +112,9 @@ function asLevel(data: unknown, page: number, previous?: Level): Level {
     .filter-panel .range { display: flex; gap: 8px; }
     .filter-panel .range input { width: 110px; }
     .filter-panel .footer { display: flex; justify-content: flex-end; }
+    .bulk { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding-bottom: var(--lc-gap, 12px); }
+    .bulk .selected { color: var(--lc-color-muted, #5d6b7a); margin-right: 4px; }
+    lc-icon.lead { margin-inline-end: 8px; }
     .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   `,
   template: `
@@ -116,6 +122,26 @@ function asLevel(data: unknown, page: number, previous?: Level): Level {
       @if (top()?.status === 'error') {
         <div role="alert"><nz-alert nzType="error" [nzMessage]="i18n.t('lc.loadFailed')" nzShowIcon /></div>
       } @else {
+        @if (node().selection && node().bulkActions?.length) {
+          <div class="bulk" role="toolbar" [attr.aria-label]="i18n.t('lc.actions')">
+            <span class="selected" aria-live="polite">{{ i18n.t('lc.selectedRows', { n: selectedRows().length }) }}</span>
+            @for (action of node().bulkActions; track $index) {
+              @if (runtime().isVisible(action, bulkScope())) {
+                <span nz-tooltip [nzTooltipTitle]="action.tooltip ? runtime().text(action.tooltip, bulkScope()) : null">
+                  <button nz-button type="button" [nzLoading]="busy()" [disabled]="busy() || !runtime().isEnabled(action, bulkScope())" (click)="runBulk(action)">
+                    @if (action.icon && !busy()) {
+                      <lc-icon class="lead" [name]="action.icon" />
+                    }
+                    {{ runtime().text(action.label, bulkScope()) }}
+                  </button>
+                </span>
+              }
+            }
+            @if (selectedKeys().length) {
+              <button nz-button nzType="link" type="button" [disabled]="busy()" (click)="clearSelection()">{{ i18n.t('lc.clearSelection') }}</button>
+            }
+          </div>
+        }
         <div class="toolbar">
           @if (groupable().length) {
             <label [for]="groupId">{{ i18n.t('lc.groupBy') }}</label>
@@ -135,6 +161,9 @@ function asLevel(data: unknown, page: number, previous?: Level): Level {
           <nz-table nzSize="middle" [nzData]="items()" [nzFrontPagination]="false" [nzShowPagination]="false" [nzNoResult]="empty">
             <thead>
               <tr>
+                @if (node().selection) {
+                  <th nzWidth="48px" [nzChecked]="allVisibleSelected()" [nzIndeterminate]="someVisibleSelected()" [nzDisabled]="!visibleRows().length" [nzLabel]="i18n.t('lc.selectVisible')" (nzCheckedChange)="selectVisible($event)"></th>
+                }
                 @for (column of columns(); track column.field) {
                   <th
                     scope="col"
@@ -195,6 +224,9 @@ function asLevel(data: unknown, page: number, previous?: Level): Level {
                 @switch (item.kind) {
                   @case ('group') {
                     <tr class="group-row">
+                      @if (node().selection) {
+                        <td></td>
+                      }
                       @for (column of columns(); track column.field; let first = $first) {
                         <td [nzAlign]="numeric(column) ? 'right' : 'left'">
                           @if (first) {
@@ -220,7 +252,10 @@ function asLevel(data: unknown, page: number, previous?: Level): Level {
                     </tr>
                   }
                   @case ('row') {
-                    <tr>
+                    <tr [class.ant-table-row-selected]="isSelected(item.row)">
+                      @if (node().selection) {
+                        <td [nzChecked]="isSelected(item.row)" [nzLabel]="i18n.t('lc.selectRow')" (nzCheckedChange)="toggleRow(item.row, $event)"></td>
+                      }
                       @for (column of columns(); track column.field; let first = $first) {
                         <td [nzAlign]="numeric(column) ? 'right' : 'left'" [style.padding-left.px]="first && item.level ? 16 + item.level * 24 : null">
                           @if (format(item.row[column.field], column); as view) {
@@ -274,6 +309,9 @@ function asLevel(data: unknown, page: number, previous?: Level): Level {
             @if (hasTotals() && top()?.totals) {
               <tfoot nzSummary>
                 <tr class="totals">
+                  @if (node().selection) {
+                    <td></td>
+                  }
                   @for (column of columns(); track column.field; let first = $first) {
                     <td [nzAlign]="numeric(column) ? 'right' : 'left'">
                       @if (column.aggregate) {
@@ -338,7 +376,7 @@ export class ServerDataTableComponent {
   protected readonly groupable = computed(() => this.columns().filter((c) => c.groupable));
   private readonly byField = computed(() => new Map(this.node().columns.map((c) => [c.field, c] as const)));
   protected readonly pageSize = computed(() => this.node().pageSize ?? DEFAULT_PAGE_SIZE);
-  protected readonly colspan = computed(() => this.columns().length + (this.node().rowActions?.length ? 1 : 0));
+  protected readonly colspan = computed(() => this.columns().length + (this.node().selection ? 1 : 0) + (this.node().rowActions?.length ? 1 : 0));
 
   // User choices.
   protected readonly filters = signal<Record<string, ColumnFilter>>({});
@@ -387,7 +425,93 @@ export class ServerDataTableComponent {
       const request = { sort: this.sort(), filters: this.activeFilters(), groupBy: this.groupBy() };
       if (bind) untracked(() => this.runtime().setState(bind, request));
     });
+    // Other filters, other rows: the selection is emptied (not at the first run, which would clear a selection the screen set).
+    let filtersBefore: string | null = null;
+    effect(() => {
+      const filters = JSON.stringify(this.activeFilters());
+      const selection = this.node().selection;
+      if (filtersBefore !== null && filters !== filtersBefore && selection) untracked(() => this.clearSelection());
+      filtersBefore = filters;
+    });
     inject(DestroyRef).onDestroy(() => this.textTimer && clearTimeout(this.textTimer));
+  }
+
+  // Selection.
+  /** Field that identifies a row in the selection. */
+  private readonly key = computed(() => this.node().selection?.key ?? 'id');
+  /** Keys of the selected rows, from the screen state. */
+  protected readonly selectedKeys = computed<unknown[]>(() => {
+    const selection = this.node().selection;
+    const value = selection ? this.runtime().getState(selection.bind) : null;
+    return Array.isArray(value) ? value : [];
+  });
+  /** Rows chosen on other pages or in groups now closed, as they were when chosen. */
+  private readonly remembered = signal<ReadonlyMap<unknown, Row>>(new Map());
+  /** Rows drawn now, those of the open groups included. */
+  protected readonly visibleRows = computed<Row[]>(() => this.items().flatMap((item) => (item.kind === 'row' ? [item.row] : [])));
+  /** The selected rows: the loaded version when the row is loaded, otherwise the one remembered. */
+  protected readonly selectedRows = computed<Row[]>(() => {
+    const key = this.key();
+    const known = new Map(this.remembered());
+    for (const level of this.levels().values()) for (const row of level.rows) known.set(row[key], row);
+    return this.selectedKeys().flatMap((k) => (known.has(k) ? [known.get(k)!] : []));
+  });
+  protected readonly allVisibleSelected = computed(() => {
+    const keys = new Set(this.selectedKeys());
+    const rows = this.visibleRows();
+    return rows.length > 0 && rows.every((row) => keys.has(row[this.key()]));
+  });
+  protected readonly someVisibleSelected = computed(() => {
+    const keys = new Set(this.selectedKeys());
+    return !this.allVisibleSelected() && this.visibleRows().some((row) => keys.has(row[this.key()]));
+  });
+  /** Bulk actions see the selected rows in `selection`. */
+  protected readonly bulkScope = computed<Scope>(() => ({ ...this.scope(), selection: this.selectedRows() }));
+
+  protected isSelected(row: Row): boolean {
+    return this.node().selection ? this.selectedKeys().includes(row[this.key()]) : false;
+  }
+
+  protected toggleRow(row: Row, checked: boolean): void {
+    this.select([row], checked);
+  }
+
+  protected selectVisible(checked: boolean): void {
+    this.select(this.visibleRows(), checked);
+  }
+
+  private select(rows: readonly Row[], checked: boolean): void {
+    const selection = this.node().selection;
+    if (!selection) return;
+    const key = this.key();
+    const values = new Set(rows.map((row) => row[key]));
+    const keys = this.selectedKeys().filter((k) => !values.has(k));
+    this.remembered.update((map) => {
+      const next = new Map(map);
+      for (const row of rows) {
+        if (checked) next.set(row[key], row);
+        else next.delete(row[key]);
+      }
+      return next;
+    });
+    this.runtime().setState(selection.bind, checked ? [...keys, ...values] : keys);
+  }
+
+  protected clearSelection(): void {
+    const selection = this.node().selection;
+    if (!selection) return;
+    this.remembered.set(new Map());
+    this.runtime().setState(selection.bind, []);
+  }
+
+  protected async runBulk(action: ActionDefinition): Promise<void> {
+    if (this.busy()) return;
+    this.busy.set(true);
+    try {
+      await runSteps(this.runtime(), action.onClick, this.bulkScope());
+    } finally {
+      this.busy.set(false);
+    }
   }
 
   private request(page: number, groupPath: ServerTableRequest['groupPath'], extra: Partial<ServerTableRequest> = {}): ServerTableRequest {

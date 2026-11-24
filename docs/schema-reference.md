@@ -198,6 +198,8 @@
 | `rowActions` | list of rowAction | Actions on a row, in the last column: expressions see the row as `row`. |
 | `rowActionsInline` | integer 0–10 | How many (visible) row actions to show as buttons; the others go into the «⋯» menu. 0 = all in the menu; if missing, all buttons. |
 | `refreshable` | yes/no | «Refresh» button in the table footer, on the left (pages are on the right): it reloads the data source like the refresh step. Absent if false or not given. |
+| `selection` | object | Row selection: the keys of the chosen rows are in the `bind` state; bulk actions see the whole rows in `selection`. The selection stays across pages, sorting, groups and open groups, and is emptied when the filters change. |
+| `bulkActions` | list of action | Actions on the selected rows, above the table, with the count of the chosen rows and a button that empties the selection. Expressions see `selection` (list of the chosen rows, also those of other pages). |
 
 ### `input`
 

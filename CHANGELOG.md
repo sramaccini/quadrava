@@ -14,6 +14,8 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ### Added
 
+- `serverDataTable`: row selection and bulk actions (`selection`, `bulkActions`), as in the `table`. The selection
+  stays across pages, sorting and groups; a change of the filters empties it; «Clear selection» empties it by hand.
 - Buttons and actions: an optional `icon` before the text, on `button`, the actions of `form`, the `bulkActions` and the
   `rowActions` of the tables (also in the «⋯» menu). New icons in the set: `save`, `edit`, `link`, `eye`,
   `eye-invisible`, `user-add`, `back`, `play`, `download`.

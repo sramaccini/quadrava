@@ -295,6 +295,8 @@
   "showcase_datatable.details": "Dettagli",
   "showcase_datatable.large_volumes_20_000_transactions": "Grandi volumi: 20.000 movimenti",
   "showcase_datatable.same_interface_but_filters_sorti": "Stessa interfaccia, ma filtri, ordinamento, gruppi, totali e pagine li calcola il servizio: il browser riceve solo la pagina e i gruppi che si vedono. Aprendo un gruppo si caricano le sue righe a pagine.",
+  "showcase_datatable.reconcile": "Riconcilia",
+  "showcase_datatable.reconciled": "{n, plural, one {# movimento riconciliato} other {# movimenti riconciliati}} (solo un esempio)",
   "showcase_datatable.server_side_200_000_transactions": "Lato server: 200.000 movimenti",
   "showcase_datatable.showcase_data_table": "Vetrina: datatable",
   "showcase_datatable.sixty_transactions_loaded_once": "Sessanta movimenti caricati una volta sola: filtra dall’icona nelle intestazioni, ordina con le frecce, scegli una o più colonne per raggruppare. Ogni gruppo mostra il numero di movimenti e il saldo.",

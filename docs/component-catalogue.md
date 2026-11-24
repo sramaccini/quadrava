@@ -419,6 +419,12 @@ The same interface as the data table (header filters, sorting, group choice, tot
 - `bind` writes `{ sort, filters, groupBy }` to the state, useful for exports or other calls with the same criteria.
 - The service must check the fields it receives (only known columns in `sort`, `filters`, `groupBy`, `distinct`) and cap `size`: the request comes from the browser and cannot be trusted.
 
+**Selection and bulk actions** (`selection`, `bulkActions`), as in the `table` (§ 2.2): a checkbox per row, one in the header
+for the visible rows (those of the page and of the open groups), the count of the chosen rows and «Svuota la selezione»
+(clear selection) above the table. The selection stays across pages, sorting, groups and open groups: the keys are in the
+`bind` state and the bulk actions see the whole rows in `selection`, also those of other pages. A change of the filters
+empties it, since the chosen rows may no longer be among those shown. The showcase «Datatable» has an example.
+
 ### 2.20 Standalone fields (input)
 
 A field used on its own, outside forms and filters: text box, number, drop-down, multiple choice, radio buttons, checkbox, switch, date, date and time, search (lookup), file, repeatable rows. The value lives in the **screen state**, so data sources, expressions, texts and steps read it like any other state.

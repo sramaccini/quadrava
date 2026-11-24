@@ -216,6 +216,22 @@
           },
           "pageSize": 15,
           "bind": "state.transactionSearch",
+          "selection": {
+            "bind": "state.chosenTransactions"
+          },
+          "bulkActions": [
+            {
+              "id": "btn-reconcile",
+              "label": "{{ t('showcase_datatable.reconcile', 'Reconcile') }}",
+              "icon": "check",
+              "enabledIf": "{{ size(selection) > 0 }}",
+              "onClick": [
+                {
+                  "toast": "{{ t('showcase_datatable.reconciled', '{n, plural, one {# transaction reconciled} other {# transactions reconciled}} (only an example)', {'n': size(selection)}) }}"
+                }
+              ]
+            }
+          ],
           "rowActionsInline": 1,
           "columns": [
             {
