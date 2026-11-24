@@ -27,6 +27,12 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 - The reference BFF uses authz-library 2.6.0: `/bff/user` has the e-mail of the user again, from the token of Keycloak.
 
+### Fixed
+
+- Group rows of `dataTable` and `serverDataTable`: a background of their own (`--lc-group-row-bg`, a light tint of the
+  primary colour on the surface), no longer the active background of the side bar, which with a dark side bar made
+  them dark with dark text.
+
 ## [0.18.0] - 2026-11-19
 
 ### Added

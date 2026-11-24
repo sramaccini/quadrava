@@ -97,7 +97,7 @@ function asLevel(data: unknown, page: number, previous?: Level): Level {
     .toolbar nz-select { min-width: 260px; }
     .count { color: var(--lc-color-muted, #5d6b7a); margin-left: auto; }
     .wrap { overflow-x: auto; overflow-y: hidden; }
-    .group-row > td { background: var(--lc-sider-active-bg, rgba(127, 127, 127, 0.06)); font-weight: 500; }
+    .group-row > td { background: var(--lc-group-row-bg, rgba(127, 127, 127, 0.06)); font-weight: 500; }
     .group-label { display: inline-flex; align-items: center; gap: 6px; }
     .toggle { padding: 0 4px; }
     .group-count { color: var(--lc-color-muted, #5d6b7a); font-weight: 400; }

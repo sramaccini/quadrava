@@ -50,6 +50,9 @@ describe('themeToCssVars', () => {
     });
     expect(vars['--lc-sider-bg']).toBe('#001529');
     expect(vars['--lc-sider-active-bg']).toBe('#123456');
+    // The group rows of the tables do not take the colours of the side bar.
+    expect(vars['--lc-group-row-bg']).not.toContain('#123456');
+    expect(vars['--lc-group-row-bg']).toContain('color-mix');
     expect(vars['--lc-sider-width']).toBe('300px');
     expect(vars['--lc-sider-collapsed-width']).toBe('64px');
     expect(vars['--lc-header-bg']).toBe('#eee');

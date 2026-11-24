@@ -49,6 +49,9 @@ export function themeToCssVars(theme: ThemeDefinition): Record<string, string> {
   vars['--lc-page-header-text'] = page.text ?? colors.onSurface;
   vars['--lc-page-header-muted'] = page.mutedText ?? muted;
   vars['--lc-page-header-border'] = page.border ?? colors.border;
+  // Group rows of the tables: a light tint of the primary colour on the surface of the content, not the colours of the
+  // side bar, which may be dark.
+  vars['--lc-group-row-bg'] = `color-mix(in srgb, ${colors.primary} 6%, ${colors.surface})`;
   vars['--lc-content-padding'] = `${layout?.content?.padding ?? 24}px`;
   const compact = density === 'compact';
   vars['--lc-gap'] = compact ? '6px' : '12px';
