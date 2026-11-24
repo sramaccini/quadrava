@@ -596,7 +596,7 @@
   "notification_settings.email": "Indirizzo email",
   "notification_settings.saved": "Preferenze salvate",
   "showcase_form.widths_title": "Larghezza dei campi e disposizione a flusso",
-  "showcase_form.widths_intro": "Ogni campo dice quanto è largo (width: xs, s, m, l) e, con layout flow, i campi si affiancano finché ci stanno; un campo senza width prende una riga intera.",
+  "showcase_form.widths_intro": "Ogni campo dice quanto è largo (width: xs, s, m, l, full) e, con layout flow, i campi si affiancano finché ci stanno; un campo senza width prende una riga intera, la descrizione con width full tutta la riga.",
   "showcase_form.widths_code": "Codice",
   "showcase_form.widths_issue_date": "Data di emissione",
   "showcase_form.widths_amount": "Importo",

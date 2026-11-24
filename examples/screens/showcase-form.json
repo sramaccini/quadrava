@@ -267,7 +267,7 @@
         {
           "id": "widths-intro",
           "type": "text",
-          "text": "{{ t('showcase_form.widths_intro', 'Each field says how wide it is (width: xs, s, m, l) and, with layout flow, the fields sit side by side while they fit; a field without width takes a whole line.') }}"
+          "text": "{{ t('showcase_form.widths_intro', 'Each field says how wide it is (width: xs, s, m, l, full) and, with layout flow, the fields sit side by side while they fit; a field without width takes a whole line, the description with width full all of it.') }}"
         },
         {
           "id": "widths-form",
@@ -355,7 +355,8 @@
             {
               "name": "description",
               "type": "textarea",
-              "label": "{{ t('showcase_form.widths_description', 'Description') }}"
+              "label": "{{ t('showcase_form.widths_description', 'Description') }}",
+              "width": "full"
             }
           ],
           "actions": [

@@ -450,7 +450,7 @@
 | `maxSizeKb` | integer 1–102400 | For type file: maximum size in KB (1024 if absent). Up to 102400 with multipart upload; base64 content is limited to 10240. |
 | `upload` | text | For type file: data source (POST) to which the file is sent right away. In multipart the file is the "file" part of the request and the `file` variable has name, type and size; in base64 it also has content. |
 | `span` | integer 1–4 | Columns taken by the field in the form grid (1 if absent). |
-| `width` | `xs`, `s`, `m`, `l` | Width of the input: xs (about 8 characters: postcodes, quantities), s (about 16: dates, amounts, codes), m (about 32: names, emails), l (about 48: addresses). The input never exceeds its cell or the screen; the theme can change the sizes (--lc-field-width-xs … -l). Without it the input takes the whole cell, or in a form with layout flow a whole line. |
+| `width` | `xs`, `s`, `m`, `l`, `full` | Width of the input: xs (about 8 characters: postcodes, quantities), s (about 16: dates, amounts, codes), m (about 32: names, emails), l (about 48: addresses), full (the whole line, with no limit: long texts such as a description). The input never exceeds its cell or the screen; the theme can change the sizes (--lc-field-width-xs … -l). Without it the input takes the whole cell, or in a form with layout flow a whole line, at most 560px wide. |
 | `fields` | list of values | For type repeater: the fields of every row (text, number, select, checkbox, date, textarea, switch, lookup, file; no nested rows). Validation rules see the row in `item`. |
 | `minRows` | integer 0–50 | For type repeater: minimum rows (0 if absent). |
 | `maxRows` | integer 1–200 | For type repeater: maximum rows (50 if absent). |

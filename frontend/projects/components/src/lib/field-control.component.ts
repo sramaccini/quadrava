@@ -19,7 +19,7 @@ import { SuggestInputComponent } from './suggest-input.component';
 import { parseIsoDate, parseIsoDateTime, toIsoDate, toIsoDateTime } from './shared';
 
 /** Sizes of an input (`width`), changed by the theme with `--lc-field-width-xs` … `-l`. */
-const FIELD_WIDTHS: Record<FieldWidth, string> = { xs: '6rem', s: '10rem', m: '18rem', l: '28rem' };
+const FIELD_WIDTHS: Record<Exclude<FieldWidth, 'full'>, string> = { xs: '6rem', s: '10rem', m: '18rem', l: '28rem' };
 
 /**
  * The control of a field (without label or error message, which stay with the host): used by the form, the
@@ -38,7 +38,7 @@ const FIELD_WIDTHS: Record<FieldWidth, string> = { xs: '6rem', s: '10rem', m: '1
   selector: 'lc-field-control',
   imports: [FormsModule, LookupComponent, FileFieldComponent, IconComponent, RepeaterComponent, RichTextEditorComponent, SuggestInputComponent, TagsFieldComponent, NzButtonModule, NzInputModule, NzSelectModule, NzCheckboxModule, NzDatePickerModule, NzRadioModule, NzSwitchModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { '[class.sized]': '!!field().width', '[style.--lc-field-width]': 'width()' },
+  host: { '[class.sized]': '!!width()', '[style.--lc-field-width]': 'width()' },
   styles: `
     :host { display: block; }
     :host(.sized) { width: var(--lc-field-width); max-width: 100%; }
@@ -241,10 +241,10 @@ const FIELD_WIDTHS: Record<FieldWidth, string> = { xs: '6rem', s: '10rem', m: '1
 })
 export class FieldControlComponent {
   readonly field = input.required<FieldDefinition>();
-  /** The size of `width`, from the theme; null without it. */
+  /** The size of `width`, from the theme; null without it and with `full`, which takes the room there is. */
   protected readonly width = computed(() => {
     const width = this.field().width;
-    return width ? `var(--lc-field-width-${width}, ${FIELD_WIDTHS[width]})` : null;
+    return width && width !== 'full' ? `var(--lc-field-width-${width}, ${FIELD_WIDTHS[width]})` : null;
   });
   readonly runtime = input.required<ScreenRuntime>();
   readonly scope = input<Scope>({});

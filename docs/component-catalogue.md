@@ -244,10 +244,11 @@ status:paid customer:▌        → Enter: only the word at the cursor is replac
 | `s` | 16 characters (10rem) | dates, amounts, codes |
 | `m` | 32 characters (18rem) | names, emails |
 | `l` | 48 characters (28rem) | addresses |
+| `full` | the whole line, with no limit | long texts: a description, notes |
 
 The theme can change the sizes with the variables `--lc-field-width-xs`, `-s`, `-m` and `-l`. `width` holds for the fields of `form`, `input` and `filterBar` too (a filter with `width` loses the minimum of 160 px of the filters).
 
-**Flow** (`"layout": "flow"`): the fields sit one after the other on the same line while they fit, then on the next, each as wide as its `width`; a field without `width` takes a whole line (its input at most 560 px). `columns` and `span` are not used. The showcase «Forms» has an example.
+**Flow** (`"layout": "flow"`): the fields sit one after the other on the same line while they fit, then on the next, each as wide as its `width`; a field without `width` takes a whole line (its input at most 560 px), one with `"width": "full"` the whole line with no limit. `columns` and `span` are not used. The showcase «Forms» has an example.
 
 ```json
 { "type": "form", "layout": "flow", "fields": [

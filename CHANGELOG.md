@@ -14,6 +14,8 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ### Added
 
+- Fields: `width: "full"`, the whole line of a `flow` form with no limit (a field without `width` stops at 560px), for
+  long texts such as a description.
 - Runtime image: `QUADRAVA_TRUST_FORWARDED=true` passes the `X-Forwarded-Proto` and `X-Forwarded-Host` of a TLS
   terminator in front to the BFF. Before, the BFF always got the scheme of the image (`http`), and built the login
   callback on http behind https.

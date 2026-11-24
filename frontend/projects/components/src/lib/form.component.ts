@@ -21,7 +21,8 @@ import { nextId } from './shared';
  * With `fieldsFrom` more fields come from a data source, after those of the screen: their labels and options are data,
  * shown as they are; their values sit in the object `into` when it is given. The actions wait for those fields.
  * The fields sit in a grid (`columns`, `span`) or, with `layout: "flow"`, one after the other while they fit: a field
- * with `width` takes that width, one without it a whole line.
+ * with `width` takes that width, one without it a whole line (its input at most 560px), one with `width: "full"` the
+ * whole line with no limit.
  */
 @Component({
   selector: 'lc-form',
@@ -45,7 +46,7 @@ import { nextId } from './shared';
     /* A column, so the item is as wide as the wider of label and input (a wrapping row would add them up). */
     form.flow > nz-form-item { flex: 0 1 auto; min-width: 0; flex-flow: column nowrap; }
     form.flow > nz-form-item.line { flex-basis: 100%; }
-    form.flow > nz-form-item.line lc-field-control { max-width: 560px; }
+    form.flow > nz-form-item.line:not(.full) lc-field-control { max-width: 560px; }
     form.flow > .actions { flex-basis: 100%; }
     /* The buttons wrap when they do not fit, instead of widening the page (WCAG 1.4.10, reflow). */
     .actions { display: flex; flex-wrap: wrap; gap: var(--lc-gap, 12px); }
@@ -59,7 +60,7 @@ import { nextId } from './shared';
       @for (item of items(); track item.key) {
         @let field = item.field;
         @if (runtime().isVisible(field, fieldScope())) {
-          <nz-form-item [style.--lc-field-span]="span(field)" [class.line]="flow() && !field.width">
+          <nz-form-item [style.--lc-field-span]="span(field)" [class.line]="flow() && (!field.width || field.width === 'full')" [class.full]="field.width === 'full'">
             @if (field.type !== 'checkbox') {
               <nz-form-label [nzFor]="id + item.key" [id]="id + item.key + '-label'" [nzRequired]="required(item)" [nzTooltipTitle]="field.tooltip ? runtime().text(field.tooltip, fieldScope()) : undefined" [nzTooltipIcon]="'question-circle'">{{ item.label ?? (runtime().text(field.label, fieldScope()) || field.name) }}</nz-form-label>
             }

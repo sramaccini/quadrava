@@ -893,9 +893,10 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
             "xs",
             "s",
             "m",
-            "l"
+            "l",
+            "full"
           ],
-          "description": "Width of the input: xs (about 8 characters: postcodes, quantities), s (about 16: dates, amounts, codes), m (about 32: names, emails), l (about 48: addresses). The input never exceeds its cell or the screen; the theme can change the sizes (--lc-field-width-xs … -l). Without it the input takes the whole cell, or in a form with layout flow a whole line."
+          "description": "Width of the input: xs (about 8 characters: postcodes, quantities), s (about 16: dates, amounts, codes), m (about 32: names, emails), l (about 48: addresses), full (the whole line, with no limit: long texts such as a description). The input never exceeds its cell or the screen; the theme can change the sizes (--lc-field-width-xs … -l). Without it the input takes the whole cell, or in a form with layout flow a whole line, at most 560px wide."
         },
         "fields": {
           "type": "array",

@@ -129,8 +129,8 @@ export interface ActionDefinition {
 /** Action on a row of a table: it runs steps or opens a relative path of the application, with the row in `row`. */
 export type RowActionDefinition = (Omit<ActionDefinition, 'onClick'> & { onClick: Step[]; href?: never }) | (Omit<ActionDefinition, 'onClick'> & { href: string; onClick?: never });
 
-/** Sizes of an input: about 8, 16, 32 and 48 characters. */
-export type FieldWidth = 'xs' | 's' | 'm' | 'l';
+/** Sizes of an input: about 8, 16, 32 and 48 characters, or the whole line (`full`). */
+export type FieldWidth = 'xs' | 's' | 'm' | 'l' | 'full';
 
 export interface FieldDefinition {
   name: string;
@@ -156,7 +156,7 @@ export interface FieldDefinition {
   suggest?: { source: string; valueField?: string; labelField?: string; descriptionField?: string; minChars?: number; replace?: 'word' | 'all' };
   /** Columns taken in the form grid (1 if absent). */
   span?: number;
-  /** Width of the input, from the sizes of the theme; without it the whole cell (in a `flow` form a whole line). */
+  /** Width of the input, from the sizes of the theme or the whole line (`full`); without it the whole cell (in a `flow` form a whole line, at most 560px). */
   width?: FieldWidth;
   /** Visible rows of a `textarea` field (4 if absent). */
   rows?: number;

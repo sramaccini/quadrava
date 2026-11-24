@@ -63,6 +63,22 @@ describe('column grid and flow in the form', () => {
     expect(items(h.el).map((i) => i.classList.contains('line'))).toEqual([false, false, true]);
   });
 
+  it('layout flow: a field with width full takes the whole line, without the limit of the other lines', async () => {
+    const form: NodeDefinition = {
+      type: 'form',
+      layout: 'flow',
+      fields: [
+        { name: 'title', type: 'text', label: 'Title' },
+        { name: 'description', type: 'textarea', label: 'Description', width: 'full' },
+      ],
+    };
+    const h = await renderScreen({ components: [form] });
+    expect(items(h.el).map((i) => [i.classList.contains('line'), i.classList.contains('full')])).toEqual([[true, false], [true, true]]);
+    const controls = [...h.el.querySelectorAll<HTMLElement>('lc-field-control')];
+    expect(controls.map((c) => c.classList.contains('sized'))).toEqual([false, false]);
+    expect(controls[1].style.getPropertyValue('--lc-field-width')).toBe('');
+  });
+
   it('a filter with width keeps it, without the minimum width of the filters', async () => {
     const h = await renderScreen({
       components: [{ type: 'filterBar', bind: 'state.filters', fields: [{ name: 'code', type: 'text', label: 'Code', width: 'xs' }, { name: 'text', type: 'text', label: 'Text' }] }],
