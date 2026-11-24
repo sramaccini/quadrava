@@ -28,6 +28,10 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
   selects, dates, numbers, checkboxes and radios, where NG-ZORRO showed only a pale shadow. When a dialog or a
   confirmation closes, the focus goes back to the control that opened it, also when that button was disabled while its
   action ran or when it was an item of the «⋯» menu of a row (the focus goes to the «⋯» button); before, it was lost.
+- Tables from the keyboard: in `table`, `dataTable` and `serverDataTable` the title of a sortable column is a button
+  (Enter or Space sorts; the header keeps `aria-sort`), and the filter of a column is a button named after it
+  («Filter Status») instead of an icon that could not take the focus. Its panel opens with the focus on the first field
+  and Esc closes it, with the focus back on the button.
 
 ## [0.19.1] - 2026-11-24
 

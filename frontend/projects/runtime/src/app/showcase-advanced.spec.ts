@@ -493,7 +493,7 @@ describe('Showcase: advanced components', () => {
       expect(groups()[0]).toMatch(/^Account: Alpha Bank \(\d+\)$/);
       expect(dt().querySelector('tfoot')?.textContent).toContain('Total');
       // Filter: only the transactions to check.
-      (([...dt().querySelectorAll<HTMLElement>('th')].find((th) => th.textContent?.trim().startsWith('Status'))!.querySelector('nz-filter-trigger span')) as HTMLElement).click();
+      (([...dt().querySelectorAll<HTMLElement>('th')].find((th) => th.textContent?.trim().startsWith('Status'))!.querySelector('button.lc-filter-trigger')) as HTMLElement).click();
       const panel = (): HTMLElement | undefined => [...document.querySelectorAll<HTMLElement>('.ant-dropdown .filter-panel')].find((p) => p.getAttribute('aria-label') === 'Filter Status');
       await until(() => !!panel(), 'filter');
       const options = [...panel()!.querySelectorAll<HTMLElement>('label[nz-checkbox]')];

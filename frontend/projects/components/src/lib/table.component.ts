@@ -31,6 +31,8 @@ const DEFAULT_PAGE_SIZE = 10;
     /* Selected rows: colours of the theme, readable also on hover (the default of the table may be dark). */
     tr.ant-table-row-selected > td { background: var(--lc-selected-row-bg, rgba(127, 127, 127, 0.12)); }
     tr.ant-table-row-selected:hover > td { background: var(--lc-selected-row-hover-bg, rgba(127, 127, 127, 0.18)); }
+    /* The title of a sortable column is a button: sorting works from the keyboard too (Enter, Space). */
+    .lc-sort { padding: 0; border: 0; background: none; font: inherit; color: inherit; text-align: inherit; cursor: pointer; }
     lc-icon.lead { margin-inline-end: 8px; }
     .wrap { overflow-x: auto; overflow-y: hidden; }
     .expand-cell { width: 48px; }
@@ -99,7 +101,13 @@ const DEFAULT_PAGE_SIZE = 10;
                   [attr.aria-sort]="ariaSort(column)"
                   nz-tooltip
                   [nzTooltipTitle]="column.tooltip ? runtime().text(column.tooltip, scope()) : null"
-                >{{ runtime().text(column.label, scope()) || column.field }}</th>
+                >
+                  @if (column.sortable) {
+                    <button type="button" class="lc-sort">{{ runtime().text(column.label, scope()) || column.field }}</button>
+                  } @else {
+                    {{ runtime().text(column.label, scope()) || column.field }}
+                  }
+                </th>
               }
               @if (node().rowActions?.length) {
                 <th scope="col"><span class="visually-hidden">{{ i18n.t('lc.actions') }}</span></th>

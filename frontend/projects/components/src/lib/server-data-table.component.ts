@@ -16,7 +16,7 @@ import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import type { ActionDefinition, ColumnDefinition, DataColumnDefinition, ServerDataTableNode, SortSpec } from 'schema';
 import { IconComponent } from './icon.component';
 import { RowActionsComponent } from './row-actions.component';
-import { TONE_COLORS, nextId, parseIsoDate, toIsoDate } from './shared';
+import { TONE_COLORS, focusInside, nextId, parseIsoDate, toIsoDate } from './shared';
 import { isActiveFilter, type ColumnFilter, type Row } from './table-data';
 
 const DEFAULT_PAGE_SIZE = 20;
@@ -95,6 +95,11 @@ function asLevel(data: unknown, page: number, previous?: Level): Level {
     .cell-link { padding: 0; border: 0; background: none; font: inherit; color: var(--ant-primary-color, var(--lc-color-primary, #1f5fbf)); cursor: pointer; text-align: inherit; }
     .cell-link:hover, .cell-link:focus-visible { text-decoration: underline; }
     .cell-link:disabled { cursor: not-allowed; opacity: 0.6; }
+    /* The title of a sortable column is a button: sorting works from the keyboard too (Enter, Space). */
+    .lc-sort { padding: 0; border: 0; background: none; font: inherit; color: inherit; text-align: inherit; cursor: pointer; }
+    /* The filter of a column is a button with a name; NG-ZORRO's own is a span that cannot take the focus. */
+    .lc-filter-trigger { border: 0; background: transparent; font: inherit; }
+    .lc-filter-trigger:hover { background: color-mix(in srgb, var(--lc-color-on-surface, #000) 6%, transparent); }
     .toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; padding-bottom: var(--lc-gap, 12px); }
     .toolbar label { color: var(--lc-color-muted, #5d6b7a); }
     .toolbar nz-select { min-width: 260px; }
@@ -182,13 +187,36 @@ function asLevel(data: unknown, page: number, previous?: Level): Level {
                     [attr.aria-sort]="ariaSort(column)"
                     [nzCustomFilter]="!!column.filter"
                   >
-                    {{ label(column) }}
+                    @if (column.sortable) {
+                      <button type="button" class="lc-sort">{{ label(column) }}</button>
+                    } @else {
+                      {{ label(column) }}
+                    }
                     @if (column.filter) {
-                      <nz-filter-trigger [nzActive]="isFiltered(column)" [nzDropdownMenu]="menu" (nzVisibleChange)="$event && column.filter === 'select' && loadOptions(column)" [attr.aria-label]="i18n.t('lc.filterColumn', { label: label(column) })">
+                      <button
+                        #trigger
+                        type="button"
+                        nz-th-extra
+                        class="ant-table-filter-trigger lc-filter-trigger"
+                        nz-dropdown
+                        nzTrigger="click"
+                        nzPlacement="bottomRight"
+                        [nzClickHide]="false"
+                        [nzDropdownMenu]="menu"
+                        [nzVisible]="openFilter() === column.field"
+                        (nzVisibleChange)="showFilter(column, $event, trigger)"
+                        (click)="$event.stopPropagation()"
+                        [class.active]="isFiltered(column)"
+                        [class.ant-table-filter-open]="openFilter() === column.field"
+                        aria-haspopup="dialog"
+                        [attr.aria-expanded]="openFilter() === column.field"
+                        [attr.aria-controls]="openFilter() === column.field ? filterPanelId(column) : null"
+                        [attr.aria-label]="i18n.t('lc.filterColumn', { label: label(column) })"
+                      >
                         <lc-icon name="filter" />
-                        <!-- The menu is inside the button: a single node in the @if, so the button goes in the right place of the header. -->
+                        <!-- The menu is inside the button: a single node in the @if, so the button goes in the right place of the header (nz-th-extra). -->
                         <nz-dropdown-menu #menu="nzDropdownMenu">
-                          <div class="filter-panel" role="group" [attr.aria-label]="i18n.t('lc.filterColumn', { label: label(column) })">
+                          <div class="filter-panel" role="group" [id]="filterPanelId(column)" [attr.aria-label]="i18n.t('lc.filterColumn', { label: label(column) })">
                             @switch (column.filter) {
                               @case ('text') {
                                 <input nz-input type="search" [placeholder]="i18n.t('lc.filterContains')" [attr.aria-label]="i18n.t('lc.filterContains')" [ngModel]="textFilter(column)" (ngModelChange)="setTextFilter(column, $event)" />
@@ -217,7 +245,7 @@ function asLevel(data: unknown, page: number, previous?: Level): Level {
                             </div>
                           </div>
                         </nz-dropdown-menu>
-                      </nz-filter-trigger>
+                      </button>
                     }
                   </th>
                 }
@@ -378,6 +406,30 @@ export class ServerDataTableComponent {
 
   protected readonly i18n = inject(I18n);
   protected readonly groupId = nextId('lc-server-table-group');
+
+  /** Field of the column whose filter panel is open. */
+  protected readonly openFilter = signal<string | null>(null);
+  private readonly panelId = nextId('lc-filter');
+
+  protected filterPanelId(column: DataColumnDefinition): string {
+    return `${this.panelId}-${column.field}`;
+  }
+
+  /**
+   * The filter panel of a column opens (Enter or a click on its button) with the focus on its first field, and closes with
+   * Esc, a click outside or the button again; if the focus was in the panel, or lost, it goes back to the button.
+   */
+  protected showFilter(column: DataColumnDefinition, visible: boolean, trigger: HTMLElement): void {
+    this.openFilter.set(visible ? column.field : null);
+    const doc = trigger.ownerDocument;
+    if (visible) {
+      if (column.filter === 'select') void this.loadOptions(column);
+      focusInside(doc, this.filterPanelId(column));
+      return;
+    }
+    const active = doc.activeElement;
+    if (!active || active === doc.body || active.closest('.filter-panel')) trigger.focus();
+  }
   protected readonly busy = signal(false);
   private readonly labels = (): FormatLabels => ({ yes: this.i18n.t('lc.yes'), no: this.i18n.t('lc.no'), translate: (key, fallback) => this.i18n.t(key, {}, fallback) });
 

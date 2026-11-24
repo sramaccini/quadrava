@@ -79,7 +79,7 @@ Built in this order, one per commit, each with tests (schema, component and show
 
 ### 2.1 Column sorting
 
-Columns with `sortable: true` show the sort arrows. A click cycles through ascending, descending and no sorting.
+Columns with `sortable: true` show the sort arrows. A click cycles through ascending, descending and no sorting. The title of a sortable column is a button, so sorting also works from the keyboard (Tab, then Enter or Space); the header tells screen readers the current order (`aria-sort`).
 
 ```json
 { "type": "table", "source": "orders",
@@ -373,7 +373,7 @@ Table for analysing an already loaded set of rows in the page: every column can 
     { "field": "amount", "format": "currency", "sortable": true, "filter": "number", "aggregate": "sum" }] }
 ```
 
-- **Per-column filters** from the header: `text` (contains), `select` (choice among the values present), `number` (from / to), `date` (range). A button clears all filters.
+- **Per-column filters** from the header: `text` (contains), `select` (choice among the values present), `number` (from / to), `date` (range). A button clears all filters. The filter of a column is a button named after it («Filter Status»): Enter opens its panel with the focus on the first field, Esc closes it and the focus goes back to the button.
 - **Sorting** on one column at a time, as in the table.
 - **Grouping**: the user picks one or more `groupable` columns (in order) from a selector above the table; `groupBy` is the initial choice. Every group has a header with the value, the number of rows and the totals of the columns with `aggregate`; groups open and close.
 - Grand total at the bottom, in-page paging (`pageSize`), row actions as in the table.

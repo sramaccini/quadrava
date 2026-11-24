@@ -72,7 +72,7 @@ describe('serverDataTable', () => {
     expect(lastRequest(h).page).toBe(0);
     header(h, 'Amount').click();
     await h.until(() => body(h)[0]?.[3] === '€120.00', 'amount descending');
-    (header(h, 'Notes').querySelector('nz-filter-trigger span') as HTMLElement).click();
+    header(h, 'Notes').querySelector<HTMLButtonElement>('button.lc-filter-trigger')!.click();
     await h.until(() => !!document.querySelector('.ant-dropdown .filter-panel input'), 'filter');
     const input = document.querySelector('.ant-dropdown .filter-panel input') as HTMLInputElement;
     input.value = 'Transaction 1';
@@ -101,7 +101,7 @@ describe('serverDataTable', () => {
   it('the values of a choice filter come from the service, with the other filters applied', async () => {
     const h = await render();
     await h.until(() => body(h).length === 5, 'rows');
-    (header(h, 'Account').querySelector('nz-filter-trigger span') as HTMLElement).click();
+    header(h, 'Account').querySelector<HTMLButtonElement>('button.lc-filter-trigger')!.click();
     await h.until(() => document.querySelectorAll('.ant-dropdown label[nz-checkbox]').length === 2, 'values');
     expect(lastRequest(h).distinct).toBe('account');
     ([...document.querySelectorAll<HTMLElement>('.ant-dropdown label[nz-checkbox]')][1].querySelector('input') as HTMLInputElement).click();
@@ -215,9 +215,7 @@ describe('serverDataTable: selection and bulk actions', () => {
     button(h, 'Move').click();
     await h.until(() => h.toasts.length === 1, 'bulk action');
     expect(h.toasts).toEqual(['moved 1']);
-    const filter = h.el.querySelector('lc-server-data-table nz-filter-trigger') as HTMLElement;
-    (filter.querySelector('.ant-dropdown-trigger, span') as HTMLElement | null)?.click();
-    filter.click();
+    h.el.querySelector<HTMLButtonElement>('lc-server-data-table button.lc-filter-trigger')!.click();
     await h.until(() => !!document.querySelector('.filter-panel input[type="search"]'), 'filter open');
     const input = document.querySelector<HTMLInputElement>('.filter-panel input[type="search"]')!;
     input.value = 'Transaction 1';

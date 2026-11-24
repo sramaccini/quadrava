@@ -35,7 +35,7 @@ describe('datatable', () => {
   const count = (h: ScreenHarness): string => plain(h.el.querySelector('lc-data-table .count')?.textContent);
   const header = (h: ScreenHarness, text: string): HTMLElement => [...h.el.querySelectorAll<HTMLElement>('lc-data-table th')].find((th) => plain(th.textContent).startsWith(text))!;
   const openFilter = async (h: ScreenHarness, column: string): Promise<HTMLElement> => {
-    (header(h, column).querySelector('nz-filter-trigger .ant-dropdown-trigger, nz-filter-trigger span') as HTMLElement).click();
+    header(h, column).querySelector<HTMLButtonElement>('button.lc-filter-trigger')!.click();
     const panel = (): HTMLElement | undefined => [...document.querySelectorAll<HTMLElement>('.ant-dropdown .filter-panel')].find((p) => p.getAttribute('aria-label') === 'Filter ' + column);
     await h.until(() => !!panel(), 'filter open');
     return panel()!;
@@ -60,7 +60,7 @@ describe('datatable', () => {
     input.dispatchEvent(new Event('input'));
     await h.until(() => bodyRows(h).length === 1, 'text filter (after the pause)');
     expect(bodyRows(h).map((r) => r[3])).toEqual(['Counter sale']);
-    expect(header(h, 'Notes').querySelector('nz-filter-trigger .active, nz-filter-trigger .ant-table-filter-trigger.active')).not.toBeNull();
+    expect(header(h, 'Notes').querySelector('.lc-filter-trigger.active')).not.toBeNull();
     input.value = '';
     input.dispatchEvent(new Event('input'));
     await h.until(() => bodyRows(h).length === 5, 'text filter removed');

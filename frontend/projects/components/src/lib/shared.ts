@@ -3,6 +3,16 @@ import type { Tone } from 'schema';
 
 let counter = 0;
 /** Unique identifier to connect labels and controls. */
+/**
+ * Moves the focus to the first field or enabled button inside the element with this id, once it is on the page: a pop-up
+ * (the filter panel of a column) appears a moment after it is asked for.
+ */
+export function focusInside(doc: Document, id: string, attempts = 20): void {
+  const target = doc.getElementById(id)?.querySelector<HTMLElement>('input:not([disabled]), button:not([disabled]), [tabindex="0"]');
+  if (target) target.focus();
+  else if (attempts > 0) setTimeout(() => focusInside(doc, id, attempts - 1), 25);
+}
+
 export function nextId(prefix: string): string {
   counter += 1;
   return `${prefix}-${counter}`;
