@@ -32,6 +32,11 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
   (Enter or Space sorts; the header keeps `aria-sort`), and the filter of a column is a button named after it
   («Filter Status») instead of an icon that could not take the focus. Its panel opens with the focus on the first field
   and Esc closes it, with the focus back on the button.
+- Dark themes: the colours of the theme win over those written in the NG-ZORRO dark stylesheet. Primary, success,
+  warning and danger (buttons, links, tabs, checkboxes, switches, pagination, menus, alerts, form messages…) are those of
+  the theme; text in those colours is made readable (4.5:1) on the background and the surfaces, text and marks on a
+  coloured fill use the theme's `onPrimary` (or black or white, whichever reads better); the page has the background of
+  the theme instead of black. Before, white on the primary colour was 4.20:1 and the danger text 2.31:1.
 
 ## [0.19.1] - 2026-11-24
 

@@ -3,11 +3,13 @@ import { CSP_NONCE, effect, inject, provideEnvironmentInitializer, type Environm
 import { generate } from '@ant-design/colors';
 import { ThemeService } from 'core';
 import type { ThemeDefinition } from 'schema';
+import { NZ_DARK_THEME_CSS } from './nz-dark-theme.generated';
 
 /** Name of the NG-ZORRO dark stylesheet, published as a separate file (see the style configuration of the application). */
 export const NZ_DARK_STYLESHEET = 'nz-dark.css';
 const DARK_LINK_ID = 'lc-nz-dark-theme';
 const DARK_SURFACES_ID = 'lc-nz-dark-surfaces';
+const DARK_THEME_ID = 'lc-nz-dark-theme-colours';
 
 function rgba(hex: string, alpha: number): string {
   const n = parseInt(hex.slice(1), 16);
@@ -56,6 +58,12 @@ export function readable(base: string, background: string): string {
   return standOut(base, [background], 4.5);
 }
 
+/** Text on a background of colour `base`: `preferred` if it reaches 4.5:1, otherwise black or white, whichever reads better. */
+export function onColour(base: string, preferred?: string): string {
+  if (preferred && contrast(preferred, base) >= 4.5) return preferred;
+  return contrast('#000000', base) >= contrast('#ffffff', base) ? '#000000' : '#ffffff';
+}
+
 /**
  * Colour of the focus ring: the primary colour, changed if needed so that it stands out (3:1, WCAG «Non-text contrast») on
  * both the background of the page and the surfaces (cards, tables, dialogs).
@@ -72,6 +80,9 @@ export function themeToNzVars(theme: ThemeDefinition): Record<string, string> {
   const vars: Record<string, string> = {};
   const family = (name: string, base: string): void => {
     const palette = generate(base, options);
+    // Text in this colour, readable on the background and on the surfaces, and text on a background of this colour.
+    vars[`--lc-text-${name}`] = standOut(base, [colors.background, colors.surface], 4.5);
+    vars[`--lc-on-${name}`] = onColour(base, name === 'primary' ? colors.onPrimary : undefined);
     vars[`--ant-${name}-color`] = base;
     vars[`--ant-${name}-color-hover`] = palette[4];
     vars[`--ant-${name}-color-active`] = palette[6];
@@ -126,10 +137,16 @@ html:root .ant-picker input:focus-visible, html:root .ant-input-number-input:foc
 
 /**
  * The dark stylesheet of NG-ZORRO paints cards, tables, dialogs, drawers and pop-ups with its own greys (#141414,
- * #1f1f1f, #1d1d1d) and borders (#303030): with a dark theme they ignore its surface and border colours. Loaded after that
- * stylesheet, only with dark themes; `:root` gives these rules the weight to win over the library's.
+ * #1f1f1f, #1d1d1d) and borders (#303030), and the page with black: with a dark theme they ignore its background, surface and
+ * border colours. Loaded after that stylesheet, only with dark themes; `:root` gives these rules the weight to win over the
+ * library's. Its fixed blue, red, green and gold are replaced by `NZ_DARK_THEME_CSS` (generated, `npm run nz:dark`); the links
+ * and icons of a selected menu item, white in a rule of their own, take the colour of the item.
  */
 export const NZ_DARK_SURFACES_CSS = `
+:root body { background-color: var(--lc-color-background); }
+:root .ant-menu-dark .ant-menu-item-selected > a, :root .ant-menu-dark .ant-menu-item-selected > a:hover,
+:root .ant-menu-dark .ant-menu-item-selected > span > a, :root .ant-menu-dark .ant-menu-item-selected > span > a:hover,
+:root .ant-menu-dark .ant-menu-item-selected .anticon, :root .ant-menu-dark .ant-menu-item-selected .ant-menu-item-icon { color: inherit; }
 :root .ant-card, :root .ant-card-actions, :root .ant-collapse-content, :root .ant-collapse-panel, :root .ant-table, :root .ant-table-summary,
 :root .ant-table-cell-fix-left, :root .ant-table-cell-fix-right, :root .ant-table-sticky-holder, :root .ant-picker-calendar,
 :root .ant-picker-calendar .ant-picker-panel, :root .ant-picker-panel-container, :root .ant-picker-panel, :root .ant-drawer-content,
@@ -182,9 +199,11 @@ export function provideNzThemeBridge(): EnvironmentProviders {
           link.href = NZ_DARK_STYLESHEET;
           doc.head.appendChild(link);
         }
+        if (!doc.getElementById(DARK_THEME_ID)) addStyle(DARK_THEME_ID, NZ_DARK_THEME_CSS);
         if (!doc.getElementById(DARK_SURFACES_ID)) addStyle(DARK_SURFACES_ID, NZ_DARK_SURFACES_CSS);
       } else {
         existing?.remove();
+        doc.getElementById(DARK_THEME_ID)?.remove();
         doc.getElementById(DARK_SURFACES_ID)?.remove();
       }
     });
