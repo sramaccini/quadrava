@@ -42,7 +42,7 @@ interface StatView {
     .value { display: block; font-size: 26px; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
     .caption { display: block; color: var(--lc-color-muted, #5d6b7a); font-size: 0.85em; margin-top: 2px; }
     .help { display: inline-flex; cursor: help; }
-    .help:focus-visible { outline: 2px solid var(--lc-color-primary, #1f5fbf); outline-offset: 2px; border-radius: 50%; }
+    .help:focus-visible { outline: 2px solid var(--lc-focus-ring, var(--lc-color-primary, #1f5fbf)); outline-offset: 2px; border-radius: 50%; }
   `,
   template: `
     @if (status() === 'error') {

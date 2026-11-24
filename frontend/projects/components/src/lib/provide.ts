@@ -12,6 +12,7 @@ import { ButtonComponent } from './button.component';
 import { DetailComponent } from './detail.component';
 import { DialogConfirmation } from './dialog-confirmation';
 import { DialogForm } from './dialog-form';
+import { DialogOpener } from './dialog-focus';
 import { FilterBarComponent } from './filter-bar.component';
 import { FormComponent } from './form.component';
 import { ICON_TYPES } from './icon.component';
@@ -112,6 +113,8 @@ export function provideLcComponents(extra: ComponentCatalog = {}): (Provider | E
       const nz = inject(NzI18nService);
       const dates = inject(NzDateAdapter);
       for (const [locale, messages] of Object.entries(BUILTIN_MESSAGES)) i18n.addMessages(locale, messages, 'builtin');
+      // Created now, so that it sees the first click that opens a dialog.
+      inject(DialogOpener);
       const closeNames = localizeDialogClose(inject(DOCUMENT), () => i18n.t('lc.close'));
       inject(DestroyRef).onDestroy(() => closeNames?.disconnect());
       effect(() => {

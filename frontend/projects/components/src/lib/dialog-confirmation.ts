@@ -1,7 +1,7 @@
-import { DOCUMENT } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Injectable, ViewEncapsulation, inject } from '@angular/core';
 import { Confirmation, I18n } from 'core';
 import { NZ_MODAL_DATA, NzModalService } from 'ng-zorro-antd/modal';
+import { DialogOpener, returnFocus } from './dialog-focus';
 
 /**
  * Content of the window: the message is always text (nzContent as a string would be interpreted as HTML). The window has
@@ -29,7 +29,7 @@ export class ConfirmMessageComponent {
 @Injectable({ providedIn: 'root' })
 export class DialogConfirmation extends Confirmation {
   private readonly modal = inject(NzModalService);
-  private readonly doc = inject(DOCUMENT);
+  private readonly opener = inject(DialogOpener);
   private readonly i18n = inject(I18n);
   private open = false;
 
@@ -37,13 +37,13 @@ export class DialogConfirmation extends Confirmation {
     if (this.open) return Promise.resolve(false);
     this.open = true;
     return new Promise<boolean>((resolve) => {
-      const previous = this.doc.activeElement as HTMLElement | null;
+      const previous = this.opener.current();
       let settled = false;
       const finish = (result: boolean): void => {
         if (settled) return;
         settled = true;
         this.open = false;
-        previous?.focus?.();
+        returnFocus(previous);
         resolve(result);
       };
       const ref = this.modal.confirm({

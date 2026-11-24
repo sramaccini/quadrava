@@ -23,6 +23,11 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
   rows», «Select the visible rows»); required fields of `form` carry `aria-required` and a field with an error or a
   warning points to its message with `aria-describedby`; the close button of the dialogs is named in the language of
   the user instead of the English «Close» of NG-ZORRO.
+- Focus: whatever takes the focus from the keyboard shows a ring in a colour derived from the theme
+  (`--lc-focus-ring`, the primary colour changed if needed to reach 3:1 on the background and on the surfaces), also on
+  selects, dates, numbers, checkboxes and radios, where NG-ZORRO showed only a pale shadow. When a dialog or a
+  confirmation closes, the focus goes back to the control that opened it, also when that button was disabled while its
+  action ran or when it was an item of the «⋯» menu of a row (the focus goes to the «⋯» button); before, it was lost.
 
 ## [0.19.1] - 2026-11-24
 

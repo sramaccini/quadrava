@@ -21,7 +21,7 @@ import { TONE_COLORS } from './shared';
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     .help { display: inline-flex; margin-left: 4px; color: var(--lc-color-muted, #5d6b7a); cursor: help; vertical-align: -1px; }
-    .help:focus-visible { outline: 2px solid var(--lc-color-primary, #1f5fbf); outline-offset: 2px; border-radius: 50%; }
+    .help:focus-visible { outline: 2px solid var(--lc-focus-ring, var(--lc-color-primary, #1f5fbf)); outline-offset: 2px; border-radius: 50%; }
   `,
   template: `
     <nz-card role="region" [attr.aria-label]="node().title ? runtime().text(node().title, scope()) : null" [nzTitle]="node().title ? runtime().text(node().title, scope())  : undefined">

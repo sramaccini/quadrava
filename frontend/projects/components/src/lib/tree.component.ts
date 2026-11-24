@@ -43,7 +43,7 @@ export function highlight(text: string, search: string): { text: string; match: 
     :host { display: block; }
     .search { max-width: 320px; margin-bottom: 8px; }
     .title { padding: 0 2px; border-radius: 2px; }
-    .title:focus-visible { outline: 2px solid var(--lc-color-primary, #1f5fbf); outline-offset: 1px; }
+    .title:focus-visible { outline: 2px solid var(--lc-focus-ring, var(--lc-color-primary, #1f5fbf)); outline-offset: 1px; }
     mark { padding: 0; background: color-mix(in srgb, var(--lc-color-primary, #1f5fbf) 20%, transparent); color: inherit; }
     .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   `,

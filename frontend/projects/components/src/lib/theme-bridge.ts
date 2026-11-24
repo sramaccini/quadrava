@@ -39,16 +39,29 @@ export function contrast(a: string, b: string): number {
 }
 
 /**
- * The `base` colour made readable on `background`: it is darkened (or, on dark backgrounds, lightened) in small steps
- * until the contrast reaches 4.5:1 (normal text, WCAG AA).
+ * The `base` colour darkened (or, on dark backgrounds, lightened) in small steps until its contrast with each of the
+ * `backgrounds` reaches `minimum`. The first background decides the direction.
  */
-export function readable(base: string, background: string): string {
-  const toward = luminance(background) > 0.4 ? '#000000' : '#ffffff';
+function standOut(base: string, backgrounds: readonly string[], minimum: number): string {
+  const toward = luminance(backgrounds[0]) > 0.4 ? '#000000' : '#ffffff';
   for (let t = 0; t <= 1; t += 0.05) {
     const candidate = mix(base, toward, t);
-    if (contrast(candidate, background) >= 4.5) return candidate;
+    if (backgrounds.every((background) => contrast(candidate, background) >= minimum)) return candidate;
   }
   return toward;
+}
+
+/** The `base` colour made readable on `background`: contrast 4.5:1 (normal text, WCAG AA). */
+export function readable(base: string, background: string): string {
+  return standOut(base, [background], 4.5);
+}
+
+/**
+ * Colour of the focus ring: the primary colour, changed if needed so that it stands out (3:1, WCAG «Non-text contrast») on
+ * both the background of the page and the surfaces (cards, tables, dialogs).
+ */
+export function focusRing(primary: string, background: string, surface: string): string {
+  return standOut(primary, [background, surface], 3);
 }
 
 /** NG-ZORRO CSS variables (`--ant-*`) derived from the theme colours: primary, success, warning, error. Pure function. */
@@ -78,6 +91,7 @@ export function themeToNzVars(theme: ThemeDefinition): Record<string, string> {
   family('warning', colors.warning ?? '#ad6800');
   family('error', colors.danger ?? '#c62828');
   vars['--ant-info-color'] = colors.primary;
+  vars['--lc-focus-ring'] = focusRing(colors.primary, colors.background, colors.surface);
   return vars;
 }
 
@@ -88,6 +102,10 @@ const A11Y_STYLE_ID = 'lc-nz-contrast';
  * Parts of NG-ZORRO with fixed colours or too light for the minimum contrast (WCAG AA): text of the coloured
  * tags, placeholders and arrows of selects, waiting steps, days outside the month in the calendar. They use the
  * theme colours (`--lc-*`), already chosen to be readable.
+ *
+ * Also the focus ring: NG-ZORRO removes the outline and shows the focus with a pale shadow, hard to see. Whatever takes the
+ * focus from the keyboard gets a ring in `--lc-focus-ring`; fields with a frame (selects, dates, numbers, fields with
+ * icons) show it on the frame, and checkboxes and radios on the box they draw instead of their hidden input.
  */
 export const NZ_CONTRAST_CSS = `
 .ant-tag-success { color: var(--lc-tag-success-text) !important; }
@@ -96,6 +114,14 @@ export const NZ_CONTRAST_CSS = `
 .ant-select-arrow, .ant-select-clear { color: var(--lc-color-muted) !important; }
 .ant-steps-item-wait .ant-steps-item-title, .ant-steps-item-wait .ant-steps-item-description, .ant-steps-item-wait .ant-steps-icon { color: var(--lc-color-muted) !important; }
 .ant-picker-cell:not(.ant-picker-cell-in-view) { color: var(--lc-color-muted) !important; }
+html:root :focus-visible, html:root .ant-checkbox-input:focus-visible + .ant-checkbox-inner,
+html:root .ant-radio-input:focus-visible + .ant-radio-inner, html:root .ant-radio-button-wrapper:has(input:focus-visible) {
+  outline: 2px solid var(--lc-focus-ring, var(--lc-color-primary, #1f5fbf)); outline-offset: 2px; }
+html:root .ant-select-focused:not(.ant-select-disabled) .ant-select-selector, html:root .ant-input-affix-wrapper-focused,
+html:root .ant-picker-focused, html:root .ant-input-number-focused {
+  outline: 2px solid var(--lc-focus-ring, var(--lc-color-primary, #1f5fbf)); outline-offset: 1px; }
+html:root .ant-select-selection-search-input:focus-visible, html:root .ant-input-affix-wrapper input:focus-visible,
+html:root .ant-picker input:focus-visible, html:root .ant-input-number-input:focus-visible { outline: none; }
 `;
 
 /**

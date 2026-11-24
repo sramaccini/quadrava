@@ -46,7 +46,7 @@ type Row = Record<string, unknown>;
     .limit { display: inline-flex; gap: 4px; align-items: center; color: var(--lc-color-danger, #c62828); font-size: 12px; font-weight: 400; }
     .lane { grid-column: 1 / -1; margin-top: 4px; }
     .lane button { display: inline-flex; gap: 8px; align-items: center; padding: 2px 4px; border: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; border-radius: var(--lc-radius, 6px); }
-    .lane button:focus-visible { outline: 2px solid var(--lc-color-primary, #1f5fbf); }
+    .lane button:focus-visible { outline: 2px solid var(--lc-focus-ring, var(--lc-color-primary, #1f5fbf)); }
     ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; min-height: 40px; }
     .card { display: flex; gap: 4px; align-items: flex-start; padding: 8px; border-radius: var(--lc-radius, 6px); background: var(--lc-color-surface, #fff);
       border: 1px solid var(--lc-color-border, #d0d7de); }
@@ -58,7 +58,7 @@ type Row = Record<string, unknown>;
     .title { display: block; font-weight: 600; overflow-wrap: anywhere; }
     button.title { padding: 0; border: 0; background: transparent; color: var(--lc-color-primary, #1f5fbf); font: inherit; font-weight: 600; text-align: start; cursor: pointer; }
     button.title:hover { text-decoration: underline; }
-    button.title:focus-visible { outline: 2px solid var(--lc-color-primary, #1f5fbf); outline-offset: 2px; border-radius: 2px; }
+    button.title:focus-visible { outline: 2px solid var(--lc-focus-ring, var(--lc-color-primary, #1f5fbf)); outline-offset: 2px; border-radius: 2px; }
     .card.openable { cursor: pointer; }
     .description { display: block; margin-top: 2px; font-size: 12px; color: var(--lc-color-muted, #5d6b7a); overflow-wrap: anywhere; }
     .badges { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }

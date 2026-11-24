@@ -16,7 +16,7 @@ import { renderTokens, tokenizeJson, tokenizeTemplate } from './code-tokens';
       color: var(--lc-color-on-surface); background: var(--lc-code-bg, var(--lc-color-surface));
       border: 1px solid var(--lc-color-border); border-radius: var(--lc-radius, 6px);
     }
-    pre:focus-visible { outline: 2px solid var(--lc-color-primary); outline-offset: 1px; }
+    pre:focus-visible { outline: 2px solid var(--lc-focus-ring, var(--lc-color-primary, #1f5fbf)); outline-offset: 1px; }
     /* Colours on white with a contrast of at least 4.5:1, replaceable by the theme. */
     pre ::ng-deep .lc-code-key { color: var(--lc-code-key, #0b5cad); }
     pre ::ng-deep .lc-code-string { color: var(--lc-code-string, #1a7f37); }

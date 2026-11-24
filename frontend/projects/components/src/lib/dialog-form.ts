@@ -1,7 +1,7 @@
-import { DOCUMENT } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ElementRef, Injectable, afterNextRender, inject } from '@angular/core';
 import { FormDialog, I18n, type FormDialogRequest } from 'core';
 import { NZ_MODAL_DATA, NzModalRef, NzModalService } from 'ng-zorro-antd/modal';
+import { DialogOpener, returnFocus } from './dialog-focus';
 import { FormComponent } from './form.component';
 import { nextId } from './shared';
 
@@ -51,14 +51,14 @@ export class DialogFormComponent {
 @Injectable({ providedIn: 'root' })
 export class DialogForm extends FormDialog {
   private readonly modal = inject(NzModalService);
-  private readonly doc = inject(DOCUMENT);
+  private readonly opener = inject(DialogOpener);
   private showing = false;
 
   override open(request: FormDialogRequest): Promise<boolean> {
     if (this.showing) return Promise.resolve(false);
     this.showing = true;
     return new Promise<boolean>((resolve) => {
-      const previous = this.doc.activeElement as HTMLElement | null;
+      const previous = this.opener.current();
       let settled = false;
       let ref: NzModalRef | null = null;
       const finish = (result: boolean): void => {
@@ -66,7 +66,7 @@ export class DialogForm extends FormDialog {
         settled = true;
         this.showing = false;
         ref?.close();
-        previous?.focus?.();
+        returnFocus(previous);
         resolve(result);
       };
       const titleId = nextId('lc-dialog-title');
