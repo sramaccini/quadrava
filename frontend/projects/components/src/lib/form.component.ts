@@ -7,6 +7,7 @@ import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import type { ActionDefinition, FieldDefinition, FormNode } from 'schema';
 import { BusyComponent } from './busy.component';
 import { FieldControlComponent } from './field-control.component';
+import { IconComponent } from './icon.component';
 import { checkValue, personalValues, repeaterRows, validationEnv } from './field-validation';
 import { dataItems, itemValue, screenItems, withItemValue, type FormItem, ownValues } from './form-fields';
 import { nextId } from './shared';
@@ -26,7 +27,7 @@ import { nextId } from './shared';
  */
 @Component({
   selector: 'lc-form',
-  imports: [BusyComponent, FieldControlComponent, NzAlertModule, NzFormModule, NzButtonModule, NzTooltipModule],
+  imports: [BusyComponent, FieldControlComponent, IconComponent, NzAlertModule, NzFormModule, NzButtonModule, NzTooltipModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: block; container-type: inline-size; }
@@ -50,6 +51,7 @@ import { nextId } from './shared';
     form.flow > .actions { flex-basis: 100%; }
     /* The buttons wrap when they do not fit, instead of widening the page (WCAG 1.4.10, reflow). */
     .actions { display: flex; flex-wrap: wrap; gap: var(--lc-gap, 12px); }
+    .actions lc-icon { margin-inline-end: 8px; }
   `,
   template: `
     @if (fieldsFailure(); as error) {
@@ -98,6 +100,9 @@ import { nextId } from './shared';
           @if (runtime().isVisible(action, fieldScope())) {
             <span nz-tooltip [nzTooltipTitle]="action.tooltip ? runtime().text(action.tooltip, fieldScope()) : null">
               <button nz-button nzType="primary" type="button" [nzLoading]="busy()" [disabled]="busy() || fieldsLoading() || !runtime().isEnabled(action, fieldScope())" (click)="run(action)">
+                @if (action.icon && !busy()) {
+                  <lc-icon [name]="action.icon" />
+                }
                 {{ runtime().text(action.label, fieldScope()) }}
               </button>
             </span>

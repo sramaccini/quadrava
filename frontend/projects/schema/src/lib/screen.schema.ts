@@ -442,6 +442,10 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
         "tooltip": {
           "type": "string",
           "description": "Help text shown on mouse hover or with the focus. Text only (never HTML); it can contain {{ }}."
+        },
+        "icon": {
+          "$ref": "#/$defs/icon",
+          "description": "Icon shown before the text of the action, from the built-in set (for example save, edit, delete, plus); the text stays. An unknown name shows no icon."
         }
       }
     },
@@ -477,7 +481,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
           "type": "string",
           "pattern": "^/(?!/)",
           "description": "Relative path of the application that the action opens, with the row in `row`, for example a download: /api/issues/{{ params.issue }}/attachments/{{ row.id }}/content. The values of {{ }} are encoded, so they cannot add segments; an address that does not resolve to a path of the same origin opens nothing."
-        }
+        },
+        "icon": true
       },
       "oneOf": [
         {
@@ -1404,6 +1409,10 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                   "$ref": "#/$defs/step"
                 },
                 "description": "Steps run on click, in order (call, set, navigate, refresh…). The button stays busy until they finish."
+              },
+              "icon": {
+                "$ref": "#/$defs/icon",
+                "description": "Icon shown before the text of the button, from the built-in set (for example save, edit, delete, plus); the text stays. An unknown name shows no icon."
               }
             }
           }
@@ -4660,6 +4669,11 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
           "additionalProperties": false
         }
       ]
+    },
+    "icon": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "description": "Name of an icon of the built-in set (for example save, edit, delete, plus). An unknown name shows no icon."
     }
   }
 };

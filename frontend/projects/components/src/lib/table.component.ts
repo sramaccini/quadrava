@@ -9,6 +9,7 @@ import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import { inlineDataSource, type ActionDefinition, type ColumnDefinition, type SortSpec, type Step, type TableColumnDefinition, type TableNode } from 'schema';
 import { RowActionsComponent } from './row-actions.component';
+import { IconComponent } from './icon.component';
 import { TONE_COLORS } from './shared';
 import { aggregate, asSort, sortRows, type Row } from './table-data';
 
@@ -23,9 +24,10 @@ const DEFAULT_PAGE_SIZE = 10;
  */
 @Component({
   selector: 'lc-table',
-  imports: [BusyComponent, TableFooterComponent, NodeHostComponent, RowActionsComponent, NzTableModule, NzTagModule, NzButtonModule, NzAlertModule, NzTooltipModule],
+  imports: [BusyComponent, TableFooterComponent, NodeHostComponent, RowActionsComponent, IconComponent, NzTableModule, NzTagModule, NzButtonModule, NzAlertModule, NzTooltipModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
+    lc-icon.lead { margin-inline-end: 8px; }
     .wrap { overflow-x: auto; overflow-y: hidden; }
     .expand-cell { width: 48px; }
     .cell-link { padding: 0; border: 0; background: none; font: inherit; color: var(--ant-primary-color, var(--lc-color-primary, #1f5fbf)); cursor: pointer; text-align: inherit; }
@@ -51,6 +53,9 @@ const DEFAULT_PAGE_SIZE = 10;
               @if (runtime().isVisible(action, bulkScope())) {
                 <span nz-tooltip [nzTooltipTitle]="action.tooltip ? runtime().text(action.tooltip, bulkScope()) : null">
                   <button nz-button type="button" [nzLoading]="busy()" [disabled]="busy() || !runtime().isEnabled(action, bulkScope())" (click)="runBulk(action)">
+                    @if (action.icon && !busy()) {
+                      <lc-icon class="lead" [name]="action.icon" />
+                    }
                     {{ runtime().text(action.label, bulkScope()) }}
                   </button>
                 </span>

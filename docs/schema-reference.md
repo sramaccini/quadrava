@@ -40,6 +40,7 @@
 | --- | --- | --- |
 | `label` * | text | Text of the button; it can contain {{ }}. |
 | `onClick` * | list of step | Steps run on click, in order (call, set, navigate, refresh…). The button stays busy until they finish. |
+| `icon` | icon | Icon shown before the text of the button, from the built-in set (for example save, edit, delete, plus); the text stays. An unknown name shows no icon. |
 
 ### `filterBar`
 

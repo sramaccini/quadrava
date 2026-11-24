@@ -2,13 +2,19 @@ import { ChangeDetectionStrategy, Component, input, signal } from '@angular/core
 import { runSteps, type ScreenRuntime, type Scope } from 'core';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import type { ButtonNode } from 'schema';
+import { IconComponent } from './icon.component';
 
 @Component({
   selector: 'lc-button',
-  imports: [NzButtonModule],
+  imports: [IconComponent, NzButtonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // The icon gives way to the spinner while the steps run.
+  styles: `lc-icon { margin-inline-end: 8px; }`,
   template: `
     <button nz-button nzType="primary" type="button" [nzLoading]="busy()" [disabled]="busy() || !runtime().isEnabled(node(), scope())" (click)="click()">
+      @if (node().icon && !busy()) {
+        <lc-icon [name]="node().icon" />
+      }
       {{ runtime().text(node().label, scope()) }}
     </button>
   `,

@@ -363,6 +363,7 @@
             {
               "id": "btn-widths-save",
               "label": "{{ t('showcase_form.widths_save', 'Save') }}",
+              "icon": "save",
               "onClick": [
                 {
                   "toast": "{{ t('showcase_form.widths_done', 'Only an example: nothing is sent') }}"

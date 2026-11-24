@@ -14,6 +14,9 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ### Added
 
+- Buttons and actions: an optional `icon` before the text, on `button`, the actions of `form`, the `bulkActions` and the
+  `rowActions` of the tables (also in the «⋯» menu). New icons in the set: `save`, `edit`, `link`, `eye`,
+  `eye-invisible`, `user-add`, `back`, `play`, `download`.
 - Fields: `width: "full"`, the whole line of a `flow` form with no limit (a field without `width` stops at 560px), for
   long texts such as a description.
 - Runtime image: `QUADRAVA_TRUST_FORWARDED=true` passes the `X-Forwarded-Proto` and `X-Forwarded-Host` of a TLS

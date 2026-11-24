@@ -48,6 +48,12 @@ import {
   CopyOutline,
   EyeInvisibleOutline,
   EyeOutline,
+  SaveOutline,
+  EditOutline,
+  UserAddOutline,
+  ArrowLeftOutline,
+  PlayCircleOutline,
+  DownloadOutline,
 } from '@ant-design/icons-angular/icons';
 import type { IconDefinition } from '@ant-design/icons-angular';
 import { NzIconModule } from 'ng-zorro-antd/icon';
@@ -94,6 +100,16 @@ export const ICON_TYPES: Record<string, { type: string; icon: IconDefinition }> 
   first: { type: 'vertical-right', icon: VerticalRightOutline },
   last: { type: 'vertical-left', icon: VerticalLeftOutline },
   copy: { type: 'copy', icon: CopyOutline },
+  // Common actions of buttons.
+  save: { type: 'save', icon: SaveOutline },
+  edit: { type: 'edit', icon: EditOutline },
+  link: { type: 'link', icon: LinkOutline },
+  eye: { type: 'eye', icon: EyeOutline },
+  'eye-invisible': { type: 'eye-invisible', icon: EyeInvisibleOutline },
+  'user-add': { type: 'user-add', icon: UserAddOutline },
+  back: { type: 'arrow-left', icon: ArrowLeftOutline },
+  play: { type: 'play-circle', icon: PlayCircleOutline },
+  download: { type: 'download', icon: DownloadOutline },
   // Show and hide the text of a password field.
   'password-show': { type: 'eye', icon: EyeOutline },
   'password-hide': { type: 'eye-invisible', icon: EyeInvisibleOutline },

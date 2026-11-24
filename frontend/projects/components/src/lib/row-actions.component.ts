@@ -19,15 +19,19 @@ import { IconComponent } from './icon.component';
   styles: `
     .actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
     .more { padding-inline: 6px; }
+    lc-icon.lead { margin-inline-end: 6px; }
   `,
   template: `
     <div class="actions">
       @for (action of split().inline; track $index) {
         <span nz-tooltip [nzTooltipTitle]="action.tooltip ? runtime().text(action.tooltip, rowScope()) : null">
           @if (address(action); as url) {
-            <a nz-button nzSize="small" [href]="url">{{ runtime().text(action.label, rowScope()) }}</a>
+            <a nz-button nzSize="small" [href]="url">@if (action.icon) {<lc-icon class="lead" [name]="action.icon" />}{{ runtime().text(action.label, rowScope()) }}</a>
           } @else {
             <button nz-button nzSize="small" type="button" [disabled]="busy() || !runtime().isEnabled(action, rowScope()) || !action.onClick" (click)="emit(action)">
+              @if (action.icon) {
+                <lc-icon class="lead" [name]="action.icon" />
+              }
               {{ runtime().text(action.label, rowScope()) }}
             </button>
           }
@@ -43,11 +47,14 @@ import { IconComponent } from './icon.component';
             @for (action of split().menu; track $index) {
               @if (address(action); as url) {
                 <li nz-menu-item class="lc-row-action" nz-tooltip nzTooltipPlacement="left" [nzTooltipTitle]="action.tooltip ? runtime().text(action.tooltip, rowScope()) : null">
-                  <a [href]="url">{{ runtime().text(action.label, rowScope()) }}</a>
+                  <a [href]="url">@if (action.icon) {<lc-icon class="lead" [name]="action.icon" />}{{ runtime().text(action.label, rowScope()) }}</a>
                 </li>
               } @else {
                 <li nz-menu-item class="lc-row-action" [nzDisabled]="!runtime().isEnabled(action, rowScope()) || !action.onClick" (click)="runtime().isEnabled(action, rowScope()) && emit(action)"
                   nz-tooltip nzTooltipPlacement="left" [nzTooltipTitle]="action.tooltip ? runtime().text(action.tooltip, rowScope()) : null">
+                  @if (action.icon) {
+                    <lc-icon class="lead" [name]="action.icon" />
+                  }
                   {{ runtime().text(action.label, rowScope()) }}
                 </li>
               }

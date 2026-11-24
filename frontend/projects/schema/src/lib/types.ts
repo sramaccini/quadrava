@@ -119,6 +119,8 @@ export interface ConditionalProps {
 export interface ActionDefinition {
   id?: string;
   label: string;
+  /** Icon before the text, from the built-in set. */
+  icon?: string;
   tooltip?: string;
   visibleIf?: Expression;
   hiddenIf?: Expression;
@@ -340,6 +342,8 @@ export interface TextNode extends NodeBase {
 export interface ButtonNode extends NodeBase {
   type: 'button';
   label: string;
+  /** Icon before the text, from the built-in set. */
+  icon?: string;
   onClick: Step[];
 }
 export interface FilterBarNode extends NodeBase {

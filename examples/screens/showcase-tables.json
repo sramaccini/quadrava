@@ -95,6 +95,7 @@
             {
               "id": "btn-open",
               "label": "{{ t('common.open', 'Open') }}",
+              "icon": "eye",
               "onClick": [
                 {
                   "navigate": "order-detail",
@@ -107,6 +108,7 @@
             {
               "id": "btn-approve",
               "label": "{{ t('common.approve', 'Approve') }}",
+              "icon": "check",
               "visibleIf": "{{can('orders.order.approve') && row.status == 'submitted'}}",
               "onClick": [
                 {
@@ -254,6 +256,7 @@
             {
               "id": "btn-download",
               "label": "{{ t('showcase_tables.download', 'Download') }}",
+              "icon": "download",
               "href": "/examples/{{ row.folder }}/{{ row.file }}"
             }
           ]

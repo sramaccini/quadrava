@@ -71,6 +71,7 @@
             {
               "id": "btn-download",
               "type": "button",
+              "icon": "download",
               "label": "{{ t('showcase_containers.download_json', 'Download JSON') }}",
               "onClick": [
                 {

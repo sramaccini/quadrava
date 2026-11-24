@@ -808,6 +808,21 @@ One screen serves forms whose fields are data: the custom fields of a project, t
 
 In the showcase: «Vetrina: form» (Showcase: forms), «Campi dal servizio» (Fields from the service) section.
 
+### 2.32 Icons on buttons and actions
+
+The `button` component and every action (the actions of a `form`, the `bulkActions` of a `table`, the `rowActions`,
+as buttons and in the «⋯» menu) take an optional `icon`, shown before the text. The text stays: it is what screen readers
+read, and an icon alone is not offered. While the steps run, the icon of a button gives way to the spinner.
+
+```json
+{ "id": "btn-save", "label": "Save", "icon": "save", "onClick": [{ "call": "saveIssue" }] }
+```
+
+The names are those of the built-in set, the same as in the navigation; an unknown name shows no icon. For the actions:
+`save`, `edit`, `delete`, `plus`, `check`, `close`, `link`, `eye`, `eye-invisible`, `user-add`, `back`, `move`,
+`play`, `reload`, `download`, `upload`, `external`, `copy`, `search`, `filter`, `settings`. The showcases «Tables»,
+«Forms» and «Containers» have examples.
+
 ## 3. Implementation notes and known limits
 
 - **Loading data sources.** A GET data source reloads by itself only if the resolved request (URL and parameters) changes. A state change that does not touch the request (a selection, a wizard step, a chosen node) does not trigger new calls; to reload anyway, use the `refresh` step.
