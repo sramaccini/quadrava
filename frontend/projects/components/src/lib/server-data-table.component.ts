@@ -100,6 +100,9 @@ function asLevel(data: unknown, page: number, previous?: Level): Level {
     .toolbar nz-select { min-width: 260px; }
     .count { color: var(--lc-color-muted, #5d6b7a); margin-left: auto; }
     .wrap { overflow-x: auto; overflow-y: hidden; }
+    /* Selected rows: colours of the theme, readable also on hover (the default of the table may be dark). */
+    tr.ant-table-row-selected > td { background: var(--lc-selected-row-bg, rgba(127, 127, 127, 0.12)); }
+    tr.ant-table-row-selected:hover > td { background: var(--lc-selected-row-hover-bg, rgba(127, 127, 127, 0.18)); }
     .group-row > td { background: var(--lc-group-row-bg, rgba(127, 127, 127, 0.06)); font-weight: 500; }
     .group-label { display: inline-flex; align-items: center; gap: 6px; }
     .toggle { padding: 0 4px; }

@@ -52,6 +52,9 @@ export function themeToCssVars(theme: ThemeDefinition): Record<string, string> {
   // Group rows of the tables: a light tint of the primary colour on the surface of the content, not the colours of the
   // side bar, which may be dark.
   vars['--lc-group-row-bg'] = `color-mix(in srgb, ${colors.primary} 6%, ${colors.surface})`;
+  // Selected rows: a stronger tint than the group rows, a little stronger still on hover; the text keeps its colour.
+  vars['--lc-selected-row-bg'] = `color-mix(in srgb, ${colors.primary} 14%, ${colors.surface})`;
+  vars['--lc-selected-row-hover-bg'] = `color-mix(in srgb, ${colors.primary} 20%, ${colors.surface})`;
   vars['--lc-content-padding'] = `${layout?.content?.padding ?? 24}px`;
   const compact = density === 'compact';
   vars['--lc-gap'] = compact ? '6px' : '12px';

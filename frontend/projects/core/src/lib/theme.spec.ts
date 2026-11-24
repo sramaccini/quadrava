@@ -53,6 +53,10 @@ describe('themeToCssVars', () => {
     // The group rows of the tables do not take the colours of the side bar.
     expect(vars['--lc-group-row-bg']).not.toContain('#123456');
     expect(vars['--lc-group-row-bg']).toContain('color-mix');
+    // Selected rows: their own tint of the primary on the surface, distinct from the group rows.
+    expect(vars['--lc-selected-row-bg']).toContain('color-mix');
+    expect(vars['--lc-selected-row-bg']).not.toBe(vars['--lc-group-row-bg']);
+    expect(vars['--lc-selected-row-hover-bg']).not.toBe(vars['--lc-selected-row-bg']);
     expect(vars['--lc-sider-width']).toBe('300px');
     expect(vars['--lc-sider-collapsed-width']).toBe('64px');
     expect(vars['--lc-header-bg']).toBe('#eee');

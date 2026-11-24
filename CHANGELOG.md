@@ -12,6 +12,12 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Fixed
+
+- Selected rows of `table` and `serverDataTable`: a background from the theme (`--lc-selected-row-bg`, and
+  `--lc-selected-row-hover-bg` on hover, tints of the primary colour on the surface) instead of the default of the
+  table, which with some themes was dark and made the text hard to read.
+
 ## [0.19.0] - 2026-11-24
 
 ### Added
