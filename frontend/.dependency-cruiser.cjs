@@ -75,9 +75,9 @@ module.exports = {
     {
       name: 'not-to-unresolvable',
       severity: 'error',
-      comment: 'An import that does not resolve: a missing package or a wrong path.',
+      comment: 'An import that does not resolve: a missing package or a wrong path. The examples in public/examples are copied by demo:prepare.',
       from: {},
-      to: { couldNotResolve: true },
+      to: { couldNotResolve: true, pathNot: '/public/examples/' },
     },
   ],
   options: {

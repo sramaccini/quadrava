@@ -1,8 +1,9 @@
 name: Security
 
-# Static analysis of the code with CodeQL and a search for secrets in the commits with gitleaks, on every push to main,
-# on pull requests and once a week (new CodeQL queries find issues in code that has not changed). The findings of
-# CodeQL appear under Security › Code scanning; a secret found by gitleaks fails the job.
+# A search for secrets in the commits with gitleaks, on every push to main, on pull requests and once a week (the whole
+# history); a secret found fails the job. Static analysis is CodeQL in the default setup of the repository (Settings ›
+# Code security: JavaScript/TypeScript, Java and Actions, weekly and on pull requests), whose findings appear under
+# Security › Code scanning: GitHub refuses a second, advanced CodeQL configuration next to it.
 
 on:
   push:
@@ -20,33 +21,6 @@ permissions:
   contents: read
 
 jobs:
-  codeql:
-    name: CodeQL (${{ matrix.language }})
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      security-events: write
-    strategy:
-      fail-fast: false
-      matrix:
-        # Java without a build: the reference implementation reads authz-library from GitHub Packages, and the analysis
-        # does not need it.
-        language: [javascript-typescript, java-kotlin]
-    steps:
-      - uses: actions/checkout@v7
-      - uses: github/codeql-action/init@v4
-        with:
-          languages: ${{ matrix.language }}
-          build-mode: none
-          config: |
-            paths-ignore:
-              - '**/node_modules'
-              - '**/dist'
-              - frontend/projects/schema/validation/src/validators.generated.ts
-      - uses: github/codeql-action/analyze@v4
-        with:
-          category: /language:${{ matrix.language }}
-
   gitleaks:
     name: Secrets (gitleaks)
     runs-on: ubuntu-latest
