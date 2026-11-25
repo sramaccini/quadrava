@@ -210,6 +210,7 @@
 | `default` |  | Initial value, if the state does not have one already (null if absent; false for checkbox and switch). Texts can contain {{ }}, for example a translated text. |
 | `onChange` | list of step | Steps run after every change of the value, which see the new value in `value`. Free text is written to the state when leaving the field or with Enter. |
 | `group` | text | Validation group: the step { "validate": "<group>" } checks the fields of the same group together. |
+| `errorPath` | text | Where the value of the field is in the body of the calls started outside a form, as a JSON Pointer (for example /customer/address/city, with ~1 for / and ~0 for ~ in a name): the field errors of the service with this path go to the field (a slash and the field name if absent). |
 
 ### `box`
 

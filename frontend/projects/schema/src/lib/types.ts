@@ -730,6 +730,8 @@ export interface InputNode extends NodeBase {
   onChange?: Step[];
   /** Validation group for the `validate` step. */
   group?: string;
+  /** JSON Pointer of the value in the body of the calls started outside a form (`/<field name>` if absent). */
+  errorPath?: string;
 }
 
 export type NodeDefinition = SectionNode | TextNode | ButtonNode | FilterBarNode | TableNode | FormNode | TabsNode | DetailNode | AlertNode | StatsNode | WizardNode | TreeNode | CalendarNode | ChartNode | SquareChartNode | DataTableNode | ServerDataTableNode | InputNode | BoxNode | GridNode | BorderNode | ImageNode | LinkNode | ProgressNode | TimelineNode | KanbanNode | CommentsNode;

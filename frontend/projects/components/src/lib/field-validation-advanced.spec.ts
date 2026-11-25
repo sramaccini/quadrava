@@ -237,6 +237,45 @@ describe('validation: passwords, remote rules, errors of the services', () => {
       await h.settle();
       expect(message(h, 'Email')).toBe('');
     });
+
+    it('only paths that end on a field or on a cell drawn are placed and counted', async () => {
+      const h = await renderScreen({
+        components: [
+          form(
+            [
+              { name: 'email', type: 'text', label: 'Email' },
+              { name: 'note', type: 'text', label: 'Note', visibleIf: '{{ false }}' },
+              { name: 'lines', type: 'repeater', label: 'Lines', minRows: 2, fields: [{ name: 'code', type: 'text', label: 'Code' }] },
+            ],
+            [{ call: 'save', onError: { toast: '{{ string(error.fields) }} placed' } }],
+          ),
+        ],
+        dataSources,
+        respond: () => {
+          throw Object.assign(new Error('422'), {
+            status: 422,
+            fieldErrors: [
+              { path: '/lines/1/code', code: 'taken' },
+              // Deeper than a cell, a row that does not exist, a column that is not a field, not an index.
+              { path: '/lines/0/code/extra', code: 'taken' },
+              { path: '/lines/2/code', code: 'taken' },
+              { path: '/lines/0/other', code: 'taken' },
+              { path: '/lines/01/code', code: 'taken' },
+              { path: '/lines/first/code', code: 'taken' },
+              // Under a plain field, a hidden field, a name with an escaped slash.
+              { path: '/email/0', code: 'taken' },
+              { path: '/note', code: 'taken' },
+              { path: '/e~1mail', code: 'taken' },
+            ],
+          });
+        },
+      });
+      await save(h);
+      await h.until(() => h.toasts.length > 0, 'failure handled');
+      expect(h.toasts).toEqual(['1 placed']);
+      expect([...h.el.querySelectorAll('lc-repeater .cell-error')].map((e) => plain(e.textContent))).toEqual(['Invalid value']);
+      expect(message(h, 'Email')).toBe('');
+    });
   });
 
   it('limits of a multiple choice and relative dates', async () => {
@@ -309,6 +348,36 @@ describe('validation: passwords, remote rules, errors of the services', () => {
       change(h, 'Email', 'c@d.it');
       await h.settle();
       expect(note(h, 'Email')).toBe('');
+    });
+
+    it('a field whose value sits deeper in the body is reached by its errorPath, escapes included', async () => {
+      const h = await renderScreen({
+        components: [
+          { ...field('city', 'City'), errorPath: '/customer/address/city' } as NodeDefinition,
+          { ...field('unit', 'Unit'), errorPath: '/sizes/kg~1m~0' } as NodeDefinition,
+          field('zip', 'Zip'),
+          { type: 'button', label: 'Send', onClick: [{ call: 'send', onError: { toast: '{{ string(error.fields) }} placed' } }] } as NodeDefinition,
+        ],
+        dataSources: { send: { type: 'rest', method: 'POST', url: '/api/send', body: { customer: { address: { city: '{{ state.city }}', zip: '{{ state.zip }}' } } } } },
+        respond: () => {
+          throw Object.assign(new Error('422'), {
+            status: 422,
+            fieldErrors: [
+              { path: '/customer/address/city', code: 'alphanumeric' },
+              { path: '/sizes/kg~1m~0', code: 'integer' },
+              // The name alone no longer reaches a field with errorPath; a deeper path does not reach one by name.
+              { path: '/city', code: 'email' },
+              { path: '/customer/address/zip', code: 'email' },
+            ],
+          });
+        },
+      });
+      (h.el.querySelector('lc-button button') as HTMLButtonElement).click();
+      await h.until(() => h.toasts.length > 0, 'failure handled');
+      expect(h.toasts).toEqual(['2 placed']);
+      expect(note(h, 'City')).toBe('Use letters and digits only');
+      expect(note(h, 'Unit')).toBe('Enter a whole number');
+      expect(note(h, 'Zip')).toBe('');
     });
   });
 

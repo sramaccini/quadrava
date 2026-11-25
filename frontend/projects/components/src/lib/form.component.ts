@@ -306,8 +306,10 @@ export class FormComponent {
   }
 
   /**
-   * Places the field errors of the service on the fields (and the cells of repeaters); returns how many it placed. An
-   * error on a data field kept in `into` has the path of the object (`/custom/customer`).
+   * Places the field errors of the service on the fields (and the cells of repeaters); returns how many it placed. A
+   * path is placed only when it ends exactly on a visible field (`/email`), on a data field kept in `into`
+   * (`/custom/customer`) or on a cell of a row that exists (`/lines/0/code`); any other path, deeper or unknown, is
+   * left to the default message.
    */
   private placeServerErrors(errors: readonly FieldError[]): number {
     const fields: Record<string, string> = {};
@@ -319,12 +321,12 @@ export class FormComponent {
       const inData = into !== undefined && segments[0] === into && segments.length === 2;
       const [name, row, column, ...rest] = inData ? [`${into}.${segments[1]}`] : segments;
       const item = this.items().find((i) => i.key === name);
-      if (!item || rest.length) continue;
+      if (!item || rest.length || !this.runtime().isVisible(item.field, this.fieldScope())) continue;
       const message = codeMessage(this.i18n, code, params);
-      if (item.field.type === 'repeater' && row !== undefined && column !== undefined && /^\d+$/.test(row)) {
-        cells[name] = { ...cells[name], [`${row}/${column}`]: message };
-      } else if (row === undefined) {
+      if (row === undefined) {
         fields[name] = message;
+      } else if (item.field.type === 'repeater' && column !== undefined && this.isCell(item, row, column)) {
+        cells[name] = { ...cells[name], [`${row}/${column}`]: message };
       } else {
         continue;
       }
@@ -333,6 +335,11 @@ export class FormComponent {
     this.serverErrors.set(fields);
     this.cellErrors.set(cells);
     return placed;
+  }
+
+  /** Whether `row` and `column` name a cell drawn by the repeater: a row that exists, a field of its rows. */
+  private isCell(item: FormItem, row: string, column: string): boolean {
+    return /^(0|[1-9]\d*)$/.test(row) && Number(row) < repeaterRows(this.valueOf(item)).length && (item.field.fields ?? []).some((f) => f.name === column);
   }
 
   protected async run(action: ActionDefinition): Promise<void> {

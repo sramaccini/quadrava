@@ -2365,6 +2365,12 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                 "type": "string",
                 "pattern": "^[A-Za-z][A-Za-z0-9-]*$",
                 "description": "Validation group: the step { \"validate\": \"<group>\" } checks the fields of the same group together."
+              },
+              "errorPath": {
+                "type": "string",
+                "maxLength": 200,
+                "pattern": "^(/([^/~]|~[01])*)+$",
+                "description": "Where the value of the field is in the body of the calls started outside a form, as a JSON Pointer (for example /customer/address/city, with ~1 for / and ~0 for ~ in a name): the field errors of the service with this path go to the field (a slash and the field name if absent)."
               }
             }
           }

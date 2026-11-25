@@ -12,7 +12,8 @@ import { nextId } from './shared';
  * written when leaving the field or with Enter, so as not to reload the data sources at every character. Validation
  * errors and warnings are shown after the first change; enforcement stays with the service that receives the value.
  * The fields of the same validation group see each other: rules across fields (`sameAs`, `after`, `atLeastOne`, CEL
- * rules on `form`) read their values, and the field errors of a `call` started outside a form reach them by name.
+ * rules on `form`) read their values, and the field errors of a `call` started outside a form reach them by name, or
+ * by `errorPath` when the value sits deeper in the body.
  */
 @Component({
   selector: 'lc-input',
@@ -106,6 +107,7 @@ export class InputComponent implements OnInit {
     const leave = this.runtime().registerField(this.group(), {
       field: this.node().field,
       path: this.path(),
+      errorPath: this.node().errorPath,
       showFieldError: (error) => this.serverError.set(codeMessage(this.i18n, error.code, error.params)),
     });
     this.destroyRef.onDestroy(leave);

@@ -18,6 +18,17 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
   spinner, a newer value cancels the request, answers kept per value, translated message. The value reaches the state,
   and so starts the search, only once the service accepts it. Until now such a rule made the filter invalid and was
   reported to the diagnostics. No change to the schema.
+- `input`: `errorPath`, the JSON Pointer of the value in the body of a `call` started outside a form (for example
+  `/customer/address/city`). The field errors of the service with that path go to the field; without it the path is
+  `/<field name>`, as before. New optional property of the screen schema: Quadrava Studio shows it in the property
+  panel of the `input` node. In `core`, `GroupField` gains the same optional `errorPath`.
+
+### Fixed
+
+- `form`: a field error of a service on a cell that is not drawn (a row past the last one, a column that is not a
+  field of the rows) or on a hidden field was counted in `error.fields` and turned the failure message into «Check
+  the highlighted fields», though nothing was highlighted. Such paths now count as unmatched, like deeper or unknown
+  ones.
 
 ## [0.22.1] - 2026-11-25
 
