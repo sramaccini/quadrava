@@ -1,11 +1,20 @@
 openapi: 3.1.0
 info:
   title: Quadrava - Authorization contract
-  version: 0.1.0
+  version: 0.2.0
   description: >
     REST contract that every application back end implements to expose the permissions of the current user.
     The front end uses this information only to hide or disable parts of the interface:
     the back end always checks every request and filters the outgoing data.
+
+
+    **Optional part: operational roles** (0.2, ADR-28). A user may hold several roles and work as one of them at a time.
+    `/authz/roles` lists the roles of the user for the application: a **base** role always applies and is not offered
+    as a choice; the others are the **operational** roles. With `role` on `/authz/capabilities` and `/authz/check`
+    the answer covers the base roles plus that operational role only; a `role` that is not one of the operational roles
+    of the user grants nothing beyond the base roles (fail-closed). Without `role` the answer covers all the roles of
+    the user, as in 0.1. A service without operational roles answers `404` on `/authz/roles` and ignores `role`.
+    A BFF that keeps the active role in the session (bff.yaml) always sends its own `role`, never the page's.
   license:
     name: Mozilla Public License 2.0
     identifier: MPL-2.0
@@ -29,6 +38,13 @@ paths:
           required: true
           description: Identifier of the application.
           schema: { type: string }
+        - name: role
+          in: query
+          required: false
+          description: >
+            Operational role to answer for (optional part): the permissions of the base roles plus this one. Without it,
+            those of all the roles of the user.
+          schema: { type: string }
       responses:
         '200':
           description: List of the granted permissions.
@@ -40,6 +56,33 @@ paths:
               schema: { $ref: '#/components/schemas/Capabilities' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
+  /authz/roles:
+    get:
+      tags: [authz]
+      operationId: getRoles
+      summary: Roles of the current user for an application (optional)
+      description: >
+        The roles of the user that the authorization service knows for the application, with their label and whether
+        they are base roles. The operational roles (`base: false`) are those the user can work as, one at a time.
+        Roles the service gives no permissions to are left out. A service without operational roles answers `404`.
+      parameters:
+        - name: app
+          in: query
+          required: true
+          description: Identifier of the application.
+          schema: { type: string }
+      responses:
+        '200':
+          description: The roles of the user, base and operational.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Role' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
   /authz/check:
     post:
       tags: [authz]
@@ -86,6 +129,8 @@ components:
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }
+    NotFound:
+      description: The service has no operational roles (optional part not implemented).
   schemas:
     Permission:
       type: string
@@ -125,6 +170,24 @@ components:
           type: array
           maxItems: 200
           items: { $ref: '#/components/schemas/CheckItem' }
+        role:
+          type: string
+          description: >
+            Operational role to answer for (optional part): the permissions of the base roles plus this one. Without it,
+            those of all the roles of the user.
+    Role:
+      type: object
+      required: [id, label, base]
+      properties:
+        id:
+          type: string
+          description: Identifier of the role, sent back as `role`.
+        label:
+          type: string
+          description: Name shown to the user, as text.
+        base:
+          type: boolean
+          description: True for a role that always applies and is not offered as a choice; false for an operational role.
     CheckResult:
       type: object
       required: [permission, allowed]

@@ -36,6 +36,11 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
   memory, CSRF, permissions per role from a JSON file and forwarding of `/api` with the user's token, event streams
   included. An example to start from, not for production as it is; CI runs its tests and the BFF and authorization
   kits against it.
+- Working with one operational role at a time (ADR-28), as optional parts of two contracts. Authorization contract
+  0.2.0: `GET /authz/roles` lists the roles of the user with their `base` flag, and an optional `role` on
+  `/authz/capabilities` and `/authz/check` answers for the base roles plus that role (without it, as before).
+  BFF contract 0.6.0: `operationalRoles` and `currentRole` in the user, `POST /bff/role` to switch, the active
+  role in `X-Active-Role` towards the services, and any `role` or `X-Active-Role` sent by the page overridden.
 
 ### Fixed
 

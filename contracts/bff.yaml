@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Quadrava - BFF contract
-  version: 0.5.0
+  version: 0.6.0
   description: >
     What the Quadrava runtime and Studio expect from the Backend for Frontend (BFF) that serves them. The BFF does the
     OpenID Connect login, keeps the tokens on the server and gives the browser only a session cookie; it forwards the
@@ -51,6 +51,27 @@ info:
     `POST /bff/tenant` to switch. The login opens the session on a tenant chosen by the BFF (for example the last one
     used): it never asks. The runtime shows the choice only when its `tenantSwitchUrl` is configured and the list has
     more than one entry; a BFF without tenants leaves both fields out and needs no endpoint.
+
+
+    **Optional part: operational roles** (0.6, ADR-28). A user who holds several roles may work as one of them at a
+    time. At login the BFF reads `/authz/roles` (authz.yaml) and opens the session on an operational role it chooses
+    (for example the last one used, or the first): it never asks. The user lists the choices (`operationalRoles`,
+    `currentRole`; the `roles` field is unchanged) and `POST /bff/role` switches. While the session has an active
+    role:
+
+    - the BFF answers, or forwards, `/authz/*` with the active role, **overriding any `role` sent by the page** (in the
+      query of `/authz/capabilities`, in the body of `/authz/check`): the browser cannot widen its own permissions;
+
+    - every call forwarded to the services carries the active role in the `X-Active-Role` header; one sent by the page
+      is removed (also when the session has no role). A service that enforces separation of duties authorizes with the
+      base roles plus that role;
+
+    - after a switch the permissions version (`X-Permissions-Version`) changes, so the runtime reloads the permissions.
+
+    The runtime shows the choice only when its `roleSwitchUrl` is configured and the list has more than one entry. The
+    role in the `baggage` of the calls (`lc.role`) is for the audit trail only: services authorize with
+    `X-Active-Role`. A BFF without operational roles leaves both fields out and needs no endpoint; so does one whose
+    authorization service answers `404` on `/authz/roles`.
   license:
     name: Mozilla Public License 2.0
     identifier: MPL-2.0
@@ -137,6 +158,34 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
+  /bff/role:
+    post:
+      tags: [session]
+      operationId: switchRole
+      summary: Switches the operational role of the session (optional)
+      description: >
+        Makes another of the operational roles listed in the user the active one. It is a POST with the CSRF token,
+        never a GET: a link from another site must not be able to switch it. From the answer on, `/authz/*` and the
+        calls forwarded to the services use the new role; the runtime reloads the user and the permissions and checks
+        the current screen again. The path is the default; the runtime uses the one configured as `roleSwitchUrl`.
+      parameters:
+        - name: X-XSRF-TOKEN
+          in: header
+          required: true
+          description: The value of the `XSRF-TOKEN` cookie.
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RoleSelection' }
+      responses:
+        '204':
+          description: The session now works as the chosen role.
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
   /logout:
     post:
       tags: [session]
@@ -180,7 +229,7 @@ components:
     Forbidden:
       description: CSRF token missing or wrong.
     NotFound:
-      description: The tenant is not one of those offered to the user.
+      description: The tenant, or the role, is not one of those offered to the user.
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }
@@ -211,6 +260,15 @@ components:
         currentTenant:
           type: string
           description: Identifier of the tenant of the session, one of `tenants`; available to the expressions as `user.tenant`.
+        operationalRoles:
+          type: array
+          description: >
+            Operational roles the user may work as, one at a time (optional). Absent or with a single entry, the runtime
+            shows no choice. Base roles are not listed.
+          items: { $ref: '#/components/schemas/OperationalRole' }
+        currentRole:
+          type: string
+          description: Identifier of the active role of the session, one of `operationalRoles`; available to the expressions as `user.role`.
     Tenant:
       type: object
       required: [id, label]
@@ -221,6 +279,24 @@ components:
         label:
           type: string
           description: Name shown to the user, as text.
+    OperationalRole:
+      type: object
+      required: [id, label]
+      properties:
+        id:
+          type: string
+          description: Identifier, sent back when switching.
+        label:
+          type: string
+          description: Name shown to the user, as text.
+    RoleSelection:
+      type: object
+      required: [role]
+      additionalProperties: false
+      properties:
+        role:
+          type: string
+          description: Identifier of the role to switch to, one of `operationalRoles`.
     TenantSelection:
       type: object
       required: [tenant]
