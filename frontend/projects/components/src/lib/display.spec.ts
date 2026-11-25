@@ -1,4 +1,4 @@
-import { I18n } from 'core';
+import { Confirmation, I18n } from 'core';
 import type { NodeDefinition } from 'schema';
 import { safeImageSrc } from './display.component';
 import { plain, renderScreen } from './screen-testing';
@@ -236,6 +236,99 @@ describe('image, link, progress, timeline and kanban', () => {
       expect(lanes()[0].getAttribute('aria-expanded')).toBe('false');
       expect(column(h.el, 'Anna Rossi — To do')).toBeUndefined();
       expect(h.el.querySelectorAll('lc-kanban .card')).toHaveLength(2);
+    });
+
+    describe('moveAcrossLanes', () => {
+      const lanes = '{{ fromLane == null ? "none" : fromLane }}/{{ fromLaneLabel }}→{{ lane == null ? "none" : lane }}/{{ laneLabel }} {{ from }}→{{ to }}';
+      const unassigned = [...ranked, { id: 5, title: 'Loose', status: 'to-do' }];
+
+      it('a card is dropped in a cell of another lane; onMove sees the lanes, null for the lane of the cards without a value', async () => {
+        const h = await renderScreen({ components: [kanban({ laneField: 'who', moveAcrossLanes: true, onMove: [{ toast: lanes }] })], dataSources, respond: () => unassigned });
+        await h.until(() => h.el.querySelectorAll('lc-kanban .card').length === 5, 'cards');
+        dragEvent('dragstart', column(h.el, 'Anna Rossi — To do').querySelector('.card')!);
+        dragEvent('dragover', column(h.el, 'Luca — Done'));
+        await h.settle();
+        expect(column(h.el, 'Luca — Done').classList).toContain('over');
+        dragEvent('drop', column(h.el, 'Luca — Done'));
+        await h.until(() => h.toasts.length === 1, 'moved');
+        expect(h.toasts).toEqual(['Anna Rossi/Anna Rossi→Luca/Luca to-do→done']);
+        // The same column of another lane is a move too, even without reorder.
+        dragEvent('dragstart', column(h.el, 'No group — To do').querySelector('.card')!);
+        dragEvent('dragover', column(h.el, 'Luca — To do'));
+        dragEvent('drop', column(h.el, 'Luca — To do'));
+        await h.until(() => h.toasts.length === 2, 'moved from the lane without a value');
+        expect(h.toasts[1]).toBe('none/No group→Luca/Luca to-do→to-do');
+      });
+
+      it('the «Move» menu offers the other lanes, keeping the column; moveIf decides for each lane', async () => {
+        const h = await renderScreen({
+          components: [kanban({ laneField: 'who', moveAcrossLanes: true, moveIf: "{{ lane == fromLane || lane != 'Luca' }}", onMove: [{ toast: lanes }] })],
+          dataSources,
+          respond: () => unassigned,
+        });
+        await h.until(() => h.el.querySelectorAll('lc-kanban .card').length === 5, 'cards');
+        (column(h.el, 'Anna Rossi — To do').querySelector('.card button') as HTMLButtonElement).click();
+        await h.until(() => document.querySelectorAll('.ant-dropdown-menu-item').length > 0, 'menu');
+        expect(plain(document.querySelector('.ant-dropdown-menu-item-group-title')?.textContent)).toBe('Move to row');
+        const items = [...document.querySelectorAll<HTMLElement>('.ant-dropdown-menu-item')];
+        // Luca is not allowed by moveIf.
+        expect(items.map((i) => plain(i.textContent))).toEqual(['In progress', 'Done', 'No group']);
+        items[2].click();
+        await h.until(() => h.toasts.length === 1, 'moved');
+        expect(h.toasts).toEqual(['Anna Rossi/Anna Rossi→none/No group to-do→to-do']);
+        document.querySelectorAll('.cdk-overlay-container').forEach((c) => (c.innerHTML = ''));
+        // A drag to a lane that moveIf forbids is not accepted.
+        dragEvent('dragstart', column(h.el, 'Anna Rossi — To do').querySelector('.card')!);
+        dragEvent('dragover', column(h.el, 'Luca — Done'));
+        await h.settle();
+        expect(column(h.el, 'Luca — Done').classList).not.toContain('over');
+      });
+
+      it('without moveAcrossLanes the menu has no other lanes', async () => {
+        const h = await renderScreen({ components: [kanban({ laneField: 'who', onMove: [{ toast: lanes }] })], dataSources, respond: () => ranked });
+        await h.until(() => h.el.querySelectorAll('lc-kanban .card').length === 4, 'cards');
+        (column(h.el, 'Luca — To do').querySelector('.card button') as HTMLButtonElement).click();
+        await h.until(() => document.querySelectorAll('.ant-dropdown-menu-item').length > 0, 'menu');
+        expect([...document.querySelectorAll('.ant-dropdown-menu-item')].map((i) => plain(i.textContent))).toEqual(['In progress', 'Done']);
+        expect(document.querySelector('.ant-dropdown-menu-item-group-title')).toBeNull();
+        document.querySelectorAll('.cdk-overlay-container').forEach((c) => (c.innerHTML = ''));
+      });
+
+      it('a cancelled confirm, or a failed call, leaves the card where it was', async () => {
+        const asked: string[] = [];
+        let answer = false;
+        const h = await renderScreen({
+          components: [
+            kanban({
+              laneField: 'who',
+              moveAcrossLanes: true,
+              onMove: [{ confirm: 'The assignee will be changed to {{ laneLabel }}' }, { call: 'move', args: { id: '{{ row.id }}', who: '{{ lane }}' } }, { refresh: 'tasks' }],
+            }),
+          ],
+          dataSources,
+          respond: (r) => {
+            if (r.method === 'POST') throw new Error('refused');
+            return ranked;
+          },
+          extraProviders: [{ provide: Confirmation, useValue: { confirm: async (m: string) => (asked.push(m), answer) } }],
+        });
+        await h.until(() => h.el.querySelectorAll('lc-kanban .card').length === 4, 'cards');
+        const drop = async () => {
+          dragEvent('dragstart', column(h.el, 'Anna Rossi — To do').querySelector('.card')!);
+          dragEvent('dragover', column(h.el, 'Luca — To do'));
+          dragEvent('drop', column(h.el, 'Luca — To do'));
+          await h.until(() => !h.el.querySelector('lc-kanban .card.busy'), 'move over');
+        };
+        await drop();
+        expect(asked).toEqual(['The assignee will be changed to Luca']);
+        expect(h.requests.filter((r) => r.method === 'POST')).toEqual([]);
+        answer = true;
+        await drop();
+        await h.until(() => h.requests.some((r) => r.method === 'POST'), 'call');
+        await h.settle();
+        expect([...column(h.el, 'Anna Rossi — To do').querySelectorAll('.card .title')].map((t) => plain(t.textContent))).toEqual(['Quote', 'Reminder']);
+        expect([...column(h.el, 'Luca — To do').querySelectorAll('.card .title')].map((t) => plain(t.textContent))).toEqual(['Contract']);
+      });
     });
 
     it('a column over its limit shows the count against the limit and a warning in words', async () => {

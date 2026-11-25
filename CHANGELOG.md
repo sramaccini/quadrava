@@ -12,6 +12,15 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Added
+
+- Kanban: `moveAcrossLanes: true` (with `laneField`) lets a card move to another lane, which changes its value of the
+  lane field: it is dropped in any cell of the board, or moved with the new «Move to row» group of the «Move» menu,
+  which keeps the column. `onMove` and `moveIf` see the lanes in `fromLane`, `fromLaneLabel`, `lane` and
+  `laneLabel` (null for the lane of the cards without a value and for the board without lanes); `moveIf` is asked for
+  each target lane. The announcement for screen readers names the lane on such a board. Off by default: a card still
+  moves only within its lane. The second board of the «Tasks» showcase uses it.
+
 ## [0.21.0] - 2026-11-25
 
 ### Added

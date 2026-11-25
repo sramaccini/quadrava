@@ -29,6 +29,18 @@
         "afterId": "{{ afterId }}"
       }
     },
+    "moveTaskToLane": {
+      "type": "rest",
+      "method": "POST",
+      "url": "/api/tasks/{{ id }}/move",
+      "body": {
+        "status": "{{ status }}",
+        "beforeId": "{{ beforeId }}",
+        "afterId": "{{ afterId }}",
+        "field": "{{ field }}",
+        "lane": "{{ lane }}"
+      }
+    },
     "events": {
       "type": "rest",
       "method": "GET",

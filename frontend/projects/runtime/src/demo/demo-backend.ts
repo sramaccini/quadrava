@@ -84,7 +84,7 @@ export class DemoBackend {
   private readonly staffNumbers = new Set(['S000001', 'S123456']);
   /**
    * Tasks of the showcase kanban, in the order of the board: /api/tasks/{id}/move changes the status and, with beforeId or
-   * afterId (the cards that will be around it), the place.
+   * afterId (the cards that will be around it), the place; with field and lane (who or priority), the lane too.
    */
   private readonly tasks: { id: number; title: string; who: string; status: string; priority: string; points: number }[] = [
     { id: 1, title: 'Quote for Smith Ltd', who: 'Anna Rossi', status: 'to-do', priority: 'high', points: 3 },
@@ -480,6 +480,14 @@ export class DemoBackend {
       const status = req.body?.['status'];
       if (!task) throw new Error('404');
       if (typeof status !== 'string' || !['to-do', 'in-progress', 'done'].includes(status)) throw new Error('400');
+      // With the lanes of the board, the move can also change the person or the priority.
+      const field = req.body?.['field'];
+      const lane = req.body?.['lane'];
+      if ((field === 'who' || field === 'priority') && typeof lane === 'string' && lane !== '') {
+        const allowed = field === 'who' ? new Set(this.tasks.map((t) => t.who)) : new Set(['high', 'normal', 'low']);
+        if (!allowed.has(lane)) throw new Error('400');
+        task[field] = lane;
+      }
       task.status = status;
       // The place: before afterId, or else after beforeId; without either, at the end.
       const others = this.tasks.filter((t) => t !== task);

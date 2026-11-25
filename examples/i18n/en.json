@@ -444,6 +444,7 @@
   "showcase_tables.download": "Download",
   "showcase_tasks.a_colleague_moves_a_card": "A colleague moves a card",
   "showcase_tasks.board_in_lanes": "The same tasks in swimlanes",
+  "showcase_tasks.confirm_lane": "Move “{title}” to {lane}?",
   "showcase_tasks.group_by": "Group by",
   "showcase_tasks.group_by.priority": "Priority",
   "showcase_tasks.group_by.who": "Person",

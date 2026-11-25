@@ -444,6 +444,7 @@
   "showcase_tables.download": "Scarica",
   "showcase_tasks.a_colleague_moves_a_card": "Un collega sposta una scheda",
   "showcase_tasks.board_in_lanes": "Le stesse attività in corsie",
+  "showcase_tasks.confirm_lane": "Spostare «{title}» in {lane}?",
   "showcase_tasks.group_by": "Raggruppa per",
   "showcase_tasks.group_by.priority": "Priorità",
   "showcase_tasks.group_by.who": "Persona",

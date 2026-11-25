@@ -14,6 +14,9 @@
     "moveTask": {
       "ref": "showcase-tasks/moveTask"
     },
+    "moveTaskToLane": {
+      "ref": "showcase-tasks/moveTaskToLane"
+    },
     "events": {
       "ref": "showcase-tasks/events"
     },
@@ -221,6 +224,7 @@
           "columnField": "status",
           "titleField": "title",
           "laneField": "{{ state.groupBy }}",
+          "moveAcrossLanes": true,
           "badges": [
             {
               "field": "priority",
@@ -241,12 +245,20 @@
           "moveIf": "{{ can('showcase.components.read') }}",
           "onMove": [
             {
-              "call": "moveTask",
+              "if": "{{ lane != fromLane }}",
+              "then": {
+                "confirm": "{{ t('showcase_tasks.confirm_lane', 'Move “{title}” to {lane}?', {'title': row.title, 'lane': laneLabel}) }}"
+              }
+            },
+            {
+              "call": "moveTaskToLane",
               "args": {
                 "id": "{{ row.id }}",
                 "status": "{{ to }}",
                 "beforeId": "{{ beforeId }}",
-                "afterId": "{{ afterId }}"
+                "afterId": "{{ afterId }}",
+                "field": "{{ state.groupBy }}",
+                "lane": "{{ lane }}"
               },
               "onError": {
                 "toast": "{{ t('showcase_tasks.move_failed', 'Move failed') }}"

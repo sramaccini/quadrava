@@ -18,9 +18,11 @@ type Row = Record<string, unknown>;
  * Kanban: the rows of the data source in columns according to `columnField` (rows with a value that is not a column
  * are not shown) and, with `laneField`, in horizontal lanes that can be collapsed. With `onMove` a card moves by
  * dragging it to another column of its lane or, from the keyboard, with the «Move» menu; with `reorder` also between
- * the cards of its column («Move up», «Move down»). The steps see the row in `row`, the starting column in `from`, the
- * target one in `to` and the keys of the new neighbours in `beforeId` and `afterId` (usually a call and a refresh).
- * `moveIf` decides which cards can be moved (fail-closed). The real move is done by the service: the card changes
+ * the cards of its column («Move up», «Move down»); with `moveAcrossLanes` also to another lane («Move to row», which
+ * keeps the column). The steps see the row in `row`, the starting column in `from`, the target one in `to`, the keys
+ * of the new neighbours in `beforeId` and `afterId`, and the lanes in `fromLane`, `fromLaneLabel`, `lane` and
+ * `laneLabel` (usually a call and a refresh). `moveIf` decides which cards can be moved, and to which lanes
+ * (fail-closed). The real move is done by the service: the card changes
  * place when the reloaded data says so, and screen readers then hear where it is. The columns can also come from an
  * expression or from a data source (`columnsFrom`), so one screen serves several boards; `laneField` and `lanes` can be
  * expressions too, so one board can be grouped in several ways. With `onOpen` the title of a card is a button that runs
@@ -140,7 +142,7 @@ type Row = Record<string, unknown>;
     <ng-template #cards let-rows let-column="column" let-lane="lane">
       <ul [class.drop-end]="dropGap()?.lane === lane && dropGap()?.column === column && dropGap()?.gap === rows.length && rows.length > 0">
         @for (row of rows; track key(row); let i = $index, first = $first, last = $last) {
-          @let movable = canMove(row);
+          @let movable = canMove(row, lane, lane);
           @let title = text(row, node().titleField);
           <li
             class="card"
@@ -214,6 +216,19 @@ type Row = Record<string, unknown>;
                       <li nz-menu-item (click)="move(row, target.value, null)">{{ target.label }}</li>
                     }
                   }
+                  @if (acrossLanes()) {
+                    @let others = otherLanes(row, lane);
+                    @if (others.length) {
+                      <li nz-menu-divider></li>
+                      <li nz-menu-group [nzTitle]="i18n.t('lc.kanbanMoveToLane')">
+                        <ul>
+                          @for (target of others; track target.value) {
+                            <li nz-menu-item (click)="move(row, column, null, target)">{{ target.label }}</li>
+                          }
+                        </ul>
+                      </li>
+                    }
+                  }
                 </ul>
               </nz-dropdown-menu>
             }
@@ -284,6 +299,9 @@ export class KanbanComponent {
 
   protected readonly board = computed(() => kanbanBoard(rowsOf(this.source().data), this.node(), this.columnDefs(), this.laning(), this.i18n.t('lc.kanbanNoLane')));
 
+  /** Cards can change lane: `moveAcrossLanes` on a board with lanes. */
+  protected readonly acrossLanes = computed(() => !!this.node().moveAcrossLanes && this.board().laned);
+
   /** Cards open with `onOpen`. */
   protected readonly openable = computed(() => !!this.node().onOpen?.length);
 
@@ -333,11 +351,29 @@ export class KanbanComponent {
     });
   }
 
-  /** Movable if there are steps to do it and `moveIf` (if present) says yes for the row; an error counts as no. */
-  protected canMove(row: Row): boolean {
+  /**
+   * Movable if there are steps to do it and `moveIf` (if present) says yes for the row, staying in its lane (`lane`
+   * equal to `fromLane`); with a target lane, `moveIf` decides for that lane. An error counts as no.
+   */
+  protected canMove(row: Row, target?: KanbanLane, own?: KanbanLane): boolean {
     const node = this.node();
     if (!node.onMove?.length) return false;
-    return node.moveIf === undefined || this.runtime().engine.evaluateCondition(node.moveIf, this.runtime().context({ ...this.scope(), row }), { whenMissing: true, fallback: false });
+    if (node.moveIf === undefined) return true;
+    own ??= this.laneOf(row);
+    const lanes = this.laneScope(own, target ?? own);
+    return this.runtime().engine.evaluateCondition(node.moveIf, this.runtime().context({ ...this.scope(), row, ...lanes }), { whenMissing: true, fallback: false });
+  }
+
+  /** The lanes a card can move to, other than its own (`moveIf` for each). */
+  protected otherLanes(row: Row, own: KanbanLane): KanbanLane[] {
+    return this.board().lanes.filter((lane) => lane !== own && this.canMove(row, lane, own));
+  }
+
+  /** The lanes for the steps: the value is null for the lane of the cards without a value and for the board without lanes. */
+  private laneScope(from: KanbanLane | undefined, to: KanbanLane | undefined): Scope {
+    const value = (lane: KanbanLane | undefined): string | null => (lane?.value === '' || lane?.value === undefined ? null : lane.value);
+    const label = (lane: KanbanLane | undefined): string | null => (lane && this.board().laned ? lane.label : null);
+    return { fromLane: value(from), fromLaneLabel: label(from), lane: value(to), laneLabel: label(to) };
   }
 
   protected dragStart(event: DragEvent, row: Row): void {
@@ -355,13 +391,18 @@ export class KanbanComponent {
     this.dropGap.set(null);
   }
 
-  /** A card can be dropped in the cells of its own lane; with `reorder`, between the cards too (otherwise at the end). */
+  /**
+   * A card can be dropped in the cells of its own lane, and with `moveAcrossLanes` in those of the lanes `moveIf`
+   * allows; with `reorder`, between the cards too (otherwise at the end).
+   */
   protected dragOver(event: DragEvent, lane: KanbanLane, column: string): void {
     const row = this.dragged;
-    if (!row || this.laneOf(row) !== lane) return;
+    if (!row) return;
+    const own = this.laneOf(row) === lane;
+    if (!own && !(this.acrossLanes() && this.canMove(row, lane))) return;
     const node = this.node();
     const from = this.text(row, node.columnField);
-    if (from === column && !node.reorder) return;
+    if (own && from === column && !node.reorder) return;
     event.preventDefault();
     const cards = lane.cells[this.board().columns.findIndex((c) => c.value === column)] ?? [];
     let gap = cards.length;
@@ -389,16 +430,22 @@ export class KanbanComponent {
     const target = this.dropGap();
     const row = this.dragged;
     this.dragEnd();
-    if (row && target) void this.move(row, target.column, target.gap);
+    if (row && target) void this.move(row, target.column, target.gap, target.lane);
   }
 
-  /** Moves a card to a column of its lane, at a position between the cards (null: at the end). */
-  protected async move(row: Row, to: string, gap: number | null): Promise<void> {
+  /**
+   * Moves a card to a column of its lane, or of another lane with `moveAcrossLanes`, at a position between the cards
+   * (null: at the end). The card changes place only with the reloaded data: a cancelled confirm or a failed call
+   * leaves it where it was.
+   */
+  protected async move(row: Row, to: string, gap: number | null, target?: KanbanLane): Promise<void> {
     const node = this.node();
     const from = this.text(row, node.columnField);
-    if (this.busy() || !this.canMove(row) || (from === to && !node.reorder)) return;
-    const lane = this.laneOf(row);
-    const cards = lane?.cells[this.board().columns.findIndex((c) => c.value === to)];
+    const own = this.laneOf(row);
+    const lane = target ?? own;
+    const across = lane !== own;
+    if (this.busy() || !lane || (across && !this.acrossLanes()) || !this.canMove(row, lane, own) || (!across && from === to && !node.reorder)) return;
+    const cards = lane.cells[this.board().columns.findIndex((c) => c.value === to)];
     if (!cards) return;
     const place = placement(cards, row, gap ?? cards.length, node);
     if (!place) return;
@@ -407,7 +454,7 @@ export class KanbanComponent {
     this.busy.set(row);
     this.announcement.set('');
     try {
-      await runSteps(this.runtime(), node.onMove ?? [], { ...this.scope(), row, from, to, ...place });
+      await runSteps(this.runtime(), node.onMove ?? [], { ...this.scope(), row, from, to, ...place, ...this.laneScope(own, lane) });
     } finally {
       this.busy.set(null);
     }
@@ -422,12 +469,14 @@ export class KanbanComponent {
   /** Tells screen readers where the card is after the move (with the reloaded data, when onMove refreshes it). */
   private announce(key: unknown, title: string): void {
     if (key === null) return;
-    const { columns, lanes } = this.board();
+    const { columns, lanes, laned } = this.board();
     for (const lane of lanes) {
       for (const [c, cell] of lane.cells.entries()) {
         const position = cell.findIndex((r) => cardKey(r, this.node()) === key);
         if (position >= 0) {
-          this.announcement.set(this.i18n.t('lc.kanbanPlace', { title, column: columns[c].label, position: position + 1, count: cell.length }));
+          const place = { title, column: columns[c].label, position: position + 1, count: cell.length };
+          // On a board whose cards change lane, the lane is part of the place.
+          this.announcement.set(laned && this.acrossLanes() ? this.i18n.t('lc.kanbanPlaceInLane', { ...place, lane: lane.label }) : this.i18n.t('lc.kanbanPlace', place));
           return;
         }
       }

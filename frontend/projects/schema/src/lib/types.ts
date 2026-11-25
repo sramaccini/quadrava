@@ -684,6 +684,8 @@ export interface KanbanNode extends NodeBase {
   lanes?: { value: string; label: string }[] | Expression;
   /** Cards can also change place within their column. */
   reorder?: boolean;
+  /** With `laneField`, cards can also move to another lane (`lane` and `fromLane` in `onMove` and `moveIf`). */
+  moveAcrossLanes?: boolean;
   moveIf?: Expression;
   onMove?: Step[];
   /** Steps that open a card (usually `navigate`), with the row in `row`. */
