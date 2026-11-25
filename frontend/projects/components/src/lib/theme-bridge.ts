@@ -143,8 +143,14 @@ html:root .ant-picker input:focus-visible, html:root .ant-input-number-input:foc
  * border colours. Loaded after that stylesheet, only with dark themes; `:root` gives these rules the weight to win over the
  * library's. Its fixed blue, red, green and gold are replaced by `NZ_DARK_THEME_CSS` (generated, `npm run nz:dark`); the links
  * and icons of a selected menu item, white in a rule of their own, take the colour of the item.
+ *
+ * That stylesheet also carries an old copy of the CDK overlay rules: loaded after the CDK's own, its
+ * `.cdk-overlay-connected-position-bounding-box { position: absolute }` won over `.cdk-overlay-popover { position: fixed }`.
+ * Overlays shown as popovers (menus, drop-downs, filters) sit in the top layer, where an absolute box is placed on the
+ * document and not on the viewport: on a scrolled page they opened higher by the scroll. The CDK rule is restored here.
  */
 export const NZ_DARK_SURFACES_CSS = `
+:root .cdk-overlay-popover { position: fixed; }
 :root body { background-color: var(--lc-color-background); }
 :root .ant-menu-dark .ant-menu-item-selected > a, :root .ant-menu-dark .ant-menu-item-selected > a:hover,
 :root .ant-menu-dark .ant-menu-item-selected > span > a, :root .ant-menu-dark .ant-menu-item-selected > span > a:hover,

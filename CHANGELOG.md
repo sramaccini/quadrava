@@ -12,6 +12,13 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Fixed
+
+- Dark themes: menus and drop-downs (the «Move» menu of the kanban, row actions, filters) opened higher than
+  their trigger by the scroll of the page, often out of sight, once the dark theme was chosen after a pop-up had been
+  shown. The NG-ZORRO dark stylesheet, loaded later, carries an old copy of the CDK overlay rules that undid the
+  `position: fixed` of the CDK popovers; the theme bridge restores it.
+
 ## [0.22.0] - 2026-11-25
 
 ### Added
