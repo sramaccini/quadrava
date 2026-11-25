@@ -1,0 +1,36 @@
+{
+  "//": "Type check of the CLI (npm run cli:typecheck): esbuild bundles it without checking types. The libraries are read from their sources, as esbuild does, not from dist.",
+  "compilerOptions": {
+    "strict": true,
+    "noEmit": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "target": "ES2022",
+    "lib": [
+      "ES2023"
+    ],
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "types": [
+      "node"
+    ],
+    "paths": {
+      "expressions": [
+        "../expressions/src/public-api.ts"
+      ],
+      "schema": [
+        "../schema/src/public-api.ts"
+      ],
+      "schema/validation": [
+        "../schema/validation/src/public-api.ts"
+      ]
+    }
+  },
+  "files": [
+    "src/main.ts"
+  ]
+}

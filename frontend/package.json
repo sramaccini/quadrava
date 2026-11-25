@@ -34,7 +34,8 @@
     "conformance:bff": "node tools/conformance-bff.mjs",
     "release:check": "node tools/release.mjs",
     "cli:build": "node projects/cli/build.mjs",
-    "cli:test": "npm run cli:build && node --test \"projects/cli/src/*.spec.mjs\""
+    "cli:typecheck": "tsc -p projects/cli/tsconfig.json",
+    "cli:test": "npm run cli:typecheck && npm run cli:build && node --test \"projects/cli/src/*.spec.mjs\""
   },
   "private": true,
   "engines": {
@@ -64,6 +65,7 @@
     "@angular/compiler-cli": "^22.2.4",
     "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.64.0",
+    "@types/node": "~24.19.4",
     "ajv": "^8.20.0",
     "esbuild": "^0.28.2",
     "jsdom": "^30.0.0",
