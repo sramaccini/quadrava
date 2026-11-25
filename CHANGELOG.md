@@ -31,6 +31,11 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
   follows `contracts/bff.yaml` 0.5.0 and passes the BFF and authorization kits; an example to start from, not meant
   for production as it is. The development realm has its client (`quadrava-bff-lite-proxy`, port 8091): recreate
   Keycloak to import it.
+- A minimal BFF in Node (`reference/bff-node`, ADR-27): the BFF contract without tenants and the `/authz` part of the
+  authorization contract, with login through Keycloak (Authorization Code with PKCE, `openid-client`), sessions in
+  memory, CSRF, permissions per role from a JSON file and forwarding of `/api` with the user's token, event streams
+  included. An example to start from, not for production as it is; CI runs its tests and the BFF and authorization
+  kits against it.
 
 ### Fixed
 
