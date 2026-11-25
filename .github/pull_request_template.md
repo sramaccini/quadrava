@@ -9,6 +9,7 @@
 
 ## Contributor License Agreement
 
-<!-- Required for your first contribution: keep the sentence below, with your name. -->
+<!-- Required for your first contribution: keep the sentence below, with your name. On behalf of an organisation, use the
+     sentence for CLA-entity.md given in CONTRIBUTING.md instead. -->
 
 I have read the Quadrava Contributor License Agreement (CLA.md) and I agree to it for this and my future contributions. — *Your Name*

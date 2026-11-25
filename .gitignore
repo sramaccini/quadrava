@@ -23,3 +23,6 @@ Thumbs.db
 # Stack di sviluppo locale (npm run stack): dati del registro e log
 data/
 .stack/
+
+# Private notes, never committed
+private/

@@ -4,13 +4,17 @@ Thank you for wanting to help. Quadrava is licensed under the [Mozilla Public Li
 
 ## Before the first pull request: the CLA
 
-Contributions are accepted under the [Contributor License Agreement](CLA.md). It leaves you the copyright of your work and gives the project a licence broad enough to distribute it, also under other licence terms in the future (for example a commercial edition next to the open-source one).
+Contributions are accepted under a Contributor License Agreement, the standard text of [Contributor Agreements](https://contributoragreements.org) 1.2: [CLA.md](CLA.md) for individuals, [CLA-entity.md](CLA-entity.md) for companies and other organisations. It leaves you the copyright of your work and gives the project a non-exclusive licence, and a patent licence, broad enough to distribute it, also under other licence terms in the future (for example a commercial edition next to the open-source one).
 
 To accept it, add this sentence to the description of your first pull request, with your name:
 
 > I have read the Quadrava Contributor License Agreement (CLA.md) and I agree to it for this and my future contributions. — *Your Name*
 
-If you contribute on behalf of your employer, make sure you are allowed to, or ask for an agreement signed by the company.
+If you contribute on behalf of your employer or another organisation, someone allowed to act for it accepts the agreement for organisations, with this sentence:
+
+> I have read the Quadrava Entity Contributor License Agreement (CLA-entity.md) and I agree to it on behalf of *Organisation*, for this and its future contributions. — *Your Name, role*
+
+Mark any third-party material in the pull request, with its licence: the agreement covers only what you own.
 
 ## How to work
 
