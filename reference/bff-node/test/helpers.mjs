@@ -62,13 +62,13 @@ export async function listen(handler) {
 
 /**
  * A BFF with the fake provider and the given environment.
- * @param {{ env?: Record<string, string>, provider?: ReturnType<typeof fakeProvider>, fetch?: typeof fetch }} [options]
+ * @param {{ env?: Record<string, string>, provider?: ReturnType<typeof fakeProvider>, fetch?: typeof fetch, roles?: unknown }} [options]
  */
-export async function startBff({ env = {}, provider = fakeProvider(), fetch: fetchImpl } = {}) {
+export async function startBff({ env = {}, provider = fakeProvider(), fetch: fetchImpl, roles = ROLES } = {}) {
   const config = loadConfig({ BFF_ALLOWED_ORIGINS: 'http://app.test', BFF_HOME: 'http://app.test/', ...env });
   const store = new SessionStore({ idleSeconds: config.idleSeconds, maxSeconds: config.maxSeconds });
   const logs = /** @type {string[]} */ ([]);
-  const server = await listen(createBff({ config, provider, store, rolePermissions: rolePermissions(ROLES), fetch: fetchImpl, log: (l) => logs.push(l) }));
+  const server = await listen(createBff({ config, provider, store, rolePermissions: rolePermissions(roles), fetch: fetchImpl, log: (l) => logs.push(l) }));
   return { ...server, config, store, provider, logs, client: () => new Browser(server.url) };
 }
 

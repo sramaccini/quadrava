@@ -1,8 +1,8 @@
-// The request handler of the BFF: contracts/bff.yaml (login, callback, user, logout, CSRF), the /authz part of
-// contracts/authz.yaml, and the forwarding of the configured routes.
+// The request handler of the BFF: contracts/bff.yaml (login, callback, user, operational roles, logout, CSRF), the
+// /authz part of contracts/authz.yaml, and the forwarding of the configured routes.
 import { addCookie, BodyError, cookie, readCookies, readJson, redirect, sendJson, sendProblem } from './http.mjs';
 import { forward, routeFor, safePath } from './forward.mjs';
-import { check, grantsFor, rolesFromClaims } from './permissions.mjs';
+import { check, grantsFor, rolesOf, rolesFromClaims } from './permissions.mjs';
 import { randomId, sameSecret } from './sessions.mjs';
 import { randomVerifier } from './oidc.mjs';
 
@@ -14,6 +14,7 @@ const WRITES = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 /** An access token closer than this to its expiry is renewed before a call. */
 const RENEW_BEFORE_MS = 30_000;
 const MAX_CHECK_BODY = 256 * 1024;
+const MAX_ROLE_BODY = 4 * 1024;
 const HOST = /^[A-Za-z0-9.-]+(:\d{1,5})?$|^\[[0-9A-Fa-f:.]+\](:\d{1,5})?$/;
 
 /**
@@ -21,7 +22,7 @@ const HOST = /^[A-Za-z0-9.-]+(:\d{1,5})?$|^\[[0-9A-Fa-f:.]+\](:\d{1,5})?$/;
  *   config: import('./config.mjs').Config,
  *   provider: import('./oidc.mjs').Provider,
  *   store: import('./sessions.mjs').SessionStore,
- *   rolePermissions: Map<string, string[]>,
+ *   rolePermissions: Map<string, import('./permissions.mjs').Role>,
  *   fetch?: typeof fetch,
  *   log?: (line: string) => void,
  * }} deps
@@ -29,6 +30,8 @@ const HOST = /^[A-Za-z0-9.-]+(:\d{1,5})?$|^\[[0-9A-Fa-f:.]+\](:\d{1,5})?$/;
  */
 export function createBff({ config, provider, store, rolePermissions, fetch: fetchImpl = fetch, log = console.error }) {
   const allowed = new Set(config.allowedOrigins);
+  /** The last operational role chosen by each user, for their next login (in memory: forgotten at restart). */
+  const lastRole = new Map();
 
   /**
    * The public origin of the BFF for this request: configured, or from the request (with the forwarded headers only
@@ -114,7 +117,13 @@ export function createBff({ config, provider, store, rolePermissions, fetch: fet
         if (method !== 'GET') return notAllowed(res, 'GET');
         if (!session) return unauthorized();
         const { name, username, email, roles } = session.user;
-        return sendJson(res, 200, { ...(name ? { name } : {}), ...(username ? { username } : {}), ...(email ? { email } : {}), roles });
+        // The operational roles only when the user has some (optional part of the contract).
+        const choice = session.operationalRoles.length ? { operationalRoles: session.operationalRoles, currentRole: session.currentRole } : {};
+        return sendJson(res, 200, { ...(name ? { name } : {}), ...(username ? { username } : {}), ...(email ? { email } : {}), roles, ...choice });
+      }
+      if (path === '/bff/role') {
+        if (method !== 'POST') return notAllowed(res, 'POST');
+        return await switchRole(req, res, /** @type {import('./sessions.mjs').Session} */ (session));
       }
       if (path === '/logout') {
         if (method !== 'POST') return notAllowed(res, 'POST');
@@ -124,8 +133,15 @@ export function createBff({ config, provider, store, rolePermissions, fetch: fet
         if (method !== 'GET') return notAllowed(res, 'GET');
         if (!session) return unauthorized();
         if (!url.searchParams.get('app')) return sendProblem(res, 400, 'Parameter app missing');
-        // The permissions of the roles hold for every application the BFF serves.
+        // The permissions of the roles hold for every application the BFF serves. A `role` in the query is not read:
+        // the answer is for the active role of the session, so the page cannot widen its own permissions.
         return sendJson(res, 200, { permissions: [...session.permissions], version: session.permissionsVersion });
+      }
+      if (path === '/authz/roles') {
+        if (method !== 'GET') return notAllowed(res, 'GET');
+        if (!session) return unauthorized();
+        if (!url.searchParams.get('app')) return sendProblem(res, 400, 'Parameter app missing');
+        return sendJson(res, 200, rolesOf(session.user.roles, rolePermissions));
       }
       if (path === '/authz/check') {
         if (method !== 'POST') return notAllowed(res, 'POST');
@@ -141,7 +157,7 @@ export function createBff({ config, provider, store, rolePermissions, fetch: fet
           addCookie(res, cookie(SESSION_COOKIE, '', { secure, maxAge: 0 }));
           return unauthorized();
         }
-        return await forward(req, res, { route, token, maxBodyBytes: config.maxBodyBytes, fetch: fetchImpl, log });
+        return await forward(req, res, { route, token, activeRole: session.currentRole, maxBodyBytes: config.maxBodyBytes, fetch: fetchImpl, log });
       }
       // Without a session every call answers 401, as the runtime expects; with one, an unknown path is just unknown.
       return session ? sendProblem(res, 404, 'Not found') : unauthorized();
@@ -223,12 +239,16 @@ export function createBff({ config, provider, store, rolePermissions, fetch: fet
       return sendProblem(res, 400, 'Login failed');
     }
     const { claims, tokens } = result;
-    const grants = grantsFor(rolesFromClaims(claims, config.rolesClaim), rolePermissions);
     const text = (/** @type {unknown} */ v) => (typeof v === 'string' && v ? v : undefined);
+    const username = text(claims.preferred_username) ?? text(claims.sub);
+    // The session opens on an operational role chosen here, never asked: the last one the user worked as, or the first.
+    const grants = grantsFor(rolesFromClaims(claims, config.rolesClaim), rolePermissions, username === undefined ? undefined : lastRole.get(username));
     const previous = cookies.get(SESSION_COOKIE);
     if (previous) store.delete(previous);
     const session = store.create({
-      user: { name: text(claims.name), username: text(claims.preferred_username) ?? text(claims.sub), email: text(claims.email), roles: grants.roles },
+      user: { name: text(claims.name), username, email: text(claims.email), roles: grants.roles },
+      operationalRoles: grants.operationalRoles,
+      currentRole: grants.currentRole,
       permissions: new Set(grants.permissions),
       permissionsVersion: grants.version,
       tokens,
@@ -240,6 +260,30 @@ export function createBff({ config, provider, store, rolePermissions, fetch: fet
     addCookie(res, cookie(LOGIN_COOKIE, '', { secure, maxAge: 0 }));
     res.setHeader('X-Permissions-Version', session.permissionsVersion);
     return redirect(res, pending.returnTo);
+  }
+
+  /**
+   * POST /bff/role (session and CSRF already checked): the session works as another of the user's operational roles
+   * (ADR-28). Its permissions and their version change at once; the role is remembered for the next login.
+   * @param {import('node:http').IncomingMessage} req
+   * @param {import('node:http').ServerResponse} res
+   * @param {import('./sessions.mjs').Session} session
+   */
+  async function switchRole(req, res, session) {
+    const body = await readJson(req, MAX_ROLE_BODY);
+    const role = /** @type {{ role?: unknown }} */ (body ?? {}).role;
+    if (!body || typeof body !== 'object' || Array.isArray(body) || Object.keys(body).length !== 1 || typeof role !== 'string') {
+      return sendProblem(res, 400, 'Invalid role selection', { detail: 'The body is { "role": "<id>" }.' });
+    }
+    if (!session.operationalRoles.some((r) => r.id === role)) return sendProblem(res, 404, 'Role not offered to the user');
+    const grants = grantsFor(session.user.roles, rolePermissions, role);
+    session.currentRole = grants.currentRole;
+    session.permissions = new Set(grants.permissions);
+    session.permissionsVersion = grants.version;
+    if (session.user.username !== undefined) lastRole.set(session.user.username, role);
+    res.setHeader('X-Permissions-Version', session.permissionsVersion);
+    res.statusCode = 204;
+    res.end();
   }
 
   /**

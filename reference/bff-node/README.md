@@ -1,7 +1,7 @@
 # Minimal Node BFF
 
-A Backend for Frontend for Quadrava in one small Node service: the whole of `contracts/bff.yaml` (0.5.0, without
-tenants) and the `/authz` part of `contracts/authz.yaml`, on Node 24 with `openid-client` as its only dependency
+A Backend for Frontend for Quadrava in one small Node service: the whole of `contracts/bff.yaml` (0.6.0, with the
+operational roles and without tenants) and the `/authz` part of `contracts/authz.yaml` (0.2.0), on Node 24 with `openid-client` as its only dependency
 (ADR-27). Under 1,000 lines of plain JavaScript in `src/`, comments included, to read in one sitting and change.
 
 **An example to start from, not meant for production as it is.** Sessions live in the memory of the process: they are
@@ -44,11 +44,13 @@ sequenceDiagram
 | --- | --- |
 | `GET /bff/login?return=…&max_age=…` | Starts the login: Authorization Code with PKCE (S256), `state` and `nonce`. `return` must be an address whose origin is in `BFF_ALLOWED_ORIGINS` (otherwise 400 in Problem format: no open redirect); without it the user lands on `BFF_HOME`. `max_age` goes to Keycloak, which then asks for the credentials again if its own login is older, even inside a session. With a session and no `max_age` it goes straight back. |
 | `GET /login/oauth2/code/keycloak` | The callback (`BFF_CALLBACK_PATH`). The login must have been started by the same browser (a `BFF_LOGIN` cookie bound to the `state`; a `state` works once). openid-client checks the state, PKCE, the ID token, the nonce and, with `max_age`, the time of the authentication. A new session identifier at every login. |
-| `GET /bff/user` | `name`, `username`, `email`, `roles`: never tokens. |
+| `GET /bff/user` | `name`, `username`, `email`, `roles` and, for a user with operational roles, `operationalRoles` and `currentRole`: never tokens. |
+| `POST /bff/role` | `{"role": "<id>"}` with the CSRF token: the session works as another of the user's operational roles (ADR-28). `204`, `404` for a role not offered, `400` for another body. |
 | `POST /logout` | A write: session and CSRF token needed. Closes the session and answers `{"redirect": …}` with the end-session address of Keycloak (`id_token_hint`, back to the application that asked, or `BFF_HOME`), which ends the Keycloak session too. Without `Accept: application/json` it redirects there. |
-| `GET /authz/capabilities?app=…` | The permissions of the roles of the user, sorted, and their `version` (also in `X-Permissions-Version`). |
-| `POST /authz/check` | `{"checks": [...]}`, at most 200: one result per check, in order, with the resource echoed. A write like any other: CSRF token needed. |
-| `/api/...` (`BFF_ROUTES`) | Forwarded to the service with the access token. |
+| `GET /authz/capabilities?app=…` | The permissions of the session, sorted, and their `version` (also in `X-Permissions-Version`). A `role` in the query is ignored: the answer is for the active role of the session. |
+| `GET /authz/roles?app=…` | The roles of the user that the permissions file knows, with `label` and `base`. |
+| `POST /authz/check` | `{"checks": [...]}`, at most 200: one result per check, in order, with the resource echoed. A write like any other: CSRF token needed. A `role` in the body is ignored, as for the capabilities. |
+| `/api/...` (`BFF_ROUTES`) | Forwarded to the service with the access token and the active role in `X-Active-Role`. |
 
 Rules that hold for every call:
 
@@ -66,21 +68,32 @@ Rules that hold for every call:
 ### Roles and permissions
 
 The roles come from the access token (`BFF_ROLES_CLAIM`, `realm_access.roles` for the realm roles of Keycloak) and are
-kept at the login. Only the roles named in the permissions file count: they are the `roles` of `/bff/user`, and their
-permissions are those of the session. A user with none of them signs in with no permissions. The file
-([`permissions.json`](permissions.json), the same map as the reference BFF) lists the permissions of each role in the
-format `domain.resource.action`, for every application the BFF serves:
+kept at the login. Only the roles named in the permissions file count: they are the `roles` of `/bff/user`. A user
+with none of them signs in with no permissions. The file ([`permissions.json`](permissions.json), the same roles as
+the reference `authz` service) lists the permissions of each role in the format `domain.resource.action`, for every
+application the BFF serves. A role is a list of permissions, or an object with a `label` and the `base` flag
+(ADR-28):
 
 ```json
 {
-  "operator": ["orders.order.read", "invoices.invoice.read"],
-  "manager": ["orders.order.read", "orders.order.approve"]
+  "user": { "label": "User", "base": true, "permissions": ["showcase.components.read"] },
+  "clerk": { "label": "Clerk", "permissions": ["orders.order.create"] },
+  "approver": ["orders.order.approve"]
 }
 ```
 
-The version of the permissions is a hash of the list: two users with the same permissions have the same version, and
-it changes when the file changes and the user signs in again. Permissions are a help for the interface only: the
-services check every call themselves.
+**Operational roles.** A base role always applies. The other roles are operational: the session works as one of them
+at a time, and its permissions are those of the base roles plus that one. At the login the BFF opens the session on
+the role the user worked as last (remembered in memory, per user) or the first; it never asks. `/bff/user` lists the
+choices (`operationalRoles`, `currentRole`), `POST /bff/role` switches, `/authz` answers for the active role whatever
+`role` the page sends, and `/api` receives it in `X-Active-Role`. A user without operational roles has all the
+permissions of their roles and no role fields. In the development realm the administrator holds `administrator` and
+`manager`, so the user menu of the runtime offers the choice (with `services.roleSwitchUrl`, set in the BFF
+configuration of the runtime).
+
+The version of the permissions is a hash of the active role and of the list: it changes with a switch, and when the
+file changes and the user signs in again. Permissions are a help for the interface only: the services check every call
+themselves.
 
 ### Forwarding
 
@@ -89,7 +102,8 @@ Each route of `BFF_ROUTES` (`/api` by default) goes to its service:
 - the request carries the user's access token (`Authorization: Bearer`), renewed with the refresh token when it has
   less than 30 seconds left (one renewal for concurrent calls; if it fails the session ends and the call gets `401`);
 - only `Accept`, `Accept-Language`, `Content-Type`, `If-None-Match`, `If-Match`, `If-Modified-Since`, `traceparent`,
-  `tracestate` and `baggage` pass: never the cookies of the browser nor its own `Authorization`;
+  `tracestate` and `baggage` pass: never the cookies of the browser nor its own `Authorization` or `X-Active-Role`;
+- the active role of the session, if any, goes in `X-Active-Role`;
 - only status, body, `Content-Type`, `ETag`, `Cache-Control`, `Last-Modified` and `Content-Disposition` come back; not
   the cookies of the service, nor its `X-Permissions-Version` (the version is that of the session);
 - bodies are streamed both ways, up to `BFF_MAX_BODY_BYTES` (`413` beyond); a service that does not answer within 60

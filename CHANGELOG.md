@@ -63,6 +63,11 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
   operational roles or more. No reload: the permissions of the new role are read again and a screen it may not open
   gives way to the home. The BFF configuration of the runtime has `/bff/role`. In the in-browser demo the
   administrator profile can also work as operator.
+- The Node BFF (`reference/bff-node`) has the operational roles of BFF contract 0.6.0: a role of `permissions.json` may
+  be an object with `label`, `base` and `permissions` (a list, as before, is an operational role); the session opens on
+  the last role used or the first, `/bff/user` lists `operationalRoles` and `currentRole`, `POST /bff/role` switches,
+  `/authz/roles` answers, `/authz` ignores the `role` of the page and `/api` gets `X-Active-Role`. Its
+  `permissions.json` gains the base role `user`.
 
 ### Fixed
 

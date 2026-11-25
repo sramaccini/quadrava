@@ -1,7 +1,8 @@
 // Forwarding of a route (/api by default) to its service, with the user's access token.
 //
 // - Only a few headers reach the service (format, conditional requests, language, trace context): never the cookies
-//   of the browser nor an `Authorization` of its own.
+//   of the browser nor an `Authorization` or an `X-Active-Role` of its own. The active role of the session, if any,
+//   goes in `X-Active-Role` (ADR-28).
 // - Only status, body and a few safe headers come back.
 // - The bodies are streamed both ways. An event stream (`text/event-stream`) is passed on chunk by chunk as it arrives,
 //   with no time limit while it stays open.
@@ -49,9 +50,9 @@ async function* limited(body, limit) {
  * Forwards the request and streams the answer back.
  * @param {import('node:http').IncomingMessage} req
  * @param {import('node:http').ServerResponse} res
- * @param {{ route: import('./config.mjs').Route, token: string, maxBodyBytes: number, fetch?: typeof fetch, log?: (line: string) => void }} options
+ * @param {{ route: import('./config.mjs').Route, token: string, activeRole?: string, maxBodyBytes: number, fetch?: typeof fetch, log?: (line: string) => void }} options
  */
-export async function forward(req, res, { route, token, maxBodyBytes, fetch: fetchImpl = fetch, log = console.error }) {
+export async function forward(req, res, { route, token, activeRole, maxBodyBytes, fetch: fetchImpl = fetch, log = console.error }) {
   const rawUrl = req.url ?? '/';
   if (!safePath(rawUrl)) return sendProblem(res, 400, 'Invalid path');
   const length = Number(req.headers['content-length'] ?? 0);
@@ -64,6 +65,7 @@ export async function forward(req, res, { route, token, maxBodyBytes, fetch: fet
     if (typeof value === 'string') headers[name] = value;
   }
   headers.authorization = `Bearer ${token}`;
+  if (activeRole) headers['x-active-role'] = activeRole;
   const method = req.method ?? 'GET';
   const hasBody = BODY_METHODS.has(method);
 

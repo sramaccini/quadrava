@@ -5,7 +5,7 @@ Implements the contracts in `../contracts` to demonstrate them and to serve as a
 | Module | Port | Contract |
 | --- | --- | --- |
 | `bff` | 8080 | `bff.yaml` and `authz.yaml`: OIDC session with Keycloak, tokens server-side only |
-| `bff-node` | 8080 | The same contracts in a minimal Node BFF (ADR-27): sessions in memory, no tenants or back-channel logout. Not a Maven module: [`bff-node/README.md`](bff-node/README.md) |
+| `bff-node` | 8080 | The same contracts in a minimal Node BFF (ADR-27): sessions in memory, operational roles (ADR-28), no tenants or back-channel logout. Not a Maven module: [`bff-node/README.md`](bff-node/README.md) |
 | `authz` | 8082 | `authz.yaml`, as a separate service called with the access token |
 | `telemetry` | 8083 | `telemetry.yaml` |
 

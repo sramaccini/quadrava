@@ -28,7 +28,9 @@ export function sameSecret(a, b) {
  * @property {number} createdAt
  * @property {number} lastSeen
  * @property {{ name?: string, username?: string, email?: string, roles: string[] }} user
- * @property {Set<string>} permissions
+ * @property {{ id: string, label: string }[]} operationalRoles  the roles the user may work as, one at a time (ADR-28)
+ * @property {string | undefined} currentRole  the active one; undefined without operational roles
+ * @property {Set<string>} permissions         of the base roles plus the active one, or of all the roles without one
  * @property {string} permissionsVersion
  * @property {Tokens} tokens
  * @property {Promise<boolean> | null} refreshing  the renewal in progress, shared by concurrent calls

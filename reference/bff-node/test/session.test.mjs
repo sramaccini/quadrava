@@ -129,7 +129,9 @@ describe('with a session', () => {
     const r = await browser.fetch('/bff/user');
     assert.equal(r.status, 200);
     const user = await r.json();
-    assert.deepEqual(user, { name: 'Demo Operator', username: 'operator', email: 'operator@example.test', roles: ['operator'] });
+    // One operational role, labelled with its identifier when the file gives no label (ADR-28).
+    assert.deepEqual(user, { name: 'Demo Operator', username: 'operator', email: 'operator@example.test', roles: ['operator'],
+      operationalRoles: [{ id: 'operator', label: 'operator' }], currentRole: 'operator' });
     assert.ok(r.headers.get('x-permissions-version'));
   });
 

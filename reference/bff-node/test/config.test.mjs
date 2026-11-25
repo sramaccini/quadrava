@@ -31,6 +31,7 @@ describe('configuration', () => {
 
   it('the permissions file of the example is valid', () => {
     const roles = loadRolePermissions(loadConfig({}).permissionsFile);
-    assert.deepEqual([...roles.keys()], ['operator', 'manager', 'administrator']);
+    assert.deepEqual([...roles.keys()], ['user', 'operator', 'manager', 'administrator']);
+    assert.deepEqual([...roles].filter(([, r]) => r.base).map(([id]) => id), ['user']);
   });
 });
