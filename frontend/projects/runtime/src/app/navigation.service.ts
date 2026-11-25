@@ -140,10 +140,21 @@ export class NavigationService {
 
   /** Screen change requested by an action (`navigate`): stays in the current area if the screen belongs to it. */
   openScreen(screen: string, params: Record<string, unknown>): void {
+    const area = this.areaFor(screen, params);
+    if (area) this.open(area, screen, params);
+  }
+
+  /** Address of the screen that `openScreen` would open, for links (the breadcrumb of a screen). */
+  screenHref(screen: string, params: Record<string, unknown>): string | null {
+    const area = this.areaFor(screen, params);
+    if (!area) return null;
+    return this.location.prepareExternalUrl(this.router.serializeUrl(this.router.createUrlTree([area, screen], { queryParams: params })));
+  }
+
+  private areaFor(screen: string, params: Record<string, unknown>): string | undefined {
     const runtime = this.runtime();
     const here = this.current().area;
-    const area = runtime?.areaOf(screen, params, here) ?? here ?? runtime?.defaultTarget()?.area;
-    if (area) this.open(area, screen, params);
+    return runtime?.areaOf(screen, params, here) ?? here ?? runtime?.defaultTarget()?.area;
   }
 
   /** Area selector: goes back to the last screen visited, otherwise to the first item. */
@@ -174,5 +185,9 @@ export class RouterNavigator extends ScreenNavigator {
 
   navigate(screen: string, params: Record<string, unknown>): void {
     this.navigation.openScreen(screen, params);
+  }
+
+  override href(screen: string, params: Record<string, unknown>): string | null {
+    return this.navigation.screenHref(screen, params);
   }
 }

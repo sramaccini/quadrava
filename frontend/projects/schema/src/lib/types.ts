@@ -733,10 +733,19 @@ export interface InputNode extends NodeBase {
 export type NodeDefinition = SectionNode | TextNode | ButtonNode | FilterBarNode | TableNode | FormNode | TabsNode | DetailNode | AlertNode | StatsNode | WizardNode | TreeNode | CalendarNode | ChartNode | SquareChartNode | DataTableNode | ServerDataTableNode | InputNode | BoxNode | GridNode | BorderNode | ImageNode | LinkNode | ProgressNode | TimelineNode | KanbanNode | CommentsNode;
 export type NodeType = NodeDefinition['type'];
 
+/** Item of the path above the title of a screen: a link when it has `navigate`. */
+export interface BreadcrumbItem {
+  label: string;
+  navigate?: string;
+  params?: Record<string, unknown>;
+}
+
 export interface ScreenDefinition {
   schemaVersion: string;
   screen: string;
   title?: string;
+  /** Path above the title, in place of the path in the menu; the last item is the screen itself. */
+  breadcrumb?: BreadcrumbItem[];
   description?: string;
   requires?: string;
   /**

@@ -109,6 +109,20 @@ describe('quadrava validate', () => {
     assert.match(stderr, /refers to orders\/\w+, which is not in datasources\//);
   });
 
+  it('reports the screens opened by navigate (steps and breadcrumb) that are not in screens/', async () => {
+    const dir = project((d) =>
+      change(d, 'screens/order-list.json', (s) => ({
+        ...s,
+        breadcrumb: [{ label: 'Home', navigate: 'no-such-home' }, { label: 'Orders' }],
+        components: [...s.components, { type: 'button', label: 'Go', onClick: [{ navigate: 'no-such-screen' }] }],
+      })),
+    );
+    const { code, stderr } = await run(['validate', dir]);
+    assert.equal(code, 1);
+    assert.match(stderr, /order-list\.json \/breadcrumb\/0\/navigate: opens the screen «no-such-home», which is not in screens\//);
+    assert.match(stderr, /order-list\.json \/components\/\d+\/onClick\/0\/navigate: opens the screen «no-such-screen», which is not in screens\//);
+  });
+
   it('reports a data source named by a screen that the screen does not declare', async () => {
     const dir = project((d) => change(d, 'screens/order-list.json', (s) => ({ ...s, components: [...s.components, { type: 'table', source: 'nowhere', columns: [{ field: 'id', label: 'Id' }] }] })));
     const { code, stderr } = await run(['validate', dir]);

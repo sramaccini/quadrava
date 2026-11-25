@@ -517,4 +517,17 @@ describe('App (demo)', () => {
     expect(el.querySelector('main')?.textContent).not.toContain('iban');
     expect((el.querySelector('main .actions button') as HTMLButtonElement).disabled).toBe(true);
   });
+
+  it('the breadcrumb declared by the order detail leads back to the list, in the same area', async () => {
+    const { fixture, el, url } = await start();
+    await until(fixture, () => rows(el) > 0, 'invoice list');
+    await TestBed.inject(Router).navigateByUrl('/invoice-lookup/order-detail?id=1');
+    const crumbs = (): string[] => [...el.querySelectorAll('main nz-breadcrumb-item .ant-breadcrumb-link')].map((n) => n.textContent?.trim() ?? '');
+    await until(fixture, () => crumbs()[1] === 'Smith Ltd', 'breadcrumb with the customer');
+    expect(crumbs()).toEqual(['Orders', 'Smith Ltd']);
+    const link = el.querySelector('main nz-breadcrumb a') as HTMLAnchorElement;
+    expect(link.getAttribute('href')).toMatch(/\/invoice-lookup\/order-list$/);
+    link.click();
+    await until(fixture, () => url() === '/invoice-lookup/order-list', 'back to the list');
+  });
 });

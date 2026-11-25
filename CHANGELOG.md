@@ -12,6 +12,18 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Added
+
+- Screens: an optional `breadcrumb`, the path shown above the title in place of the one taken from the menu. Each item
+  has a `label` (text or expression, such as `{{ has(data.project) ? data.project.name : '' }}`) and, to be a link,
+  `navigate` with optional `params`, as in the navigate step; the last item is the screen itself
+  (`aria-current="page"`). A plain click navigates inside the application, a click with a modifier opens the address
+  in a new tab. Without the property the path from the menu stays as before. The order detail of the examples uses it.
+- `ScreenNavigator` has an optional `href(screen, params)`, the address of a screen for the links of the breadcrumb;
+  the runtime implements it. A navigator without it still navigates, with `#` as the address.
+- `quadrava validate` checks that the screens opened by `navigate` (steps and breadcrumb items) are in `screens/`.
+  Before, only the screens of the menu were checked.
+
 ## [0.20.1] - 2026-11-25
 
 ### Fixed

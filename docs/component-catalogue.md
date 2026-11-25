@@ -829,6 +829,27 @@ The names are those of the built-in set, the same as in the navigation; an unkno
 `play`, `reload`, `download`, `upload`, `external`, `copy`, `search`, `filter`, `settings`. The showcases «Tables»,
 «Forms» and «Containers» have examples.
 
+### 2.33 Breadcrumb declared by the screen
+
+Above the title the runtime shows the path of the screen in the menu (area, groups, item). A screen that is not in the
+menu, or that sits below another one (the detail of an item of a list), declares its own path with `breadcrumb`. It
+takes the place of the one from the menu:
+
+```json
+"breadcrumb": [
+  { "label": "{{ t('projects.title', 'Projects') }}", "navigate": "project-list" },
+  { "label": "{{ has(data.project) ? data.project.name : '' }}", "navigate": "project-detail", "params": { "key": "{{ params.key }}" } },
+  { "label": "Issues", "navigate": "issue-list", "params": { "key": "{{ params.key }}" } },
+  { "label": "{{ params.issue }}" }
+]
+```
+
+Projects › Website relaunch › Issues › WEB-4: the first three are links, the last one is the screen itself and is
+marked as the current page. An item with `navigate` opens its screen as the navigate step does (in the current area if
+the screen is there); a click with Ctrl, Cmd or Shift opens it in a new tab. A label that reads a data source uses
+`has()`, so it stays empty while the data loads instead of failing. `quadrava validate` checks that the screens of
+`navigate` exist. The order detail of the examples has a path back to the list of orders.
+
 ## 3. Implementation notes and known limits
 
 - **Loading data sources.** A GET data source reloads by itself only if the resolved request (URL and parameters) changes. A state change that does not touch the request (a selection, a wizard step, a chosen node) does not trigger new calls; to reload anyway, use the `refresh` step.

@@ -49,7 +49,8 @@ const isObject = (value: unknown): value is Json => typeof value === 'object' &&
 
 /**
  * Checks a project as the runtime and Studio would read it: every document against its schema, the identifiers against
- * the file names, the navigation (unique identifiers, default area, screens of the project), the references to data sources, the patterns of the fields, the CEL expressions, the themes and the
+ * the file names, the navigation (unique identifiers, default area, screens of the project), the references to data sources, the screens
+ * opened by `navigate` (steps and breadcrumb), the patterns of the fields, the CEL expressions, the themes and the
  * languages of the manifest, and the translation catalogues (the same keys in every language, every `t('…')` known).
  * Returns the documents (for publishing) and the problems; it never throws.
  */
@@ -89,6 +90,7 @@ export function validateProject(files: ProjectFile[]): { documents: ProjectDocum
 
   checkNavigationDocument(documents, issues);
   checkReferences(documents, issues);
+  checkTargets(documents, issues);
   checkPatterns(documents, issues);
   checkExpressions(documents, issues);
   checkManifest(documents, issues);
@@ -127,6 +129,22 @@ function checkReferences(documents: ProjectDocument[], issues: Issue[]): void {
       const [document, source] = ref.split('/');
       if (!sources.get(document)?.[source]) issues.push({ file, path: `/dataSources/${name}`, message: `refers to ${ref}, which is not in datasources/` });
     }
+  }
+}
+
+/** The screens that the screens open (`navigate` of the steps and of the breadcrumb items) are in screens/. */
+function checkTargets(documents: ProjectDocument[], issues: Issue[]): void {
+  const screens = new Set(documents.filter((d) => d.kind === 'screen').map((d) => d.id));
+  for (const { file, doc } of documents.filter((d) => d.kind === 'screen')) {
+    const walk = (value: unknown, path: string): void => {
+      if (Array.isArray(value)) value.forEach((v, i) => walk(v, `${path}/${i}`));
+      else if (isObject(value)) {
+        const target = value['navigate'];
+        if (typeof target === 'string' && !screens.has(target)) issues.push({ file, path: `${path}/navigate`, message: `opens the screen «${target}», which is not in screens/` });
+        for (const [key, v] of Object.entries(value)) walk(v, `${path}/${key}`);
+      }
+    };
+    walk(doc, '');
   }
 }
 

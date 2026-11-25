@@ -72,6 +72,11 @@ export interface DataRequestOptions {
 /** Screen change. */
 export abstract class ScreenNavigator {
   abstract navigate(screen: string, params: Record<string, unknown>): void;
+  /**
+   * Address of a screen, for the links of the breadcrumb (opening it in a new tab, copying it). Without it the links
+   * still navigate, through `navigate`.
+   */
+  href?(screen: string, params: Record<string, unknown>): string | null;
 }
 
 /** Messages to the user. */

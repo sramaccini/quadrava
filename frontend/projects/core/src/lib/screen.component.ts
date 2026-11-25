@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, Injector, effect, inject, input, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, Injector, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzBreadCrumbModule } from 'ng-zorro-antd/breadcrumb';
 import { NzTypographyModule } from 'ng-zorro-antd/typography';
@@ -9,6 +9,14 @@ import { NodeHostComponent } from './node-host.component';
 import { ScreenRuntime } from './screen-runtime';
 import { ScreenTitle } from './screen-title';
 import { ValidatorRegistry } from './validators';
+
+/** Item of the breadcrumb as drawn: the label resolved and, for a link, the screen with its parameters. */
+interface Crumb {
+  readonly label: string;
+  readonly screen?: string;
+  readonly params?: Record<string, unknown>;
+  readonly href?: string | null;
+}
 
 /** Shows an already validated screen: creates the runtime, checks `requires` and draws the top-level components. */
 @Component({
@@ -22,6 +30,8 @@ import { ValidatorRegistry } from './validators';
     nz-breadcrumb ::ng-deep .ant-breadcrumb-link { color: inherit; }
     nz-breadcrumb ::ng-deep .ant-breadcrumb-separator { margin-inline: 6px; color: var(--lc-color-primary, #1677ff); opacity: 0.7; }
     nz-breadcrumb ::ng-deep nz-breadcrumb-item:last-child .ant-breadcrumb-link { color: var(--lc-color-primary, #1677ff); font-weight: 600; }
+    nz-breadcrumb a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+    nz-breadcrumb a:hover { color: var(--lc-color-primary, #1677ff); }
     h1[nz-typography] { margin: 0; font-size: 24px; font-weight: 600; line-height: 1.3; color: inherit; }
     .description { margin: 4px 0 0; color: var(--lc-page-header-muted, #5d6b7a); }
     .page-body { padding: var(--lc-content-padding, 24px); }
@@ -30,12 +40,20 @@ import { ValidatorRegistry } from './validators';
   template: `
     @if (runtime(); as rt) {
       @if (rt.allowed()) {
-        @if (rt.definition.title || breadcrumb().length) {
+        @if (rt.definition.title || crumbs().length) {
           <header class="page-header">
-            @if (breadcrumb().length) {
+            @if (crumbs().length) {
               <nz-breadcrumb [nzAutoGenerate]="false" nzSeparator="›" [attr.aria-label]="i18n.t('lc.breadcrumb')">
-                @for (label of breadcrumb(); track $index) {
-                  <nz-breadcrumb-item>{{ label }}</nz-breadcrumb-item>
+                @for (crumb of crumbs(); track $index; let last = $last) {
+                  <nz-breadcrumb-item>
+                    @if (last) {
+                      <span aria-current="page">{{ crumb.label }}</span>
+                    } @else if (crumb.screen) {
+                      <a [attr.href]="crumb.href ?? '#'" (click)="follow($event, crumb)">{{ crumb.label }}</a>
+                    } @else {
+                      {{ crumb.label }}
+                    }
+                  </nz-breadcrumb-item>
                 }
               </nz-breadcrumb>
             }
@@ -63,7 +81,10 @@ import { ValidatorRegistry } from './validators';
 export class ScreenComponent {
   readonly definition = input.required<ScreenDefinition>();
   readonly params = input<Record<string, unknown>>({});
-  /** Path shown above the title (for example area, group, item). Provided by the host application. */
+  /**
+   * Path shown above the title (for example area, group, item). Provided by the host application; the `breadcrumb` of
+   * the definition, when there is one, takes its place.
+   */
   readonly breadcrumb = input<readonly string[]>([]);
 
   readonly runtime = signal<ScreenRuntime | null>(null);
@@ -83,6 +104,27 @@ export class ScreenComponent {
   private readonly validators = inject(ValidatorRegistry);
   private readonly settings = inject(SETTINGS_VALUES);
   private readonly screenTitle = inject(ScreenTitle);
+
+  /** The breadcrumb declared by the screen (labels and parameters resolved), otherwise the one of the host. */
+  protected readonly crumbs = computed<readonly Crumb[]>(() => {
+    const rt = this.runtime();
+    const declared = rt?.definition.breadcrumb;
+    if (!rt || !declared?.length) return this.breadcrumb().map((label) => ({ label }));
+    return declared.map((item) => {
+      const label = rt.text(item.label);
+      if (!item.navigate) return { label };
+      const resolved = rt.resolveValue(item.params ?? {});
+      const params = resolved && typeof resolved === 'object' ? (resolved as Record<string, unknown>) : {};
+      return { label, screen: item.navigate, params, href: this.navigator.href?.(item.navigate, params) ?? null };
+    });
+  });
+
+  /** A plain click navigates inside the application; with a modifier the browser opens the address (a new tab). */
+  protected follow(event: MouseEvent, crumb: Crumb): void {
+    if (crumb.href && (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || event.button !== 0)) return;
+    event.preventDefault();
+    if (crumb.screen) this.navigator.navigate(crumb.screen, crumb.params ?? {});
+  }
 
   constructor() {
     // The title of the screen, for the application (the browser tab).

@@ -2,6 +2,15 @@
   "schemaVersion": "1.0",
   "screen": "order-detail",
   "title": "{{ t('order_detail.order_detail', 'Order detail') }}",
+  "breadcrumb": [
+    {
+      "label": "{{ t('nav.orders', 'Orders') }}",
+      "navigate": "order-list"
+    },
+    {
+      "label": "{{ has(data.order) ? data.order.customer : params.id }}"
+    }
+  ],
   "requires": "orders.order.read",
   "dataSources": {
     "order": {
