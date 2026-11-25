@@ -12,6 +12,8 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+## [0.22.0] - 2026-11-25
+
 ### Added
 
 - Kanban: `moveAcrossLanes: true` (with `laneField`) lets a card move to another lane, which changes its value of the
@@ -569,7 +571,8 @@ The first versioned release.
 - **Demo back end of the stack**: the event stream `/api/streams/tasks`, so that behind the BFF the live boards of the
   showcase follow the changes of other users.
 
-[Unreleased]: https://github.com/sramaccini/quadrava/compare/v0.21.0...HEAD
+[Unreleased]: https://github.com/sramaccini/quadrava/compare/v0.22.0...HEAD
+[0.22.0]: https://github.com/sramaccini/quadrava/compare/v0.21.0...v0.22.0
 [0.21.0]: https://github.com/sramaccini/quadrava/compare/v0.20.1...v0.21.0
 [0.20.1]: https://github.com/sramaccini/quadrava/compare/v0.20.0...v0.20.1
 [0.20.0]: https://github.com/sramaccini/quadrava/compare/v0.19.1...v0.20.0
