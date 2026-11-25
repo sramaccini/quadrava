@@ -477,6 +477,7 @@ export class ServerDataTableComponent {
     // First level: at every change of filters, sorting, groups, page or refresh it starts over.
     effect(() => {
       const request = this.request(this.page(), []);
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions -- read only to track the refresh signal
       this.runtime().refreshCount()[this.node().source];
       untracked(() => void this.loadTop(request));
     });

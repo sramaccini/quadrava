@@ -33,6 +33,9 @@ jobs:
       # Known vulnerabilities of high or critical severity in any dependency, development tools included, stop the build.
       - run: npm audit --audit-level=high
       - run: npm run release:check
+      # ESLint (CLAUDE.md § 9 and § 11) and the boundaries between the libraries (§ 5, dependency-cruiser).
+      - run: npm run lint
+      - run: npm run deps:check
       - run: npm run schema:check
       - run: npm run schema:docs:check
       - run: npm run validate:examples

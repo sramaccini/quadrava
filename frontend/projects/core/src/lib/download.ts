@@ -38,6 +38,7 @@ export function fileNameFromDisposition(header: string | null | undefined): stri
 export function safeFileName(name: string | undefined): string | undefined {
   if (!name) return undefined;
   const base = name.split(/[/\\]/).pop() ?? '';
+  // eslint-disable-next-line no-control-regex -- control characters are removed from file names on purpose
   const clean = base.replace(/[\u0000-\u001f\u007f<>:"|?*]/g, '').replace(/^[.\s]+|[.\s]+$/g, '').slice(0, 150);
   return clean || undefined;
 }

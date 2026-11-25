@@ -389,7 +389,7 @@ describe('App (demo)', () => {
   });
 
   it('the areas depend on the permissions of the profile', async () => {
-    const { fixture, el } = await start();
+    const { fixture } = await start();
     await until(fixture, () => areas().length > 0, 'selector');
     expect(areas()).toEqual(['Invoice entry', 'Invoice lookup', 'Component showcase']);
     TestBed.inject(DemoSession).username.set('manager');

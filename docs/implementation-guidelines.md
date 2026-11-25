@@ -32,7 +32,7 @@ The current stable version of every component is used; exact versions are pinned
 | Reference implementation (BFF, authz, telemetry ingestion) | Spring Boot 4.1.2 on Java 25, multi-module Maven, Spring Security as OAuth2 client and resource server; the BFF on authz-library with Spring Session in Redis (ADR-26) | Not for production |
 | Unit and component tests | Vitest through `ng test`, jsdom | One `*.spec.ts` next to the unit |
 | End-to-end tests | Playwright in Chromium, Firefox and WebKit, with axe-core | Run against the demo |
-| Code quality | Strict TypeScript, Prettier, `.editorconfig` | No linter yet: the security rules of section 10 are checked by review |
+| Code quality | Strict TypeScript, ESLint (typescript-eslint, angular-eslint), dependency-cruiser, Prettier, `.editorconfig` | `npm run lint` checks the code rules and part of the security rules of section 10; `npm run deps:check` the boundaries between the libraries. Formatting is not checked |
 | Repository organisation | One repository, an Angular CLI workspace in `frontend` | No incremental build tool: the build of the libraries takes about a minute |
 | Distribution | Container image of the runtime on GHCR, packages `@sramaccini/quadrava-*` on GitHub Packages (ADR-20, ADR-21) | One version for everything, `CHANGELOG.md` |
 
@@ -158,7 +158,7 @@ provideLcComponents({ signature: SignatureComponent });
 
 | Rule | Detail |
 | --- | --- |
-| A single client | All calls go through the `DataClient` port (`HttpDataClient` and `lcHttpInterceptor` in `services`); components never use `fetch` or `HttpClient` (checked by review: there is no linter rule yet) |
+| A single client | All calls go through the `DataClient` port (`HttpDataClient` and `lcHttpInterceptor` in `services`); components never use `fetch` or `HttpClient` (`fetch`, `XMLHttpRequest`, `EventSource` and `WebSocket` are refused by `npm run lint` below `services`, `HttpClient` by `npm run deps:check`; the language catalogues, static files, are the one exception) |
 | Uniform error model | Errors are Problems (RFC 9457, `contracts/problem.yaml`); the runtime keeps the status, the correlation identifier and the field errors (`DataError`), never the server's text |
 | 401 | The session is marked expired and the browser goes to the login of the BFF (once: no loop) |
 | 403 | Generic message; the permissions are reloaded when `X-Permissions-Version` changes. Target: a refresh on the 403 itself |
@@ -253,7 +253,7 @@ The example applications in `examples` are the common thread: every test level u
 
 | Stage | Today |
 | --- | --- |
-| Quality | Strict TypeScript in the build; versions and changelog consistent (`release:check`). No linter, no formatting check, no explicit check of the dependency rules |
+| Quality | Strict TypeScript in the build and for the CLI (`cli:typecheck`); versions and changelog consistent (`release:check`); ESLint (`lint`) and the dependency rules (`deps:check`). No formatting check |
 | Unit and component tests | All the projects, including the runtime with the showcase |
 | Schema and example validation | `schema:check`, `schema:docs:check`, `validate:examples` |
 | REST contracts | `mvn verify` of the reference implementation and the conformance kits against it (`npm run conformance`); the BFF test reads `contracts/bff.yaml`, the other OpenAPI files have no automatic validation yet |

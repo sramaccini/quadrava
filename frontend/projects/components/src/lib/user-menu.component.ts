@@ -119,6 +119,7 @@ export class UserMenuComponent {
   private readonly trigger = viewChild.required<ElementRef<HTMLButtonElement>>('trigger');
   private readonly list = viewChild<ElementRef<HTMLUListElement>>('list');
   /** Choice of an item other than sign-out. */
+  // eslint-disable-next-line @angular-eslint/no-output-native -- public API of lc-user-menu: renaming it would break it
   readonly select = output<string>();
   /** Sign-out confirmed by the user (straight away when no `Confirmation` is provided). */
   readonly logout = output<void>();

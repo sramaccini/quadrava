@@ -97,6 +97,7 @@ export async function loadMessages(
   i18n: I18n,
   locales: readonly string[],
   urlFor: (locale: string) => string,
+  // eslint-disable-next-line no-restricted-globals -- the catalogues are static files of the application, not data
   fetcher: (url: string) => Promise<{ ok: boolean; status: number; json(): Promise<unknown> }> = (url) => fetch(url),
 ): Promise<string[]> {
   const problems: string[] = [];

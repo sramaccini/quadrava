@@ -40,6 +40,7 @@ function charsetBits(password: string): number {
   if (/[A-Z]/.test(password)) size += 26;
   if (/\d/.test(password)) size += 10;
   if (/[^A-Za-z0-9]/u.test(password.replace(/[^\x20-\x7e]/g, ''))) size += 33;
+  // eslint-disable-next-line no-control-regex -- the range is ASCII: anything outside it counts as a large alphabet
   if (/[^\x00-\x7f]/.test(password)) size += 100;
   return Math.log2(Math.max(size, 1));
 }

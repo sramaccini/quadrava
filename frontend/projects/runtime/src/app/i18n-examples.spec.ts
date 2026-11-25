@@ -80,7 +80,10 @@ describe('translated examples', () => {
     const walk = (n: unknown): void => {
       if (Array.isArray(n)) n.forEach(walk);
       else if (n && typeof n === 'object') {
-        for (const [k, v] of Object.entries(n)) (k === 'label' && typeof v === 'string' ? labels.push(v) : walk(v));
+        for (const [k, v] of Object.entries(n)) {
+          if (k === 'label' && typeof v === 'string') labels.push(v);
+          else walk(v);
+        }
       }
     };
     walk(navigation);

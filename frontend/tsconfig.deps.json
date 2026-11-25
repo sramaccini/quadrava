@@ -1,0 +1,14 @@
+{
+  "//": "For dependency-cruiser (npm run deps:check): the libraries resolve to their sources, not to dist, so the check needs no build:libs.",
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "components": ["./projects/components/src/public-api.ts"],
+      "core": ["./projects/core/src/public-api.ts"],
+      "expressions": ["./projects/expressions/src/public-api.ts"],
+      "schema": ["./projects/schema/src/public-api.ts"],
+      "schema/validation": ["./projects/schema/validation/src/public-api.ts"],
+      "services": ["./projects/services/src/public-api.ts"]
+    }
+  }
+}
