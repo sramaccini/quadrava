@@ -18,6 +18,8 @@ import org.springframework.stereotype.Component;
  * <ul>
  *   <li>A user who is not in {@code quadrava.bff.users}, or has no roles, cannot sign in.</li>
  *   <li>The login opens the session on the last tenant the user chose, or on the first one offered: it never asks.</li>
+ *   <li>A user with operational roles (ADR-28) works as one of them: the one chosen, else the last one used, else the
+ *   first of the user's list. The permissions are those of the base roles plus the active one.</li>
  * </ul>
  */
 @Component
@@ -26,6 +28,8 @@ public class ConfiguredAuthorization implements AuthorizationResolver {
     private final BffProperties properties;
     /** Last tenant chosen by each user. In memory, like everything in the reference BFF: lost at restart. */
     private final Map<String, String> lastUsed = new ConcurrentHashMap<>();
+    /** Last operational role chosen by each user, in memory too. */
+    private final Map<String, String> lastRole = new ConcurrentHashMap<>();
 
     public ConfiguredAuthorization(BffProperties properties) {
         this.properties = properties;
@@ -33,6 +37,11 @@ public class ConfiguredAuthorization implements AuthorizationResolver {
 
     @Override
     public Resolved resolve(String username, String requestedTenant) {
+        return resolve(username, requestedTenant, null);
+    }
+
+    @Override
+    public Resolved resolve(String username, String requestedTenant, String preferredRole) {
         List<String> roles = properties.users().getOrDefault(username, List.of());
         if (roles.isEmpty()) {
             throw new UserNotAuthorizedException("User not configured: " + username);
@@ -48,9 +57,34 @@ public class ConfiguredAuthorization implements AuthorizationResolver {
         } else if (!offered.isEmpty()) {
             tenant = find(offered, lastUsed.get(username)).orElse(offered.getFirst().id());
         }
+        List<String> operational = roles.stream().filter(role -> !isBase(role)).toList();
+        String current = null;
+        if (!operational.isEmpty()) {
+            if (preferredRole != null && operational.contains(preferredRole)) {
+                current = preferredRole;
+                lastRole.put(username, current);
+            } else {
+                String last = lastRole.get(username);
+                current = last != null && operational.contains(last) ? last : operational.getFirst();
+            }
+        }
+        String active = current;
         TreeSet<String> permissions = new TreeSet<>();
-        roles.forEach(role -> permissions.addAll(properties.rolePermissions().getOrDefault(role, List.of())));
-        return new Resolved(username, null, tenant, offered, List.copyOf(roles), List.copyOf(permissions));
+        roles.stream()
+                .filter(role -> active == null || isBase(role) || role.equals(active))
+                .forEach(role -> permissions.addAll(properties.rolePermissions().getOrDefault(role, List.of())));
+        List<SessionContext.Role> offeredRoles = operational.stream().map(role -> new SessionContext.Role(role, label(role))).toList();
+        return new Resolved(username, null, tenant, offered, List.copyOf(roles), List.copyOf(permissions), offeredRoles, current);
+    }
+
+    private boolean isBase(String role) {
+        BffProperties.RoleInfo info = properties.roles().get(role);
+        return info != null && info.base();
+    }
+
+    private String label(String role) {
+        BffProperties.RoleInfo info = properties.roles().get(role);
+        return info != null && info.label() != null ? info.label() : role;
     }
 
     private static Optional<String> find(List<SessionContext.Tenant> offered, String id) {

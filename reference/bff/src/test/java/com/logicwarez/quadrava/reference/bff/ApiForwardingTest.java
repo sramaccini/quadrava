@@ -117,8 +117,9 @@ class ApiForwardingTest {
         // A service that is down: nobody listens on this port.
         registry.add("quadrava.bff.routes[1].prefix", () -> "/down");
         registry.add("quadrava.bff.routes[1].target", () -> "http://localhost:1");
-        registry.add("quadrava.bff.users.ada", () -> "operator");
-        registry.add("quadrava.bff.users.grace", () -> "operator,manager");
+        registry.add("quadrava.bff.users.ada", () -> "user,operator");
+        // Two operational roles (ADR-28): grace works as one of them at a time.
+        registry.add("quadrava.bff.users.grace", () -> "user,operator,manager");
         // Two tenants for grace only: the other users have none.
         registry.add("quadrava.bff.tenants[0].id", () -> "north");
         registry.add("quadrava.bff.tenants[0].label", () -> "North office");
@@ -173,7 +174,7 @@ class ApiForwardingTest {
         MockHttpSession session = new MockHttpSession();
         Instant now = Instant.now();
         session.setAttribute(SessionContext.ATTRIBUTE, new SessionContext(r.username(), "Ada Lovelace", r.email(), r.tenantId(),
-                r.tenants(), r.roles(), r.permissions(), now, now.plusSeconds(3600)));
+                r.tenants(), r.roles(), r.permissions(), now, now.plusSeconds(3600), r.operationalRoles(), r.currentRole()));
         return session;
     }
 
@@ -226,7 +227,7 @@ class ApiForwardingTest {
     void theUserOfTheSessionHasItsRolesAndNoTokensNorEmptyFields() throws Exception {
         mvc.perform(get("/bff/user").session(signedIn("ada")))
                 .andExpect(status().isOk())
-                .andExpect(content().json("{\"name\":\"Ada Lovelace\",\"username\":\"ada\",\"roles\":[\"operator\"]}",
+                .andExpect(content().json("{\"name\":\"Ada Lovelace\",\"username\":\"ada\",\"roles\":[\"user\",\"operator\"],\"operationalRoles\":[{\"id\":\"operator\",\"label\":\"Operator\"}],\"currentRole\":\"operator\"}",
                         org.springframework.test.json.JsonCompareMode.STRICT));
     }
 
@@ -235,8 +236,10 @@ class ApiForwardingTest {
         mvc.perform(get("/authz/capabilities").queryParam("app", "demo").session(signedIn("ada")))
                 .andExpect(status().isOk())
                 .andExpect(content().json("{\"permissions\":[\"invoices.invoice.create\",\"invoices.invoice.read\",\"orders.order.read\",\"showcase.components.read\"]}"));
-        // The roles add up; an unknown role gives nothing.
-        assertThat(resolver.resolve("grace", null).permissions()).contains("orders.order.approve", "invoices.invoice.create");
+        // The base roles add up with the active operational role only (ADR-28): grace starts as operator.
+        assertThat(resolver.resolve("grace", null).permissions()).contains("showcase.components.read", "invoices.invoice.create")
+                .doesNotContain("orders.order.approve");
+        assertThat(resolver.resolve("grace", null, "manager").permissions()).contains("showcase.components.read", "orders.order.approve");
         // A user who is not in the configuration cannot sign in.
         assertThatThrownBy(() -> resolver.resolve("mallory", null)).isInstanceOf(UserNotAuthorizedException.class);
         // The services behind the routes are not asked: the permissions are answered by the BFF.
@@ -354,5 +357,26 @@ class ApiForwardingTest {
                 .andExpect(status().isNotFound());
         mvc.perform(get("/registry/apps").session(ada).header("X-Tenant", "north")).andExpect(status().isOk());
         assertThat(received.getFirst().headers()).doesNotContainKey("X-tenant");
+    }
+
+    @Test
+    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+    void theUserSwitchesOperationalRoleAndTheServicesReceiveOnlyTheOneOfTheSession() throws Exception {
+        MockHttpSession session = signedIn("grace");
+        mvc.perform(get("/bff/user").session(session))
+                .andExpect(content().json("{\"operationalRoles\":[{\"id\":\"operator\",\"label\":\"Operator\"},{\"id\":\"manager\",\"label\":\"Manager\"}],\"currentRole\":\"operator\"}"));
+        mvc.perform(post("/bff/role").session(session).contentType(MediaType.APPLICATION_JSON).content("{\"role\":\"manager\"}"))
+                .andExpect(status().isForbidden());
+        mvc.perform(post("/bff/role").session(session).with(csrf()).contentType(MediaType.APPLICATION_JSON).content("{\"role\":\"administrator\"}"))
+                .andExpect(status().isNotFound());
+        mvc.perform(post("/bff/role").session(session).with(csrf()).contentType(MediaType.APPLICATION_JSON).content("{\"role\":\"manager\"}"))
+                .andExpect(status().isNoContent());
+        mvc.perform(get("/authz/capabilities").queryParam("app", "demo").session(session))
+                .andExpect(result -> assertThat(result.getResponse().getContentAsString()).contains("orders.order.approve"));
+        // The services receive the role of the session, not the one of the browser.
+        mvc.perform(get("/registry/apps").session(session).header("X-Active-Role", "administrator")).andExpect(status().isOk());
+        assertThat(received.getFirst().headers().get("X-active-role")).containsExactly("manager");
+        // A new session starts on the last role chosen.
+        mvc.perform(get("/bff/user").session(signedIn("grace"))).andExpect(content().json("{\"currentRole\":\"manager\"}"));
     }
 }

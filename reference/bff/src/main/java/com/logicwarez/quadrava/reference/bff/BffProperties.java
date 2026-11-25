@@ -15,10 +15,13 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param users           roles of every user, by login name. A user who is not listed cannot sign in (fail-closed).
  * @param rolePermissions permissions of every role (domain.resource.action), the same map as the reference authz service.
  * @param tenants         tenants the users may work on (optional, contracts/bff.yaml): none = no choice.
+ * @param roles           label and base flag of the roles (ADR-28), as in the reference authz service: a base role always
+ *                        applies, the others are operational, one at a time. A role that is not listed is operational.
  */
 @ConfigurationProperties("quadrava.bff")
 public record BffProperties(List<Route> routes, Long maxBodyBytes, Map<String, List<String>> users,
-                            Map<String, List<String>> rolePermissions, List<Tenant> tenants) {
+                            Map<String, List<String>> rolePermissions, List<Tenant> tenants,
+                            Map<String, RoleInfo> roles) {
 
     public BffProperties {
         routes = routes == null ? List.of() : List.copyOf(routes);
@@ -26,7 +29,14 @@ public record BffProperties(List<Route> routes, Long maxBodyBytes, Map<String, L
         users = users == null ? Map.of() : Map.copyOf(users);
         rolePermissions = rolePermissions == null ? Map.of() : Map.copyOf(rolePermissions);
         tenants = tenants == null ? List.of() : List.copyOf(tenants);
+        roles = roles == null ? Map.of() : Map.copyOf(roles);
     }
+
+    /**
+     * @param label name shown to the user (the identifier if absent)
+     * @param base  whether the role always applies; otherwise it is an operational role, chosen one at a time
+     */
+    public record RoleInfo(String label, boolean base) {}
 
     /**
      * @param prefix forwarded path, for example {@code /registry}: it covers {@code /registry} and {@code /registry/...}

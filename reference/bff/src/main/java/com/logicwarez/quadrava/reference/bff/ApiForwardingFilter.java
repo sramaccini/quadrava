@@ -29,7 +29,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
  *   <li>Only a few headers reach the service (format, conditional cache, language, {@code traceparent},
  *       {@code baggage} with screen and action for the audit): never the
  *       session cookies nor any {@code Authorization} from the browser. The tenant of the session, if any, goes in
- *       {@code X-Tenant}.</li>
+ *       {@code X-Tenant}, and its operational role (ADR-28) in {@code X-Active-Role}.</li>
  *   <li>Only status, body and a few safe headers (type, ETag, cache, file name) go back to the browser. Not the
  *       {@code X-Permissions-Version} of a service: the permissions are those of the session, and the BFF writes their
  *       version on every answer.</li>
@@ -100,6 +100,8 @@ public class ApiForwardingFilter extends OncePerRequestFilter {
         upstream.header("Authorization", "Bearer " + token.get());
         // The tenant of the session, if any: the one from the browser never passes (it is not in REQUEST_HEADERS).
         Optional.ofNullable(session.get().tenantId()).ifPresent(t -> upstream.header("X-Tenant", t));
+        // Likewise the operational role of the session (ADR-28), never one from the browser.
+        Optional.ofNullable(session.get().currentRole()).ifPresent(r -> upstream.header("X-Active-Role", r));
         String method = request.getMethod();
         if (BODY_METHODS.contains(method)) {
             InputStream body = request.getInputStream();

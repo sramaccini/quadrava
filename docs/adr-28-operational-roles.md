@@ -1,8 +1,8 @@
 # ADR-28: working with one role at a time
 
 Status: accepted (November 2026); implemented on 25 November 2026 in the contracts, the reference authorization
-service, the conformance kits, `services`, `components`, the runtime shell and the two light BFFs. The reference BFF
-follows once authz-library releases the same part (version 2.7.0, prepared on a branch of that repository).
+service, the conformance kits, `services`, `components`, the runtime shell, the two light BFFs and the reference BFF
+(on authz-library 2.7.0, which has the same part).
 
 ## Context
 

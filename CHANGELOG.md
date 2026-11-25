@@ -73,6 +73,10 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
   own, it keeps the active role in an HttpOnly cookie set by `POST /bff/role` and checked against the roles of the
   token at every call, so it only chooses among the user's own roles. The BFF kit now keeps the cookies set by a role
   switch, as a browser does.
+- The reference BFF moves to authz-library 2.7.0 and has the operational roles of BFF contract 0.6.0: the label and the
+  base flag of each role in `quadrava.bff.roles`, the base role `user` (with `showcase.components.read`) for every
+  user and `manager` for the administrator too; the session opens on the last role used or the first, and the services
+  receive the active role in `X-Active-Role`. Building `reference/` needs the 2.7.0 package from GitHub Packages.
 
 ### Fixed
 
