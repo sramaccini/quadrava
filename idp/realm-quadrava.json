@@ -51,6 +51,28 @@
       }
     },
     {
+      "clientId": "quadrava-bff-lite-proxy",
+      "name": "Quadrava light BFF with oauth2-proxy and nginx (docker/bff-lite-proxy)",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "dev-only-secret",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "frontchannelLogout": false,
+      "redirectUris": [
+        "http://localhost:8091/oauth2/callback"
+      ],
+      "webOrigins": [
+        "http://localhost:8091"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:8091/*"
+      }
+    },
+    {
       "clientId": "quadrava-tools",
       "name": "Quadrava development tools (local scripts, never in production)",
       "enabled": true,

@@ -1,0 +1,93 @@
+# Light BFF of Quadrava with oauth2-proxy and nginx (ADR-27): an example to start from, not meant for production as it
+# is. Development only: HTTP, development credentials (labelled as such), the Keycloak of idp/ on the host.
+#
+#   cd idp && docker compose up -d                 # Keycloak (realm quadrava)
+#   node frontend/tools/demo-api.mjs               # the demo API on the host, port 8084
+#   cd docker/bff-lite-proxy && docker compose up -d
+#   open http://localhost:8091
+#
+# The browser talks only to nginx, on http://localhost:8091. oauth2-proxy shares the network of nginx: nginx reaches it
+# on 127.0.0.1:4180, and it reaches Keycloak on localhost:8180 through a relay in nginx (see nginx/templates).
+name: quadrava-bff-lite-proxy
+
+services:
+  nginx:
+    image: nginx:1.30.3-alpine
+    ports:
+      - "8091:8091"
+    environment:
+      # Origin of the page as the browser sees it: return addresses, redirect URI, address after the logout.
+      BFF_ORIGIN: http://localhost:8091
+      # Issuer of Keycloak as the browser (and the tokens) see it.
+      OIDC_ISSUER: http://localhost:8180/realms/quadrava
+      OIDC_CLIENT_ID: quadrava-bff-lite-proxy
+      # Keycloak of idp/, published on the host. The relay keeps the Host header localhost:8180.
+      KEYCLOAK_UPSTREAM: http://host.docker.internal:8180
+      # Back end of the application (/api): the demo API on the host (frontend/tools/demo-api.mjs).
+      API_UPSTREAM: http://host.docker.internal:8084
+      RUNTIME_UPSTREAM: http://runtime:8080
+      # Where the image writes the templates (nginx.conf includes it), instead of conf.d with its default server.
+      NGINX_ENVSUBST_OUTPUT_DIR: /etc/nginx/bff
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    tmpfs:
+      - /etc/nginx/bff
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/templates:/etc/nginx/templates:ro
+      - ./nginx/bff.js:/etc/nginx/njs/bff.js:ro
+      # Permissions per role: edit the file, the next call reads it (no restart).
+      - ./role-permissions.json:/etc/quadrava/role-permissions.json:ro
+    depends_on:
+      - runtime
+
+  oauth2-proxy:
+    image: quay.io/oauth2-proxy/oauth2-proxy:v7.15.2
+    # Same network namespace as nginx: localhost:8180 is the relay to Keycloak, 127.0.0.1:4180 is reached by nginx only.
+    network_mode: service:nginx
+    environment:
+      OAUTH2_PROXY_HTTP_ADDRESS: 127.0.0.1:4180
+      OAUTH2_PROXY_PROVIDER: keycloak-oidc
+      OAUTH2_PROXY_OIDC_ISSUER_URL: http://localhost:8180/realms/quadrava
+      OAUTH2_PROXY_CLIENT_ID: quadrava-bff-lite-proxy
+      # Development credential of the realm in idp/ (never a real secret).
+      OAUTH2_PROXY_CLIENT_SECRET: dev-only-secret
+      OAUTH2_PROXY_CODE_CHALLENGE_METHOD: S256
+      OAUTH2_PROXY_SCOPE: openid profile email
+      OAUTH2_PROXY_REDIRECT_URL: http://localhost:8091/oauth2/callback
+      OAUTH2_PROXY_EMAIL_DOMAINS: "*"
+      # Only the auth endpoints are used (nginx asks /oauth2/auth): there is no upstream to proxy.
+      OAUTH2_PROXY_UPSTREAMS: static://202
+      OAUTH2_PROXY_REVERSE_PROXY: "true"
+      # Only nginx, in the same network namespace, sets the X-Forwarded-* headers.
+      OAUTH2_PROXY_TRUSTED_PROXY_IPS: 127.0.0.1/32
+      # The answers of /oauth2/auth carry the access token (X-Auth-Request-Access-Token) and the ID token (Authorization).
+      OAUTH2_PROXY_SET_XAUTHREQUEST: "true"
+      OAUTH2_PROXY_PASS_ACCESS_TOKEN: "true"
+      OAUTH2_PROXY_SET_AUTHORIZATION_HEADER: "true"
+      # The session: a ticket in an HttpOnly cookie, the tokens in Redis (they never reach the browser).
+      OAUTH2_PROXY_SESSION_STORE_TYPE: redis
+      OAUTH2_PROXY_REDIS_CONNECTION_URL: redis://redis:6379
+      OAUTH2_PROXY_COOKIE_NAME: quadrava_lite_session
+      # Development value (32 bytes): generate your own with `openssl rand -base64 32 | tr -- '+/' '-_'`.
+      OAUTH2_PROXY_COOKIE_SECRET: dev-only-cookie-secret-32-bytes!
+      # http on localhost; behind https set it to true.
+      OAUTH2_PROXY_COOKIE_SECURE: "false"
+      OAUTH2_PROXY_COOKIE_SAMESITE: lax
+      # Absolute length of a session, and renewal of the tokens (Keycloak's access token lasts 5 minutes).
+      OAUTH2_PROXY_COOKIE_EXPIRE: 10h
+      OAUTH2_PROXY_COOKIE_REFRESH: 4m
+      OAUTH2_PROXY_SKIP_PROVIDER_BUTTON: "true"
+    depends_on:
+      - nginx
+      - redis
+    restart: on-failure
+
+  redis:
+    image: redis:8.2
+
+  # The runtime image (docker/runtime): the demo with the examples, its services through this BFF.
+  runtime:
+    image: ghcr.io/sramaccini/quadrava-runtime:${QUADRAVA_RUNTIME_VERSION:-0.22.1}
+    volumes:
+      - ../../frontend/projects/runtime/config/bff/runtime-config.json:/etc/quadrava/runtime-config.json:ro

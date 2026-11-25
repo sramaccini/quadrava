@@ -12,6 +12,15 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Added
+
+- A light BFF made of configuration only (ADR-27), `docker/bff-lite-proxy/`: oauth2-proxy for the login, the session
+  and the tokens, nginx with a short njs script for the CSRF cookie and header, `/bff/user`, `/authz/capabilities` and
+  `/authz/check` (permissions per role from a mounted JSON file), `/api` with the user's token and event streams. It
+  follows `contracts/bff.yaml` 0.5.0 and passes the BFF and authorization kits; an example to start from, not meant
+  for production as it is. The development realm has its client (`quadrava-bff-lite-proxy`, port 8091): recreate
+  Keycloak to import it.
+
 ## [0.22.1] - 2026-11-25
 
 ### Fixed

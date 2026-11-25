@@ -1,0 +1,180 @@
+# The light BFF (contracts/bff.yaml): nginx in front of the runtime, the API and oauth2-proxy. The image replaces the
+# ${NAME} values with the variables of the environment (compose.yaml) when it starts; the $names are nginx variables.
+#
+# Every location needs a session (auth_request to oauth2-proxy, 401 without one) unless it says `auth_request off`:
+# the pages of the runtime, the login and the internal locations.
+
+upstream oauth2_proxy {
+  # oauth2-proxy shares the network namespace of this container.
+  server 127.0.0.1:4180;
+}
+
+# CSRF double submit: the XSRF-TOKEN cookie to set (only when the request has none) and whether a write is refused.
+js_set $xsrf_set_cookie bff.xsrfSetCookie;
+js_set $csrf_refused bff.csrfRefused;
+
+server {
+  listen 8091;
+  # Redirects of nginx itself as paths: right behind any proxy, whatever host name it uses.
+  absolute_redirect off;
+
+  # Read by bff.js.
+  js_var $bff_origin "${BFF_ORIGIN}";
+  js_var $oidc_issuer "${OIDC_ISSUER}";
+  js_var $oidc_client_id "${OIDC_CLIENT_ID}";
+
+  # Writes without the CSRF header, or with a wrong one: 403 before anything else.
+  if ($csrf_refused) {
+    rewrite ^ /_bff/csrf-refused last;
+  }
+
+  # Every application call needs the session of oauth2-proxy. Its answer carries the user's tokens, kept in variables
+  # for the locations below, and possibly a renewed session cookie.
+  auth_request /_bff/oauth2-auth;
+  auth_request_set $access_token $upstream_http_x_auth_request_access_token;
+  auth_request_set $id_token $upstream_http_authorization;
+  auth_request_set $auth_set_cookie $upstream_http_set_cookie;
+  error_page 401 @unauthorized;
+  error_page 403 @forbidden;
+
+  # On every answer, the CSRF cookie when the browser has none yet (with the first response of a session at the
+  # latest), and the session cookie renewed by oauth2-proxy. No location below has add_header, so these always apply.
+  add_header Set-Cookie $xsrf_set_cookie always;
+  add_header Set-Cookie $auth_set_cookie always;
+
+  client_max_body_size 100m;
+  client_body_buffer_size 64k;
+
+  # --- Session (contracts/bff.yaml) -------------------------------------------------------------------------------
+
+  # The signed-in user, from the claims of the access token.
+  location = /bff/user {
+    js_content bff.user;
+  }
+
+  # The login: checks the return address (same origin only, no open redirect) and goes to oauth2-proxy.
+  location = /bff/login {
+    auth_request off;
+    js_content bff.login;
+  }
+
+  # The logout (POST with the CSRF token): closes the session of oauth2-proxy and answers with the logout of Keycloak.
+  location = /logout {
+    js_content bff.logout;
+  }
+
+  location /bff/ {
+    auth_request off;
+    default_type application/problem+json;
+    return 404 '{"type":"about:blank","title":"Not found","status":404}';
+  }
+
+  # The two addresses of oauth2-proxy the browser needs: the start of the login (it checks `rd` itself) and the
+  # return from Keycloak. Its other endpoints (sign_out with a GET, sign_in, userinfo) are not exposed.
+  location = /oauth2/start {
+    auth_request off;
+    proxy_pass http://oauth2_proxy;
+    include /etc/nginx/bff/oauth2-proxy-headers.inc;
+  }
+  location = /oauth2/callback {
+    auth_request off;
+    proxy_pass http://oauth2_proxy;
+    include /etc/nginx/bff/oauth2-proxy-headers.inc;
+  }
+
+  # --- Permissions (contracts/authz.yaml), from the roles of the token and role-permissions.json ---------------------
+
+  location = /authz/capabilities {
+    js_content bff.capabilities;
+  }
+  location = /authz/check {
+    js_content bff.check;
+  }
+
+  # --- Services ------------------------------------------------------------------------------------------------------
+
+  # The back end of the application, with the user's access token. Accept-Language and the other headers of the
+  # browser pass on; the cookies of the BFF do not. No buffering and a long read timeout, for event streams.
+  location /api/ {
+    proxy_pass ${API_UPSTREAM};
+    proxy_set_header Authorization "Bearer $access_token";
+    proxy_set_header Cookie "";
+    proxy_set_header X-XSRF-TOKEN "";
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_http_version 1.1;
+    proxy_set_header Connection "";
+    proxy_buffering off;
+    proxy_request_buffering off;
+    proxy_cache off;
+    proxy_read_timeout 24h;
+    proxy_send_timeout 24h;
+  }
+
+  # This BFF has no telemetry service: the reports of the runtime are accepted and dropped. To keep them, forward
+  # /telemetry/ to a service of contracts/telemetry.yaml like /api/ above.
+  location /telemetry/ {
+    js_content bff.discard;
+  }
+
+  # --- The runtime (public: its files hold no data) --------------------------------------------------------------------
+
+  location / {
+    auth_request off;
+    proxy_pass ${RUNTIME_UPSTREAM};
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_http_version 1.1;
+    proxy_set_header Connection "";
+  }
+
+  # --- Internal ------------------------------------------------------------------------------------------------------
+
+  location = /_bff/oauth2-auth {
+    internal;
+    auth_request off;
+    proxy_pass http://oauth2_proxy/oauth2/auth;
+    proxy_pass_request_body off;
+    proxy_set_header Content-Length "";
+    include /etc/nginx/bff/oauth2-proxy-headers.inc;
+    proxy_set_header X-Forwarded-Uri $request_uri;
+  }
+
+  location = /_bff/sign-out {
+    internal;
+    auth_request off;
+    proxy_pass http://oauth2_proxy/oauth2/sign_out;
+    proxy_pass_request_body off;
+    proxy_set_header Content-Length "";
+    include /etc/nginx/bff/oauth2-proxy-headers.inc;
+  }
+
+  location = /_bff/csrf-refused {
+    internal;
+    auth_request off;
+    default_type application/problem+json;
+    return 403 '{"type":"about:blank","title":"CSRF token missing or wrong","status":403}';
+  }
+
+  location @unauthorized {
+    auth_request off;
+    default_type application/problem+json;
+    return 401 '{"type":"about:blank","title":"Session missing or expired","status":401}';
+  }
+
+  location @forbidden {
+    auth_request off;
+    default_type application/problem+json;
+    return 403 '{"type":"about:blank","title":"Forbidden","status":403}';
+  }
+}
+
+# Development only: oauth2-proxy (in this network namespace) reaches the Keycloak of idp/ on localhost:8180, as the
+# browser does, so the issuer in the tokens is the same for both. With an identity provider that has a real host name,
+# drop this server and point oauth2-proxy at it.
+server {
+  listen 127.0.0.1:8180;
+  location / {
+    proxy_pass ${KEYCLOAK_UPSTREAM};
+    proxy_set_header Host localhost:8180;
+  }
+}
