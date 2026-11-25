@@ -12,6 +12,14 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Added
+
+- A minimal BFF in Node (`reference/bff-node`, ADR-27): the BFF contract without tenants and the `/authz` part of the
+  authorization contract, with login through Keycloak (Authorization Code with PKCE, `openid-client`), sessions in
+  memory, CSRF, permissions per role from a JSON file and forwarding of `/api` with the user's token, event streams
+  included. An example to start from, not for production as it is; CI runs its tests and the BFF and authorization
+  kits against it.
+
 ## [0.22.1] - 2026-11-25
 
 ### Fixed

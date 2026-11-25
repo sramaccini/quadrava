@@ -178,6 +178,41 @@ jobs:
           server-password: GITHUB_TOKEN
       - run: mvn -B verify
 
+  bff-node:
+    name: Node BFF (unit tests and conformance)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: reference/bff-node
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: reference/bff-node/package-lock.json
+      - run: npm ci
+      - run: npm test
+      # The kits of the BFF and of the authorization against this BFF, with Keycloak and the development realm. The
+      # Node BFF takes port 8080, the callback registered in the realm; no Redis and no demo back end are needed.
+      - run: docker compose up -d keycloak
+        working-directory: idp
+      - name: Start the Node BFF
+        run: |
+          mkdir -p ../../.stack/logs
+          nohup npm start > ../../.stack/logs/bff-node.log 2>&1 &
+          for i in $(seq 1 120); do curl -s -o /dev/null http://localhost:8080/bff/user && exit 0; sleep 2; done
+          echo 'the Node BFF does not answer'; exit 1
+      - run: node tools/conformance-bff.mjs --bff http://localhost:8080 --return http://localhost:4200/ --user administrator --password administrator
+        working-directory: frontend
+      - name: Authorization kit on the session of the BFF
+        working-directory: frontend
+        run: |
+          login() { node --input-type=module -e "import { bffLogin } from './tools/conformance-lib.mjs'; console.log(await bffLogin('http://localhost:8080', '$1', '$1', 'http://localhost:4200/'))"; }
+          node tools/conformance-authz.mjs --authz http://localhost:8080 --app demo --cookie "$(login operator)" --other-cookie "$(login manager)"
+      - if: failure()
+        run: tail -n 100 ../../.stack/logs/bff-node.log; docker compose -f ../../idp/docker-compose.yml logs --tail 100
+
   conformance:
     name: Conformance kits (reference services)
     runs-on: ubuntu-latest

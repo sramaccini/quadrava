@@ -1,0 +1,34 @@
+{
+  "operator": [
+    "showcase.components.read",
+    "invoices.invoice.read",
+    "invoices.invoice.create",
+    "orders.order.read"
+  ],
+  "manager": [
+    "showcase.components.read",
+    "invoices.invoice.read",
+    "invoices.invoice.create",
+    "orders.order.read",
+    "orders.order.write",
+    "orders.order.approve",
+    "packages.package.read",
+    "packages.package.create",
+    "expenses.expense.read",
+    "expenses.expense.review"
+  ],
+  "administrator": [
+    "showcase.components.read",
+    "invoices.invoice.read",
+    "invoices.invoice.create",
+    "orders.order.read",
+    "orders.order.write",
+    "orders.order.approve",
+    "orders.iban.read",
+    "orders.iban.write",
+    "packages.package.read",
+    "packages.package.create",
+    "expenses.expense.read",
+    "expenses.expense.review"
+  ]
+}
