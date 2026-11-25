@@ -25,6 +25,12 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
   (`/order` for `{ "order": "{{ form }}" }`): the field errors of the service are matched to the fields below it.
 - Both are new optional properties of the screen schema: Quadrava Studio shows them in the property panel of the
   `input` and `form` nodes once it takes the new schema package.
+- A light BFF made of configuration only (ADR-27), `docker/bff-lite-proxy/`: oauth2-proxy for the login, the session
+  and the tokens, nginx with a short njs script for the CSRF cookie and header, `/bff/user`, `/authz/capabilities` and
+  `/authz/check` (permissions per role from a mounted JSON file), `/api` with the user's token and event streams. It
+  follows `contracts/bff.yaml` 0.5.0 and passes the BFF and authorization kits; an example to start from, not meant
+  for production as it is. The development realm has its client (`quadrava-bff-lite-proxy`, port 8091): recreate
+  Keycloak to import it.
 
 ### Fixed
 

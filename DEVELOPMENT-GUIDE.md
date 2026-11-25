@@ -259,6 +259,7 @@ Real focus handling and the dark theme are not covered yet (the application shel
 * **Contract first.** Change `contracts/*.yaml`, validate it, then change the code. Breaking changes need a new version path.
 * The reference implementation (`reference/`) is non-production by design: keep it simple and clearly labelled.
 * Build with `mvn verify` from `reference/`. Permission checks and the `X-Permissions-Version` header must match `authz.yaml`.
+* **Light BFF with oauth2-proxy and nginx** (ADR-27, [docker/bff-lite-proxy/README.md](docker/bff-lite-proxy/README.md)): configuration only, nothing to build. With the Keycloak of `idp/` running (recreated once, to import the client `quadrava-bff-lite-proxy`) and the demo API on 8084 (`node tools/demo-api.mjs` from `frontend/`): `cd docker/bff-lite-proxy && docker compose up -d`, then http://localhost:8091 (the runtime image with the examples). Its kits, from `frontend/`: `npm run conformance:bff -- --bff http://localhost:8091 --return http://localhost:8091/ --user administrator --password administrator`, and `npm run conformance:authz -- --authz http://localhost:8091 --app demo --cookie "…" --other-cookie "…"` with the cookies of two signed-in sessions. The permissions per role are in `docker/bff-lite-proxy/role-permissions.json`, read again at every call.
 
 ## 12. Commits and pull requests
 
