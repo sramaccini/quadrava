@@ -19,9 +19,12 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
   and so starts the search, only once the service accepts it. Until now such a rule made the filter invalid and was
   reported to the diagnostics. No change to the schema.
 - `input`: `errorPath`, the JSON Pointer of the value in the body of a `call` started outside a form (for example
-  `/customer/address/city`). The field errors of the service with that path go to the field; without it the path is
-  `/<field name>`, as before. New optional property of the screen schema: Quadrava Studio shows it in the property
-  panel of the `input` node. In `core`, `GroupField` gains the same optional `errorPath`.
+  `/customer/address/city`). The field errors of the service with that path go to the field, besides those with
+  `/<field name>`, as before. In `core`, `GroupField` gains the same optional `errorPath`.
+- `form`: `errorPath`, where the values of the form are in the body its actions send, for a body that wraps them
+  (`/order` for `{ "order": "{{ form }}" }`): the field errors of the service are matched to the fields below it.
+- Both are new optional properties of the screen schema: Quadrava Studio shows them in the property panel of the
+  `input` and `form` nodes once it takes the new schema package.
 
 ### Fixed
 

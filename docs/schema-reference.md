@@ -75,6 +75,7 @@
 | `columns` | integer 1–4 | Columns of the field grid (1 if absent). With little space the form goes back to one column. |
 | `layout` | `grid`, `flow` | How the fields are placed: grid (the default) in the columns of `columns`, each field taking `span` of them; flow, one after the other on the same line while they fit, then on the next: a field with `width` takes that width, one without it a whole line. In flow `columns` and `span` are not used. |
 | `validation` | list of formRule | Rules across fields, checked with those of the fields: each says the fields it checks (fields), and the message goes to them. For example [{ "after": "start", "fields": ["end"] }, { "sameAs": "email", "fields": ["emailConfirm"] }, { "atLeastOne": ["phone", "email"] }]. |
+| `errorPath` | text | Where the values of the form are in the body its actions send, as a JSON Pointer (for example /order when the body is { "order": "{{ form }}" }, with ~1 for / and ~0 for ~ in a name): the field errors of the service are matched to the fields below it. Absent, the values of the form are the body itself. |
 
 ### `tabs`
 
@@ -210,7 +211,7 @@
 | `default` |  | Initial value, if the state does not have one already (null if absent; false for checkbox and switch). Texts can contain {{ }}, for example a translated text. |
 | `onChange` | list of step | Steps run after every change of the value, which see the new value in `value`. Free text is written to the state when leaving the field or with Enter. |
 | `group` | text | Validation group: the step { "validate": "<group>" } checks the fields of the same group together. |
-| `errorPath` | text | Where the value of the field is in the body of the calls started outside a form, as a JSON Pointer (for example /customer/address/city, with ~1 for / and ~0 for ~ in a name): the field errors of the service with this path go to the field (a slash and the field name if absent). |
+| `errorPath` | text | Where the value of the field is in the body of the calls started outside a form, as a JSON Pointer (for example /customer/address/city, with ~1 for / and ~0 for ~ in a name): the field errors of the service with this path go to the field, as do those with a slash and the field name. |
 
 ### `box`
 

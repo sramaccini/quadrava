@@ -1679,6 +1679,12 @@
                   "$ref": "#/$defs/formRule"
                 },
                 "description": "Rules across fields, checked with those of the fields: each says the fields it checks (fields), and the message goes to them. For example [{ \"after\": \"start\", \"fields\": [\"end\"] }, { \"sameAs\": \"email\", \"fields\": [\"emailConfirm\"] }, { \"atLeastOne\": [\"phone\", \"email\"] }]."
+              },
+              "errorPath": {
+                "type": "string",
+                "maxLength": 200,
+                "pattern": "^(/([^/~]|~[01])*)+$",
+                "description": "Where the values of the form are in the body its actions send, as a JSON Pointer (for example /order when the body is { \"order\": \"{{ form }}\" }, with ~1 for / and ~0 for ~ in a name): the field errors of the service are matched to the fields below it. Absent, the values of the form are the body itself."
               }
             }
           }
@@ -2368,7 +2374,7 @@
                 "type": "string",
                 "maxLength": 200,
                 "pattern": "^(/([^/~]|~[01])*)+$",
-                "description": "Where the value of the field is in the body of the calls started outside a form, as a JSON Pointer (for example /customer/address/city, with ~1 for / and ~0 for ~ in a name): the field errors of the service with this path go to the field (a slash and the field name if absent)."
+                "description": "Where the value of the field is in the body of the calls started outside a form, as a JSON Pointer (for example /customer/address/city, with ~1 for / and ~0 for ~ in a name): the field errors of the service with this path go to the field, as do those with a slash and the field name."
               }
             }
           }

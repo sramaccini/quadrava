@@ -276,6 +276,42 @@ describe('validation: passwords, remote rules, errors of the services', () => {
       expect([...h.el.querySelectorAll('lc-repeater .cell-error')].map((e) => plain(e.textContent))).toEqual(['Invalid value']);
       expect(message(h, 'Email')).toBe('');
     });
+
+    it('a form whose values sit below errorPath in the body reads only the paths below it', async () => {
+      const h = await renderScreen({
+        components: [
+          {
+            ...form(
+              [
+                { name: 'email', type: 'text', label: 'Email' },
+                { name: 'lines', type: 'repeater', label: 'Lines', minRows: 1, fields: [{ name: 'code', type: 'text', label: 'Code' }] },
+              ],
+              [{ call: 'save', onError: { toast: '{{ string(error.fields) }} placed' } }],
+            ),
+            errorPath: '/order',
+          } as NodeDefinition,
+        ],
+        dataSources: { save: { type: 'rest', method: 'POST', url: '/api/orders', body: { order: '{{ form }}' } } },
+        respond: () => {
+          throw Object.assign(new Error('422'), {
+            status: 422,
+            fieldErrors: [
+              { path: '/order/email', code: 'email' },
+              { path: '/order/lines/0/code', code: 'alphanumeric' },
+              // Outside the values of the form: not placed.
+              { path: '/email', code: 'url' },
+              { path: '/orders/email', code: 'url' },
+              { path: '/order', code: 'url' },
+            ],
+          });
+        },
+      });
+      await save(h);
+      await h.until(() => h.toasts.length > 0, 'failure handled');
+      expect(h.toasts).toEqual(['2 placed']);
+      expect(message(h, 'Email')).toBe('Enter a valid email address');
+      expect([...h.el.querySelectorAll('lc-repeater .cell-error')].map((e) => plain(e.textContent))).toEqual(['Use letters and digits only']);
+    });
   });
 
   it('limits of a multiple choice and relative dates', async () => {
@@ -365,19 +401,35 @@ describe('validation: passwords, remote rules, errors of the services', () => {
             fieldErrors: [
               { path: '/customer/address/city', code: 'alphanumeric' },
               { path: '/sizes/kg~1m~0', code: 'integer' },
-              // The name alone no longer reaches a field with errorPath; a deeper path does not reach one by name.
-              { path: '/city', code: 'email' },
-              { path: '/customer/address/zip', code: 'email' },
+              // By name, as before; a deeper path does not reach a field without errorPath.
+              { path: '/zip', code: 'email' },
+              { path: '/customer/address/zip', code: 'url' },
             ],
           });
         },
       });
       (h.el.querySelector('lc-button button') as HTMLButtonElement).click();
       await h.until(() => h.toasts.length > 0, 'failure handled');
-      expect(h.toasts).toEqual(['2 placed']);
+      expect(h.toasts).toEqual(['3 placed']);
       expect(note(h, 'City')).toBe('Use letters and digits only');
       expect(note(h, 'Unit')).toBe('Enter a whole number');
-      expect(note(h, 'Zip')).toBe('');
+      expect(note(h, 'Zip')).toBe('Enter a valid email address');
+    });
+
+    it('a field with errorPath is still reached by its name', async () => {
+      const h = await renderScreen({
+        components: [
+          { ...field('city', 'City'), errorPath: '/customer/address/city' } as NodeDefinition,
+          { type: 'button', label: 'Send', onClick: [{ call: 'send' }] } as NodeDefinition,
+        ],
+        dataSources: { send: { type: 'rest', method: 'POST', url: '/api/send', body: { city: '{{ state.city }}' } } },
+        respond: () => {
+          throw Object.assign(new Error('422'), { status: 422, fieldErrors: [{ path: '/city', code: 'alphanumeric' }] });
+        },
+      });
+      (h.el.querySelector('lc-button button') as HTMLButtonElement).click();
+      await h.until(() => note(h, 'City') !== '', 'field error by name');
+      expect(note(h, 'City')).toBe('Use letters and digits only');
     });
   });
 

@@ -399,6 +399,8 @@ export interface FormNode extends NodeBase {
   layout?: 'grid' | 'flow';
   /** Rules across fields, checked with those of the fields. */
   validation?: FormValidationRule[];
+  /** JSON Pointer of the values of the form in the body its actions send (`/order`); absent, they are the body. */
+  errorPath?: string;
 }
 
 export interface TabDefinition {
@@ -730,7 +732,7 @@ export interface InputNode extends NodeBase {
   onChange?: Step[];
   /** Validation group for the `validate` step. */
   group?: string;
-  /** JSON Pointer of the value in the body of the calls started outside a form (`/<field name>` if absent). */
+  /** JSON Pointer of the value in the body of the calls started outside a form; `/<field name>` reaches it too. */
   errorPath?: string;
 }
 

@@ -309,15 +309,18 @@ export class FormComponent {
    * Places the field errors of the service on the fields (and the cells of repeaters); returns how many it placed. A
    * path is placed only when it ends exactly on a visible field (`/email`), on a data field kept in `into`
    * (`/custom/customer`) or on a cell of a row that exists (`/lines/0/code`); any other path, deeper or unknown, is
-   * left to the default message.
+   * left to the default message. With `errorPath` the values of the form sit below that path in the body (`/order`):
+   * only the paths below it are read, without it.
    */
   private placeServerErrors(errors: readonly FieldError[]): number {
     const fields: Record<string, string> = {};
     const cells: Record<string, Record<string, string>> = {};
     const into = this.node().fieldsFrom?.into;
+    const prefix = this.node().errorPath ?? '';
     let placed = 0;
     for (const { path, code, params } of errors) {
-      const segments = pointerSegments(path);
+      if (!path.startsWith(`${prefix}/`)) continue;
+      const segments = pointerSegments(path.slice(prefix.length));
       const inData = into !== undefined && segments[0] === into && segments.length === 2;
       const [name, row, column, ...rest] = inData ? [`${into}.${segments[1]}`] : segments;
       const item = this.items().find((i) => i.key === name);

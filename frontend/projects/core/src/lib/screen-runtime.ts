@@ -32,7 +32,7 @@ export interface GroupField {
   readonly field: FieldDefinition;
   /** Where its value is in the state. */
   readonly path: string;
-  /** Where its value is in the body of a call, as a JSON Pointer (`/<field name>` if absent). */
+  /** Where its value is in the body of a call, as a JSON Pointer; `/<field name>` reaches the field too. */
   readonly errorPath?: string;
   /** Shows an error of a service on the field (until its value changes). */
   showFieldError(error: FieldError): void;
@@ -430,13 +430,14 @@ export class ScreenRuntime {
 
   /**
    * Field errors of a service for the standalone fields (a `call` started outside a form): an error goes to every
-   * standalone field whose `errorPath` is its path (`/<field name>` if absent). Returns how many were placed.
+   * standalone field whose `errorPath` is its path, and `/<field name>` to the fields with that name. Returns how many
+   * were placed.
    */
   placeFieldErrors(errors: readonly FieldError[]): number {
     const fields = [...untracked(() => this.groups()).values()].flat();
     let placed = 0;
     for (const error of errors) {
-      const targets = fields.filter((e) => (e.errorPath ?? `/${e.field.name}`) === error.path);
+      const targets = fields.filter((e) => e.errorPath === error.path || `/${e.field.name}` === error.path);
       for (const target of targets) target.showFieldError(error);
       if (targets.length) placed++;
     }
