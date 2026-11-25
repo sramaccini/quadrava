@@ -4,8 +4,9 @@ A Backend for Frontend for Quadrava made of configuration only (ADR-27, `docs/ad
 [oauth2-proxy](https://oauth2-proxy.github.io/oauth2-proxy/) signs the user in with OpenID Connect and keeps the
 session and the tokens; nginx is the only address the browser talks to, asks oauth2-proxy whether each call has a session
 (`auth_request`) and adds what oauth2-proxy lacks with a short njs script (`nginx/bff.js`): the CSRF cookie and header,
-`/bff/user`, `/authz/capabilities` and `/authz/check`. It follows `contracts/bff.yaml` (0.5.0) and passes the BFF
-conformance kit, so an application can move between it, the minimal Node BFF and the reference BFF on authz-library
+`/bff/user`, `/authz/capabilities`, `/authz/check`, `/authz/roles` and the choice of the operational role
+(`POST /bff/role`, ADR-28). It follows `contracts/bff.yaml` (0.6.0) and passes the BFF and authorization conformance
+kits, so an application can move between it, the minimal Node BFF and the reference BFF on authz-library
 without touching its JSON.
 
 **An example to start from, not meant for production as it is**: plain HTTP, development credentials in
@@ -48,7 +49,7 @@ sequenceDiagram
 | `compose.yaml` | nginx (official image, njs included), oauth2-proxy, Redis for its sessions, the runtime image |
 | `nginx/nginx.conf` | Main configuration: the njs module (QuickJS engine) and the server below |
 | `nginx/templates/bff.conf.template` | The server: which paths need a session, where each goes, the CSRF check. The image fills in the `${…}` values from the environment of `compose.yaml` when it starts |
-| `nginx/bff.js` | The njs glue: CSRF cookie and check, login with a checked return address, user, permissions, logout |
+| `nginx/bff.js` | The njs glue: CSRF cookie and check, login with a checked return address, user, permissions, operational role, logout |
 | `role-permissions.json` | Permissions per role (mounted, editable) |
 
 ## Running it
@@ -77,6 +78,13 @@ The conformance kit, from `frontend/`:
 
 ```bash
 npm run conformance:bff -- --bff http://localhost:8091 --return http://localhost:8091/ --user administrator --password administrator
+```
+
+and the authorization kit, with the cookies of two signed-in sessions of different users (for example copied from the
+browser, or from `bffLogin` of `tools/conformance-lib.mjs`):
+
+```bash
+npm run conformance:authz -- --authz http://localhost:8091 --app demo --cookie "…" --other-cookie "…"
 ```
 
 (`npm run conformance` checks the services of the local stack on their own ports; this BFF is checked with the line
@@ -111,14 +119,28 @@ permissions of `role-permissions.json`:
 ```json
 {
   "roles": {
-    "operator": ["orders.order.read", "invoices.invoice.read"],
-    "manager": ["orders.order.read", "orders.order.write", "orders.order.approve"]
+    "user": { "label": "User", "base": true, "permissions": ["showcase.components.read"] },
+    "operator": { "label": "Operator", "permissions": ["orders.order.read", "invoices.invoice.read"] },
+    "manager": { "label": "Manager", "permissions": ["orders.order.read", "orders.order.write", "orders.order.approve"] }
   }
 }
 ```
 
-A user gets the union of the permissions of their roles (`domain.resource.action`, contracts/authz.yaml), the same for
-every application (`app` is required but not used). The file is read again at every call: after editing it, the next
+A role is an object with its `permissions` (`domain.resource.action`, contracts/authz.yaml), a `label` for the menu
+(its identifier if absent) and `base`; a plain list of permissions, the earlier format, is an operational role labelled
+with its identifier. The permissions are the same for every application (`app` is required but not used).
+
+**Operational roles** (ADR-28): a `base` role always applies, the others are chosen one at a time. A user with
+operational roles works as one of them: the permissions are those of the base roles plus the active one, `/bff/user`
+lists `operationalRoles` and `currentRole`, and `POST /bff/role` with `{ "role": "<id>" }` (and the CSRF token)
+switches. Without operational roles, the user gets the union of the permissions of all their roles, as before, and the
+user has no role fields. The `role` that a page sends to `/authz` and its `X-Active-Role` change nothing.
+
+oauth2-proxy has no place for data of the application in its session, so the active role is kept in an HttpOnly
+cookie (`quadrava_lite_role`, `SameSite=Lax`, 30 days) that `POST /bff/role` sets. It is not trusted: at every call
+njs takes it only if it names an operational role of the user in the token, otherwise the first one (in alphabetical
+order). So the cookie can only choose among the user's own roles, as the switch does; it also makes the next login of
+the same browser open on the last role used. The file is read again at every call: after editing it, the next
 `/authz/capabilities` answers with the new permissions and a new `X-Permissions-Version`, and the runtime reloads them.
 Another identity provider puts the roles elsewhere (`groups`, `roles`, a claim of a client): change `rolesOf` in
 `nginx/bff.js`.
@@ -131,11 +153,13 @@ The permissions only drive the interface: the services behind `/api` check every
 | --- | --- |
 | Session missing or expired: `401`, never a redirect | Every location needs a session (`auth_request` to `/oauth2/auth` of oauth2-proxy) unless it is public (the runtime files, the login); without one nginx answers `401` in Problem format |
 | `GET /bff/login?return=` | njs accepts only a return address with the origin of `BFF_ORIGIN` (otherwise `400` Problem, no open redirect) and sends its path to `/oauth2/start?rd=` |
-| `GET /bff/user` | njs, from the claims of the access token: `name`, `username`, `email`, `roles`; no tokens |
+| `GET /bff/user` | njs, from the claims of the access token: `name`, `username`, `email`, `roles`, and `operationalRoles` and `currentRole` when the user has operational roles; no tokens |
+| `POST /bff/role` | Needs the session and the CSRF token. njs checks the body (`400`) and that the role is an operational role of the user (`404`), sets the role cookie and answers `204` with the new `X-Permissions-Version` |
 | `POST /logout` | Needs the session and the CSRF token. njs closes the session of oauth2-proxy (cookie and tokens in Redis) and answers `{ "redirect": … }` with the logout of Keycloak (`id_token_hint`, back to `BFF_ORIGIN`) |
 | CSRF | `XSRF-TOKEN` cookie (not HttpOnly, `SameSite=Lax`, random) on any answer to a browser that has none, so with the first one of a session at the latest; a `POST`, `PUT`, `PATCH` or `DELETE` whose `X-XSRF-TOKEN` header is missing or different answers `403` Problem before anything else |
-| `/api/…` | Forwarded with `Authorization: Bearer <access token>`, without the cookies of the browser; `Accept-Language` and the other headers pass on; no buffering and a read timeout of 24 hours for event streams |
-| `/authz/capabilities`, `/authz/check` | njs, from the roles and `role-permissions.json`, with `X-Permissions-Version` |
+| `/api/…` | Forwarded with `Authorization: Bearer <access token>` and the active role in `X-Active-Role` (none without operational roles; never the one of the page), without the cookies of the browser; `Accept-Language` and the other headers pass on; no buffering and a read timeout of 24 hours for event streams |
+| `/authz/capabilities`, `/authz/check` | njs, from the roles, the active role and `role-permissions.json`, with `X-Permissions-Version`; a `role` of the page is ignored |
+| `/authz/roles` | njs: the roles of the user that the file knows, with `label` and `base` |
 | Tokens | Kept in Redis by oauth2-proxy (the browser has only an HttpOnly cookie with the session ticket); renewed with the refresh token when the session is older than 4 minutes (Keycloak's access tokens last 5) |
 
 `/telemetry/` is accepted and dropped (`204`): there is no telemetry service here. To keep the reports, forward it to a

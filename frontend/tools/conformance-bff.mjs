@@ -24,7 +24,7 @@ const logoutUrl = args['logout-url'] ?? '/logout';
 const tenantUrl = args['tenant-url'] ?? '/bff/tenant';
 const roleUrl = args['role-url'] ?? '/bff/role';
 const app = args.app ?? 'demo';
-const session = args.cookie ?? (args.user ? await bffLogin(base, args.user, args.password, returnTo) : null);
+let session = args.cookie ?? (args.user ? await bffLogin(base, args.user, args.password, returnTo) : null);
 const { check, report } = suite();
 
 /** A call as the browser makes it: cookies by hand, redirects not followed. */
@@ -162,9 +162,19 @@ async function permissions(query = '', headers = {}) {
   return { list: [...(r.json?.permissions ?? [])].sort(), version: r.json?.version };
 }
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-/** Switches the role of the session; the status of the answer. */
+/**
+ * Switches the role of the session; the status of the answer. The cookies the answer sets are kept for the next calls,
+ * as a browser does: a BFF without a session store may keep the active role in one of its own.
+ */
 async function switchRole(role) {
   const r = await call('POST', roleUrl, { ...(await withCsrf()), body: { role } });
+  const jar = new Map(session.split(';').map((c) => c.trim()).filter(Boolean).map((c) => [c.split('=')[0], c]));
+  for (const line of r.cookies) {
+    const pair = line.split(';')[0].trim();
+    const name = pair.split('=')[0];
+    if (name !== 'XSRF-TOKEN') jar.set(name, pair);
+  }
+  session = [...jar.values()].join('; ');
   return r.status;
 }
 

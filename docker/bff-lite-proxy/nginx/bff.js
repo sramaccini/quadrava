@@ -1,5 +1,6 @@
 // The glue of the light BFF (contracts/bff.yaml), in njs: what oauth2-proxy does not give. The CSRF double submit, the
-// login with a checked return address, the user and the permissions from the claims of the access token, the logout.
+// login with a checked return address, the user and the permissions from the claims of the access token, the active
+// operational role (ADR-28), the logout.
 // The token comes from oauth2-proxy (auth_request), which has checked it when it received it from Keycloak: this
 // script only reads its claims.
 import fs from 'fs';
@@ -13,6 +14,8 @@ const PERMISSION = /^[a-z0-9]+\.[a-z0-9]+\.[a-z0-9]+$/;
 const MAX_CHECKS = 200;
 const TTL_SECONDS = 300;
 const WRITES = ['POST', 'PUT', 'PATCH', 'DELETE'];
+/** The active operational role of the browser (ADR-28): HttpOnly, checked at every call against the token. */
+const ROLE_COOKIE = 'quadrava_lite_role';
 /** Roles Keycloak gives every user: not roles of the application. */
 const KEYCLOAK_ROLES = /^(default-roles-.*|offline_access|uma_authorization)$/;
 
@@ -84,10 +87,17 @@ function rolesOf(c) {
 function user(r) {
   const c = claims(r);
   if (!c) return problem(r, 401, 'Session missing or expired');
+  const granted = grantsOr500(r);
+  if (!granted) return;
   const body = { roles: rolesOf(c) };
   if (typeof c.name === 'string') body.name = c.name;
   if (typeof c.preferred_username === 'string') body.username = c.preferred_username;
   if (typeof c.email === 'string') body.email = c.email;
+  // The operational roles only when the user has some (optional part of the contract, ADR-28).
+  if (granted.operationalRoles.length) {
+    body.operationalRoles = granted.operationalRoles;
+    body.currentRole = granted.currentRole;
+  }
   json(r, 200, body);
 }
 
@@ -141,23 +151,59 @@ function discard(r) {
 
 // --- Permissions (contracts/authz.yaml) ----------------------------------------------------------------------------
 
-/** The permissions of the roles of the user, sorted, and their version (it changes when they change). */
-function permissionsOf(r) {
-  const file = JSON.parse(fs.readFileSync(PERMISSIONS_FILE, 'utf8'));
-  const byRole = file.roles || {};
-  const granted = {};
-  for (const role of rolesOf(claims(r))) {
-    for (const permission of Array.isArray(byRole[role]) ? byRole[role] : []) granted[permission] = true;
+/**
+ * A role of the file: a list of permissions (an operational role labelled with its identifier), or an object with
+ * `permissions` and, optionally, `label` and `base` (ADR-28). Null when the file does not describe it.
+ */
+function roleEntry(byRole, id) {
+  const entry = Object.prototype.hasOwnProperty.call(byRole, id) ? byRole[id] : undefined;
+  if (Array.isArray(entry)) return { label: id, base: false, permissions: entry };
+  if (entry && typeof entry === 'object' && Array.isArray(entry.permissions)) {
+    return { label: typeof entry.label === 'string' && entry.label ? entry.label : id, base: entry.base === true, permissions: entry.permissions };
   }
-  const permissions = Object.keys(granted).sort();
-  const version = crypto.createHash('sha256').update(permissions.join(',')).digest('hex').slice(0, 16);
-  return { permissions: permissions, version: version };
+  return null;
 }
 
-/** permissionsOf, or a 500 Problem (logged) when the file cannot be read. */
-function permissionsOr500(r) {
+/**
+ * The roles of the user that the file knows and the permissions of the session, sorted, with a version that changes
+ * with them and with the role (ADR-28). Without operational roles, those of all the roles. With them, those of the base
+ * roles plus the active one: the one in the role cookie (set by POST /bff/role) if the user holds it, otherwise the
+ * first; `wanted` instead of the cookie, for the answer of a switch. The cookie only chooses among the user's own
+ * roles, checked at every call: the page cannot widen anything.
+ */
+function grantsOf(r, wanted) {
+  const file = JSON.parse(fs.readFileSync(PERMISSIONS_FILE, 'utf8'));
+  const byRole = file.roles || {};
+  const known = rolesOf(claims(r)).filter((id) => roleEntry(byRole, id) !== null).sort();
+  const operational = known.filter((id) => !roleEntry(byRole, id).base);
+  if (wanted === undefined) {
+    try {
+      wanted = decodeURIComponent(cookie(r, ROLE_COOKIE));
+    } catch (e) {
+      wanted = ''; // a malformed cookie: the first role
+    }
+  }
+  const active = operational.includes(wanted) ? wanted : operational[0];
+  const granted = {};
+  for (const id of known) {
+    if (active !== undefined && id !== active && !roleEntry(byRole, id).base) continue;
+    for (const permission of roleEntry(byRole, id).permissions) granted[permission] = true;
+  }
+  const permissions = Object.keys(granted).sort();
+  const version = crypto.createHash('sha256').update((active || '') + '|' + permissions.join(',')).digest('hex').slice(0, 16);
+  return {
+    roles: known.map((id) => ({ id: id, label: roleEntry(byRole, id).label, base: roleEntry(byRole, id).base })),
+    operationalRoles: operational.map((id) => ({ id: id, label: roleEntry(byRole, id).label })),
+    currentRole: active,
+    permissions: permissions,
+    version: version,
+  };
+}
+
+/** grantsOf, or a 500 Problem (logged) when the file cannot be read. */
+function grantsOr500(r) {
   try {
-    return permissionsOf(r);
+    return grantsOf(r);
   } catch (e) {
     r.error(`cannot read ${PERMISSIONS_FILE}: ${e.message}`);
     problem(r, 500, 'Permissions not available');
@@ -165,10 +211,54 @@ function permissionsOr500(r) {
   }
 }
 
+/** The active role for X-Active-Role towards the services: '' without one (nginx then sends no header). */
+function activeRole(r) {
+  try {
+    return grantsOf(r).currentRole || '';
+  } catch (e) {
+    return '';
+  }
+}
+
+/** GET /authz/roles: the roles of the user that the file knows, with label and base flag. */
+function roles(r) {
+  if (r.method !== 'GET') return problem(r, 405, 'Method not allowed', { Allow: 'GET' });
+  if (!r.args.app) return problem(r, 400, 'The app parameter is missing');
+  const granted = grantsOr500(r);
+  if (!granted) return;
+  json(r, 200, granted.roles);
+}
+
+/**
+ * POST /bff/role with { "role": "<id>" } (the CSRF token is checked before): the role cookie for the next calls, if
+ * the role is one of the user's operational roles. 204 with the new permissions version, 404 or 400 otherwise.
+ */
+function switchRole(r) {
+  if (r.method !== 'POST') return problem(r, 405, 'Method not allowed', { Allow: 'POST' });
+  let body;
+  try {
+    body = JSON.parse(r.requestText || '');
+  } catch (e) {
+    return problem(r, 400, 'The body is not JSON');
+  }
+  if (!body || typeof body !== 'object' || Array.isArray(body) || Object.keys(body).length !== 1 || typeof body.role !== 'string') {
+    return problem(r, 400, 'The body is { "role": "<id>" }');
+  }
+  const granted = grantsOr500(r);
+  if (!granted) return;
+  if (!granted.operationalRoles.some((role) => role.id === body.role)) return problem(r, 404, 'Role not offered to the user');
+  const secure = r.variables.bff_origin.startsWith('https:') ? '; Secure' : '';
+  // Kept for 30 days: the next login of this browser opens on the same role (the last one used).
+  r.headersOut['Set-Cookie'] = `${ROLE_COOKIE}=${encodeURIComponent(body.role)}; Path=/; Max-Age=2592000; HttpOnly; SameSite=Lax${secure}`;
+  // The version the next calls will carry: that of the permissions of the new role.
+  r.headersOut['X-Permissions-Version'] = grantsOf(r, body.role).version;
+  r.return(204);
+}
+
 function capabilities(r) {
   if (r.method !== 'GET') return problem(r, 405, 'Method not allowed', { Allow: 'GET' });
   if (!r.args.app) return problem(r, 400, 'The app parameter is missing');
-  const granted = permissionsOr500(r);
+  const granted = grantsOr500(r);
   if (!granted) return;
   json(r, 200, { permissions: granted.permissions, version: granted.version, ttlSeconds: TTL_SECONDS }, { 'X-Permissions-Version': granted.version });
 }
@@ -189,7 +279,7 @@ function check(r) {
       return problem(r, 400, 'Invalid permission: the format is domain.resource.action, lower case');
     }
   }
-  const granted = permissionsOr500(r);
+  const granted = grantsOr500(r);
   if (!granted) return;
   const results = checks.map((item) => {
     const result = { permission: item.permission, allowed: granted.permissions.includes(item.permission) };
@@ -199,4 +289,4 @@ function check(r) {
   json(r, 200, { results: results }, { 'X-Permissions-Version': granted.version });
 }
 
-export default { xsrfSetCookie, csrfRefused, user, login, logout, discard, capabilities, check };
+export default { xsrfSetCookie, csrfRefused, activeRole, user, login, logout, discard, capabilities, check, roles, switchRole };

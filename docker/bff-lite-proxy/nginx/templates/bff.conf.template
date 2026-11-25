@@ -12,6 +12,8 @@ upstream oauth2_proxy {
 # CSRF double submit: the XSRF-TOKEN cookie to set (only when the request has none) and whether a write is refused.
 js_set $xsrf_set_cookie bff.xsrfSetCookie;
 js_set $csrf_refused bff.csrfRefused;
+# The active operational role of the user (ADR-28), for X-Active-Role towards the services; empty without one.
+js_set $active_role bff.activeRole;
 
 server {
   listen 8091;
@@ -58,6 +60,12 @@ server {
     js_content bff.login;
   }
 
+  # The choice of the operational role (POST with the CSRF token, ADR-28): kept in an HttpOnly cookie, checked against
+  # the roles of the token at every call.
+  location = /bff/role {
+    js_content bff.switchRole;
+  }
+
   # The logout (POST with the CSRF token): closes the session of oauth2-proxy and answers with the logout of Keycloak.
   location = /logout {
     js_content bff.logout;
@@ -90,16 +98,21 @@ server {
   location = /authz/check {
     js_content bff.check;
   }
+  location = /authz/roles {
+    js_content bff.roles;
+  }
 
   # --- Services ------------------------------------------------------------------------------------------------------
 
   # The back end of the application, with the user's access token. Accept-Language and the other headers of the
-  # browser pass on; the cookies of the BFF do not. No buffering and a long read timeout, for event streams.
+  # browser pass on; the cookies of the BFF and its X-Active-Role do not: the active role of the user goes instead (none
+  # without operational roles, as nginx drops an empty header). No buffering and a long read timeout, for event streams.
   location /api/ {
     proxy_pass ${API_UPSTREAM};
     proxy_set_header Authorization "Bearer $access_token";
     proxy_set_header Cookie "";
     proxy_set_header X-XSRF-TOKEN "";
+    proxy_set_header X-Active-Role $active_role;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
     proxy_http_version 1.1;

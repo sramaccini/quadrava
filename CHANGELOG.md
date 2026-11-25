@@ -68,6 +68,11 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
   the last role used or the first, `/bff/user` lists `operationalRoles` and `currentRole`, `POST /bff/role` switches,
   `/authz/roles` answers, `/authz` ignores the `role` of the page and `/api` gets `X-Active-Role`. Its
   `permissions.json` gains the base role `user`.
+- The light BFF with oauth2-proxy and nginx (`docker/bff-lite-proxy`) has the operational roles of BFF contract 0.6.0,
+  in the same format of `role-permissions.json` (which gains the base role `user`). Having no session store of its
+  own, it keeps the active role in an HttpOnly cookie set by `POST /bff/role` and checked against the roles of the
+  token at every call, so it only chooses among the user's own roles. The BFF kit now keeps the cookies set by a role
+  switch, as a browser does.
 
 ### Fixed
 
