@@ -270,6 +270,8 @@ describe('image, link, progress, timeline and kanban', () => {
       await h.until(() => h.el.querySelectorAll('lc-kanban .card').length === 1, 'cards');
       const card = h.el.querySelector('lc-kanban .card') as HTMLElement;
       expect([...card.querySelectorAll('nz-tag')].map((t) => plain(t.textContent))).toEqual(['high']);
+      // The text on the fill of the tone is the one the theme computes to read on it, not the white of NG-ZORRO.
+      expect((card.querySelector('nz-tag') as HTMLElement).style.color).toBe('var(--lc-on-error, #fff)');
       const avatar = card.querySelector('.avatar') as HTMLElement;
       expect([plain(avatar.textContent), avatar.getAttribute('role'), avatar.getAttribute('aria-label')]).toEqual(['AR', 'img', 'Anna Rossi']);
       expect(plain(card.querySelector('.footer')?.textContent)).toBe('Points: 3');

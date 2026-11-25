@@ -14,6 +14,17 @@ export const TONE_COLORS: Record<Tone, string> = {
 };
 
 /**
+ * Text on a fill of a tone (`TONE_COLORS`): the colour the theme bridge computes to read on it (4.5:1), white without a
+ * theme. NG-ZORRO writes white text on coloured tags, unreadable on the light fills of dark themes.
+ */
+export const TONE_TEXT: Record<Tone, string> = {
+  neutral: 'var(--lc-on-muted, #fff)',
+  primary: 'var(--lc-on-primary, #fff)',
+  success: 'var(--lc-on-success, #fff)',
+  danger: 'var(--lc-on-error, #fff)',
+};
+
+/**
  * Allowed image address: relative (no protocol, no leading `//` and no `..`), https, or an image embedded
  * in base64. Everything else (javascript:, http:, file:…) is discarded: null.
  */

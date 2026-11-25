@@ -12,6 +12,12 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Fixed
+
+- Kanban badges: the text on the fill of a tone is the colour the theme computes to read on it (4.5:1: `onPrimary`,
+  or black or white, whichever reads better; new variable `--lc-on-muted` for the neutral tone) instead of NG-ZORRO's
+  white, which on the light fills of dark themes read at 2.56:1 (neutral) and 2.77:1 (danger).
+
 ## [0.20.0] - 2026-11-24
 
 ### Added

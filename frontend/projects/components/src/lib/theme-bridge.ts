@@ -102,6 +102,8 @@ export function themeToNzVars(theme: ThemeDefinition): Record<string, string> {
   family('warning', colors.warning ?? '#ad6800');
   family('error', colors.danger ?? '#c62828');
   vars['--ant-info-color'] = colors.primary;
+  // Text on a fill of the muted colour (the neutral tone of kanban badges).
+  vars['--lc-on-muted'] = onColour(colors.mutedText ?? colors.onSurface);
   vars['--lc-focus-ring'] = focusRing(colors.primary, colors.background, colors.surface);
   return vars;
 }

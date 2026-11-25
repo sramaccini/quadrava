@@ -8,7 +8,7 @@ import { NzDropdownModule } from 'ng-zorro-antd/dropdown';
 import { NzMenuModule } from 'ng-zorro-antd/menu';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 import type { KanbanNode, Tone } from 'schema';
-import { TONE_COLORS } from './display.component';
+import { TONE_COLORS, TONE_TEXT } from './display.component';
 import { IconComponent } from './icon.component';
 import { cardKey, columnsOf, initials, kanbanBoard, lanesOf, placement, type KanbanLane, type KanbanLaning } from './kanban-board';
 
@@ -167,7 +167,8 @@ type Row = Record<string, unknown>;
                   @for (badge of node().badges; track $index) {
                     @let value = text(row, badge.field);
                     @if (value) {
-                      <nz-tag [nzColor]="color(badge.tones?.[value] ?? 'neutral')">{{ badge.valueKey ? i18n.t(badge.valueKey + '.' + value, {}, value) : value }}</nz-tag>
+                      @let tone = badge.tones?.[value] ?? 'neutral';
+                      <nz-tag [nzColor]="color(tone)" [style.color]="textColor(tone)">{{ badge.valueKey ? i18n.t(badge.valueKey + '.' + value, {}, value) : value }}</nz-tag>
                     }
                   }
                 </span>
@@ -297,6 +298,10 @@ export class KanbanComponent {
 
   protected color(tone: Tone): string {
     return TONE_COLORS[tone];
+  }
+
+  protected textColor(tone: Tone): string {
+    return TONE_TEXT[tone];
   }
 
   protected cardScope(row: Row): Scope {

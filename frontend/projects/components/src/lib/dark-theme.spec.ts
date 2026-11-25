@@ -37,6 +37,13 @@ describe('dark themes', () => {
     }
   });
 
+  it('text on the fills of the tones (kanban badges) keeps 4.5:1, also on the light fills of a dark theme', () => {
+    const vars = themeToNzVars({ ...dark, tokens: { colors: { ...dark.tokens.colors, mutedText: '#94a3b8', danger: '#f87171', success: '#4ade80' } } });
+    expect(contrast(vars['--lc-on-muted'], '#94a3b8')).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(vars['--lc-on-error'], '#f87171')).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(vars['--lc-on-success'], '#4ade80')).toBeGreaterThanOrEqual(4.5);
+  });
+
   it('a dark theme loads, after the dark stylesheet, its colours and its surfaces; a light one removes them', () => {
     TestBed.configureTestingModule({ providers: [provideLcComponents()] });
     const themes = TestBed.inject(ThemeService);
