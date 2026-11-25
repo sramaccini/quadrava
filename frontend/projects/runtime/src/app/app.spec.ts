@@ -82,6 +82,7 @@ describe('App (demo)', () => {
   beforeEach(() => {
     // Demo language fixed, whatever the browser declares.
     localStorage.setItem('lc.language', 'en');
+    localStorage.removeItem('lc.theme');
     vi.stubGlobal('fetch', async (url: string) => {
       const body = files[url];
       return body ? { ok: true, status: 200, json: async () => body } : { ok: false, status: 404, json: async () => ({}) };
@@ -467,6 +468,24 @@ describe('App (demo)', () => {
     await chooseSetting(fixture, 'General', 'Theme', 'light');
     await until(fixture, () => document.documentElement.style.getPropertyValue('--ant-primary-color') === '#1f5fbf', 'light theme');
     expect(document.getElementById('lc-nz-dark-theme')).toBeNull();
+  });
+
+  it('the chosen theme is remembered: a new start opens with it, and with the first one if it no longer exists', async () => {
+    const first = await start();
+    await until(first.fixture, () => rows(first.el) > 0, 'invoice list');
+    await chooseSetting(first.fixture, 'General', 'Theme', 'dark');
+    await until(first.fixture, () => document.documentElement.style.getPropertyValue('--lc-color-primary') === '#6aa6ff', 'dark theme');
+    expect(localStorage.getItem('lc.theme')).toBe('dark');
+    first.fixture.destroy();
+    document.documentElement.removeAttribute('style');
+    const again = await start();
+    await until(again.fixture, () => document.documentElement.style.getPropertyValue('--lc-color-primary') === '#6aa6ff', 'dark theme after a new start');
+    again.fixture.destroy();
+    document.documentElement.removeAttribute('style');
+    localStorage.setItem('lc.theme', 'removed-theme');
+    const fallback = await start();
+    await until(fallback.fixture, () => document.documentElement.style.getPropertyValue('--lc-color-primary') === '#1f5fbf', 'first theme');
+    expect(localStorage.getItem('lc.theme')).toBe('light');
   });
 
   it('a theme with a brand puts the logo of the application at the top left and its name and icons in the browser tab; without one, Quadrava', async () => {

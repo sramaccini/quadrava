@@ -18,6 +18,7 @@ import { ShellSession } from './shell-session';
 /** Languages of the demo: each has its `examples/i18n/<language>.json`. */
 
 const LANGUAGE_KEY = 'lc.language';
+const THEME_KEY = 'lc.theme';
 
 /** Prefix of the identifiers of the application's items in the user menu. */
 const APP_ITEM = 'app:';
@@ -47,6 +48,17 @@ function viewportSignal(destroyRef: DestroyRef) {
     medium.removeEventListener('change', update);
   });
   return current.asReadonly();
+}
+
+/** Initial theme: the last one chosen, if the application still has it, otherwise its first. */
+function initialTheme(themes: readonly string[]): string {
+  try {
+    const stored = localStorage.getItem(THEME_KEY);
+    if (stored && themes.includes(stored)) return stored;
+  } catch {
+    // Storage not available: the first theme.
+  }
+  return themes[0];
 }
 
 /** Initial language: the last one chosen, otherwise the browser's if the application has it, otherwise its default one. */
@@ -86,7 +98,7 @@ export class App {
   protected readonly nextProfile = signal(this.session.username());
   private readonly definitions = inject(DefinitionSource);
   protected readonly themes = this.definitions.themes();
-  protected readonly themeName = signal(this.themes[0]);
+  protected readonly themeName = signal(initialTheme(this.themes));
   protected readonly viewport = viewportSignal(inject(DestroyRef));
   protected readonly collapsed = signal(false);
   /** Drawer with the sidebar, only in the narrow band. */
@@ -181,6 +193,12 @@ export class App {
     });
     effect(() => {
       const name = this.themeName();
+      // Remembered like the language: a reload, a new tab or the next sign-in keep it.
+      try {
+        localStorage.setItem(THEME_KEY, name);
+      } catch {
+        // Storage not available: the choice holds only for this session.
+      }
       this.definitions
         .theme(name)
         .then(async (doc: unknown) => {
