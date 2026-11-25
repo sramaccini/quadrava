@@ -190,10 +190,12 @@ describe('HttpSession', () => {
     http.expectOne('/bff/user').flush({ name: 'Mario Rossi', username: 'mrossi', email: 'mrossi@example.test' });
     await p;
     expect(session.state()).toBe('authenticated');
-    expect(session.user()).toEqual({ name: 'Mario Rossi', username: 'mrossi', email: 'mrossi@example.test', roles: [], tenant: '' });
-    // Without tenants in the BFF there is nothing to choose.
+    expect(session.user()).toEqual({ name: 'Mario Rossi', username: 'mrossi', email: 'mrossi@example.test', roles: [], tenant: '', role: '' });
+    // Without tenants or operational roles in the BFF there is nothing to choose.
     expect(session.tenants()).toEqual([]);
     expect(session.canSwitchTenant()).toBe(false);
+    expect(session.operationalRoles()).toEqual([]);
+    expect(session.canSwitchRole()).toBe(false);
   });
   it('if the BFF does not respond it considers the session expired', async () => {
     const { http, redirects } = setup();
@@ -257,6 +259,78 @@ describe('HttpSession', () => {
     const done = session.switchTenant('south');
     http.expectOne('/bff/tenant').flush({ title: 'Tenant not offered to the user', status: 404 }, { status: 404, statusText: 'Not Found' });
     expect(await done).toBe(false);
+    expect(redirects).toEqual([]);
+  });
+
+  const twoRoles = {
+    username: 'grace',
+    roles: ['user', 'clerk', 'approver'],
+    operationalRoles: [{ id: 'clerk', label: 'Clerk' }, { id: 'approver', label: 'Approver' }, { label: 'no id' }],
+    currentRole: 'clerk',
+  };
+
+  it('offers the role switch only with the address configured and more than one operational role', async () => {
+    let { http } = setup();
+    let session = TestBed.inject(HttpSession);
+    let p = session.load();
+    http.expectOne('/bff/user').flush(twoRoles);
+    await p;
+    // The malformed entry is dropped; the role reaches the expressions.
+    expect(session.operationalRoles()).toEqual([{ id: 'clerk', label: 'Clerk' }, { id: 'approver', label: 'Approver' }]);
+    expect(session.user()['role']).toBe('clerk');
+    expect(session.canSwitchRole()).toBe(false);
+    expect(await session.switchRole('approver')).toBe(false);
+    http.expectNone('/bff/role');
+
+    TestBed.resetTestingModule();
+    ({ http } = setup({ roleSwitchUrl: '/bff/role' }));
+    session = TestBed.inject(HttpSession);
+    p = session.load();
+    http.expectOne('/bff/user').flush({ ...twoRoles, operationalRoles: twoRoles.operationalRoles.slice(0, 1), currentRole: 'approver' });
+    await p;
+    expect(session.canSwitchRole()).toBe(false);
+    // A current role that is not offered is not the role of the session.
+    expect(session.currentRole()).toBeNull();
+  });
+
+  it('switches role with a POST, then reads the user and the permissions again without reloading the page', async () => {
+    const { http, redirects } = setup({ roleSwitchUrl: '/bff/role' });
+    const session = TestBed.inject(HttpSession);
+    const p = session.load();
+    http.expectOne('/bff/user').flush(twoRoles);
+    await p;
+    expect(session.canSwitchRole()).toBe(true);
+    // The current role and the ones not offered are not sent.
+    expect(await session.switchRole('clerk')).toBe(false);
+    expect(await session.switchRole('admin')).toBe(false);
+    http.expectNone('/bff/role');
+
+    const done = session.switchRole('approver');
+    const request = http.expectOne('/bff/role');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ role: 'approver' });
+    request.flush(null, { status: 204, statusText: 'No Content' });
+    await Promise.resolve();
+    http.expectOne('/bff/user').flush({ ...twoRoles, currentRole: 'approver' });
+    http.expectOne((r) => r.url === '/authz/capabilities').flush(caps(['orders.order.approve'], 'v2'));
+    expect(await done).toBe(true);
+    expect(session.currentRole()).toBe('approver');
+    expect(TestBed.inject(HttpAuthorization).can('orders.order.approve')).toBe(true);
+    expect(redirects).toEqual([]);
+  });
+
+  it('a refused role switch keeps the role and the permissions', async () => {
+    const { http, redirects } = setup({ roleSwitchUrl: '/bff/role' });
+    const session = TestBed.inject(HttpSession);
+    const p = session.load();
+    http.expectOne('/bff/user').flush(twoRoles);
+    await p;
+    const done = session.switchRole('approver');
+    http.expectOne('/bff/role').flush({ title: 'Role not offered to the user', status: 404 }, { status: 404, statusText: 'Not Found' });
+    expect(await done).toBe(false);
+    http.expectNone('/bff/user');
+    http.expectNone((r) => r.url === '/authz/capabilities');
+    expect(session.currentRole()).toBe('clerk');
     expect(redirects).toEqual([]);
   });
 
@@ -518,6 +592,22 @@ describe('HttpTracer', () => {
     expect(req.request.headers.get('baggage')).toBe('lc.screen=order-list,lc.action=call%20approve%2C%20refresh%20orders');
     req.flush({});
     await p;
+  });
+
+  it('the active role of the session goes in the baggage of every call, for the audit trail', async () => {
+    const { http } = setup({ roleSwitchUrl: '/bff/role' });
+    const session = TestBed.inject(HttpSession);
+    const p = session.load();
+    http.expectOne('/bff/user').flush({ username: 'grace', operationalRoles: [{ id: 'clerk', label: 'Clerk' }], currentRole: 'clerk' });
+    await p;
+    const client = TestBed.inject(HttpClient);
+    client.get('/api/a').subscribe();
+    expect(http.expectOne('/api/a').request.headers.get('baggage')).toBe('lc.role=clerk');
+    const q = TestBed.inject(HttpDataClient).request({ method: 'GET', url: '/api/orders' }, { source: 'orders', baggage: { 'lc.screen': 'order-list' } });
+    const req = http.expectOne('/api/orders');
+    expect(req.request.headers.get('baggage')).toBe('lc.screen=order-list,lc.role=clerk');
+    req.flush([]);
+    await q;
   });
 
   it('a request without context has no baggage header, and one set by the caller is left as it is', () => {

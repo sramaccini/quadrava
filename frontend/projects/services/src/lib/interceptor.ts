@@ -16,7 +16,7 @@ export const LC_TRACE = new HttpContextToken<{ source?: string; parent?: SpanCon
 
 /**
  * For calls to the same origin: opens the HTTP span and puts its identity in `traceparent` (the services continue
- * the same trace) and the screen and action of the call in `baggage`, sends the language chosen by the user in `Accept-Language`
+ * the same trace) and the screen, the action and the active role (ADR-28) of the call in `baggage`, sends the language chosen by the user in `Accept-Language`
  * (the browser would send its own), watches `X-Permissions-Version` (if it changes, reloads the permissions) and on 401 redirects to the login.
  * Sends to telemetry are not traced: they would generate more spans.
  */
@@ -29,7 +29,9 @@ export const lcHttpInterceptor: HttpInterceptorFn = (req, next) => {
   // For data-source calls the name, not the URL: path and query may contain data values.
   const attributes: SpanAttributes = source ? { 'http.request.method': req.method, 'lc.datasource': source } : { 'http.request.method': req.method, 'url.path': req.url.split(/[?#]/)[0] };
   const span = untraced ? null : injector.get(HttpTracer).start('http.client', attributes, parent, 'client');
-  const audit = req.headers.has('baggage') ? null : baggage(context);
+  // The role is for the audit trail only: the services authorize with the X-Active-Role the BFF adds.
+  const role = injector.get(HttpSession).currentRole();
+  const audit = req.headers.has('baggage') ? null : baggage(role ? { ...context, 'lc.role': role } : context);
   const language = req.headers.has('Accept-Language') ? null : injector.get(I18n, null)?.locale();
   const headers: Record<string, string> = {
     ...(span ? { traceparent: traceparent(span.context) } : {}),

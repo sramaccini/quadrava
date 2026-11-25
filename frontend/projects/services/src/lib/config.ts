@@ -17,6 +17,11 @@ export interface LcServicesConfig {
    * user has more than one tenant, the shell offers the choice.
    */
   tenantSwitchUrl?: string;
+  /**
+   * Role switch: POST to the BFF with `{ role }` (contracts/bff.yaml, optional part, ADR-28). Only when it is set, and
+   * the user has more than one operational role, the shell offers the choice.
+   */
+  roleSwitchUrl?: string;
   /** Base of the authorization contract. */
   authzBase?: string;
   /** Base of the telemetry contract. */
@@ -42,6 +47,7 @@ export interface ResolvedServicesConfig {
   loginUrl: string;
   logoutUrl: string;
   tenantSwitchUrl: string | null;
+  roleSwitchUrl: string | null;
   authzBase: string;
   telemetryBase: string;
   telemetry: boolean;
@@ -60,6 +66,7 @@ export function resolveConfig(config: LcServicesConfig): ResolvedServicesConfig 
     loginUrl: config.loginUrl ?? '/bff/login',
     logoutUrl: config.logoutUrl ?? '/logout',
     tenantSwitchUrl: config.tenantSwitchUrl ?? null,
+    roleSwitchUrl: config.roleSwitchUrl ?? null,
     authzBase: config.authzBase ?? '/authz',
     telemetryBase: config.telemetryBase ?? '/telemetry/v1',
     telemetry: config.telemetry ?? true,

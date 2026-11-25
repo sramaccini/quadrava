@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Confirmation, I18n, UserProvider } from 'core';
 import { firstValueFrom } from 'rxjs';
+import { HttpAuthorization } from './authorization';
 import { LC_REDIRECT, LC_SERVICES_CONFIG } from './config';
 
 /** `refused`: the BFF answered 401 again right after a login, so no other login is started (no loop). */
@@ -38,6 +39,19 @@ export interface SessionTenant {
   label: string;
 }
 
+/** An operational role the user may work as (contracts/bff.yaml, OperationalRole, ADR-28): the label is shown as text. */
+export interface SessionRole {
+  id: string;
+  label: string;
+}
+
+/** Only the well-formed entries of a list of `{ id, label }` from the BFF, with those two fields only. */
+function choicesOf(list: unknown): { id: string; label: string }[] {
+  return Array.isArray(list)
+    ? list.filter((t): t is { id: string; label: string } => typeof t?.id === 'string' && typeof t?.label === 'string').map((t) => ({ id: t.id, label: t.label }))
+    : [];
+}
+
 /** The user of the session (contracts/bff.yaml, User). */
 interface BffUser {
   name?: string;
@@ -46,6 +60,8 @@ interface BffUser {
   roles?: string[];
   tenants?: unknown;
   currentTenant?: unknown;
+  operationalRoles?: unknown;
+  currentRole?: unknown;
 }
 
 /** Text of the request to sign in again, when the catalogue of the platform is not there. */
@@ -59,16 +75,14 @@ export class HttpSession extends UserProvider {
   private readonly redirect = inject(LC_REDIRECT);
   private readonly confirmation = inject(Confirmation, { optional: true });
   private readonly i18n = inject(I18n, { optional: true });
+  private readonly authorization = inject(HttpAuthorization);
   private readonly info = signal<BffUser | null>(null);
   /** A login for a sensitive action is being asked: the other calls refused at the same time do not ask again. */
   private reauthenticating = false;
 
   readonly state = signal<SessionState>('unknown');
   /** Tenants offered to the user: only the well-formed ones; none when the BFF has no tenants. */
-  readonly tenants = computed<readonly SessionTenant[]>(() => {
-    const list = this.info()?.tenants;
-    return Array.isArray(list) ? list.filter((t): t is SessionTenant => typeof t?.id === 'string' && typeof t?.label === 'string').map((t) => ({ id: t.id, label: t.label })) : [];
-  });
+  readonly tenants = computed<readonly SessionTenant[]>(() => choicesOf(this.info()?.tenants));
   /** The tenant of the session, if it is one of those offered. */
   readonly currentTenant = computed(() => {
     const id = this.info()?.currentTenant;
@@ -76,6 +90,15 @@ export class HttpSession extends UserProvider {
   });
   /** The choice is offered only when the switch address is configured and there is more than one tenant. */
   readonly canSwitchTenant = computed(() => this.config.tenantSwitchUrl !== null && this.tenants().length > 1);
+  /** Operational roles offered to the user (ADR-28): only the well-formed ones; none when the BFF has no roles. */
+  readonly operationalRoles = computed<readonly SessionRole[]>(() => choicesOf(this.info()?.operationalRoles));
+  /** The active role of the session, if it is one of those offered. */
+  readonly currentRole = computed(() => {
+    const id = this.info()?.currentRole;
+    return typeof id === 'string' && this.operationalRoles().some((r) => r.id === id) ? id : null;
+  });
+  /** The choice is offered only when the switch address is configured and there is more than one operational role. */
+  readonly canSwitchRole = computed(() => this.config.roleSwitchUrl !== null && this.operationalRoles().length > 1);
 
   async load(): Promise<void> {
     try {
@@ -89,7 +112,7 @@ export class HttpSession extends UserProvider {
 
   user(): Record<string, unknown> {
     const u = this.info();
-    return u ? { name: u.name ?? '', username: u.username ?? '', email: u.email ?? '', roles: u.roles ?? [], tenant: this.currentTenant() ?? '' } : {};
+    return u ? { name: u.name ?? '', username: u.username ?? '', email: u.email ?? '', roles: u.roles ?? [], tenant: this.currentTenant() ?? '', role: this.currentRole() ?? '' } : {};
   }
 
   /**
@@ -151,6 +174,24 @@ export class HttpSession extends UserProvider {
     }
     this.redirect((globalThis.location?.href ?? '/').split('#')[0]);
     return true;
+  }
+
+  /**
+   * Makes another operational role the active one (ADR-28): a POST to the BFF (never a GET), then the user and the
+   * permissions are read again, so the interface follows the new role without reloading the page. False if the switch
+   * is not offered, the role is not one of those listed, or the BFF refuses it.
+   */
+  async switchRole(id: string): Promise<boolean> {
+    const url = this.config.roleSwitchUrl;
+    if (!this.canSwitchRole() || url === null || id === this.currentRole() || !this.operationalRoles().some((r) => r.id === id)) return false;
+    try {
+      await firstValueFrom(this.http.post(url, { role: id }));
+    } catch {
+      // Refused, or session expired (the interceptor then goes to the login).
+      return false;
+    }
+    await Promise.all([this.load(), this.authorization.load()]);
+    return this.currentRole() === id;
   }
 
   /**

@@ -51,6 +51,10 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
   kit the user's `operationalRoles` and `currentRole`, `POST /bff/role` and that a `role` or `X-Active-Role` sent
   by the page does not change the permissions. `npm run conformance` runs the authorization kit as the administrator,
   who has two operational roles.
+- `services`: operational roles of the BFF (ADR-28). `roleSwitchUrl` in `LcServicesConfig`; `HttpSession` gains
+  `operationalRoles`, `currentRole`, `canSwitchRole` and `switchRole(id)`, a POST to the BFF followed by a new read of
+  the user and of the permissions, without reloading the page; the type `SessionRole`. The active role is
+  `user.role` in the expressions (empty without roles) and goes in the W3C `baggage` of every call as `lc.role`.
 
 ### Fixed
 
