@@ -10,6 +10,9 @@
     "checkStaff": {
       "ref": "showcase-validation/checkStaff"
     },
+    "findStaff": {
+      "ref": "showcase-validation/findStaff"
+    },
     "saveStaff": {
       "ref": "showcase-validation/saveStaff"
     },
@@ -415,7 +418,7 @@
         {
           "id": "staff-intro",
           "type": "text",
-          "text": "{{ t('showcase_validation.staff_intro', 'The staff number is checked on the service while you type (S000001 and S123456 are already used). The password shows its strength. When saving, the service checks again and can reject a field: an address at example.org comes back as an error on the e-mail.') }}"
+          "text": "{{ t('showcase_validation.staff_intro', 'The staff number is checked on the service while you type (S000001 and S123456 are already used). The password shows its strength. When saving, the service checks again and can reject a field: an address at example.org comes back as an error on the e-mail. The search below starts only with a staff number that exists.') }}"
         },
         {
           "id": "form-staff",
@@ -516,6 +519,32 @@
               ]
             }
           ]
+        },
+        {
+          "id": "filter-staff",
+          "type": "filterBar",
+          "bind": "state.staffSearch",
+          "fields": [
+            {
+              "name": "number",
+              "type": "text",
+              "label": "{{ t('showcase_validation.staff_search', 'Search by staff number') }}",
+              "pattern": "S\\d{6}",
+              "messages": {
+                "pattern": "{{ t('showcase_validation.staff_number_pattern', 'S followed by six digits, for example S000123') }}"
+              },
+              "validation": [
+                {
+                  "remote": "findStaff"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "staff-search-result",
+          "type": "text",
+          "text": "{{ state.staffSearch.number == null ? t('showcase_validation.staff_search_all', 'Searching for: every staff member') : t('showcase_validation.staff_search_one', 'Searching for: {number}', {'number': state.staffSearch.number}) }}"
         }
       ]
     },

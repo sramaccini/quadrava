@@ -203,6 +203,10 @@ export class DemoBackend {
     if (path === '/api/showcase/staff/check' && req.method === 'GET') {
       return { valid: !this.staffNumbers.has(String(req.query?.['number'] ?? '').toUpperCase()), code: 'staffNumberTaken' };
     }
+    // The search by staff number of the same showcase: its filter asks here before searching.
+    if (path === '/api/showcase/staff/exists' && req.method === 'GET') {
+      return { valid: this.staffNumbers.has(String(req.query?.['number'] ?? '').toUpperCase()), code: 'staffNumberUnknown' };
+    }
     // Saving repeats the checks of the screen, as every service must, plus one of its own (a blocked e-mail domain): the
     // problems come back as field errors in the Problem (contracts/problem.yaml).
     if (path === '/api/showcase/staff' && req.method === 'POST') {

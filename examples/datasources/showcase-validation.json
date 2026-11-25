@@ -17,6 +17,14 @@
         "number": "{{ value }}"
       }
     },
+    "findStaff": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/showcase/staff/exists",
+      "params": {
+        "number": "{{ value }}"
+      }
+    },
     "saveStaff": {
       "type": "rest",
       "method": "POST",

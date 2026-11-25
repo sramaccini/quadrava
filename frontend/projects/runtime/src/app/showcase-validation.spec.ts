@@ -135,6 +135,25 @@ describe('Showcase: validation', () => {
     expect(TestBed.inject(DemoDiagnostics).events()).toEqual([]);
   });
 
+  it('the search by staff number starts only with a number the service knows', { timeout: 20000 }, async () => {
+    const s = await openShowcase('/showcase/showcase-validation');
+    const box = s.el.querySelector('[data-node-id="filter-staff"] input') as HTMLInputElement;
+    const note = (): string => plainText(s.el.querySelector('[data-node-id="filter-staff"] .ant-form-item-explain')?.textContent);
+    const result = (): string => plainText(s.el.querySelector('[data-node-id="staff-search-result"]')?.textContent);
+    const enter = (value: string): void => {
+      box.value = value;
+      box.dispatchEvent(new Event('change'));
+    };
+    expect(result()).toBe('Searching for: every staff member');
+    enter('S999999');
+    await s.until(() => note() === 'No staff member has this number', 'unknown number');
+    expect(result()).toBe('Searching for: every staff member');
+    enter('S123456');
+    await s.until(() => result() === 'Searching for: S123456', 'search');
+    expect(note()).toBe('');
+    expect(TestBed.inject(DemoDiagnostics).events()).toEqual([]);
+  });
+
   it('isValid() in an expression', async () => {
     const s = await openShowcase('/showcase/showcase-validation');
     const result = (): string => plainText(s.el.querySelector('[data-node-id="iban-result"]')?.textContent);

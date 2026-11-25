@@ -12,6 +12,13 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Added
+
+- `filterBar`: remote rules (`{ "remote": "<data source>" }`) work in its fields as in forms: pause without typing,
+  spinner, a newer value cancels the request, answers kept per value, translated message. The value reaches the state,
+  and so starts the search, only once the service accepts it. Until now such a rule made the filter invalid and was
+  reported to the diagnostics. No change to the schema.
+
 ## [0.22.1] - 2026-11-25
 
 ### Fixed

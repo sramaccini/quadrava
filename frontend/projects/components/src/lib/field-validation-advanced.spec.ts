@@ -131,6 +131,72 @@ describe('validation: passwords, remote rules, errors of the services', () => {
       await h.settle();
       expect(h.toasts).not.toContain('went');
     });
+
+    describe('in a filter bar', () => {
+      const filters = (respond: (r: DataRequest) => unknown) =>
+        renderScreen({
+          components: [{ type: 'filterBar', bind: 'state.filters', fields: [{ ...staff, validation: [{ remote: 'checkStaff', debounce: 100 }] }] }] as NodeDefinition[],
+          dataSources: { ...dataSources, rows: { type: 'rest', method: 'GET', url: '/api/rows', params: { staff: '{{ state.filters.staff }}' } } },
+          respond,
+        });
+      const searches = (h: ScreenHarness) => h.requests.filter((r) => r.url === '/api/rows');
+      const checks = (h: ScreenHarness) => h.requests.filter((r) => r.url === '/api/staff/check');
+      const box = (h: ScreenHarness) => h.el.querySelector('lc-filter-bar input');
+      const shown = (h: ScreenHarness) => plain(h.el.querySelector('lc-filter-bar .ant-form-item-explain')?.textContent);
+      // A known code is translated by the platform catalogue.
+      const answer = (r: DataRequest) => (r.url === '/api/rows' ? [] : { valid: !taken.has(String(r.query?.['number'])), code: 'alphanumeric' });
+
+      it('searches only once the service accepts the value, with a spinner while it checks', async () => {
+        const h = await filters(answer);
+        await h.until(() => searches(h).length === 1, 'first load');
+        type(box(h), 'S000002', 'change');
+        await h.settle();
+        expect(h.el.querySelector('lc-filter-bar .ant-form-item-is-validating')).not.toBeNull();
+        expect(searches(h)).toHaveLength(1);
+        await h.until(() => searches(h).length === 2, 'search after the check');
+        expect(searches(h)[1].query).toEqual({ staff: 'S000002' });
+        expect(h.el.querySelector('lc-filter-bar .ant-form-item-is-validating')).toBeNull();
+      });
+
+      it('a value refused, or not checked, is not searched for; its message is translated', async () => {
+        let down = false;
+        const h = await filters((r) => {
+          if (down && r.url === '/api/staff/check') throw new Error('offline');
+          return answer(r);
+        });
+        await h.until(() => searches(h).length === 1, 'first load');
+        type(box(h), 'S000002', 'change');
+        await h.until(() => searches(h).length === 2, 'accepted');
+        type(box(h), 'S000001', 'change');
+        await h.until(() => shown(h) === 'Use letters and digits only', 'refused');
+        down = true;
+        type(box(h), 'S000005', 'change');
+        await h.until(() => shown(h) === 'The value could not be checked: try again', 'check failed');
+        // The search stays the one of the last value accepted.
+        expect(searches(h)).toHaveLength(2);
+        // Emptying the filter searches for everything at once.
+        type(box(h), '', 'change');
+        await h.until(() => searches(h).length === 3, 'all rows');
+        expect(searches(h)[2].query).toEqual({});
+        expect(shown(h)).toBe('');
+      });
+
+      it('a newer value cancels the check in progress; an answer already known is not asked again', async () => {
+        const h = await filters(answer);
+        await h.until(() => searches(h).length === 1, 'first load');
+        type(box(h), 'S000002', 'change');
+        await h.settle();
+        type(box(h), 'S000003', 'change');
+        await h.until(() => searches(h).length === 2, 'search');
+        expect(checks(h).map((r) => r.query)).toEqual([{ number: 'S000003' }]);
+        expect(searches(h)[1].query).toEqual({ staff: 'S000003' });
+        type(box(h), 'S000002', 'change');
+        await h.until(() => searches(h).length === 3, 'second search');
+        type(box(h), 'S000003', 'change');
+        await h.until(() => searches(h).length === 4, 'third search');
+        expect(checks(h).map((r) => r.query)).toEqual([{ number: 'S000003' }, { number: 'S000002' }]);
+      });
+    });
   });
 
   describe('errors of the services', () => {

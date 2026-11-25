@@ -235,7 +235,7 @@ export function checkRules(rules: readonly CompiledRule[], field: Pick<FieldDefi
     if (rule.name !== 'remote' || isEmptyValue(value)) continue;
     const scope: Scope = { ...env.scope, value };
     if (!applies(rule, scope, env)) continue;
-    if (!env.remote) return { error: misconfigured(field, rule, 'remote rules are checked only in forms and standalone fields', env), warning: null };
+    if (!env.remote) return { error: misconfigured(field, rule, 'remote rules are checked only in forms, standalone fields and filter bars', env), warning: null };
     const result = env.remote.result(`${env.slot ?? ''}${field.name}/${index}`, rule, value, scope);
     if (result.status === 'pending') return { error: null, warning, pending: true };
     if (result.status === 'failed') return { error: env.i18n.t('lc.validation.remoteFailed'), warning: null, remote: true };
