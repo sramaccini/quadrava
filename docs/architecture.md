@@ -138,7 +138,7 @@ sequenceDiagram
 
 The BFF is the only one that talks to the provider and holds the tokens; only the session cookie reaches the browser.
 
-Two modes were planned: **BFF** (recommended for regulated contexts) and **SPA with tokens in memory** (simpler, more exposed). Only the BFF mode is implemented: `contracts/bff.yaml` says what the runtime expects from it and the reference BFF implements it. In both, no screen is shown before authentication and the JSON never contains secrets. Renewal and logout are handled by the runtime's authentication service, with a clean return to the sign-in screen on expiry; in BFF mode the service forwards API calls adding the token and can enforce the list of allowed hosts.
+There is only the **BFF** mode: an SPA mode with tokens in the browser was planned and then dropped (ADR-27), because a token in the page is exposed to any script that runs in it. `contracts/bff.yaml` says what the runtime expects from the BFF; the reference BFF implements it, and two light BFFs (oauth2-proxy and nginx, a minimal one in Node) make it cheap to run one. No screen is shown before authentication and the JSON never contains secrets. Renewal and logout are handled by the runtime's authentication service, with a clean return to the sign-in screen on expiry; in BFF mode the service forwards API calls adding the token and can enforce the list of allowed hosts.
 
 ## 7. Authorization
 
@@ -259,7 +259,7 @@ In a platform that interprets documents, the document itself is untrusted input:
 | --- | --- |
 | Tampered JSON or malicious expression | Validation against the schema in three places; expressions in a sandbox; no use of `eval` or equivalents |
 | XSS through texts or data | Values always inserted as text, never as HTML; sanitisation where HTML is unavoidable; restrictive CSP |
-| Token theft | BFF mode with HttpOnly, Secure and SameSite cookies; in SPA mode tokens only in memory, never in localStorage |
+| Token theft | Tokens only in the BFF, HttpOnly, Secure and SameSite cookies in the browser; no SPA mode (ADR-27) |
 | CSRF in BFF mode | SameSite cookies and anti-CSRF tokens for requests that change data |
 | Privilege escalation from the front end | The back end checks every request and filters data: the JSON cannot grant anything |
 | Calls to arbitrary hosts declared in the JSON | Data-source URLs are relative to the same origin; the BFF forwards only its configured prefixes to its configured hosts |
@@ -276,7 +276,7 @@ Each decision lists the alternatives considered and its status. "Proposed" means
 | --- | --- | --- | --- | --- |
 | ADR-01 | On the back-end side the platform provides only REST interfaces and a reference implementation | Providing complete production back-end services | Keeps the product focused; back ends depend on the customer's context | Accepted |
 | ADR-02 | The runtime interprets the JSON | Generating Angular code from the JSON | Immediate changes and faithful preview; security is recovered through validation | Accepted |
-| ADR-03 | Tokens handled with the BFF pattern, with SPA mode as an option | Tokens only in the browser | Safer for regulated contexts | Accepted for the BFF (`contracts/bff.yaml`); the SPA mode is not implemented |
+| ADR-03 | Tokens handled with the BFF pattern, with SPA mode as an option | Tokens only in the browser | Safer for regulated contexts | Accepted for the BFF (`contracts/bff.yaml`); the SPA option was dropped by ADR-27 |
 | ADR-04 | CEL for predicates | JSONata, JSONLogic | Safe, typed, verifiable; the same rules on the Java side too | Accepted |
 | ADR-05 | OpenTelemetry with OTLP/HTTP ingestion; in the browser a small exporter of its own (spans and logs as OTLP/HTTP JSON in batches) instead of the OpenTelemetry SDK | Proprietary log protocol; the OpenTelemetry SDK for browsers | Standard, existing tools, propagation to the back end. The runtime needs three kinds of span with explicit parents and attributes chosen one by one (no data values): a few hundred lines without new dependencies, where the SDK would add weight and automatic instrumentation that could put URLs with data into the attributes | Accepted, amended (15 October 2026) |
 | ADR-06 | Audit written by the back end | Audit sent by the front end | The front end is not a trustworthy source | Accepted: the runtime gives the context (`traceparent`, `baggage`) |
@@ -299,6 +299,7 @@ Each decision lists the alternatives considered and its status. "Proposed" means
 | ADR-23 | The data of the screen's data sources in expressions ([detail](adr-23-data-in-expressions.md)): `data.<name>` is the last answer of a GET data source, the same the components show; missing until it arrives (fail-closed, no technical report while waiting); writes stay with `as` | `form` of a main form visible next to it; an `onLoad` step that copies into `state` | `data` reserved for `as` | Accepted (6 November 2026) |
 | ADR-24 | Links from the rows of a table ([detail](adr-24-links-from-the-rows.md)): `href` on a column and on a row action, a relative path built from the row; values encoded, only a path of the same origin, a real link | a step `open: { href }`; a call that saves the answer as a file | `href` or steps, not both; `rowActions` items are `RowActionDefinition` | Accepted (6 November 2026) |
 | ADR-25 | Items of the application in the user menu and in the settings ([detail](adr-25-user-menu-and-settings.md)): `userMenu` and `settings` in the navigation, with the shape of a menu item; a section of the settings is a screen of the application drawn in a tab (the tab names it: the screen needs no title); the language chosen by the user reaches the services in `Accept-Language` | a form language inside the navigation; items that run steps; a header of its own | BFF contract 0.4 (the BFF forwards `Accept-Language`) | Accepted (7 November 2026) |
+| ADR-27 | A BFF only, with two light ones ([detail](adr-27-bff-only-with-light-bffs.md)): no SPA mode with tokens in the browser; oauth2-proxy and nginx (`docker/bff-lite-proxy/`) and a minimal BFF in Node (`reference/bff-node/`) follow `contracts/bff.yaml` next to the reference BFF | SPA mode with tokens in memory (ADR-03) | Tokens never in the page; an application can start with a light BFF and change it without touching its JSON | Accepted (25 November 2026) |
 
 ## 13. Risks and open points
 

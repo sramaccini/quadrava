@@ -118,7 +118,7 @@ Authentication uses current standards and provides no proprietary alternatives.
 | --- | --- | --- | --- |
 | RF-AUT-01 | Login through OAuth2 Authorization Code with PKCE over OIDC (external provider, for example Keycloak) | M | Done (through the BFF; Keycloak in development) |
 | RF-AUT-02 | No application screen is shown before authentication (landing gate) | M | Done |
-| RF-AUT-03 | Token handling is configurable: BFF mode (tokens server-side only, the browser has a session cookie) or SPA mode with tokens in memory; BFF mode is recommended for regulated contexts | M | Partial: BFF mode only; the SPA mode with tokens in memory is not implemented |
+| RF-AUT-03 | Tokens are handled by a BFF (tokens server-side only, the browser has a session cookie); there is no SPA mode with tokens in the browser (ADR-27) | M | Done: the reference BFF on authz-library; two light BFFs (oauth2-proxy and nginx, a minimal one in Node) are planned in ADR-27 |
 | RF-AUT-04 | Expiry, renewal and logout are handled by the runtime, with a clean return to the sign-in screen | M | Done: the BFF renews the tokens, a 401 leads to the login, logout also closes the session at the provider |
 | RF-AUT-05 | The application JSON never contains secrets: only references to the identity provider | M | Done |
 | RF-AUT-06 | User data (name, roles, claims) is available to expressions through the built-in user object | M | Done (`user`, with roles and tenant) |
@@ -296,7 +296,7 @@ Quantitative targets (times, volumes) are not defined yet: they must be agreed b
 
 | # | Open point | Where it is decided |
 | --- | --- | --- |
-| 1 | Token handling: BFF or tokens in browser memory | Decided: BFF (ADR-03); the SPA mode is not implemented |
+| 1 | Token handling: BFF or tokens in browser memory | Decided: BFF only (ADR-03, ADR-27); no SPA mode |
 | 2 | Expression language: CEL, JSONata or JSONLogic | Decided: CEL (ADR-04) |
 | 3 | Exact format of the authorization contract (permission list, batch checks, per-row permissions) | Decided: `contracts/authz.yaml` (capabilities with version, batch checks, `_perm` in the rows) |
 | 4 | Multi-tenant model and environments (development, testing, production) | Partly decided: the tenant chosen in the BFF session (ADR-18); environments and their protection are a choice of each registry (registry contract 0.7) |

@@ -387,7 +387,7 @@ The conformance kits pass against the reference services, in CI on every push: a
 ## Security model
 
 * **No secrets in JSON.** Keys, passwords and tokens never appear in a definition; only references to configuration owned by the BFF or the environment.
-* **Tokens stay out of the browser** in BFF mode (HttpOnly, Secure, SameSite cookie); in SPA mode they live in memory only, never in `localStorage` / `sessionStorage`.
+* **Tokens stay out of the browser**: the BFF keeps them and the page has only an HttpOnly, Secure, SameSite cookie. There is no mode with tokens in the browser (ADR-27).
 * **Expressions are sandboxed** (CEL, no `eval`), and a failing expression denies.
 * **Values are always inserted as text.** `innerHTML` and sanitizer bypasses are forbidden. NG-ZORRO's modals and messages interpret strings as HTML, so Quadrava passes them text that has been neutralised or rendered through a component.
 * **Rich text is never HTML.** Markdown is parsed into a tree and rendered with Angular templates, so HTML inside the text (from data or translations) stays visible text; links are accepted only with `https:`, `mailto:` or a relative `/` path. The rich text editor normalises whatever the browser produces back to the allowed Markdown (styles, scripts and unknown tags are dropped), pastes plain text only and refuses links with other schemes.

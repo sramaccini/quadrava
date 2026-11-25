@@ -174,7 +174,7 @@ provideLcComponents({ signature: SignatureComponent });
 | --- | --- |
 | Tokens never go into `localStorage` or `sessionStorage` | They are readable by any injected script (XSS) |
 | In BFF mode the session cookie is `HttpOnly`, `Secure` and `SameSite`, with CSRF protection on requests that change data | The browser must not be able to read the session or send it cross-site |
-| In SPA mode (not implemented: BFF only today) the token would stay only in memory and be short-lived | Limits the damage in case of compromise |
+| Tokens only in the BFF, never in the page: there is no SPA mode (ADR-27) | A script running in the page cannot read them |
 | The front end never takes security decisions | Hiding is user experience; the back end always checks and filters |
 | Conditions use permissions (`can`), never roles | Permissions are the contract with the back end |
 | Capabilities are loaded after login and renewed when the permission version changes | Avoids both continuous requests and stale interfaces |
