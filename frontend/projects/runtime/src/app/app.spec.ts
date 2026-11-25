@@ -339,10 +339,13 @@ describe('App (demo)', () => {
     TestBed.inject(I18n).setLocale('en');
   });
 
+  /** The choices of a group of the user menu, by its heading. */
+  const choicesIn = (group: string): HTMLElement[] => [...document.querySelectorAll<HTMLElement>(`.ant-dropdown ul[role="group"][aria-label="${group}"] li[role="menuitemradio"]`)];
+
   it('a user with several tenants chooses one in the user menu; with one there is no choice', async () => {
     const { fixture, el } = await start();
     await until(fixture, () => rows(el) > 0, 'invoice list');
-    const radios = () => [...document.querySelectorAll<HTMLElement>('.ant-dropdown li[role="menuitemradio"]')];
+    const radios = () => choicesIn('Workspace');
     const trigger = el.querySelector('lc-user-menu button.trigger') as HTMLButtonElement;
     trigger.click();
     await until(fixture, () => document.querySelectorAll('.ant-dropdown li[nz-menu-item]').length > 0, 'user menu');
@@ -357,6 +360,32 @@ describe('App (demo)', () => {
     radios()[1].click();
     await until(fixture, () => TestBed.inject(DemoSession).user()['tenant'] === 'south', 'south chosen');
     await until(fixture, () => radios()[1]?.getAttribute('aria-checked') === 'true', 'south marked');
+  });
+
+  it('a user with several operational roles switches role: the menu follows, and a screen no longer allowed gives way to the home', async () => {
+    const { fixture, el, url } = await start('administrator', '/package-creation/package-list');
+    await until(fixture, () => areas().length === 5 && url().startsWith('/package-creation/package-list'), 'packages as administrator');
+    const trigger = el.querySelector('lc-user-menu button.trigger') as HTMLButtonElement;
+    trigger.click();
+    await until(fixture, () => choicesIn('Role').length === 2, 'roles in the user menu');
+    expect(choicesIn('Role').map((r) => [r.textContent?.trim(), r.getAttribute('aria-checked')])).toEqual([['Administrator', 'true'], ['Operator', 'false']]);
+    // The tenants come first, the roles after them.
+    expect([...document.querySelectorAll('.ant-dropdown ul[role="group"]')].map((g) => g.getAttribute('aria-label'))).toEqual(['Workspace', 'Role']);
+    choicesIn('Role')[1].click();
+    await until(fixture, () => TestBed.inject(DemoSession).user()['role'] === 'operator', 'operator chosen');
+    // The operator may not see the packages: the menu shrinks and the screen gives way to the first one of the user.
+    await until(fixture, () => areas().length === 3 && !url().startsWith('/package-creation'), 'home of the operator');
+    expect(areas()).toEqual(['Invoice entry', 'Invoice lookup', 'Component showcase']);
+  });
+
+  it('a switch to a role that may still open the screen leaves it open', async () => {
+    const { fixture, el, url } = await start('administrator', '/invoice-lookup/invoice-list');
+    await until(fixture, () => url().startsWith('/invoice-lookup/invoice-list') && areas().length === 5, 'invoices as administrator');
+    (el.querySelector('lc-user-menu button.trigger') as HTMLButtonElement).click();
+    await until(fixture, () => choicesIn('Role').length === 2, 'roles in the user menu');
+    choicesIn('Role')[1].click();
+    await until(fixture, () => areas().length === 3, 'operator menu');
+    expect(url().startsWith('/invoice-lookup/invoice-list')).toBe(true);
   });
 
   it('the areas depend on the permissions of the profile', async () => {

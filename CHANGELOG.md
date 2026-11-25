@@ -58,6 +58,11 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 - `components`: `lc-user-menu` shows several groups of choices, each under its heading: `choices` also takes a list of
   groups, a group may have an `id`, and the new output `choiceIn` gives the group and the choice (`choice` still
   gives the choice alone). Groups without items are left out. New texts `lc.role` and `lc.roleSwitchFailed`.
+- Runtime: the choice of the operational role in the user menu (ADR-28), under *Role* after the tenants, with
+  `services.roleSwitchUrl` in `runtime-config.json` (`QUADRAVA_ROLE_SWITCH_URL` in the runtime image) and two
+  operational roles or more. No reload: the permissions of the new role are read again and a screen it may not open
+  gives way to the home. The BFF configuration of the runtime has `/bff/role`. In the in-browser demo the
+  administrator profile can also work as operator.
 
 ### Fixed
 

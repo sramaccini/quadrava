@@ -30,6 +30,7 @@ At start-up the image writes `runtime-config.json`, the file the runtime reads b
 | `QUADRAVA_REGISTRY_BASE` | Base path of the registry APIs on the same origin | `/registry` (runtime default) |
 | `QUADRAVA_APP_ID` | Identifier of the application towards the BFF services | `QUADRAVA_REGISTRY_APP` |
 | `QUADRAVA_TENANT_SWITCH_URL` | Path that switches the tenant (ADR-18); without it no choice is shown | |
+| `QUADRAVA_ROLE_SWITCH_URL` | Path that switches the operational role, for example `/bff/role` (ADR-28); without it no choice is shown | |
 | `QUADRAVA_LOG_LEVEL` | Lightest technical reports sent to telemetry: `error`, `warn`, `info` or `off` (traces are still sent) | `warn` |
 | `QUADRAVA_STUDIO_ORIGINS` | Origins of Quadrava Studio allowed to open this runtime with their project (ADR-16) | none |
 | `QUADRAVA_BFF_URL` | Address of the BFF (`http://bff:8080`): nginx forwards its paths to it | not forwarded |

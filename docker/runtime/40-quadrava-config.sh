@@ -88,6 +88,10 @@ elif [ -n "${QUADRAVA_REGISTRY_APP:-}" ]; then
     path QUADRAVA_TENANT_SWITCH_URL "$QUADRAVA_TENANT_SWITCH_URL"
     services="$services, \"tenantSwitchUrl\": \"$QUADRAVA_TENANT_SWITCH_URL\""
   fi
+  if [ -n "${QUADRAVA_ROLE_SWITCH_URL:-}" ]; then
+    path QUADRAVA_ROLE_SWITCH_URL "$QUADRAVA_ROLE_SWITCH_URL"
+    services="$services, \"roleSwitchUrl\": \"$QUADRAVA_ROLE_SWITCH_URL\""
+  fi
   if [ -n "${QUADRAVA_LOG_LEVEL:-}" ]; then
     case "$QUADRAVA_LOG_LEVEL" in
       error | warn | info | off) services="$services, \"logLevel\": \"$QUADRAVA_LOG_LEVEL\"" ;;

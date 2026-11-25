@@ -168,6 +168,11 @@ export class NavigationService {
     if (leaf) this.open(area, leaf.screen, leaf.params);
   }
 
+  /** The home of the application, which takes the user to their initial destination. */
+  home(): void {
+    void this.router.navigate([''], { replaceUrl: true });
+  }
+
   /** Initial destination for the current user; an open settings dialog (`?settings=`) stays open there. */
   openDefault(): boolean {
     const target = this.runtime()?.defaultTarget();

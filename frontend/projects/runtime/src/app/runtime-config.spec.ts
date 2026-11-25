@@ -66,6 +66,23 @@ describe('runtime configuration: where the definitions come from', () => {
     // Without tenantSwitchUrl there is no tenant choice.
     expect(TestBed.inject(LC_SERVICES_CONFIG).tenantSwitchUrl).toBeNull();
     expect(TestBed.inject(ShellSession).tenants()).toEqual([]);
+    // Nor a role choice without roleSwitchUrl.
+    expect(TestBed.inject(LC_SERVICES_CONFIG).roleSwitchUrl).toBeNull();
+    expect(TestBed.inject(ShellSession).operationalRoles()).toEqual([]);
+  });
+
+  it('the role switch address reaches the services only as a path of the same origin', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const bff = (roleSwitchUrl: unknown) => ({ ...registry, services: { source: 'bff', appId: 'demo', roleSwitchUrl } });
+    serve(bff('/bff/role'));
+    const config = await loadRuntimeConfig();
+    expect(config.services).toEqual({ source: 'bff', appId: 'demo', roleSwitchUrl: '/bff/role' });
+    TestBed.configureTestingModule({ providers: appConfigFor(config).providers });
+    expect(TestBed.inject(LC_SERVICES_CONFIG).roleSwitchUrl).toBe('/bff/role');
+    for (const wrong of ['https://other.example/role', '//other.example/role', true]) {
+      serve(bff(wrong));
+      expect((await loadRuntimeConfig()).services).toEqual({ source: 'bff', appId: 'demo' });
+    }
   });
 
   it('the tenant switch address reaches the services only as a path of the same origin', async () => {

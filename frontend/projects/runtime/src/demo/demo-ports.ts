@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Authorization, DataClient, LiveUpdates, RuntimeDiagnostics, UserProvider, type DataRequest, type DataRequestOptions } from 'core';
-import type { SessionTenant } from 'services';
+import type { SessionRole, SessionTenant } from 'services';
 import { DemoBackend } from './demo-backend';
 
 /** Profiles of the demo: the permissions are those the authorization service would give in production. */
@@ -26,6 +26,17 @@ export const DEMO_TENANTS: Record<string, readonly SessionTenant[]> = {
   ],
 };
 
+/**
+ * Operational roles of the demo profiles (ADR-28): the administrator may also work as an operator, with the permissions
+ * of that profile (two areas instead of five), so the shell offers the choice. The others have no roles to choose.
+ */
+export const DEMO_ROLES: Record<string, readonly SessionRole[]> = {
+  administrator: [
+    { id: 'administrator', label: 'Administrator' },
+    { id: 'operator', label: 'Operator' },
+  ],
+};
+
 /** Fake authorization, based on signals: changing profile redraws the screen. */
 @Injectable({ providedIn: 'root' })
 export class DemoSession extends Authorization implements UserProvider {
@@ -34,6 +45,19 @@ export class DemoSession extends Authorization implements UserProvider {
   readonly loggedIn = signal(true);
   /** Tenant chosen in the demo, if it is one of the profile's; otherwise the first one. */
   readonly chosenTenant = signal<string | null>(null);
+
+  /** Operational role chosen in the demo, if it is one of the profile's; otherwise the first one. */
+  readonly chosenRole = signal<string | null>(null);
+
+  role(): string {
+    const roles = DEMO_ROLES[this.username()] ?? [];
+    return roles.find((r) => r.id === this.chosenRole())?.id ?? roles[0]?.id ?? '';
+  }
+
+  /** The permissions of the active role, which is a profile of the demo; without roles those of the profile. */
+  permissions(): readonly string[] {
+    return DEMO_PROFILES[this.role() || this.username()] ?? [];
+  }
 
   tenant(): string {
     const tenants = DEMO_TENANTS[this.username()] ?? [];
@@ -49,11 +73,11 @@ export class DemoSession extends Authorization implements UserProvider {
   }
 
   override can(permission: string): boolean {
-    return this.loggedIn() && (DEMO_PROFILES[this.username()] ?? []).includes(permission);
+    return this.loggedIn() && this.permissions().includes(permission);
   }
 
   user(): Record<string, unknown> {
-    return { username: this.username(), roles: [this.username()], tenant: this.tenant() };
+    return { username: this.username(), roles: [this.username()], tenant: this.tenant(), role: this.role() };
   }
 }
 

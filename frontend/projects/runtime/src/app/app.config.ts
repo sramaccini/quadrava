@@ -31,8 +31,8 @@ function definitions(config: RuntimeConfig, settings: ApplicationSettings, proje
  */
 function ports(config: RuntimeConfig): (Provider | EnvironmentProviders)[] {
   if (config.services?.source === 'bff') {
-    const { appId, tenantSwitchUrl, logLevel } = config.services;
-    return [provideLcServices({ appId, tenantSwitchUrl, logLevel }), { provide: ShellSession, useExisting: BffShellSession }];
+    const { appId, tenantSwitchUrl, roleSwitchUrl, logLevel } = config.services;
+    return [provideLcServices({ appId, tenantSwitchUrl, roleSwitchUrl, logLevel }), { provide: ShellSession, useExisting: BffShellSession }];
   }
   return [
     provideHttpClient(withFetch()),

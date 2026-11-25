@@ -2,12 +2,12 @@ import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, injec
 import { FormsModule } from '@angular/forms';
 import { RouterOutlet } from '@angular/router';
 import { NgTemplateOutlet } from '@angular/common';
-import { AppBrandComponent, IconComponent, NotificationBellComponent, QuadravaWordmarkComponent, SHELL_MESSAGES, SidebarComponent, UserMenuComponent, type UserMenuChoices, type UserMenuItem, type UserNotification } from 'components';
+import { AppBrandComponent, IconComponent, NotificationBellComponent, QuadravaWordmarkComponent, SHELL_MESSAGES, SidebarComponent, UserMenuComponent, type UserMenuChoice, type UserMenuChoices, type UserMenuItem, type UserNotification } from 'components';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzDrawerModule } from 'ng-zorro-antd/drawer';
 import { NzLayoutModule } from 'ng-zorro-antd/layout';
 import { NzSelectModule } from 'ng-zorro-antd/select';
-import { DefinitionSource, I18n, Notifier, ScreenTitle, ThemeService, loadCatalogs, type VisibleLeaf } from 'core';
+import { Authorization, DefinitionSource, I18n, Notifier, ScreenTitle, ThemeService, loadCatalogs, type VisibleLeaf } from 'core';
 import { applyDocumentBrand } from './document-brand';
 import { NavigationService } from './navigation.service';
 import { NotificationsService } from './notifications.service';
@@ -121,11 +121,19 @@ export class App {
     ...this.appItems().map((item) => ({ id: APP_ITEM + item.id, label: item.label, icon: item.icon })),
     { id: 'settings', label: this.i18n.t('app.settingsMenu'), icon: 'settings' },
   ]);
-  /** Tenants of the user, first in the user menu: only when there are at least two to choose from. */
-  protected readonly tenantChoices = computed<UserMenuChoices | undefined>(() => {
+  /**
+   * Groups of choices, first in the user menu: the tenants of the user, then the operational roles (ADR-28), each only
+   * when there are at least two to choose from.
+   */
+  protected readonly userChoices = computed<UserMenuChoices[]>(() => {
     const tenants = this.session.tenants();
-    return tenants.length > 1 ? { label: this.i18n.t('lc.tenant'), items: tenants, selected: this.session.currentTenant() ?? undefined } : undefined;
+    const roles = this.session.operationalRoles();
+    return [
+      ...(tenants.length > 1 ? [{ id: 'tenant', label: this.i18n.t('lc.tenant'), items: tenants, selected: this.session.currentTenant() ?? undefined }] : []),
+      ...(roles.length > 1 ? [{ id: 'role', label: this.i18n.t('lc.role'), items: roles, selected: this.session.currentRole() ?? undefined }] : []),
+    ];
   });
+  private readonly authorization = inject(Authorization);
   private readonly notifier = inject(Notifier);
   /** Logo and name of the application at the top left, from the theme (null: the Quadrava logo). */
   protected readonly brand = computed(() => this.themeService.current()?.brand ?? null);
@@ -217,8 +225,38 @@ export class App {
     this.navigation.open(area, leaf.screen, leaf.params);
   }
 
+  protected choose(choice: UserMenuChoice): void {
+    if (choice.group === 'tenant') void this.switchTenant(choice.id);
+    else if (choice.group === 'role') void this.switchRole(choice.id);
+  }
+
   /** Switches tenant: on success the page starts again (with the BFF); if refused, it says so and stays. */
   protected async switchTenant(id: string): Promise<void> {
     if (!(await this.session.switchTenant(id))) this.notifier.toast(this.i18n.t('lc.tenantSwitchFailed'), 'error');
+  }
+
+  /**
+   * Switches the operational role (ADR-28): no reload, the permissions of the new role are already loaded and the
+   * interface follows them. The current screen is checked again: if the new role may not open it, the user goes to the
+   * home of the application. If the BFF refuses, the page says so and nothing changes.
+   */
+  protected async switchRole(id: string): Promise<void> {
+    if (!(await this.session.switchRole(id))) {
+      this.notifier.toast(this.i18n.t('lc.roleSwitchFailed'), 'error');
+      return;
+    }
+    const screen = this.navigation.current().screen;
+    if (screen && !(await this.screenAllowed(screen))) this.navigation.home();
+  }
+
+  /** Whether the user may open a screen now (its `requires`); a screen that cannot be read is left to its page. */
+  private async screenAllowed(name: string): Promise<boolean> {
+    let requires: unknown;
+    try {
+      requires = ((await this.definitions.screen(name)) as { requires?: unknown } | null)?.requires;
+    } catch {
+      return true;
+    }
+    return typeof requires !== 'string' || this.authorization.can(requires);
   }
 }
