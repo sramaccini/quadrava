@@ -2,7 +2,7 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { vi } from 'vitest';
 import { Confirmation, I18n } from 'core';
 import { provideLcComponents } from './provide';
-import { UserMenuComponent, type UserMenuChoices, type UserMenuItem } from './user-menu.component';
+import { UserMenuComponent, type UserMenuChoice, type UserMenuChoices, type UserMenuItem } from './user-menu.component';
 
 describe('UserMenuComponent', () => {
   const flush = async (fixture: ComponentFixture<unknown>): Promise<void> => {
@@ -14,7 +14,7 @@ describe('UserMenuComponent', () => {
   };
   const menuItems = (): string[] => [...document.querySelectorAll('.ant-dropdown li.ant-dropdown-menu-item, .ant-dropdown li[nz-menu-item]')].map((li) => (li.textContent ?? '').replace(/\s+/g, ' ').trim());
 
-  async function render(items: readonly UserMenuItem[] = [{ id: 'permissions', label: '4 permissions', icon: 'safety', disabled: true }, { id: 'profile', label: 'Profile', icon: 'user' }], choices?: UserMenuChoices, locale = 'en') {
+  async function render(items: readonly UserMenuItem[] = [{ id: 'permissions', label: '4 permissions', icon: 'safety', disabled: true }, { id: 'profile', label: 'Profile', icon: 'user' }], choices?: UserMenuChoices | readonly UserMenuChoices[], locale = 'en') {
     TestBed.configureTestingModule({ providers: [provideLcComponents()] });
     TestBed.inject(I18n).setLocale(locale);
     const fixture = TestBed.createComponent(UserMenuComponent);
@@ -23,14 +23,16 @@ describe('UserMenuComponent', () => {
     if (choices) fixture.componentRef.setInput('choices', choices);
     const selected: string[] = [];
     const chosen: string[] = [];
+    const chosenIn: UserMenuChoice[] = [];
     let logouts = 0;
+    fixture.componentInstance.choiceIn.subscribe((c) => chosenIn.push(c));
     fixture.componentInstance.select.subscribe((id) => selected.push(id));
     fixture.componentInstance.choice.subscribe((id) => chosen.push(id));
     fixture.componentInstance.logout.subscribe(() => logouts++);
     await flush(fixture);
     (fixture.nativeElement.querySelector('button.trigger') as HTMLButtonElement).click();
     for (let i = 0; i < 40 && menuItems().length === 0; i++) await flush(fixture);
-    return { fixture, selected, chosen, logouts: () => logouts };
+    return { fixture, selected, chosen, chosenIn, logouts: () => logouts };
   }
 
   afterEach(() => document.querySelectorAll('.cdk-overlay-container').forEach((c) => (c.innerHTML = '')));
@@ -97,6 +99,22 @@ describe('UserMenuComponent', () => {
     radios[1].click();
     expect(chosen).toEqual(['south']);
     expect(selected).toEqual([]);
+  });
+
+  it('several groups of choices, each under its heading, say which group a choice belongs to', async () => {
+    const tenants = { id: 'tenant', label: 'Workspace', items: [{ id: 'north', label: 'North office' }, { id: 'south', label: 'South office' }], selected: 'north' };
+    const roles = { id: 'role', label: 'Role', items: [{ id: 'clerk', label: 'Clerk' }, { id: 'approver', label: 'Approver' }], selected: 'clerk' };
+    const empty = { id: 'none', label: 'Nothing', items: [] };
+    const { chosen, chosenIn } = await render([{ id: 'profile', label: 'Profile' }], [tenants, empty, roles]);
+    expect(menuItems()).toEqual(['North office', 'South office', 'Clerk', 'Approver', 'Profile', 'Sign out']);
+    const groups = [...document.querySelectorAll('.ant-dropdown ul[role="group"]')].map((g) => g.getAttribute('aria-label'));
+    expect(groups).toEqual(['Workspace', 'Role']);
+    const radios = [...document.querySelectorAll<HTMLElement>('.ant-dropdown li[role="menuitemradio"]')];
+    expect(radios.map((r) => r.getAttribute('aria-checked'))).toEqual(['true', 'false', 'true', 'false']);
+    radios[3].click();
+    radios[1].click();
+    expect(chosen).toEqual(['approver', 'south']);
+    expect(chosenIn).toEqual([{ group: 'role', id: 'approver' }, { group: 'tenant', id: 'south' }]);
   });
 
   it('is a menu that works from the keyboard: roles, focus on the first item, arrows, Enter, focus back on the icon', async () => {

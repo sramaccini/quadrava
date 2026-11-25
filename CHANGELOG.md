@@ -55,6 +55,9 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
   `operationalRoles`, `currentRole`, `canSwitchRole` and `switchRole(id)`, a POST to the BFF followed by a new read of
   the user and of the permissions, without reloading the page; the type `SessionRole`. The active role is
   `user.role` in the expressions (empty without roles) and goes in the W3C `baggage` of every call as `lc.role`.
+- `components`: `lc-user-menu` shows several groups of choices, each under its heading: `choices` also takes a list of
+  groups, a group may have an `id`, and the new output `choiceIn` gives the group and the choice (`choice` still
+  gives the choice alone). Groups without items are left out. New texts `lc.role` and `lc.roleSwitchFailed`.
 
 ### Fixed
 

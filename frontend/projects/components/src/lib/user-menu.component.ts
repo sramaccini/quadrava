@@ -16,18 +16,29 @@ export interface UserMenuItem {
   children?: readonly UserMenuItem[];
 }
 
-/** A group of alternatives of which one is current, such as the tenants of the user: a heading and the choices. */
+/**
+ * A group of alternatives of which one is current, such as the tenants or the operational roles of the user: a heading
+ * and the choices.
+ */
 export interface UserMenuChoices {
+  /** Identifier of the group, given back with the choice (`choiceIn`) when the menu has more than one group. */
+  id?: string;
   label: string;
   items: readonly UserMenuItem[];
   /** Identifier of the current choice, marked with a tick. */
   selected?: string;
 }
 
+/** A choice made in a group of the menu: the identifier of the group (if it has one) and of the alternative. */
+export interface UserMenuChoice {
+  group?: string;
+  id: string;
+}
+
 /**
  * Signed-in user: an icon with the initial (the name in its tooltip and accessible name), with a drop-down menu. The sign-out item (logout) is always the last one,
- * separated from the others, and asks for confirmation first; the other items are decided by the application. An optional group of choices (one of them
- * current) comes first, under its heading. Texts arrive as values and are shown as text.
+ * separated from the others, and asks for confirmation first; the other items are decided by the application. Optional groups of choices (one of them
+ * current in each) come first, each under its heading. Texts arrive as values and are shown as text.
  *
  * Keyboard: opening the menu moves the focus to its first item; arrows, Home and End move among the items, Enter or Space
  * chooses, Esc closes; closing gives the focus back to the icon. On an entry with a submenu, Enter, Space or the right arrow
@@ -55,7 +66,7 @@ export interface UserMenuChoices {
     </button>
     <nz-dropdown-menu #menu="nzDropdownMenu">
       <ul #list nz-menu role="menu" [attr.aria-label]="i18n.t('lc.userMenu')" (keydown)="key($event)">
-        @if (choices(); as group) {
+        @for (group of groups(); track $index) {
           <li nz-menu-group role="none" [nzTitle]="group.label">
             <ul role="group" [attr.aria-label]="group.label">
               @for (item of group.items; track item.id) {
@@ -98,7 +109,8 @@ export class UserMenuComponent {
   readonly name = input.required<string>();
   readonly items = input<readonly UserMenuItem[]>([]);
   readonly logoutLabel = input<string>();
-  readonly choices = input<UserMenuChoices>();
+  /** One group of choices, or several (for example the tenants, then the roles); groups without items are left out. */
+  readonly choices = input<UserMenuChoices | readonly UserMenuChoices[]>();
   protected readonly i18n = inject(I18n);
   private readonly confirmation = inject(Confirmation, { optional: true });
   /** One submenu is expanded at a time; controlling it explicitly keeps click activation consistent in the dropdown. */
@@ -110,8 +122,15 @@ export class UserMenuComponent {
   readonly select = output<string>();
   /** Sign-out confirmed by the user (straight away when no `Confirmation` is provided). */
   readonly logout = output<void>();
-  /** Choice of an alternative of the group other than the current one. */
+  /** Choice of an alternative of a group other than the current one: its identifier. */
   readonly choice = output<string>();
+  /** The same choice with the identifier of its group, for a menu with more than one group. */
+  readonly choiceIn = output<UserMenuChoice>();
+
+  protected readonly groups = computed<readonly UserMenuChoices[]>(() => {
+    const choices = this.choices();
+    return (choices === undefined ? [] : Array.isArray(choices) ? choices : [choices as UserMenuChoices]).filter((g) => g.items.length > 0);
+  });
 
   protected readonly initial = computed(() => (this.name().trim().charAt(0) || '?').toUpperCase());
 
@@ -196,6 +215,8 @@ export class UserMenuComponent {
   }
 
   protected pick(item: UserMenuItem, group: UserMenuChoices): void {
-    if (!item.disabled && item.id !== group.selected) this.choice.emit(item.id);
+    if (item.disabled || item.id === group.selected) return;
+    this.choice.emit(item.id);
+    this.choiceIn.emit({ group: group.id, id: item.id });
   }
 }
