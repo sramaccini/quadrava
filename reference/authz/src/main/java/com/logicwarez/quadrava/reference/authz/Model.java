@@ -12,9 +12,17 @@ public final class Model {
 
     public record CheckItem(String permission, ResourceRef resource) {}
 
-    public record CheckRequest(List<CheckItem> checks) {}
+    /** The checks and, optionally, the operational role to answer for (0.2). */
+    public record CheckRequest(List<CheckItem> checks, String role) {
+        public CheckRequest(List<CheckItem> checks) {
+            this(checks, null);
+        }
+    }
 
     public record CheckResult(String permission, ResourceRef resource, boolean allowed) {}
 
     public record CheckResponse(List<CheckResult> results) {}
+
+    /** A role of the user: base roles always apply, operational ones are chosen one at a time (0.2). */
+    public record Role(String id, String label, boolean base) {}
 }

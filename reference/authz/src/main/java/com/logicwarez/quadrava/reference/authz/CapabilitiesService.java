@@ -1,5 +1,6 @@
 package com.logicwarez.quadrava.reference.authz;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -29,6 +30,36 @@ public class CapabilitiesService {
                 .map(c -> new Model.CheckResult(c.permission(), c.resource(), permissions.contains(c.permission())))
                 .toList();
         return new Model.CheckResponse(results);
+    }
+
+    /** The roles of the user this service knows (with permissions or described in {@code roles}), in their order. */
+    public List<Model.Role> rolesOf(Collection<String> userRoles) {
+        return userRoles.stream()
+                .distinct()
+                .filter(id -> properties.rolePermissions().containsKey(id) || properties.roles().containsKey(id))
+                .map(id -> {
+                    AuthzProperties.RoleInfo info = properties.roles().get(id);
+                    String label = info != null && info.label() != null && !info.label().isBlank() ? info.label() : id;
+                    return new Model.Role(id, label, info != null && info.base());
+                })
+                .toList();
+    }
+
+    /**
+     * The roles an answer covers (ADR-28): without an operational role all those of the user; with one, the base roles
+     * of the user plus that role, if it is one of the user's operational roles. Any other role adds nothing (fail-closed).
+     */
+    public List<String> effectiveRoles(Collection<String> userRoles, String role) {
+        if (role == null) {
+            return List.copyOf(userRoles);
+        }
+        List<String> roles = new ArrayList<>();
+        for (Model.Role known : rolesOf(userRoles)) {
+            if (known.base() || known.id().equals(role)) {
+                roles.add(known.id());
+            }
+        }
+        return roles;
     }
 
     private Set<String> permissionsOf(Collection<String> roles) {

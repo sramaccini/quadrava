@@ -43,6 +43,18 @@ configuration of the users.
   - `POST /bff/tenant` with `{"tenant": "<id>"}` and the CSRF token switches the session.
   - The last tenant chosen is remembered per user, in memory, for the next login.
   - Forwarded calls carry `X-Tenant`; one sent by the browser never passes.
+- **Operational roles** (optional, ADR-28) are not in this BFF yet: they need a new version of authz-library.
+
+**The authorization service** (`authz`) answers `authz.yaml` 0.2.0 from the roles in the token
+(`realm_access.roles`) and two maps of `application.yml`:
+
+- `quadrava.authz.role-permissions`: the permissions of each role;
+- `quadrava.authz.roles`: the label of each role and whether it is a `base` role (ADR-28). A base role, `user` in
+  the example, always applies; the others are operational roles, one at a time. `/authz/roles` lists those of the
+  user; with `role` on `/authz/capabilities` and `/authz/check` the answer covers the base roles plus that role
+  (a role the user does not hold adds nothing), without it all the roles of the user. In the development realm the
+  administrator holds two operational roles, `administrator` and `manager`.
+
 - The library also serves:
   - `/bff/sessions`: the user's own sessions, to close them;
   - `/bff/admin/users/{username}/sessions`: needs the permission `authz.session.revoke`, which no role of the

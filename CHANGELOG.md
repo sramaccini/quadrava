@@ -41,6 +41,11 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
   `/authz/capabilities` and `/authz/check` answers for the base roles plus that role (without it, as before).
   BFF contract 0.6.0: `operationalRoles` and `currentRole` in the user, `POST /bff/role` to switch, the active
   role in `X-Active-Role` towards the services, and any `role` or `X-Active-Role` sent by the page overridden.
+- The reference authorization service follows authorization contract 0.2.0: `/authz/roles` and `role`, with the
+  label and the `base` flag of each role in `quadrava.authz.roles`. The development realm gains a base role `user`
+  (with `showcase.components.read`, which leaves the other roles of the service) held by every user, and the
+  administrator also holds `manager`: recreate Keycloak to import it (`docker compose up -d --force-recreate` in
+  `idp/`).
 
 ### Fixed
 

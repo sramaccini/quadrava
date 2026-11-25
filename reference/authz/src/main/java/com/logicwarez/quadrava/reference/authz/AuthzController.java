@@ -32,9 +32,16 @@ public class AuthzController {
 
     @GetMapping("/authz/capabilities")
     public ResponseEntity<Model.Capabilities> capabilities(@RequestParam("app") String app,
+                                                           @RequestParam(name = "role", required = false) String role,
                                                            @AuthenticationPrincipal Jwt jwt) {
-        Model.Capabilities capabilities = service.forRoles(rolesOf(jwt));
+        Model.Capabilities capabilities = service.forRoles(service.effectiveRoles(rolesOf(jwt), role));
         return ResponseEntity.ok().header(VERSION_HEADER, capabilities.version()).body(capabilities);
+    }
+
+    /** The roles of the user with their label and base flag (ADR-28): the operational ones are chosen one at a time. */
+    @GetMapping("/authz/roles")
+    public List<Model.Role> roles(@RequestParam("app") String app, @AuthenticationPrincipal Jwt jwt) {
+        return service.rolesOf(rolesOf(jwt));
     }
 
     @PostMapping("/authz/check")
@@ -50,7 +57,7 @@ public class AuthzController {
                 return problem("Invalid permission: the format is domain.resource.action, lower case");
             }
         }
-        List<String> roles = rolesOf(jwt);
+        List<String> roles = service.effectiveRoles(rolesOf(jwt), request.role());
         return ResponseEntity.ok()
                 .header(VERSION_HEADER, service.forRoles(roles).version())
                 .body(service.check(roles, request));

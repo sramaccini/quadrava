@@ -8,6 +8,10 @@
   "roles": {
     "realm": [
       {
+        "name": "user",
+        "description": "Base role of every user: it always applies (ADR-28)"
+      },
+      {
         "name": "operator",
         "description": "Reads and edits orders"
       },
@@ -99,6 +103,7 @@
         }
       ],
       "realmRoles": [
+        "user",
         "operator"
       ]
     },
@@ -117,6 +122,7 @@
         }
       ],
       "realmRoles": [
+        "user",
         "manager"
       ]
     },
@@ -135,7 +141,9 @@
         }
       ],
       "realmRoles": [
-        "administrator"
+        "user",
+        "administrator",
+        "manager"
       ]
     }
   ]

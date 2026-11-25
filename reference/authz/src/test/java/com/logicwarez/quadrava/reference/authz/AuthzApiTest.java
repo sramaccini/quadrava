@@ -52,6 +52,44 @@ class AuthzApiTest {
         mvc.perform(get("/authz/capabilities").param("app", "demo")).andExpect(status().isUnauthorized());
     }
 
+    /** The administrator of the realm: the base role and two operational ones (ADR-28). */
+    private static RequestPostProcessor administrator() {
+        return jwt().jwt(j -> j.subject("administrator").claim("realm_access", Map.of("roles", List.of("user", "administrator", "manager", "offline_access"))));
+    }
+
+    @Test
+    void theRolesOfTheUserWithTheBaseFlag() throws Exception {
+        mvc.perform(get("/authz/roles").param("app", "demo").with(administrator()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(3))
+                .andExpect(jsonPath("$[0].id").value("user"))
+                .andExpect(jsonPath("$[0].base").value(true))
+                .andExpect(jsonPath("$[1].id").value("administrator"))
+                .andExpect(jsonPath("$[1].label").value("Administrator"))
+                .andExpect(jsonPath("$[1].base").value(false));
+        mvc.perform(get("/authz/roles").with(administrator())).andExpect(status().isBadRequest());
+        mvc.perform(get("/authz/roles").param("app", "demo")).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void anOperationalRoleNarrowsCapabilitiesAndChecks() throws Exception {
+        mvc.perform(get("/authz/capabilities").param("app", "demo").with(administrator()))
+                .andExpect(jsonPath("$.permissions", org.hamcrest.Matchers.hasItem("orders.iban.read")));
+        mvc.perform(get("/authz/capabilities").param("app", "demo").param("role", "manager").with(administrator()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.permissions", org.hamcrest.Matchers.hasItem("showcase.components.read")))
+                .andExpect(jsonPath("$.permissions", org.hamcrest.Matchers.not(org.hamcrest.Matchers.hasItem("orders.iban.read"))));
+        String body = "{\"role\":\"manager\",\"checks\":[{\"permission\":\"orders.iban.read\"},{\"permission\":\"orders.order.approve\"}]}";
+        mvc.perform(post("/authz/check").with(administrator()).contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.results[0].allowed").value(false))
+                .andExpect(jsonPath("$.results[1].allowed").value(true));
+        // A role the user does not hold: only the base role.
+        mvc.perform(get("/authz/capabilities").param("app", "demo").param("role", "operator").with(administrator()))
+                .andExpect(jsonPath("$.permissions.length()").value(1))
+                .andExpect(jsonPath("$.permissions[0]").value("showcase.components.read"));
+    }
+
     @Test
     void missingAppParameterInProblemFormat() throws Exception {
         mvc.perform(get("/authz/capabilities").with(operator()))

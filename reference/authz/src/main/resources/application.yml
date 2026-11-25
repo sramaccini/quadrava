@@ -20,17 +20,31 @@ management:
       exposure:
         include: health
 
-# Role → permissions map of the sample application (domain.resource.action format).
+# Roles of the sample application (ADR-28): a base role always applies; the others are operational roles, of which the
+# user works as one at a time when the BFF asks for it (role on /authz/capabilities and /authz/check). The roles come
+# from the token (realm_access.roles of idp/realm-quadrava.json); the administrator holds two operational ones.
 quadrava:
   authz:
-    role-permissions:
+    roles:
+      user:
+        label: User
+        base: true
       operator:
+        label: Operator
+      manager:
+        label: Manager
+      administrator:
+        label: Administrator
+    # Role → permissions map (domain.resource.action format). Without a role in the request, the user has those of all
+    # their roles.
+    role-permissions:
+      user:
         - showcase.components.read
+      operator:
         - invoices.invoice.read
         - invoices.invoice.create
         - orders.order.read
       manager:
-        - showcase.components.read
         - invoices.invoice.read
         - invoices.invoice.create
         - orders.order.read
@@ -41,7 +55,6 @@ quadrava:
         - expenses.expense.read
         - expenses.expense.review
       administrator:
-        - showcase.components.read
         - invoices.invoice.read
         - invoices.invoice.create
         - orders.order.read
