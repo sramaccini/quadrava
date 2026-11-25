@@ -257,7 +257,7 @@ The example applications in `examples` are the common thread: every test level u
 | Unit and component tests | All the projects, including the runtime with the showcase |
 | Schema and example validation | `schema:check`, `schema:docs:check`, `validate:examples` |
 | REST contracts | `mvn verify` of the reference implementation and the conformance kits against it (`npm run conformance`); the BFF test reads `contracts/bff.yaml`, the other OpenAPI files have no automatic validation yet |
-| Security | Licences of the dependencies inventoried (`notices:check`); no vulnerability scan, SBOM or secret scanning in the pipeline yet |
+| Security | Licences of the dependencies inventoried (`notices:check`); `npm audit --audit-level=high` on the workspace and the Node BFF; CodeQL on TypeScript and Java and gitleaks on the commits (`security.yml`); Dependabot every week; an SBOM in CycloneDX with every release, and one attested on the image |
 | End-to-end and accessibility | Playwright in three browsers with axe-core |
 | Artefacts | Runtime image built and started in CI; published with the packages on a `v*` tag |
 

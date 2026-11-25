@@ -30,6 +30,8 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
+      # Known vulnerabilities of high or critical severity in any dependency, development tools included, stop the build.
+      - run: npm audit --audit-level=high
       - run: npm run release:check
       - run: npm run schema:check
       - run: npm run schema:docs:check
@@ -192,6 +194,7 @@ jobs:
           cache: npm
           cache-dependency-path: reference/bff-node/package-lock.json
       - run: npm ci
+      - run: npm audit --audit-level=high
       - run: npm test
       # The kits of the BFF and of the authorization against this BFF, with Keycloak and the development realm. The
       # Node BFF takes port 8080, the callback registered in the realm; no Redis and no demo back end are needed.

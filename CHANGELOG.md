@@ -14,6 +14,9 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ### Added
 
+- Every release carries the SBOM of the workspace in CycloneDX (`quadrava-x.y.z.cdx.json`), and the runtime image its
+  SBOM and provenance as attestations.
+
 - `filterBar`: remote rules (`{ "remote": "<data source>" }`) work in its fields as in forms: pause without typing,
   spinner, a newer value cancels the request, answers kept per value, translated message. The value reaches the state,
   and so starts the search, only once the service accepts it. Until now such a rule made the filter invalid and was

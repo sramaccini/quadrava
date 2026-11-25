@@ -3,7 +3,7 @@ name: Release
 # A version of Quadrava (ADR-20), started by pushing a «v*» tag such as v0.1.0. The checks of CI run first; then the tag
 # must match the version of the packages and have its section in CHANGELOG.md; then the runtime image is published on
 # GitHub Container Registry, the CLI and the five libraries on GitHub Packages (npm, ADR-21), and the GitHub release is
-# created with the notes of the changelog and the web build of the runtime.
+# created with the notes of the changelog, the web build of the runtime and the SBOM.
 
 on:
   push:
@@ -72,6 +72,9 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           build-args: VERSION=${{ steps.version.outputs.version }}
+          # The image carries its SBOM and provenance as attestations (docker buildx imagetools inspect).
+          sbom: true
+          provenance: mode=max
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
       - name: CLI and libraries on GitHub Packages
@@ -101,10 +104,15 @@ jobs:
           npx ng build runtime
           cp ../LICENSE ../NOTICE dist/runtime/browser/
           tar -czf "$RUNNER_TEMP/quadrava-runtime-web-${GITHUB_REF_NAME#v}.tar.gz" -C dist/runtime/browser .
+      - name: SBOM
+        working-directory: frontend
+        # All the dependencies of the workspace in CycloneDX; the build tools carry the property
+        # cdx:npm:package:development. Not --omit=dev: npm 11 then leaves out @angular/core, rxjs and tslib.
+        run: npm sbom --sbom-format cyclonedx > "$RUNNER_TEMP/quadrava-${GITHUB_REF_NAME#v}.cdx.json"
       - name: GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           prerelease=''
           case "$GITHUB_REF_NAME" in *-*) prerelease='--prerelease' ;; esac
-          gh release create "$GITHUB_REF_NAME" --verify-tag --title "Quadrava ${GITHUB_REF_NAME#v}" --notes-file "$RUNNER_TEMP/notes.md" $prerelease "$RUNNER_TEMP/quadrava-runtime-web-${GITHUB_REF_NAME#v}.tar.gz"
+          gh release create "$GITHUB_REF_NAME" --verify-tag --title "Quadrava ${GITHUB_REF_NAME#v}" --notes-file "$RUNNER_TEMP/notes.md" $prerelease "$RUNNER_TEMP/quadrava-runtime-web-${GITHUB_REF_NAME#v}.tar.gz" "$RUNNER_TEMP/quadrava-${GITHUB_REF_NAME#v}.cdx.json"

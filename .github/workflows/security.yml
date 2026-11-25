@@ -1,0 +1,67 @@
+name: Security
+
+# Static analysis of the code with CodeQL and a search for secrets in the commits with gitleaks, on every push to main,
+# on pull requests and once a week (new CodeQL queries find issues in code that has not changed). The findings of
+# CodeQL appear under Security › Code scanning; a secret found by gitleaks fails the job.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '17 4 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  codeql:
+    name: CodeQL (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        # Java without a build: the reference implementation reads authz-library from GitHub Packages, and the analysis
+        # does not need it.
+        language: [javascript-typescript, java-kotlin]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+          config: |
+            paths-ignore:
+              - '**/node_modules'
+              - '**/dist'
+              - frontend/projects/schema/validation/src/validators.generated.ts
+      - uses: github/codeql-action/analyze@v4
+        with:
+          category: /language:${{ matrix.language }}
+
+  gitleaks:
+    name: Secrets (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # The whole history on main, so that a push of several commits is checked commit by commit.
+          fetch-depth: 0
+      - name: gitleaks
+        # The official image at a fixed version: the commits of the push or of the pull request, or the whole history.
+        run: |
+          range=''
+          if [ "${{ github.event_name }}" = pull_request ]; then
+            range="--log-opts=${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
+          elif [ "${{ github.event_name }}" = push ] && [ "${{ github.event.before }}" != 0000000000000000000000000000000000000000 ]; then
+            range="--log-opts=${{ github.event.before }}..${{ github.sha }}"
+          fi
+          docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.28.0 git /repo --no-banner --redact $range

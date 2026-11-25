@@ -1,0 +1,61 @@
+# Weekly update proposals for the dependencies of the repository, one pull request per group. Security updates are
+# opened at once, regardless of the schedule. Angular and NG-ZORRO move together: a major version of either is a
+# piece of work of its own (DEVELOPMENT-GUIDE § 3, `npm run nz:dark` after an NG-ZORRO update).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    # A dependency goes to the first group that matches it.
+    groups:
+      angular:
+        patterns: ['@angular/*', '@angular-devkit/*', '@schematics/angular', 'ng-zorro-antd', 'typescript']
+      development:
+        dependency-type: development
+      production:
+        dependency-type: production
+    ignore:
+      # Major versions of the framework are planned, not merged from a bot.
+      - dependency-name: '@angular/*'
+        update-types: ['version-update:semver-major']
+      - dependency-name: ng-zorro-antd
+        update-types: ['version-update:semver-major']
+
+  - package-ecosystem: npm
+    directory: /reference/bff-node
+    schedule:
+      interval: weekly
+    groups:
+      all:
+        patterns: ['*']
+
+  - package-ecosystem: maven
+    directory: /reference
+    schedule:
+      interval: weekly
+    groups:
+      all:
+        patterns: ['*']
+    ignore:
+      # authz-library comes from GitHub Packages, which Dependabot cannot read without a token: it moves by hand.
+      - dependency-name: 'com.logicwarez.authz:*'
+
+  - package-ecosystem: docker
+    directory: /docker/runtime
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: docker-compose
+    directories: [/idp, /docker/bff-lite-proxy]
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      all:
+        patterns: ['*']
