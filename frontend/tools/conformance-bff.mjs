@@ -4,11 +4,14 @@
 //   node tools/conformance-bff.mjs --bff http://localhost:8080 --return http://localhost:4200/
 //        [--cookie "<session cookies of a signed-in browser>" | --user <user> --password <password>]
 //        [--session-url /bff/user] [--login-url /bff/login] [--logout-url /logout] [--tenant-url /bff/tenant]
+//        [--role-url /bff/role] [--app demo]
 //
 // Without --cookie only the checks that need no session run. With it (copied from a signed-in browser, for example
 // "JSESSIONID=…"), or with --user and --password (the kit signs in through the Keycloak login page, local realm only),
 // the checks of the user and, last, of the logout run too: that session ends. The checks of the
-// tenants (optional part of the contract) run only if the user of the session lists them.
+// tenants and of the operational roles (optional parts of the contract) run only if the user of the session lists
+// them; those of the roles read the permissions of the application --app through the BFF (/authz/capabilities) and,
+// with two roles or more, switch to another one and back.
 // Exits with code 1 if a check fails.
 import { bffLogin, expect, isProblem, parseArgs, suite } from './conformance-lib.mjs';
 
@@ -19,6 +22,8 @@ const sessionUrl = args['session-url'] ?? '/bff/user';
 const loginUrl = args['login-url'] ?? '/bff/login';
 const logoutUrl = args['logout-url'] ?? '/logout';
 const tenantUrl = args['tenant-url'] ?? '/bff/tenant';
+const roleUrl = args['role-url'] ?? '/bff/role';
+const app = args.app ?? 'demo';
 const session = args.cookie ?? (args.user ? await bffLogin(base, args.user, args.password, returnTo) : null);
 const { check, report } = suite();
 
@@ -95,7 +100,7 @@ await check('current user with the session: 200, only the fields of the contract
   expect(r.status === 200, `expected 200, got ${r.status}`);
   const user = r.json;
   expect(user && typeof user === 'object' && !Array.isArray(user), 'the body is not a JSON object');
-  for (const field of ['name', 'username', 'email', 'currentTenant']) {
+  for (const field of ['name', 'username', 'email', 'currentTenant', 'currentRole']) {
     expect(user[field] === undefined || typeof user[field] === 'string', `${field} is not a text`);
   }
   expect(user.roles === undefined || (Array.isArray(user.roles) && user.roles.every((x) => typeof x === 'string')), 'roles is not a list of texts');
@@ -145,6 +150,82 @@ await check('tenant switch to the current tenant: 204', async () => {
   const after = await call('GET', sessionUrl, { cookie: session });
   expect(after.json?.currentTenant === current, 'the session is no longer on the same tenant');
 }, { skip: noTenants });
+
+const rolesOf = (user) => (Array.isArray(user?.operationalRoles) ? user.operationalRoles : []);
+const roles = rolesOf(signedIn?.json);
+const noRoles = !session || roles.length === 0;
+const capabilitiesPath = (query = '') => `/authz/capabilities?app=${encodeURIComponent(app)}${query}`;
+/** The permissions of the session, sorted, and their version. */
+async function permissions(query = '', headers = {}) {
+  const r = await call('GET', capabilitiesPath(query), { cookie: session, headers });
+  expect(r.status === 200, `/authz/capabilities: expected 200, got ${r.status}`);
+  return { list: [...(r.json?.permissions ?? [])].sort(), version: r.json?.version };
+}
+const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+/** Switches the role of the session; the status of the answer. */
+async function switchRole(role) {
+  const r = await call('POST', roleUrl, { ...(await withCsrf()), body: { role } });
+  return r.status;
+}
+
+await check('operational roles of the user: id and label as text, the current one among them', async () => {
+  expect(roles.every((r) => typeof r?.id === 'string' && typeof r?.label === 'string'), 'a role without id or label as text');
+  const current = signedIn.json.currentRole;
+  expect(typeof current === 'string' && roles.some((r) => r.id === current), `currentRole "${current}" is not one of the operational roles`);
+}, { skip: noRoles });
+
+await check('role switch with a GET: refused', async () => {
+  const r = await call('GET', roleUrl, { cookie: session });
+  expect(r.status >= 400, `expected a refusal (4xx), got ${r.status}: a link from another site could switch the role`);
+}, { skip: noRoles });
+
+await check('role switch without the CSRF token: 403', async () => {
+  const r = await call('POST', roleUrl, { cookie: session, body: { role: roles[0]?.id } });
+  expect(r.status === 403, `expected 403, got ${r.status}`);
+}, { skip: noRoles });
+
+await check('role switch to a role not offered: 404 in Problem format', async () => {
+  const r = await call('POST', roleUrl, { ...(await withCsrf()), body: { role: 'not-a-role-of-this-user' } });
+  expect(r.status === 404, `expected 404, got ${r.status}`);
+  expect(isProblem(r), 'the response is not a Problem (title, status)');
+}, { skip: noRoles });
+
+await check('role switch with a malformed body: 400', async () => {
+  const r = await call('POST', roleUrl, { ...(await withCsrf()), body: { role: 7 } });
+  expect(r.status === 400, `expected 400, got ${r.status}`);
+}, { skip: noRoles });
+
+const current = signedIn?.json?.currentRole;
+const other = roles.find((r) => r.id !== current)?.id;
+/** The permissions of each role, read by switching to it: filled by the switch check. */
+const byRole = new Map();
+
+await check('role switch to another role: 204, currentRole and the permissions version change', async () => {
+  const before = await permissions();
+  expect((await switchRole(other)) === 204, 'expected 204 for an operational role of the user');
+  const user = await call('GET', sessionUrl, { cookie: session });
+  expect(user.json?.currentRole === other, `currentRole is "${user.json?.currentRole}", not the chosen "${other}"`);
+  const after = await permissions();
+  expect(after.version !== before.version, 'the permissions version did not change after the switch');
+  byRole.set(current, before.list).set(other, after.list);
+  expect((await switchRole(current)) === 204, 'switching back to the first role failed');
+  expect(same((await permissions()).list, before.list), 'back on the first role, the permissions are not those it had');
+}, { skip: noRoles || !other });
+
+await check('a role sent by the page does not change the permissions (query, body, X-Active-Role)', async () => {
+  const own = await permissions();
+  for (const role of [other, 'not-a-role-of-this-user'].filter(Boolean)) {
+    expect(same((await permissions(`&role=${encodeURIComponent(role)}`)).list, own.list), `?role=${role} changed the permissions of the session`);
+    expect(same((await permissions('', { 'X-Active-Role': role })).list, own.list), `X-Active-Role: ${role} changed the permissions of the session`);
+  }
+  // A permission of the other role that the active one does not have stays denied, whatever role the body names.
+  const extra = (byRole.get(other) ?? []).find((p) => !own.list.includes(p)) ?? 'conformance.missing.test';
+  const csrf = await withCsrf();
+  const role = other ?? 'not-a-role-of-this-user';
+  const r = await call('POST', '/authz/check', { ...csrf, headers: { ...csrf.headers, 'X-Active-Role': role }, body: { role, checks: [{ permission: extra }] } });
+  expect(r.status === 200, `/authz/check: expected 200, got ${r.status}`);
+  expect(r.json?.results?.[0]?.allowed === false, `${extra} is granted by a role sent by the page`);
+}, { skip: noRoles });
 
 await check('logout with the session and the CSRF token: 200 with the address to go to', async () => {
   const r = await call('POST', logoutUrl, await withCsrf());

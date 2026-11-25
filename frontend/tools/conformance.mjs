@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const kits = [
-  ['authz', ['--authz', 'http://localhost:8082', '--app', 'demo', '--user', 'operator', '--password', 'operator', '--other-user', 'manager', '--other-password', 'manager']],
+  ['authz', ['--authz', 'http://localhost:8082', '--app', 'demo', '--user', 'administrator', '--password', 'administrator', '--other-user', 'manager', '--other-password', 'manager']],
   ['telemetry', ['--telemetry', 'http://localhost:8083', '--user', 'operator', '--password', 'operator']],
   ['bff', ['--bff', 'http://localhost:8080', '--return', 'http://localhost:4200/', '--user', 'administrator', '--password', 'administrator']],
 ];

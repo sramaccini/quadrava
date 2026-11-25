@@ -46,6 +46,11 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
   (with `showcase.components.read`, which leaves the other roles of the service) held by every user, and the
   administrator also holds `manager`: recreate Keycloak to import it (`docker compose up -d --force-recreate` in
   `idp/`).
+- The conformance kits check the operational roles where they are implemented, skipped otherwise: the
+  authorization kit `/authz/roles` and `role` (with a cookie, that a BFF ignores the `role` of the page), the BFF
+  kit the user's `operationalRoles` and `currentRole`, `POST /bff/role` and that a `role` or `X-Active-Role` sent
+  by the page does not change the permissions. `npm run conformance` runs the authorization kit as the administrator,
+  who has two operational roles.
 
 ### Fixed
 

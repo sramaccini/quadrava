@@ -9,6 +9,9 @@
 // The contract accepts a Bearer token (a service behind the BFF) or the session cookie (a BFF that answers /authz
 // itself): with --cookie (copied from a signed-in browser) the calls carry the cookies, and the writes the CSRF token
 // of the XSRF-TOKEN cookie, as the runtime sends them (contracts/bff.yaml).
+// The operational roles (optional part, 0.2) are checked when /authz/roles answers 200: with a token, that `role`
+// narrows the answer to the base roles plus that role; with a cookie (a BFF, which keeps the active role in the
+// session), that a `role` sent by the page changes nothing.
 // The service is not modified: the checks only read and verify. Exits with code 1 if a check fails.
 import { call as httpCall, expect, isProblem, parseArgs, suite, tokenFromArgs } from './conformance-lib.mjs';
 
@@ -109,6 +112,70 @@ await check('body is not JSON: 400', async () => {
   const r = await call('POST', '/authz/check', { raw: '{not json' });
   expect(r.status === 400, `expected 400, got ${r.status}`);
 });
+
+const throughBff = !user.token;
+const rolesAnswer = await call('GET', `/authz/roles?app=${encodeURIComponent(app)}`);
+const noRoles = rolesAnswer.status === 404;
+const roles = Array.isArray(rolesAnswer.json) ? rolesAnswer.json : [];
+const operational = roles.filter((r) => r?.base === false).map((r) => r.id);
+const NOT_A_ROLE = 'conformance-not-a-role';
+const sorted = (list) => [...(list ?? [])].sort();
+const subset = (a, b) => a.every((p) => b.includes(p));
+/** The permissions answered for a role. */
+async function permissionsFor(role) {
+  const r = await call('GET', `/authz/capabilities?app=${encodeURIComponent(app)}&role=${encodeURIComponent(role)}`);
+  expect(r.status === 200, `capabilities with role ${role}: expected 200, got ${r.status}`);
+  return sorted(r.json?.permissions);
+}
+
+await check('roles (optional part): a list of { id, label, base }, or 404 without the part', async () => {
+  expect(rolesAnswer.status === 200 || rolesAnswer.status === 404, `expected 200 or 404, got ${rolesAnswer.status}`);
+  if (noRoles) return;
+  expect(Array.isArray(rolesAnswer.json), 'the body is not a list');
+  expect(roles.every((r) => typeof r?.id === 'string' && typeof r?.label === 'string' && typeof r?.base === 'boolean'), 'a role without id or label as text, or without base as true or false');
+  expect(new Set(roles.map((r) => r.id)).size === roles.length, 'repeated roles');
+});
+
+await check('roles without app: 400 in Problem format', async () => {
+  const r = await call('GET', '/authz/roles');
+  expect(r.status === 400, `expected 400, got ${r.status}`);
+  expect(isProblem(r), 'the response is not a Problem');
+}, { skip: noRoles });
+
+await check('capabilities with an operational role: the base roles plus that one, within all the roles', async () => {
+  const all = sorted(capabilities.permissions);
+  const base = await permissionsFor(NOT_A_ROLE);
+  for (const role of operational) {
+    const granted = await permissionsFor(role);
+    expect(subset(granted, all), `role ${role} grants permissions the user does not have without a role`);
+    expect(subset(base, granted), `role ${role} lacks permissions of the base roles`);
+  }
+}, { skip: noRoles || throughBff });
+
+await check('a role the user does not hold grants nothing beyond the base roles', async () => {
+  const base = await permissionsFor(NOT_A_ROLE);
+  for (const role of operational) expect(subset(base, await permissionsFor(role)), `an unknown role grants more than role ${role}`);
+  const r = await call('POST', '/authz/check', { body: { role: NOT_A_ROLE, checks: capabilities.permissions.map((permission) => ({ permission })) } });
+  expect(r.status === 200, `expected 200, got ${r.status}`);
+  const allowed = sorted(r.json?.results?.filter((x) => x.allowed).map((x) => x.permission));
+  expect(JSON.stringify(allowed) === JSON.stringify(base), 'the batch check with an unknown role does not match the capabilities with it');
+}, { skip: noRoles || throughBff });
+
+await check('batch check with an operational role: consistent with the capabilities for that role', async () => {
+  for (const role of operational) {
+    const granted = await permissionsFor(role);
+    const r = await call('POST', '/authz/check', { body: { role, checks: capabilities.permissions.map((permission) => ({ permission })) } });
+    expect(r.status === 200, `expected 200, got ${r.status}`);
+    r.json.results.forEach((res) => expect(res.allowed === granted.includes(res.permission), `role ${role}: ${res.permission} is ${res.allowed ? 'granted' : 'denied'} by the check, not by the capabilities`));
+  }
+}, { skip: noRoles || throughBff || operational.length === 0 });
+
+await check('through a BFF: a role sent by the page changes nothing (the BFF answers for the role of the session)', async () => {
+  const all = sorted(capabilities.permissions);
+  for (const role of [...operational, NOT_A_ROLE]) {
+    expect(JSON.stringify(await permissionsFor(role)) === JSON.stringify(all), `?role=${role} changed the permissions of the session`);
+  }
+}, { skip: noRoles || !throughBff });
 
 await check('users with different permissions: different versions', async () => {
   const r = await call('GET', `/authz/capabilities?app=${encodeURIComponent(app)}`, { as: other });
