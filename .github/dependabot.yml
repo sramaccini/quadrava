@@ -8,19 +8,27 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
-    # A dependency goes to the first group that matches it.
+    # The framework moves in one pull request: a dependency-type group would otherwise take its packages too, and half of
+    # Angular at a new version does not install. The other groups leave them out explicitly.
     groups:
       angular:
-        patterns: ['@angular/*', '@angular-devkit/*', '@schematics/angular', 'ng-zorro-antd', 'typescript']
+        patterns: ['@angular/*', '@angular-devkit/*', '@schematics/angular', 'angular-eslint', 'ng-zorro-antd', 'typescript']
       development:
         dependency-type: development
+        exclude-patterns: ['@angular/*', '@angular-devkit/*', '@schematics/angular', 'angular-eslint', 'ng-zorro-antd', 'typescript']
       production:
         dependency-type: production
+        exclude-patterns: ['@angular/*', '@angular-devkit/*', '@schematics/angular', 'angular-eslint', 'ng-zorro-antd', 'typescript']
     ignore:
-      # Major versions of the framework are planned, not merged from a bot.
+      # Major versions of the framework are planned, not merged from a bot; TypeScript follows the versions Angular supports.
       - dependency-name: '@angular/*'
         update-types: ['version-update:semver-major']
       - dependency-name: ng-zorro-antd
+        update-types: ['version-update:semver-major']
+      - dependency-name: typescript
+        update-types: ['version-update:semver-major']
+      # The types of Node follow the version of Node the project uses (.nvmrc, 24 LTS).
+      - dependency-name: '@types/node'
         update-types: ['version-update:semver-major']
 
   - package-ecosystem: npm
@@ -46,6 +54,10 @@ updates:
     directory: /docker/runtime
     schedule:
       interval: weekly
+    ignore:
+      # The build stage stays on the Node LTS of the project (.nvmrc); a new major is a choice, not a bot update.
+      - dependency-name: node
+        update-types: ['version-update:semver-major']
 
   - package-ecosystem: docker-compose
     directories: [/idp, /docker/bff-lite-proxy]
