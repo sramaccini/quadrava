@@ -17,7 +17,7 @@
     "core": "^0.24.0",
     "schema": "^0.24.0",
     "@angular/forms": "^22.2.0",
-    "@ant-design/colors": "^7.2.1",
+    "@ant-design/colors": "^7.2.1 || ^8.0.1",
     "@ant-design/icons-angular": "^22.1.0",
     "ng-zorro-antd": "^22.1.0",
     "date-fns": "^4.1.0"

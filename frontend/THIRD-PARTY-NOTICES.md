@@ -13,10 +13,12 @@ The reference services in `reference/` are distributed as source only; their dep
 | @angular/forms | 22.3.0 | MIT |
 | @angular/platform-browser | 22.3.0 | MIT |
 | @angular/router | 22.3.0 | MIT |
+| @ant-design/colors | 8.0.1 | MIT |
 | @ant-design/colors | 7.2.1 | MIT |
+| @ant-design/fast-color | 3.0.1 | MIT |
 | @ant-design/fast-color | 2.0.6 | MIT |
 | @ant-design/icons-angular | 22.1.1 | MIT |
-| @babel/runtime | 7.29.10 | MIT |
+| @babel/runtime | 7.29.15 | MIT |
 | @ctrl/tinycolor | 3.6.1 | MIT |
 | @fontsource/sora | 5.3.0 | OFL-1.1 |
 | @marcbachmann/cel-js | 8.0.0 | MIT |
@@ -26,7 +28,7 @@ The reference services in `reference/` are distributed as source only; their dep
 | ng-zorro-antd | 22.2.1 | MIT |
 | parse5 | 8.1.1 | MIT |
 | rxjs | 7.8.2 | Apache-2.0 |
-| tslib | 2.8.1 | 0BSD |
+| tslib | 2.9.1 | 0BSD |
 | zod | 4.6.7 | MIT |
 
 ## @angular/cdk 22.3.0
@@ -225,6 +227,35 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
+## @ant-design/colors 8.0.1
+
+Licence: MIT · Source: https://github.com/ant-design/ant-design-colors.git
+
+```text
+MIT LICENSE
+
+Copyright (c) 2018-present Ant UED, https://xtech.antfin.com/
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+```
+
 ## @ant-design/colors 7.2.1
 
 Licence: MIT · Source: https://github.com/ant-design/ant-design-colors.git
@@ -252,6 +283,33 @@ NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
 LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+```
+
+## @ant-design/fast-color 3.0.1
+
+Licence: MIT · Source: https://github.com/ant-design/fast-color.git
+
+```text
+The MIT License (MIT)
+Copyright (c) 2015-present Alipay.com, https://www.alipay.com/
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF 
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY 
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ```
 
 ## @ant-design/fast-color 2.0.6
@@ -287,7 +345,7 @@ Licence: MIT · Source: https://github.com/ant-design/ant-design-icons/tree/mast
 
 (No licence file in the package: see the licence named above.)
 
-## @babel/runtime 7.29.10
+## @babel/runtime 7.29.15
 
 Licence: MIT · Source: https://github.com/babel/babel.git
 
@@ -772,7 +830,7 @@ Apache License
  limitations under the License.
 ```
 
-## tslib 2.8.1
+## tslib 2.9.1
 
 Licence: 0BSD · Source: https://github.com/Microsoft/tslib.git
 

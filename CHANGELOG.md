@@ -12,6 +12,11 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Changed
+
+- `components` accepts `@ant-design/colors` 8 besides 7 as a peer dependency: the palettes of the theme bridge are the
+  same in both.
+
 ## [0.24.0] - 2026-11-26
 
 ### Added
