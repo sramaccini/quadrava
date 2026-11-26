@@ -573,6 +573,19 @@ export interface ChartNode extends NodeBase {
   rightFormat?: 'number' | 'currency' | 'percent';
 }
 /** A compact square-column time series for high-density activity dashboards. */
+/** Nodes and edges read from one data source and laid out from left to right, for example a workflow. */
+export interface GraphNode extends NodeBase {
+  type: 'graph';
+  source: string;
+  nodes: { field?: string; keyField?: string; labelField?: string; valueKey?: string; toneField?: string; tones?: Record<string, Tone> };
+  edges: { field?: string; fromField?: string; toField?: string; labelField?: string };
+  highlight?: string;
+  start?: string;
+  edgeLabels?: boolean;
+  height?: number;
+  caption?: string;
+}
+
 export interface SquareChartNode extends NodeBase {
   type: 'squareChart';
   source: string;
@@ -783,7 +796,7 @@ export interface InputNode extends NodeBase {
   errorPath?: string;
 }
 
-export type NodeDefinition = SectionNode | TextNode | ButtonNode | MenuButtonNode | FilterBarNode | TableNode | FormNode | TabsNode | DetailNode | AlertNode | StatsNode | WizardNode | TreeNode | CalendarNode | ChartNode | SquareChartNode | DataTableNode | ServerDataTableNode | InputNode | BoxNode | GridNode | BorderNode | ImageNode | LinkNode | ProgressNode | TimelineNode | KanbanNode | CommentsNode;
+export type NodeDefinition = SectionNode | TextNode | ButtonNode | MenuButtonNode | FilterBarNode | TableNode | FormNode | TabsNode | DetailNode | AlertNode | StatsNode | WizardNode | TreeNode | CalendarNode | ChartNode | SquareChartNode | GraphNode | DataTableNode | ServerDataTableNode | InputNode | BoxNode | GridNode | BorderNode | ImageNode | LinkNode | ProgressNode | TimelineNode | KanbanNode | CommentsNode;
 export type NodeType = NodeDefinition['type'];
 
 /** Item of the path above the title of a screen: a link when it has `navigate`. */

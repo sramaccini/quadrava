@@ -17,6 +17,9 @@
     "taskMoves": {
       "ref": "showcase-tasks/taskMoves"
     },
+    "taskWorkflow": {
+      "ref": "showcase-tasks/taskWorkflow"
+    },
     "moveTask": {
       "ref": "showcase-tasks/moveTask"
     },
@@ -349,6 +352,24 @@
                     "title": "{{ t('showcase_tasks.workflow_title', 'Workflow of “{title}”', {'title': has(data.task) ? data.task.title : ''}) }}",
                     "size": "large",
                     "components": [
+                      {
+                        "id": "workflow-graph",
+                        "type": "graph",
+                        "source": "taskWorkflow",
+                        "nodes": {
+                          "field": "statuses",
+                          "valueKey": "values.taskStatus",
+                          "toneField": "tone"
+                        },
+                        "edges": {
+                          "field": "transitions",
+                          "labelField": "name"
+                        },
+                        "highlight": "{{ has(data.task) ? data.task.status : '' }}",
+                        "start": "to-do",
+                        "height": 300,
+                        "caption": "{{ t('showcase_tasks.workflow_caption', 'The statuses of the tasks and the transitions between them; the current status is outlined.') }}"
+                      },
                       {
                         "id": "workflow-explain",
                         "type": "text",

@@ -39,6 +39,7 @@ Rules common to all components, new ones included:
 | `calendar` | Monthly calendar with events. |
 | `chart` | Bar, line and pie charts. |
 | `squareChart` | Compact square columns for dense time-series data. |
+| `graph` | Nodes and connections laid out from left to right, for example a workflow (§ 2.35). |
 | Fields | `text`, `number`, `select`, `checkbox`, `date`, `textarea`, `datetime`, `radio`, `switch`, `multiselect`, `tags`, `lookup`, `file`, `repeater`, `richtext` (§ 2.26). |
 | Cell formats | `text`, `number`, `currency`, `percent`, `date`, `datetime`, `boolean`, `badge`, `markdown`. |
 | Steps | `set`, `call` (with `as` and `onError`), `refresh`, `navigate`, `toast`, `confirm`, `dialog`, `view` (§ 2.11), `validate`, `print`, `export` and `download` (§ 2.22), `if` and `run`; named sequences in `actions` (§ 2.22b). |
@@ -925,6 +926,55 @@ Keyboard and screen readers: the button announces a menu (`aria-haspopup`, `aria
 to the first item, the arrows, Home and End move among the items, Enter or Space choose, Esc closes and gives the focus
 back to the button. While the steps of an item run the button is busy. The showcase «Tasks and progress» has the status
 of a task with its transitions.
+
+### 2.35 Graph
+
+Nodes and connections read from one data source and laid out automatically from left to right: the statuses of a
+workflow and its transitions, the steps of a process, the dependencies between items. It is read-only.
+
+```json
+{
+  "type": "graph",
+  "source": "workflow",
+  "nodes": { "field": "statuses", "valueKey": "values.status", "toneField": "category",
+             "tones": { "new": "neutral", "indeterminate": "primary", "done": "success" } },
+  "edges": { "field": "transitions", "labelField": "name" },
+  "highlight": "{{ has(data.issue) ? data.issue.status : '' }}",
+  "start": "open",
+  "caption": "Workflow of the issues"
+}
+```
+
+The data source answers with both lists, for example `{ "statuses": [...], "transitions": [...] }`; `field` says where
+each one is (the answer itself, or its `items`, without it).
+
+| Property | What it does |
+| --- | --- |
+| `nodes` | `keyField` (`id`), `labelField` (`name`), `valueKey` to translate the labels, `toneField` and `tones` for the colour; without `tones` the value of `toneField` is the tone itself. |
+| `edges` | `fromField` (`from`), `toField` (`to`), `labelField` for the name of the connection. An empty `from` means «from any node»: the connection starts from a small «Any» marker above its node. |
+| `highlight` | Key of the node to outline, usually an expression (the current status). |
+| `start` | Key of the first node, marked with a dot; without it the nodes that nobody reaches come first. |
+| `edgeLabels` | Whether the names of the connections are shown at first (`true` by default). |
+| `height` | Height of the drawing area (360 px by default); a larger graph scrolls inside it. |
+| `caption` | Caption under the graph, also the name of the drawing for screen readers. |
+
+How the layout works (`layoutGraph`, a pure function): the start node goes in the first column, every other node in
+the column after the nearest node that leads to it; within a column the nodes are ordered to cross fewer connections.
+Connections that go back (to the same or an earlier column) are dashed arcs below the nodes, one lane each.
+
+```
+     (Any)
+       ╎ Back to the start
+       ▼
+ ● [To do] ──Start──▶ [In progress] ──Finish──▶ [Done]
+       ▲                 ╎   ▲                     ╎
+       ╰╌╌╌╌╌╌Pause╌╌╌╌╌╌╯   ╰╌╌╌╌╌╌Reopen╌╌╌╌╌╌╌╌╯
+```
+
+The toolbar zooms from 50% to 200% and switches the names of the connections on and off. The drawing follows the light
+and dark themes. Screen readers do not read the drawing: they get the nodes (with «current» and «start») and the
+connections («To do → In progress: Start») as two lists. The workflow window of the showcase «Tasks and progress»
+shows the statuses of the tasks with the current one outlined.
 
 ## 3. Implementation notes and known limits
 

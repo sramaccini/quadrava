@@ -37,6 +37,19 @@ describe('schema of the new components', () => {
       expect(issuesOf(view({ title: 'Workflow', components: [{ type: 'text', text: 'x' }], onClose: [] })).length).toBeGreaterThan(0);
     });
   });
+  describe('graph', () => {
+    const graph = (extra: Record<string, unknown>) => screen([{ type: 'graph', source: 'w', nodes: { field: 'statuses' }, edges: { field: 'transitions' }, ...extra }], { w: { ref: 'workflow/get' } });
+    it('accepts nodes and edges from one data source, with highlight, start, labels and tones', () => {
+      expect(issuesOf(graph({ nodes: { field: 'statuses', keyField: 'id', labelField: 'name', valueKey: 'values.status', toneField: 'category', tones: { done: 'success' } }, edges: { field: 'transitions', fromField: 'from', toField: 'to', labelField: 'name' }, highlight: '{{ data.issue.status }}', start: 'open', edgeLabels: false, height: 300, caption: 'Workflow' }))).toEqual([]);
+    });
+    it('rejects missing edges, unknown tones, a tiny height and unknown properties', () => {
+      expect(issuesOf(screen([{ type: 'graph', source: 'w', nodes: {} }], { w: { ref: 'workflow/get' } })).length).toBeGreaterThan(0);
+      expect(issuesOf(graph({ nodes: { tones: { done: 'purple' } } })).length).toBeGreaterThan(0);
+      expect(issuesOf(graph({ height: 20 })).length).toBeGreaterThan(0);
+      expect(issuesOf(graph({ edges: { kind: 'x' } })).length).toBeGreaterThan(0);
+      expect(issuesOf(graph({ editable: true })).length).toBeGreaterThan(0);
+    });
+  });
   describe('square chart', () => {
     it('accepts a square-column time series and rejects missing fields or extras', () => {
       expect(issuesOf(screen([{ type: 'squareChart', source: 's', categoryField: 'day', valueField: 'count' }], { s: { ref: 'activity/list' } }))).toEqual([]);

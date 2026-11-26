@@ -1257,6 +1257,7 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
             "calendar",
             "chart",
             "squareChart",
+            "graph",
             "dataTable",
             "serverDataTable",
             "input",
@@ -2205,6 +2206,111 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
               "caption": {
                 "type": "string",
                 "description": "Accessible name and caption of the chart."
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "graph"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "required": [
+              "source",
+              "nodes",
+              "edges"
+            ],
+            "properties": {
+              "source": {
+                "type": "string",
+                "description": "Data source with the nodes and the edges: one answer with both lists (see field), for example a workflow with its statuses and transitions."
+              },
+              "nodes": {
+                "type": "object",
+                "additionalProperties": false,
+                "description": "Where the nodes are and which fields they use.",
+                "properties": {
+                  "field": {
+                    "type": "string",
+                    "description": "Property of the answer with the list of nodes, for example statuses (the answer itself, or its items, if absent)."
+                  },
+                  "keyField": {
+                    "type": "string",
+                    "description": "Field with the key of a node, which the edges name (id if absent)."
+                  },
+                  "labelField": {
+                    "type": "string",
+                    "description": "Field with the label of a node (name if absent)."
+                  },
+                  "valueKey": {
+                    "type": "string",
+                    "description": "Prefix of the translation keys of the labels: the key is prefix.key, the label is the fallback."
+                  },
+                  "toneField": {
+                    "type": "string",
+                    "description": "Field whose value chooses the colour of a node through tones; with tones absent the value itself is the tone (neutral, primary, success, danger)."
+                  },
+                  "tones": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "$ref": "#/$defs/tone"
+                    },
+                    "description": "Colour of the nodes by value of toneField, for example {\"done\": \"success\"}; values not listed are neutral."
+                  }
+                }
+              },
+              "edges": {
+                "type": "object",
+                "additionalProperties": false,
+                "description": "Where the edges are and which fields they use.",
+                "properties": {
+                  "field": {
+                    "type": "string",
+                    "description": "Property of the answer with the list of edges, for example transitions."
+                  },
+                  "fromField": {
+                    "type": "string",
+                    "description": "Field with the key of the node the edge starts from (from if absent); an empty value means from any node."
+                  },
+                  "toField": {
+                    "type": "string",
+                    "description": "Field with the key of the node the edge leads to (to if absent)."
+                  },
+                  "labelField": {
+                    "type": "string",
+                    "description": "Field with the label of the edge, for example the name of the transition (no labels if absent)."
+                  }
+                }
+              },
+              "highlight": {
+                "type": "string",
+                "description": "Key of the node to highlight, usually an expression, for example the current status of an issue."
+              },
+              "start": {
+                "type": "string",
+                "description": "Key of the node where the graph starts: it goes first and is marked as the start (the nodes without incoming edges if absent)."
+              },
+              "edgeLabels": {
+                "type": "boolean",
+                "description": "Whether the labels of the edges are shown at first; the user can switch them on and off (true if absent)."
+              },
+              "height": {
+                "type": "integer",
+                "minimum": 160,
+                "maximum": 800,
+                "description": "Height of the drawing area in pixels (360 if absent); a larger graph scrolls inside it."
+              },
+              "caption": {
+                "type": "string",
+                "description": "Caption under the graph, plain text or an expression; also the name of the drawing for screen readers."
               }
             }
           }

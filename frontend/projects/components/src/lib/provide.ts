@@ -10,6 +10,7 @@ import { BUILTIN_MESSAGES } from './messages';
 import { AlertComponent } from './alert.component';
 import { ButtonComponent } from './button.component';
 import { MenuButtonComponent } from './menu-button.component';
+import { GraphComponent } from './graph.component';
 import { DetailComponent } from './detail.component';
 import { DialogConfirmation } from './dialog-confirmation';
 import { DialogForm } from './dialog-form';
@@ -81,6 +82,7 @@ export const STANDARD_COMPONENTS: ComponentCatalog = {
   calendar: CalendarComponent,
   chart: ChartComponent,
   squareChart: SquareChartComponent,
+  graph: GraphComponent,
   dataTable: DataTableComponent,
   serverDataTable: ServerDataTableComponent,
   input: InputComponent,

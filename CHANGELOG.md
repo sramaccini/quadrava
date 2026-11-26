@@ -23,6 +23,10 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
   state of the screen; the sequence goes on when the user closes it. Sizes `small`, `medium`, `large`, `full`. New core
   port `ViewDialog`, implemented in `components` by `DialogView` and provided by `provideLcComponents()`. Studio needs the
   step in its step editor.
+- New component `graph`: nodes and connections read from one data source and laid out from left to right (a pure
+  `layoutGraph` function), with a highlighted node, a start node, connections «from any node», zoom, names of the
+  connections that can be switched off and a text alternative for screen readers. Read-only. Studio needs its template
+  and palette entry.
 
 - `filterBar`: remote rules (`{ "remote": "<data source>" }`) work in its fields as in forms: pause without typing,
   spinner, a newer value cancels the request, answers kept per value, translated message. The value reaches the state,

@@ -182,6 +182,19 @@
 | `height` | integer 120–600 | Height in pixels (220 if absent). |
 | `caption` | text | Accessible name and caption of the chart. |
 
+### `graph`
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `source` * | text | Data source with the nodes and the edges: one answer with both lists (see field), for example a workflow with its statuses and transitions. |
+| `nodes` * | object | Where the nodes are and which fields they use. |
+| `edges` * | object | Where the edges are and which fields they use. |
+| `highlight` | text | Key of the node to highlight, usually an expression, for example the current status of an issue. |
+| `start` | text | Key of the node where the graph starts: it goes first and is marked as the start (the nodes without incoming edges if absent). |
+| `edgeLabels` | yes/no | Whether the labels of the edges are shown at first; the user can switch them on and off (true if absent). |
+| `height` | integer 160–800 | Height of the drawing area in pixels (360 if absent); a larger graph scrolls inside it. |
+| `caption` | text | Caption under the graph, plain text or an expression; also the name of the drawing for screen readers. |
+
 ### `dataTable`
 
 | Property | Type | Description |
