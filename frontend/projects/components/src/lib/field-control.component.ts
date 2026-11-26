@@ -77,7 +77,7 @@ const FIELD_WIDTHS: Record<Exclude<FieldWidth, 'full'>, string> = { xs: '6rem', 
     @let f = field();
     @switch (f.type) {
       @case ('select') {
-        <nz-select [nzId]="inputId()" nzAllowClear [nzPlaceHolder]="placeholder()" [nzDisabled]="disabled()" [ngModel]="selected()" (ngModelChange)="valueChange.emit($event)">
+        <nz-select [nzId]="inputId()" nzAllowClear [nzPlaceHolder]="placeholder()" [nzDisabled]="disabled()" [nzOpen]="openOnStart()" [ngModel]="selected()" (ngModelChange)="valueChange.emit($event)">
           @for (option of choices(); track option) {
             <nz-option [nzValue]="option" [nzLabel]="optionLabel(option)" />
           }
@@ -144,7 +144,7 @@ const FIELD_WIDTHS: Record<Exclude<FieldWidth, 'full'>, string> = { xs: '6rem', 
         <lc-file-field [inputId]="inputId()" [field]="f" [runtime]="runtime()" [scope]="scope()" [value]="value()" [disabled]="disabled()" (valueChange)="valueChange.emit($event)" />
       }
       @case ('lookup') {
-        <lc-lookup [inputId]="inputId()" [field]="f" [runtime]="runtime()" [scope]="scope()" [value]="value()" [disabled]="disabled()" [placeholder]="placeholder()" (valueChange)="valueChange.emit($event)" />
+        <lc-lookup [inputId]="inputId()" [field]="f" [runtime]="runtime()" [scope]="scope()" [value]="value()" [disabled]="disabled()" [placeholder]="placeholder()" [openOnStart]="openOnStart()" (valueChange)="valueChange.emit($event)" />
       }
       @case ('multiselect') {
         <nz-select [nzId]="inputId()" nzMode="multiple" nzAllowClear [nzPlaceHolder]="placeholder()" [nzDisabled]="disabled()" [ngModel]="list()" (ngModelChange)="multiple($event)">
@@ -269,6 +269,8 @@ export class FieldControlComponent {
   readonly variant = input<'form' | 'filter'>('form');
   /** Text of empty choice fields (and of the «all» choice in filters). */
   readonly placeholder = input('—');
+  /** A select or a lookup has its list open as soon as it appears (an inline field just opened). */
+  readonly openOnStart = input(false);
   /** Label that is data (a field of `fieldsFrom`), shown as it is; otherwise the label of the field, resolved by the screen. */
   readonly labelText = input<string | null>(null);
   /** Labels of options that are data, by value; otherwise `optionKeys`, `optionKey` or the value. */

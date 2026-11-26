@@ -1072,22 +1072,29 @@ with the call sending only the field that changed: `"body": "{{ {field: value} }
   Add a description…                                       [✓] [✕]
 ```
 
-- **Reading.** Each value is text: options by their label, dates in the format of the language, lists separated by
+- **Reading.** Each value is text: options by their label, a `lookup` by the label of its row (asked of the service
+  with `lookupKey` when it is not among the loaded rows), dates in the format of the language, lists separated by
   commas, `richtext` as formatted text. `display: "heading"` makes a text field a large title (its label stays for
   screen readers only). An empty value shows `emptyText` («Click to add» if absent) in a quiet colour.
 - **Opening.** A click, or Enter or Space on the focused value, opens the editor of that field only, with the focus in
   it. Opening another field closes the first one without saving it. A field with `readOnlyIf` true is only text: no
   button, no focus.
-- **Confirming.** Single-line fields (`text`, `number`, `select`, `radio`, `multiselect`, `tags`, `date`,
-  `datetime`) have two small buttons on the right, ✓ and ✕; Enter in the text box confirms. `textarea` and
+- **Confirming.** Single-line fields (`text`, `number`, `radio`, `multiselect`, `tags`, `date`, `datetime`)
+  have two small buttons on the right, ✓ and ✕; Enter in the text box confirms. A `select` or a `lookup` opens with
+  its list and is confirmed by choosing a value (clearing it confirms an empty value); it has only ✕. `textarea` and
   `richtext` have Save and Cancel under them; Ctrl+Enter (⌘+Enter) saves. Escape cancels, after closing a list of
   options or a calendar that is open.
+- **Checkboxes and switches** stay controls: every change runs `onSave` at once, and the control goes back to the
+  old value if the checks or a step fail. With `readOnlyIf` true they are disabled.
 - **Checks and errors.** Confirming checks the field with its rules (`required`, `maxLength`, `validation`…): an
   error keeps the editor open with the message. Then `onSave` runs; if a step fails the editor stays open with what
   the user typed, and the field errors of the service (`/summary`) go under the field. A value that did not change
-  closes the editor without running the steps. Cancel puts back the value the field had.
-- **Other types.** `checkbox`, `switch`, `file`, `lookup`, `password` and `repeater` fields are drawn as in a
-  normal form; the `actions` of the form, if any, stay under the fields.
+  closes the editor without running the steps. Cancel puts back the value the field had. An emptied field that is not
+  text (a number, a date, a choice) is saved as null.
+- **Fields from the data** (`fieldsFrom`) behave the same; their `field` is the full key, for example
+  `custom.reviewDate` when `into` is `custom` (a body `{{ {field: value} }}` sends `{"custom.reviewDate": …}`).
+- **Other types.** `file`, `password` and `repeater` fields are drawn as in a normal form; the `actions` of the
+  form, if any, stay under the fields.
 
 The showcase «Forms» has a work item in the section «Inline editing».
 

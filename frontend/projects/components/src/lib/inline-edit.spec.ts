@@ -2,6 +2,7 @@ import type { DataRequest } from 'core';
 import type { FieldDefinition, NodeDefinition } from 'schema';
 import { inlineText, isEmptyValue, sameValue } from './inline-edit';
 import { plain, renderScreen, type ScreenHarness } from './screen-testing';
+import { stubViewportHeight } from './select-testing';
 
 describe('inline editing in the form', () => {
   const labels = { yes: 'Yes', no: 'No', translate: (key: string, fallback: string) => (key === 'status.open' ? 'Open' : fallback) };
@@ -162,5 +163,154 @@ describe('inline editing in the form', () => {
     button(h, 'Summary', 'Confirm').click();
     await h.until(() => plain(item(h, 'Summary').querySelector('.ant-form-item-explain')?.textContent) !== '', 'service error');
     expect((item(h, 'Summary').querySelector('input') as HTMLInputElement).value).toBe('Rejected');
+  });
+
+  describe('number fields', () => {
+    const points: NodeDefinition = {
+      type: 'form',
+      source: 'issue',
+      edit: 'inline',
+      fields: [{ name: 'points', type: 'number', label: 'Points', min: 0, max: 999, step: 1 }],
+      onSave: [{ call: 'patch' }, { toast: "{{ 'saved ' + field }}" }],
+    };
+    const openPoints = async (): Promise<ScreenHarness> => {
+      const h = await renderScreen({ components: [points], dataSources, respond: (r) => (r.method === 'GET' ? { points: 3 } : {}) });
+      await h.until(() => plain(view(h, 'Points')?.textContent) === '3', 'value');
+      view(h, 'Points')!.click();
+      await h.settle();
+      return h;
+    };
+
+    it('an emptied number is saved as null, not as empty text', async () => {
+      const h = await openPoints();
+      const input = item(h, 'Points').querySelector('input')!;
+      type(input, '');
+      key(input, 'Enter');
+      await h.until(() => h.toasts.includes('saved points'), 'saved');
+      expect(patches(h)).toEqual([{ points: null }]);
+    });
+
+    it('Escape after a failed check puts back the old value, even if the text box reports its text as it goes', async () => {
+      const h = await openPoints();
+      const input = item(h, 'Points').querySelector('input')!;
+      type(input, '1000');
+      key(input, 'Enter');
+      await h.until(() => plain(item(h, 'Points').querySelector('.ant-form-item-explain')?.textContent) !== '', 'max message');
+      key(input, 'Escape');
+      // The browser sends «change» from the text box being removed, after the value was put back.
+      input.dispatchEvent(new Event('change'));
+      await h.until(() => view(h, 'Points') !== null, 'closed');
+      expect(plain(view(h, 'Points')!.textContent)).toBe('3');
+      expect(patches(h)).toEqual([]);
+    });
+  });
+
+  describe('choices, lookups, toggles and data fields', () => {
+    let restoreHeight: () => void;
+    beforeAll(() => (restoreHeight = stubViewportHeight()));
+    afterAll(() => restoreHeight());
+    afterEach(() => document.querySelectorAll('.cdk-overlay-container').forEach((c) => (c.innerHTML = '')));
+
+    const people = [
+      { id: 1, name: 'Ada' },
+      { id: 2, name: 'Linus' },
+    ];
+    const details: NodeDefinition = {
+      type: 'form',
+      source: 'issue',
+      edit: 'inline',
+      fields: [
+        { name: 'assignee', type: 'lookup', label: 'Assignee', emptyText: 'Unassigned', lookup: { source: 'people', labelField: 'name' } },
+        { name: 'priority', type: 'select', label: 'Priority', options: ['low', 'high'] },
+        { name: 'blocked', type: 'checkbox', label: 'Blocked' },
+      ],
+      fieldsFrom: { source: 'fields', into: 'custom', nameField: 'key' },
+      onSave: [{ call: 'patch' }, { toast: "{{ 'saved ' + field }}" }],
+    };
+    const sources = {
+      ...dataSources,
+      people: { type: 'rest' as const, method: 'GET' as const, url: '/api/people', params: { id: '{{ lookupKey }}' } },
+      fields: { type: 'rest' as const, method: 'GET' as const, url: '/api/fields' },
+    };
+    const options = (): HTMLElement[] => [...document.querySelectorAll<HTMLElement>('.ant-select-item-option')];
+    const openDetails = async (failPatch = false): Promise<ScreenHarness> => {
+      const h = await renderScreen({
+        components: [details],
+        dataSources: sources,
+        respond: (r) => {
+          if (r.url === '/api/fields') return [{ key: 'reviewDate', label: 'Review date', type: 'date' }, { key: 'ticket', label: 'Ticket', type: 'text' }];
+          if (r.url === '/api/people') return r.query?.['id'] === 2 ? [people[1]] : [people[0]];
+          if (r.method === 'PATCH') {
+            if (failPatch) throw new Error('500');
+            return {};
+          }
+          return { assignee: 2, priority: 'low', blocked: false, custom: { reviewDate: null } };
+        },
+      });
+      await h.until(() => plain(view(h, 'Assignee')?.textContent) === 'Linus', 'label of the lookup value');
+      return h;
+    };
+
+    it('a lookup shows the label of its value, opens with its list and saves the value chosen, with no ✓', async () => {
+      const h = await openDetails();
+      view(h, 'Assignee')!.click();
+      await h.until(() => options().length > 0, 'list open');
+      expect(button(h, 'Assignee', 'Confirm')).toBeUndefined();
+      expect(button(h, 'Assignee', 'Cancel')).toBeDefined();
+      options().find((o) => plain(o.textContent) === 'Ada')!.click();
+      await h.until(() => h.toasts.includes('saved assignee'), 'saved on pick');
+      expect(patches(h)).toEqual([{ assignee: 1 }]);
+      await h.until(() => plain(view(h, 'Assignee')?.textContent) === 'Ada', 'closed with the new label');
+    });
+
+    it('a select saves on pick; clearing a lookup confirms null and shows emptyText', async () => {
+      const h = await openDetails();
+      view(h, 'Priority')!.click();
+      await h.until(() => options().length === 2, 'list open');
+      options()[1].click();
+      await h.until(() => h.toasts.includes('saved priority'), 'saved on pick');
+      view(h, 'Assignee')!.click();
+      await h.settle();
+      (item(h, 'Assignee').querySelector('.ant-select-clear') as HTMLElement).dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      await h.until(() => h.toasts.includes('saved assignee'), 'cleared');
+      expect(patches(h)).toEqual([{ priority: 'high' }, { assignee: null }]);
+      await h.until(() => plain(view(h, 'Assignee')?.textContent) === 'Unassigned', 'empty text');
+    });
+
+    it('a checkbox saves at every change', async () => {
+      const h = await openDetails();
+      const box = (): HTMLInputElement => h.el.querySelector('[nz-checkbox] input[type=checkbox]') as HTMLInputElement;
+      expect(box()).not.toBeNull();
+      box().click();
+      await h.until(() => h.toasts.includes('saved blocked'), 'saved at once');
+      expect(patches(h)).toEqual([{ blocked: true }]);
+      expect(box().checked).toBe(true);
+    });
+
+    it('a checkbox goes back to its old value when saving fails', async () => {
+      const failing = await openDetails(true);
+      const other = failing.el.querySelector('[nz-checkbox] input[type=checkbox]') as HTMLInputElement;
+      other.click();
+      await failing.until(() => patches(failing).length === 1, 'tried');
+      await failing.until(() => !(failing.el.querySelector('[nz-checkbox] input[type=checkbox]') as HTMLInputElement).checked, 'back to the old value');
+    });
+
+    it('a field from the data is inline too; field is its full key', async () => {
+      const h = await openDetails();
+      await h.until(() => view(h, 'Review date') !== null, 'data field');
+      view(h, 'Review date')!.click();
+      await h.settle();
+      expect(item(h, 'Review date').querySelector('nz-date-picker')).not.toBeNull();
+      button(h, 'Review date', 'Cancel').click();
+      await h.until(() => view(h, 'Review date') !== null, 'closed');
+      view(h, 'Ticket')!.click();
+      await h.settle();
+      const input = item(h, 'Ticket').querySelector('input')!;
+      type(input, 'T-1');
+      key(input, 'Enter');
+      await h.until(() => h.toasts.includes('saved custom.ticket'), 'saved with the full key');
+      expect(patches(h)).toEqual([{ 'custom.ticket': 'T-1' }]);
+      expect(h.reports).toEqual([]);
+    });
   });
 });

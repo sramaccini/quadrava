@@ -9,7 +9,8 @@ import { BusyComponent } from './busy.component';
 import { FieldControlComponent } from './field-control.component';
 import { labelInControl } from './file-field.component';
 import { IconComponent } from './icon.component';
-import { inlineText, isEmptyValue, isInlineType, isMultiLine, sameValue } from './inline-edit';
+import { confirmsOnPick, emptyAsNull, inlineText, isEmptyValue, isInlineType, isMultiLine, isToggle, sameValue } from './inline-edit';
+import { LookupComponent } from './lookup.component';
 import { MarkdownComponent } from './markdown.component';
 import { checkValue, personalValues, repeaterRows, validationEnv } from './field-validation';
 import { dataItems, itemValue, screenItems, withItemValue, type FormItem, ownValues } from './form-fields';
@@ -29,13 +30,14 @@ import { nextId } from './shared';
  * whole line with no limit.
  * With `edit: "inline"` the fields show their values as text (a heading with `display: "heading"`, formatted text for
  * richtext, `emptyText` when empty); a click, Enter or Space opens the editor of that field only, focused. Single-line
- * fields are confirmed with ✓ or Enter, multi-line ones with Save or Ctrl+Enter; ✕, Cancel or Escape restore the value.
- * Confirming checks the field, then runs `onSave` with `field` and `value`: an error keeps the editor open. A field
- * that cannot be changed (readOnlyIf) is only text.
+ * fields are confirmed with ✓ or Enter, multi-line ones with Save or Ctrl+Enter, a select or a lookup (opened with its
+ * list) by choosing a value; ✕, Cancel or Escape restore the value. Confirming checks the field, then runs `onSave`
+ * with `field` and `value`: an error keeps the editor open. A field that cannot be changed (readOnlyIf) is only text.
+ * Checkboxes and switches stay controls: every change runs `onSave` at once and goes back if it fails.
  */
 @Component({
   selector: 'lc-form',
-  imports: [BusyComponent, FieldControlComponent, IconComponent, MarkdownComponent, NzAlertModule, NzFormModule, NzButtonModule, NzTooltipModule],
+  imports: [BusyComponent, FieldControlComponent, IconComponent, LookupComponent, MarkdownComponent, NzAlertModule, NzFormModule, NzButtonModule, NzTooltipModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: block; container-type: inline-size; }
@@ -86,6 +88,7 @@ import { nextId } from './shared';
         @if (runtime().isVisible(field, fieldScope())) {
           <nz-form-item [attr.data-lc-input]="id + item.key" [attr.data-lc-required]="required(item) ? '' : null" [style.--lc-field-span]="span(field)" [class.line]="flow() && (!field.width || field.width === 'full')" [class.full]="field.width === 'full'">
             @let inlineField = inline() && isInlineType(field);
+            @let inlineToggle = inline() && isToggle(field);
             @if (!labelInControl(field)) {
               <nz-form-label [class.sr-only]="inlineField && field.display === 'heading'" [nzFor]="id + item.key" [id]="id + item.key + '-label'" [nzRequired]="required(item)" [nzTooltipTitle]="field.tooltip ? runtime().text(field.tooltip, fieldScope()) : undefined" [nzTooltipIcon]="'question-circle'">{{ item.label ?? (runtime().text(field.label, fieldScope()) || field.name) }}</nz-form-label>
             }
@@ -117,6 +120,8 @@ import { nextId } from './shared';
                     <span class="empty">{{ locked ? '—' : field.emptyText ? runtime().text(field.emptyText, fieldScope()) : i18n.t('lc.inline.empty') }}</span>
                   } @else if (field.type === 'richtext') {
                     <lc-markdown [source]="$any(value)" />
+                  } @else if (field.type === 'lookup') {
+                    <lc-lookup [textOnly]="true" [field]="field" [runtime]="runtime()" [scope]="fieldScope()" [value]="value" />
                   } @else {
                     {{ shownText(item, value) }}
                   }
@@ -128,7 +133,8 @@ import { nextId } from './shared';
                 [runtime]="runtime()"
                 [scope]="fieldScope()"
                 [value]="valueOf(item)"
-                [disabled]="readOnly(field)"
+                [disabled]="readOnly(field) || ((inlineField || inlineToggle) && busy())"
+                [openOnStart]="inlineField && confirmsOnPick(field)"
                 [inputId]="id + item.key"
                 [labelId]="id + item.key + '-label'"
                 [labelText]="item.label"
@@ -139,7 +145,7 @@ import { nextId } from './shared';
                 [cellErrors]="cellErrors()[item.key] ?? {}"
                 [personal]="personal()"
                 [remote]="remote()"
-                (valueChange)="set(item, $event)"
+                (valueChange)="inlineToggle ? toggle(item, $event) : inlineField ? changed(item, $event) : set(item, $event)"
               />
               @if (inlineField) {
                 @if (isMultiLine(field)) {
@@ -149,11 +155,13 @@ import { nextId } from './shared';
                   </div>
                 } @else {
                   <div class="editor-actions icons">
-                    <button nz-button nzSize="small" type="button" [nzLoading]="busy()" [attr.aria-label]="i18n.t('lc.confirm')" (click)="save(item)">
-                      @if (!busy()) {
-                        <lc-icon name="check" />
-                      }
-                    </button>
+                    @if (!confirmsOnPick(field)) {
+                      <button nz-button nzSize="small" type="button" [nzLoading]="busy()" [attr.aria-label]="i18n.t('lc.confirm')" (click)="save(item)">
+                        @if (!busy()) {
+                          <lc-icon name="check" />
+                        }
+                      </button>
+                    }
                     <button nz-button nzSize="small" type="button" [disabled]="busy()" [attr.aria-label]="i18n.t('lc.cancel')" (click)="cancel(item)"><lc-icon name="close" /></button>
                   </div>
                 }
@@ -190,6 +198,8 @@ export class FormComponent {
   protected readonly labelInControl = labelInControl;
   protected readonly isInlineType = isInlineType;
   protected readonly isMultiLine = isMultiLine;
+  protected readonly confirmsOnPick = confirmsOnPick;
+  protected readonly isToggle = isToggle;
   protected readonly isEmptyValue = isEmptyValue;
   readonly node = input.required<FormNode>();
   readonly runtime = input.required<ScreenRuntime>();
@@ -468,6 +478,29 @@ export class FormComponent {
     }
   }
 
+  /**
+   * A change in the editor of an inline field. A select or a lookup confirms at once (clearing it confirms null). A
+   * change that arrives when the editor is closed is ignored: a text box removed after Escape still reports its text when
+   * it loses the focus, and must not overwrite the value put back.
+   */
+  protected changed(item: FormItem, value: unknown): void {
+    if (this.editing() !== item.key) return;
+    this.set(item, value);
+    if (confirmsOnPick(item.field)) void this.save(item);
+  }
+
+  /** A checkbox or switch of an inline form: the change is saved at once and goes back if the checks or the steps fail. */
+  protected async toggle(item: FormItem, value: unknown): Promise<void> {
+    if (this.busy()) return;
+    const open = this.items().find((i) => i.key === this.editing());
+    if (open) this.restore(open);
+    this.before = this.valueOf(item);
+    this.set(item, value);
+    this.editing.set(item.key);
+    await this.save(item);
+    if (this.editing() === item.key) this.restore(item);
+  }
+
   protected cancel(item: FormItem): void {
     if (this.busy()) return;
     this.restore(item);
@@ -490,7 +523,7 @@ export class FormComponent {
     this.serverErrors.set({});
     this.values.update((values) => {
       const value = itemValue(values, item, into);
-      return value === undefined ? values : withItemValue(values, item, into, transformValue(item.field, value));
+      return value === undefined ? values : withItemValue(values, item, into, emptyAsNull(item.field, transformValue(item.field, value)));
     });
     this.busy.set(true);
     try {

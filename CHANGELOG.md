@@ -12,6 +12,16 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Added
+
+- Inline forms: `lookup` fields show the label of their value and open with their list; a `select` or a `lookup` is
+  confirmed by choosing a value (no ✓). Checkboxes and switches save at every change and go back if saving fails.
+
+### Fixed
+
+- Inline forms: an emptied number (or any other non-text field) is saved as null, not as empty text; Escape after a
+  failed check shows the old value again instead of the rejected one.
+
 ## [0.27.0] - 2026-11-26
 
 ### Added

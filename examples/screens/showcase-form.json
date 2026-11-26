@@ -422,7 +422,7 @@
         {
           "id": "inline-intro",
           "type": "text",
-          "text": "{{ t('showcase_form.inline_intro', 'With edit inline each field shows its value as text, like the summary and description of a work item: click it (or focus it and press Enter) to open only that field. Enter or ✓ confirms a single line, Ctrl+Enter or Save the description; Escape or Cancel puts the value back. Every confirmation sends only that field.') }}"
+          "text": "{{ t('showcase_form.inline_intro', 'With edit inline each field shows its value as text, like the summary and description of a work item: click it (or focus it and press Enter) to open only that field. Enter or ✓ confirms a single line, Ctrl+Enter or Save the description, choosing a value confirms the assignee and the priority; Escape or Cancel puts the value back. The checkbox saves at every click. Every confirmation sends only that field.') }}"
         },
         {
           "id": "inline-form",
@@ -443,6 +443,19 @@
               "type": "richtext",
               "label": "{{ t('showcase_form.inline_description', 'Description') }}",
               "emptyText": "{{ t('showcase_form.inline_description_empty', 'Add a description…') }}"
+            },
+            {
+              "name": "assignee",
+              "type": "lookup",
+              "label": "{{ t('showcase_form.inline_assignee', 'Assignee') }}",
+              "emptyText": "{{ t('showcase_form.inline_unassigned', 'Unassigned') }}",
+              "lookup": {
+                "source": "people",
+                "valueField": "id",
+                "labelField": "name",
+                "minChars": 0
+              },
+              "width": "m"
             },
             {
               "name": "priority",
@@ -468,6 +481,11 @@
               "label": "{{ t('showcase_form.inline_key', 'Key') }}",
               "readOnlyIf": "{{ true }}",
               "width": "s"
+            },
+            {
+              "name": "blocked",
+              "type": "checkbox",
+              "label": "{{ t('showcase_form.inline_blocked', 'Blocked by another item') }}"
             }
           ],
           "onSave": [

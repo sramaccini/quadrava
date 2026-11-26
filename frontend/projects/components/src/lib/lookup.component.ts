@@ -18,14 +18,19 @@ const DEBOUNCE_MS = 300;
  * that of the latest search is discarded. If the current value is not among the known rows (for example in an
  * edit form) and the data source uses `{{ lookupKey }}`, the field asks the service for the row of that value to
  * show its text. The field's requests do not change the rows the data source shows to the other components.
- * Used by the form, the filter bar and the repeatable rows.
+ * Used by the form, the filter bar and the repeatable rows. With `textOnly` it draws only the text of the value (the
+ * read view of an inline form), resolved in the same way; with `openOnStart` its list is open when it appears.
  */
 @Component({
   selector: 'lc-lookup',
   imports: [FormsModule, NzSelectModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  styles: `:host { display: block; } nz-select { width: 100%; min-width: 200px; }`,
+  styles: `:host { display: block; } :host(.text-only) { display: inline; } nz-select { width: 100%; min-width: 200px; }`,
+  host: { '[class.text-only]': 'textOnly()' },
   template: `
+    @if (textOnly()) {
+      {{ currentLabel() }}
+    } @else {
     <nz-select
       [nzId]="inputId()"
       nzShowSearch
@@ -34,6 +39,7 @@ const DEBOUNCE_MS = 300;
       [nzPlaceHolder]="placeholder()"
       [nzDisabled]="disabled()"
       [nzLoading]="loading()"
+      [nzOpen]="openOnStart()"
       [nzNotFoundContent]="loading() ? i18n.t('lc.loading') : i18n.t('lc.noResults')"
       [ngModel]="value() ?? null"
       (ngModelChange)="choose($event)"
@@ -44,6 +50,7 @@ const DEBOUNCE_MS = 300;
         <nz-option [nzValue]="option.value" [nzLabel]="option.label" />
       }
     </nz-select>
+    }
   `,
 })
 export class LookupComponent {
@@ -54,6 +61,10 @@ export class LookupComponent {
   readonly disabled = input(false);
   readonly inputId = input<string | null>(null);
   readonly placeholder = input('—');
+  /** Only the text of the value, without the control. */
+  readonly textOnly = input(false);
+  /** The list is open as soon as the control appears (an inline field just opened). */
+  readonly openOnStart = input(false);
   readonly valueChange = output<unknown>();
 
   protected readonly i18n = inject(I18n);
@@ -81,6 +92,12 @@ export class LookupComponent {
       options.unshift({ value: current, label: this.labels().get(current) ?? String(current) });
     }
     return options;
+  });
+
+  /** Text of the current value: its label once known, otherwise the value itself. */
+  protected readonly currentLabel = computed(() => {
+    const value = this.value();
+    return this.options().find((o) => o.value === value)?.label ?? '';
   });
 
   /** Can the data source search by key? Only then is it worth asking for the text of a value. */

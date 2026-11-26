@@ -94,7 +94,7 @@ export class DemoBackend {
   private readonly medicalStaff = new MedicalStaffRegister(DemoBackend.PAGE_SIZE);
   private reports = 0;
   /** Ticket of the form with custom fields (showcase): the values of those fields are kept in `custom`. */
-  private workItem: Record<string, unknown> = { key: 'ODT-42', summary: 'Login fails after the password change', description: null, priority: 'high', dueDate: '2026-12-15' };
+  private workItem: Record<string, unknown> = { key: 'ODT-42', summary: 'Login fails after the password change', description: null, priority: 'high', dueDate: '2026-12-15', assignee: 2, blocked: false };
   private ticket: { title: string; custom: Record<string, unknown> } = { title: 'Printer offline', custom: { contract: 'C-1042', severity: 'high', reviewer: 2 } };
   /** Staff numbers already used (validation showcase). */
   private readonly staffNumbers = new Set(['S000001', 'S123456']);
