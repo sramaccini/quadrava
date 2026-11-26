@@ -12,6 +12,8 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+## [0.23.0] - 2026-11-26
+
 ### Added
 
 - Every release carries the SBOM of the workspace in CycloneDX (`quadrava-x.y.z.cdx.json`), and the runtime image its
@@ -667,7 +669,8 @@ The first versioned release.
 - **Demo back end of the stack**: the event stream `/api/streams/tasks`, so that behind the BFF the live boards of the
   showcase follow the changes of other users.
 
-[Unreleased]: https://github.com/sramaccini/quadrava/compare/v0.22.1...HEAD
+[Unreleased]: https://github.com/sramaccini/quadrava/compare/v0.23.0...HEAD
+[0.23.0]: https://github.com/sramaccini/quadrava/compare/v0.22.1...v0.23.0
 [0.22.1]: https://github.com/sramaccini/quadrava/compare/v0.22.0...v0.22.1
 [0.22.0]: https://github.com/sramaccini/quadrava/compare/v0.21.0...v0.22.0
 [0.21.0]: https://github.com/sramaccini/quadrava/compare/v0.20.1...v0.21.0
