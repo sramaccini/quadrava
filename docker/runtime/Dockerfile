@@ -14,7 +14,7 @@ COPY examples/ /src/examples/
 COPY frontend/ ./
 RUN npm run demo:prepare && npx ng build runtime
 
-FROM nginx:1.28-alpine
+FROM nginx:1.29-alpine
 ARG VERSION=0.0.0-dev
 LABEL org.opencontainers.image.title="Quadrava runtime" \
       org.opencontainers.image.description="The Quadrava runtime: screens defined in JSON, from the examples or a registry, behind a BFF" \
