@@ -4,8 +4,10 @@ import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzDropdownModule } from 'ng-zorro-antd/dropdown';
 import { NzMenuModule } from 'ng-zorro-antd/menu';
 import { NzTagModule } from 'ng-zorro-antd/tag';
+import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import type { MenuButtonNode, Tone } from 'schema';
 import { BusyComponent } from './busy.component';
+import { buttonFace } from './button-face';
 import { TONE_COLORS, TONE_TEXT } from './display.component';
 import { IconComponent } from './icon.component';
 import { menuEntries, toneOf, type MenuEntry } from './menu-entries';
@@ -13,7 +15,9 @@ import { menuEntries, toneOf, type MenuEntry } from './menu-entries';
 /**
  * A button that opens a menu: fixed items, items made from the rows of a data source (with a coloured label) and
  * dividers; each item runs its own steps, which see the row as `item`. The label and the tone of the button are
- * expressions, for example the current status of an issue.
+ * expressions, for example the current status of an issue. With `display: "icon"` it shows the icon alone, without the
+ * arrow (the «…» button), and its text becomes the name for screen readers and the tooltip; `count` adds a number and
+ * `pressed` highlights it (aria-pressed), for example the eye of the watchers while the user watches.
  *
  * Keyboard and screen readers as a menu button: `aria-haspopup` and `aria-expanded` on the button; opening moves the
  * focus to the first item, arrows, Home and End move among the items, Enter or Space choose, Esc closes and gives the
@@ -21,13 +25,19 @@ import { menuEntries, toneOf, type MenuEntry } from './menu-entries';
  */
 @Component({
   selector: 'lc-menu-button',
-  imports: [BusyComponent, IconComponent, NzButtonModule, NzDropdownModule, NzMenuModule, NzTagModule],
+  imports: [BusyComponent, IconComponent, NzButtonModule, NzDropdownModule, NzMenuModule, NzTagModule, NzTooltipModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: inline-block; }
     .toned, .toned:hover, .toned:focus { background: var(--lc-menu-tone); border-color: var(--lc-menu-tone); color: var(--lc-menu-on-tone); }
     .toned:hover { filter: brightness(1.08); }
     .label { margin-inline: 0 6px; }
+    .icon-only { min-width: 32px; padding-inline: 8px; }
+    .count { margin-inline: 0 6px; font-variant-numeric: tabular-nums; }
+    .icon-only .count { margin-inline: 4px 0; }
+    .pressed, .pressed:hover, .pressed:focus { color: var(--lc-color-primary); border-color: var(--lc-color-primary); background: color-mix(in srgb, var(--lc-color-primary) 14%, transparent); }
+    li.danger { color: var(--lc-text-error); }
+    .icon-only lc-icon.lead { margin-inline-end: 0; }
     lc-icon.lead { margin-inline-end: 8px; }
     ul { min-width: 200px; }
     li span.row { display: flex; align-items: center; gap: 8px; }
@@ -50,18 +60,31 @@ import { menuEntries, toneOf, type MenuEntry } from './menu-entries';
       [style.--lc-menu-on-tone]="toneText()"
       [nzLoading]="busy()"
       [disabled]="busy() || !runtime().isEnabled(node(), scope())"
+      [class.icon-only]="face().iconOnly"
+      [class.pressed]="face().pressed === true"
       aria-haspopup="menu"
       [attr.aria-expanded]="open()"
+      [attr.aria-pressed]="face().pressed"
+      [attr.aria-label]="face().iconOnly || face().count !== null ? face().name : null"
+      nz-tooltip
+      [nzTooltipTitle]="face().iconOnly ? face().name : null"
       (nzVisibleChange)="visible($event)"
     >
       @if (node().icon && !busy()) {
         <lc-icon class="lead" [name]="node().icon" />
       }
-      <span class="label">{{ runtime().text(node().label, scope()) }}</span>
-      <lc-icon name="down" />
+      @if (!face().iconOnly) {
+        <span class="label">{{ face().text }}</span>
+      }
+      @if (face().count !== null) {
+        <span class="count" aria-hidden="true">{{ face().count }}</span>
+      }
+      @if (!face().iconOnly) {
+        <lc-icon name="down" />
+      }
     </button>
     <nz-dropdown-menu #menu="nzDropdownMenu">
-      <ul #list nz-menu role="menu" [attr.aria-label]="runtime().text(node().label, scope())" (keydown)="key($event)">
+      <ul #list nz-menu role="menu" [attr.aria-label]="face().text" (keydown)="key($event)">
         @for (entry of entries(); track entry.key) {
           @switch (entry.kind) {
             @case ('divider') {
@@ -71,7 +94,7 @@ import { menuEntries, toneOf, type MenuEntry } from './menu-entries';
               <li role="none" class="wait"><lc-busy [busy]="true" [empty]="true" [immediate]="true" /></li>
             }
             @case ('item') {
-              <li nz-menu-item role="menuitem" tabindex="-1" [nzDisabled]="entry.disabled" [attr.aria-disabled]="entry.disabled || null" (click)="choose(entry)">
+              <li nz-menu-item role="menuitem" tabindex="-1" [class.danger]="!entry.badge && entry.tone === 'danger'" [nzDisabled]="entry.disabled" [attr.aria-disabled]="entry.disabled || null" (click)="choose(entry)">
                 <span class="row">
                   @if (entry.icon) {
                     <lc-icon [name]="entry.icon" />
@@ -102,6 +125,10 @@ export class MenuButtonComponent {
   private readonly trigger = viewChild.required<string, ElementRef<HTMLButtonElement>>('trigger', { read: ElementRef });
   private readonly list = viewChild<ElementRef<HTMLUListElement>>('list');
 
+  protected readonly face = computed(() => {
+    const format = new Intl.NumberFormat(this.i18n.intlLocale());
+    return buttonFace(this.node(), this.runtime(), this.scope(), (n) => format.format(n));
+  });
   protected readonly tone = computed(() => toneOf(this.node().tone === undefined ? undefined : this.runtime().text(this.node().tone, this.scope())));
   protected readonly toneColor = computed(() => TONE_COLORS[this.tone()]);
   protected readonly toneText = computed(() => TONE_TEXT[this.tone()]);

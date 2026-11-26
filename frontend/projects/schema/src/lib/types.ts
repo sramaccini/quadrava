@@ -348,10 +348,16 @@ export interface TextNode extends NodeBase {
   /** markdown: formatted text (lists, bold…), always drawn without HTML. */
   format?: TextFormat;
 }
-export interface ButtonNode extends NodeBase {
+/** How a button looks: `display` icon alone (with `icon`), a `count` next to it, a `pressed` state. */
+export interface ButtonFaceProps {
+  display?: 'label' | 'icon';
+  count?: string;
+  pressed?: Expression;
+}
+export interface ButtonNode extends NodeBase, ButtonFaceProps {
   type: 'button';
   label: string;
-  /** Icon before the text, from the built-in set. */
+  /** Icon before the text, from the built-in set; alone with display icon. */
   icon?: string;
   onClick: Step[];
 }
@@ -360,6 +366,8 @@ export interface MenuActionItem {
   id?: string;
   label: string;
   icon?: string;
+  /** danger for an action that removes something; neutral if absent. */
+  tone?: Tone;
   visibleIf?: string;
   enabledIf?: string;
   onClick: Step[];
@@ -385,7 +393,7 @@ export interface MenuDivider {
 }
 export type MenuItemDefinition = MenuActionItem | MenuSourceItems | MenuDivider;
 /** A button that opens a menu of items, each with its own steps (for example the statuses an issue can move to). */
-export interface MenuButtonNode extends NodeBase {
+export interface MenuButtonNode extends NodeBase, ButtonFaceProps {
   type: 'menuButton';
   label: string;
   /** A tone or an expression that gives one (neutral if absent or for any other value). */

@@ -407,6 +407,103 @@
               ]
             }
           ]
+        },
+        {
+          "id": "toolbar-explain",
+          "type": "text",
+          "text": "{{ t('showcase_tasks.toolbar_explain', 'Icon buttons, as at the top of an item: the eye counts the watchers and stays highlighted while you watch; «…» holds the other actions. Their text is what screen readers read and the tooltip.') }}"
+        },
+        {
+          "id": "status-toolbar",
+          "type": "box",
+          "gap": "small",
+          "components": [
+            {
+              "id": "task-watchers",
+              "type": "menuButton",
+              "label": "{{ t('showcase_tasks.watchers', 'Watchers') }}",
+              "icon": "eye",
+              "display": "icon",
+              "count": "{{ has(state.watching) && state.watching ? 3 : 2 }}",
+              "pressed": "{{ has(state.watching) && state.watching }}",
+              "items": [
+                {
+                  "id": "watch-start",
+                  "label": "{{ t('showcase_tasks.watch', 'Watch') }}",
+                  "visibleIf": "{{ !(has(state.watching) && state.watching) }}",
+                  "onClick": [
+                    {
+                      "set": {
+                        "path": "state.watching",
+                        "value": true
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "watch-stop",
+                  "label": "{{ t('showcase_tasks.watch_stop', 'Stop watching') }}",
+                  "visibleIf": "{{ has(state.watching) && state.watching }}",
+                  "onClick": [
+                    {
+                      "set": {
+                        "path": "state.watching",
+                        "value": false
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "task-copy-link",
+              "type": "button",
+              "label": "{{ t('showcase_tasks.copy_link', 'Copy the link') }}",
+              "icon": "link",
+              "display": "icon",
+              "onClick": [
+                {
+                  "toast": "{{ t('showcase_tasks.link_copied', 'Link copied') }}"
+                }
+              ]
+            },
+            {
+              "id": "task-more",
+              "type": "menuButton",
+              "label": "{{ t('showcase_tasks.more_actions', 'More actions') }}",
+              "icon": "more",
+              "display": "icon",
+              "items": [
+                {
+                  "id": "task-clone",
+                  "label": "{{ t('showcase_tasks.clone', 'Clone') }}",
+                  "icon": "copy",
+                  "onClick": [
+                    {
+                      "toast": "{{ t('showcase_tasks.cloned', 'Cloned (demo)') }}"
+                    }
+                  ]
+                },
+                {
+                  "divider": true
+                },
+                {
+                  "id": "task-delete",
+                  "label": "{{ t('showcase_tasks.delete', 'Delete') }}",
+                  "icon": "delete",
+                  "tone": "danger",
+                  "onClick": [
+                    {
+                      "confirm": "{{ t('showcase_tasks.delete_confirm', 'Delete the task? (demo: nothing is deleted)') }}"
+                    },
+                    {
+                      "toast": "{{ t('showcase_tasks.deleted', 'Deleted (demo)') }}"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
         }
       ]
     },

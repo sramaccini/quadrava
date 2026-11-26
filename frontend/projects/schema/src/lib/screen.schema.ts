@@ -1425,9 +1425,49 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
               },
               "icon": {
                 "$ref": "#/$defs/icon",
-                "description": "Icon shown before the text of the button, from the built-in set (for example save, edit, delete, plus); the text stays. An unknown name shows no icon."
+                "description": "Icon shown before the text of the button, from the built-in set (for example save, edit, delete, plus); with display icon it is shown alone. An unknown name shows no icon."
+              },
+              "display": {
+                "enum": [
+                  "label",
+                  "icon"
+                ],
+                "description": "How the button is shown: label (icon, if any, and text) or icon (the icon alone, which needs icon; the text becomes the name read by screen readers and the tooltip). label if absent."
+              },
+              "count": {
+                "type": "string",
+                "description": "A number shown next to the icon or the text, usually an expression (for example {{ size(data.watchers) }}); screen readers hear it after the text («Watchers: 2»). Nothing is shown when it is empty or not a number."
+              },
+              "pressed": {
+                "$ref": "#/$defs/expression",
+                "description": "The button is shown as pressed (highlighted, aria-pressed) while the expression is true, for example while the user watches an item. Without it the button is not a toggle."
               }
-            }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "display": {
+                      "const": "icon"
+                    }
+                  },
+                  "required": [
+                    "display"
+                  ]
+                },
+                "then": {
+                  "required": [
+                    "icon"
+                  ],
+                  "properties": {
+                    "icon": {
+                      "$ref": "#/$defs/icon",
+                      "description": "Icon of the button: required with display icon."
+                    }
+                  }
+                }
+              }
+            ]
           }
         },
         {
@@ -1458,7 +1498,7 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
               },
               "icon": {
                 "$ref": "#/$defs/icon",
-                "description": "Icon shown before the text of the button, from the built-in set; the text stays. An unknown name shows no icon."
+                "description": "Icon shown before the text of the button, from the built-in set; with display icon it is shown alone. An unknown name shows no icon."
               },
               "items": {
                 "type": "array",
@@ -1467,8 +1507,48 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                   "$ref": "#/$defs/menuItem"
                 },
                 "description": "Entries of the menu opened by the button, in order: fixed items, items from a data source and dividers. With no item to show, the menu says there is nothing to choose."
+              },
+              "display": {
+                "enum": [
+                  "label",
+                  "icon"
+                ],
+                "description": "How the button is shown: label (icon, if any, text and the arrow) or icon (the icon alone, without the arrow, for example the «…» button with icon more; it needs icon, and the text becomes the name read by screen readers and the tooltip). label if absent."
+              },
+              "count": {
+                "type": "string",
+                "description": "A number shown next to the icon or the text, usually an expression (for example {{ size(data.watchers) }}); screen readers hear it after the text («Watchers: 2»). Nothing is shown when it is empty or not a number."
+              },
+              "pressed": {
+                "$ref": "#/$defs/expression",
+                "description": "The button is shown as pressed (highlighted, aria-pressed) while the expression is true, for example while the user watches an item. Without it the button is not a toggle."
               }
-            }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "display": {
+                      "const": "icon"
+                    }
+                  },
+                  "required": [
+                    "display"
+                  ]
+                },
+                "then": {
+                  "required": [
+                    "icon"
+                  ],
+                  "properties": {
+                    "icon": {
+                      "$ref": "#/$defs/icon",
+                      "description": "Icon of the button: required with display icon."
+                    }
+                  }
+                }
+              }
+            ]
           }
         },
         {
@@ -4984,6 +5064,10 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                 "$ref": "#/$defs/step"
               },
               "description": "Steps run when the item is chosen, in order."
+            },
+            "tone": {
+              "$ref": "#/$defs/tone",
+              "description": "Colour of the item: danger for an action that removes something (for example Delete); neutral if absent."
             }
           }
         },

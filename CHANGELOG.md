@@ -12,6 +12,13 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Added
+
+- `button` and `menuButton`: `display: "icon"` shows the icon alone (the text becomes the accessible name and the
+  tooltip; a menu button drops its arrow), `count` adds a number (also in the accessible name, «Watchers: 2») and
+  `pressed` makes a toggle (`aria-pressed`, highlighted). The schema refuses `display: "icon"` without `icon`. A fixed
+  item of a `menuButton` takes `tone: "danger"`. Studio shows the new properties in the panel generated from the schema.
+
 ## [0.23.0] - 2026-11-26
 
 ### Added

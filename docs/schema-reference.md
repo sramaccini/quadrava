@@ -40,7 +40,10 @@
 | --- | --- | --- |
 | `label` * | text | Text of the button; it can contain {{ }}. |
 | `onClick` * | list of step | Steps run on click, in order (call, set, navigate, refresh…). The button stays busy until they finish. |
-| `icon` | icon | Icon shown before the text of the button, from the built-in set (for example save, edit, delete, plus); the text stays. An unknown name shows no icon. |
+| `icon` | icon | Icon shown before the text of the button, from the built-in set (for example save, edit, delete, plus); with display icon it is shown alone. An unknown name shows no icon. |
+| `display` | `label`, `icon` | How the button is shown: label (icon, if any, and text) or icon (the icon alone, which needs icon; the text becomes the name read by screen readers and the tooltip). label if absent. |
+| `count` | text | A number shown next to the icon or the text, usually an expression (for example {{ size(data.watchers) }}); screen readers hear it after the text («Watchers: 2»). Nothing is shown when it is empty or not a number. |
+| `pressed` | expression | The button is shown as pressed (highlighted, aria-pressed) while the expression is true, for example while the user watches an item. Without it the button is not a toggle. |
 
 ### `menuButton`
 
@@ -48,8 +51,11 @@
 | --- | --- | --- |
 | `label` * | text | Text of the button, for example the current status; it can contain {{ }}. |
 | `tone` | text | Colour of the button: neutral, primary, success or danger, or an expression that gives one of them (for example the category of the current status). Any other value is neutral (neutral if absent). |
-| `icon` | icon | Icon shown before the text of the button, from the built-in set; the text stays. An unknown name shows no icon. |
+| `icon` | icon | Icon shown before the text of the button, from the built-in set; with display icon it is shown alone. An unknown name shows no icon. |
 | `items` * | list of menuItem | Entries of the menu opened by the button, in order: fixed items, items from a data source and dividers. With no item to show, the menu says there is nothing to choose. |
+| `display` | `label`, `icon` | How the button is shown: label (icon, if any, text and the arrow) or icon (the icon alone, without the arrow, for example the «…» button with icon more; it needs icon, and the text becomes the name read by screen readers and the tooltip). label if absent. |
+| `count` | text | A number shown next to the icon or the text, usually an expression (for example {{ size(data.watchers) }}); screen readers hear it after the text («Watchers: 2»). Nothing is shown when it is empty or not a number. |
+| `pressed` | expression | The button is shown as pressed (highlighted, aria-pressed) while the expression is true, for example while the user watches an item. Without it the button is not a toggle. |
 
 ### `filterBar`
 

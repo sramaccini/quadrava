@@ -858,12 +858,30 @@ In the showcase: «Vetrina: form» (Showcase: forms), «Campi dal servizio» (Fi
 ### 2.32 Icons on buttons and actions
 
 The `button` component and every action (the actions of a `form`, the `bulkActions` of a `table`, the `rowActions`,
-as buttons and in the «⋯» menu) take an optional `icon`, shown before the text. The text stays: it is what screen readers
-read, and an icon alone is not offered. While the steps run, the icon of a button gives way to the spinner.
+as buttons and in the «⋯» menu) take an optional `icon`, shown before the text. While the steps run, the icon of a button
+gives way to the spinner.
 
 ```json
 { "id": "btn-save", "label": "Save", "icon": "save", "onClick": [{ "call": "saveIssue" }] }
 ```
+
+**Icon buttons, counts and toggles.** `button` and `menuButton` also take three properties for toolbars such as the
+actions at the top of an item:
+
+| Property | What it does |
+| --- | --- |
+| `display: "icon"` | Only the icon (`icon` is then required: the schema and `quadrava validate` refuse it without). The `label` stays required: it becomes the name read by screen readers and the tooltip. A `menuButton` shown as an icon has no arrow (the «…» button, icon `more`). |
+| `count` | A number next to the icon or the text, usually an expression (`{{ size(data.watchers) }}`); screen readers hear it after the text («Watchers: 2»). Nothing is shown when it is empty or not a number. |
+| `pressed` | An expression: while it is true the button is highlighted with the primary colour and announced as pressed (`aria-pressed`). An expression in error is not pressed. |
+
+```json
+{ "type": "menuButton", "label": "Watchers", "icon": "eye", "display": "icon",
+  "count": "{{ size(data.watchers) }}", "pressed": "{{ data.issue.watching }}",
+  "items": [{ "label": "{{ data.issue.watching ? 'Stop watching' : 'Watch' }}", "onClick": [{ "call": "toggleWatch" }] }] }
+```
+
+An icon button and a toggle have the default look; a `button` with text and no `pressed` stays primary. A fixed item of
+a `menuButton` can take `tone: "danger"` for an action that removes something (Delete): its text is red.
 
 The names are those of the built-in set, the same as in the navigation; an unknown name shows no icon. For the actions:
 `save`, `edit`, `delete`, `plus`, `check`, `close`, `link`, `eye`, `eye-invisible`, `user-add`, `back`, `move`,

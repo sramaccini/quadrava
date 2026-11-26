@@ -26,6 +26,20 @@ describe('schema of the new components', () => {
       expect(issuesOf(menu([{ label: 'A', onClick: [{ toast: 'x' }] }], { onClick: [{ toast: 'x' }] })).length).toBeGreaterThan(0);
     });
   });
+  describe('icon buttons', () => {
+    const one = (node: Record<string, unknown>) => screen([node]);
+    it('accept display icon with an icon, a count and a pressed state on button and menuButton, and a danger menu item', () => {
+      expect(issuesOf(one({ type: 'button', label: 'Watchers', icon: 'eye', display: 'icon', count: '{{ 2 }}', pressed: '{{ true }}', onClick: [{ toast: 'x' }] }))).toEqual([]);
+      expect(issuesOf(one({ type: 'menuButton', label: 'More', icon: 'more', display: 'icon', items: [{ label: 'Delete', tone: 'danger', onClick: [{ toast: 'x' }] }] }))).toEqual([]);
+      expect(issuesOf(one({ type: 'button', label: 'Save', display: 'label', onClick: [{ toast: 'x' }] }))).toEqual([]);
+    });
+    it('refuse display icon without an icon, an unknown display and a pressed state that is not an expression', () => {
+      expect(issuesOf(one({ type: 'button', label: 'Save', display: 'icon', onClick: [{ toast: 'x' }] })).length).toBeGreaterThan(0);
+      expect(issuesOf(one({ type: 'menuButton', label: 'More', display: 'icon', items: [{ label: 'A', onClick: [{ toast: 'x' }] }] })).length).toBeGreaterThan(0);
+      expect(issuesOf(one({ type: 'button', label: 'Save', icon: 'save', display: 'compact', onClick: [{ toast: 'x' }] })).length).toBeGreaterThan(0);
+      expect(issuesOf(one({ type: 'button', label: 'Save', pressed: 'yes', onClick: [{ toast: 'x' }] })).length).toBeGreaterThan(0);
+    });
+  });
   describe('view step', () => {
     const view = (spec: Record<string, unknown>) => screen([{ type: 'button', label: 'Open', onClick: [{ view: spec }] }]);
     it('accepts a window with a title, components, a size and a close label', () => {

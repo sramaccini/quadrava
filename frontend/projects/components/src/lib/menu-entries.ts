@@ -67,7 +67,7 @@ export function menuEntries(items: readonly MenuItemDefinition[], env: MenuEnvir
         key: action.id ?? `item-${i}`,
         label: env.text(action.label, scope),
         icon: action.icon,
-        tone: 'neutral',
+        tone: toneOf(action.tone),
         disabled: !env.isEnabled(action, scope),
         steps: action.onClick,
         scope,
