@@ -29,7 +29,7 @@ export function isMultiLine(field: FieldDefinition): boolean {
 /** Types whose empty value is empty text; for the others an emptied value is saved as null. */
 const TEXT_TYPES: ReadonlySet<FieldDefinition['type']> = new Set(['text', 'textarea', 'richtext', 'password']);
 
-/** The value an inline field saves: an emptied number (and any other non-text field) is null, not empty text. */
+/** The value a form keeps: an emptied number (and any other non-text field) is null, not empty text. */
 export function emptyAsNull(field: FieldDefinition, value: unknown): unknown {
   return value === '' && !TEXT_TYPES.has(field.type) ? null : value;
 }

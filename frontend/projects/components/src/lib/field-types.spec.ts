@@ -10,6 +10,27 @@ describe('new field types', () => {
   afterAll(() => restore());
   afterEach(() => document.querySelectorAll('.cdk-overlay-container').forEach((c) => (c.innerHTML = '')));
 
+  it('in the form an emptied number reaches the service as null, an emptied text as empty text', async () => {
+    const form: NodeDefinition = {
+      type: 'form',
+      initial: { points: 3, title: 'x' },
+      fields: [
+        { name: 'points', type: 'number', label: 'Points' },
+        { name: 'title', type: 'text', label: 'Title' },
+      ],
+      actions: [{ label: 'Save', onClick: [{ call: 'save' }] }],
+    };
+    const h = await renderScreen({ components: [form], dataSources: { save: { type: 'rest', method: 'POST', url: '/api/save', body: '{{ form }}' } } });
+    for (const input of h.el.querySelectorAll<HTMLInputElement>('lc-form input')) {
+      input.value = '';
+      input.dispatchEvent(new Event('input'));
+      input.dispatchEvent(new Event('change'));
+    }
+    [...h.el.querySelectorAll<HTMLButtonElement>('lc-form button')].find((b) => plain(b.textContent) === 'Save')!.click();
+    await h.until(() => h.requests.some((r) => r.method === 'POST'), 'saved');
+    expect(h.requests.find((r) => r.method === 'POST')?.body).toEqual({ points: null, title: '' });
+  });
+
   it('date and time: conversion to local time, round trip', () => {
     const date = parseIsoDateTime('2026-10-07T14:30');
     expect(date?.getHours()).toBe(14);

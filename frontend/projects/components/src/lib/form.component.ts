@@ -356,7 +356,9 @@ export class FormComponent {
 
   protected set(item: FormItem, raw: unknown): void {
     const field = item.field;
-    const value = field.type === 'number' && raw !== '' && raw !== null ? Number(raw) : raw;
+    // An emptied field that is not text (a number, a date, a choice) is null, as in the filter bar and the rows.
+    const empty = emptyAsNull(field, raw);
+    const value = field.type === 'number' && empty !== null && empty !== undefined ? Number(empty) : empty;
     this.values.update((current) => withItemValue(current, item, this.node().fieldsFrom?.into, value));
     // A field changed by the user is no longer the one the service rejected.
     if (item.key in this.serverErrors()) this.serverErrors.update(({ [item.key]: _, ...rest }) => rest);

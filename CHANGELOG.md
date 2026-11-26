@@ -12,6 +12,11 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Changed
+
+- Forms: an emptied number (and any other field that is not text: a date, a choice) is null in `form`, as in the filter
+  bar, the standalone fields and the repeatable rows; before it was empty text. Text fields still give empty text.
+
 ## [0.28.0] - 2026-11-26
 
 ### Added
