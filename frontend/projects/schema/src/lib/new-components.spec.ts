@@ -26,6 +26,17 @@ describe('schema of the new components', () => {
       expect(issuesOf(menu([{ label: 'A', onClick: [{ toast: 'x' }] }], { onClick: [{ toast: 'x' }] })).length).toBeGreaterThan(0);
     });
   });
+  describe('view step', () => {
+    const view = (spec: Record<string, unknown>) => screen([{ type: 'button', label: 'Open', onClick: [{ view: spec }] }]);
+    it('accepts a window with a title, components, a size and a close label', () => {
+      expect(issuesOf(view({ title: 'Workflow', size: 'full', closeLabel: 'Back', components: [{ type: 'text', text: 'x' }] }))).toEqual([]);
+    });
+    it('rejects a window without components, an unknown size and unknown properties', () => {
+      expect(issuesOf(view({ title: 'Workflow', components: [] })).length).toBeGreaterThan(0);
+      expect(issuesOf(view({ title: 'Workflow', size: 'huge', components: [{ type: 'text', text: 'x' }] })).length).toBeGreaterThan(0);
+      expect(issuesOf(view({ title: 'Workflow', components: [{ type: 'text', text: 'x' }], onClose: [] })).length).toBeGreaterThan(0);
+    });
+  });
   describe('square chart', () => {
     it('accepts a square-column time series and rejects missing fields or extras', () => {
       expect(issuesOf(screen([{ type: 'squareChart', source: 's', categoryField: 'day', valueField: 'count' }], { s: { ref: 'activity/list' } }))).toEqual([]);

@@ -239,6 +239,9 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
           "$ref": "#/$defs/stepDialog"
         },
         {
+          "$ref": "#/$defs/stepView"
+        },
+        {
           "$ref": "#/$defs/stepValidate"
         },
         {
@@ -3428,6 +3431,52 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
               "items": {
                 "$ref": "#/$defs/step"
               }
+            }
+          }
+        }
+      }
+    },
+    "stepView": {
+      "type": "object",
+      "required": [
+        "view"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "view": {
+          "type": "object",
+          "required": [
+            "title",
+            "components"
+          ],
+          "additionalProperties": false,
+          "description": "Window that shows components: tables, details, charts, buttons… They read the data sources and the state of the screen and see the variables of the place where the step runs (row, item, form). The sequence goes on when the user closes the window.",
+          "properties": {
+            "title": {
+              "type": "string",
+              "description": "Title of the window: plain text or an expression."
+            },
+            "size": {
+              "type": "string",
+              "enum": [
+                "small",
+                "medium",
+                "large",
+                "full"
+              ],
+              "description": "Width of the window: small 520 px, medium 720 px, large 960 px, full almost the whole screen (medium if absent)."
+            },
+            "components": {
+              "type": "array",
+              "minItems": 1,
+              "description": "Components shown in the window, as in a screen.",
+              "items": {
+                "$ref": "#/$defs/node"
+              }
+            },
+            "closeLabel": {
+              "type": "string",
+              "description": "Text of the button that closes the window (Close, translated, if absent)."
             }
           }
         }

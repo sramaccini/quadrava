@@ -381,6 +381,12 @@
 | --- | --- | --- |
 | `dialog` * | object | Window with a form: the onSubmit steps see the values in `form`. If they succeed the window closes and the sequence goes on; if the user cancels the sequence stops silently. |
 
+### `view`
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `view` * | object | Window that shows components: tables, details, charts, buttons… They read the data sources and the state of the screen and see the variables of the place where the step runs (row, item, form). The sequence goes on when the user closes the window. |
+
 ### `validate`
 
 | Property | Type | Description |

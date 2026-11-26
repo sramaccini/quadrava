@@ -41,7 +41,7 @@ Rules common to all components, new ones included:
 | `squareChart` | Compact square columns for dense time-series data. |
 | Fields | `text`, `number`, `select`, `checkbox`, `date`, `textarea`, `datetime`, `radio`, `switch`, `multiselect`, `tags`, `lookup`, `file`, `repeater`, `richtext` (§ 2.26). |
 | Cell formats | `text`, `number`, `currency`, `percent`, `date`, `datetime`, `boolean`, `badge`, `markdown`. |
-| Steps | `set`, `call` (with `as` and `onError`), `refresh`, `navigate`, `toast`, `confirm`, `dialog`, `validate`, `print`, `export` and `download` (§ 2.22), `if` and `run`; named sequences in `actions` (§ 2.22b). |
+| Steps | `set`, `call` (with `as` and `onError`), `refresh`, `navigate`, `toast`, `confirm`, `dialog`, `view` (§ 2.11), `validate`, `print`, `export` and `download` (§ 2.22), `if` and `run`; named sequences in `actions` (§ 2.22b). |
 | Shell | Side bar (`lc-sidebar`, with search, counters and keyboard support: § 2.25; the application brand is inserted with an `lcBrand` element, otherwise logo and name), messages of the user (`lc-notification-bell`: a bell with the unread count and the list, ADR-22; `notificationsOf` keeps only well-formed messages), user menu (`lc-user-menu`: an icon with the initial and the name in its tooltip, application items (in the runtime those of `userMenu` of the navigation, ADR-25), optional groups of choices with the current one ticked in each, such as the tenants of ADR-18 and the operational roles of ADR-28 (`choices` takes one group or a list, `choiceIn` gives the group of a choice), and sign-out last, after a confirmation; a menu for screen readers and the keyboard: arrows, Home, End, Enter, Esc, submenus with the side arrows), responsive top bar, `lc-quadrava-wordmark` logotype, syntax-highlighted code viewer `lc-code-view`, tools in section headers (`SectionTools`: «JSON» and «Aiuto» in the demo showcase). |
 
 ## 2. Added in October 2026
@@ -276,7 +276,7 @@ Description
 
 The value is a list of objects. Every row has its own fields (`text`, `number`, `select`, `checkbox`, `date`, `textarea`, `switch`, `lookup`, `file`; no nested rows) and a button to remove it; below is the button to add one. Required flags and validation rules apply row by row; rules and data sources of the row's fields see the row as `item`. A form with repeatable rows widens up to 880 px.
 
-### 2.11 Dialog with a form
+### 2.11 Dialog with a form, window with components
 
 New `dialog` step: it opens a window with a form; the `onSubmit` steps see the values in `form`. If they succeed the window closes and the sequence continues; if the user cancels, the sequence stops silently (like `confirm`).
 
@@ -289,6 +289,26 @@ New `dialog` step: it opens a window with a form; the `onSubmit` steps see the v
 ```
 
 The window is a new core port (`FormDialog`), implemented with the NG-ZORRO modal; without an implementation the step does not proceed (fail-closed).
+
+The `view` step opens a window that shows components instead of a form: tables, details, charts, buttons. They read the
+data sources and the state of the screen and see the variables of the place where the step runs (`row`, `item`,
+`form`). The sequence goes on when the user closes the window (its button, Esc, the cross or a click outside).
+
+```json
+{ "view": { "title": "{{ t('issues.workflow', 'Workflow') }}", "size": "large",
+  "components": [{ "type": "table", "source": "transitions", "columns": [{ "field": "name" }, { "field": "to" }] }] } }
+```
+
+| Property | What it does |
+| --- | --- |
+| `title` | Title of the window, plain text or an expression. |
+| `size` | `small` 520 px, `medium` 720 px (default), `large` 960 px, `full` almost the whole screen. |
+| `components` | The nodes shown, as in a screen. Those that write to the state (`bind`) get their initial value when the window opens. |
+| `closeLabel` | Text of the button that closes it («Close», translated, if absent). |
+
+The port is `ViewDialog`; without an implementation the step does not go on. A data source used only by a remote rule
+of a field inside the window is loaded when the screen opens, as an ordinary data source. The menu of the status in the
+showcase «Tasks and progress» opens the workflow of the task in a window.
 
 ### 2.12 Tooltip in the detail card
 

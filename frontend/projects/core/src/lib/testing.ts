@@ -6,6 +6,7 @@ import {
   Confirmation,
   DataClient,
   FormDialog,
+  ViewDialog,
   Notifier,
   RuntimeDiagnostics,
   type DiagnosticSeverity,
@@ -15,6 +16,7 @@ import {
   type DataRequest,
   type DataRequestOptions,
   type FormDialogRequest,
+  type ViewDialogRequest,
   type SpanAttributes,
   type SpanContext,
 } from './ports';
@@ -48,6 +50,8 @@ export class Fakes {
   /** Form windows opened and values to «enter» in order (when they run out, the user cancels). */
   dialogs: FormDialogRequest[] = [];
   dialogValues: Record<string, unknown>[] = [];
+  /** Windows with components opened by `view` steps; they close at once. */
+  views: ViewDialogRequest[] = [];
   i18n = new I18n();
   respond: (request: DataRequest) => unknown = () => ({ items: [], total: 0 });
   /** Values of the settings of the application (`settings` in the expressions). */
@@ -76,6 +80,11 @@ export class Fakes {
         return runSteps(request.runtime, request.form.actions?.[0]?.onClick ?? [], { ...request.scope, form: values });
       },
     } as FormDialog,
+    viewDialog: {
+      open: async (request: ViewDialogRequest) => {
+        this.views.push(request);
+      },
+    } as ViewDialog,
     i18n: this.i18n,
     settings: () => this.settings,
     tracer: {

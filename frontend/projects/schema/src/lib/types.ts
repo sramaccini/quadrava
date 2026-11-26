@@ -95,6 +95,15 @@ export interface DialogStep {
     onSubmit: Step[];
   };
 }
+/** Window that shows components with the data of the screen; the sequence goes on when the user closes it. */
+export interface ViewStep {
+  view: {
+    title: string;
+    size?: 'small' | 'medium' | 'large' | 'full';
+    components: NodeDefinition[];
+    closeLabel?: string;
+  };
+}
 /** Checks the standalone fields of a group (`*` = all): if one is not valid it shows the errors and stops the sequence. */
 export interface ValidateStep {
   validate: string;
@@ -107,7 +116,7 @@ export interface PrintStep {
 export interface ExportStep {
   export: { source: string; fileName?: string; args?: Record<string, unknown>; columns: { field: string; label?: string }[] };
 }
-export type Step = CallStep | DownloadStep | RefreshStep | NavigateStep | ToastStep | SetStep | ConfirmStep | DialogStep | ValidateStep | PrintStep | ExportStep | IfStep | RunStep;
+export type Step = CallStep | DownloadStep | RefreshStep | NavigateStep | ToastStep | SetStep | ConfirmStep | DialogStep | ViewStep | ValidateStep | PrintStep | ExportStep | IfStep | RunStep;
 
 export interface ConditionalProps {
   visibleIf?: Expression;

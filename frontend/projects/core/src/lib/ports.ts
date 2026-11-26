@@ -1,5 +1,5 @@
 import { InjectionToken } from '@angular/core';
-import type { FormNode } from 'schema';
+import type { FormNode, NodeDefinition } from 'schema';
 import type { ScreenRuntime } from './screen-runtime';
 import type { HttpMethod, Scope } from './types';
 
@@ -153,6 +153,22 @@ export interface FormDialogRequest {
 /** Window with a form. Resolves true if the user submitted and the submit steps succeeded, false if they cancelled. */
 export abstract class FormDialog {
   abstract open(request: FormDialogRequest): Promise<boolean>;
+}
+
+export interface ViewDialogRequest {
+  /** Title already resolved, to show as text. */
+  title: string;
+  size: 'small' | 'medium' | 'large' | 'full';
+  components: NodeDefinition[];
+  /** Text of the button that closes the window, already resolved. */
+  closeLabel: string;
+  runtime: ScreenRuntime;
+  scope: Scope;
+}
+
+/** Window that shows components with the runtime of the screen. Resolves when the user closes it. */
+export abstract class ViewDialog {
+  abstract open(request: ViewDialogRequest): Promise<void>;
 }
 
 /**

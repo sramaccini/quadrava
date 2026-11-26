@@ -1,11 +1,12 @@
 import { effect, Injector, signal, computed, untracked, type EffectRef } from '@angular/core';
 import { ExpressionEngine, parseTemplate } from 'expressions';
-import { inlineDataSource, type DialogStep, type FieldDefinition, type InputNode, type NodeDefinition, type ScreenDefinition, type Step } from 'schema';
+import { inlineDataSource, type DialogStep, type ViewStep, type FieldDefinition, type InputNode, type NodeDefinition, type ScreenDefinition, type Step } from 'schema';
 import {
   Authorization,
   Confirmation,
   DataClient,
   FormDialog,
+  ViewDialog,
   LiveUpdates,
   Notifier,
   RuntimeDiagnostics,
@@ -51,6 +52,8 @@ export interface RuntimeDeps {
   confirmation?: Confirmation | null;
   /** If missing, `dialog` steps do not go on (fail-closed). */
   formDialog?: FormDialog | null;
+  /** If missing, `view` steps do not go on (fail-closed). */
+  viewDialog?: ViewDialog | null;
   /** Language and translations. If missing, the runtime's own texts use their English fallbacks and `t()` uses the fallback. */
   i18n?: I18n | null;
   /** Validators of the fields and of `isValid()`. If missing, the built-in ones. */
@@ -598,6 +601,29 @@ export class ScreenRuntime {
       runtime: this,
       scope,
     });
+  }
+
+  /**
+   * Opens a window with components that use the data sources and the state of the screen; it goes on when the user
+   * closes it. The components that write to the state get their initial value as those of the screen. Without a
+   * service it does not go on.
+   */
+  async openView(spec: ViewStep['view'], scope: Scope = {}): Promise<boolean> {
+    const view = this.deps.viewDialog;
+    if (!view) {
+      this.report('view', 'no service for windows with components: action not run');
+      return false;
+    }
+    this.seedFilters(spec.components);
+    await view.open({
+      title: this.text(spec.title, scope),
+      size: spec.size ?? 'medium',
+      components: spec.components,
+      closeLabel: spec.closeLabel === undefined ? this.systemText('lc.close', 'Close') : this.text(spec.closeLabel, scope),
+      runtime: this,
+      scope,
+    });
+    return true;
   }
 
   toast(message: string, kind: 'info' | 'error' = 'info'): void {

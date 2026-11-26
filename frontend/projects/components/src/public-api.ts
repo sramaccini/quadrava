@@ -47,5 +47,6 @@ export * from './lib/server-data-table.component';
 export * from './lib/tabs.component';
 export * from './lib/dialog-confirmation';
 export * from './lib/dialog-form';
+export * from './lib/view-dialog';
 export * from './lib/notifier';
 export * from './lib/theme-bridge';

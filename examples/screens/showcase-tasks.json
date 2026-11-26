@@ -340,6 +340,42 @@
               "divider": true
             },
             {
+              "id": "status-workflow",
+              "label": "{{ t('showcase_tasks.status_workflow', 'View the workflow') }}",
+              "icon": "eye",
+              "onClick": [
+                {
+                  "view": {
+                    "title": "{{ t('showcase_tasks.workflow_title', 'Workflow of “{title}”', {'title': has(data.task) ? data.task.title : ''}) }}",
+                    "size": "large",
+                    "components": [
+                      {
+                        "id": "workflow-explain",
+                        "type": "text",
+                        "text": "{{ t('showcase_tasks.workflow_explain', 'The window reads the data sources of the screen: these are the transitions the task can take now.') }}"
+                      },
+                      {
+                        "id": "workflow-moves",
+                        "type": "table",
+                        "source": "taskMoves",
+                        "columns": [
+                          {
+                            "field": "name",
+                            "label": "{{ t('showcase_tasks.workflow_transition', 'Transition') }}"
+                          },
+                          {
+                            "field": "to",
+                            "label": "{{ t('showcase_tasks.workflow_to', 'Leads to') }}",
+                            "valueKey": "values.taskStatus"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
               "id": "status-board",
               "label": "{{ t('showcase_tasks.status_board', 'Show it on the board') }}",
               "icon": "eye",
