@@ -88,6 +88,6 @@ services:
 
   # The runtime image (docker/runtime): the demo with the examples, its services through this BFF.
   runtime:
-    image: ghcr.io/sramaccini/quadrava-runtime:${QUADRAVA_RUNTIME_VERSION:-0.27.0}
+    image: ghcr.io/sramaccini/quadrava-runtime:${QUADRAVA_RUNTIME_VERSION:-0.28.0}
     volumes:
       - ../../frontend/projects/runtime/config/bff/runtime-config.json:/etc/quadrava/runtime-config.json:ro

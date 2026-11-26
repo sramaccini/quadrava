@@ -12,6 +12,8 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+## [0.28.0] - 2026-11-26
+
 ### Added
 
 - Inline forms: `lookup` fields show the label of their value and open with their list; a `select` or a `lookup` is
@@ -729,7 +731,8 @@ The first versioned release.
 - **Demo back end of the stack**: the event stream `/api/streams/tasks`, so that behind the BFF the live boards of the
   showcase follow the changes of other users.
 
-[Unreleased]: https://github.com/sramaccini/quadrava/compare/v0.27.0...HEAD
+[Unreleased]: https://github.com/sramaccini/quadrava/compare/v0.28.0...HEAD
+[0.28.0]: https://github.com/sramaccini/quadrava/compare/v0.27.0...v0.28.0
 [0.27.0]: https://github.com/sramaccini/quadrava/compare/v0.26.0...v0.27.0
 [0.26.0]: https://github.com/sramaccini/quadrava/compare/v0.25.1...v0.26.0
 [0.25.1]: https://github.com/sramaccini/quadrava/compare/v0.25.0...v0.25.1
