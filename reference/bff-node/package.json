@@ -13,6 +13,6 @@
     "test": "node --test \"test/*.test.mjs\""
   },
   "dependencies": {
-    "openid-client": "6.8.9"
+    "openid-client": "6.9.1"
   }
 }
