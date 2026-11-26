@@ -104,6 +104,22 @@ export interface ViewStep {
     closeLabel?: string;
   };
 }
+/**
+ * Small panel with a form under the button that ran the step; the `onSubmit` steps see the values in `form`. If the user
+ * closes it the sequence stops. Without a button to point at it opens as a dialog window.
+ */
+export interface PopoverStep {
+  popover: {
+    title: string;
+    icon?: string;
+    tone?: Tone;
+    fields: FieldDefinition[];
+    initial?: Record<string, unknown>;
+    submitLabel?: string;
+    submitEnabledIf?: Expression;
+    onSubmit: Step[];
+  };
+}
 /** Checks the standalone fields of a group (`*` = all): if one is not valid it shows the errors and stops the sequence. */
 export interface ValidateStep {
   validate: string;
@@ -116,7 +132,7 @@ export interface PrintStep {
 export interface ExportStep {
   export: { source: string; fileName?: string; args?: Record<string, unknown>; columns: { field: string; label?: string }[] };
 }
-export type Step = CallStep | DownloadStep | RefreshStep | NavigateStep | ToastStep | SetStep | ConfirmStep | DialogStep | ViewStep | ValidateStep | PrintStep | ExportStep | IfStep | RunStep;
+export type Step = CallStep | DownloadStep | RefreshStep | NavigateStep | ToastStep | SetStep | ConfirmStep | DialogStep | ViewStep | PopoverStep | ValidateStep | PrintStep | ExportStep | IfStep | RunStep;
 
 export interface ConditionalProps {
   visibleIf?: Expression;

@@ -407,6 +407,12 @@
 | --- | --- | --- |
 | `view` * | object | Window that shows components: tables, details, charts, buttons… They read the data sources and the state of the screen and see the variables of the place where the step runs (row, item, form). The sequence goes on when the user closes the window. |
 
+### `popover`
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `popover` * | object | Small panel with a form, opened under the button that ran the step (or the «…» button of a menu item), for example an optional comment after adding a flag. The onSubmit steps see the values in `form`; if they succeed the panel closes and the sequence goes on. The cross, Esc or a click outside close it and stop the sequence silently. Without a button to point at it opens as a dialog window. |
+
 ### `validate`
 
 | Property | Type | Description |

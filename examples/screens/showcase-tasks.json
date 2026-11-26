@@ -520,6 +520,27 @@
                         "path": "state.flagged",
                         "value": true
                       }
+                    },
+                    {
+                      "popover": {
+                        "title": "{{ t('showcase_tasks.flag_added', 'Flag added') }}",
+                        "icon": "flag",
+                        "tone": "danger",
+                        "fields": [
+                          {
+                            "name": "comment",
+                            "type": "textarea",
+                            "label": "{{ t('showcase_tasks.flag_why', 'Optional: let your team know why this task has been flagged') }}"
+                          }
+                        ],
+                        "submitLabel": "{{ t('showcase_tasks.flag_comment_add', 'Add comment') }}",
+                        "submitEnabledIf": "{{ isValid('required', form.comment) }}",
+                        "onSubmit": [
+                          {
+                            "toast": "{{ t('showcase_tasks.flag_commented', 'Comment added (demo)') }}"
+                          }
+                        ]
+                      }
                     }
                   ]
                 },

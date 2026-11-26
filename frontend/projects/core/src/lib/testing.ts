@@ -6,6 +6,7 @@ import {
   Confirmation,
   DataClient,
   FormDialog,
+  FormPopover,
   ViewDialog,
   Notifier,
   RuntimeDiagnostics,
@@ -17,6 +18,7 @@ import {
   type DataRequestOptions,
   type FormDialogRequest,
   type ViewDialogRequest,
+  type PopoverRequest,
   type SpanAttributes,
   type SpanContext,
 } from './ports';
@@ -52,6 +54,8 @@ export class Fakes {
   dialogValues: Record<string, unknown>[] = [];
   /** Windows with components opened by `view` steps; they close at once. */
   views: ViewDialogRequest[] = [];
+  /** Panels opened by `popover` steps; they take their values from `dialogValues`, as the form windows. */
+  popovers: PopoverRequest[] = [];
   i18n = new I18n();
   respond: (request: DataRequest) => unknown = () => ({ items: [], total: 0 });
   /** Values of the settings of the application (`settings` in the expressions). */
@@ -85,6 +89,14 @@ export class Fakes {
         this.views.push(request);
       },
     } as ViewDialog,
+    formPopover: {
+      open: async (request: PopoverRequest) => {
+        this.popovers.push(request);
+        const values = this.dialogValues.shift();
+        if (!values) return false;
+        return runSteps(request.runtime, request.form.actions?.[0]?.onClick ?? [], { ...request.scope, form: values });
+      },
+    } as FormPopover | null,
     i18n: this.i18n,
     settings: () => this.settings,
     tracer: {

@@ -242,6 +242,9 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
           "$ref": "#/$defs/stepView"
         },
         {
+          "$ref": "#/$defs/stepPopover"
+        },
+        {
           "$ref": "#/$defs/stepValidate"
         },
         {
@@ -3667,6 +3670,67 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
             "closeLabel": {
               "type": "string",
               "description": "Text of the button that closes the window (Close, translated, if absent)."
+            }
+          }
+        }
+      }
+    },
+    "stepPopover": {
+      "type": "object",
+      "required": [
+        "popover"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "popover": {
+          "type": "object",
+          "required": [
+            "title",
+            "fields",
+            "onSubmit"
+          ],
+          "additionalProperties": false,
+          "description": "Small panel with a form, opened under the button that ran the step (or the «…» button of a menu item), for example an optional comment after adding a flag. The onSubmit steps see the values in `form`; if they succeed the panel closes and the sequence goes on. The cross, Esc or a click outside close it and stop the sequence silently. Without a button to point at it opens as a dialog window.",
+          "properties": {
+            "title": {
+              "type": "string",
+              "description": "Title of the panel: plain text or an expression."
+            },
+            "icon": {
+              "$ref": "#/$defs/icon",
+              "description": "Icon before the title, from the built-in set (for example flag)."
+            },
+            "tone": {
+              "$ref": "#/$defs/tone",
+              "description": "Colour of the icon: neutral, primary, success or danger (neutral if absent)."
+            },
+            "fields": {
+              "type": "array",
+              "description": "Fields of the form in the panel, as in a form.",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/field"
+              }
+            },
+            "initial": {
+              "type": "object",
+              "description": "Initial values with expressions (for example {\"note\": \"{{ row.note }}\"})."
+            },
+            "submitLabel": {
+              "type": "string",
+              "description": "Text of the button that confirms (Confirm, translated, if absent)."
+            },
+            "submitEnabledIf": {
+              "$ref": "#/$defs/expression",
+              "description": "The confirm button is enabled only while the expression is true; it sees the values in `form`, where an empty field is null (for example {{ isValid('required', form.comment) }} while the comment is empty). Always enabled if absent."
+            },
+            "onSubmit": {
+              "type": "array",
+              "description": "Steps run when the form is confirmed and valid; they see the values as form. The panel closes when they succeed.",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/step"
+              }
             }
           }
         }

@@ -1,5 +1,5 @@
 import { InjectionToken } from '@angular/core';
-import type { FormNode, NodeDefinition } from 'schema';
+import type { FormNode, NodeDefinition, Tone } from 'schema';
 import type { ScreenRuntime } from './screen-runtime';
 import type { HttpMethod, Scope } from './types';
 
@@ -169,6 +169,27 @@ export interface ViewDialogRequest {
 /** Window that shows components with the runtime of the screen. Resolves when the user closes it. */
 export abstract class ViewDialog {
   abstract open(request: ViewDialogRequest): Promise<void>;
+}
+
+/** Request for a small panel with a form, under the control that ran the step. */
+export interface PopoverRequest {
+  /** Title already resolved, to show as text. */
+  title: string;
+  /** Icon before the title, from the built-in set. */
+  icon?: string;
+  /** Colour of the icon. */
+  tone: Tone;
+  form: FormNode;
+  runtime: ScreenRuntime;
+  scope: Scope;
+}
+
+/**
+ * Small panel with a form, anchored to the control that ran the step. Resolves true if the user submitted and the submit
+ * steps succeeded, false if they closed it.
+ */
+export abstract class FormPopover {
+  abstract open(request: PopoverRequest): Promise<boolean>;
 }
 
 /**

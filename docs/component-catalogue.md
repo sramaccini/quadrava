@@ -42,7 +42,7 @@ Rules common to all components, new ones included:
 | `graph` | Nodes and connections laid out from left to right, for example a workflow (§ 2.35). |
 | Fields | `text`, `number`, `select`, `checkbox`, `date`, `textarea`, `datetime`, `radio`, `switch`, `multiselect`, `tags`, `lookup`, `file`, `repeater`, `richtext` (§ 2.26). |
 | Cell formats | `text`, `number`, `currency`, `percent`, `date`, `datetime`, `boolean`, `badge`, `markdown`. |
-| Steps | `set`, `call` (with `as` and `onError`), `refresh`, `navigate`, `toast`, `confirm`, `dialog`, `view` (§ 2.11), `validate`, `print`, `export` and `download` (§ 2.22), `if` and `run`; named sequences in `actions` (§ 2.22b). |
+| Steps | `set`, `call` (with `as` and `onError`), `refresh`, `navigate`, `toast`, `confirm`, `dialog`, `view` and `popover` (§ 2.11), `validate`, `print`, `export` and `download` (§ 2.22), `if` and `run`; named sequences in `actions` (§ 2.22b). |
 | Shell | Side bar (`lc-sidebar`, with search, counters and keyboard support: § 2.25; the application brand is inserted with an `lcBrand` element, otherwise logo and name), messages of the user (`lc-notification-bell`: a bell with the unread count and the list, ADR-22; `notificationsOf` keeps only well-formed messages), user menu (`lc-user-menu`: an icon with the initial and the name in its tooltip, application items (in the runtime those of `userMenu` of the navigation, ADR-25), optional groups of choices with the current one ticked in each, such as the tenants of ADR-18 and the operational roles of ADR-28 (`choices` takes one group or a list, `choiceIn` gives the group of a choice), and sign-out last, after a confirmation; a menu for screen readers and the keyboard: arrows, Home, End, Enter, Esc, submenus with the side arrows), responsive top bar, `lc-quadrava-wordmark` logotype, syntax-highlighted code viewer `lc-code-view`, tools in section headers (`SectionTools`: «JSON» and «Aiuto» in the demo showcase). |
 
 ## 2. Added in October 2026
@@ -277,7 +277,7 @@ Description
 
 The value is a list of objects. Every row has its own fields (`text`, `number`, `select`, `checkbox`, `date`, `textarea`, `switch`, `lookup`, `file`; no nested rows) and a button to remove it; below is the button to add one. Required flags and validation rules apply row by row; rules and data sources of the row's fields see the row as `item`. A form with repeatable rows widens up to 880 px.
 
-### 2.11 Dialog with a form, window with components
+### 2.11 Dialog with a form, window with components, panel under a button
 
 New `dialog` step: it opens a window with a form; the `onSubmit` steps see the values in `form`. If they succeed the window closes and the sequence continues; if the user cancels, the sequence stops silently (like `confirm`).
 
@@ -310,6 +310,33 @@ data sources and the state of the screen and see the variables of the place wher
 The port is `ViewDialog`; without an implementation the step does not go on. A data source used only by a remote rule
 of a field inside the window is loaded when the screen opens, as an ordinary data source. The menu of the status in the
 showcase «Tasks and progress» opens the workflow of the task in a window.
+
+The `popover` step opens a small panel with a form right under the button that ran it, instead of a window in the middle
+of the screen: the «Flag added» of the issue trackers, with an optional comment. For an item of a «…» menu the panel
+opens under the «…» button. Like `dialog`, the `onSubmit` steps see the values in `form`; if they succeed the panel
+closes and the sequence goes on. The cross, Esc or a click outside close it and stop the sequence silently: the steps
+before it stay done (the flag stays added).
+
+```json
+{ "label": "Add flag", "icon": "flag", "onClick": [
+  { "call": "flag", "args": { "key": "{{ params.key }}" } },
+  { "popover": { "title": "Flag added", "icon": "flag", "tone": "danger",
+    "fields": [{ "name": "comment", "type": "textarea", "label": "Optional: let your team know why" }],
+    "submitLabel": "Add comment", "submitEnabledIf": "{{ isValid(required, form.comment) }}",
+    "onSubmit": [{ "call": "addComment", "args": { "text": "{{ form.comment }}" } }] } }] }
+```
+
+| Property | What it does |
+| --- | --- |
+| `title` | Title of the panel, plain text or an expression. |
+| `icon`, `tone` | Icon before the title and its colour (`danger` for a red flag; neutral if absent). |
+| `fields`, `initial`, `submitLabel`, `onSubmit` | As in `dialog`. |
+| `submitEnabledIf` | The confirm button is enabled only while it is true; it sees `form`, where an empty field is `null`: `isValid(required, form.comment)` keeps it disabled while the comment is empty. |
+
+The panel is a dialog for screen readers, named by its title; the focus starts on the first field, stays inside the
+panel while it is open and goes back to the button when it closes. The port is `FormPopover` (on the CDK overlay); without
+it, or without a button to point at, the step opens as a `dialog` window. In the showcase «Tasks and progress»,
+«Add flag» in the «…» menu opens it.
 
 ### 2.12 Tooltip in the detail card
 

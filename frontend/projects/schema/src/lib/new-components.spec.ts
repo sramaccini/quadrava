@@ -55,6 +55,19 @@ describe('schema of the new components', () => {
       expect(issuesOf(view({ title: 'Workflow', components: [{ type: 'text', text: 'x' }], onClose: [] })).length).toBeGreaterThan(0);
     });
   });
+  describe('popover step', () => {
+    const popover = (spec: Record<string, unknown>) => screen([{ type: 'button', label: 'Flag', onClick: [{ popover: spec }] }]);
+    const fields = [{ name: 'comment', type: 'textarea' }];
+    it('accepts a panel with a title, an icon, a tone, fields, a submit condition and steps', () => {
+      expect(issuesOf(popover({ title: 'Flag added', icon: 'flag', tone: 'danger', fields, initial: { comment: '' }, submitLabel: 'Add comment', submitEnabledIf: "{{ isValid('required', form.comment) }}", onSubmit: [{ toast: 'x' }] }))).toEqual([]);
+    });
+    it('rejects a panel without fields or steps, an unknown tone and unknown properties', () => {
+      expect(issuesOf(popover({ title: 'Flag added', onSubmit: [{ toast: 'x' }] })).length).toBeGreaterThan(0);
+      expect(issuesOf(popover({ title: 'Flag added', fields })).length).toBeGreaterThan(0);
+      expect(issuesOf(popover({ title: 'Flag added', tone: 'red', fields, onSubmit: [{ toast: 'x' }] })).length).toBeGreaterThan(0);
+      expect(issuesOf(popover({ title: 'Flag added', fields, onSubmit: [{ toast: 'x' }], placement: 'top' })).length).toBeGreaterThan(0);
+    });
+  });
   describe('graph', () => {
     const graph = (extra: Record<string, unknown>) => screen([{ type: 'graph', source: 'w', nodes: { field: 'statuses' }, edges: { field: 'transitions' }, ...extra }], { w: { ref: 'workflow/get' } });
     it('accepts nodes and edges from one data source, with highlight, start, labels and tones', () => {

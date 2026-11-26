@@ -1,6 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import { DestroyRef, effect, importProvidersFrom, inject, provideEnvironmentInitializer, type EnvironmentProviders, type Provider } from '@angular/core';
-import { Confirmation, FormDialog, I18n, ViewDialog, provideComponentCatalog, type ComponentCatalog } from 'core';
+import { Confirmation, FormDialog, FormPopover, I18n, ViewDialog, provideComponentCatalog, type ComponentCatalog } from 'core';
 import { enGB as dateEnglish, it as dateItalian, type Locale } from 'date-fns/locale';
 import { NzDateAdapter, provideNzDateFnsAdapter } from 'ng-zorro-antd/core/time';
 import { en_GB, it_IT, NzI18nService, provideNzI18n, type NzI18nInterface } from 'ng-zorro-antd/i18n';
@@ -15,6 +15,7 @@ import { DetailComponent } from './detail.component';
 import { DialogConfirmation } from './dialog-confirmation';
 import { DialogForm } from './dialog-form';
 import { DialogView } from './view-dialog';
+import { PopoverForm } from './form-popover';
 import { DialogOpener } from './dialog-focus';
 import { FilterBarComponent } from './filter-bar.component';
 import { FormComponent } from './form.component';
@@ -109,6 +110,7 @@ export function provideLcComponents(extra: ComponentCatalog = {}): (Provider | E
     { provide: Confirmation, useExisting: DialogConfirmation },
     { provide: FormDialog, useExisting: DialogForm },
     { provide: ViewDialog, useExisting: DialogView },
+    { provide: FormPopover, useExisting: PopoverForm },
     provideNzIcons(Object.values(ICON_TYPES).flatMap((i) => (i.filled ? [i.icon, i.filled] : [i.icon]))),
     provideNzI18n(ENGLISH),
     provideNzDateFnsAdapter(),

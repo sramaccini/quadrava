@@ -42,7 +42,7 @@ export interface StepOptions {
   onFieldErrors?: (errors: readonly FieldError[]) => number;
 }
 
-const SIMPLE_KINDS = ['if', 'set', 'toast', 'confirm', 'dialog', 'view', 'validate', 'print'] as const;
+const SIMPLE_KINDS = ['if', 'set', 'toast', 'confirm', 'dialog', 'view', 'popover', 'validate', 'print'] as const;
 
 /** Steps of a sequence for traces: kind and name from the definition (`call save, refresh list`), never values. */
 export function describeSteps(steps: Step[]): string {
@@ -177,6 +177,10 @@ async function runSimpleStep(
   if ('view' in step) {
     // The sequence goes on when the user closes the window.
     return runtime.openView(step.view, scope);
+  }
+  if ('popover' in step) {
+    // Like a dialog: if the user closes the panel the sequence stops silently.
+    return runtime.openPopover(step.popover, scope);
   }
   if ('toast' in step) {
     runtime.toast(runtime.text(step.toast, scope));

@@ -17,6 +17,10 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 - Icons `flag` and `like` in the built-in set, with a filled form drawn while a toggle is pressed.
 - `button` takes `tone`, as `menuButton`: on a toggle it is the colour of the pressed state (`danger` for a red flag),
   otherwise it fills the button. On a `menuButton` toggle the tone colours the pressed state too.
+- `popover` step: a small panel with a form under the button that ran it (or the «…» button of a menu item), with
+  `title`, `icon`, `tone`, `fields`, `submitLabel`, `submitEnabledIf` and `onSubmit`; the cross, Esc or a click outside
+  close it and stop the sequence. New port `FormPopover` in `core`; without it the step opens as a `dialog` window.
+  `components` declares `@angular/cdk` (already required by NG-ZORRO) as a peer dependency.
 
 ### Changed
 

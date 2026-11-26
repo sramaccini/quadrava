@@ -1,11 +1,12 @@
 import { effect, Injector, signal, computed, untracked, type EffectRef } from '@angular/core';
 import { ExpressionEngine, parseTemplate } from 'expressions';
-import { inlineDataSource, type DialogStep, type ViewStep, type FieldDefinition, type InputNode, type NodeDefinition, type ScreenDefinition, type Step } from 'schema';
+import { inlineDataSource, type DialogStep, type ViewStep, type PopoverStep, type FormNode, type FieldDefinition, type InputNode, type NodeDefinition, type ScreenDefinition, type Step } from 'schema';
 import {
   Authorization,
   Confirmation,
   DataClient,
   FormDialog,
+  FormPopover,
   ViewDialog,
   LiveUpdates,
   Notifier,
@@ -54,6 +55,8 @@ export interface RuntimeDeps {
   formDialog?: FormDialog | null;
   /** If missing, `view` steps do not go on (fail-closed). */
   viewDialog?: ViewDialog | null;
+  /** If missing, `popover` steps open as a form window (`formDialog`). */
+  formPopover?: FormPopover | null;
   /** Language and translations. If missing, the runtime's own texts use their English fallbacks and `t()` uses the fallback. */
   i18n?: I18n | null;
   /** Validators of the fields and of `isValid()`. If missing, the built-in ones. */
@@ -624,6 +627,29 @@ export class ScreenRuntime {
       scope,
     });
     return true;
+  }
+
+  /**
+   * Opens a small panel with a form under the control that ran the step; without a service for panels it opens as a form
+   * window, and without that either it does not go on. If the user closes it it returns false.
+   */
+  async openPopover(spec: PopoverStep['popover'], scope: Scope = {}): Promise<boolean> {
+    const submit = { label: spec.submitLabel ?? this.systemText('lc.confirm', 'Confirm'), onClick: spec.onSubmit };
+    const form: FormNode = {
+      type: 'form',
+      fields: spec.fields,
+      initial: spec.initial,
+      actions: [spec.submitEnabledIf === undefined ? submit : { ...submit, enabledIf: spec.submitEnabledIf }],
+    };
+    const title = this.text(spec.title, scope);
+    const popover = this.deps.formPopover;
+    if (popover) return popover.open({ title, icon: spec.icon, tone: spec.tone ?? 'neutral', form, runtime: this, scope });
+    const dialog = this.deps.formDialog;
+    if (!dialog) {
+      this.report('popover', 'no service for panels or form windows: action not run');
+      return false;
+    }
+    return dialog.open({ title, form, runtime: this, scope });
   }
 
   toast(message: string, kind: 'info' | 'error' = 'info'): void {
