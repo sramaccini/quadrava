@@ -6,13 +6,13 @@ The reference services in `reference/` are distributed as source only; their dep
 
 | Package | Version | Licence |
 | --- | --- | --- |
-| @angular/cdk | 22.2.5 | MIT |
-| @angular/common | 22.2.4 | MIT |
-| @angular/compiler | 22.2.4 | MIT |
-| @angular/core | 22.2.4 | MIT |
-| @angular/forms | 22.2.4 | MIT |
-| @angular/platform-browser | 22.2.4 | MIT |
-| @angular/router | 22.2.4 | MIT |
+| @angular/cdk | 22.3.0 | MIT |
+| @angular/common | 22.3.0 | MIT |
+| @angular/compiler | 22.3.0 | MIT |
+| @angular/core | 22.3.0 | MIT |
+| @angular/forms | 22.3.0 | MIT |
+| @angular/platform-browser | 22.3.0 | MIT |
+| @angular/router | 22.3.0 | MIT |
 | @ant-design/colors | 7.2.1 | MIT |
 | @ant-design/fast-color | 2.0.6 | MIT |
 | @ant-design/icons-angular | 22.1.1 | MIT |
@@ -22,14 +22,14 @@ The reference services in `reference/` are distributed as source only; their dep
 | @marcbachmann/cel-js | 8.0.0 | MIT |
 | @standard-schema/spec | 1.1.0 | MIT |
 | date-fns | 4.4.0 | MIT |
-| entities | 8.1.0 | BSD-2-Clause |
-| ng-zorro-antd | 22.1.1 | MIT |
-| parse5 | 8.0.1 | MIT |
+| entities | 9.0.0 | BSD-2-Clause |
+| ng-zorro-antd | 22.2.1 | MIT |
+| parse5 | 8.1.1 | MIT |
 | rxjs | 7.8.2 | Apache-2.0 |
 | tslib | 2.8.1 | 0BSD |
-| zod | 4.6.6 | MIT |
+| zod | 4.6.7 | MIT |
 
-## @angular/cdk 22.2.5
+## @angular/cdk 22.3.0
 
 Licence: MIT · Source: https://github.com/angular/components.git
 
@@ -57,7 +57,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-## @angular/common 22.2.4
+## @angular/common 22.3.0
 
 Licence: MIT · Source: https://github.com/angular/angular.git
 
@@ -85,7 +85,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-## @angular/compiler 22.2.4
+## @angular/compiler 22.3.0
 
 Licence: MIT · Source: https://github.com/angular/angular.git
 
@@ -113,7 +113,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-## @angular/core 22.2.4
+## @angular/core 22.3.0
 
 Licence: MIT · Source: https://github.com/angular/angular.git
 
@@ -141,7 +141,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-## @angular/forms 22.2.4
+## @angular/forms 22.3.0
 
 Licence: MIT · Source: https://github.com/angular/angular.git
 
@@ -169,7 +169,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-## @angular/platform-browser 22.2.4
+## @angular/platform-browser 22.3.0
 
 Licence: MIT · Source: https://github.com/angular/angular.git
 
@@ -197,7 +197,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-## @angular/router 22.2.4
+## @angular/router 22.3.0
 
 Licence: MIT · Source: https://github.com/angular/angular.git
 
@@ -514,7 +514,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## entities 8.1.0
+## entities 9.0.0
 
 Licence: BSD-2-Clause · Source: https://github.com/fb55/entities.git
 
@@ -532,13 +532,13 @@ THIS IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRE
 EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ```
 
-## ng-zorro-antd 22.1.1
+## ng-zorro-antd 22.2.1
 
 Licence: MIT · Source: https://github.com/NG-ZORRO/ng-zorro-antd
 
 (No licence file in the package: see the licence named above.)
 
-## parse5 8.0.1
+## parse5 8.1.1
 
 Licence: MIT · Source: git://github.com/inikulin/parse5.git
 
@@ -791,7 +791,7 @@ OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ```
 
-## zod 4.6.6
+## zod 4.6.7
 
 Licence: MIT · Source: https://github.com/colinhacks/zod.git
 
