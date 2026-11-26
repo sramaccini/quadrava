@@ -12,7 +12,7 @@ name: quadrava-bff-lite-proxy
 
 services:
   nginx:
-    image: nginx:1.30.3-alpine
+    image: nginx:1.31.0-alpine
     ports:
       - "8091:8091"
     environment:
