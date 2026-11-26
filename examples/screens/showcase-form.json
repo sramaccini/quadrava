@@ -24,6 +24,12 @@
     },
     "people": {
       "ref": "showcase-form/people"
+    },
+    "workItem": {
+      "ref": "showcase-form/workItem"
+    },
+    "patchWorkItem": {
+      "ref": "showcase-form/patchWorkItem"
     }
   },
   "components": [
@@ -405,6 +411,76 @@
               "*"
             ]
           }
+        }
+      ]
+    },
+    {
+      "id": "section-inline",
+      "type": "section",
+      "title": "{{ t('showcase_form.inline_title', 'Inline editing') }}",
+      "components": [
+        {
+          "id": "inline-intro",
+          "type": "text",
+          "text": "{{ t('showcase_form.inline_intro', 'With edit inline each field shows its value as text, like the summary and description of a work item: click it (or focus it and press Enter) to open only that field. Enter or ✓ confirms a single line, Ctrl+Enter or Save the description; Escape or Cancel puts the value back. Every confirmation sends only that field.') }}"
+        },
+        {
+          "id": "inline-form",
+          "type": "form",
+          "source": "workItem",
+          "edit": "inline",
+          "fields": [
+            {
+              "name": "summary",
+              "type": "text",
+              "label": "{{ t('showcase_form.inline_summary', 'Summary') }}",
+              "display": "heading",
+              "required": true,
+              "maxLength": 120
+            },
+            {
+              "name": "description",
+              "type": "richtext",
+              "label": "{{ t('showcase_form.inline_description', 'Description') }}",
+              "emptyText": "{{ t('showcase_form.inline_description_empty', 'Add a description…') }}"
+            },
+            {
+              "name": "priority",
+              "type": "select",
+              "label": "{{ t('showcase_form.inline_priority', 'Priority') }}",
+              "options": [
+                "low",
+                "medium",
+                "high"
+              ],
+              "optionKey": "showcase_form.priority",
+              "width": "s"
+            },
+            {
+              "name": "dueDate",
+              "type": "date",
+              "label": "{{ t('showcase_form.inline_due', 'Due date') }}",
+              "width": "s"
+            },
+            {
+              "name": "key",
+              "type": "text",
+              "label": "{{ t('showcase_form.inline_key', 'Key') }}",
+              "readOnlyIf": "{{ true }}",
+              "width": "s"
+            }
+          ],
+          "onSave": [
+            {
+              "call": "patchWorkItem"
+            },
+            {
+              "refresh": "workItem"
+            },
+            {
+              "toast": "{{ t('showcase_form.inline_saved', 'Saved: {field}', {'field': field}) }}"
+            }
+          ]
         }
       ]
     }

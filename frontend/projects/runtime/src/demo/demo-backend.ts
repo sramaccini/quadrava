@@ -94,6 +94,7 @@ export class DemoBackend {
   private readonly medicalStaff = new MedicalStaffRegister(DemoBackend.PAGE_SIZE);
   private reports = 0;
   /** Ticket of the form with custom fields (showcase): the values of those fields are kept in `custom`. */
+  private workItem: Record<string, unknown> = { key: 'ODT-42', summary: 'Login fails after the password change', description: null, priority: 'high', dueDate: '2026-12-15' };
   private ticket: { title: string; custom: Record<string, unknown> } = { title: 'Printer offline', custom: { contract: 'C-1042', severity: 'high', reviewer: 2 } };
   /** Staff numbers already used (validation showcase). */
   private readonly staffNumbers = new Set(['S000001', 'S123456']);
@@ -260,6 +261,15 @@ export class DemoBackend {
         this.ticket = { title: String(body['title'] ?? ''), custom: { ...custom } };
       }
       if (req.method === 'GET' || req.method === 'PUT') return { ...this.ticket, custom: { ...this.ticket.custom } };
+    }
+    // The work item of the inline form: every save changes one field (the key cannot be changed).
+    if (path === '/api/showcase/work-item') {
+      if (req.method === 'PATCH') {
+        const { key: _, ...changes } = (req.body ?? {}) as Record<string, unknown>;
+        if ('summary' in changes && String(changes['summary'] ?? '').trim() === '') throw Object.assign(new Error('422'), { status: 422, fieldErrors: [{ path: '/summary', code: 'required' }] });
+        this.workItem = { ...this.workItem, ...changes };
+      }
+      if (req.method === 'GET' || req.method === 'PATCH') return { ...this.workItem };
     }
     // A report returns its protocol number (the following steps read it with `as`).
     if (path === '/api/showcase/flag' && req.method === 'POST') return { protocol: `PR-${String(++this.reports).padStart(4, '0')}`, receipt: true };

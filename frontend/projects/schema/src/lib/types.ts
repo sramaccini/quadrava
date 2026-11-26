@@ -173,10 +173,12 @@ export interface FieldDefinition {
   accept?: string;
   /** For `file`: maximum size in KB (1024 if absent). */
   maxSizeKb?: number;
-  /** For `file`: a button (default) or a drop zone, with the label as the text of its button. */
-  display?: 'button' | 'dropzone';
+  /** For `file`: a button (default) or a drop zone, with the label as the text of its button; for text in an inline form: a heading. */
+  display?: 'button' | 'dropzone' | 'heading';
   /** For `file` shown as dropzone: a short text under the button. */
   hint?: string;
+  /** In an inline form: the text in place of an empty value that can be changed. */
+  emptyText?: string;
   /** For `file`: data source the file is sent to right away (variable `file`). */
   upload?: string;
   /** For `file` with `upload`: multipart (default) or base64 in the JSON body. */
@@ -468,6 +470,10 @@ export interface FormNode extends NodeBase {
   /** More fields read from a data source, after `fields` (labels and options are data, shown as they are). */
   fieldsFrom?: FieldsFromDefinition;
   actions?: ActionDefinition[];
+  /** `form` (the default): the inputs always open; `inline`: values as text, one field at a time opened by a click. */
+  edit?: 'form' | 'inline';
+  /** With `edit: inline`: steps when a field is confirmed (`field` the name, `value` the new value). */
+  onSave?: Step[];
   /** Columns of the field grid (1 if absent). */
   columns?: number;
   /** `grid` (the default): the fields in the columns; `flow`: one after the other while they fit, by their `width`. */

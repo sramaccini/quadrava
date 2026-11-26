@@ -43,6 +43,17 @@
       "params": {
         "q": "{{ search }}"
       }
+    },
+    "workItem": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/showcase/work-item"
+    },
+    "patchWorkItem": {
+      "type": "rest",
+      "method": "PATCH",
+      "url": "/api/showcase/work-item",
+      "body": "{{ {field: value} }}"
     }
   }
 }

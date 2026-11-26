@@ -1,4 +1,4 @@
-import { afterEveryRender, ChangeDetectionStrategy, Component, computed, DestroyRef, effect, ElementRef, inject, input, output, signal, untracked } from '@angular/core';
+import { afterEveryRender, afterNextRender, ChangeDetectionStrategy, Component, computed, DestroyRef, effect, ElementRef, inject, Injector, input, output, signal, untracked } from '@angular/core';
 import { codeMessage, formRules, I18n, isRequired, NO_PROBLEM, pointerSegments, RemoteChecks, rowsOf, runSteps, transformValue, type CompiledRule, type FieldCheck, type FieldError, type ScreenRuntime, type Scope } from 'core';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzButtonModule } from 'ng-zorro-antd/button';
@@ -9,6 +9,8 @@ import { BusyComponent } from './busy.component';
 import { FieldControlComponent } from './field-control.component';
 import { labelInControl } from './file-field.component';
 import { IconComponent } from './icon.component';
+import { inlineText, isEmptyValue, isInlineType, isMultiLine, sameValue } from './inline-edit';
+import { MarkdownComponent } from './markdown.component';
 import { checkValue, personalValues, repeaterRows, validationEnv } from './field-validation';
 import { dataItems, itemValue, screenItems, withItemValue, type FormItem, ownValues } from './form-fields';
 import { nextId } from './shared';
@@ -25,10 +27,15 @@ import { nextId } from './shared';
  * The fields sit in a grid (`columns`, `span`) or, with `layout: "flow"`, one after the other while they fit: a field
  * with `width` takes that width, one without it a whole line (its input at most 560px), one with `width: "full"` the
  * whole line with no limit.
+ * With `edit: "inline"` the fields show their values as text (a heading with `display: "heading"`, formatted text for
+ * richtext, `emptyText` when empty); a click, Enter or Space opens the editor of that field only, focused. Single-line
+ * fields are confirmed with ✓ or Enter, multi-line ones with Save or Ctrl+Enter; ✕, Cancel or Escape restore the value.
+ * Confirming checks the field, then runs `onSave` with `field` and `value`: an error keeps the editor open. A field
+ * that cannot be changed (readOnlyIf) is only text.
  */
 @Component({
   selector: 'lc-form',
-  imports: [BusyComponent, FieldControlComponent, IconComponent, NzAlertModule, NzFormModule, NzButtonModule, NzTooltipModule],
+  imports: [BusyComponent, FieldControlComponent, IconComponent, MarkdownComponent, NzAlertModule, NzFormModule, NzButtonModule, NzTooltipModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: block; container-type: inline-size; }
@@ -53,6 +60,20 @@ import { nextId } from './shared';
     /* The buttons wrap when they do not fit, instead of widening the page (WCAG 1.4.10, reflow). */
     .actions { display: flex; flex-wrap: wrap; gap: var(--lc-gap, 12px); }
     .actions lc-icon { margin-inline-end: 8px; }
+    .actions:empty { display: none; }
+    /* Inline editing: the value as text, a quiet background on hover and a ring on focus say it can be opened. */
+    .view { min-height: 32px; padding: 4px 8px; margin-inline: -8px; border-radius: var(--lc-radius, 6px); overflow-wrap: anywhere; }
+    .view.text { white-space: pre-wrap; }
+    .view.editable { cursor: pointer; }
+    .view.editable:hover { background: color-mix(in srgb, var(--lc-color-muted, #5d6b7a) 12%, transparent); }
+    .view.editable:focus-visible { outline: 2px solid var(--lc-color-primary); outline-offset: 0; }
+    .view.heading { font-size: 24px; font-weight: 600; line-height: 1.3; }
+    .view .empty { color: var(--lc-color-muted, #5d6b7a); font-weight: normal; }
+    .view.heading .empty { font-size: 16px; }
+    .heading-editor ::ng-deep input { font-size: 20px; font-weight: 600; }
+    .editor-actions { display: flex; gap: 8px; margin-top: 8px; }
+    .editor-actions.icons { justify-content: flex-end; gap: 4px; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   `,
   template: `
     @if (fieldsFailure(); as error) {
@@ -64,8 +85,9 @@ import { nextId } from './shared';
         @let field = item.field;
         @if (runtime().isVisible(field, fieldScope())) {
           <nz-form-item [attr.data-lc-input]="id + item.key" [attr.data-lc-required]="required(item) ? '' : null" [style.--lc-field-span]="span(field)" [class.line]="flow() && (!field.width || field.width === 'full')" [class.full]="field.width === 'full'">
+            @let inlineField = inline() && isInlineType(field);
             @if (!labelInControl(field)) {
-              <nz-form-label [nzFor]="id + item.key" [id]="id + item.key + '-label'" [nzRequired]="required(item)" [nzTooltipTitle]="field.tooltip ? runtime().text(field.tooltip, fieldScope()) : undefined" [nzTooltipIcon]="'question-circle'">{{ item.label ?? (runtime().text(field.label, fieldScope()) || field.name) }}</nz-form-label>
+              <nz-form-label [class.sr-only]="inlineField && field.display === 'heading'" [nzFor]="id + item.key" [id]="id + item.key + '-label'" [nzRequired]="required(item)" [nzTooltipTitle]="field.tooltip ? runtime().text(field.tooltip, fieldScope()) : undefined" [nzTooltipIcon]="'question-circle'">{{ item.label ?? (runtime().text(field.label, fieldScope()) || field.name) }}</nz-form-label>
             }
             @let problem = shown(item);
             <nz-form-control
@@ -74,6 +96,33 @@ import { nextId } from './shared';
               [nzErrorTip]="problem.error ?? undefined"
               [nzWarningTip]="problem.warning ?? undefined"
             >
+              @if (inlineField && editing() !== item.key) {
+                @let locked = readOnly(field);
+                @let value = valueOf(item);
+                <div
+                  class="view"
+                  [id]="id + item.key + '-view'"
+                  [class.editable]="!locked"
+                  [class.heading]="field.display === 'heading'"
+                  [class.text]="field.type !== 'richtext'"
+                  [attr.role]="locked ? null : 'button'"
+                  [attr.tabindex]="locked ? null : 0"
+                  [attr.aria-labelledby]="locked ? null : id + item.key + '-label ' + id + item.key + '-view'"
+                  [attr.title]="locked ? null : i18n.t('lc.inline.edit', { label: item.label ?? (runtime().text(field.label, fieldScope()) || field.name) })"
+                  (click)="!locked && edit(item)"
+                  (keydown.enter)="!locked && edit(item, $event)"
+                  (keydown.space)="!locked && edit(item, $event)"
+                >
+                  @if (isEmptyValue(value)) {
+                    <span class="empty">{{ locked ? '—' : field.emptyText ? runtime().text(field.emptyText, fieldScope()) : i18n.t('lc.inline.empty') }}</span>
+                  } @else if (field.type === 'richtext') {
+                    <lc-markdown [source]="$any(value)" />
+                  } @else {
+                    {{ shownText(item, value) }}
+                  }
+                </div>
+              } @else {
+              <div [class.heading-editor]="inlineField && field.display === 'heading'" (keydown)="inlineField && editorKey($event, item)">
               <lc-field-control
                 [field]="field"
                 [runtime]="runtime()"
@@ -92,6 +141,25 @@ import { nextId } from './shared';
                 [remote]="remote()"
                 (valueChange)="set(item, $event)"
               />
+              @if (inlineField) {
+                @if (isMultiLine(field)) {
+                  <div class="editor-actions">
+                    <button nz-button nzType="primary" type="button" [nzLoading]="busy()" (click)="save(item)">{{ i18n.t('lc.inline.save') }}</button>
+                    <button nz-button type="button" [disabled]="busy()" (click)="cancel(item)">{{ i18n.t('lc.cancel') }}</button>
+                  </div>
+                } @else {
+                  <div class="editor-actions icons">
+                    <button nz-button nzSize="small" type="button" [nzLoading]="busy()" [attr.aria-label]="i18n.t('lc.confirm')" (click)="save(item)">
+                      @if (!busy()) {
+                        <lc-icon name="check" />
+                      }
+                    </button>
+                    <button nz-button nzSize="small" type="button" [disabled]="busy()" [attr.aria-label]="i18n.t('lc.cancel')" (click)="cancel(item)"><lc-icon name="close" /></button>
+                  </div>
+                }
+              }
+              </div>
+              }
             </nz-form-control>
           </nz-form-item>
         }
@@ -120,6 +188,9 @@ import { nextId } from './shared';
 export class FormComponent {
   /** A checkbox and a drop zone draw their label themselves. */
   protected readonly labelInControl = labelInControl;
+  protected readonly isInlineType = isInlineType;
+  protected readonly isMultiLine = isMultiLine;
+  protected readonly isEmptyValue = isEmptyValue;
   readonly node = input.required<FormNode>();
   readonly runtime = input.required<ScreenRuntime>();
   readonly scope = input<Scope>({});
@@ -134,6 +205,7 @@ export class FormComponent {
   protected readonly id = nextId('lc-form') + '-';
 
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+  private readonly injector = inject(Injector);
 
   /**
    * After every render: the control of a required field says so (aria-required), and the control of a field with a
@@ -162,6 +234,13 @@ export class FormComponent {
   protected readonly values = signal<Record<string, unknown>>({});
   protected readonly busy = signal(false);
   protected readonly submitted = signal(false);
+
+  /** Inline editing: the values as text, one field at a time opened. */
+  protected readonly inline = computed(() => this.node().edit === 'inline');
+  /** Key of the field being edited inline; its value when it was opened; whether confirming it was tried. */
+  protected readonly editing = signal<string | null>(null);
+  private before: unknown = null;
+  private readonly tried = signal(false);
 
   /** The form contains repeatable rows. */
   protected readonly hasRows = computed(() => this.node().fields.some((f) => f.type === 'repeater'));
@@ -292,7 +371,8 @@ export class FormComponent {
     const server = this.serverErrors()[item.key];
     if (server) return { error: server, warning: null };
     const check = this.check(item);
-    return this.submitted() || check.pending || check.remote ? check : NO_PROBLEM;
+    const after = this.submitted() || (this.tried() && this.editing() === item.key);
+    return after || check.pending || check.remote ? check : NO_PROBLEM;
   }
 
   private check(item: FormItem): FieldCheck {
@@ -346,6 +426,96 @@ export class FormComponent {
   /** Whether `row` and `column` name a cell drawn by the repeater: a row that exists, a field of its rows. */
   private isCell(item: FormItem, row: string, column: string): boolean {
     return /^(0|[1-9]\d*)$/.test(row) && Number(row) < repeaterRows(this.valueOf(item)).length && (item.field.fields ?? []).some((f) => f.name === column);
+  }
+
+  /** Text of a value in the read view of an inline form. */
+  protected shownText(item: FormItem, value: unknown): string {
+    const labels = { yes: this.i18n.t('lc.yes'), no: this.i18n.t('lc.no'), translate: (key: string, fallback: string) => this.i18n.t(key, {}, fallback) };
+    return inlineText(item.field, value, this.i18n.intlLocale(), labels, item.optionLabels);
+  }
+
+  /** Opens the editor of a field (closing, unchanged, the one already open) and moves the focus into it. */
+  protected edit(item: FormItem, event?: Event): void {
+    event?.preventDefault();
+    if (this.busy()) return;
+    const open = this.items().find((i) => i.key === this.editing());
+    if (open) this.restore(open);
+    this.before = this.valueOf(item);
+    this.tried.set(false);
+    this.editing.set(item.key);
+    this.focusAfterRender(this.id + item.key);
+  }
+
+  /** Keys of an open editor: Escape cancels; Enter confirms a single-line field, Ctrl+Enter (or ⌘+Enter) a multi-line one. */
+  protected editorKey(event: KeyboardEvent, item: FormItem): void {
+    if (event.key === 'Escape') {
+      // With its list of options or its calendar open, Escape closes only that.
+      const target = event.target instanceof Element ? event.target : null;
+      if (target?.closest('.ant-select-open') || ((item.field.type === 'date' || item.field.type === 'datetime') && target?.ownerDocument.querySelector('.ant-picker-dropdown'))) return;
+      event.preventDefault();
+      event.stopPropagation();
+      this.cancel(item);
+      return;
+    }
+    if (event.key !== 'Enter' || event.defaultPrevented) return;
+    // A single line confirms with Enter only from its text box: in a list of options Enter chooses.
+    const textBox = event.target instanceof HTMLInputElement && (item.field.type === 'text' || item.field.type === 'number');
+    if (isMultiLine(item.field) ? event.ctrlKey || event.metaKey : textBox) {
+      event.preventDefault();
+      // A text box applies its transform when it changes: done before saving.
+      if (event.target instanceof HTMLInputElement) event.target.dispatchEvent(new Event('change'));
+      void this.save(item);
+    }
+  }
+
+  protected cancel(item: FormItem): void {
+    if (this.busy()) return;
+    this.restore(item);
+    this.focusAfterRender(this.id + item.key + '-view');
+  }
+
+  /** Puts back the value the field had when it was opened and closes its editor. */
+  private restore(item: FormItem): void {
+    this.values.update((current) => withItemValue(current, item, this.node().fieldsFrom?.into, this.before));
+    if (item.key in this.serverErrors()) this.serverErrors.update(({ [item.key]: _, ...rest }) => rest);
+    this.tried.set(false);
+    this.editing.set(null);
+  }
+
+  /** Confirms an inline field: its checks, then `onSave` with `field` and `value`; the editor closes if they succeed. */
+  protected async save(item: FormItem): Promise<void> {
+    if (this.busy() || this.editing() !== item.key) return;
+    const into = this.node().fieldsFrom?.into;
+    this.tried.set(true);
+    this.serverErrors.set({});
+    this.values.update((values) => {
+      const value = itemValue(values, item, into);
+      return value === undefined ? values : withItemValue(values, item, into, transformValue(item.field, value));
+    });
+    this.busy.set(true);
+    try {
+      let check = this.check(item);
+      for (let round = 0; round < 3 && check.pending; round++) {
+        await this.remote().settle();
+        check = this.check(item);
+      }
+      if (check.error !== null || check.pending) return;
+      const value = this.valueOf(item);
+      const steps = this.node().onSave;
+      if (steps?.length && !sameValue(value, this.before)) {
+        const ok = await runSteps(this.runtime(), steps, { ...this.fieldScope(), field: item.key, value }, { onFieldErrors: (errors) => this.placeServerErrors(errors) });
+        if (!ok) return;
+      }
+      this.tried.set(false);
+      this.editing.set(null);
+      this.focusAfterRender(this.id + item.key + '-view');
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  private focusAfterRender(id: string): void {
+    afterNextRender(() => this.host.querySelector<HTMLElement>(`[id="${CSS.escape(id)}"]`)?.focus(), { injector: this.injector });
   }
 
   protected async run(action: ActionDefinition): Promise<void> {

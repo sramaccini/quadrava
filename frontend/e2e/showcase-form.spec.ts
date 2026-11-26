@@ -19,4 +19,31 @@ test.describe('Showcase: forms', () => {
     expect(right).toBeLessThanOrEqual(375);
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
   });
+
+  test('inline form: from the keyboard a field opens, Escape closes its list before the editor, Enter saves', async ({ page }) => {
+    await page.goto('/showcase/showcase-form');
+    const form = page.locator('[data-node-id="inline-form"]');
+    const priority = form.getByRole('button', { name: /^Priority/ });
+    await expect(priority).toHaveText('High');
+    await priority.focus();
+    await page.keyboard.press('Enter');
+    const select = form.getByRole('combobox');
+    await expect(select).toBeFocused();
+    await page.keyboard.press('ArrowDown');
+    await expect(page.locator('nz-option-item').first()).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('nz-option-item')).toHaveCount(0);
+    await expect(select).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(priority).toBeFocused();
+
+    const summary = form.getByRole('button', { name: /^Summary/ });
+    await summary.click();
+    const input = form.getByRole('textbox');
+    await expect(input).toBeFocused();
+    await input.fill('Login fails with SSO');
+    await page.keyboard.press('Enter');
+    await expect(summary).toHaveText('Login fails with SSO');
+    await expect(summary).toBeFocused();
+  });
 });

@@ -12,6 +12,12 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Added
+
+- Inline editing in the form (`edit: "inline"`): the values as text, one field at a time opened with a click, Enter or
+  Space, confirmed with ✓ / Enter or Save / Ctrl+Enter and cancelled with ✕ / Cancel / Escape; `onSave` runs with
+  `field` and `value` after the checks of the field. Fields get `display: "heading"` and `emptyText`.
+
 ## [0.26.0] - 2026-11-26
 
 ### Added

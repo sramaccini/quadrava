@@ -29,7 +29,7 @@ Rules common to all components, new ones included:
 | `table` | Table with server-side paging, cell formats, sorting, selection and bulk actions, action menu, expandable rows, clickable cells and totals. |
 | `dataTable` | Data table with filters, sorting and grouping in the page (§ 2.18). |
 | `serverDataTable` | The same data table, but filters, sorting, groups, totals and pages are computed by the service (§ 2.19). |
-| `form` | Form with validation, conditional fields, column grid, fields from a data source (§ 2.31) and actions. |
+| `form` | Form with validation, conditional fields, column grid, fields from a data source (§ 2.31) and actions; with `edit: "inline"` each field is changed on its own, click to edit (§ 2.36). |
 | `tabs` | Tabs, each with its own nodes. |
 | `detail` | Read-only detail card (label and value; a `format: markdown` field is shown formatted). |
 | `alert` | In-page message (info, success, error), also formatted (`format: markdown`). |
@@ -1045,6 +1045,51 @@ The toolbar zooms from 50% to 200% and switches the names of the connections on 
 and dark themes. Screen readers do not read the drawing: they get the nodes (with «current» and «start») and the
 connections («To do → In progress: Start») as two lists. The workflow window of the showcase «Tasks and progress»
 shows the statuses of the tasks with the current one outlined.
+
+### 2.36 Inline editing in the form
+
+Like the summary and the description of a work item: the form shows its values as text and each field is changed on its
+own. With `edit: "inline"` there are no input boxes until the user opens one field, and every confirmation saves only
+that field with the steps of `onSave`, which see its name in `field` and its new value in `value`.
+
+```json
+{ "type": "form", "source": "workItem", "edit": "inline",
+  "fields": [
+    { "name": "summary", "type": "text", "label": "Summary", "display": "heading", "required": true, "maxLength": 120 },
+    { "name": "description", "type": "richtext", "label": "Description", "emptyText": "Add a description…" },
+    { "name": "key", "type": "text", "label": "Key", "readOnlyIf": "{{ true }}" }
+  ],
+  "onSave": [{ "call": "patchWorkItem" }, { "refresh": "workItem" }] }
+```
+
+with the call sending only the field that changed: `"body": "{{ {field: value} }}"` and `"method": "PATCH"`.
+
+```
+  Summary (heading)               opened with a click, Enter or Space
+  Login fails after the change    ┌──────────────────────────────┐
+                                  │ Login fails with SSO         │
+  Description                     └──────────────────────────────┘
+  Add a description…                                       [✓] [✕]
+```
+
+- **Reading.** Each value is text: options by their label, dates in the format of the language, lists separated by
+  commas, `richtext` as formatted text. `display: "heading"` makes a text field a large title (its label stays for
+  screen readers only). An empty value shows `emptyText` («Click to add» if absent) in a quiet colour.
+- **Opening.** A click, or Enter or Space on the focused value, opens the editor of that field only, with the focus in
+  it. Opening another field closes the first one without saving it. A field with `readOnlyIf` true is only text: no
+  button, no focus.
+- **Confirming.** Single-line fields (`text`, `number`, `select`, `radio`, `multiselect`, `tags`, `date`,
+  `datetime`) have two small buttons on the right, ✓ and ✕; Enter in the text box confirms. `textarea` and
+  `richtext` have Save and Cancel under them; Ctrl+Enter (⌘+Enter) saves. Escape cancels, after closing a list of
+  options or a calendar that is open.
+- **Checks and errors.** Confirming checks the field with its rules (`required`, `maxLength`, `validation`…): an
+  error keeps the editor open with the message. Then `onSave` runs; if a step fails the editor stays open with what
+  the user typed, and the field errors of the service (`/summary`) go under the field. A value that did not change
+  closes the editor without running the steps. Cancel puts back the value the field had.
+- **Other types.** `checkbox`, `switch`, `file`, `lookup`, `password` and `repeater` fields are drawn as in a
+  normal form; the `actions` of the form, if any, stay under the fields.
+
+The showcase «Forms» has a work item in the section «Inline editing».
 
 ## 3. Implementation notes and known limits
 
