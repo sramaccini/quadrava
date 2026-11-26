@@ -350,6 +350,8 @@ export interface TextNode extends NodeBase {
 }
 /** How a button looks: `display` icon alone (with `icon`), a `count` next to it, a `pressed` state. */
 export interface ButtonFaceProps {
+  /** A tone or an expression that gives one: the colour of the button, or of its pressed state on a toggle. */
+  tone?: string;
   display?: 'label' | 'icon';
   count?: string;
   pressed?: Expression;
@@ -396,8 +398,6 @@ export type MenuItemDefinition = MenuActionItem | MenuSourceItems | MenuDivider;
 export interface MenuButtonNode extends NodeBase, ButtonFaceProps {
   type: 'menuButton';
   label: string;
-  /** A tone or an expression that gives one (neutral if absent or for any other value). */
-  tone?: string;
   icon?: string;
   items: MenuItemDefinition[];
 }

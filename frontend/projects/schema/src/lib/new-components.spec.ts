@@ -33,6 +33,10 @@ describe('schema of the new components', () => {
       expect(issuesOf(one({ type: 'menuButton', label: 'More', icon: 'more', display: 'icon', items: [{ label: 'Delete', tone: 'danger', onClick: [{ toast: 'x' }] }] }))).toEqual([]);
       expect(issuesOf(one({ type: 'button', label: 'Save', display: 'label', onClick: [{ toast: 'x' }] }))).toEqual([]);
     });
+    it('accept a tone, a value or an expression, on a button', () => {
+      expect(issuesOf(one({ type: 'button', label: 'Flag', icon: 'flag', display: 'icon', tone: 'danger', pressed: '{{ true }}', onClick: [{ toast: 'x' }] }))).toEqual([]);
+      expect(issuesOf(one({ type: 'button', label: 'Vote', icon: 'like', tone: "{{ 'primary' }}", onClick: [{ toast: 'x' }] }))).toEqual([]);
+    });
     it('refuse display icon without an icon, an unknown display and a pressed state that is not an expression', () => {
       expect(issuesOf(one({ type: 'button', label: 'Save', display: 'icon', onClick: [{ toast: 'x' }] })).length).toBeGreaterThan(0);
       expect(issuesOf(one({ type: 'menuButton', label: 'More', display: 'icon', items: [{ label: 'A', onClick: [{ toast: 'x' }] }] })).length).toBeGreaterThan(0);

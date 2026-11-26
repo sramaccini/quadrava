@@ -872,7 +872,8 @@ actions at the top of an item:
 | --- | --- |
 | `display: "icon"` | Only the icon (`icon` is then required: the schema and `quadrava validate` refuse it without). The `label` stays required: it becomes the name read by screen readers and the tooltip. A `menuButton` shown as an icon has no arrow (the «…» button, icon `more`). |
 | `count` | A number next to the icon or the text, usually an expression (`{{ size(data.watchers) }}`); screen readers hear it after the text («Watchers: 2»). Nothing is shown when it is empty or not a number. |
-| `pressed` | An expression: while it is true the button is highlighted with the primary colour and announced as pressed (`aria-pressed`). An expression in error is not pressed. |
+| `pressed` | An expression: while it is true the button is highlighted with the colour of `tone` (primary if absent) and announced as pressed (`aria-pressed`); an icon with a filled form (`flag`, `like`) is drawn filled. An expression in error is not pressed. |
+| `tone` | `neutral`, `primary`, `success` or `danger`, or an expression that gives one. On a toggle it is the colour of the pressed state: `danger` for a flag. On a button that is not a toggle it fills the button, as on a `menuButton`. |
 
 ```json
 { "type": "menuButton", "label": "Watchers", "icon": "eye", "display": "icon",
@@ -883,8 +884,18 @@ actions at the top of an item:
 An icon button and a toggle have the default look; a `button` with text and no `pressed` stays primary. A fixed item of
 a `menuButton` can take `tone: "danger"` for an action that removes something (Delete): its text is red.
 
+A flag, as in the issue trackers: «Add flag» in the «…» menu, and a red pressed button while the item is flagged (a
+click removes the flag); the thumb counts the votes:
+
+```json
+{ "type": "button", "label": "Remove the flag", "icon": "flag", "display": "icon", "tone": "danger",
+  "pressed": "{{ data.issue.flagged }}", "visibleIf": "{{ data.issue.flagged }}", "onClick": [{ "call": "unflag" }] },
+{ "type": "button", "label": "Votes", "icon": "like", "display": "icon", "count": "{{ data.issue.votes }}",
+  "pressed": "{{ data.issue.voted }}", "onClick": [{ "call": "toggleVote" }] }
+```
+
 The names are those of the built-in set, the same as in the navigation; an unknown name shows no icon. For the actions:
-`save`, `edit`, `delete`, `plus`, `check`, `close`, `link`, `eye`, `eye-invisible`, `user-add`, `back`, `move`,
+`save`, `edit`, `delete`, `plus`, `check`, `close`, `link`, `eye`, `eye-invisible`, `flag`, `like`, `user-add`, `back`, `move`,
 `play`, `reload`, `download`, `upload`, `external`, `copy`, `search`, `filter`, `settings`. The showcases «Tables»,
 «Forms» and «Containers» have examples.
 

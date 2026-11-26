@@ -7,10 +7,10 @@ import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import type { MenuButtonNode, Tone } from 'schema';
 import { BusyComponent } from './busy.component';
-import { buttonFace } from './button-face';
+import { PRESSED_COLORS, buttonFace } from './button-face';
 import { TONE_COLORS, TONE_TEXT } from './display.component';
 import { IconComponent } from './icon.component';
-import { menuEntries, toneOf, type MenuEntry } from './menu-entries';
+import { menuEntries, type MenuEntry } from './menu-entries';
 
 /**
  * A button that opens a menu: fixed items, items made from the rows of a data source (with a coloured label) and
@@ -35,7 +35,7 @@ import { menuEntries, toneOf, type MenuEntry } from './menu-entries';
     .icon-only { min-width: 32px; padding-inline: 8px; }
     .count { margin-inline: 0 6px; font-variant-numeric: tabular-nums; }
     .icon-only .count { margin-inline: 4px 0; }
-    .pressed, .pressed:hover, .pressed:focus { color: var(--lc-color-primary); border-color: var(--lc-color-primary); background: color-mix(in srgb, var(--lc-color-primary) 14%, transparent); }
+    .pressed, .pressed:hover, .pressed:focus { color: var(--lc-pressed); border-color: var(--lc-pressed); background: color-mix(in srgb, var(--lc-pressed) 14%, transparent); }
     li.danger { color: var(--lc-text-error); }
     .icon-only lc-icon.lead { margin-inline-end: 0; }
     lc-icon.lead { margin-inline-end: 8px; }
@@ -54,8 +54,9 @@ import { menuEntries, toneOf, type MenuEntry } from './menu-entries';
       nzTrigger="click"
       nzPlacement="bottomLeft"
       [nzDropdownMenu]="menu"
-      [nzType]="tone() === 'primary' ? 'primary' : 'default'"
-      [class.toned]="tone() === 'success' || tone() === 'danger'"
+      [nzType]="face().pressed === null && tone() === 'primary' ? 'primary' : 'default'"
+      [class.toned]="face().pressed === null && (tone() === 'success' || tone() === 'danger')"
+      [style.--lc-pressed]="face().pressed === null ? null : pressedColor()"
       [style.--lc-menu-tone]="toneColor()"
       [style.--lc-menu-on-tone]="toneText()"
       [nzLoading]="busy()"
@@ -71,7 +72,7 @@ import { menuEntries, toneOf, type MenuEntry } from './menu-entries';
       (nzVisibleChange)="visible($event)"
     >
       @if (node().icon && !busy()) {
-        <lc-icon class="lead" [name]="node().icon" />
+        <lc-icon class="lead" [name]="node().icon" [filled]="face().pressed === true" />
       }
       @if (!face().iconOnly) {
         <span class="label">{{ face().text }}</span>
@@ -129,7 +130,9 @@ export class MenuButtonComponent {
     const format = new Intl.NumberFormat(this.i18n.intlLocale());
     return buttonFace(this.node(), this.runtime(), this.scope(), (n) => format.format(n));
   });
-  protected readonly tone = computed(() => toneOf(this.node().tone === undefined ? undefined : this.runtime().text(this.node().tone, this.scope())));
+  protected readonly tone = computed(() => this.face().tone ?? 'neutral');
+  /** On a toggle the tone colours the pressed state (primary when it has none) instead of filling the button. */
+  protected readonly pressedColor = computed(() => PRESSED_COLORS[this.face().tone ?? 'primary']);
   protected readonly toneColor = computed(() => TONE_COLORS[this.tone()]);
   protected readonly toneText = computed(() => TONE_TEXT[this.tone()]);
 

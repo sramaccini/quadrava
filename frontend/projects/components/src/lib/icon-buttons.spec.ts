@@ -10,10 +10,14 @@ describe('button face', () => {
 
   it('icon only needs an icon; the count goes after the text in the name; a toggle is pressed or not', () => {
     expect(buttonFace({ label: 'Watchers', icon: 'eye', display: 'icon', count: '{{ n }}', pressed: '{{ true }}' }, runtime, {})).toEqual({
-      text: 'Watchers', count: '2', name: 'Watchers: 2', iconOnly: true, pressed: true,
+      text: 'Watchers', count: '2', name: 'Watchers: 2', iconOnly: true, pressed: true, tone: null,
     });
     expect(buttonFace({ label: 'More', display: 'icon' }, runtime, {})).toMatchObject({ iconOnly: false, pressed: null, count: null, name: 'More' });
     expect(buttonFace({ label: 'Watch', pressed: '{{ oops }}' }, runtime, {}).pressed).toBe(false);
+  });
+
+  it('a tone is resolved; any other value is neutral, none is null', () => {
+    expect(['danger', 'success', 'red', undefined].map((tone) => buttonFace({ label: 'A', tone }, runtime, {}).tone)).toEqual(['danger', 'success', 'neutral', null]);
   });
 
   it('a count that is empty, failed or not a number is not shown; numbers are formatted', () => {
@@ -47,6 +51,45 @@ describe('icon buttons, counts and pressed state', () => {
     await h.until(() => button().getAttribute('aria-pressed') === 'true', 'pressed');
     expect(button().classList.contains('pressed')).toBe(true);
     expect(h.reports).toEqual([]);
+  });
+
+  it('a pressed flag takes the colour of its tone and its icon is drawn filled', async () => {
+    const node: NodeDefinition = {
+      type: 'button',
+      label: 'Flag',
+      icon: 'flag',
+      display: 'icon',
+      tone: 'danger',
+      pressed: '{{ has(state.flagged) && state.flagged }}',
+      onClick: [{ set: { path: 'state.flagged', value: true } }],
+    } as NodeDefinition;
+    const h = await renderScreen({ components: [node] });
+    const button = (): HTMLButtonElement => h.el.querySelector('lc-button button')!;
+    const svg = (): string => button().querySelector('.anticon-flag svg')?.innerHTML ?? '';
+    const outline = svg();
+    expect(outline).not.toBe('');
+    expect(button().classList.contains('toned')).toBe(false);
+    expect(button().style.getPropertyValue('--lc-pressed')).toContain('--lc-text-error');
+    button().click();
+    await h.until(() => button().getAttribute('aria-pressed') === 'true', 'pressed');
+    await h.until(() => svg() !== '' && svg() !== outline, 'filled icon');
+    expect(h.reports).toEqual([]);
+  });
+
+  it('a tone fills a button that is not a toggle; an icon button without a tone is neutral', async () => {
+    const h = await renderScreen({
+      components: [
+        { type: 'button', label: 'Delete', icon: 'delete', tone: 'danger', onClick: [{ toast: 'x' }] },
+        { type: 'button', label: 'Like', icon: 'like', display: 'icon', onClick: [{ toast: 'x' }] },
+      ],
+    });
+    const [del, like] = [...h.el.querySelectorAll<HTMLButtonElement>('lc-button button')];
+    expect(del.classList.contains('toned')).toBe(true);
+    expect(del.classList.contains('ant-btn-primary')).toBe(false);
+    expect(del.style.getPropertyValue('--lc-button-tone')).toContain('--lc-color-danger');
+    expect(like.classList.contains('toned')).toBe(false);
+    expect(like.classList.contains('ant-btn-primary')).toBe(false);
+    expect(like.querySelector('.anticon-like')).not.toBeNull();
   });
 
   it('a button with text keeps it, without aria-label or aria-pressed when it is not a toggle', async () => {

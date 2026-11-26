@@ -54,6 +54,10 @@ import {
   ArrowLeftOutline,
   PlayCircleOutline,
   DownloadOutline,
+  FlagFill,
+  FlagOutline,
+  LikeFill,
+  LikeOutline,
 } from '@ant-design/icons-angular/icons';
 import type { IconDefinition } from '@ant-design/icons-angular';
 import { NzIconModule } from 'ng-zorro-antd/icon';
@@ -61,8 +65,9 @@ import { NzIconModule } from 'ng-zorro-antd/icon';
 /**
  * Built-in icon set: name used in the JSON → Ant Design icon. Icons are registered one by one
  * (`provideLcComponents`): an unknown name shows nothing and never causes icons to be loaded from the network.
+ * `filled` is the filled form, drawn for a pressed toggle.
  */
-export const ICON_TYPES: Record<string, { type: string; icon: IconDefinition }> = {
+export const ICON_TYPES: Record<string, { type: string; icon: IconDefinition; filled?: IconDefinition }> = {
   help: { type: 'question-circle', icon: QuestionCircleOutline },
   menu: { type: 'menu', icon: MenuOutline },
   home: { type: 'home', icon: HomeOutline },
@@ -110,6 +115,8 @@ export const ICON_TYPES: Record<string, { type: string; icon: IconDefinition }> 
   back: { type: 'arrow-left', icon: ArrowLeftOutline },
   play: { type: 'play-circle', icon: PlayCircleOutline },
   download: { type: 'download', icon: DownloadOutline },
+  flag: { type: 'flag', icon: FlagOutline, filled: FlagFill },
+  like: { type: 'like', icon: LikeOutline, filled: LikeFill },
   // Show and hide the text of a password field.
   'password-show': { type: 'eye', icon: EyeOutline },
   'password-hide': { type: 'eye-invisible', icon: EyeInvisibleOutline },
@@ -137,11 +144,14 @@ export function iconType(name: string | undefined): string | null {
   styles: `:host { display: inline-flex; width: 1em; flex: none; justify-content: center; }`,
   template: `
     @if (type(); as t) {
-      <span nz-icon [nzType]="t" aria-hidden="true"></span>
+      <span nz-icon [nzType]="t" [nzTheme]="theme()" aria-hidden="true"></span>
     }
   `,
 })
 export class IconComponent {
   readonly name = input<string | undefined>(undefined);
+  /** Draws the filled form, when the icon has one (a pressed toggle). */
+  readonly filled = input(false);
   protected readonly type = computed(() => iconType(this.name()));
+  protected readonly theme = computed(() => (this.filled() && ICON_TYPES[this.name() ?? '']?.filled ? 'fill' : 'outline'));
 }

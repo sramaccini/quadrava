@@ -1427,6 +1427,10 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                 "$ref": "#/$defs/icon",
                 "description": "Icon shown before the text of the button, from the built-in set (for example save, edit, delete, plus); with display icon it is shown alone. An unknown name shows no icon."
               },
+              "tone": {
+                "type": "string",
+                "description": "Colour of the button: neutral, primary, success or danger, or an expression that gives one of them. On a toggle (pressed) it is the colour of the pressed state, for example danger for a flag (primary if absent); otherwise it fills the button (a button with text is primary if absent, an icon button neutral). Any other value is neutral."
+              },
               "display": {
                 "enum": [
                   "label",
@@ -1440,7 +1444,7 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
               },
               "pressed": {
                 "$ref": "#/$defs/expression",
-                "description": "The button is shown as pressed (highlighted, aria-pressed) while the expression is true, for example while the user watches an item. Without it the button is not a toggle."
+                "description": "The button is shown as pressed (highlighted with the colour of tone, aria-pressed) while the expression is true, for example while the user watches an item. Without it the button is not a toggle. A pressed icon is drawn filled when the set has a filled form (flag, like)."
               }
             },
             "allOf": [
@@ -1494,7 +1498,7 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
               },
               "tone": {
                 "type": "string",
-                "description": "Colour of the button: neutral, primary, success or danger, or an expression that gives one of them (for example the category of the current status). Any other value is neutral (neutral if absent)."
+                "description": "Colour of the button: neutral, primary, success or danger, or an expression that gives one of them (for example the category of the current status). On a toggle (pressed) it is the colour of the pressed state (primary if absent). Any other value is neutral (neutral if absent)."
               },
               "icon": {
                 "$ref": "#/$defs/icon",
@@ -1521,7 +1525,7 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
               },
               "pressed": {
                 "$ref": "#/$defs/expression",
-                "description": "The button is shown as pressed (highlighted, aria-pressed) while the expression is true, for example while the user watches an item. Without it the button is not a toggle."
+                "description": "The button is shown as pressed (highlighted with the colour of tone, aria-pressed) while the expression is true, for example while the user watches an item. Without it the button is not a toggle. A pressed icon is drawn filled when the set has a filled form (flag, like)."
               }
             },
             "allOf": [
@@ -5002,7 +5006,7 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
     "icon": {
       "type": "string",
       "pattern": "^[a-z][a-z0-9-]*$",
-      "description": "Name of an icon of the built-in set (for example save, edit, delete, plus). An unknown name shows no icon."
+      "description": "Name of an icon of the built-in set (for example save, edit, delete, plus, flag, like). An unknown name shows no icon."
     },
     "breadcrumbItem": {
       "type": "object",

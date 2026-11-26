@@ -109,7 +109,7 @@ export function provideLcComponents(extra: ComponentCatalog = {}): (Provider | E
     { provide: Confirmation, useExisting: DialogConfirmation },
     { provide: FormDialog, useExisting: DialogForm },
     { provide: ViewDialog, useExisting: DialogView },
-    provideNzIcons(Object.values(ICON_TYPES).map((i) => i.icon)),
+    provideNzIcons(Object.values(ICON_TYPES).flatMap((i) => (i.filled ? [i.icon, i.filled] : [i.icon]))),
     provideNzI18n(ENGLISH),
     provideNzDateFnsAdapter(),
     importProvidersFrom(NzModalModule),

@@ -12,6 +12,12 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Added
+
+- Icons `flag` and `like` in the built-in set, with a filled form drawn while a toggle is pressed.
+- `button` takes `tone`, as `menuButton`: on a toggle it is the colour of the pressed state (`danger` for a red flag),
+  otherwise it fills the button. On a `menuButton` toggle the tone colours the pressed state too.
+
 ### Changed
 
 - `components` accepts `@ant-design/colors` 8 besides 7 as a peer dependency: the palettes of the theme bridge are the
