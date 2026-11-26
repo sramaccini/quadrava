@@ -42,7 +42,7 @@ services:
       - runtime
 
   oauth2-proxy:
-    image: quay.io/oauth2-proxy/oauth2-proxy:v7.15.2
+    image: quay.io/oauth2-proxy/oauth2-proxy:v7.15.6
     # Same network namespace as nginx: localhost:8180 is the relay to Keycloak, 127.0.0.1:4180 is reached by nginx only.
     network_mode: service:nginx
     environment:
