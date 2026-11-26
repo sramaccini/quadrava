@@ -27,7 +27,8 @@ test.describe('Showcase: forms', () => {
     await expect(priority).toHaveText('High');
     await priority.focus();
     await page.keyboard.press('Enter');
-    const select = form.getByRole('combobox');
+    // The search input of the select has no role of its own: it is found by its label.
+    const select = form.getByLabel('Priority', { exact: true });
     await expect(select).toBeFocused();
     await page.keyboard.press('ArrowDown');
     await expect(page.locator('nz-option-item').first()).toBeVisible();
