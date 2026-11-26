@@ -107,8 +107,10 @@ jobs:
       - name: SBOM
         working-directory: frontend
         # All the dependencies of the workspace in CycloneDX; the build tools carry the property
-        # cdx:npm:package:development. Not --omit=dev: npm 11 then leaves out @angular/core, rxjs and tslib.
-        run: npm sbom --sbom-format cyclonedx > "$RUNNER_TEMP/quadrava-${GITHUB_REF_NAME#v}.cdx.json"
+        # cdx:npm:package:development. Not --omit=dev: npm 11 then leaves out @angular/core, rxjs and tslib. From the lockfile
+        # (what npm ci installs): the installed tree can hold an optional peer in another version (chokidar 5 of sass
+        # against the ^6 of @angular-devkit/core), which npm sbom refuses. CI runs the same command.
+        run: npm sbom --sbom-format cyclonedx --package-lock-only > "$RUNNER_TEMP/quadrava-${GITHUB_REF_NAME#v}.cdx.json"
       - name: GitHub release
         env:
           GH_TOKEN: ${{ github.token }}

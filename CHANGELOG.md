@@ -12,6 +12,12 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Fixed
+
+- The release writes its SBOM from the lockfile (`npm sbom --package-lock-only`), and CI checks that it can: with Angular
+  22.3 the installed tree holds chokidar 5 (of sass) against the optional ^6 of `@angular-devkit/core`, which `npm sbom`
+  refuses. Because of it 0.25.0 has its runtime image and packages but no GitHub release (notes, web build, SBOM).
+
 ## [0.25.0] - 2026-11-26
 
 ### Added
