@@ -38,7 +38,7 @@ test.describe('Showcase: forms', () => {
     await page.keyboard.press('Escape');
     await expect(priority).toBeFocused();
 
-    const summary = form.getByRole('button', { name: /^Summary/ });
+    const summary = form.getByRole('button', { name: /Summary/ });
     await summary.click();
     const input = form.getByRole('textbox');
     await expect(input).toBeFocused();
