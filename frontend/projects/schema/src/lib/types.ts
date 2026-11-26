@@ -346,6 +346,44 @@ export interface ButtonNode extends NodeBase {
   icon?: string;
   onClick: Step[];
 }
+/** A fixed item of the menu of a `menuButton`. */
+export interface MenuActionItem {
+  id?: string;
+  label: string;
+  icon?: string;
+  visibleIf?: string;
+  enabledIf?: string;
+  onClick: Step[];
+}
+/** The items of a menu made from the rows of a data source: their steps and expressions see the row as `item`. */
+export interface MenuSourceItems {
+  source: string;
+  labelField: string;
+  /** Field that identifies the row (`id` if absent). */
+  keyField?: string;
+  /** Field shown as a coloured label after the text. */
+  badgeField?: string;
+  /** Field whose value picks the colour in `tones` (`badgeField` if absent). */
+  toneField?: string;
+  tones?: Record<string, Tone>;
+  /** Prefix of the translation keys of the label (prefix.value). */
+  valueKey?: string;
+  enabledIf?: string;
+  onClick: Step[];
+}
+export interface MenuDivider {
+  divider: true;
+}
+export type MenuItemDefinition = MenuActionItem | MenuSourceItems | MenuDivider;
+/** A button that opens a menu of items, each with its own steps (for example the statuses an issue can move to). */
+export interface MenuButtonNode extends NodeBase {
+  type: 'menuButton';
+  label: string;
+  /** A tone or an expression that gives one (neutral if absent or for any other value). */
+  tone?: string;
+  icon?: string;
+  items: MenuItemDefinition[];
+}
 export interface FilterBarNode extends NodeBase {
   type: 'filterBar';
   bind: string;
@@ -736,7 +774,7 @@ export interface InputNode extends NodeBase {
   errorPath?: string;
 }
 
-export type NodeDefinition = SectionNode | TextNode | ButtonNode | FilterBarNode | TableNode | FormNode | TabsNode | DetailNode | AlertNode | StatsNode | WizardNode | TreeNode | CalendarNode | ChartNode | SquareChartNode | DataTableNode | ServerDataTableNode | InputNode | BoxNode | GridNode | BorderNode | ImageNode | LinkNode | ProgressNode | TimelineNode | KanbanNode | CommentsNode;
+export type NodeDefinition = SectionNode | TextNode | ButtonNode | MenuButtonNode | FilterBarNode | TableNode | FormNode | TabsNode | DetailNode | AlertNode | StatsNode | WizardNode | TreeNode | CalendarNode | ChartNode | SquareChartNode | DataTableNode | ServerDataTableNode | InputNode | BoxNode | GridNode | BorderNode | ImageNode | LinkNode | ProgressNode | TimelineNode | KanbanNode | CommentsNode;
 export type NodeType = NodeDefinition['type'];
 
 /** Item of the path above the title of a screen: a link when it has `navigate`. */

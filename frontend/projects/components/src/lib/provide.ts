@@ -9,6 +9,7 @@ import { NzModalModule } from 'ng-zorro-antd/modal';
 import { BUILTIN_MESSAGES } from './messages';
 import { AlertComponent } from './alert.component';
 import { ButtonComponent } from './button.component';
+import { MenuButtonComponent } from './menu-button.component';
 import { DetailComponent } from './detail.component';
 import { DialogConfirmation } from './dialog-confirmation';
 import { DialogForm } from './dialog-form';
@@ -66,6 +67,7 @@ export const STANDARD_COMPONENTS: ComponentCatalog = {
   section: SectionComponent,
   text: TextComponent,
   button: ButtonComponent,
+  menuButton: MenuButtonComponent,
   filterBar: FilterBarComponent,
   table: TableComponent,
   form: FormComponent,

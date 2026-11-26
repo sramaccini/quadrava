@@ -11,6 +11,12 @@
     "statuses": {
       "ref": "showcase-tasks/statuses"
     },
+    "task": {
+      "ref": "showcase-tasks/task"
+    },
+    "taskMoves": {
+      "ref": "showcase-tasks/taskMoves"
+    },
     "moveTask": {
       "ref": "showcase-tasks/moveTask"
     },
@@ -272,6 +278,78 @@
             }
           ],
           "lanes": "{{ state.groupBy == 'priority' ? [{'value': 'high', 'label': t('values.priority.high', 'High')}, {'value': 'normal', 'label': t('values.priority.normal', 'Normal')}, {'value': 'low', 'label': t('values.priority.low', 'Low')}] : [] }}"
+        }
+      ]
+    },
+    {
+      "id": "section-status",
+      "type": "section",
+      "title": "{{ t('showcase_tasks.status_title', 'Status of a task: menu button') }}",
+      "components": [
+        {
+          "id": "status-explain",
+          "type": "text",
+          "text": "{{ t('showcase_tasks.status_explain', 'The button shows the status of “{title}”. Its menu lists the transitions the task can take, from a data source, each with the status it leads to.', {'title': has(data.task) ? data.task.title : ''}) }}"
+        },
+        {
+          "id": "task-status",
+          "type": "menuButton",
+          "label": "{{ !has(data.task) ? '…' : data.task.status == 'done' ? t('values.taskStatus.done', 'Done') : data.task.status == 'in-progress' ? t('values.taskStatus.in-progress', 'In progress') : t('values.taskStatus.to-do', 'To do') }}",
+          "tone": "{{ has(data.task) ? data.task.tone : 'neutral' }}",
+          "items": [
+            {
+              "source": "taskMoves",
+              "labelField": "name",
+              "badgeField": "to",
+              "toneField": "category",
+              "tones": {
+                "new": "neutral",
+                "indeterminate": "primary",
+                "done": "success"
+              },
+              "valueKey": "values.taskStatus",
+              "enabledIf": "{{ can('showcase.components.read') }}",
+              "onClick": [
+                {
+                  "call": "moveTask",
+                  "args": {
+                    "id": 1,
+                    "status": "{{ item.to }}",
+                    "beforeId": null,
+                    "afterId": null
+                  },
+                  "onError": {
+                    "toast": "{{ t('showcase_tasks.move_failed', 'Move failed') }}"
+                  }
+                },
+                {
+                  "refresh": "task"
+                },
+                {
+                  "refresh": "taskMoves"
+                },
+                {
+                  "refresh": "tasks"
+                },
+                {
+                  "toast": "{{ t('showcase_tasks.status_moved', '“{transition}” done', {'transition': item.name}) }}"
+                }
+              ]
+            },
+            {
+              "divider": true
+            },
+            {
+              "id": "status-board",
+              "label": "{{ t('showcase_tasks.status_board', 'Show it on the board') }}",
+              "icon": "eye",
+              "onClick": [
+                {
+                  "toast": "{{ t('showcase_tasks.status_board_toast', 'It is the first card of the board above') }}"
+                }
+              ]
+            }
+          ]
         }
       ]
     },

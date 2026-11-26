@@ -42,6 +42,15 @@
 | `onClick` * | list of step | Steps run on click, in order (call, set, navigate, refresh…). The button stays busy until they finish. |
 | `icon` | icon | Icon shown before the text of the button, from the built-in set (for example save, edit, delete, plus); the text stays. An unknown name shows no icon. |
 
+### `menuButton`
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `label` * | text | Text of the button, for example the current status; it can contain {{ }}. |
+| `tone` | text | Colour of the button: neutral, primary, success or danger, or an expression that gives one of them (for example the category of the current status). Any other value is neutral (neutral if absent). |
+| `icon` | icon | Icon shown before the text of the button, from the built-in set; the text stays. An unknown name shows no icon. |
+| `items` * | list of menuItem | Entries of the menu opened by the button, in order: fixed items, items from a data source and dividers. With no item to show, the menu says there is nothing to choose. |
+
 ### `filterBar`
 
 | Property | Type | Description |

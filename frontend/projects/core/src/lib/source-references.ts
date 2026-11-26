@@ -12,8 +12,9 @@ const NAMED = new Set(['call', 'download', 'refresh', 'remote']);
 
 /**
  * Every place where a screen names one of its data sources: the `source` of the components, of the nested parts that
- * read data (`lookup`, `suggest`, `columnsFrom`, `fieldsFrom`, `mentions`, `export`), the `call`, `download` and `refresh` steps,
- * the `remote` rules and the `upload` of file fields. Used by Studio and by `quadrava validate`; it runs nothing.
+ * read data (`lookup`, `suggest`, `columnsFrom`, `fieldsFrom`, `mentions`, `export`), the items of a menu button, the `call`,
+ * `download` and `refresh` steps, the `remote` rules and the `upload` of file fields. Used by Studio and by
+ * `quadrava validate`; it runs nothing.
  */
 export function sourceReferences(screen: unknown): SourceReference[] {
   const found: SourceReference[] = [];
@@ -26,6 +27,13 @@ export function sourceReferences(screen: unknown): SourceReference[] {
     }
     for (const name of NAMED) if (typeof node[name] === 'string') found.push({ path: [...path, name], name: node[name] as string });
     if (node['type'] === 'file' && typeof node['upload'] === 'string') found.push({ path: [...path, 'upload'], name: node['upload'] });
+    // The items of a menu made from the rows of a data source.
+    if (node['type'] === 'menuButton' && Array.isArray(node['items'])) {
+      node['items'].forEach((item: unknown, i) => {
+        const source = item !== null && typeof item === 'object' ? (item as Record<string, unknown>)['source'] : undefined;
+        if (typeof source === 'string') found.push({ path: [...path, 'items', i, 'source'], name: source });
+      });
+    }
     for (const [k, child] of Object.entries(node)) {
       // The data sources themselves are not references; a screen has them only at the top.
       if (k === 'dataSources' && path.length === 0) continue;

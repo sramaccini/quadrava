@@ -90,6 +90,16 @@
       "type": "rest",
       "method": "POST",
       "url": "/api/tasks/colleague"
+    },
+    "task": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/tasks/1"
+    },
+    "taskMoves": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/tasks/1/transitions"
     }
   }
 }

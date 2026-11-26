@@ -32,6 +32,21 @@ function sortBy<T extends object>(rows: T[], query: DataRequest['query']): T[] {
 const CUSTOMERS = ['Smith Ltd', 'Baker Inc', 'Walker & Co.', 'Nolan Group'];
 const MONTHS = ['July', 'August', 'September', 'October'];
 
+/** The statuses of the tasks, with the category of each (as an issue tracker groups them) and its tone. */
+const TASK_STATUSES = [
+  { id: 'to-do', name: 'To do', tone: 'neutral', category: 'new' },
+  { id: 'in-progress', name: 'In progress', tone: 'primary', category: 'indeterminate', wip: 3 },
+  { id: 'done', name: 'Done', tone: 'success', category: 'done' },
+];
+/** The transitions of the workflow of the tasks; `from: null` is allowed from any status. */
+const TASK_TRANSITIONS: { id: string; name: string; from: string | null; to: string }[] = [
+  { id: 'start', name: 'Start', from: 'to-do', to: 'in-progress' },
+  { id: 'finish', name: 'Finish', from: 'in-progress', to: 'done' },
+  { id: 'pause', name: 'Pause', from: 'in-progress', to: 'to-do' },
+  { id: 'reopen', name: 'Reopen', from: 'done', to: 'in-progress' },
+  { id: 'reset', name: 'Back to the start', from: null, to: 'to-do' },
+];
+
 /**
  * In-memory back end of the demo: same shape as the REST responses the catalogue expects (items/total/size, _perm).
  * It does not depend on Angular: the browser uses it (MockDataClient, demo without services) and so does the sample
@@ -477,6 +492,21 @@ export class DemoBackend {
         this.emit('/api/streams/tasks', 'tasks.changed');
       }, 1200);
       return {};
+    }
+    // The workflow of the tasks as a graph: statuses and the transitions between them; a transition without from is
+    // allowed from any status.
+    if (path === '/api/task-workflow' && req.method === 'GET') return { statuses: TASK_STATUSES.map((s) => ({ ...s })), transitions: TASK_TRANSITIONS.map((t) => ({ ...t })) };
+    const oneTask = /^\/api\/tasks\/(\d+)(\/transitions)?$/.exec(path);
+    if (oneTask && req.method === 'GET') {
+      const task = this.tasks.find((t) => t.id === Number(oneTask[1]));
+      if (!task) throw new Error('404');
+      const status = TASK_STATUSES.find((s) => s.id === task.status);
+      if (!oneTask[2]) return { ...task, statusName: status?.name ?? task.status, tone: status?.tone ?? 'neutral' };
+      // The transitions the task can take from its status, with the status they lead to.
+      return TASK_TRANSITIONS.filter((t) => (t.from === task.status || t.from === null) && t.to !== task.status).map((t) => {
+        const to = TASK_STATUSES.find((s) => s.id === t.to);
+        return { ...t, toName: to?.name ?? t.to, category: to?.category ?? 'new' };
+      });
     }
     const move = /^\/api\/tasks\/(\d+)\/move$/.exec(path);
     if (move && req.method === 'POST') {

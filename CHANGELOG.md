@@ -16,6 +16,9 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 - Every release carries the SBOM of the workspace in CycloneDX (`quadrava-x.y.z.cdx.json`), and the runtime image its
   SBOM and provenance as attestations.
+- New component `menuButton`: a button that opens a menu of fixed items, items made from the rows of a data source
+  (with a coloured badge, the steps see the row as `item`) and dividers; its label and tone are expressions. Studio
+  needs its template and palette entry.
 
 - `filterBar`: remote rules (`{ "remote": "<data source>" }`) work in its fields as in forms: pause without typing,
   spinner, a newer value cancels the request, answers kept per value, translated message. The value reaches the state,

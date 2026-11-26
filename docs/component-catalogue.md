@@ -24,6 +24,7 @@ Rules common to all components, new ones included:
 | `comments` | Thread of comments in Markdown with a box for writing and @mentions (§ 2.30). |
 | `text` | Plain text (with line breaks), heading (`style: heading`) or formatted text (`format: markdown`, § 2.26). |
 | `button` | Button that runs a sequence of steps (`onClick`). |
+| `menuButton` | Button that opens a menu of fixed items, items from a data source and dividers; label and tone are expressions (§ 2.34). |
 | `filterBar` | Filter bar that writes to the screen state (`bind`). |
 | `table` | Table with server-side paging, cell formats, sorting, selection and bulk actions, action menu, expandable rows, clickable cells and totals. |
 | `dataTable` | Data table with filters, sorting and grouping in the page (§ 2.18). |
@@ -868,6 +869,42 @@ marked as the current page. An item with `navigate` opens its screen as the navi
 the screen is there); a click with Ctrl, Cmd or Shift opens it in a new tab. A label that reads a data source uses
 `has()`, so it stays empty while the data loads instead of failing. `quadrava validate` checks that the screens of
 `navigate` exist. The order detail of the examples has a path back to the list of orders.
+
+### 2.34 Menu button
+
+A button that opens a menu. Its label and its tone (`neutral`, `primary`, `success`, `danger`; any other value is
+`neutral`) are expressions, so the button can show the current status of an item and offer the moves it can make:
+
+```json
+{
+  "type": "menuButton",
+  "label": "{{ has(data.issue) ? data.issue.statusName : '…' }}",
+  "tone": "{{ has(data.issue) ? data.issue.tone : 'neutral' }}",
+  "items": [
+    { "source": "transitions", "labelField": "name", "badgeField": "to", "toneField": "category",
+      "tones": { "new": "neutral", "indeterminate": "primary", "done": "success" }, "valueKey": "values.status",
+      "onClick": [{ "call": "move", "args": { "to": "{{ item.to }}" } }, { "refresh": "issue" }, { "refresh": "transitions" }] },
+    { "divider": true },
+    { "label": "View workflow", "icon": "eye", "onClick": [{ "run": "showWorkflow" }] }
+  ]
+}
+```
+
+`items` mixes three kinds of entries:
+
+| Entry | What it gives |
+| --- | --- |
+| `{ "label", "icon"?, "visibleIf"?, "enabledIf"?, "onClick" }` | One fixed item. |
+| `{ "source", "labelField", "keyField"?, "badgeField"?, "toneField"?, "tones"?, "valueKey"?, "enabledIf"?, "onClick" }` | One item per row of the data source (a list, or the `items` of a paged answer). The steps and `enabledIf` see the row as `item`. `badgeField` adds a coloured label, translated with `valueKey` like a badge cell; its colour is `tones[row[toneField]]` (by default the badge value itself). |
+| `{ "divider": true }` | A line between groups. Dividers at the start, at the end or next to each other are left out, so an empty data source leaves no stray line. |
+
+While the data source loads, the menu shows the activity indicator in its place; a menu with nothing to show says so.
+The fixed items stay when the data source is empty.
+
+Keyboard and screen readers: the button announces a menu (`aria-haspopup`, `aria-expanded`); opening it moves the focus
+to the first item, the arrows, Home and End move among the items, Enter or Space choose, Esc closes and gives the focus
+back to the button. While the steps of an item run the button is busy. The showcase «Tasks and progress» has the status
+of a task with its transitions.
 
 ## 3. Implementation notes and known limits
 

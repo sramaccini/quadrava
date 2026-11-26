@@ -9,6 +9,23 @@ const issuesOf = (doc: unknown): string[] => {
 const table = (extra: Record<string, unknown>, columns: unknown[] = [{ field: 'numero' }]) => screen([{ type: 'table', source: 's', columns, ...extra }]);
 
 describe('schema of the new components', () => {
+  describe('menu button', () => {
+    const menu = (items: unknown[], extra: Record<string, unknown> = {}) => screen([{ type: 'menuButton', label: 'Status', items, ...extra }], { moves: { ref: 'issues/moves' } });
+    it('accepts fixed items, items from a data source and dividers', () => {
+      expect(issuesOf(menu([
+        { source: 'moves', labelField: 'name', badgeField: 'to', toneField: 'category', tones: { done: 'success' }, onClick: [{ toast: '{{ item.id }}' }] },
+        { divider: true },
+        { label: 'View workflow', icon: 'eye', onClick: [{ toast: 'x' }] },
+      ], { tone: '{{ "success" }}' }))).toEqual([]);
+    });
+    it('rejects a menu without items, items without steps, mixed items and unknown properties', () => {
+      expect(issuesOf(menu([])).length).toBeGreaterThan(0);
+      expect(issuesOf(menu([{ label: 'A' }])).length).toBeGreaterThan(0);
+      expect(issuesOf(menu([{ label: 'A', source: 'moves', labelField: 'name', onClick: [{ toast: 'x' }] }])).length).toBeGreaterThan(0);
+      expect(issuesOf(menu([{ divider: false }])).length).toBeGreaterThan(0);
+      expect(issuesOf(menu([{ label: 'A', onClick: [{ toast: 'x' }] }], { onClick: [{ toast: 'x' }] })).length).toBeGreaterThan(0);
+    });
+  });
   describe('square chart', () => {
     it('accepts a square-column time series and rejects missing fields or extras', () => {
       expect(issuesOf(screen([{ type: 'squareChart', source: 's', categoryField: 'day', valueField: 'count' }], { s: { ref: 'activity/list' } }))).toEqual([]);
