@@ -252,6 +252,7 @@
 | `align` | `start`, `center`, `end`, `stretch` | Alignment on the cross axis: in a row it is the vertical one (stretch if absent, end to align fields of different heights). |
 | `justify` | `start`, `center`, `end`, `between` | Distribution on the main axis (start if absent; between = first and last at the ends). |
 | `wrap` | yes/no | In a row, wraps when space runs out (true if absent). |
+| `variant` | `plain`, `dashed` | Look of the box: plain (only the arrangement of the children, plain if absent) or dashed (a quiet dashed frame with some padding, for example around the action that adds an item under a list). |
 
 ### `grid`
 
@@ -495,6 +496,8 @@
 | `suggest` | object | For type text and tags: suggestions from a GET data source while typing; the value stays free text (for example a query). For tags the data source sees the text typed in search and word, and a suggestion is added as a tag. The data source sees `search` (the whole text) and `word` (the word at the cursor, delimited by spaces, brackets and commas), for example "params": { "q": "{{ search }}", "word": "{{ word }}" }; choosing a suggestion replaces that word. |
 | `accept` | text | For type file: allowed extensions (.pdf) and MIME types (image/*, application/pdf), separated by commas. |
 | `maxSizeKb` | integer 1–102400 | For type file: maximum size in KB (1024 if absent). Up to 102400 with multipart upload; base64 content is limited to 10240. |
+| `display` | `button`, `dropzone` | Only for file fields: button (a button and the chosen file, button if absent) or dropzone (an area with a dashed border across the cell, the button in the middle with the label as its text, and files can also be dropped on it). In a dropzone the label is not repeated above the area. |
+| `hint` | text | Only for file fields shown as dropzone: a short text under the button, for example the largest size allowed. It can contain {{ }}. |
 | `upload` | text | For type file: data source (POST) to which the file is sent right away. In multipart the file is the "file" part of the request and the `file` variable has name, type and size; in base64 it also has content. |
 | `span` | integer 1–4 | Columns taken by the field in the form grid (1 if absent). |
 | `width` | `xs`, `s`, `m`, `l`, `full` | Width of the input: xs (about 8 characters: postcodes, quantities), s (about 16: dates, amounts, codes), m (about 32: names, emails), l (about 48: addresses), full (the whole line, with no limit: long texts such as a description). The input never exceeds its cell or the screen; the theme can change the sizes (--lc-field-width-xs … -l). Without it the input takes the whole cell, or in a form with layout flow a whole line, at most 560px wide. |

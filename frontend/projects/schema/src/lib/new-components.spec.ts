@@ -55,6 +55,18 @@ describe('schema of the new components', () => {
       expect(issuesOf(view({ title: 'Workflow', components: [{ type: 'text', text: 'x' }], onClose: [] })).length).toBeGreaterThan(0);
     });
   });
+  describe('drop zone and dashed box', () => {
+    const file = (extra: Record<string, unknown>) => screen([{ type: 'input', field: { name: 'a', type: 'file', label: 'Add attachment', ...extra } }]);
+    it('accept a file field shown as dropzone with a hint, and a dashed box', () => {
+      expect(issuesOf(file({ display: 'dropzone', hint: 'Up to 25 MB' }))).toEqual([]);
+      expect(issuesOf(file({ display: 'button' }))).toEqual([]);
+      expect(issuesOf(screen([{ type: 'box', variant: 'dashed', components: [{ type: 'text', text: 'x' }] }]))).toEqual([]);
+    });
+    it('refuse an unknown display or variant', () => {
+      expect(issuesOf(file({ display: 'area' })).length).toBeGreaterThan(0);
+      expect(issuesOf(screen([{ type: 'box', variant: 'dotted', components: [{ type: 'text', text: 'x' }] }])).length).toBeGreaterThan(0);
+    });
+  });
   describe('popover step', () => {
     const popover = (spec: Record<string, unknown>) => screen([{ type: 'button', label: 'Flag', onClick: [{ popover: spec }] }]);
     const fields = [{ name: 'comment', type: 'textarea' }];

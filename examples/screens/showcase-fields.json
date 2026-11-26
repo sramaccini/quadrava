@@ -251,6 +251,45 @@
               ]
             }
           ]
+        },
+        {
+          "id": "file-dropzone-explain",
+          "type": "text",
+          "text": "{{ t('showcase_fields.dropzone_explain', 'As a drop zone, like the attachments of an issue: drag a file onto the area or use the button; the label is the text of the button and the hint goes under it. Below, a box with a dashed frame around the action that adds an item.') }}"
+        },
+        {
+          "id": "file-dropzone",
+          "type": "input",
+          "field": {
+            "name": "dropped",
+            "type": "file",
+            "label": "{{ t('showcase_fields.add_attachment', 'Add attachment') }}",
+            "display": "dropzone",
+            "hint": "{{ t('showcase_fields.dropzone_hint', 'PDF or images, up to 20 MB per file') }}",
+            "accept": ".pdf,image/*",
+            "maxSizeKb": 20480,
+            "upload": "uploadAttachment"
+          }
+        },
+        {
+          "id": "file-linked",
+          "type": "box",
+          "variant": "dashed",
+          "justify": "center",
+          "components": [
+            {
+              "id": "file-linked-add",
+              "type": "button",
+              "label": "{{ t('showcase_fields.add_linked_item', 'Add linked work item') }}",
+              "icon": "plus",
+              "tone": "neutral",
+              "onClick": [
+                {
+                  "toast": "{{ t('showcase_fields.linked_added', 'Linked item added (demo)') }}"
+                }
+              ]
+            }
+          ]
         }
       ]
     },

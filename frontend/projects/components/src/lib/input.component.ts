@@ -3,6 +3,7 @@ import { codeMessage, I18n, initialInputValue, inputPath, isRequired, NO_PROBLEM
 import { NzFormModule } from 'ng-zorro-antd/form';
 import type { InputNode } from 'schema';
 import { FieldControlComponent } from './field-control.component';
+import { labelInControl } from './file-field.component';
 import { checkValue, validationEnv } from './field-validation';
 import { nextId } from './shared';
 
@@ -19,16 +20,19 @@ import { nextId } from './shared';
   selector: 'lc-input',
   imports: [FieldControlComponent, NzFormModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // A drop zone spans the whole cell, as the area of the attachments of an issue.
+  host: { '[class.wide]': "node().field.type === 'file' && node().field.display === 'dropzone'" },
   styles: `
     /* On its own it is at most 560px wide; layout containers lift the limit (--lc-input-max: none) to fill the cell. */
     :host { display: block; max-width: var(--lc-input-max, 560px); }
+    :host(.wide) { max-width: none; }
     nz-form-item { margin-bottom: 0; }
   `,
   template: `
     @let f = node().field;
     <div nz-form nzLayout="vertical">
       <nz-form-item>
-        @if (f.type !== 'checkbox') {
+        @if (!labelInControl(f)) {
           <nz-form-label [nzFor]="id" [id]="id + '-label'" [nzRequired]="required()" [nzTooltipTitle]="f.tooltip ? runtime().text(f.tooltip, scope()) : undefined" [nzTooltipIcon]="'question-circle'">{{ runtime().text(f.label, scope()) || f.name }}</nz-form-label>
         }
         @let p = problem();
@@ -59,6 +63,8 @@ import { nextId } from './shared';
   `,
 })
 export class InputComponent implements OnInit {
+  /** A checkbox and a drop zone draw their label themselves. */
+  protected readonly labelInControl = labelInControl;
   readonly node = input.required<InputNode>();
   readonly runtime = input.required<ScreenRuntime>();
   readonly scope = input<Scope>({});

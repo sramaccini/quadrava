@@ -173,6 +173,10 @@ export interface FieldDefinition {
   accept?: string;
   /** For `file`: maximum size in KB (1024 if absent). */
   maxSizeKb?: number;
+  /** For `file`: a button (default) or a drop zone, with the label as the text of its button. */
+  display?: 'button' | 'dropzone';
+  /** For `file` shown as dropzone: a short text under the button. */
+  hint?: string;
   /** For `file`: data source the file is sent to right away (variable `file`). */
   upload?: string;
   /** For `file` with `upload`: multipart (default) or base64 in the JSON body. */
@@ -670,6 +674,8 @@ export type BorderRegion = 'north' | 'south' | 'west' | 'east' | 'center';
 export interface BoxNode extends NodeBase {
   type: 'box';
   components: NodeDefinition[];
+  /** plain (default) or dashed: a quiet dashed frame with some padding. */
+  variant?: 'plain' | 'dashed';
   direction?: 'row' | 'column';
   gap?: LayoutGap;
   align?: 'start' | 'center' | 'end' | 'stretch';

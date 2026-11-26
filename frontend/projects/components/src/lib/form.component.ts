@@ -7,6 +7,7 @@ import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import type { ActionDefinition, FieldDefinition, FormNode } from 'schema';
 import { BusyComponent } from './busy.component';
 import { FieldControlComponent } from './field-control.component';
+import { labelInControl } from './file-field.component';
 import { IconComponent } from './icon.component';
 import { checkValue, personalValues, repeaterRows, validationEnv } from './field-validation';
 import { dataItems, itemValue, screenItems, withItemValue, type FormItem, ownValues } from './form-fields';
@@ -63,7 +64,7 @@ import { nextId } from './shared';
         @let field = item.field;
         @if (runtime().isVisible(field, fieldScope())) {
           <nz-form-item [attr.data-lc-input]="id + item.key" [attr.data-lc-required]="required(item) ? '' : null" [style.--lc-field-span]="span(field)" [class.line]="flow() && (!field.width || field.width === 'full')" [class.full]="field.width === 'full'">
-            @if (field.type !== 'checkbox') {
+            @if (!labelInControl(field)) {
               <nz-form-label [nzFor]="id + item.key" [id]="id + item.key + '-label'" [nzRequired]="required(item)" [nzTooltipTitle]="field.tooltip ? runtime().text(field.tooltip, fieldScope()) : undefined" [nzTooltipIcon]="'question-circle'">{{ item.label ?? (runtime().text(field.label, fieldScope()) || field.name) }}</nz-form-label>
             }
             @let problem = shown(item);
@@ -117,6 +118,8 @@ import { nextId } from './shared';
   `,
 })
 export class FormComponent {
+  /** A checkbox and a drop zone draw their label themselves. */
+  protected readonly labelInControl = labelInControl;
   readonly node = input.required<FormNode>();
   readonly runtime = input.required<ScreenRuntime>();
   readonly scope = input<Scope>({});

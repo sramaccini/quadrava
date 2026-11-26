@@ -16,7 +16,7 @@ Rules common to all components, new ones included:
 | Node / element | What it is for |
 | --- | --- |
 | `section` | Panel with a title that groups other nodes, stacked or side by side (`layout: "row"`). |
-| `box`, `grid`, `border` | Layout containers without a frame: row or column, column grid, north/south/west/east/centre regions (§ 2.21). |
+| `box`, `grid`, `border` | Layout containers without a frame (a `box` can have a dashed one): row or column, column grid, north/south/west/east/centre regions (§ 2.21). |
 | `input` | A standalone field (text box, drop-down, date…) bound to the screen state (§ 2.20). |
 | `image`, `link` | Image with alternative text; link to a screen or to an https address (§ 2.23). |
 | `progress` | Progress bar or circle (§ 2.23). |
@@ -233,6 +233,18 @@ status:paid customer:▌        → Enter: only the word at the cursor is replac
 - The field value becomes `{ name, type, size }` plus the service response (for example the `id`). Without `upload` the value also contains `content` (base64, up to 10 MB).
 - The `DataClient` port receives the file in `DataRequest.file`; `HttpDataClient` sends it as `FormData`.
 - The file name is always shown as text.
+
+As a **drop zone**, like the attachments of an issue: `display: "dropzone"` draws an area with a dashed border across
+the cell, the button in the middle with the `label` as its text (the label is not repeated above the area) and `hint`
+under it. A file dragged over the area highlights it; dropped, it is checked and uploaded as a chosen one (the first, if
+more are dropped). From the keyboard the button works as always.
+
+```json
+{ "type": "input", "field": { "name": "attachment", "type": "file", "label": "Add attachment", "display": "dropzone",
+  "hint": "Up to 25 MB per file", "maxSizeKb": 25600, "upload": "uploadAttachment" } }
+```
+
+The showcase «Fields and forms» has one in the section «File upload».
 
 ### 2.9 Column grid, field widths and flow in the form
 
@@ -513,6 +525,8 @@ Three containers that decide only **where** their children go (no frame or backg
 - `wrap`: in a row, wraps when space runs out (true if missing).
 - `gap`: `none`, `small`, `medium` (default), `large`, derived from the theme's `--lc-gap`.
 - Children: `grow` (0–12) shares the free space proportionally; a child with `grow` in a wrapping row does not shrink below 200 px.
+- `variant: "dashed"`: a quiet dashed frame with some padding, as around the action that adds an item under a list (the
+  same frame as a file drop zone); `plain` (the default) draws nothing.
 
 ```json
 { "type": "box", "justify": "between", "align": "center", "components": [

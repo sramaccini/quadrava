@@ -1,8 +1,10 @@
 import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, input, output, signal, viewChild } from '@angular/core';
 import { I18n, type ScreenRuntime, type Scope } from 'core';
+import { NgTemplateOutlet } from '@angular/common';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import type { FieldDefinition } from 'schema';
 import { IconComponent } from './icon.component';
+import { nextId } from './shared';
 
 const DEFAULT_MAX_KB = 1024;
 /** Base64 content inside the JSON weighs a third more: beyond this limit multipart is needed. */
@@ -20,6 +22,14 @@ export function accepts(accept: string | undefined, file: { name: string; type: 
     .some((rule) => (rule.startsWith('.') ? name.endsWith(rule) : rule.endsWith('/*') ? type.startsWith(rule.slice(0, -1)) : type === rule));
 }
 
+/**
+ * Is the label of the field drawn by the control itself rather than above it? A checkbox has it next to the box, a file
+ * field shown as dropzone on its button.
+ */
+export function labelInControl(field: FieldDefinition): boolean {
+  return field.type === 'checkbox' || (field.type === 'file' && field.display === 'dropzone');
+}
+
 /** Content of a file in base64 (without the `data:` prefix). */
 function readBase64(file: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -34,11 +44,14 @@ function readBase64(file: Blob): Promise<string> {
  * `file` field: one file per field. Type and size are checked before any upload. With `upload` the file
  * goes right away to the data source: in multipart (default) as a real file, in base64 inside the JSON body
  * (variable `file`); the value of the field becomes `{ name, type, size }` plus the service response. Without
- * `upload` the value also contains `content` (base64). The name of the file is always text.
+ * `upload` the value also contains `content` (base64). The name of the file is always text. With `display: "dropzone"` it
+ * is an area with a dashed border: the button in the middle has the label as its text, `hint` goes under it, and a file
+ * dropped on the area is checked and uploaded as a chosen one (the first, if more are dropped). From the keyboard the
+ * button works as always.
  */
 @Component({
   selector: 'lc-file-field',
-  imports: [IconComponent, NzButtonModule],
+  imports: [IconComponent, NgTemplateOutlet, NzButtonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: block; }
@@ -49,13 +62,35 @@ function readBase64(file: Blob): Promise<string> {
     .size { color: var(--lc-color-muted, #5d6b7a); }
     .error { margin: 4px 0 0; color: var(--lc-color-danger, #c62828); }
     input[type='file'] { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
+    .zone {
+      position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+      padding: 24px 16px; text-align: center; border: 1px dashed color-mix(in srgb, var(--lc-color-muted) 60%, transparent); border-radius: var(--lc-radius, 6px);
+      transition: border-color 0.2s, background-color 0.2s;
+    }
+    .zone.over { border-color: var(--lc-color-primary); background: color-mix(in srgb, var(--lc-color-primary) 8%, transparent); }
+    .zone .row { justify-content: center; }
+    .hint { margin: 0; color: var(--lc-color-muted, #5d6b7a); font-size: 12px; }
   `,
   template: `
+    @if (zone()) {
+      <div class="zone" [class.over]="over()" (dragover)="dragOver($event)" (dragleave)="dragLeave($event)" (drop)="dropped($event)">
+        <ng-container *ngTemplateOutlet="picker" />
+        @if (hint(); as h) {
+          <p class="hint" [id]="hintId">{{ h }}</p>
+        }
+      </div>
+    } @else {
+      <ng-container *ngTemplateOutlet="picker" />
+    }
+    @if (error(); as e) {
+      <p class="error" role="alert">{{ e }}</p>
+    }
+    <ng-template #picker>
     <div class="row">
-      <input #picker type="file" [id]="inputId()" [attr.accept]="field().accept ?? null" [disabled]="disabled() || busy()" (change)="picked(picker)" />
-      <button nz-button type="button" [nzLoading]="busy()" [disabled]="disabled()" (click)="picker.click()">
+      <input #input type="file" [id]="inputId()" [attr.aria-label]="zone() ? buttonText() : null" [attr.accept]="field().accept ?? null" [disabled]="disabled() || busy()" (change)="picked(input)" />
+      <button nz-button type="button" [nzLoading]="busy()" [disabled]="disabled()" [attr.aria-describedby]="hint() ? hintId : null" (click)="input.click()">
         <lc-icon name="upload" />
-        {{ i18n.t(file() ? 'lc.replaceFile' : 'lc.chooseFile') }}
+        {{ buttonText() }}
       </button>
       @if (file(); as f) {
         <span class="name"><lc-icon name="attachment" />{{ f.name }}</span>
@@ -67,9 +102,7 @@ function readBase64(file: Blob): Promise<string> {
         }
       }
     </div>
-    @if (error(); as e) {
-      <p class="error" role="alert">{{ e }}</p>
-    }
+    </ng-template>
   `,
 })
 export class FileFieldComponent {
@@ -84,7 +117,17 @@ export class FileFieldComponent {
   protected readonly i18n = inject(I18n);
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
-  private readonly picker = viewChild<ElementRef<HTMLInputElement>>('picker');
+  private readonly picker = viewChild<ElementRef<HTMLInputElement>>('input');
+  /** A file is being dragged over the drop zone. */
+  protected readonly over = signal(false);
+  protected readonly hintId = nextId('lc-file-hint');
+  protected readonly zone = computed(() => this.field().display === 'dropzone');
+  protected readonly hint = computed(() => (this.zone() && this.field().hint ? this.runtime().text(this.field().hint, this.scope()) : ''));
+  /** In a drop zone the label is the text of the button; otherwise «Choose a file» or «Replace the file». */
+  protected readonly buttonText = computed(() => {
+    const label = this.zone() ? this.runtime().text(this.field().label, this.scope()) : '';
+    return label || this.i18n.t(this.file() ? 'lc.replaceFile' : 'lc.chooseFile');
+  });
 
   /** Current file, read from the value of the field (also when it comes from the initial data). */
   protected readonly file = computed<{ name: string; size: number } | null>(() => {
@@ -100,10 +143,35 @@ export class FileFieldComponent {
     return kb >= 1024 ? `${format.format(kb / 1024)} MB` : `${format.format(Math.max(kb, 0.1))} KB`;
   }
 
-  protected async picked(input: HTMLInputElement): Promise<void> {
+  protected picked(input: HTMLInputElement): void {
     const chosen = input.files?.[0];
     input.value = '';
-    if (!chosen) return;
+    if (chosen) void this.take(chosen);
+  }
+
+  /** Something dragged over the zone: files are accepted (copy) unless the field is disabled or busy. */
+  protected dragOver(event: DragEvent): void {
+    if (this.disabled() || this.busy() || !event.dataTransfer?.types.includes('Files')) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'copy';
+    this.over.set(true);
+  }
+
+  protected dragLeave(event: DragEvent): void {
+    // Moving over a child of the zone is not leaving it.
+    const zone = event.currentTarget as HTMLElement;
+    if (!(event.relatedTarget instanceof Node && zone.contains(event.relatedTarget))) this.over.set(false);
+  }
+
+  protected dropped(event: DragEvent): void {
+    event.preventDefault();
+    this.over.set(false);
+    const dropped = event.dataTransfer?.files?.[0];
+    if (dropped && !this.disabled() && !this.busy()) void this.take(dropped);
+  }
+
+  /** Checks type and size of a chosen or dropped file, then keeps it or uploads it. */
+  private async take(chosen: File): Promise<void> {
     const field = this.field();
     const multipart = !!field.upload && field.uploadAs !== 'base64';
     const max = Math.min(field.maxSizeKb ?? DEFAULT_MAX_KB, multipart ? Infinity : MAX_BASE64_KB);

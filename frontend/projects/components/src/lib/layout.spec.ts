@@ -25,6 +25,18 @@ describe('layout containers', () => {
     expect(column.classList).toContain('gap-none');
   });
 
+  it('box with variant dashed: a dashed frame; plain or absent: none', async () => {
+    const h = await renderScreen({
+      components: [
+        { type: 'box', variant: 'dashed', components: [text('a')] },
+        { type: 'box', variant: 'plain', components: [text('b')] },
+        { type: 'box', components: [text('c')] },
+      ],
+    });
+    expect([...h.el.querySelectorAll('lc-box .box')].map((b) => b.classList.contains('dashed'))).toEqual([true, false, false]);
+    expect([...h.el.querySelectorAll('lc-box .box')].every((b) => b.classList.contains('gap-medium'))).toBe(true);
+  });
+
   it('grid: columns and span limited to the available columns', async () => {
     const h = await renderScreen({ components: [{ type: 'grid', columns: 3, components: [text('a', { span: 2 }), text('b'), text('c', { span: 9 })] }] });
     expect((h.el.querySelector('lc-grid .grid') as HTMLElement).style.getPropertyValue('--lc-grid-columns')).toBe('3');

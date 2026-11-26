@@ -12,6 +12,12 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Added
+
+- File fields shown as a drop zone (`display: "dropzone"`): an area with a dashed border across the cell, the button in
+  the middle with the label as its text and `hint` under it; dropped files are checked and uploaded as chosen ones.
+- `box` with `variant: "dashed"`: a quiet dashed frame with some padding.
+
 ## [0.25.1] - 2026-11-26
 
 ### Fixed

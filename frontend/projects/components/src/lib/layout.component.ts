@@ -3,7 +3,8 @@ import { I18n, NodeHostComponent, type ScreenRuntime, type Scope } from 'core';
 import type { BorderNode, BorderRegion, BoxNode, GridNode, LayoutGap, NodeDefinition } from 'schema';
 
 /**
- * Layout containers: they draw only the arrangement of the children (no border or background, which stay with the section).
+ * Layout containers: they draw only the arrangement of the children (no border or background, which stay with the section;
+ * the one exception is the quiet dashed frame of `box` with `variant: "dashed"`).
  * Position properties are on the children (`grow` in the box, `span` in the grid, `region` in the border). The space
  * between children comes from the theme (`--lc-gap`). A hidden child takes no space (`lc-node:empty`).
  */
@@ -24,7 +25,10 @@ function gapClass(gap: LayoutGap | undefined): string {
 const ALIGN: Record<string, string> = { start: 'flex-start', center: 'center', end: 'flex-end', stretch: 'stretch' };
 const JUSTIFY: Record<string, string> = { start: 'flex-start', center: 'center', end: 'flex-end', between: 'space-between' };
 
-/** Box: children in a row (wrapping when space runs out) or in a column; `grow` shares the free space. */
+/**
+ * Box: children in a row (wrapping when space runs out) or in a column; `grow` shares the free space. `variant: "dashed"`
+ * draws a quiet dashed frame with some padding, as around the action that adds an item under a list.
+ */
 @Component({
   selector: 'lc-box',
   imports: [NodeHostComponent],
@@ -35,12 +39,13 @@ const JUSTIFY: Record<string, string> = { start: 'flex-start', center: 'center',
     .box.column { flex-direction: column; }
     .box.wrap { flex-wrap: wrap; }
     .box > lc-node { flex: 0 1 auto; min-width: 0; }
+    .box.dashed { padding: 16px; border: 1px dashed color-mix(in srgb, var(--lc-color-muted) 60%, transparent); border-radius: var(--lc-radius, 6px); }
     /* Whoever takes space in a wrapping row does not go below 200px. */
     .box.wrap:not(.column) > lc-node.grow { min-width: 200px; }
     ${GAP_STYLES}
   `,
   template: `
-    <div class="box" [class]="gapClass()" [class.column]="node().direction === 'column'" [class.wrap]="wrap()" [style.align-items]="align()" [style.justify-content]="justify()">
+    <div class="box" [class]="gapClass()" [class.dashed]="node().variant === 'dashed'" [class.column]="node().direction === 'column'" [class.wrap]="wrap()" [style.align-items]="align()" [style.justify-content]="justify()">
       @for (child of node().components; track $index) {
         <lc-node [class.grow]="!!child.grow" [style.flex]="child.grow ? child.grow + ' 1 0' : null" [node]="child" [runtime]="runtime()" [scope]="scope()" />
       }

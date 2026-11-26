@@ -87,4 +87,57 @@ describe('file upload', () => {
     expect(h.requests[0].body).toEqual({ name: 'small.pdf', type: 'application/pdf', size: 3, content: btoa('abc') });
     expect(h.requests[0].file).toBeUndefined();
   });
+
+  describe('as a drop zone', () => {
+    const attachments: NodeDefinition = {
+      type: 'input',
+      field: { name: 'attachment', type: 'file', label: 'Add attachment', display: 'dropzone', hint: 'Up to {{ 1 }} KB per file', accept: '.pdf', maxSizeKb: 1, upload: 'store' },
+    } as NodeDefinition;
+    const zone = (h: ScreenHarness): HTMLElement => h.el.querySelector('lc-file-field .zone')!;
+    /** A drag event with files, as the browser sends it (jsdom has no DataTransfer). */
+    const drag = (type: string, files: File[]): Event => {
+      const event = new Event(type, { bubbles: true, cancelable: true });
+      Object.defineProperty(event, 'dataTransfer', { value: { types: ['Files'], files, dropEffect: 'none' } });
+      return event;
+    };
+
+    it('the label is the text of the button in the middle, with the hint under it; no label above', async () => {
+      const h = await renderScreen({ components: [attachments], dataSources });
+      const button = zone(h).querySelector('button')!;
+      expect(plain(button.textContent)).toBe('Add attachment');
+      expect(h.el.querySelector('lc-input nz-form-label')).toBeNull();
+      const hint = zone(h).querySelector('.hint')!;
+      expect(plain(hint.textContent)).toBe('Up to 1 KB per file');
+      expect(button.getAttribute('aria-describedby')).toBe(hint.id);
+      expect(zone(h).querySelector('input[type="file"]')?.getAttribute('aria-label')).toBe('Add attachment');
+      expect(h.reports).toEqual([]);
+    });
+
+    it('a dropped file is checked and uploaded like a chosen one; the area is highlighted while a file is over it', async () => {
+      const h = await renderScreen({ components: [attachments], dataSources, respond: () => ({ id: 7 }) });
+      const over = drag('dragover', []);
+      zone(h).dispatchEvent(over);
+      await h.settle();
+      expect(over.defaultPrevented).toBe(true);
+      expect(zone(h).classList.contains('over')).toBe(true);
+      zone(h).dispatchEvent(drag('drop', [new File(['x'], 'notes.txt', { type: 'text/plain' })]));
+      await h.until(() => !!error(h), 'type rejected');
+      expect(zone(h).classList.contains('over')).toBe(false);
+      expect(h.requests).toEqual([]);
+      zone(h).dispatchEvent(drag('drop', [new File(['pdf'], 'spec.pdf', { type: 'application/pdf' })]));
+      await h.until(() => plain(h.el.querySelector('lc-file-field .name')?.textContent) === 'spec.pdf', 'uploaded');
+      expect(h.requests[0].file?.name).toBe('spec.pdf');
+      expect(error(h)).toBe('');
+    });
+
+    it('a disabled field does not take dropped files', async () => {
+      const h = await renderScreen({ components: [{ ...attachments, enabledIf: '{{ false }}' } as NodeDefinition], dataSources });
+      const over = drag('dragover', []);
+      zone(h).dispatchEvent(over);
+      expect(over.defaultPrevented).toBe(false);
+      zone(h).dispatchEvent(drag('drop', [new File(['pdf'], 'spec.pdf', { type: 'application/pdf' })]));
+      await h.settle();
+      expect(h.requests).toEqual([]);
+    });
+  });
 });

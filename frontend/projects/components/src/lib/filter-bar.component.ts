@@ -3,6 +3,7 @@ import { I18n, isEmptyValue, NO_PROBLEM, RemoteChecks, type FieldCheck, type Scr
 import { NzFormModule } from 'ng-zorro-antd/form';
 import type { FieldDefinition, FilterBarNode } from 'schema';
 import { FieldControlComponent } from './field-control.component';
+import { labelInControl } from './file-field.component';
 import { checkValue, validationEnv } from './field-validation';
 import { nextId } from './shared';
 
@@ -27,7 +28,7 @@ import { nextId } from './shared';
       @for (field of fields(); track field.name) {
         @if (field.type !== 'file' && field.type !== 'password' && runtime().isVisible(field, scope())) {
           <nz-form-item>
-            @if (field.type !== 'checkbox') {
+            @if (!labelInControl(field)) {
               <nz-form-label [nzFor]="id + field.name" [nzTooltipTitle]="field.tooltip ? runtime().text(field.tooltip, scope()) : undefined" [nzTooltipIcon]="'question-circle'">{{ runtime().text(field.label, scope()) || field.name }}</nz-form-label>
             }
             @let p = problems()[field.name] ?? noProblem;
@@ -52,6 +53,8 @@ import { nextId } from './shared';
   `,
 })
 export class FilterBarComponent implements OnInit {
+  /** A checkbox and a drop zone draw their label themselves. */
+  protected readonly labelInControl = labelInControl;
   readonly node = input.required<FilterBarNode>();
   readonly runtime = input.required<ScreenRuntime>();
   readonly scope = input<Scope>({});
