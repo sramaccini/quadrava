@@ -12,6 +12,8 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+## [0.27.0] - 2026-11-26
+
 ### Added
 
 - Inline editing in the form (`edit: "inline"`): the values as text, one field at a time opened with a click, Enter or
@@ -717,7 +719,8 @@ The first versioned release.
 - **Demo back end of the stack**: the event stream `/api/streams/tasks`, so that behind the BFF the live boards of the
   showcase follow the changes of other users.
 
-[Unreleased]: https://github.com/sramaccini/quadrava/compare/v0.26.0...HEAD
+[Unreleased]: https://github.com/sramaccini/quadrava/compare/v0.27.0...HEAD
+[0.27.0]: https://github.com/sramaccini/quadrava/compare/v0.26.0...v0.27.0
 [0.26.0]: https://github.com/sramaccini/quadrava/compare/v0.25.1...v0.26.0
 [0.25.1]: https://github.com/sramaccini/quadrava/compare/v0.25.0...v0.25.1
 [0.25.0]: https://github.com/sramaccini/quadrava/compare/v0.24.0...v0.25.0
