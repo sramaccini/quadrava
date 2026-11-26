@@ -12,6 +12,8 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+## [0.25.0] - 2026-11-26
+
 ### Added
 
 - Icons `flag` and `like` in the built-in set, with a filled form drawn while a toggle is pressed.
@@ -693,7 +695,8 @@ The first versioned release.
 - **Demo back end of the stack**: the event stream `/api/streams/tasks`, so that behind the BFF the live boards of the
   showcase follow the changes of other users.
 
-[Unreleased]: https://github.com/sramaccini/quadrava/compare/v0.24.0...HEAD
+[Unreleased]: https://github.com/sramaccini/quadrava/compare/v0.25.0...HEAD
+[0.25.0]: https://github.com/sramaccini/quadrava/compare/v0.24.0...v0.25.0
 [0.24.0]: https://github.com/sramaccini/quadrava/compare/v0.23.0...v0.24.0
 [0.23.0]: https://github.com/sramaccini/quadrava/compare/v0.22.1...v0.23.0
 [0.22.1]: https://github.com/sramaccini/quadrava/compare/v0.22.0...v0.22.1
