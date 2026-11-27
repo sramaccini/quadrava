@@ -34,6 +34,7 @@ import showcaseViewsSources from '../../public/examples/datasources/showcase-vie
 import light from '../../public/examples/themes/light.json';
 import dark from '../../public/examples/themes/dark.json';
 import classic from '../../public/examples/themes/classic.json';
+import brandPack from '../../public/examples/assets/brand.json';
 import { DemoDiagnostics, DemoSession } from '../demo/demo-ports';
 import { NavigationService } from './navigation.service';
 import { openSelect, stubViewportHeight } from './select-testing';
@@ -73,6 +74,7 @@ describe('App (demo)', () => {
     'examples/themes/light.json': light,
     'examples/themes/dark.json': dark,
     'examples/themes/classic.json': classic,
+    'examples/assets/brand.json': brandPack,
   };
 
   let restoreViewport: () => void;
@@ -526,11 +528,13 @@ describe('App (demo)', () => {
     await until(fixture, () => !!el.querySelector('lc-sidebar .logo lc-app-brand'), 'brand of the theme');
     const brand = el.querySelector('lc-sidebar .logo lc-app-brand') as HTMLElement;
     expect(brand.querySelector('[role="img"]')?.getAttribute('aria-label')).toBe('Acme Office');
-    // The classic theme has a dark side bar: the logo for dark backgrounds.
-    expect(brand.querySelector('img')?.getAttribute('src')).toBe(classic.brand.logoOnDark);
+    // The classic theme has a dark side bar: the logo for dark backgrounds, from the asset pack of the brand.
+    const image = (name: keyof typeof brandPack.images) => `data:${brandPack.images[name].type};base64,${brandPack.images[name].data}`;
+    expect(classic.brand.logoOnDark).toBe('asset:brand/logo-on-dark');
+    expect(brand.querySelector('img')?.getAttribute('src')).toBe(image('logo-on-dark'));
     expect(el.querySelector('lc-sidebar .logo lc-quadrava-wordmark')).toBeNull();
     expect(document.title).toBe('Invoices · Acme Office');
-    expect(document.head.querySelector('link[data-lc-icon="svg"]')?.getAttribute('href')).toBe(classic.brand.icons.svg);
+    expect(document.head.querySelector('link[data-lc-icon="svg"]')?.getAttribute('href')).toBe(image('icon'));
     // The theme gives only the SVG icon: the Quadrava PNG ones are left out.
     expect(document.head.querySelector('link[data-lc-icon="png32"]')).toBeNull();
   });

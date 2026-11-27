@@ -7,7 +7,7 @@ import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzDrawerModule } from 'ng-zorro-antd/drawer';
 import { NzLayoutModule } from 'ng-zorro-antd/layout';
 import { NzSelectModule } from 'ng-zorro-antd/select';
-import { Authorization, DefinitionSource, I18n, Notifier, ScreenTitle, ThemeService, loadCatalogs, type VisibleLeaf } from 'core';
+import { AssetPacks, Authorization, DefinitionSource, I18n, Notifier, ScreenTitle, ThemeService, loadCatalogs, type VisibleLeaf } from 'core';
 import { applyDocumentBrand } from './document-brand';
 import { NavigationService } from './navigation.service';
 import { NotificationsService } from './notifications.service';
@@ -87,6 +87,7 @@ export class App {
   /** Messages of the user behind the bell (ADR-22), when the navigation names their service. */
   protected readonly notifications = inject(NotificationsService);
   private readonly themeService = inject(ThemeService);
+  private readonly assetPacks = inject(AssetPacks);
   protected readonly i18n = inject(I18n);
   private readonly settings = inject(APPLICATION_SETTINGS);
   /** Languages of the application (from its project). */
@@ -213,7 +214,8 @@ export class App {
           // The precompiled validators are large: loaded when first needed, outside the initial bundle.
           const { validateTheme } = await import('schema/validation');
           const result = validateTheme(doc);
-          if (result.valid) this.themeService.apply(result.value);
+          // The images of the brand from an asset pack (asset:pack/name) become data: addresses (ADR-29).
+          if (result.valid) this.themeService.apply(await this.assetPacks.withImages(result.value));
         })
         .catch((e: unknown) => console.warn('[tema]', name, e instanceof Error ? e.message : e));
     });

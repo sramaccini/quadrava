@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { AssetPacks, assetIconSvg, packEntry } from './asset-packs';
+import { AssetPacks, assetIconSvg, packEntry, packImage } from './asset-packs';
 import { DefinitionSource, RuntimeDiagnostics } from './ports';
 
 const pack = (name = 'acme') => ({
@@ -8,6 +8,7 @@ const pack = (name = 'acme') => ({
   version: '1.0.0',
   license: 'MIT',
   icons: { truck: { viewBox: '0 0 24 24', paths: ['M2 6h12v9H2z'] } },
+  images: { logo: { type: 'image/png', data: 'iVBORw0KGgo=' } },
 });
 
 class Packs extends DefinitionSource {
@@ -46,6 +47,22 @@ describe('asset packs', () => {
     expect(packEntry('acme/../truck')).toBeNull();
     expect(packEntry('Acme/truck')).toBeNull();
     expect(packEntry(undefined)).toBeNull();
+  });
+
+  it('splits asset:pack/name, the address of an image', () => {
+    expect(packImage('asset:acme/logo')).toEqual({ pack: 'acme', entry: 'logo' });
+    expect(packImage('acme/logo')).toBeNull();
+    expect(packImage('asset:acme')).toBeNull();
+  });
+
+  it('gives an image as a data: address, and replaces the images of a brand; a missing one is left out', async () => {
+    const { packs, reports } = setup({ acme: pack() });
+    expect(await packs.image('asset:acme/logo')).toBe('data:image/png;base64,iVBORw0KGgo=');
+    expect(await packs.image('asset:acme/banner')).toBeNull();
+    expect(await packs.image('asset:acme/toString')).toBeNull();
+    expect(reports.map((r) => r.error)).toEqual(['no image banner']);
+    const brand = { name: 'ACME', logo: 'asset:acme/logo', icon: 'asset:acme/none', icons: { svg: '/icon.svg' }, height: 32 };
+    expect(await packs.withImages(brand)).toEqual({ name: 'ACME', logo: 'data:image/png;base64,iVBORw0KGgo=', icons: { svg: '/icon.svg' }, height: 32 });
   });
 
   it('draws an icon from its geometry, in the colour of the text', () => {

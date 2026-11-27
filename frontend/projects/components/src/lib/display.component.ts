@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
-import type { ScreenRuntime, Scope } from 'core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
+import { AssetPacks, packImage, type ScreenRuntime, type Scope } from 'core';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzProgressModule } from 'ng-zorro-antd/progress';
 import type { ImageNode, LinkNode, ProgressNode, Tone } from 'schema';
@@ -36,7 +36,10 @@ export function safeImageSrc(raw: string): string | null {
   return null;
 }
 
-/** Image with alternative text: if the address is not allowed or does not load, the text is shown. */
+/**
+ * Image with alternative text: if the address is not allowed or does not load, the text is shown. An image of an asset
+ * pack (`asset:pack/name`, ADR-29) is taken from its pack, as a `data:` address; nothing is shown while the pack loads.
+ */
 @Component({
   selector: 'lc-image',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -61,7 +64,7 @@ export function safeImageSrc(raw: string): string | null {
         referrerpolicy="no-referrer"
         (error)="failed.set(true)"
       />
-    } @else {
+    } @else if (!pending()) {
       <div class="missing" role="img" [attr.aria-label]="alt()" [style.max-width.px]="node().width ?? null">{{ alt() }}</div>
     }
   `,
@@ -71,8 +74,25 @@ export class ImageComponent {
   readonly runtime = input.required<ScreenRuntime>();
   readonly scope = input<Scope>({});
   protected readonly failed = signal(false);
-  protected readonly src = computed(() => safeImageSrc(this.runtime().text(this.node().src, this.scope())));
+  private readonly packs = inject(AssetPacks);
+  private readonly address = computed(() => this.runtime().text(this.node().src, this.scope()));
+  /** The image of a pack, once loaded, with the address it is for. */
+  private readonly fromPack = signal<{ address: string; src: string | null } | null>(null);
+  protected readonly pending = computed(() => packImage(this.address()) !== null && this.fromPack()?.address !== this.address());
+  protected readonly src = computed(() => {
+    const address = this.address();
+    if (!packImage(address)) return safeImageSrc(address);
+    const loaded = this.fromPack();
+    return loaded?.address === address && loaded.src ? safeImageSrc(loaded.src) : null;
+  });
   protected readonly alt = computed(() => this.runtime().text(this.node().alt, this.scope()));
+
+  constructor() {
+    effect(() => {
+      const address = this.address();
+      if (packImage(address)) void this.packs.image(address).then((src) => this.fromPack.set({ address, src }));
+    });
+  }
 }
 
 /**

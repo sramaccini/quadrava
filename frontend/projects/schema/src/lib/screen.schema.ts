@@ -2862,7 +2862,7 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
             "properties": {
               "src": {
                 "type": "string",
-                "description": "Address of the image: relative (/img/logo.png), https:// or data:image/…; it can contain {{ }}. Any other address is not shown.",
+                "description": "Address of the image: relative (/img/logo.png), https://, data:image/… or an image of an asset pack of the application, asset:pack/name (asset:acme/empty-orders); it can contain {{ }}. Any other address is not shown.",
                 "contentMediaType": "image/*",
                 "maxLength": 100000
               },

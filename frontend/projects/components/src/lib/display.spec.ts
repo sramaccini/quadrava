@@ -1,4 +1,4 @@
-import { Confirmation, I18n } from 'core';
+import { AssetPacks, Confirmation, I18n } from 'core';
 import type { NodeDefinition } from 'schema';
 import { safeImageSrc } from './display.component';
 import { plain, renderScreen } from './screen-testing';
@@ -30,6 +30,22 @@ describe('image, link, progress, timeline and kanban', () => {
     img.dispatchEvent(new Event('error'));
     await h.settle();
     expect(h.el.querySelector('lc-image .missing')?.textContent?.trim()).toBe('Logo');
+  });
+
+  it('image of an asset pack: its data: address, and the alternative text when the pack does not have it', async () => {
+    const packs = { image: async (address: string) => (address === 'asset:acme/logo' ? 'data:image/png;base64,iVBORw0KGgo=' : null) };
+    const h = await renderScreen({
+      components: [
+        { type: 'image', src: 'asset:acme/logo', alt: 'ACME' },
+        { type: 'image', src: 'asset:acme/missing', alt: 'Missing' },
+      ],
+      extraProviders: [{ provide: AssetPacks, useValue: packs }],
+    });
+    await h.settle();
+    const [found, missing] = Array.from(h.el.querySelectorAll('lc-image'));
+    expect(found.querySelector('img')?.getAttribute('src')).toBe('data:image/png;base64,iVBORw0KGgo=');
+    expect(missing.querySelector('img')).toBeNull();
+    expect(missing.querySelector('[role="img"]')?.getAttribute('aria-label')).toBe('Missing');
   });
 
   it('link: to a screen with parameters, to an external address in a new tab without access to this one', async () => {

@@ -11,6 +11,11 @@ export function packEntry(name: string | undefined): { pack: string; entry: stri
   return match ? { pack: match[1], entry: match[2] } : null;
 }
 
+/** The pack and the entry of an image address of a pack, `asset:pack/name`, or null if the address is not one. */
+export function packImage(address: string | undefined): { pack: string; entry: string } | null {
+  return address?.startsWith('asset:') ? packEntry(address.slice('asset:'.length)) : null;
+}
+
 /**
  * The SVG of an icon of a pack, from its geometry: only the view box and the paths, filled with the colour of the text.
  * The geometry comes from a validated pack (numbers and path commands only), so nothing else can get into the markup.
@@ -39,6 +44,32 @@ export class AssetPacks {
       this.packs.set(name, pack);
     }
     return pack;
+  }
+
+  /**
+   * An image of a pack, `asset:pack/name`, as a `data:` address that the image rules accept; null when the address is
+   * not one, or the pack or the image is not there (then a diagnostic).
+   */
+  async image(address: string): Promise<string | null> {
+    const ref = packImage(address);
+    if (!ref) return null;
+    const pack = await this.pack(ref.pack);
+    if (!pack) return null;
+    const image = Object.prototype.hasOwnProperty.call(pack.images ?? {}, ref.entry) ? pack.images?.[ref.entry] : undefined;
+    return image ? `data:${image.type};base64,${image.data}` : this.missing(ref.pack, `no image ${ref.entry}`);
+  }
+
+  /**
+   * A copy of the value with every image address of a pack in its strings (`asset:pack/name`) replaced by its `data:`
+   * address, and left out when the image is not there: for the brand of a theme (logo, icons), which takes plain
+   * addresses.
+   */
+  async withImages<T>(value: T): Promise<T> {
+    if (typeof value === 'string') return (packImage(value) ? ((await this.image(value)) ?? undefined) : value) as T;
+    if (Array.isArray(value)) return (await Promise.all(value.map((item) => this.withImages(item)))) as T;
+    if (value === null || typeof value !== 'object') return value;
+    const entries = await Promise.all(Object.entries(value).map(async ([key, item]) => [key, await this.withImages(item)] as const));
+    return Object.fromEntries(entries.filter(([, item]) => item !== undefined)) as T;
   }
 
   private async load(name: string): Promise<AssetsDefinition | null> {

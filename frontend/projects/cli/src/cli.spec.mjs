@@ -284,11 +284,13 @@ describe('quadrava assets', () => {
     assert.equal(code, 0, stdout);
     const pack = fake.calls.find((c) => c.method === 'POST' && c.url.includes('/documents/assets/logistics/')).body;
     assert.deepEqual(Object.keys(pack.icons).sort(), ['truck', 'warehouse']);
-    const unused = project((d) => change(d, 'screens/showcase-basics.json', (s) => JSON.parse(JSON.stringify(s).replaceAll('logistics/truck', 'save').replaceAll('logistics/warehouse', 'save'))));
+    const unused = project((d) => change(d, 'screens/showcase-basics.json', (s) => JSON.parse(JSON.stringify(s).replaceAll('logistics/truck', 'save').replaceAll('logistics/warehouse', 'save').replaceAll('asset:logistics/parcel', '/parcel.png'))));
     const other = await registry();
     const second = await run(['publish', unused, '--registry', other.url, '--app', 'tracker']);
     assert.equal(second.code, 0, second.stdout);
     assert.match(second.stdout, /skipped +assets\/logistics\.json \(assets logistics\): no icon or image used/);
-    assert.ok(!other.calls.some((c) => c.url.includes('/documents/assets/')));
+    assert.ok(!other.calls.some((c) => c.url.includes('/documents/assets/logistics/')));
+    // The pack of the brand is still used, by the classic theme.
+    assert.ok(other.calls.some((c) => c.url.includes('/documents/assets/brand/')));
   });
 });
