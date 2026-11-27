@@ -1,16 +1,22 @@
-import { afterNextRender, ChangeDetectionStrategy, Component, computed, ElementRef, inject, Injector, input, signal } from '@angular/core';
+import { afterNextRender, ChangeDetectionStrategy, Component, computed, ElementRef, inject, Injector, input, linkedSignal, signal } from '@angular/core';
 import { I18n, rowsOf, runSteps, type ScreenRuntime, type Scope } from 'core';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import type { CommentsNode, Expression } from 'schema';
 import { BusyComponent } from './busy.component';
-import { mentionsIn, threadOf, type ThreadComment } from './comments-thread';
+import { durationText, filterThread, mentionsIn, threadOf, type ThreadComment, type ThreadFilter } from './comments-thread';
+import { IconComponent } from './icon.component';
 import { MarkdownComponent } from './markdown.component';
 import { nextId } from './shared';
 import type { Suggestion, SuggestSpec } from './suggest';
 import { SuggestInputComponent } from './suggest-input.component';
 
 type Row = Record<string, unknown>;
+/** A chip above the feed: its text and the rows it keeps. */
+interface Chip {
+  label: string;
+  filter: ThreadFilter;
+}
 
 /**
  * Thread of comments of a data source: author with initials, date and text in restricted Markdown (`lc-markdown`, never
@@ -18,10 +24,13 @@ type Row = Record<string, unknown>;
  * people of `mentions` (suggested while typing), Ctrl+Enter or the button to publish. The steps see `text` and
  * `mentions`; the box is emptied when they succeed and the outcome is announced. With `onEdit` and `onDelete` (and
  * `editIf`, `deleteIf` with the comment in `row`) each comment has its buttons: Edit turns it into the same box.
+ * With `kindField` it is a feed of activity: the rows of `changes` are lines «changed Status from To do to Done», those of
+ * `workLog` lines «logged 2 hr» with their text; `filters` adds the chips All, Comments, History, Work log and
+ * `orderToggle` a button that turns the order (kept in `orderBind` when given).
  */
 @Component({
   selector: 'lc-comments',
-  imports: [BusyComponent, MarkdownComponent, NzAlertModule, NzButtonModule, SuggestInputComponent],
+  imports: [BusyComponent, IconComponent, MarkdownComponent, NzAlertModule, NzButtonModule, SuggestInputComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: block; }
@@ -41,21 +50,46 @@ type Row = Record<string, unknown>;
     .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
     .buttons { display: flex; flex-wrap: wrap; gap: 8px; }
     .hint { font-size: 12px; color: var(--lc-color-muted, #5d6b7a); }
+    .feed-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .line { color: var(--lc-color-muted, #5d6b7a); }
     .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   `,
   template: `
     @if (source().status === 'error') {
       <div role="alert"><nz-alert nzType="error" [nzMessage]="source().error ?? null" nzShowIcon /></div>
     } @else {
-      <lc-busy [busy]="source().status === 'loading'" [empty]="!comments().length">
+      @if (chips().length || node().orderToggle) {
+        <div class="feed-bar">
+          @if (chips().length) {
+            <div class="chips" role="group" [attr.aria-label]="i18n.t('lc.activity.show')">
+              @for (chip of chips(); track $index) {
+                <button nz-button nzSize="small" type="button" [nzType]="chipIndex() === $index ? 'primary' : 'default'" [attr.aria-pressed]="chipIndex() === $index" (click)="chipIndex.set($index)">
+                  {{ chip.label }}
+                </button>
+              }
+            </div>
+          }
+          @if (node().orderToggle) {
+            <button nz-button nzType="text" nzSize="small" type="button" (click)="toggleOrder()">
+              <lc-icon name="move" />
+              {{ i18n.t(order() === 'desc' ? 'lc.activity.newestFirst' : 'lc.activity.oldestFirst') }}
+            </button>
+          }
+        </div>
+      }
+      <lc-busy [busy]="source().status === 'loading'" [empty]="!all().length">
         @if (comments().length) {
-          <ol class="thread" [attr.aria-label]="i18n.t('lc.comments')">
+          <ol class="thread" [attr.aria-label]="i18n.t(node().kindField ? 'lc.activity' : 'lc.comments')">
             @for (c of comments(); track $index) {
               <li>
                 <article [attr.aria-label]="c.author">
                   <span class="avatar" aria-hidden="true">{{ c.initials }}</span>
                   <header>
                     <span class="author">{{ c.author }}</span>
+                    @if (c.kind !== 'comment') {
+                      &ngsp;<span class="line">{{ line(c) }}</span>
+                    }
                     @if (c.iso) {
                       <time [attr.datetime]="c.iso">{{ format().format(c.time!) }}</time>
                     }
@@ -87,8 +121,10 @@ type Row = Record<string, unknown>;
                         <button nz-button nzSize="small" type="button" [disabled]="sending()" (click)="cancel(c)">{{ i18n.t('lc.commentCancel') }}</button>
                       </div>
                     </div>
-                  } @else {
-                    <lc-markdown [source]="c.text" />
+                  } @else if (c.kind !== 'change') {
+                    @if (c.text) {
+                      <lc-markdown [source]="c.text" />
+                    }
                     @if (canEdit(c.row) || canDelete(c.row)) {
                       <div class="tools">
                         @if (canEdit(c.row)) {
@@ -104,6 +140,8 @@ type Row = Record<string, unknown>;
               </li>
             }
           </ol>
+        } @else if (all().length) {
+          <p class="empty">{{ i18n.t('lc.activity.nothing') }}</p>
         } @else if (source().status !== 'loading') {
           <p class="empty">{{ i18n.t('lc.noComments') }}</p>
         }
@@ -157,7 +195,37 @@ export class CommentsComponent {
   private readonly chosen = new Map<string, string>();
 
   protected readonly source = computed(() => this.runtime().source(this.node().source));
-  protected readonly comments = computed(() => threadOf(rowsOf(this.source().data), this.node()));
+  /** Order chosen with the button, from `order`; with `orderBind` the state wins when it holds asc or desc. */
+  private readonly chosenOrder = linkedSignal<'asc' | 'desc'>(() => this.node().order ?? 'asc');
+  protected readonly order = computed<'asc' | 'desc'>(() => {
+    const bind = this.node().orderBind;
+    const kept = bind ? this.runtime().getState(bind) : undefined;
+    return kept === 'asc' || kept === 'desc' ? kept : this.chosenOrder();
+  });
+  /**
+   * The chips, with `kindField`: `true` gives All, Comments and, for the kinds the feed has, History and Work log; a list
+   * gives those of the screen, each with the values of `kindField` it shows.
+   */
+  protected readonly chips = computed<Chip[]>(() => {
+    const node = this.node();
+    if (!node.filters || !node.kindField) return [];
+    if (Array.isArray(node.filters)) return node.filters.map((chip) => ({ label: this.runtime().text(chip.label, this.scope()), filter: chip.kinds ? { values: chip.kinds } : {} }));
+    const chips: Chip[] = [
+      { label: this.i18n.t('lc.activity.all'), filter: {} },
+      { label: this.i18n.t('lc.activity.comments'), filter: { kinds: ['comment'] } },
+    ];
+    if (node.changes) chips.push({ label: this.i18n.t('lc.activity.history'), filter: { kinds: ['change'] } });
+    if (node.workLog) chips.push({ label: this.i18n.t('lc.activity.workLog'), filter: { kinds: ['worklog'] } });
+    return chips;
+  });
+  /** Position of the chip chosen: the first at the start, and again when the chips change. */
+  protected readonly chipIndex = linkedSignal<number>(() => (this.chips(), 0));
+  /** Every row of the feed, and those of the chip chosen. */
+  protected readonly all = computed(() => threadOf(rowsOf(this.source().data), this.node(), this.order()));
+  protected readonly comments = computed(() => {
+    const chosen = this.chips()[this.chipIndex()];
+    return chosen ? filterThread(this.all(), chosen.filter) : this.all();
+  });
   protected readonly format = computed(() => new Intl.DateTimeFormat(this.i18n.intlLocale(), { dateStyle: 'medium', timeStyle: 'short' }));
   protected readonly hint = computed(() => this.i18n.t(this.node().mentions ? 'lc.commentHintMentions' : 'lc.commentHint'));
 
@@ -171,6 +239,34 @@ export class CommentsComponent {
     const m = this.node().mentions;
     return m ? { source: m.source, valueField: m.valueField ?? 'id', labelField: m.labelField, minChars: m.minChars } : null;
   });
+
+  protected toggleOrder(): void {
+    const next = this.order() === 'desc' ? 'asc' : 'desc';
+    this.chosenOrder.set(next);
+    const bind = this.node().orderBind;
+    if (bind) this.runtime().setState(bind, next);
+  }
+
+  /** The line of a change or of a work log, after the author. */
+  protected line(item: ThreadComment): string {
+    if (item.kind === 'worklog') return this.i18n.t('lc.activity.logged', { time: item.minutes === null || item.minutes === undefined ? '—' : durationText(item.minutes, this.i18n.intlLocale()) });
+    const change = item.change!;
+    const keys = this.node().changes ?? {};
+    const field = keys.fieldKey ? this.i18n.t(`${keys.fieldKey}.${change.field}`, {}, change.field) : change.field;
+    const from = this.valueText(change.field, change.from);
+    const to = this.valueText(change.field, change.to);
+    if (!to) return this.i18n.t('lc.activity.cleared', { field });
+    return from ? this.i18n.t('lc.activity.changed', { field, from, to }) : this.i18n.t('lc.activity.set', { field, to });
+  }
+
+  /** A value of a change as text, translated with `valueKey`; a list is joined, an object or nothing is empty. */
+  private valueText(field: string, value: unknown): string {
+    if (Array.isArray(value)) return value.map((v) => this.valueText(field, v)).filter(Boolean).join(', ');
+    if (value === null || value === undefined || typeof value === 'object') return '';
+    const raw = String(value);
+    const prefix = this.node().changes?.valueKey;
+    return prefix && raw ? this.i18n.t(`${prefix}.${field}.${raw}`, {}, raw) : raw;
+  }
 
   protected canEdit(row: Row): boolean {
     return !!this.node().onEdit?.length && this.allowed(this.node().editIf, { row });

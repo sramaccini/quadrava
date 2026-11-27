@@ -337,6 +337,12 @@ describe('Showcase: advanced components', () => {
       const { el, until, settle } = await openShowcase('/showcase/showcase-tasks');
       const articles = () => [...el.querySelectorAll<HTMLElement>('main lc-comments article')];
       const button = (a: HTMLElement, text: string) => [...a.querySelectorAll('button')].find((b) => plainText(b.textContent) === text) as HTMLButtonElement | undefined;
+      // The activity of the task: three comments, two field changes and a work log; the chip keeps the comments.
+      await until(() => articles().length === 6, 'activity');
+      expect(plainText(articles()[2].querySelector('header')?.textContent)).toContain('Luca Bianchi changed Status from To do to In progress');
+      expect(plainText(articles()[4].querySelector('header')?.textContent)).toContain('Luca Bianchi logged 1 hr 30 mins');
+      const comments = [...el.querySelectorAll<HTMLButtonElement>('main lc-comments .chips button')].find((b) => plainText(b.textContent) === 'Comments')!;
+      comments.click();
       await until(() => articles().length === 3, 'comments');
       expect(articles().map((a) => !!button(a, 'Edit'))).toEqual([false, false, true]);
       expect(plainText(articles()[1].querySelector('header')?.textContent)).toContain('edited');

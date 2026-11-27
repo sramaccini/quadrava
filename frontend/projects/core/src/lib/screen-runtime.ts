@@ -246,6 +246,8 @@ export class ScreenRuntime {
         if (sort?.bind && this.getState(sort.bind) === undefined) this.setState(sort.bind, sort.default ? { ...sort.default } : null);
         const selection = node.selection;
         if (selection && this.getState(selection.bind) === undefined) this.setState(selection.bind, []);
+      } else if (node.type === 'comments') {
+        if (node.orderBind && this.getState(node.orderBind) === undefined) this.setState(node.orderBind, node.order ?? 'asc');
       } else if (node.type === 'serverDataTable') {
         const selection = node.selection;
         if (selection && this.getState(selection.bind) === undefined) this.setState(selection.bind, []);

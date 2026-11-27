@@ -837,6 +837,18 @@ export interface CommentsNode extends NodeBase {
   authorField?: string;
   dateField?: string;
   order?: 'asc' | 'desc';
+  /** Field with the kind of the row, for a feed that mixes comments, changes (`changes`) and work logs (`workLog`). */
+  kindField?: string;
+  /** Rows that record the change of a field, drawn as one line. */
+  changes?: { kind?: string; fieldField?: string; fromField?: string; toField?: string; fieldKey?: string; valueKey?: string };
+  /** Rows that record time spent (in minutes), drawn as one line with their text under it. */
+  workLog?: { kind?: string; minutesField?: string };
+  /** Chips above the feed: `true` for All, Comments, History, Work log, or the chips of the screen with the kinds they show. */
+  filters?: boolean | { label: string; kinds?: string[] }[];
+  /** Button that turns the order between newest and oldest first. */
+  orderToggle?: boolean;
+  /** State where the order chosen with `orderToggle` is kept. */
+  orderBind?: StatePath;
   /** Steps that publish a comment; they see `text` and `mentions`. */
   onPost?: Step[];
   postIf?: Expression;

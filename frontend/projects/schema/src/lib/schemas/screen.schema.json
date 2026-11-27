@@ -3440,6 +3440,108 @@
                 ],
                 "description": "Order of the comments by date: oldest first, the newest next to the box for writing (asc, default), or newest first (desc)."
               },
+              "kindField": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Field of the row that says what it is, for a feed of activity that mixes comments, changes and work: the rows whose value is the kind of changes or of workLog are drawn as those, every other row is a comment."
+              },
+              "changes": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Value of kindField of a change (change if absent)."
+                  },
+                  "fieldField": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Field of the row with the name of the field changed (field if absent)."
+                  },
+                  "fromField": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Field of the row with the old value (from if absent). Without a value the line reads «set Priority to High»."
+                  },
+                  "toField": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Field of the row with the new value (to if absent). Without a value the line reads «cleared Due date»."
+                  },
+                  "fieldKey": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Catalogue prefix of the names of the fields: the key is the prefix, a dot and the name (issue.fields.status). The name as it is if absent or not translated."
+                  },
+                  "valueKey": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Catalogue prefix of the values: the key is the prefix, the name of the field and the value, separated by dots (values.status.done). The value as it is if absent or not translated."
+                  }
+                },
+                "description": "Rows that record the change of a field, drawn as a line: «Luca Bianchi changed Status from To do to In progress». They have no Edit or Delete buttons. Needs kindField."
+              },
+              "workLog": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Value of kindField of a work log (worklog if absent)."
+                  },
+                  "minutesField": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Field of the row with the time spent, in minutes (minutes if absent)."
+                  }
+                },
+                "description": "Rows that record time spent, drawn as a line «Anna Rossi logged 2 hr 30 min» with the text of the row, if any, under it. They have the Edit and Delete buttons as comments. Needs kindField."
+              },
+              "filters": {
+                "description": "Chips above the feed that show only some rows, filtered in the page. true gives All, Comments and, when the feed has them, History (changes) and Work log; a list gives the chips of the screen, in order, each with its label and the values of kindField it shows (all rows without kinds). The first chip is chosen at the start. Needs kindField. (no chips if absent)",
+                "oneOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "array",
+                    "minItems": 2,
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "label"
+                      ],
+                      "additionalProperties": false,
+                      "properties": {
+                        "label": {
+                          "type": "string",
+                          "minLength": 1,
+                          "description": "Text of the chip; it can contain {{ }}, for example a translation with t()."
+                        },
+                        "kinds": {
+                          "type": "array",
+                          "minItems": 1,
+                          "items": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "description": "Values of kindField of the rows the chip shows, for example [\"comment\", \"attachment\"]. Every row if absent."
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              "orderToggle": {
+                "type": "boolean",
+                "description": "A button above the feed with which the user turns the order between newest first and oldest first; it starts from order. (false if absent)"
+              },
+              "orderBind": {
+                "$ref": "#/$defs/statePath",
+                "description": "State where the order chosen with orderToggle is kept (asc or desc), so that the screen can read it or keep it while it is open."
+              },
               "onPost": {
                 "$ref": "#/$defs/steps",
                 "description": "Steps that publish a comment: they see text (the Markdown written, without spaces at the ends) and mentions (the values of the people mentioned who are still in the text). Without onPost the thread is read-only. The box is emptied when the steps succeed, so they usually end with a refresh of source."

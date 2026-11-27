@@ -602,17 +602,25 @@
     {
       "id": "section-comments",
       "type": "section",
-      "title": "{{ t('showcase_tasks.comments', 'Comments') }}",
+      "title": "{{ t('showcase_tasks.activity', 'Activity') }}",
       "components": [
         {
           "id": "explain-comments",
           "type": "text",
-          "text": "{{ t('showcase_tasks.the_thread_of_the_team_in_date_o', 'The thread of the team in date order. Write in Markdown, type @ followed by a name to mention a person, Ctrl+Enter or «Publish» to send. Your own comments can be changed and deleted.') }}"
+          "text": "{{ t('showcase_tasks.the_activity_of_the_task', 'The activity of the task in date order: comments, field changes and work logged, from one data source. The chips show only one kind, the button turns the order. Write in Markdown, type @ followed by a name to mention a person, Ctrl+Enter or «Publish» to send. Your own comments can be changed and deleted.') }}"
         },
         {
           "id": "comments",
           "type": "comments",
           "source": "comments",
+          "kindField": "kind",
+          "changes": {
+            "fieldKey": "showcase_tasks.field",
+            "valueKey": "showcase_tasks.value"
+          },
+          "workLog": {},
+          "filters": true,
+          "orderToggle": true,
           "onPost": [
             {
               "call": "addComment"

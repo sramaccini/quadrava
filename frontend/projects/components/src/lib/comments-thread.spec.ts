@@ -21,7 +21,7 @@ describe('comments thread', () => {
   it('other field names; texts from the data stay as they are', () => {
     const row = { who: 'A', body: '{{ user.name }} **bold**', at: '2026-10-01' };
     const thread = threadOf([row], { ...node, authorField: 'who', textField: 'body', dateField: 'at' });
-    expect(thread).toEqual([{ author: 'A', initials: 'A', text: '{{ user.name }} **bold**', iso: '2026-10-01', time: new Date('2026-10-01').getTime(), edited: false, row }]);
+    expect(thread).toEqual([{ kind: 'comment', rawKind: '', author: 'A', initials: 'A', text: '{{ user.name }} **bold**', iso: '2026-10-01', time: new Date('2026-10-01').getTime(), edited: false, row }]);
   });
 
   it('edited: the field of editedField has a value (a date or true)', () => {

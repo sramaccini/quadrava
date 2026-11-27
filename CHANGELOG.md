@@ -14,6 +14,11 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ### Added
 
+- An activity feed in `comments`: with `kindField` the rows of `changes` are drawn as «changed Status from To do to
+  Done» (field names and values translated with `fieldKey` and `valueKey`) and those of `workLog` as «logged 2 hrs»
+  with their text; `filters` adds chips (the standard All, Comments, History, Work log, or the chips of the screen with
+  the kinds they show) and `orderToggle` a button that turns the order, kept in `orderBind` when given.
+
 - The cell format `relative` for tables and the detail: a date shown as its distance from now («3 days ago»,
   «yesterday»), in the language of the user, with the full date as tooltip and for screen readers.
 

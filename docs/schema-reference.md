@@ -351,6 +351,12 @@
 | `authorField` | text | Field of the row with the name of the author (author if absent). |
 | `dateField` | text | Field of the row with the date and time, ISO 8601 (date if absent). Comments without a valid date come last, without a date. |
 | `order` | `asc`, `desc` | Order of the comments by date: oldest first, the newest next to the box for writing (asc, default), or newest first (desc). |
+| `kindField` | text | Field of the row that says what it is, for a feed of activity that mixes comments, changes and work: the rows whose value is the kind of changes or of workLog are drawn as those, every other row is a comment. |
+| `changes` | object | Rows that record the change of a field, drawn as a line: «Luca Bianchi changed Status from To do to In progress». They have no Edit or Delete buttons. Needs kindField. |
+| `workLog` | object | Rows that record time spent, drawn as a line «Anna Rossi logged 2 hr 30 min» with the text of the row, if any, under it. They have the Edit and Delete buttons as comments. Needs kindField. |
+| `filters` |  | Chips above the feed that show only some rows, filtered in the page. true gives All, Comments and, when the feed has them, History (changes) and Work log; a list gives the chips of the screen, in order, each with its label and the values of kindField it shows (all rows without kinds). The first chip is chosen at the start. Needs kindField. (no chips if absent) |
+| `orderToggle` | yes/no | A button above the feed with which the user turns the order between newest first and oldest first; it starts from order. (false if absent) |
+| `orderBind` | state path | State where the order chosen with orderToggle is kept (asc or desc), so that the screen can read it or keep it while it is open. |
 | `onPost` | steps | Steps that publish a comment: they see text (the Markdown written, without spaces at the ends) and mentions (the values of the people mentioned who are still in the text). Without onPost the thread is read-only. The box is emptied when the steps succeed, so they usually end with a refresh of source. |
 | `postIf` | expression | Condition for showing the box for writing, for example {{ can('tasks.comments.create') }}; an error counts as false. Always shown with onPost if absent. |
 | `onEdit` | steps | Steps that save a changed comment: they see row (the comment as it came), text and mentions, as onPost. Each comment gets an Edit button (with editIf) that turns it into a box with its text; the box closes when the steps succeed, so they usually end with a refresh of source. |

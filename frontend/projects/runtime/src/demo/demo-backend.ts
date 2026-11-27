@@ -154,6 +154,12 @@ export class DemoBackend {
     { id: 3, author: 'operator', text: 'I will send it **tomorrow** morning.', date: '2026-10-27T11:05:00Z', mentions: [] },
   ];
   private commentIds = 3;
+  /** The rest of the activity of the task, as a service would merge it with the comments: field changes and work. */
+  private readonly taskHistory = [
+    { id: 'h1', kind: 'change', author: 'Anna Rossi', field: 'priority', from: null, to: 'high', date: '2026-10-27T09:30:00Z' },
+    { id: 'h2', kind: 'change', author: 'Luca Bianchi', field: 'status', from: 'to-do', to: 'in-progress', date: '2026-10-27T10:00:00Z' },
+    { id: 'w1', kind: 'worklog', author: 'Luca Bianchi', minutes: 90, text: 'Checked the figures of the quote.', date: '2026-10-27T10:45:00Z' },
+  ];
   /** Transactions for the datatable: 60 deterministic rows over three accounts and six categories, from July to October 2026. */
   private readonly transactions = Array.from({ length: 60 }, (_, i) => {
     const categories = ['Rent', 'Utilities', 'Salaries', 'Customer receipts', 'Suppliers', 'Sundry expenses'];
@@ -429,7 +435,8 @@ export class DemoBackend {
     // The author may change and delete their own comments: _perm says so for each row, as a service would.
     if (path === '/api/task-comments' && req.method === 'GET') {
       const me = String(req.query?.['user'] ?? '');
-      return this.taskComments.map((c) => ({ ...c, _perm: { update: c.author === me, delete: c.author === me } }));
+      const comments = this.taskComments.map((c) => ({ ...c, kind: 'comment', _perm: { update: c.author === me, delete: c.author === me } }));
+      return [...comments, ...this.taskHistory.map((h) => ({ ...h, _perm: { update: false, delete: false } }))];
     }
     if (path === '/api/task-comments' && req.method === 'POST') {
       // A real service takes the author from the session; the demo trusts the name it receives.

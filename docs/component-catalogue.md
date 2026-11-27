@@ -21,7 +21,7 @@ Rules common to all components, new ones included:
 | `image`, `link` | Image with alternative text; link to a screen or to an https address (§ 2.23). |
 | `progress` | Progress bar or circle (§ 2.23). |
 | `timeline`, `kanban` | Events in date order; cards in columns that can be moved (§ 2.24). |
-| `comments` | Thread of comments in Markdown with a box for writing and @mentions (§ 2.30). |
+| `comments` | Thread of comments in Markdown with a box for writing and @mentions; with `kindField` a feed of activity that mixes comments, field changes and work logs, with filter chips and the order chosen by the user (§ 2.30). |
 | `text` | Plain text (with line breaks), heading (`style: heading`) or formatted text (`format: markdown`, § 2.26). |
 | `button` | Button that runs a sequence of steps (`onClick`). |
 | `menuButton` | Button that opens a menu of fixed items, items from a data source and dividers; label and tone are expressions (§ 2.34). |
@@ -880,7 +880,52 @@ A thread of comments read from a data source, with a box for writing below it. T
 - **Mentions** (`mentions`): typing `@` followed by letters (`minChars`, 1 if absent) asks the data source with `search`, like a lookup, so the same source of people serves both. The chosen person is inserted as `@` followed by `labelField` and a space; `mentions` holds, as texts, the `valueField` (`id`) of the people chosen who are still in the text when it is published, once each. The list of people is the same combobox as a text field with suggestions (§ 2.7): arrows, Enter, Escape, the number announced.
 - **Changing and deleting** (`onEdit`, `onDelete`): each comment gets «Edit» and «Delete» buttons where `editIf` and `deleteIf` say yes, with the comment in `row` (absent: always; an error: never). The service decides who may do what, for example with `_perm` in each row; the front end only follows it. «Edit» turns the comment into the same box, with its Markdown and the mentions, and moves the focus there: «Save» or Ctrl+Enter runs `onEdit` with `row`, `text` and `mentions` (the people chosen while changing it who are still in the text; those of the first version are the service's to keep). When the steps succeed the box closes and «Comment changed» is announced; «Cancel» or Escape restores the comment without running anything, and the focus goes back to «Edit». «Delete» runs `onDelete` with `row`: the confirmation is a `confirm` step of the author, so a screen can also do without it. With `editedField` a comment whose field has a value (a date or `true`) shows «edited» next to the date.
 
-In the showcase: «Vetrina: attività e avanzamento» (Showcase: tasks and progress), «Commenti» (Comments) section.
+**Activity feed.** The same node can show everything that happened to an item, as the Activity of a Jira issue: the
+service returns one list with comments, changes of fields and time logged, and `kindField` says which is which.
+
+```json
+{ "type": "comments", "source": "activity", "kindField": "kind",
+  "changes": { "fieldKey": "issue.fields", "valueKey": "values" },
+  "workLog": { "minutesField": "minutes" },
+  "filters": true, "orderToggle": true, "order": "desc",
+  "onPost": [ … ], "onEdit": [ … ], "onDelete": [ … ] }
+```
+
+```
+ [ All ][ Comments ][ History ][ Work log ]                ⇅ Newest first
+ AR  Anna Rossi · 27 Oct 2026, 11:05
+     I will send it tomorrow.                                   Edit  Delete
+ LB  Luca Bianchi logged 1 hr 30 mins · 27 Oct 2026, 10:45
+     Checked the figures of the quote.
+ LB  Luca Bianchi changed Status from To do to In progress · 27 Oct 2026, 10:00
+ AR  Anna Rossi set Priority to High · 27 Oct 2026, 09:30
+```
+
+- **Rows.** A row whose `kindField` is the kind of `changes` (`change` if absent) is the change of a field, one line:
+  «changed *field* from *a* to *b*», «set *field* to *b*» without an old value, «cleared *field*» without a new one.
+  The field is read from `fieldField`, `fromField` and `toField` (`field`, `from`, `to`); its name is translated with
+  `fieldKey` (`issue.fields.status`) and the values with `valueKey`, the field and the value (`values.status.done`),
+  the text as it is when there is no translation. A change has no buttons. A row of the kind of `workLog` (`worklog`)
+  is time spent: «logged 2 hrs 30 mins» from `minutesField` (`minutes`), in the language of the user, with the text
+  of the row under it and the Edit and Delete buttons of the comments. Every other row is a comment.
+- **Chips** (`filters`): `true` gives All, Comments and, for the kinds the feed has, History and Work log. A list gives
+  the chips of the screen, in order, with their labels and the values of `kindField` each one shows (all rows without
+  `kinds`), for kinds of its own such as attachments:
+
+  ```json
+  "filters": [ { "label": "{{ t('issue.all', 'All') }}" },
+               { "label": "{{ t('issue.talk', 'Comments') }}", "kinds": ["comment", "attachment"] },
+               { "label": "{{ t('issue.history', 'History') }}", "kinds": ["change"] } ]
+  ```
+
+  The rows are filtered in the page, so one data source serves every chip; the first chip is chosen at the start.
+  The chips are buttons that say which one is pressed. The box for writing stays under every chip.
+- **Order** (`orderToggle`): a button turns the order between newest and oldest first, starting from `order`. With
+  `orderBind` the choice is also written to the state (`asc` or `desc`), so the screen can read it or keep it while it
+  is open; it is not remembered across sessions.
+
+In the showcase: «Vetrina: attività e avanzamento» (Showcase: tasks and progress), «Attività» (Activity) section: the
+comments of the team with two changes and an hour and a half of work.
 
 ### 2.31 Form fields from a data source
 
