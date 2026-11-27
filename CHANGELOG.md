@@ -12,6 +12,11 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Added
+
+- `highlight` on `dataTable` and `serverDataTable`, as on `table` and `kanban`: the rows for which `when` is true take
+  the tone and a mark with a name in their first cell; group rows are never highlighted.
+
 ## [0.31.0] - 2026-11-27
 
 ### Added

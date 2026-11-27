@@ -15,6 +15,7 @@ import { NzTagModule } from 'ng-zorro-antd/tag';
 import type { ActionDefinition, ColumnDefinition, DataColumnDefinition, DataTableNode, SortSpec } from 'schema';
 import { IconComponent } from './icon.component';
 import { RowActionsComponent } from './row-actions.component';
+import { rowHighlight, type ResolvedHighlight } from './row-highlight';
 import { TONE_COLORS, focusInside, nextId, parseIsoDate, toIsoDate } from './shared';
 import { aggregate, distinctValues, filterRows, flattenGroups, groupRows, isActiveFilter, sortRows, type ColumnFilter, type DisplayItem, type Row } from './table-data';
 
@@ -64,6 +65,9 @@ type NzSortOrder = 'ascend' | 'descend' | null;
     .filter-panel .range { display: flex; gap: 8px; }
     .filter-panel .range input { width: 110px; }
     .filter-panel .footer { display: flex; justify-content: flex-end; }
+    tr.lc-highlighted > td, tr.lc-highlighted:hover > td { background: var(--lc-highlight-bg); }
+    tr.lc-highlighted > td:first-child { box-shadow: inset 4px 0 0 var(--lc-highlight-edge); }
+    .mark { display: inline-flex; margin-inline-end: 6px; vertical-align: -0.125em; }
     .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   `,
   template: `
@@ -194,9 +198,13 @@ type NzSortOrder = 'ascend' | 'descend' | null;
                     }
                   </tr>
                 } @else {
-                  <tr>
+                  @let mark = highlight(item.row);
+                  <tr [class.lc-highlighted]="mark !== null" [style.--lc-highlight-bg]="mark?.background" [style.--lc-highlight-edge]="mark?.edge">
                     @for (column of columns(); track column.field; let first = $first) {
                       <td [nzAlign]="numeric(column) ? 'right' : 'left'" [style.padding-left.px]="first && item.level ? 16 + item.level * 24 : null">
+                        @if (first && mark) {
+                          <span class="mark" role="img" [attr.aria-label]="mark.label" [attr.title]="mark.label" [style.color]="mark.mark"><lc-icon [name]="mark.icon" [filled]="true" /></span>
+                        }
                         @if (cell(item.row, column); as view) {
                           @if (column.onClick) {
                             <button type="button" class="cell-link" [disabled]="busy()" (click)="run({ onClick: column.onClick }, item.row)">
@@ -373,6 +381,24 @@ export class DataTableComponent {
         }),
     ),
   );
+
+  /** The highlighted rows (`highlight`), evaluated only for the rows of the current page: with tens of thousands of rows the others are never drawn. */
+  private readonly highlights = computed(() => {
+    const highlight = this.node().highlight;
+    const marks = new Map<Row, ResolvedHighlight>();
+    if (!highlight) return marks;
+    const label = this.i18n.t('lc.highlighted');
+    for (const row of this.pageRows()) {
+      const mark = rowHighlight(this.runtime(), highlight, { ...this.scope(), row }, label);
+      if (mark) marks.set(row, mark);
+    }
+    return marks;
+  });
+
+  protected highlight(row: Row): ResolvedHighlight | null {
+    return this.highlights().get(row) ?? null;
+  }
+  private readonly pageRows = computed(() => this.pageItems().flatMap((item) => (item.kind === 'row' ? [item.row] : [])));
 
   protected label(column: DataColumnDefinition): string {
     return this.runtime().text(column.label, this.scope()) || column.field;

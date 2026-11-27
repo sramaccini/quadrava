@@ -97,6 +97,11 @@
               "aggregate": "sum"
             }
           ],
+          "highlight": {
+            "when": "{{ row.status == 'to-check' }}",
+            "icon": "exclamation-circle",
+            "label": "{{ t('showcase_datatable.to_check', 'To check') }}"
+          },
           "rowActions": [
             {
               "id": "btn-check",
@@ -281,6 +286,11 @@
               "aggregate": "sum"
             }
           ],
+          "highlight": {
+            "when": "{{ row.status == 'to-check' }}",
+            "icon": "exclamation-circle",
+            "label": "{{ t('showcase_datatable.to_check', 'To check') }}"
+          },
           "rowActions": [
             {
               "id": "btn-check-server",

@@ -27,8 +27,8 @@ Rules common to all components, new ones included:
 | `menuButton` | Button that opens a menu of fixed items, items from a data source and dividers; label and tone are expressions (§ 2.34). |
 | `filterBar` | Filter bar that writes to the screen state (`bind`). |
 | `table` | Table with server-side paging, cell formats, sorting, selection and bulk actions, action menu, expandable rows, clickable cells, totals and highlighted rows (§ 2.37). |
-| `dataTable` | Data table with filters, sorting and grouping in the page (§ 2.18). |
-| `serverDataTable` | The same data table, but filters, sorting, groups, totals and pages are computed by the service (§ 2.19). |
+| `dataTable` | Data table with filters, sorting and grouping in the page, and highlighted rows (§ 2.18, § 2.37). |
+| `serverDataTable` | The same data table, but filters, sorting, groups, totals and pages are computed by the service; highlighted rows as in § 2.37 (§ 2.19). |
 | `form` | Form with validation, conditional fields, column grid, fields from a data source (§ 2.31) and actions; with `edit: "inline"` each field is changed on its own, click to edit (§ 2.36). |
 | `tabs` | Tabs, each with its own nodes. |
 | `detail` | Read-only detail card (label and value; a `format: markdown` field is shown formatted). |
@@ -1136,7 +1136,7 @@ The showcase «Forms» has a work item in the section «Inline editing».
 
 ### 2.37 Highlighted rows and cards
 
-A `table` or a `kanban` can make some rows stand out, for example the flagged issues of a backlog or a board.
+A `table`, a `dataTable`, a `serverDataTable` or a `kanban` can make some rows stand out, for example the flagged issues of a backlog or a board.
 
 ```json
 { "type": "kanban", "source": "issues", "columnField": "status", "titleField": "summary",
@@ -1160,9 +1160,12 @@ A `table` or a `kanban` can make some rows stand out, for example the flagged is
   an icon (`icon`, `warning` if absent, drawn filled when it has a filled form) whose name is `label`, read by screen
   readers and shown as its tooltip. `label` is required; if it resolves to empty text the name is «Highlighted».
 - **A selected row** keeps the colour of the selection; the mark stays.
-- `when` is evaluated once per load of the data, not at every redraw.
+- **Group rows** of `dataTable` and `serverDataTable` are never highlighted, only the rows of data under them.
+- `when` is evaluated once per load of the data, not at every redraw; in `dataTable` only for the rows of the current
+  page (with tens of thousands of rows the others are never drawn), in `serverDataTable` for the rows in view.
 - In the showcases: «Tasks» flags the reminder to Walker & Co. on the board; «Tables» highlights the orders awaiting
-  approval with `clock-circle`, an Ant Design icon.
+  approval with `clock-circle`, an Ant Design icon; «Datatable» marks the transactions to check, in the page and from
+  the service.
 
 ## 3. Implementation notes and known limits
 

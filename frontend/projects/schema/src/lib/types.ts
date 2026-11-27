@@ -676,6 +676,8 @@ export interface DataTableNode extends NodeBase {
   pageSize?: number;
   rowActions?: RowActionDefinition[];
   rowActionsInline?: number;
+  /** Rows highlighted while `when` is true (only those of the current page are evaluated). */
+  highlight?: RowHighlight;
 }
 
 /** Datatable driven by the service: filters, sorting, groups, totals and pages are computed by the data source. */
@@ -697,6 +699,8 @@ export interface ServerDataTableNode extends NodeBase {
   bulkActions?: ActionDefinition[];
   rowActions?: RowActionDefinition[];
   rowActionsInline?: number;
+  /** Rows of the page highlighted while `when` is true. */
+  highlight?: RowHighlight;
 }
 
 export type LayoutGap = 'none' | 'small' | 'medium' | 'large';

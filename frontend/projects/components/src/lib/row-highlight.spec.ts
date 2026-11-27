@@ -55,6 +55,46 @@ describe('highlighted rows and cards (highlight)', () => {
     expect(h.reports).toEqual([]);
   });
 
+  it('dataTable: the highlighted rows take the tone and the mark; group rows never do', async () => {
+    const h = await renderScreen({
+      components: [
+        {
+          type: 'dataTable',
+          source: 'data',
+          columns: [{ field: 'key', label: 'Key' }, { field: 'status', label: 'Status', groupable: true }],
+          groupBy: ['status'],
+          highlight: { ...highlight, tone: 'danger' },
+        } as NodeDefinition,
+      ],
+      dataSources,
+      respond: () => rows,
+    });
+    await h.until(() => h.el.querySelectorAll('tbody tr:not(.ant-table-placeholder)').length === 3, 'rows');
+    const [group, flagged, plain] = [...h.el.querySelectorAll<HTMLElement>('tbody tr:not(.ant-table-placeholder)')];
+    expect(group.classList).toContain('group-row');
+    expect(group.classList).not.toContain('lc-highlighted');
+    expect(flagged.classList).toContain('lc-highlighted');
+    expect(flagged.style.getPropertyValue('--lc-highlight-edge')).toContain('--ant-error-color');
+    expect(flagged.querySelector('td:first-child .mark')?.getAttribute('aria-label')).toBe('Flagged ODT-1');
+    expect(plain.classList).not.toContain('lc-highlighted');
+    expect(marks(h.el)).toEqual(['Flagged ODT-1']);
+    expect(h.reports).toEqual([]);
+  });
+
+  it('serverDataTable: the rows of the page for which when is true are highlighted', async () => {
+    const h = await renderScreen({
+      components: [{ type: 'serverDataTable', source: 'data', columns: [{ field: 'key', label: 'Key' }], highlight } as NodeDefinition],
+      dataSources,
+      respond: () => ({ items: rows, total: rows.length }),
+    });
+    await h.until(() => h.el.querySelectorAll('tbody tr:not(.ant-table-placeholder)').length === 2, 'rows');
+    const [flagged, plain] = [...h.el.querySelectorAll<HTMLElement>('tbody tr:not(.ant-table-placeholder)')];
+    expect(flagged.classList).toContain('lc-highlighted');
+    expect(plain.classList).not.toContain('lc-highlighted');
+    expect(marks(h.el)).toEqual(['Flagged ODT-1']);
+    expect(h.reports).toEqual([]);
+  });
+
   it('an expression in error highlights nothing and is reported; an empty label falls back to «Highlighted»', async () => {
     const h = await renderScreen({
       components: [

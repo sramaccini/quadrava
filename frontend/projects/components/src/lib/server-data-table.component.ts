@@ -16,6 +16,7 @@ import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import type { ActionDefinition, ColumnDefinition, DataColumnDefinition, ServerDataTableNode, SortSpec } from 'schema';
 import { IconComponent } from './icon.component';
 import { RowActionsComponent } from './row-actions.component';
+import { rowHighlight, type ResolvedHighlight } from './row-highlight';
 import { TONE_COLORS, focusInside, nextId, parseIsoDate, toIsoDate } from './shared';
 import { isActiveFilter, type ColumnFilter, type Row } from './table-data';
 
@@ -125,6 +126,9 @@ function asLevel(data: unknown, page: number, previous?: Level): Level {
     lc-icon.lead { margin-inline-end: 8px; }
     /* The selection checkboxes carry their name as hidden text: no space for it. */
     .select-box .ant-checkbox + span { padding: 0; }
+    tr.lc-highlighted > td, tr.lc-highlighted:hover > td { background: var(--lc-highlight-bg); }
+    tr.lc-highlighted > td:first-child { box-shadow: inset 4px 0 0 var(--lc-highlight-edge); }
+    .mark { display: inline-flex; margin-inline-end: 6px; vertical-align: -0.125em; }
     .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   `,
   template: `
@@ -287,7 +291,13 @@ function asLevel(data: unknown, page: number, previous?: Level): Level {
                     </tr>
                   }
                   @case ('row') {
-                    <tr [class.ant-table-row-selected]="isSelected(item.row)">
+                    @let mark = highlight(item.row);
+                    <tr
+                      [class.ant-table-row-selected]="isSelected(item.row)"
+                      [class.lc-highlighted]="mark !== null"
+                      [style.--lc-highlight-bg]="mark?.background"
+                      [style.--lc-highlight-edge]="mark?.edge"
+                    >
                       @if (node().selection) {
                         <td class="ant-table-selection-column">
                           <label nz-checkbox class="select-box" [nzChecked]="isSelected(item.row)" (nzCheckedChange)="toggleRow(item.row, $event)"><span class="visually-hidden">{{ rowName(item.row) }}</span></label>
@@ -295,6 +305,9 @@ function asLevel(data: unknown, page: number, previous?: Level): Level {
                       }
                       @for (column of columns(); track column.field; let first = $first) {
                         <td [nzAlign]="numeric(column) ? 'right' : 'left'" [style.padding-left.px]="first && item.level ? 16 + item.level * 24 : null">
+                          @if (first && mark) {
+                            <span class="mark" role="img" [attr.aria-label]="mark.label" [attr.title]="mark.label" [style.color]="mark.mark"><lc-icon [name]="mark.icon" [filled]="true" /></span>
+                          }
                           @if (format(item.row[column.field], column); as view) {
                             @if (column.onClick) {
                               <button type="button" class="cell-link" [disabled]="busy()" (click)="run({ onClick: column.onClick }, item.row)">
@@ -511,6 +524,22 @@ export class ServerDataTableComponent {
   private readonly remembered = signal<ReadonlyMap<unknown, Row>>(new Map());
   /** Rows drawn now, those of the open groups included. */
   protected readonly visibleRows = computed<Row[]>(() => this.items().flatMap((item) => (item.kind === 'row' ? [item.row] : [])));
+  /** The highlighted rows (`highlight`), evaluated for the rows drawn now. */
+  private readonly highlights = computed(() => {
+    const highlight = this.node().highlight;
+    const marks = new Map<Row, ResolvedHighlight>();
+    if (!highlight) return marks;
+    const label = this.i18n.t('lc.highlighted');
+    for (const row of this.visibleRows()) {
+      const mark = rowHighlight(this.runtime(), highlight, { ...this.scope(), row }, label);
+      if (mark) marks.set(row, mark);
+    }
+    return marks;
+  });
+
+  protected highlight(row: Row): ResolvedHighlight | null {
+    return this.highlights().get(row) ?? null;
+  }
   /** The selected rows: the loaded version when the row is loaded, otherwise the one remembered. */
   protected readonly selectedRows = computed<Row[]>(() => {
     const key = this.key();
