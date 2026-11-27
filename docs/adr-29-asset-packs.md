@@ -1,6 +1,6 @@
 # ADR-29: asset packs, only what each application uses
 
-Status: accepted (27 November 2026); phases 1 and 2 implemented on 27 November 2026, the others to follow.
+Status: accepted (27 November 2026); phases 1, 2 and 3 implemented on 27 November 2026, phase 4 to follow.
 
 ## Context
 
@@ -110,6 +110,8 @@ a diff, validated by `quadrava validate`. The zip is not needed after this step.
   dropped (scripts, styles, links, `foreignObject`, event attributes).
 - Images keep their content, as base64, within a size limit (PNG, JPEG, WebP, GIF, and SVG cleaned in the same way).
   They become `data:` addresses in the browser, which the Content-Security-Policy already allows.
+- What cannot become geometry filled with one colour is refused, with the reason, rather than drawn wrongly: strokes
+  (outlined in the drawing tool), text, embedded images, masks, paths with different fill rules.
 - The document follows `assets.schema.json`; `assets` is its identifier, as `screen` is for a screen, and the name of
   the file. The demo has one, `examples/assets/logistics.json`.
 

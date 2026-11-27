@@ -28,6 +28,7 @@ npx quadrava validate
 ```bash
 quadrava validate [folder]
 quadrava publish [folder] --registry <url> --app <id> [--env <environment>] [--token-env <variable>]
+quadrava assets add <pack.zip> [folder]
 ```
 
 **`validate`** reads the project in the folder (default: the current one), laid out as a Quadrava project:
@@ -39,19 +40,23 @@ screens/*.json        one file per screen, named after its identifier
 datasources/*.json    data sources documents shared by the screens
 themes/*.json         one file per theme
 i18n/*.json           one catalogue per language: key → text
+assets/*.json         asset packs: icons and images of the application (written by assets add)
 ```
 
 and checks, as the runtime reads them:
 
 - every document against its JSON Schema;
-- the identifier of every screen, data sources document and theme against the name of its file;
+- the identifier of every screen, data sources document, theme and asset pack against the name of its file;
 - the references of the screens to data sources (`{ "ref": "orders/list" }`), and every data source a screen names
   (components, lookups, `columnsFrom`, `fieldsFrom`, steps, remote rules, uploads) among its `dataSources`;
 - the screens opened by `navigate` (steps and breadcrumb items), which must be in `screens/`;
 - the `pattern` of fields and validation rules (Unicode, whole value, at most 500 characters);
 - the CEL expressions (`{{ … }}`) of screens, data sources and navigation;
 - the themes and the languages of the manifest;
-- the catalogues: the same keys in every language, and every `t('…')` in the catalogue of the default language.
+- the catalogues: the same keys in every language, and every `t('…')` in the catalogue of the default language;
+- the icons of the packs (`acme/truck`) and their images (`asset:acme/logo`) named by the screens, the navigation and the
+  themes, which must be in `assets/`. An entry of a pack that nobody names is only a notice (`NOTICE`): it is left out
+  when publishing.
 
 ```
 ERROR  screens/order-list.json /components/2/visibleIf: expression {{ can('orders.order.edit' }}: Expected RPAREN, got EOF
@@ -59,14 +64,46 @@ ERROR  i18n/it.json: missing key orders.title
 12 files checked: 2 problems.
 ```
 
-**`publish`** checks the project first and stops if it has problems; then, for every document (data sources first,
-since the screens refer to them), saves a version in the registry and publishes it in the environment (default:
+**`publish`** checks the project first and stops if it has problems; then, for every document (data sources and asset
+packs first, since the screens refer to them), saves a version in the registry and publishes it in the environment (default:
 `development`), as described by the registry contract (`contracts/registry.yaml`). The token is read from the
 environment variable `QUADRAVA_TOKEN`, or from the one named by `--token-env`; never from the command line, which would
 leave it in logs and process lists. The protected environments of a registry, if it has
 any (such as `production`), accept approved versions only: there publishing fails until a reviewer approves them in the
 registry. Which environments are protected is a choice of the registry (contract 0.7): one without protected
-environments publishes every version, and `quadrava publish` needs nothing else.
+environments publishes every version, and `quadrava publish` needs nothing else. An asset pack is published with only
+the icons and images the project uses, and not at all when it uses none: a pack of 300 icons of which the screens use 12
+publishes 12.
+
+**`assets add`** imports an asset pack (ADR-29) into the project in the folder: a zip with `pack.json` at its root and
+the files it names.
+
+```json
+{
+  "name": "acme",
+  "version": "1.2.0",
+  "license": "Proprietary, ACME S.p.A.",
+  "description": "Icons of the ACME applications",
+  "icons": {
+    "truck": { "file": "icons/truck.svg", "filled": "icons/truck-filled.svg", "keywords": ["delivery", "shipping"] }
+  },
+  "images": {
+    "logo": { "file": "images/logo.png", "alt": "ACME" }
+  }
+}
+```
+
+It writes `assets/acme.json` (or replaces it), already cleaned: every icon becomes its geometry only, a `viewBox` and the
+path data drawn in the colour of the text (shapes become paths, transforms are applied, colours, scripts and styles are
+dropped); every image keeps its content, in base64 (PNG, JPEG, WebP, GIF up to 200 kB, or an SVG without scripts and
+links). What cannot become geometry is refused with the reason, and then nothing is written: strokes (outline them in the
+drawing tool), text, embedded images, masks, paths with different fill rules. The screens then name the icons
+`acme/truck`.
+
+```
+ERROR  icons/route.svg: strokes: outline them in the drawing tool (stroke to path)
+acme.zip: 1 problem, nothing written.
+```
 
 Exit code: `0` when everything is fine, `1` when the project has problems or a document was not published, `2` for a
 wrong command.

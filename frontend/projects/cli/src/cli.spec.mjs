@@ -2,12 +2,13 @@
 // and a fake registry for publishing. Run with: npm run cli:test
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { after, describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { strToU8, zipSync } from 'fflate';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const cli = join(here, '../../../dist/cli/bin/quadrava.mjs');
@@ -192,5 +193,102 @@ describe('quadrava publish', () => {
     const { code } = await run(['publish', dir, '--registry', fake.url, '--app', 'tracker']);
     assert.equal(code, 1);
     assert.equal(fake.calls.length, 0);
+  });
+});
+
+describe('quadrava assets', () => {
+  const svg = (body, attributes = 'viewBox="0 0 24 24"') => `<svg xmlns="http://www.w3.org/2000/svg" ${attributes}>${body}</svg>`;
+  const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);
+  /** A zip of a pack, pack.json and the files, in a folder of its own. */
+  function zip(descriptor, files) {
+    const dir = mkdtempSync(join(tmpdir(), 'quadrava-pack-'));
+    temporary.push(dir);
+    const entries = { 'pack.json': strToU8(JSON.stringify(descriptor)) };
+    for (const [name, content] of Object.entries(files)) entries[name] = typeof content === 'string' ? strToU8(content) : content;
+    const file = join(dir, 'acme.zip');
+    writeFileSync(file, zipSync(entries));
+    return file;
+  }
+  const acme = (icons, images = {}) => ({ name: 'acme', version: '1.2.0', license: 'MIT', icons, images });
+  const broken = {
+    'line.svg': svg('<path d="M2 12h20" fill="none" stroke="#000" stroke-width="2"/>'),
+    'text.svg': svg('<text x="0" y="12">A</text>'),
+    'fake.png': '<svg/>',
+  };
+
+  it('assets add writes the pack cleaned: shapes as paths, transforms applied, scripts and colours gone', async () => {
+    const dir = project();
+    const file = zip(acme({ truck: { file: 'icons/truck.svg', filled: 'icons/truck-filled.svg', keywords: ['delivery'] }, box: { file: 'icons/box.svg' } }, { logo: { file: 'logo.png', alt: 'ACME' } }), {
+      'icons/truck.svg': svg('<script>alert(1)</script><g transform="translate(2 2)"><rect width="10" height="8" fill="#f00"/><circle cx="16" cy="16" r="2"/></g>'),
+      'icons/truck-filled.svg': svg('<path d="M0 0h24v24H0z"/>'),
+      'icons/box.svg': svg('<path fill-rule="evenodd" d="M2 2h20v20H2z M4 4v16h16V4z"/>', 'width="24" height="24"'),
+      'logo.png': PNG,
+    });
+    const { code, stdout, stderr } = await run(['assets', 'add', file, dir]);
+    assert.equal(code, 0, stdout + stderr);
+    assert.match(stdout, /assets\/acme\.json written: 2 icons, 1 images \(acme 1\.2\.0, MIT\)/);
+    const pack = readJson(dir, 'assets/acme.json');
+    assert.equal(pack.assets, 'acme');
+    assert.equal(pack.icons.truck.viewBox, '0 0 24 24');
+    assert.ok(pack.icons.truck.paths.every((d) => /^[MmLlHhVvCcSsQqTtAaZz0-9eE.,+\- ]+$/.test(d)));
+    assert.ok(!JSON.stringify(pack).includes('alert'));
+    assert.deepEqual(pack.icons.truck.keywords, ['delivery']);
+    assert.equal(pack.icons.truck.filled.paths.length, 1);
+    assert.equal(pack.icons.box.viewBox, '0 0 24 24');
+    assert.equal(pack.icons.box.fillRule, 'evenodd');
+    assert.deepEqual(pack.images.logo, { type: 'image/png', data: Buffer.from(PNG).toString('base64'), alt: 'ACME' });
+    // Added again: the pack of the same name is replaced.
+    assert.match((await run(['assets', 'add', file, dir])).stdout, /replaced/);
+  });
+
+  it('assets add refuses a path out of the zip and a file that is not there, and writes nothing', async () => {
+    const dir = project();
+    const outside = await run(['assets', 'add', zip(acme({ up: { file: '../up.svg' } }), {}), dir]);
+    assert.equal(outside.code, 1);
+    assert.match(outside.stderr, /icons\/up\/file: the path of a file of the zip/);
+    const missing = await run(['assets', 'add', zip(acme({ gone: { file: 'missing.svg' } }), {}), dir]);
+    assert.equal(missing.code, 1);
+    assert.match(missing.stderr, /missing\.svg: named in pack\.json but not in the zip/);
+    assert.ok(!existsSync(join(dir, 'assets/acme.json')));
+  });
+
+  it('assets add refuses what cannot become geometry or is not what it says', async () => {
+    const dir = project();
+    const { code, stderr } = await run(['assets', 'add', zip(acme({ line: { file: 'line.svg' }, text: { file: 'text.svg' } }, { fake: { file: 'fake.png' } }), broken), dir]);
+    assert.equal(code, 1);
+    assert.match(stderr, /line\.svg: strokes/);
+    assert.match(stderr, /text\.svg: the element text cannot become geometry/);
+    assert.match(stderr, /fake\.png: the content is not image\/png/);
+    assert.ok(!existsSync(join(dir, 'assets/acme.json')));
+  });
+
+  it('validate reports a pack icon that is not there, and only notes the entries nobody uses', async () => {
+    const used = await run(['validate', examples]);
+    assert.equal(used.code, 0);
+    assert.match(used.stdout, /NOTICE assets\/logistics\.json: icons not used, left out when publishing: barcode/);
+    const dir = project((d) =>
+      change(d, 'screens/order-list.json', (s) => ({
+        ...s,
+        components: [...s.components, { type: 'button', label: 'A', icon: 'logistics/ship', onClick: [{ toast: 'A' }] }, { type: 'button', label: 'B', icon: 'nowhere/truck', onClick: [{ toast: 'B' }] }],
+      })),
+    );
+    const { code, stderr } = await run(['validate', dir]);
+    assert.equal(code, 1);
+    assert.match(stderr, /order-list\.json \/components\/\d+\/icon: the pack «logistics» has no icon «ship»/);
+    assert.match(stderr, /order-list\.json \/components\/\d+\/icon: the icon nowhere\/truck is from the pack «nowhere», which is not in assets\//);
+  });
+
+  it('publish sends a pack with only the entries used, and no pack that nobody uses', async () => {
+    const fake = await registry();
+    const { code, stdout } = await run(['publish', examples, '--registry', fake.url, '--app', 'tracker']);
+    assert.equal(code, 0, stdout);
+    const pack = fake.calls.find((c) => c.method === 'POST' && c.url.includes('/documents/assets/logistics/')).body;
+    assert.deepEqual(Object.keys(pack.icons).sort(), ['truck', 'warehouse']);
+    const unused = project((d) => change(d, 'screens/showcase-basics.json', (s) => JSON.parse(JSON.stringify(s).replaceAll('logistics/truck', 'save').replaceAll('logistics/warehouse', 'save'))));
+    const other = await registry();
+    const second = await run(['publish', unused, '--registry', other.url, '--app', 'tracker']);
+    assert.equal(second.code, 0, second.stdout);
+    assert.match(second.stdout, /skipped +assets\/logistics\.json \(assets logistics\): no icon or image used/);
+    assert.ok(!other.calls.some((c) => c.url.includes('/documents/assets/')));
   });
 });

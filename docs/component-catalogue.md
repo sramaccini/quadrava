@@ -968,7 +968,8 @@ taken, in the screens and in the navigation:
 { "type": "button", "label": "Ship", "icon": "logistics/truck", "onClick": [{ "call": "ship" }] }
 ```
 
-The pack is geometry only: for every icon a `viewBox` and the path data, drawn in the colour of the text, and an optional
+`quadrava assets add pack.zip` writes the pack from a zip of SVG files (see the README of the CLI), and `quadrava
+publish` publishes only the icons the project names. The pack is geometry only: for every icon a `viewBox` and the path data, drawn in the colour of the text, and an optional
 `filled` form for a pressed toggle (format in [schema-reference.md](schema-reference.md#asset-pack-assetsschemajson)).
 The runtime loads a pack the first time a screen draws one of its icons, checks it against the schema and builds the
 SVG itself; a pack that is missing or not valid draws nothing and goes to the diagnostics. The showcase «Basic

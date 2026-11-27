@@ -20,6 +20,15 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
   filled when pressed. `DefinitionSource` gains `assets(name)`, with a default that answers 404, so existing sources
   still compile; `RegistryDefinitions` and `SnapshotDefinitions` (a `ProjectSnapshot` may carry `assets`) read them,
   and the new `AssetPacks` loads and validates each pack once.
+- `quadrava assets add pack.zip` (ADR-29, phase 3): a zip with `pack.json` and SVG and image files becomes
+  `assets/<name>.json`, cleaned with svgo (icons as geometry only, images in base64; strokes, text, masks are refused
+  with the reason). `quadrava validate` reports an icon or image of a pack that is not there and notes (`NOTICE`) the
+  entries nobody uses; `quadrava publish` publishes a pack with only the entries the project uses, and skips a pack
+  nobody uses.
+
+### Changed
+
+- The CLI bundles svgo and fflate (MIT), listed in its third-party notices; the package still has no dependencies.
 
 ### Fixed
 

@@ -1,4 +1,5 @@
-import type { Kind, ProjectDocument } from './validate';
+import type { AssetsDefinition } from '../../schema/src/public-api';
+import { usedAssets, type Kind, type ProjectDocument } from './validate';
 
 export interface PublishOptions {
   /** Address of the registry service (contracts/registry.yaml), for example `https://registry.example`. */
@@ -18,29 +19,55 @@ const REGISTRY_KIND: Partial<Record<Kind, string>> = { datasources: 'datasources
 
 /**
  * Saves a version of every document and publishes it in the environment (contracts/registry.yaml 0.8): one document
- * after the other, carrying on after a failure. Returns how many failed. The protected environments of a registry, if
- * it has any, accept approved versions only, so publishing there fails until a reviewer approves them.
+ * after the other, carrying on after a failure. Returns how many were published and how many failed. The protected environments of a registry, if
+ * it has any, accept approved versions only, so publishing there fails until a reviewer approves them. An asset pack is
+ * published with only the icons and images that the project uses (ADR-29), and not at all when it uses none.
  */
-export async function publishProject(documents: ProjectDocument[], options: PublishOptions): Promise<number> {
+export async function publishProject(documents: ProjectDocument[], options: PublishOptions): Promise<{ published: number; failed: number }> {
   const headers = { 'Content-Type': 'application/json', Accept: 'application/json', ...(options.token ? { Authorization: `Bearer ${options.token}` } : {}) };
   const registry = options.registry.replace(/\/+$/, '');
   const ordered = ORDER.flatMap((kind) => documents.filter((d) => d.kind === kind));
+  const used = usedAssets(documents);
   let failed = 0;
-  for (const { kind, id, doc, file } of ordered) {
+  let published = 0;
+  for (const document of ordered) {
+    const { kind, id, file } = document;
+    let doc = document.doc;
+    if (kind === 'assets') {
+      doc = prunePack(doc as AssetsDefinition, used.get(id));
+      if (doc === null) {
+        options.log(`skipped    ${file} (assets ${id}): no icon or image used`);
+        continue;
+      }
+    }
     const base = `${registry}/registry/apps/${encodeURIComponent(options.app)}/documents/${REGISTRY_KIND[kind]}/${encodeURIComponent(id)}`;
     try {
       const saved = await fetch(`${base}/versions`, { method: 'POST', headers, body: JSON.stringify(doc) });
       if (!saved.ok) throw new Error(`save: ${await failure(saved)}`);
       const { hash } = (await saved.json()) as { hash: string };
-      const published = await fetch(`${base}/published?env=${encodeURIComponent(options.env)}`, { method: 'PUT', headers, body: JSON.stringify({ hash }) });
-      if (!published.ok) throw new Error(`publish: ${await failure(published)}`);
+      const publication = await fetch(`${base}/published?env=${encodeURIComponent(options.env)}`, { method: 'PUT', headers, body: JSON.stringify({ hash }) });
+      if (!publication.ok) throw new Error(`publish: ${await failure(publication)}`);
+      published++;
       options.log(`published  ${file} (${kind} ${id}, ${hash.slice(0, 10)})`);
     } catch (e) {
       failed++;
       options.log(`FAILED     ${file} (${kind} ${id}): ${e instanceof Error ? e.message : e}`);
     }
   }
-  return failed;
+  return { published, failed };
+}
+
+/** The pack with only the entries used; null when none is. */
+function prunePack(pack: AssetsDefinition, used: { icons: Set<string>; images: Set<string> } | undefined): AssetsDefinition | null {
+  const keep = <T>(entries: Record<string, T> | undefined, names: Set<string> | undefined) =>
+    Object.fromEntries(Object.entries(entries ?? {}).filter(([name]) => names?.has(name)));
+  const icons = keep(pack.icons, used?.icons);
+  const images = keep(pack.images, used?.images);
+  if (!Object.keys(icons).length && !Object.keys(images).length) return null;
+  const pruned: AssetsDefinition = { ...pack, icons, images };
+  if (!Object.keys(icons).length) delete pruned.icons;
+  if (!Object.keys(images).length) delete pruned.images;
+  return pruned;
 }
 
 /** The status and, for a Problem, its title: never the whole body. */

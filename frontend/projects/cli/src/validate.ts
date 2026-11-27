@@ -53,11 +53,13 @@ const isObject = (value: unknown): value is Json => typeof value === 'object' &&
  * Checks a project as the runtime and Studio would read it: every document against its schema, the identifiers against
  * the file names, the navigation (unique identifiers, default area, screens of the project), the references to data sources, the screens
  * opened by `navigate` (steps and breadcrumb), the patterns of the fields, the CEL expressions, the themes and the
- * languages of the manifest, and the translation catalogues (the same keys in every language, every `t('…')` known).
- * Returns the documents (for publishing) and the problems; it never throws.
+ * languages of the manifest, the translation catalogues (the same keys in every language, every `t('…')` known) and the
+ * icons and images of the asset packs. Returns the documents (for publishing), the problems and the notices (an entry
+ * of a pack that nobody uses: not a problem); it never throws.
  */
-export function validateProject(files: ProjectFile[]): { documents: ProjectDocument[]; issues: Issue[] } {
+export function validateProject(files: ProjectFile[]): { documents: ProjectDocument[]; issues: Issue[]; notices: Issue[] } {
   const issues: Issue[] = [];
+  const notices: Issue[] = [];
   const documents: ProjectDocument[] = [];
 
   for (const required of ['project.json', 'navigation.json']) {
@@ -97,7 +99,69 @@ export function validateProject(files: ProjectFile[]): { documents: ProjectDocum
   checkExpressions(documents, issues);
   checkManifest(documents, issues);
   checkCatalogues(documents, files, issues);
-  return { documents, issues };
+  checkAssets(documents, issues, notices);
+  return { documents, issues, notices };
+}
+
+/** An icon of a pack, `pack/name`, and an image, `asset:pack/name`. */
+const PACK_ICON = /^([a-z0-9]+(?:-[a-z0-9]+)*)\/([a-z0-9]+(?:-[a-z0-9]+)*)$/;
+const PACK_IMAGE = /^asset:([a-z0-9]+(?:-[a-z0-9]+)*)\/([a-z0-9]+(?:-[a-z0-9]+)*)$/;
+
+/** Where the screens, the navigation and the themes name an entry of a pack. */
+interface AssetUse {
+  kind: 'icons' | 'images';
+  pack: string;
+  entry: string;
+  file: string;
+  path: string;
+}
+
+function assetUses(documents: ProjectDocument[]): AssetUse[] {
+  const uses: AssetUse[] = [];
+  for (const { kind, file, doc } of documents) {
+    if (kind !== 'screen' && kind !== 'navigation' && kind !== 'theme') continue;
+    const walk = (value: unknown, path: string, key: string): void => {
+      if (typeof value === 'string') {
+        const icon = key === 'icon' ? PACK_ICON.exec(value) : null;
+        const image = PACK_IMAGE.exec(value);
+        if (icon) uses.push({ kind: 'icons', pack: icon[1], entry: icon[2], file, path });
+        if (image) uses.push({ kind: 'images', pack: image[1], entry: image[2], file, path });
+      } else if (Array.isArray(value)) value.forEach((item, i) => walk(item, `${path}/${i}`, key));
+      else if (isObject(value)) for (const [k, v] of Object.entries(value)) walk(v, `${path}/${k}`, k);
+    };
+    walk(doc, '', '');
+  }
+  return uses;
+}
+
+/** The entries of every pack that the project uses, by pack: what `publish` keeps. */
+export function usedAssets(documents: ProjectDocument[]): Map<string, { icons: Set<string>; images: Set<string> }> {
+  const used = new Map<string, { icons: Set<string>; images: Set<string> }>();
+  for (const use of assetUses(documents)) {
+    const entry = used.get(use.pack) ?? { icons: new Set<string>(), images: new Set<string>() };
+    entry[use.kind].add(use.entry);
+    used.set(use.pack, entry);
+  }
+  return used;
+}
+
+/** Every icon and image named is in its pack; an entry of a pack that nobody names is only a notice. */
+function checkAssets(documents: ProjectDocument[], issues: Issue[], notices: Issue[]): void {
+  const packs = new Map(documents.filter((d) => d.kind === 'assets').map((d) => [d.id, d]));
+  const entries = (pack: ProjectDocument | undefined, kind: 'icons' | 'images') => ((pack?.doc as Json | undefined)?.[kind] ?? {}) as Json;
+  for (const { kind, pack, entry, file, path } of assetUses(documents)) {
+    const document = packs.get(pack);
+    const what = kind === 'icons' ? 'icon' : 'image';
+    if (!document) issues.push({ file, path, message: `the ${what} ${pack}/${entry} is from the pack «${pack}», which is not in assets/` });
+    else if (!Object.prototype.hasOwnProperty.call(entries(document, kind), entry)) issues.push({ file, path, message: `the pack «${pack}» has no ${what} «${entry}»` });
+  }
+  const used = usedAssets(documents);
+  for (const [name, document] of packs) {
+    for (const kind of ['icons', 'images'] as const) {
+      const unused = Object.keys(entries(document, kind)).filter((entry) => !used.get(name)?.[kind].has(entry));
+      if (unused.length) notices.push({ file: document.file, message: `${kind} not used, left out when publishing: ${unused.join(', ')}` });
+    }
+  }
 }
 
 /**

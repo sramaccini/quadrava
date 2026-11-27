@@ -1,6 +1,7 @@
-import { existsSync, statSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
+import { packFromZip } from './assets';
 import { readProject } from './project';
 import { publishProject } from './publish';
 import { validateProject, type Issue } from './validate';
@@ -20,6 +21,10 @@ Usage:
       Checks the project, then saves a version of every document in the registry and publishes it in the environment
       (default: development). The token is read from the environment variable QUADRAVA_TOKEN, or from the one named
       by --token-env: never from the command line.
+
+  quadrava assets add <pack.zip> [folder]
+      Imports an asset pack (ADR-29): a zip with pack.json and its SVG and image files becomes assets/<name>.json in
+      the project, cleaned (icons as geometry only, images in base64). An existing pack of the same name is replaced.
 
   quadrava --version | --help
 
@@ -42,16 +47,17 @@ async function main(argv: string[]): Promise<number> {
     },
   });
   if (values.version) return print(QUADRAVA_VERSION);
+  if (values.help || !positionals.length) return print(USAGE);
+  if (positionals[0] === 'assets') return addAssets(positionals.slice(1));
   const [command, folder = '.', ...extra] = positionals;
-  if (values.help || !command) return print(USAGE);
   if (command !== 'validate' && command !== 'publish') throw new UsageError(`unknown command: ${command}`);
   if (extra.length) throw new UsageError(`one folder only, not: ${extra.join(' ')}`);
   const root = resolve(folder);
   if (!existsSync(root) || !statSync(root).isDirectory()) throw new UsageError(`not a folder: ${folder}`);
 
   const files = readProject(root);
-  const { documents, issues } = validateProject(files);
-  report(issues, files.length);
+  const { documents, issues, notices } = validateProject(files);
+  report(issues, notices, files.length);
   if (issues.length) return 1;
   if (command === 'validate') return 0;
 
@@ -63,14 +69,39 @@ async function main(argv: string[]): Promise<number> {
   const token = process.env[tokenVariable] || undefined;
   if (!token) console.log(`No token in ${tokenVariable}: only a registry without authentication accepts the calls.`);
   const env = values.env ?? 'development';
-  const failed = await publishProject(documents, { registry, app: values.app, env, token, log: (line) => console.log(line) });
-  const published = documents.filter((d) => d.kind !== 'project').length - failed;
+  const { published, failed } = await publishProject(documents, { registry, app: values.app, env, token, log: (line) => console.log(line) });
   console.log(`${published} documents published in application «${values.app}», environment «${env}»${failed ? `, ${failed} failed` : ''}.`);
   return failed ? 1 : 0;
 }
 
-function report(issues: Issue[], files: number): void {
+/** `assets add <zip> [folder]`: the pack of the zip, cleaned, into the assets folder of the project. */
+function addAssets(args: string[]): number {
+  const [subcommand, zipFile, folder = '.', ...extra] = args;
+  if (subcommand !== 'add') throw new UsageError(`unknown command: assets ${subcommand ?? ''}`.trim());
+  if (!zipFile) throw new UsageError('assets add needs the zip of the pack');
+  if (extra.length) throw new UsageError(`one folder only, not: ${extra.join(' ')}`);
+  const root = resolve(folder);
+  if (!existsSync(root) || !statSync(root).isDirectory()) throw new UsageError(`not a folder: ${folder}`);
+  if (!existsSync(zipFile) || !statSync(zipFile).isFile()) throw new UsageError(`not a file: ${zipFile}`);
+  const { pack, issues } = packFromZip(new Uint8Array(readFileSync(zipFile)));
+  for (const issue of issues) console.error(`ERROR  ${issue.file}: ${issue.message}`);
+  if (!pack) {
+    console.log(`${zipFile}: ${issues.length === 1 ? '1 problem' : `${issues.length} problems`}, nothing written.`);
+    return 1;
+  }
+  mkdirSync(join(root, 'assets'), { recursive: true });
+  const target = join(root, 'assets', `${pack.assets}.json`);
+  const replaced = existsSync(target);
+  writeFileSync(target, JSON.stringify(pack, null, 2) + '\n');
+  const icons = Object.keys(pack.icons ?? {}).length;
+  const images = Object.keys(pack.images ?? {}).length;
+  console.log(`assets/${pack.assets}.json ${replaced ? 'replaced' : 'written'}: ${icons} icons, ${images} images (${pack.assets} ${pack.version}, ${pack.license}).`);
+  return 0;
+}
+
+function report(issues: Issue[], notices: Issue[], files: number): void {
   for (const issue of issues) console.error(`ERROR  ${issue.file}${issue.path ? ` ${issue.path}` : ''}: ${issue.message}`);
+  for (const notice of notices) console.log(`NOTICE ${notice.file}: ${notice.message}`);
   const problems = issues.length === 1 ? '1 problem' : `${issues.length || 'no'} problems`;
   console.log(`${files} files checked: ${problems}.`);
 }

@@ -1,17 +1,41 @@
 // Builds the Quadrava CLI into dist/cli, ready for `npm publish` (ADR-20): one file with everything it needs (the
-// precompiled schema validators, the CEL engine), so the package has no dependencies; the licence texts of the
-// bundled packages go into THIRD-PARTY-NOTICES.md, as their licences require.
+// precompiled schema validators, the CEL engine, svgo and fflate for the asset packs), so the package has no
+// dependencies; the licence texts of the bundled packages go into THIRD-PARTY-NOTICES.md, as their licences require.
 //
 // Usage: node projects/cli/build.mjs
 import { build } from 'esbuild';
 import { copyFileSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { createRequire } from 'node:module';
+import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const frontend = join(here, '../..');
 const out = join(frontend, 'dist/cli');
 const pkg = JSON.parse(readFileSync(join(here, 'package.json'), 'utf8'));
+
+/**
+ * Some packages (css-tree, used by svgo) read JSON files with a require made by createRequire, which esbuild cannot
+ * follow: the JSON is put in its place, so the bundle needs no file next to it. The files put in are remembered for the
+ * notices, since they are not inputs of the build (mdn-data).
+ */
+const inlined = new Set();
+const inlineJsonRequires = {
+  name: 'inline-json-requires',
+  setup(build) {
+    build.onLoad({ filter: /[\\/]node_modules[\\/].*\.js$/ }, (args) => {
+      const source = readFileSync(args.path, 'utf8');
+      if (!source.includes('createRequire(import.meta.url)')) return undefined;
+      const resolveFrom = createRequire(args.path);
+      const contents = source.replace(/\brequire\((['"])([^'"]+\.json)\1\)/g, (_, _quote, path) => {
+        const resolved = resolveFrom.resolve(path);
+        inlined.add(relative(frontend, resolved).replaceAll('\\', '/'));
+        return `(${readFileSync(resolved, 'utf8')})`;
+      });
+      return { contents, loader: 'js' };
+    });
+  },
+};
 
 rmSync(out, { recursive: true, force: true });
 const result = await build({
@@ -25,12 +49,13 @@ const result = await build({
   define: { QUADRAVA_VERSION: JSON.stringify(pkg.version) },
   metafile: true,
   logLevel: 'warning',
+  plugins: [inlineJsonRequires],
 });
 
 // The packages that ended up in the bundle, from the inputs of the build.
 const LICENCE_FILE = /^(licen[cs]e|copying|notice)(\.(md|txt|markdown))?$/i;
 const bundled = new Map();
-for (const input of Object.keys(result.metafile.inputs)) {
+for (const input of [...Object.keys(result.metafile.inputs), ...inlined]) {
   const match = /node_modules\/((?:@[^/]+\/)?[^/]+)\//.exec(input);
   if (!match || bundled.has(match[1])) continue;
   const dir = join(frontend, 'node_modules', match[1]);
