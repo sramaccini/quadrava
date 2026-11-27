@@ -525,6 +525,47 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
       "unevaluatedProperties": false,
       "description": "Action on a row: it runs steps (onClick) or opens a relative path of the application (href)."
     },
+    "fieldAction": {
+      "type": "object",
+      "$ref": "#/$defs/actionProps",
+      "$comment": "The properties of actionProps are listed again as true: when a branch of oneOf fails, Ajv forgets the properties evaluated through $ref, and unevaluatedProperties would refuse them.",
+      "required": [
+        "label"
+      ],
+      "properties": {
+        "id": true,
+        "label": true,
+        "visibleIf": true,
+        "hiddenIf": true,
+        "enabledIf": true,
+        "onClick": true,
+        "tooltip": true,
+        "icon": true,
+        "value": {
+          "description": "Value the action puts in its field, usually an expression such as {{ user.id }} for «Assign to me». In an inline form it is saved at once, through onSave, as if the user had chosen it. Not available while the field is read-only."
+        }
+      },
+      "oneOf": [
+        {
+          "required": [
+            "value"
+          ],
+          "properties": {
+            "value": true
+          }
+        },
+        {
+          "required": [
+            "onClick"
+          ],
+          "properties": {
+            "onClick": true
+          }
+        }
+      ],
+      "unevaluatedProperties": false,
+      "description": "Action shown as a link under a field of a form: it puts a value in the field (value) or runs steps (onClick). Its expressions see form, field (the name of the field) and value (its current value)."
+    },
     "rowHighlight": {
       "type": "object",
       "required": [
@@ -945,6 +986,14 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
         "hint": {
           "type": "string",
           "description": "Only for file fields shown as dropzone: a short text under the button, for example the largest size allowed. It can contain {{ }}."
+        },
+        "actions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/fieldAction"
+          },
+          "description": "Actions shown as small links under the field, for example «Assign to me» under an assignee: they follow the field in the tab order and are grouped under its label for screen readers. Only in a form (inline forms included); while an inline field is being edited they are hidden."
         },
         "emptyText": {
           "type": "string",

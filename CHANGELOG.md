@@ -14,6 +14,10 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ### Added
 
+- `actions` on a field of a form: small links under the field, such as «Assign to me». An action puts a value in the
+  field (`value`, saved at once through `onSave` in an inline form) or runs steps (`onClick`); its expressions see
+  `form`, `field` and `value`.
+
 - `visibleIf` on the items of a screen's `breadcrumb`: an item is in the path only while it is true (an error leaves
   it out), for example the parent of an issue that has one.
 

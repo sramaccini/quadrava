@@ -504,6 +504,14 @@
                 "labelField": "name",
                 "minChars": 0
               },
+              "actions": [
+                {
+                  "id": "unassign",
+                  "label": "{{ t('showcase_form.inline_unassign', 'Unassign') }}",
+                  "value": null,
+                  "visibleIf": "{{ value != null }}"
+                }
+              ],
               "width": "m"
             },
             {

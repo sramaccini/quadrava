@@ -178,6 +178,11 @@ export interface RowHighlight {
   icon?: string;
   label: string;
 }
+/**
+ * Action shown as a link under a field of a form: it puts `value` in the field (saved at once in an inline form) or runs
+ * steps; its expressions see `form`, `field` and `value`.
+ */
+export type FieldActionDefinition = (Omit<ActionDefinition, 'onClick'> & { value: unknown; onClick?: never }) | (Omit<ActionDefinition, 'onClick'> & { onClick: Step[]; value?: never });
 export type RowActionDefinition = (Omit<ActionDefinition, 'onClick'> & { onClick: Step[]; href?: never }) | (Omit<ActionDefinition, 'onClick'> & { href: string; onClick?: never });
 
 /** Sizes of an input: about 8, 16, 32 and 48 characters, or the whole line (`full`). */
@@ -201,6 +206,8 @@ export interface FieldDefinition {
   display?: 'button' | 'dropzone' | 'heading';
   /** For `file` shown as dropzone: a short text under the button. */
   hint?: string;
+  /** Links under the field in a form, such as «Assign to me». */
+  actions?: FieldActionDefinition[];
   /** In an inline form: the text in place of an empty value that can be changed. */
   emptyText?: string;
   /** For `file`: data source the file is sent to right away (variable `file`). */

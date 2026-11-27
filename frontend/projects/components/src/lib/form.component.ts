@@ -4,7 +4,7 @@ import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzFormModule } from 'ng-zorro-antd/form';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
-import type { ActionDefinition, FieldDefinition, FormNode } from 'schema';
+import type { ActionDefinition, FieldActionDefinition, FieldDefinition, FormNode } from 'schema';
 import { BusyComponent } from './busy.component';
 import { FieldControlComponent } from './field-control.component';
 import { labelInControl } from './file-field.component';
@@ -58,6 +58,9 @@ import { nextId } from './shared';
     form.flow > nz-form-item { flex: 0 1 auto; min-width: 0; flex-flow: column nowrap; }
     form.flow > nz-form-item.line { flex-basis: 100%; }
     form.flow > nz-form-item.line:not(.full) lc-field-control { max-width: 560px; }
+    /* Actions under a field («Assign to me»): small links, not buttons that compete with those of the form. */
+    .field-actions { display: flex; flex-wrap: wrap; gap: 0 12px; margin-top: 2px; }
+    .field-actions button[nz-button] { height: auto; padding: 0; }
     form.flow > .actions { flex-basis: 100%; }
     /* The buttons wrap when they do not fit, instead of widening the page (WCAG 1.4.10, reflow). */
     .actions { display: flex; flex-wrap: wrap; gap: var(--lc-gap, 12px); }
@@ -167,6 +170,29 @@ import { nextId } from './shared';
                 }
               }
               </div>
+              }
+              @if (field.actions?.length && editing() !== item.key) {
+                @let actionScope = fieldActionScope(item);
+                <div class="field-actions" role="group" [attr.aria-labelledby]="labelInControl(field) ? null : id + item.key + '-label'">
+                  @for (action of field.actions; track $index) {
+                    @if (runtime().isVisible(action, actionScope)) {
+                      <button
+                        nz-button
+                        nzType="link"
+                        nzSize="small"
+                        type="button"
+                        [attr.title]="action.tooltip ? runtime().text(action.tooltip, actionScope) : null"
+                        [disabled]="busy() || fieldsLoading() || (action.onClick ? false : readOnly(field)) || !runtime().isEnabled(action, actionScope)"
+                        (click)="runFieldAction(item, action)"
+                      >
+                        @if (action.icon) {
+                          <lc-icon [name]="action.icon" />
+                        }
+                        {{ runtime().text(action.label, actionScope) }}
+                      </button>
+                    }
+                  }
+                </div>
               }
             </nz-form-control>
           </nz-form-item>
@@ -491,7 +517,10 @@ export class FormComponent {
     if (confirmsOnPick(item.field)) void this.save(item);
   }
 
-  /** A checkbox or switch of an inline form: the change is saved at once and goes back if the checks or the steps fail. */
+  /**
+   * A checkbox or switch of an inline form, or the value of an action under a field: the change is saved at once and goes
+   * back if the checks or the steps fail.
+   */
   protected async toggle(item: FormItem, value: unknown): Promise<void> {
     if (this.busy()) return;
     const open = this.items().find((i) => i.key === this.editing());
@@ -551,6 +580,32 @@ export class FormComponent {
 
   private focusAfterRender(id: string): void {
     afterNextRender(() => this.host.querySelector<HTMLElement>(`[id="${CSS.escape(id)}"]`)?.focus(), { injector: this.injector });
+  }
+
+  /** What the expressions of the actions under a field see: the form, the name of the field and its value. */
+  protected fieldActionScope(item: FormItem): Scope {
+    return { ...this.fieldScope(), field: item.key, value: this.valueOf(item) };
+  }
+
+  /**
+   * An action under a field: `value` goes into the field, as if the user had chosen it (in an inline form it is saved at
+   * once, through `onSave`); `onClick` runs its steps.
+   */
+  protected async runFieldAction(item: FormItem, action: FieldActionDefinition): Promise<void> {
+    if (this.busy()) return;
+    const scope = this.fieldActionScope(item);
+    if (!action.onClick) {
+      const value = this.runtime().resolveValue(action.value, scope);
+      if (this.inline()) await this.toggle(item, value);
+      else this.set(item, value);
+      return;
+    }
+    this.busy.set(true);
+    try {
+      await runSteps(this.runtime(), action.onClick, scope, { onFieldErrors: (errors) => this.placeServerErrors(errors) });
+    } finally {
+      this.busy.set(false);
+    }
   }
 
   protected async run(action: ActionDefinition): Promise<void> {

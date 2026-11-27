@@ -407,6 +407,7 @@
   "showcase_form.inline_saved": "Saved: {field}",
   "showcase_form.inline_summary": "Summary",
   "showcase_form.inline_title": "Inline editing",
+  "showcase_form.inline_unassign": "Unassign",
   "showcase_form.inline_unassigned": "Unassigned",
   "showcase_form.key_copied": "Key copied",
   "showcase_form.link_copied": "Link copied",

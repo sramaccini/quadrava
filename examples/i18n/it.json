@@ -407,6 +407,7 @@
   "showcase_form.inline_saved": "Salvato: {field}",
   "showcase_form.inline_summary": "Riepilogo",
   "showcase_form.inline_title": "Modifica in linea",
+  "showcase_form.inline_unassign": "Rimuovi assegnatario",
   "showcase_form.inline_unassigned": "Non assegnato",
   "showcase_form.key_copied": "Chiave copiata",
   "showcase_form.link_copied": "Link copiato",

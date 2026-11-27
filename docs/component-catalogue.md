@@ -29,7 +29,7 @@ Rules common to all components, new ones included:
 | `table` | Table with server-side paging, cell formats, sorting, selection and bulk actions, action menu, expandable rows, clickable cells, totals and highlighted rows (§ 2.37). |
 | `dataTable` | Data table with filters, sorting and grouping in the page, and highlighted rows (§ 2.18, § 2.37). |
 | `serverDataTable` | The same data table, but filters, sorting, groups, totals and pages are computed by the service; highlighted rows as in § 2.37 (§ 2.19). |
-| `form` | Form with validation, conditional fields, column grid, fields from a data source (§ 2.31) and actions; with `edit: "inline"` each field is changed on its own, click to edit (§ 2.36). |
+| `form` | Form with validation, conditional fields, column grid, fields from a data source (§ 2.31) and actions, also under a single field (§ 2.38); with `edit: "inline"` each field is changed on its own, click to edit (§ 2.36). |
 | `tabs` | Tabs, each with its own nodes. |
 | `detail` | Read-only detail card (label and value; a `format: markdown` field is shown formatted). |
 | `alert` | In-page message (info, success, error), also formatted (`format: markdown`). |
@@ -1178,6 +1178,36 @@ A `table`, a `dataTable`, a `serverDataTable` or a `kanban` can make some rows s
 - In the showcases: «Tasks» flags the reminder to Walker & Co. on the board; «Tables» highlights the orders awaiting
   approval with `clock-circle`, an Ant Design icon; «Datatable» marks the transactions to check, in the page and from
   the service.
+
+### 2.38 Actions under a field
+
+A field of a form can have small links under it, such as «Assign to me» under the assignee of an issue:
+
+```json
+{ "name": "assignee", "type": "lookup", "label": "Assignee", "lookup": { "source": "people", "valueField": "id", "labelField": "name" },
+  "actions": [
+    { "label": "Assign to me", "value": "{{ user.id }}", "visibleIf": "{{ value != user.id }}" }
+  ] }
+```
+
+```
+ Assignee
+ ┌──────────────────────────┐
+ │ Luca Bianchi             │
+ └──────────────────────────┘
+ Assign to me                     ← a link, after the field in the tab order
+```
+
+- **`value`** puts a value in the field, as if the user had chosen it. In an inline form (§ 2.36) it is saved at
+  once through `onSave`, with `field` and `value`, and goes back if the checks or a step fail; in a normal form it only
+  changes the field. It is disabled while the field is read-only.
+- **`onClick`** runs steps instead, for anything else (open a dialog, call a service). An action has one of the two.
+- The expressions of an action (`label`, `visibleIf`, `enabledIf`, `value`, the steps) see `form`, `field` (the
+  name of the field) and `value` (its current value): «Assign to me» hides itself once the issue is assigned to the
+  user. `icon` and `tooltip` are as on the other actions.
+- The links are grouped under the label of the field, so a screen reader says which field they belong to. While an
+  inline field is being edited they are hidden. Only in a form: a standalone `input` and the filter bar ignore them.
+- The showcase «Forms» has «Unassign» under the assignee of the work item, in the section «Inline editing».
 
 ## 3. Implementation notes and known limits
 
