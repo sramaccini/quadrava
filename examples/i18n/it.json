@@ -465,6 +465,7 @@
   "showcase_layout.showcase_tabs_detail_and_message": "Vetrina: schede, dettaglio e messaggi",
   "showcase_layout.tabs_detail_and_messages": "Schede, dettaglio e messaggi",
   "showcase_layout.this_tab_exists_only_for_those_w": "Questa scheda esiste solo per chi può leggere gli IBAN: senza il permesso non compare nemmeno il suo titolo.",
+  "showcase_layout.updated": "Aggiornato",
   "showcase_layout.your_profile_cannot_edit_orders": "Il tuo profilo non può modificare gli ordini: questo messaggio sparisce con il permesso orders.order.write (prova il profilo responsabile).",
   "showcase_tables.a_filter_bar_writes_into_the_scr": "Una barra di filtri scrive nello stato della schermata; la tabella ricarica da sola quando i filtri cambiano. Le righe hanno azioni condizionate dai permessi e dallo stato della riga.",
   "showcase_tables.approve_order": "Approvare l'ordine {number}?",

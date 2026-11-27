@@ -329,7 +329,7 @@ export interface FormValidationRule extends ValidationRule {
 }
 
 export type Tone = 'neutral' | 'primary' | 'success' | 'danger';
-export type CellFormat = 'text' | 'number' | 'currency' | 'percent' | 'date' | 'datetime' | 'boolean' | 'badge' | 'markdown';
+export type CellFormat = 'text' | 'number' | 'currency' | 'percent' | 'date' | 'datetime' | 'relative' | 'boolean' | 'badge' | 'markdown';
 /** Plain or formatted text (restricted Markdown). */
 export type TextFormat = 'plain' | 'markdown';
 

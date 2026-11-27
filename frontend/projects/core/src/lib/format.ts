@@ -5,6 +5,8 @@ export interface FormattedValue {
   text: string;
   /** Present only for the `badge` format. */
   tone?: Tone;
+  /** Present only for the `relative` format: the full date and time, for the tooltip and screen readers. */
+  title?: string;
 }
 
 type FormatSpec = Pick<ColumnDefinition, 'format' | 'currency' | 'badges' | 'valueKey' | 'valueKeys' | 'decimals'>;
@@ -29,6 +31,7 @@ export interface FormatLabels {
 // Creating a formatter is expensive: one is kept for every combination of language and options.
 const numberFormats = new Map<string, Intl.NumberFormat>();
 const dateFormats = new Map<string, Intl.DateTimeFormat>();
+const relativeFormats = new Map<string, Intl.RelativeTimeFormat>();
 
 function number(locale: string, options: Intl.NumberFormatOptions): Intl.NumberFormat {
   const key = `${locale}|${JSON.stringify(options)}`;
@@ -44,17 +47,52 @@ function dateTime(locale: string, options: Intl.DateTimeFormatOptions): Intl.Dat
   return format;
 }
 
+function relativeTime(locale: string): Intl.RelativeTimeFormat {
+  let format = relativeFormats.get(locale);
+  if (!format) relativeFormats.set(locale, (format = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' })));
+  return format;
+}
+
 const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
+const MINUTE = 60_000;
+const HOUR = 60 * MINUTE;
+const DAY = 24 * HOUR;
+
+/**
+ * A moment as distance from now, in the largest unit that fits: «now», «5 minutes ago», «yesterday», «in 3 days»,
+ * «last month», «2 years ago». A date without time is compared by calendar days, so today's date is «today».
+ */
+function relativeText(date: Date, dateOnly: boolean, now: number, locale: string): string {
+  const format = relativeTime(locale);
+  if (dateOnly) {
+    const today = new Date(now);
+    const days = Math.round((date.getTime() - Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())) / DAY);
+    return Math.abs(days) < 30 ? format.format(days, 'day') : calendarDistance(days * DAY, format);
+  }
+  const diff = date.getTime() - now;
+  const size = Math.abs(diff);
+  if (size < MINUTE) return format.format(0, 'second');
+  if (size < HOUR) return format.format(Math.trunc(diff / MINUTE), 'minute');
+  if (size < DAY) return format.format(Math.trunc(diff / HOUR), 'hour');
+  if (size < 30 * DAY) return format.format(Math.trunc(diff / DAY), 'day');
+  return calendarDistance(diff, format);
+}
+
+function calendarDistance(diff: number, format: Intl.RelativeTimeFormat): string {
+  const months = Math.trunc(diff / (30.44 * DAY));
+  return Math.abs(months) < 12 ? format.format(months, 'month') : format.format(Math.trunc(months / 12), 'year');
+}
 
 /**
  * Turns a value of the row into the text to show. It never throws: a value that cannot be
  * formatted (invalid date, non-numeric amount) is shown as it is, and `null` or `undefined` become empty text.
+ * `now` is the moment the `relative` format measures from (the current time if absent).
  */
-export function formatValue(value: unknown, spec: FormatSpec, locale = 'en-GB', labels: FormatLabels = { yes: 'Yes', no: 'No' }): FormattedValue {
+export function formatValue(value: unknown, spec: FormatSpec, locale = 'en-GB', labels: FormatLabels = { yes: 'Yes', no: 'No' }, now = Date.now()): FormattedValue {
   if (value === null || value === undefined) return { text: '' };
   // A list of texts or numbers (the tags of a row): its items, each formatted, separated by commas.
   if (Array.isArray(value) && spec.format !== 'badge' && value.every((item) => typeof item === 'string' || typeof item === 'number')) {
-    return { text: value.map((item) => formatValue(item, spec, locale, labels).text).join(', ') };
+    return { text: value.map((item) => formatValue(item, spec, locale, labels, now).text).join(', ') };
   }
   try {
     switch (spec.format) {
@@ -82,6 +120,13 @@ export function formatValue(value: unknown, spec: FormatSpec, locale = 'en-GB', 
         const options: Intl.DateTimeFormatOptions =
           spec.format === 'date' || dateOnly ? { dateStyle: 'short', ...(dateOnly ? { timeZone: 'UTC' } : {}) } : { dateStyle: 'short', timeStyle: 'short' };
         return { text: dateTime(locale, options).format(date) };
+      }
+      case 'relative': {
+        const date = toDate(value);
+        if (!date) return { text: String(value) };
+        const dateOnly = typeof value === 'string' && DATE_ONLY.test(value);
+        const full = dateTime(locale, dateOnly ? { dateStyle: 'long', timeZone: 'UTC' } : { dateStyle: 'long', timeStyle: 'short' }).format(date);
+        return { text: relativeText(date, dateOnly, now, locale), title: full };
       }
       case 'boolean':
         return { text: value === true ? labels.yes : value === false ? labels.no : String(value) };

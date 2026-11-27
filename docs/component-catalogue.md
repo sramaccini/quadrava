@@ -31,7 +31,7 @@ Rules common to all components, new ones included:
 | `serverDataTable` | The same data table, but filters, sorting, groups, totals and pages are computed by the service; highlighted rows as in § 2.37 (§ 2.19). |
 | `form` | Form with validation, conditional fields, column grid, fields from a data source (§ 2.31) and actions, also under a single field (§ 2.38); with `edit: "inline"` each field is changed on its own, click to edit (§ 2.36). |
 | `tabs` | Tabs, each with its own nodes. |
-| `detail` | Read-only detail card (label and value; a `format: markdown` field is shown formatted). |
+| `detail` | Read-only detail card (label and value; a `format: markdown` field is shown formatted). Its columns follow its own width, not the window: three, two from 840 px down, one under 480 px with the label above the value, so it fits a narrow side column. |
 | `alert` | In-page message (info, success, error), also formatted (`format: markdown`). |
 | `stats` | Indicators (KPIs). |
 | `wizard` | Step-by-step procedure. |
@@ -41,7 +41,7 @@ Rules common to all components, new ones included:
 | `squareChart` | Compact square columns for dense time-series data. |
 | `graph` | Nodes and connections laid out from left to right, for example a workflow (§ 2.35). |
 | Fields | `text`, `number`, `select`, `checkbox`, `date`, `textarea`, `datetime`, `radio`, `switch`, `multiselect`, `tags`, `lookup`, `file`, `repeater`, `richtext` (§ 2.26). |
-| Cell formats | `text`, `number`, `currency`, `percent`, `date`, `datetime`, `boolean`, `badge`, `markdown`. |
+| Cell formats | `text`, `number`, `currency`, `percent`, `date`, `datetime`, `relative`, `boolean`, `badge`, `markdown`. `relative` shows a date as its distance from now («3 days ago», «yesterday», «in 2 hours»; with `Intl.RelativeTimeFormat`, in the language of the user), with the full date as tooltip and, for screen readers, as text; a date without time counts calendar days («today»). In tables and in the detail. |
 | Steps | `set`, `call` (with `as` and `onError`), `refresh`, `navigate`, `toast`, `confirm`, `dialog`, `view` and `popover` (§ 2.11), `validate`, `print`, `export`, `download`, `copy` and `copyLink` (§ 2.22), `if` and `run`; named sequences in `actions` (§ 2.22b). |
 | Shell | Side bar (`lc-sidebar`, with search, counters and keyboard support: § 2.25; the application brand is inserted with an `lcBrand` element, otherwise logo and name), messages of the user (`lc-notification-bell`: a bell with the unread count and the list, ADR-22; `notificationsOf` keeps only well-formed messages), user menu (`lc-user-menu`: an icon with the initial and the name in its tooltip, application items (in the runtime those of `userMenu` of the navigation, ADR-25), optional groups of choices with the current one ticked in each, such as the tenants of ADR-18 and the operational roles of ADR-28 (`choices` takes one group or a list, `choiceIn` gives the group of a choice), and sign-out last, after a confirmation; a menu for screen readers and the keyboard: arrows, Home, End, Enter, Esc, submenus with the side arrows), responsive top bar, `lc-quadrava-wordmark` logotype, syntax-highlighted code viewer `lc-code-view`, tools in section headers (`SectionTools`: «JSON» and «Aiuto» in the demo showcase). |
 

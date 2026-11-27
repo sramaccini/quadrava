@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { afterNextRender, ChangeDetectionStrategy, Component, computed, DestroyRef, ElementRef, inject, input, signal } from '@angular/core';
 import { MarkdownComponent } from './markdown.component';
 import { I18n, formatValue, type FormatLabels, type FormattedValue, type ScreenRuntime, type Scope } from 'core';
 import { BusyComponent } from './busy.component';
@@ -9,17 +9,25 @@ import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import type { ColumnDefinition, DetailNode } from 'schema';
 import { IconComponent } from './icon.component';
+import { FormattedValueComponent } from './formatted-value.component';
 import { TONE_COLORS } from './shared';
+
+/** Under this width the panel has one column, label above value; under WIDE two columns, otherwise three. */
+const NARROW = 480;
+const WIDE = 840;
 
 /**
  * Read-only detail panel: a record shown as label and value pairs.
  * The `source` data source must return an object; every field uses the same formats as the columns of a table.
+ * The number of columns follows the width of the panel, not of the window: in a narrow side column (under 480 px) the
+ * fields go one under the other, the label above the value.
  */
 @Component({
   selector: 'lc-detail',
-  imports: [BusyComponent, MarkdownComponent, IconComponent, NzCardModule, NzDescriptionsModule, NzTagModule, NzAlertModule, NzTooltipModule],
+  imports: [BusyComponent, FormattedValueComponent, MarkdownComponent, IconComponent, NzCardModule, NzDescriptionsModule, NzTagModule, NzAlertModule, NzTooltipModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
+    :host { display: block; }
     .help { display: inline-flex; margin-left: 4px; color: var(--lc-color-muted, #5d6b7a); cursor: help; vertical-align: -1px; }
     .help:focus-visible { outline: 2px solid var(--lc-focus-ring, var(--lc-color-primary, #1f5fbf)); outline-offset: 2px; border-radius: 50%; }
   `,
@@ -30,7 +38,7 @@ import { TONE_COLORS } from './shared';
       } @else {
       <lc-busy [busy]="source().status === 'loading'" [empty]="!record()">
       @if (record(); as rec) {
-        <nz-descriptions nzBordered nzSize="small" [nzColumn]="{ xxl: 3, xl: 3, lg: 3, md: 2, sm: 1, xs: 1 }">
+        <nz-descriptions nzBordered nzSize="small" [nzColumn]="columns()" [nzLayout]="narrow() ? 'vertical' : 'horizontal'">
           @for (field of fields(); track field.field) {
             <ng-template #title>
               {{ runtime().text(field.label, scope()) || field.field }}
@@ -46,7 +54,11 @@ import { TONE_COLORS } from './shared';
                 @if (v.tone) {
                   <nz-tag [nzColor]="color(v.tone)">{{ v.text }}</nz-tag>
                 } @else {
-                  {{ v.text || '—' }}
+                  @if (v.text) {
+                    <lc-formatted-value [value]="v" />
+                  } @else {
+                    —
+                  }
                 }
               }
             </nz-descriptions-item>
@@ -66,6 +78,25 @@ export class DetailComponent {
   readonly scope = input<Scope>({});
 
   protected readonly i18n = inject(I18n);
+  /** Width of the panel, 0 until measured (then the columns follow the window, as before). */
+  private readonly width = signal(0);
+  protected readonly narrow = computed(() => this.width() > 0 && this.width() < NARROW);
+  protected readonly columns = computed(() => {
+    const width = this.width();
+    if (!width) return { xxl: 3, xl: 3, lg: 3, md: 2, sm: 1, xs: 1 };
+    return width < NARROW ? 1 : width < WIDE ? 2 : 3;
+  });
+
+  constructor() {
+    const host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+    const destroyRef = inject(DestroyRef);
+    afterNextRender(() => {
+      if (typeof ResizeObserver === 'undefined') return;
+      const observer = new ResizeObserver((entries) => this.width.set(Math.round(entries[0]?.contentRect.width ?? 0)));
+      observer.observe(host);
+      destroyRef.onDestroy(() => observer.disconnect());
+    });
+  }
   private readonly labels = (): FormatLabels => ({ yes: this.i18n.t('lc.yes'), no: this.i18n.t('lc.no'), translate: (key, fallback) => this.i18n.t(key, {}, fallback) });
   protected readonly source = computed(() => this.runtime().source(this.node().source));
   protected readonly fields = computed(() => this.node().fields.filter((f) => this.runtime().isVisible(f, this.scope())));

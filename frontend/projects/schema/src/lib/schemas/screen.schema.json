@@ -3580,11 +3580,12 @@
             "percent",
             "date",
             "datetime",
+            "relative",
             "boolean",
             "badge",
             "markdown"
           ],
-          "description": "How to show the value: number (number with digits grouped according to the language, `decimals` decimals), currency (amount with symbol), percent (the value is already in percentage points, 10 = 10 %), date and datetime (ISO 8601 text), boolean (Yes/No), badge (coloured label according to `badges`). markdown: formatted text (restricted Markdown); in the detail it is shown formatted, in tables as plain text."
+          "description": "How to show the value: number (number with digits grouped according to the language, `decimals` decimals), currency (amount with symbol), percent (the value is already in percentage points, 10 = 10 %), date and datetime (ISO 8601 text), relative (the distance from now, such as «3 days ago» or «in 2 hours», with the full date as tooltip; ISO 8601 text), boolean (Yes/No), badge (coloured label according to `badges`). markdown: formatted text (restricted Markdown); in the detail it is shown formatted, in tables as plain text."
         },
         "currency": {
           "type": "string",

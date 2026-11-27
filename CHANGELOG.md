@@ -12,6 +12,16 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Added
+
+- The cell format `relative` for tables and the detail: a date shown as its distance from now («3 days ago»,
+  «yesterday»), in the language of the user, with the full date as tooltip and for screen readers.
+
+### Changed
+
+- `detail` lays out its fields by its own width instead of the window's: in a narrow side column (under 480 px) the
+  fields go one under the other, the label above the value, instead of overflowing.
+
 ## [0.33.0] - 2026-11-27
 
 ### Added

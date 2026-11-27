@@ -62,6 +62,28 @@ describe('formatValue', () => {
     expect(plain(formatValue('2026-10-07T14:30:00', { format: 'datetime' }, 'it-IT').text)).toBe('07/10/26, 14:30');
   });
 
+  it('relative: the distance from now in the largest unit that fits, with the full date as title', () => {
+    const now = Date.parse('2026-11-27T12:00:00Z');
+    const rel = (value: unknown, locale = 'en-GB'): string => formatValue(value, { format: 'relative' }, locale, undefined, now).text;
+    expect(rel('2026-11-27T11:59:40Z')).toBe('now');
+    expect(rel('2026-11-27T11:55:00Z')).toBe('5 minutes ago');
+    expect(rel('2026-11-27T09:00:00Z')).toBe('3 hours ago');
+    expect(rel('2026-11-24T12:00:00Z')).toBe('3 days ago');
+    expect(rel('2026-11-26T10:00:00Z')).toBe('yesterday');
+    expect(rel('2026-11-29T12:00:00Z')).toBe('in 2 days');
+    expect(rel('2026-09-20T12:00:00Z')).toBe('2 months ago');
+    expect(rel('2024-11-01T12:00:00Z')).toBe('2 years ago');
+    expect(rel('2026-11-24T12:00:00Z', 'it-IT')).toBe('3 giorni fa');
+    // A date without time counts calendar days: today's date is «today», not «12 hours ago».
+    expect(rel('2026-11-27')).toBe('today');
+    expect(rel('2026-11-28')).toBe('tomorrow');
+    const value = formatValue('2026-11-24T12:00:00Z', { format: 'relative' }, 'en-GB', undefined, now);
+    expect(value.title).toMatch(/24 November 2026/);
+    expect(formatValue('2026-11-27', { format: 'relative' }, 'en-GB', undefined, now).title).toBe('27 November 2026');
+    // Not a date: shown as it is, without a title.
+    expect(formatValue('soon', { format: 'relative' }, 'en-GB', undefined, now)).toEqual({ text: 'soon' });
+  });
+
   it('shows the labels given for booleans (Yes and No by default)', () => {
     expect(formatValue(true, { format: 'boolean' }, 'it-IT', { yes: 'Sì', no: 'No' }).text).toBe('Sì');
     expect(formatValue(false, { format: 'boolean' }).text).toBe('No');

@@ -465,6 +465,7 @@
   "showcase_layout.showcase_tabs_detail_and_message": "Showcase: tabs, detail and messages",
   "showcase_layout.tabs_detail_and_messages": "Tabs, detail and messages",
   "showcase_layout.this_tab_exists_only_for_those_w": "This tab exists only for those who can read IBANs: without the permission not even its title appears.",
+  "showcase_layout.updated": "Updated",
   "showcase_layout.your_profile_cannot_edit_orders": "Your profile cannot edit orders: this message disappears with the permission orders.order.write (try the manager profile).",
   "showcase_tables.a_filter_bar_writes_into_the_scr": "A filter bar writes into the screen state; the table reloads by itself when the filters change. Rows have actions conditioned by permissions and by the row state.",
   "showcase_tables.approve_order": "Approve order {number}?",

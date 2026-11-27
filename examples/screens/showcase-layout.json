@@ -80,6 +80,11 @@
                   "tooltip": "{{ t('showcase_layout.draft_sent_to_the_customer_or_ap', 'Draft, sent to the customer or approved') }}"
                 },
                 {
+                  "field": "updated",
+                  "label": "{{ t('showcase_layout.updated', 'Updated') }}",
+                  "format": "relative"
+                },
+                {
                   "field": "iban",
                   "label": "{{ t('showcase_layout.iban', 'IBAN') }}",
                   "hiddenIf": "{{!can('orders.iban.read')}}"

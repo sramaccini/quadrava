@@ -11,6 +11,7 @@ import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import { inlineDataSource, type ActionDefinition, type ColumnDefinition, type SortSpec, type Step, type TableColumnDefinition, type TableNode } from 'schema';
 import { RowActionsComponent } from './row-actions.component';
 import { IconComponent } from './icon.component';
+import { FormattedValueComponent } from './formatted-value.component';
 import { rowHighlight, type ResolvedHighlight } from './row-highlight';
 import { TONE_COLORS } from './shared';
 import { aggregate, asSort, sortRows, type Row } from './table-data';
@@ -26,7 +27,7 @@ const DEFAULT_PAGE_SIZE = 10;
  */
 @Component({
   selector: 'lc-table',
-  imports: [BusyComponent, TableFooterComponent, NodeHostComponent, RowActionsComponent, IconComponent, NzCheckboxModule, NzTableModule, NzTagModule, NzButtonModule, NzAlertModule, NzTooltipModule],
+  imports: [FormattedValueComponent, BusyComponent, TableFooterComponent, NodeHostComponent, RowActionsComponent, IconComponent, NzCheckboxModule, NzTableModule, NzTagModule, NzButtonModule, NzAlertModule, NzTooltipModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     /* Highlighted rows: the colour of the tone, also on hover; a selected row keeps the colour of the selection. */
@@ -159,7 +160,7 @@ const DEFAULT_PAGE_SIZE = 10;
                           @if (view.tone) {
                             <nz-tag [nzColor]="color(view.tone)">{{ view.text }}</nz-tag>
                           } @else {
-                            {{ view.text }}
+                            <lc-formatted-value [value]="view" />
                           }
                         </button>
                       } @else if (link(column, row); as url) {
@@ -167,13 +168,13 @@ const DEFAULT_PAGE_SIZE = 10;
                           @if (view.tone) {
                             <nz-tag [nzColor]="color(view.tone)">{{ view.text }}</nz-tag>
                           } @else {
-                            {{ view.text }}
+                            <lc-formatted-value [value]="view" />
                           }
                         </a>
                       } @else if (view.tone) {
                         <nz-tag [nzColor]="color(view.tone)">{{ view.text }}</nz-tag>
                       } @else {
-                        {{ view.text }}
+                        <lc-formatted-value [value]="view" />
                       }
                     }
                   </td>

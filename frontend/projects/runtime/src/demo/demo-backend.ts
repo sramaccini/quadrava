@@ -14,6 +14,8 @@ interface Order {
   type: 'private' | 'business';
   discount: number;
   iban: string;
+  /** Last change, some hours to some weeks before the demo started (shown with the relative format). */
+  updated: string;
 }
 
 /** Server-side sorting of the demo: parameters `sort` (field) and `dir` (`asc` or `desc`). */
@@ -69,6 +71,7 @@ export class DemoBackend {
     type: i % 2 ? 'business' : 'private',
     discount: i % 2 ? 10 : 0,
     iban: `IT60X0542811101${String(i).padStart(12, '0')}`,
+    updated: new Date(Date.now() - (2 + i * i * 7) * 3_600_000).toISOString(),
   }));
 
   private readonly invoices: Invoice[] = Array.from({ length: 14 }, (_, i) => ({
