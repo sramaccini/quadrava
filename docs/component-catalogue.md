@@ -994,7 +994,19 @@ takes the place of the one from the menu:
 Projects › Website relaunch › Issues › WEB-4: the first three are links, the last one is the screen itself and is
 marked as the current page. An item with `navigate` opens its screen as the navigate step does (in the current area if
 the screen is there); a click with Ctrl, Cmd or Shift opens it in a new tab. A label that reads a data source uses
-`has()`, so it stays empty while the data loads instead of failing. `quadrava validate` checks that the screens of
+`has()`, so it stays empty while the data loads instead of failing; an item whose label is empty is left out of the
+path, never drawn as an empty step.
+
+An item that only some screens have takes `visibleIf`: the parent of an issue, for the issues that have one
+(Projects › WEB › Issues › WEB-1 › WEB-18, and Projects › WEB › Issues › WEB-2 without a parent). An expression in
+error leaves the item out.
+
+```json
+{ "label": "{{ has(data.issue) && data.issue.parent != null ? data.issue.parent.key : '' }}", "navigate": "issue-detail",
+  "params": { "issue": "{{ data.issue.parent.key }}" }, "visibleIf": "{{ has(data.issue) && data.issue.parent != null }}" }
+```
+
+`quadrava validate` checks that the screens of
 `navigate` exist. The order detail of the examples has a path back to the list of orders.
 
 ### 2.34 Menu button

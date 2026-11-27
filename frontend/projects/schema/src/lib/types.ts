@@ -872,6 +872,8 @@ export interface BreadcrumbItem {
   label: string;
   navigate?: string;
   params?: Record<string, unknown>;
+  /** The item is in the path only while this is true (an error leaves it out). */
+  visibleIf?: Expression;
 }
 
 export interface ScreenDefinition {

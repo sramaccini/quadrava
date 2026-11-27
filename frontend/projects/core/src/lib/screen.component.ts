@@ -108,17 +108,23 @@ export class ScreenComponent {
   private readonly settings = inject(SETTINGS_VALUES);
   private readonly screenTitle = inject(ScreenTitle);
 
-  /** The breadcrumb declared by the screen (labels and parameters resolved), otherwise the one of the host. */
+  /**
+   * The breadcrumb declared by the screen (labels and parameters resolved), otherwise the one of the host. An item
+   * hidden by `visibleIf`, or whose label resolves to empty text (data still loading, a parent that is not there), is
+   * left out rather than drawn as an empty step.
+   */
   protected readonly crumbs = computed<readonly Crumb[]>(() => {
     const rt = this.runtime();
     const declared = rt?.definition.breadcrumb;
     if (!rt || !declared?.length) return this.breadcrumb().map((label) => ({ label }));
-    return declared.map((item) => {
+    return declared.flatMap((item): Crumb[] => {
+      if (!rt.isVisible(item)) return [];
       const label = rt.text(item.label);
-      if (!item.navigate) return { label };
+      if (!label.trim()) return [];
+      if (!item.navigate) return [{ label }];
       const resolved = rt.resolveValue(item.params ?? {});
       const params = resolved && typeof resolved === 'object' ? (resolved as Record<string, unknown>) : {};
-      return { label, screen: item.navigate, params, href: this.navigator.href?.(item.navigate, params) ?? null };
+      return [{ label, screen: item.navigate, params, href: this.navigator.href?.(item.navigate, params) ?? null }];
     });
   });
 

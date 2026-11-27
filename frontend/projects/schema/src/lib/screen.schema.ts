@@ -5225,7 +5225,7 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
       "properties": {
         "label": {
           "type": "string",
-          "description": "Text of the item: plain text or an expression such as {{ t('projects.title', 'Projects') }}. A label that reads a data source uses has(), so that it is empty while the data loads: {{ has(data.project) ? data.project.name : '' }}."
+          "description": "Text of the item: plain text or an expression such as {{ t('projects.title', 'Projects') }}. A label that reads a data source uses has(), so that it is empty while the data loads: {{ has(data.project) ? data.project.name : '' }}. An item whose label resolves to empty text is left out of the path."
         },
         "navigate": {
           "$ref": "#/$defs/id",
@@ -5234,6 +5234,10 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
         "params": {
           "type": "object",
           "description": "Parameters of the screen opened, resolved when the path is drawn, for example { \"key\": \"{{ params.key }}\" }."
+        },
+        "visibleIf": {
+          "$ref": "#/$defs/expression",
+          "description": "The item is in the path only while the expression is true, for example the parent of an issue that has one: {{ has(data.issue) && data.issue.parent != null }}. An expression in error leaves it out."
         }
       }
     },

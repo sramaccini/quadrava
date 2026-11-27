@@ -38,11 +38,12 @@ describe('breadcrumb declared by the screen', () => {
     fixture.componentRef.setInput('breadcrumb', ['Work', 'Issues']);
     fixture.componentRef.setInput('params', { key: 'WEB', issue: 'WEB-4' });
     fixture.componentRef.setInput('definition', issue);
-    // While the project loads, its item is empty: no expression error.
-    await until(() => items(el).length === 4, 'breadcrumb');
-    expect(items(el)).toEqual(['Projects', '', 'Issues', 'WEB-4']);
+    // While the project loads, its label is empty: the item is left out, not drawn as an empty step, and no error.
+    await until(() => items(el).length === 3, 'breadcrumb');
+    expect(items(el)).toEqual(['Projects', 'Issues', 'WEB-4']);
     answer({ name: 'Website relaunch' });
     await until(() => items(el)[1] === 'Website relaunch', 'project name');
+    expect(items(el)).toEqual(['Projects', 'Website relaunch', 'Issues', 'WEB-4']);
     expect(reports).toEqual([]);
 
     expect(links(el).map((a) => [plain(a.textContent), a.getAttribute('href')])).toEqual([
@@ -58,6 +59,34 @@ describe('breadcrumb declared by the screen', () => {
     // With a modifier the browser opens the address itself (a new tab).
     links(el)[0].dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, ctrlKey: true }));
     expect(navigations).toHaveLength(1);
+  });
+
+  it('visibleIf leaves an item out: the parent of an issue only when it has one; an expression in error hides it', async () => {
+    const screen: ScreenDefinition = {
+      schemaVersion: '1.0',
+      screen: 'issue-detail',
+      breadcrumb: [
+        { label: 'Issues', navigate: 'issue-list' },
+        { label: "{{ has(data.issue) && data.issue.parent != null ? data.issue.parent.key : 'none' }}", navigate: 'issue-detail', visibleIf: '{{ has(data.issue) && data.issue.parent != null }}' },
+        { label: 'Broken', visibleIf: '{{ params.missing.deeper > 1 }}' },
+        { label: '{{ params.issue }}' },
+      ],
+      dataSources: { issue: { type: 'rest', method: 'GET', url: '/api/issues/{{ params.issue }}' } },
+      components: [],
+    };
+    let parent: unknown = { key: 'WEB-1' };
+    const { fixture, el, until, reports } = await renderScreen({ components: [], respond: () => ({ parent }) });
+    fixture.componentRef.setInput('params', { issue: 'WEB-18' });
+    fixture.componentRef.setInput('definition', screen);
+    await until(() => items(el).length === 3, 'path with the parent');
+    expect(items(el)).toEqual(['Issues', 'WEB-1', 'WEB-18']);
+    expect(reports.length).toBeGreaterThan(0);
+
+    parent = null;
+    fixture.componentRef.setInput('params', { issue: 'WEB-2' });
+    fixture.componentRef.setInput('definition', { ...screen });
+    await until(() => items(el).at(-1) === 'WEB-2', 'path without a parent');
+    expect(items(el)).toEqual(['Issues', 'WEB-2']);
   });
 
   it('without the address of the navigator the links still navigate', async () => {

@@ -12,6 +12,16 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Added
+
+- `visibleIf` on the items of a screen's `breadcrumb`: an item is in the path only while it is true (an error leaves
+  it out), for example the parent of an issue that has one.
+
+### Changed
+
+- An item of a screen's `breadcrumb` whose label resolves to empty text is left out of the path instead of being drawn
+  as an empty step (for example while the data of its label loads).
+
 ## [0.32.0] - 2026-11-27
 
 ### Added
