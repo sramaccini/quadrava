@@ -142,7 +142,7 @@ with its own `Host` and `X-Forwarded-*` headers, so the BFF must trust them to b
 BFF_TRUST_PROXY=true npm start
 docker run -d --name quadrava-runtime -p 8090:8080 \
   -v "$PWD/frontend/projects/runtime/config/bff/runtime-config.json:/etc/quadrava/runtime-config.json:ro" \
-  -e QUADRAVA_BFF_URL=http://host.docker.internal:8080 ghcr.io/sramaccini/quadrava-runtime:0.32.0
+  -e QUADRAVA_BFF_URL=http://host.docker.internal:8080 ghcr.io/sramaccini/quadrava-runtime:0.33.0
 ```
 
 Then open http://localhost:8090 (or 4200) and sign in as `operator`, `manager` or `administrator` (password = user name).

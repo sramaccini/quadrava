@@ -12,6 +12,8 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+## [0.33.0] - 2026-11-27
+
 ### Added
 
 - `actions` on a field of a form: small links under the field, such as «Assign to me». An action puts a value in the
@@ -825,7 +827,8 @@ The first versioned release.
 - **Demo back end of the stack**: the event stream `/api/streams/tasks`, so that behind the BFF the live boards of the
   showcase follow the changes of other users.
 
-[Unreleased]: https://github.com/sramaccini/quadrava/compare/v0.32.0...HEAD
+[Unreleased]: https://github.com/sramaccini/quadrava/compare/v0.33.0...HEAD
+[0.33.0]: https://github.com/sramaccini/quadrava/compare/v0.32.0...v0.33.0
 [0.32.0]: https://github.com/sramaccini/quadrava/compare/v0.31.0...v0.32.0
 [0.31.0]: https://github.com/sramaccini/quadrava/compare/v0.30.0...v0.31.0
 [0.30.0]: https://github.com/sramaccini/quadrava/compare/v0.29.0...v0.30.0
