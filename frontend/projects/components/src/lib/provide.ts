@@ -19,7 +19,7 @@ import { PopoverForm } from './form-popover';
 import { DialogOpener } from './dialog-focus';
 import { FilterBarComponent } from './filter-bar.component';
 import { FormComponent } from './form.component';
-import { ICON_TYPES } from './icon.component';
+import { ANT_ICONS } from './icon.component';
 import { localizeDialogClose } from './dialog-close';
 import { SectionComponent } from './section.component';
 import { StatsComponent } from './stats.component';
@@ -111,7 +111,7 @@ export function provideLcComponents(extra: ComponentCatalog = {}): (Provider | E
     { provide: FormDialog, useExisting: DialogForm },
     { provide: ViewDialog, useExisting: DialogView },
     { provide: FormPopover, useExisting: PopoverForm },
-    provideNzIcons(Object.values(ICON_TYPES).flatMap((i) => (i.filled ? [i.icon, i.filled] : [i.icon]))),
+    provideNzIcons([...ANT_ICONS]),
     provideNzI18n(ENGLISH),
     provideNzDateFnsAdapter(),
     importProvidersFrom(NzModalModule),

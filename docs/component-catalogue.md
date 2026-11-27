@@ -952,7 +952,9 @@ click removes the flag); the thumb counts the votes:
   "pressed": "{{ data.issue.voted }}", "onClick": [{ "call": "toggleVote" }] }
 ```
 
-The names are those of the built-in set, the same as in the navigation; an unknown name shows no icon. For the actions:
+The names are those of the built-in set, the same as in the navigation, or the name of any Ant Design icon in the
+outlined form (`share-alt`, `team`, `calendar`, as on the Ant Design site without the `Outlined` suffix); a pressed toggle
+draws the filled form when the icon has one. An unknown name shows no icon. The short names for the actions:
 `save`, `edit`, `delete`, `plus`, `check`, `close`, `link`, `eye`, `eye-invisible`, `flag`, `like`, `user-add`, `back`, `move`,
 `play`, `reload`, `download`, `upload`, `external`, `copy`, `share`, `search`, `filter`, `settings`. The showcases «Tables»,
 «Forms» and «Containers» have examples.

@@ -3,7 +3,7 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { Authorization, DataClient, Notifier, ScreenComponent, ScreenNavigator, ThemeService, UserProvider, type DataRequest } from 'core';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import type { NodeDefinition, ScreenDefinition, ThemeDefinition } from 'schema';
-import { iconType, IconComponent } from './icon.component';
+import { hasFilledForm, iconType, IconComponent } from './icon.component';
 import { NzNotifier } from './notifier';
 import { provideLcComponents } from './provide';
 import { openSelect, stubViewportHeight } from './select-testing';
@@ -115,6 +115,23 @@ describe('integration with NG-ZORRO', () => {
       unknown.componentRef.setInput('name', 'unknown');
       unknown.detectChanges();
       expect(unknown.nativeElement.querySelector('[nz-icon], nz-icon')).toBeNull();
+    });
+
+    it('Ant Design names are known as well, already registered, with the filled form for a pressed toggle', async () => {
+      expect(iconType('share-alt')).toBe('share-alt');
+      expect(iconType('team')).toBe('team');
+      expect(iconType('share')).toBe('share-alt');
+      expect(hasFilledForm('star')).toBe(true);
+      expect(hasFilledForm('share')).toBe(false);
+      TestBed.configureTestingModule({ providers: [provideLcComponents()] });
+      const star = TestBed.createComponent(IconComponent);
+      star.componentRef.setInput('name', 'star');
+      star.componentRef.setInput('filled', true);
+      star.detectChanges();
+      await star.whenStable();
+      const icon = star.nativeElement.querySelector('[nz-icon]') as HTMLElement;
+      expect(icon.classList).toContain('anticon-star');
+      expect(icon.querySelector('svg')).not.toBeNull();
     });
 
     it('the notifier uses NG-ZORRO messages and does not interpret HTML', async () => {

@@ -465,7 +465,7 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
         },
         "icon": {
           "$ref": "#/$defs/icon",
-          "description": "Icon shown before the text of the action, from the built-in set (for example save, edit, delete, plus); the text stays. An unknown name shows no icon."
+          "description": "Icon shown before the text of the action, from the built-in set or by its Ant Design name (for example save, edit, delete, plus); the text stays. An unknown name shows no icon."
         }
       }
     },
@@ -1450,7 +1450,7 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
               },
               "icon": {
                 "$ref": "#/$defs/icon",
-                "description": "Icon shown before the text of the button, from the built-in set (for example save, edit, delete, plus); with display icon it is shown alone. An unknown name shows no icon."
+                "description": "Icon shown before the text of the button, from the built-in set or by its Ant Design name (for example save, edit, delete, plus); with display icon it is shown alone. An unknown name shows no icon."
               },
               "tone": {
                 "type": "string",
@@ -1527,7 +1527,7 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
               },
               "icon": {
                 "$ref": "#/$defs/icon",
-                "description": "Icon shown before the text of the button, from the built-in set; with display icon it is shown alone. An unknown name shows no icon."
+                "description": "Icon shown before the text of the button, from the built-in set or by its Ant Design name; with display icon it is shown alone. An unknown name shows no icon."
               },
               "items": {
                 "type": "array",
@@ -3742,7 +3742,7 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
             },
             "icon": {
               "$ref": "#/$defs/icon",
-              "description": "Icon before the title, from the built-in set (for example flag)."
+              "description": "Icon before the title, from the built-in set or by its Ant Design name (for example flag)."
             },
             "tone": {
               "$ref": "#/$defs/tone",
@@ -5167,7 +5167,7 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
     "icon": {
       "type": "string",
       "pattern": "^[a-z][a-z0-9-]*$",
-      "description": "Name of an icon of the built-in set (for example save, edit, delete, plus, flag, like). An unknown name shows no icon."
+      "description": "Name of an icon of the built-in set (for example save, edit, delete, plus, flag, like) or of Ant Design (for example share-alt, team). An unknown name shows no icon."
     },
     "breadcrumbItem": {
       "type": "object",
@@ -5212,7 +5212,7 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
             },
             "icon": {
               "$ref": "#/$defs/icon",
-              "description": "Icon shown before the text, from the built-in set. An unknown name shows no icon."
+              "description": "Icon shown before the text, from the built-in set or by its Ant Design name. An unknown name shows no icon."
             },
             "visibleIf": {
               "$ref": "#/$defs/expression",

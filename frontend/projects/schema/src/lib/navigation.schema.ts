@@ -138,7 +138,7 @@ export const NAVIGATION_SCHEMA: Record<string, unknown> = {
     "icon": {
       "type": "string",
       "pattern": "^[a-z][a-z0-9-]*$",
-      "description": "Name of an icon of the built-in set (for example file-plus, search, package). An unknown name shows no icon."
+      "description": "Name of an icon of the built-in set (for example file-plus, search, package) or of Ant Design (for example share-alt, team). An unknown name shows no icon."
     },
     "label": {
       "type": "string",
@@ -164,7 +164,7 @@ export const NAVIGATION_SCHEMA: Record<string, unknown> = {
         },
         "icon": {
           "$ref": "#/$defs/icon",
-          "description": "Name of an icon of the built-in set (for example file-plus, search, package). An unknown name shows no icon."
+          "description": "Name of an icon of the built-in set (for example file-plus, search, package) or of Ant Design (for example share-alt, team). An unknown name shows no icon."
         },
         "requires": {
           "$ref": "#/$defs/permission",
@@ -203,7 +203,7 @@ export const NAVIGATION_SCHEMA: Record<string, unknown> = {
         },
         "icon": {
           "$ref": "#/$defs/icon",
-          "description": "Name of an icon of the built-in set (for example file-plus, search, package). An unknown name shows no icon."
+          "description": "Name of an icon of the built-in set (for example file-plus, search, package) or of Ant Design (for example share-alt, team). An unknown name shows no icon."
         },
         "screen": {
           "$ref": "#/$defs/id",
@@ -258,7 +258,7 @@ export const NAVIGATION_SCHEMA: Record<string, unknown> = {
         },
         "icon": {
           "$ref": "#/$defs/icon",
-          "description": "Name of an icon of the built-in set (for example file-plus, search, package). An unknown name shows no icon."
+          "description": "Name of an icon of the built-in set (for example file-plus, search, package) or of Ant Design (for example share-alt, team). An unknown name shows no icon."
         },
         "requires": {
           "$ref": "#/$defs/permission",
@@ -307,7 +307,7 @@ export const NAVIGATION_SCHEMA: Record<string, unknown> = {
         },
         "icon": {
           "$ref": "#/$defs/icon",
-          "description": "Name of an icon of the built-in set (for example file-plus, search, package). An unknown name shows no icon."
+          "description": "Name of an icon of the built-in set (for example file-plus, search, package) or of Ant Design (for example share-alt, team). An unknown name shows no icon."
         },
         "requires": {
           "$ref": "#/$defs/permission",

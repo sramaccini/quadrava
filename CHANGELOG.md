@@ -17,6 +17,9 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 - Steps `copy` (a text) and `copyLink` (the full address of a screen, the current one with `{}`) write to the
   clipboard, with a notice (`copied` or «Copied to the clipboard») and `onError` when the browser refuses. New port
   `ClipboardWriter` (the browser's by default).
+- Icons: besides the short names of the built-in set, every Ant Design icon by its name (`share-alt`, `team`,
+  `calendar`), registered statically with the bundle (outlined and filled; no icon is fetched from the network). A pressed
+  toggle draws the filled form of any icon that has one, not only `flag` and `like`. New short name `share`.
 
 ### Changed
 

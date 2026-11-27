@@ -60,13 +60,14 @@ import {
   LikeFill,
   LikeOutline,
 } from '@ant-design/icons-angular/icons';
+import * as AntIcons from '@ant-design/icons-angular/icons';
 import type { IconDefinition } from '@ant-design/icons-angular';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 
 /**
- * Built-in icon set: name used in the JSON → Ant Design icon. Icons are registered one by one
- * (`provideLcComponents`): an unknown name shows nothing and never causes icons to be loaded from the network.
- * `filled` is the filled form, drawn for a pressed toggle.
+ * Short names of the built-in set (name used in the JSON → Ant Design icon), kept next to the Ant Design names. The
+ * icons are all registered statically (`provideLcComponents`): an unknown name shows nothing and never causes icons to
+ * be loaded from the network. `filled` is the filled form, drawn for a pressed toggle.
  */
 export const ICON_TYPES: Record<string, { type: string; icon: IconDefinition; filled?: IconDefinition }> = {
   help: { type: 'question-circle', icon: QuestionCircleOutline },
@@ -134,9 +135,26 @@ export const ICON_TYPES: Record<string, { type: string; icon: IconDefinition; fi
   'rich-clear': { type: 'clear', icon: ClearOutline },
 };
 
-/** NG-ZORRO type of an icon name of the built-in set, or `null` if the name is not known. */
+/** Every Ant Design icon in the outlined and filled forms (the two-tone ones are not used). */
+export const ANT_ICONS: readonly IconDefinition[] = Object.values(AntIcons as Record<string, IconDefinition>).filter(
+  (i) => i.theme === 'outline' || i.theme === 'fill',
+);
+const OUTLINED = new Set(ANT_ICONS.filter((i) => i.theme === 'outline').map((i) => i.name));
+const FILLED = new Set(ANT_ICONS.filter((i) => i.theme === 'fill').map((i) => i.name));
+
+/**
+ * NG-ZORRO type of an icon name: a short name of the built-in set (`ICON_TYPES`) or the name of an Ant Design icon
+ * (`share-alt`, `calendar`, `team`); `null` if the name is not known.
+ */
 export function iconType(name: string | undefined): string | null {
-  return name ? (ICON_TYPES[name]?.type ?? null) : null;
+  if (!name) return null;
+  return ICON_TYPES[name]?.type ?? (OUTLINED.has(name) ? name : null);
+}
+
+/** Whether the icon has a filled form, drawn for a pressed toggle. */
+export function hasFilledForm(name: string | undefined): boolean {
+  const type = iconType(name);
+  return type !== null && FILLED.has(type);
 }
 
 @Component({
@@ -155,5 +173,5 @@ export class IconComponent {
   /** Draws the filled form, when the icon has one (a pressed toggle). */
   readonly filled = input(false);
   protected readonly type = computed(() => iconType(this.name()));
-  protected readonly theme = computed(() => (this.filled() && ICON_TYPES[this.name() ?? '']?.filled ? 'fill' : 'outline'));
+  protected readonly theme = computed(() => (this.filled() && hasFilledForm(this.name()) ? 'fill' : 'outline'));
 }
