@@ -6,6 +6,7 @@ import {
   Confirmation,
   DataClient,
   FormDialog,
+  ClipboardWriter,
   FormPopover,
   ViewDialog,
   Notifier,
@@ -56,6 +57,9 @@ export class Fakes {
   views: ViewDialogRequest[] = [];
   /** Panels opened by `popover` steps; they take their values from `dialogValues`, as the form windows. */
   popovers: PopoverRequest[] = [];
+  /** Texts written to the clipboard; with `clipboardRefuses` the browser refuses. */
+  copied: string[] = [];
+  clipboardRefuses = false;
   i18n = new I18n();
   respond: (request: DataRequest) => unknown = () => ({ items: [], total: 0 });
   /** Values of the settings of the application (`settings` in the expressions). */
@@ -97,6 +101,12 @@ export class Fakes {
         return runSteps(request.runtime, request.form.actions?.[0]?.onClick ?? [], { ...request.scope, form: values });
       },
     } as FormPopover | null,
+    clipboard: {
+      writeText: async (text: string) => {
+        if (this.clipboardRefuses) throw new DOMException('denied', 'NotAllowedError');
+        this.copied.push(text);
+      },
+    } as ClipboardWriter,
     i18n: this.i18n,
     settings: () => this.settings,
     tracer: {

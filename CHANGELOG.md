@@ -12,6 +12,12 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Added
+
+- Steps `copy` (a text) and `copyLink` (the full address of a screen, the current one with `{}`) write to the
+  clipboard, with a notice (`copied` or «Copied to the clipboard») and `onError` when the browser refuses. New port
+  `ClipboardWriter` (the browser's by default).
+
 ### Changed
 
 - Forms: an emptied number (and any other field that is not text: a date, a choice) is null in `form`, as in the filter

@@ -425,6 +425,55 @@
           "text": "{{ t('showcase_form.inline_intro', 'With edit inline each field shows its value as text, like the summary and description of a work item: click it (or focus it and press Enter) to open only that field. Enter or ✓ confirms a single line, Ctrl+Enter or Save the description, choosing a value confirms the assignee and the priority; Escape or Cancel puts the value back. The checkbox saves at every click. Every confirmation sends only that field.') }}"
         },
         {
+          "id": "inline-share",
+          "type": "box",
+          "justify": "end",
+          "components": [
+            {
+              "id": "inline-copy-link",
+              "type": "button",
+              "label": "{{ t('showcase_form.copy_link', 'Copy link') }}",
+              "icon": "link",
+              "tone": "neutral",
+              "onClick": [
+                {
+                  "copyLink": {},
+                  "copied": "{{ t('showcase_form.link_copied', 'Link copied') }}"
+                }
+              ]
+            },
+            {
+              "id": "inline-more",
+              "type": "menuButton",
+              "label": "{{ t('showcase_form.more_actions', 'More actions') }}",
+              "icon": "more",
+              "display": "icon",
+              "items": [
+                {
+                  "id": "inline-more-link",
+                  "label": "{{ t('showcase_form.copy_link', 'Copy link') }}",
+                  "onClick": [
+                    {
+                      "copyLink": {},
+                      "copied": "{{ t('showcase_form.link_copied', 'Link copied') }}"
+                    }
+                  ]
+                },
+                {
+                  "id": "inline-more-key",
+                  "label": "{{ t('showcase_form.copy_key', 'Copy key') }}",
+                  "onClick": [
+                    {
+                      "copy": "ODT-42",
+                      "copied": "{{ t('showcase_form.key_copied', 'Key copied') }}"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
           "id": "inline-form",
           "type": "form",
           "source": "workItem",

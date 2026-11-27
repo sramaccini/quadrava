@@ -47,4 +47,18 @@ test.describe('Showcase: forms', () => {
     await expect(summary).toHaveText('Login fails with SSO');
     await expect(summary).toBeFocused();
   });
+  test('copy link from a button and copy key from a menu item write to the clipboard', async ({ page, context, browserName }) => {
+    // Only Chromium lets a test grant the clipboard permissions.
+    test.skip(browserName !== 'chromium', 'clipboard permissions');
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await page.goto('/showcase/showcase-form');
+    const clipboard = (): Promise<string> => page.evaluate(() => navigator.clipboard.readText());
+    await page.getByRole('button', { name: 'Copy link' }).click();
+    await expect(page.getByText('Link copied')).toBeVisible();
+    expect(await clipboard()).toBe(new URL('/showcase/showcase-form', page.url()).href);
+    await page.getByRole('button', { name: 'More actions' }).click();
+    await page.getByRole('menuitem', { name: 'Copy key' }).click();
+    await expect(page.getByText('Key copied')).toBeVisible();
+    expect(await clipboard()).toBe('ODT-42');
+  });
 });

@@ -79,6 +79,12 @@ export abstract class ScreenNavigator {
   href?(screen: string, params: Record<string, unknown>): string | null;
 }
 
+/** The clipboard of the system, for the `copy` and `copyLink` steps. The runtime uses the browser's when none is given. */
+export abstract class ClipboardWriter {
+  /** Writes the text; rejects if the browser refuses (no permission, a page not served over https). */
+  abstract writeText(text: string): Promise<void>;
+}
+
 /** Messages to the user. */
 export abstract class Notifier {
   abstract toast(message: string, kind?: 'info' | 'error'): void;

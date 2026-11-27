@@ -6,7 +6,7 @@ import {
   Confirmation,
   DataClient,
   FormDialog,
-  FormPopover,
+  ClipboardWriter, FormPopover,
   ViewDialog,
   LiveUpdates,
   Notifier,
@@ -57,6 +57,8 @@ export interface RuntimeDeps {
   viewDialog?: ViewDialog | null;
   /** If missing, `popover` steps open as a form window (`formDialog`). */
   formPopover?: FormPopover | null;
+  /** If missing, `copy` steps use the clipboard of the browser. */
+  clipboard?: ClipboardWriter | null;
   /** Language and translations. If missing, the runtime's own texts use their English fallbacks and `t()` uses the fallback. */
   i18n?: I18n | null;
   /** Validators of the fields and of `isValid()`. If missing, the built-in ones. */
@@ -454,6 +456,41 @@ export class ScreenRuntime {
   validate(group: string): boolean {
     const checks = group === '*' ? [...this.validators.values()].flatMap((s) => [...s]) : [...(this.validators.get(group) ?? [])];
     return checks.map((check) => check()).every(Boolean);
+  }
+
+  /**
+   * Writes a text to the clipboard; false if it cannot (no clipboard, or the browser refuses). The text itself never
+   * goes to the reports: it can be personal data.
+   */
+  async copy(text: string): Promise<boolean> {
+    const clipboard = this.deps.clipboard ?? globalThis.navigator?.clipboard;
+    if (!clipboard) {
+      this.report('copy', 'no clipboard available');
+      return false;
+    }
+    try {
+      await clipboard.writeText(text);
+      return true;
+    } catch (e) {
+      this.report('copy', e instanceof Error ? e.name : 'refused');
+      return false;
+    }
+  }
+
+  /**
+   * Full address of a screen, built by the navigator as for the links of the breadcrumb and made absolute on the
+   * address of the page; the current screen with its parameters when `screen` is absent. Null if the application
+   * cannot build addresses.
+   */
+  screenLink(screen?: string, params?: Record<string, unknown>): string | null {
+    const target = screen ?? this.definition.screen;
+    const href = this.deps.navigator.href?.(target, params ?? (screen ? {} : this.params)) ?? null;
+    if (href === null) return null;
+    try {
+      return new URL(href, globalThis.location?.href).href;
+    } catch {
+      return null;
+    }
   }
 
   /** Browser print (the print style sheet hides the application shell). */

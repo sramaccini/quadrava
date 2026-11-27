@@ -443,6 +443,22 @@
 | `fileName` | text | Name of the file when the service gives none in Content-Disposition; it can contain {{ }}. Without either, the last segment of the address. Folders and characters a file name cannot have are removed. |
 | `onError` | steps | Steps run if the download fails (instead of the default message). They see error.status, as in call. Not run on a 401: the runtime signs the user in again. |
 
+### `copy`
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `copy` * | text | Text written to the clipboard, usually with {{ }}, for example "{{ row.key }}". The step fails if the browser refuses. |
+| `copied` | text | Notice shown when the text is in the clipboard; it can contain {{ }}. «Copied to the clipboard» (translated) if absent. |
+| `onError` | steps | Steps run if the browser does not let the page write to the clipboard (no permission, a page not served over https), instead of the default error message. |
+
+### `copyLink`
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `copyLink` * | object | Writes to the clipboard the full address of a screen, built by the application as for its links (the same whatever way the user reached the page). Empty ({}) for the current screen with its parameters. |
+| `copied` | text | Notice shown when the text is in the clipboard; it can contain {{ }}. «Copied to the clipboard» (translated) if absent. |
+| `onError` | steps | Steps run if the browser does not let the page write to the clipboard (no permission, a page not served over https), instead of the default error message. |
+
 ### `if`
 
 | Property | Type | Description |

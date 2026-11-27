@@ -116,3 +116,52 @@ describe('validate, print and export steps', () => {
     rt.destroy();
   });
 });
+
+describe('copy and copyLink steps', () => {
+  let fakes: Fakes;
+  let injector: Injector;
+  beforeEach(() => {
+    fakes = new Fakes();
+    injector = TestBed.inject(Injector);
+  });
+
+  it('copy writes the resolved text and confirms it, with its own notice or the default one', async () => {
+    const rt = fakes.runtime(screen, injector);
+    expect(await runSteps(rt, [{ copy: '{{ row.key }}' }], { row: { key: 'ODT-7' } })).toBe(true);
+    expect(await runSteps(rt, [{ copy: 'plain', copied: '{{ "Key " + row.key + " copied" }}' }], { row: { key: 'ODT-8' } })).toBe(true);
+    expect(fakes.copied).toEqual(['ODT-7', 'plain']);
+    expect(fakes.toasts.map((t) => t.message)).toEqual(['Copied to the clipboard', 'Key ODT-8 copied']);
+    rt.destroy();
+  });
+
+  it('when the browser refuses the step fails: the default message, or onError; the text never reaches the reports', async () => {
+    fakes.clipboardRefuses = true;
+    const rt = fakes.runtime(screen, injector);
+    expect(await runSteps(rt, [{ copy: 'secret-value' }, { toast: 'after' }])).toBe(false);
+    expect(await runSteps(rt, [{ copy: 'secret-value', onError: { toast: 'handled' } }])).toBe(false);
+    expect(fakes.toasts.map((t) => t.message)).toEqual(['Could not copy to the clipboard', 'handled']);
+    expect(JSON.stringify(fakes.reports)).not.toContain('secret-value');
+    rt.destroy();
+  });
+
+  it('copyLink copies the absolute address of a screen, by default the current one with its parameters', async () => {
+    fakes.deps.navigator = {
+      navigate: () => undefined,
+      href: (target: string, params: Record<string, unknown>) => `/app/${target}?${new URLSearchParams(params as Record<string, string>)}`,
+    };
+    const rt = fakes.runtime(screen, injector, { key: 'ODT-7' });
+    expect(await runSteps(rt, [{ copyLink: {} }])).toBe(true);
+    expect(await runSteps(rt, [{ copyLink: { screen: 'issue-detail', params: { key: '{{ row.key }}' } } }], { row: { key: 'ODT-9' } })).toBe(true);
+    const origin = globalThis.location.origin;
+    expect(fakes.copied).toEqual([`${origin}/app/prova?key=ODT-7`, `${origin}/app/issue-detail?key=ODT-9`]);
+    rt.destroy();
+  });
+
+  it('copyLink fails, reported, when the application cannot build addresses', async () => {
+    const rt = fakes.runtime(screen, injector);
+    expect(await runSteps(rt, [{ copyLink: {} }])).toBe(false);
+    expect(fakes.copied).toEqual([]);
+    expect(fakes.reports.map((r) => r.source)).toContain('copyLink');
+    rt.destroy();
+  });
+});

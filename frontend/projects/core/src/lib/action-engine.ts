@@ -55,6 +55,8 @@ export function describeSteps(steps: Step[]): string {
       if ('refresh' in step) return named('refresh', step.refresh);
       if ('navigate' in step) return named('navigate', step.navigate);
       if ('export' in step) return named('export', step.export.source);
+      if ('copyLink' in step) return named('copyLink', step.copyLink.screen ?? 'current');
+      if ('copy' in step) return 'copy';
       return SIMPLE_KINDS.find((kind) => kind in step) ?? 'step';
     })
     .join(', ')
@@ -127,6 +129,24 @@ async function runStep(runtime: ScreenRuntime, step: Step, scope: Scope, run: Ru
     await runSequence(runtime, handler, { ...scope, error: { status: result.status ?? 0, fields: 0 } }, run);
     return { ok: false };
   }
+  if ('copy' in step || 'copyLink' in step) {
+    // The text of copy is resolved like any text; an expression in error copies nothing.
+    let text: string | null;
+    if ('copy' in step) {
+      text = runtime.text(step.copy, scope);
+    } else {
+      const params = step.copyLink.params === undefined ? undefined : ((runtime.resolveValue(step.copyLink.params, scope) ?? {}) as Record<string, unknown>);
+      text = runtime.screenLink(step.copyLink.screen, params);
+      if (text === null) runtime.report('copyLink', 'the application does not build addresses of screens');
+    }
+    if (text && (await runtime.copy(text))) {
+      runtime.toast(step.copied ? runtime.text(step.copied, scope) : runtime.systemText('lc.copied', 'Copied to the clipboard'));
+      return { ok: true };
+    }
+    const handler = step.onError === undefined ? [{ toast: runtime.systemText('lc.copyFailed', 'Could not copy to the clipboard') }] : asList(step.onError);
+    await runSequence(runtime, handler, { ...scope, error: { status: 0, fields: 0 } }, run);
+    return { ok: false };
+  }
   if ('if' in step) {
     // Fail-closed: a condition that cannot be evaluated runs neither branch and stops the sequence.
     const value = runtime.condition(step.if, scope);
@@ -152,7 +172,7 @@ async function runStep(runtime: ScreenRuntime, step: Step, scope: Scope, run: Ru
 /** The steps that neither change variables nor call other steps. */
 async function runSimpleStep(
   runtime: ScreenRuntime,
-  step: Exclude<Step, { call: string } | { download: string } | { if: string } | { run: string }>,
+  step: Exclude<Step, { call: string } | { download: string } | { copy: string } | { copyLink: object } | { if: string } | { run: string }>,
   scope: Scope,
   trace: SpanContext | undefined,
 ): Promise<boolean> {

@@ -125,6 +125,20 @@ export interface ValidateStep {
   validate: string;
 }
 /** Opens the browser's print dialog. */
+/** Writes a text to the clipboard. */
+export interface CopyStep {
+  copy: string;
+  /** Notice when it is copied («Copied to the clipboard» if absent). */
+  copied?: string;
+  /** Steps if the browser refuses. */
+  onError?: Step | Step[];
+}
+/** Writes to the clipboard the full address of a screen (the current one if `screen` is absent). */
+export interface CopyLinkStep {
+  copyLink: { screen?: string; params?: Record<string, unknown> };
+  copied?: string;
+  onError?: Step | Step[];
+}
 export interface PrintStep {
   print: true;
 }
@@ -132,7 +146,7 @@ export interface PrintStep {
 export interface ExportStep {
   export: { source: string; fileName?: string; args?: Record<string, unknown>; columns: { field: string; label?: string }[] };
 }
-export type Step = CallStep | DownloadStep | RefreshStep | NavigateStep | ToastStep | SetStep | ConfirmStep | DialogStep | ViewStep | PopoverStep | ValidateStep | PrintStep | ExportStep | IfStep | RunStep;
+export type Step = CallStep | DownloadStep | CopyStep | CopyLinkStep | RefreshStep | NavigateStep | ToastStep | SetStep | ConfirmStep | DialogStep | ViewStep | PopoverStep | ValidateStep | PrintStep | ExportStep | IfStep | RunStep;
 
 export interface ConditionalProps {
   visibleIf?: Expression;

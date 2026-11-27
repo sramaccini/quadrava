@@ -257,6 +257,12 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
           "$ref": "#/$defs/stepDownload"
         },
         {
+          "$ref": "#/$defs/stepCopy"
+        },
+        {
+          "$ref": "#/$defs/stepCopyLink"
+        },
+        {
           "$ref": "#/$defs/stepIf"
         },
         {
@@ -4083,6 +4089,59 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
         "onError": {
           "$ref": "#/$defs/steps",
           "description": "Steps run if the download fails (instead of the default message). They see error.status, as in call. Not run on a 401: the runtime signs the user in again."
+        }
+      }
+    },
+    "stepCopy": {
+      "type": "object",
+      "required": [
+        "copy"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "copy": {
+          "type": "string",
+          "description": "Text written to the clipboard, usually with {{ }}, for example \"{{ row.key }}\". The step fails if the browser refuses."
+        },
+        "copied": {
+          "type": "string",
+          "description": "Notice shown when the text is in the clipboard; it can contain {{ }}. «Copied to the clipboard» (translated) if absent."
+        },
+        "onError": {
+          "$ref": "#/$defs/steps",
+          "description": "Steps run if the browser does not let the page write to the clipboard (no permission, a page not served over https), instead of the default error message."
+        }
+      }
+    },
+    "stepCopyLink": {
+      "type": "object",
+      "required": [
+        "copyLink"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "copyLink": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Writes to the clipboard the full address of a screen, built by the application as for its links (the same whatever way the user reached the page). Empty ({}) for the current screen with its parameters.",
+          "properties": {
+            "screen": {
+              "$ref": "#/$defs/id",
+              "description": "Identifier of the screen to link (the current screen if absent)."
+            },
+            "params": {
+              "type": "object",
+              "description": "Parameters of the linked screen, resolved before copying, for example { \"key\": \"{{ params.key }}\" }; with no screen, the parameters of the current one if absent."
+            }
+          }
+        },
+        "copied": {
+          "type": "string",
+          "description": "Notice shown when the text is in the clipboard; it can contain {{ }}. «Copied to the clipboard» (translated) if absent."
+        },
+        "onError": {
+          "$ref": "#/$defs/steps",
+          "description": "Steps run if the browser does not let the page write to the clipboard (no permission, a page not served over https), instead of the default error message."
         }
       }
     },

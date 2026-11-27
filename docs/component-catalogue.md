@@ -42,7 +42,7 @@ Rules common to all components, new ones included:
 | `graph` | Nodes and connections laid out from left to right, for example a workflow (§ 2.35). |
 | Fields | `text`, `number`, `select`, `checkbox`, `date`, `textarea`, `datetime`, `radio`, `switch`, `multiselect`, `tags`, `lookup`, `file`, `repeater`, `richtext` (§ 2.26). |
 | Cell formats | `text`, `number`, `currency`, `percent`, `date`, `datetime`, `boolean`, `badge`, `markdown`. |
-| Steps | `set`, `call` (with `as` and `onError`), `refresh`, `navigate`, `toast`, `confirm`, `dialog`, `view` and `popover` (§ 2.11), `validate`, `print`, `export` and `download` (§ 2.22), `if` and `run`; named sequences in `actions` (§ 2.22b). |
+| Steps | `set`, `call` (with `as` and `onError`), `refresh`, `navigate`, `toast`, `confirm`, `dialog`, `view` and `popover` (§ 2.11), `validate`, `print`, `export`, `download`, `copy` and `copyLink` (§ 2.22), `if` and `run`; named sequences in `actions` (§ 2.22b). |
 | Shell | Side bar (`lc-sidebar`, with search, counters and keyboard support: § 2.25; the application brand is inserted with an `lcBrand` element, otherwise logo and name), messages of the user (`lc-notification-bell`: a bell with the unread count and the list, ADR-22; `notificationsOf` keeps only well-formed messages), user menu (`lc-user-menu`: an icon with the initial and the name in its tooltip, application items (in the runtime those of `userMenu` of the navigation, ADR-25), optional groups of choices with the current one ticked in each, such as the tenants of ADR-18 and the operational roles of ADR-28 (`choices` takes one group or a list, `choiceIn` gives the group of a choice), and sign-out last, after a confirmation; a menu for screen readers and the keyboard: arrows, Home, End, Enter, Esc, submenus with the side arrows), responsive top bar, `lc-quadrava-wordmark` logotype, syntax-highlighted code viewer `lc-code-view`, tools in section headers (`SectionTools`: «JSON» and «Aiuto» in the demo showcase). |
 
 ## 2. Added in October 2026
@@ -547,7 +547,7 @@ Three containers that decide only **where** their children go (no frame or backg
 
 Common rules: a hidden child (`visibleIf`) takes no space; inside containers fields fill the cell (outside they stay at most 560 px wide); sections side by side stretch to the row height. Containers nest freely (a box inside a border region, a grid in a section…). In the editor they are in the «Struttura e testi» group; the border starts with three sample areas (north, west, centre).
 
-### 2.22 validate, print, export and download steps
+### 2.22 validate, print, export, download and copy steps
 
 ```json
 "onClick": [
@@ -575,6 +575,23 @@ Common rules: a hidden child (`visibleIf`) takes no space; inside containers fie
     own bar.
   - **Size**: the file passes through the memory of the page. For very large files a link with `href` is lighter.
   - In the showcase, «Download JSON» on the containers page saves the invoices as the service sends them.
+- **copy** and **copyLink**: write to the clipboard, for «Copy link» or «Copy key» from a button or a menu item.
+
+  ```json
+  { "copy": "{{ data.issue.key }}", "copied": "{{ t('issue.keyCopied', 'Key copied') }}" }
+  { "copyLink": {} }
+  { "copyLink": { "screen": "issue-detail", "params": { "key": "{{ row.key }}" } } }
+  ```
+
+  - **copy** writes the text, resolved like any text (an expression in error copies nothing).
+  - **copyLink** writes the full address of a screen, built by the application as for the links of the breadcrumb
+    and made absolute: the same link whatever way the user reached the page. `{}` is the current screen with its
+    parameters; with `screen` another one, with the `params` given.
+  - **Outcome**: a notice confirms it, `copied` or «Copied to the clipboard» (`lc.copied`). If the browser refuses
+    (no permission, a page not served over https) the step fails with «Could not copy to the clipboard»
+    (`lc.copyFailed`), or runs `onError`. The copied text never goes to the reports.
+  - **Port**: the runtime uses the clipboard of the browser; an application can provide its own `ClipboardWriter`.
+  - In the showcase «Forms», the section «Inline editing» has «Copy link» and, in the «…» menu, «Copy key».
 
 ### 2.22b Before and after a call: response, conditions, named sequences, errors
 
@@ -937,7 +954,7 @@ click removes the flag); the thumb counts the votes:
 
 The names are those of the built-in set, the same as in the navigation; an unknown name shows no icon. For the actions:
 `save`, `edit`, `delete`, `plus`, `check`, `close`, `link`, `eye`, `eye-invisible`, `flag`, `like`, `user-add`, `back`, `move`,
-`play`, `reload`, `download`, `upload`, `external`, `copy`, `search`, `filter`, `settings`. The showcases «Tables»,
+`play`, `reload`, `download`, `upload`, `external`, `copy`, `share`, `search`, `filter`, `settings`. The showcases «Tables»,
 «Forms» and «Containers» have examples.
 
 ### 2.33 Breadcrumb declared by the screen
