@@ -23,8 +23,8 @@ import { ShellSession } from './shell-session';
 describe('Component showcase', () => {
   const files: Record<string, unknown> = {
     'examples/navigation.json': navigationDoc,
-    // The data sources documents the screens refer to.
-    ...Object.fromEntries(Object.entries(SHOWCASE_FILES).filter(([url]) => url.startsWith('examples/datasources/'))),
+    // The data sources documents and the asset packs the screens refer to.
+    ...Object.fromEntries(Object.entries(SHOWCASE_FILES).filter(([url]) => url.startsWith('examples/datasources/') || url.startsWith('examples/assets/'))),
     // The initial destination, which opens before going to the showcase screen.
     'examples/screens/invoice-list.json': invoices,
     'examples/screens/showcase-basics.json': base,

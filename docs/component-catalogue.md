@@ -960,6 +960,20 @@ time it is drawn, from the static files of the runtime (`assets/outline`, `asset
 `play`, `reload`, `download`, `upload`, `external`, `copy`, `share`, `search`, `filter`, `settings`. The showcases «Tables»,
 «Forms» and «Containers» have examples.
 
+**Icons of the application (asset packs, ADR-29).** An application brings its own icons in an asset pack, a document
+`assets/<pack>.json` of the project next to `screens/` and `themes/`, and names them `pack/name` wherever an icon is
+taken, in the screens and in the navigation:
+
+```json
+{ "type": "button", "label": "Ship", "icon": "logistics/truck", "onClick": [{ "call": "ship" }] }
+```
+
+The pack is geometry only: for every icon a `viewBox` and the path data, drawn in the colour of the text, and an optional
+`filled` form for a pressed toggle (format in [schema-reference.md](schema-reference.md#asset-pack-assetsschemajson)).
+The runtime loads a pack the first time a screen draws one of its icons, checks it against the schema and builds the
+SVG itself; a pack that is missing or not valid draws nothing and goes to the diagnostics. The showcase «Basic
+components» uses the pack of the demo, `examples/assets/logistics.json`, in its section «Icons».
+
 ### 2.33 Breadcrumb declared by the screen
 
 Above the title the runtime shows the path of the screen in the menu (area, groups, item). A screen that is not in the

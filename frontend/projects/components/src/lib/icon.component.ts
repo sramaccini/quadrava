@@ -61,15 +61,15 @@ import {
   LikeOutline,
 } from '@ant-design/icons-angular/icons';
 import type { IconDefinition } from '@ant-design/icons-angular';
-import { IconFiles } from 'core';
+import { AssetPacks, IconFiles, assetIconSvg, packEntry } from 'core';
 import { NzIconModule, NzIconService } from 'ng-zorro-antd/icon';
 import { ANT_FILLED, ANT_OUTLINED } from './ant-icon-names.generated';
 
 /**
  * Short names of the built-in set (name used in the JSON → Ant Design icon), registered statically with the bundle
  * (`provideLcComponents`). The other Ant Design icons are known by name and fetched on first use from the static files
- * of the same origin (ADR-29); an unknown name shows nothing and fetches nothing. `filled` is the filled form, drawn
- * for a pressed toggle.
+ * of the same origin, and the icons of the asset packs of the application are named `pack/name` (ADR-29); an unknown
+ * name shows nothing and fetches nothing. `filled` is the filled form, drawn for a pressed toggle.
  */
 export const ICON_TYPES: Record<string, { type: string; icon: IconDefinition; filled?: IconDefinition }> = {
   help: { type: 'question-circle', icon: QuestionCircleOutline },
@@ -141,15 +141,24 @@ const OUTLINED = new Set(ANT_OUTLINED);
 const FILLED = new Set(ANT_FILLED);
 
 /**
- * NG-ZORRO type of an icon name: a short name of the built-in set (`ICON_TYPES`) or the name of an Ant Design icon
- * (`share-alt`, `calendar`, `team`); `null` if the name is not known.
+ * NG-ZORRO type of the icons of a pack: `acme/truck` is `acme--truck`. The names of the packs and of their entries have
+ * no double hyphen, nor have the Ant Design icons, so the two never meet.
+ */
+const PACK_TYPE = /^(.+?)--(.+)$/;
+
+/**
+ * NG-ZORRO type of an icon name: a short name of the built-in set (`ICON_TYPES`), the name of an Ant Design icon
+ * (`share-alt`, `calendar`, `team`) or an icon of a pack (`acme/truck`); `null` if the name is not known. Whether the
+ * pack has the icon is known only once it is loaded.
  */
 export function iconType(name: string | undefined): string | null {
   if (!name) return null;
+  const pack = packEntry(name);
+  if (pack) return `${pack.pack}--${pack.entry}`;
   return ICON_TYPES[name]?.type ?? (OUTLINED.has(name) ? name : null);
 }
 
-/** Whether the icon has a filled form, drawn for a pressed toggle. */
+/** Whether the Ant Design icon has a filled form, drawn for a pressed toggle (for the icons of a pack, once it is loaded). */
 export function hasFilledForm(name: string | undefined): boolean {
   const type = iconType(name);
   return type !== null && FILLED.has(type);
@@ -159,13 +168,15 @@ type IconTheme = 'outline' | 'fill';
 
 /**
  * Fetches the Ant Design icons that are not in the bundle, once each, through the `IconFiles` port (ADR-29), and
- * registers them with NG-ZORRO. Only names of the generated list are asked for. A failure registers nothing and the icon
- * is not drawn; it never throws, unlike the dynamic loading of NG-ZORRO, which is not used.
+ * registers them with NG-ZORRO. Only names of the generated list are asked for. The icons of a pack come with the pack
+ * (`AssetPacks`): all of them are registered when it is loaded, their SVG built from the validated geometry. A failure
+ * registers nothing and the icon is not drawn; it never throws, unlike the dynamic loading of NG-ZORRO, which is not used.
  */
 @Injectable({ providedIn: 'root' })
 export class IconLoader {
   private readonly icons = inject(NzIconService);
   private readonly files = inject(IconFiles, { optional: true });
+  private readonly packs = inject(AssetPacks);
   private readonly started = new Set<string>();
   /** Bumped at every icon registered, so that the icons waiting for it are drawn. */
   readonly version = signal(0);
@@ -177,6 +188,8 @@ export class IconLoader {
 
   /** Fetches the icon once, if it is not there yet. */
   load(type: string, theme: IconTheme): void {
+    const pack = PACK_TYPE.exec(type);
+    if (pack) return this.loadPack(pack[1]);
     const key = `${theme}/${type}`;
     const files = this.files;
     if (!files || this.has(type, theme) || this.started.has(key) || (theme === 'outline' ? !OUTLINED.has(type) : !FILLED.has(type))) return;
@@ -184,6 +197,20 @@ export class IconLoader {
     void files.svg(theme, type).then((svg) => {
       if (svg === null) return;
       this.icons.addIcon({ name: type, theme, icon: svg });
+      this.version.update((v) => v + 1);
+    });
+  }
+
+  private loadPack(name: string): void {
+    const key = `pack/${name}`;
+    if (this.started.has(key)) return;
+    this.started.add(key);
+    void this.packs.pack(name).then((pack) => {
+      if (!pack?.icons) return;
+      for (const [entry, icon] of Object.entries(pack.icons)) {
+        this.icons.addIcon({ name: `${name}--${entry}`, theme: 'outline', icon: assetIconSvg(icon) });
+        if (icon.filled) this.icons.addIcon({ name: `${name}--${entry}`, theme: 'fill', icon: assetIconSvg(icon.filled) });
+      }
       this.version.update((v) => v + 1);
     });
   }
@@ -206,7 +233,7 @@ export class IconComponent {
   readonly filled = input(false);
   private readonly loader = inject(IconLoader);
   private readonly type = computed(() => iconType(this.name()));
-  private readonly wantsFill = computed(() => this.filled() && hasFilledForm(this.name()));
+  private readonly wantsFill = computed(() => this.filled() && (hasFilledForm(this.name()) || packEntry(this.name()) !== null));
 
   /** The icon as it can be drawn now: the filled form once it is there, otherwise the outlined one; null until then. */
   protected readonly shown = computed<{ type: string; theme: IconTheme } | null>(() => {

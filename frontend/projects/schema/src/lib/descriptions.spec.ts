@@ -1,3 +1,4 @@
+import { ASSETS_SCHEMA } from './assets.schema';
 import { DATASOURCES_SCHEMA } from './datasources.schema';
 import { MESSAGES_SCHEMA } from './messages.schema';
 import { NAVIGATION_SCHEMA } from './navigation.schema';
@@ -28,7 +29,7 @@ function undescribed(schema: unknown, path = ''): string[] {
 describe('descriptions of the schemas', () => {
   // They are the help of the property panel of an editor and the generated reference.
   it('every property has a description', () => {
-    const schemas = { screen: SCREEN_SCHEMA, theme: THEME_SCHEMA, navigation: NAVIGATION_SCHEMA, messages: MESSAGES_SCHEMA, datasources: DATASOURCES_SCHEMA, project: PROJECT_SCHEMA };
+    const schemas = { screen: SCREEN_SCHEMA, theme: THEME_SCHEMA, navigation: NAVIGATION_SCHEMA, messages: MESSAGES_SCHEMA, datasources: DATASOURCES_SCHEMA, project: PROJECT_SCHEMA, assets: ASSETS_SCHEMA };
     for (const [name, schema] of Object.entries(schemas)) expect(undescribed(schema), name).toEqual([]);
   });
 });

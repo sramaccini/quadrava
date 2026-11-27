@@ -15,6 +15,8 @@ describe('link between Studio and the runtime', () => {
     expect(isProjectSnapshot({ ...snapshot(), screens: { 'Bad Id': {} } })).toBe(false);
     expect(isProjectSnapshot({ ...snapshot(), messages: { english: {} } })).toBe(false);
     expect(isProjectSnapshot({ ...snapshot(), themes: [] })).toBe(false);
+    expect(isProjectSnapshot({ ...snapshot(), assets: { acme: {} } })).toBe(true);
+    expect(isProjectSnapshot({ ...snapshot(), assets: { 'Acme Ltd': {} } })).toBe(false);
     expect(isProjectSnapshot({ ...snapshot(), screens: Object.fromEntries(Array.from({ length: 501 }, (_, i) => [`s${i}`, {}])) })).toBe(false);
     expect(isProjectSnapshot(null)).toBe(false);
   });
@@ -42,5 +44,8 @@ describe('link between Studio and the runtime', () => {
     await expect(source.screen('nope')).rejects.toMatchObject({ status: 404 });
     await expect(source.screen('toString')).rejects.toMatchObject({ status: 404 });
     await expect(new SnapshotDefinitions({ ...project, navigation: null }).navigation()).rejects.toMatchObject({ status: 404 });
+    // The packs: from a Studio that sends them, otherwise none.
+    expect(await new SnapshotDefinitions({ ...project, assets: { acme: { assets: 'acme' } } }).assets('acme')).toEqual({ assets: 'acme' });
+    await expect(source.assets('acme')).rejects.toMatchObject({ status: 404 });
   });
 });

@@ -33,6 +33,11 @@ export class ExampleDefinitions extends DefinitionSource {
     return this.load(`examples/i18n/${encodeURIComponent(locale)}.json`);
   }
 
+  /** The asset packs of the demo project, `examples/assets/<name>.json`. */
+  override assets(name: string): Promise<unknown> {
+    return this.load(`examples/assets/${encodeURIComponent(name)}.json`);
+  }
+
   private async load(url: string): Promise<unknown> {
     const response = await fetch(url);
     if (!response.ok) throw Object.assign(new Error(`HTTP ${response.status}`), { status: response.status });

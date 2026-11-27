@@ -130,6 +130,23 @@ out.push(cell(project.description));
 out.push('');
 out.push(table(project.properties, project.required));
 out.push('');
+out.push('## Asset pack (`assets.schema.json`)');
+out.push('');
+const assets = read('assets');
+out.push(cell(assets.description));
+out.push('');
+out.push(table(assets.properties, assets.required));
+out.push('');
+out.push('### Icon of a pack');
+out.push('');
+const assetIcon = assets.properties.icons.additionalProperties;
+out.push(table(assetIcon.properties, assetIcon.required));
+out.push('');
+out.push('### Image of a pack');
+out.push('');
+const assetImage = assets.properties.images.additionalProperties;
+out.push(table(assetImage.properties, assetImage.required));
+out.push('');
 const content = out.join('\n');
 
 if (process.argv.includes('--check')) {

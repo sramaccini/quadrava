@@ -11,3 +11,4 @@ export { NAVIGATION_SCHEMA } from './lib/navigation.schema';
 export { MESSAGES_SCHEMA } from './lib/messages.schema';
 export { DATASOURCES_SCHEMA } from './lib/datasources.schema';
 export { PROJECT_SCHEMA } from './lib/project.schema';
+export { ASSETS_SCHEMA } from './lib/assets.schema';

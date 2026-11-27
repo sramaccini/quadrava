@@ -1,6 +1,6 @@
 # ADR-29: asset packs, only what each application uses
 
-Status: accepted (27 November 2026); phase 1 implemented on 27 November 2026, the others to follow.
+Status: accepted (27 November 2026); phases 1 and 2 implemented on 27 November 2026, the others to follow.
 
 ## Context
 
@@ -67,7 +67,6 @@ acme-icons-1.2.0.zip
 
 ```json
 {
-  "$schema": "https://quadrava.dev/schemas/asset-pack.schema.json",
   "name": "acme",
   "version": "1.2.0",
   "license": "Proprietary, ACME S.p.A.",
@@ -87,13 +86,14 @@ acme-icons-1.2.0.zip
 
 ### 3. In the project: a JSON document, already cleaned
 
-`quadrava assets add acme-icons-1.2.0.zip` reads the zip, checks `pack.json` against `asset-pack.schema.json` and writes
+`quadrava assets add acme-icons-1.2.0.zip` reads the zip, checks `pack.json` and the files it names, and writes
 **`assets/acme.json`** next to `screens/` and `themes/`. This file is a definition like the others: in Git, readable in
 a diff, validated by `quadrava validate`. The zip is not needed after this step.
 
 ```json
 {
-  "name": "acme",
+  "schemaVersion": "1.0",
+  "assets": "acme",
   "version": "1.2.0",
   "license": "Proprietary, ACME S.p.A.",
   "icons": {
@@ -110,11 +110,13 @@ a diff, validated by `quadrava validate`. The zip is not needed after this step.
   dropped (scripts, styles, links, `foreignObject`, event attributes).
 - Images keep their content, as base64, within a size limit (PNG, JPEG, WebP, GIF, and SVG cleaned in the same way).
   They become `data:` addresses in the browser, which the Content-Security-Policy already allows.
+- The document follows `assets.schema.json`; `assets` is its identifier, as `screen` is for a screen, and the name of
+  the file. The demo has one, `examples/assets/logistics.json`.
 
 ### 4. Used by name, with the namespace
 
 ```json
-{ "type": "button", "label": "Ship", "icon": "acme:truck", "onClick": [{ "call": "ship" }] }
+{ "type": "button", "label": "Ship", "icon": "acme/truck", "onClick": [{ "call": "ship" }] }
 { "type": "image", "src": "asset:acme/empty-orders" }
 ```
 
@@ -123,6 +125,8 @@ In a theme: `"logo": "asset:acme/logo"`.
 - A short name (`save`) and an Ant name (`share-alt`) have no prefix. An icon of a pack has always the prefix, so two
   packs never collide and a new Ant icon never hides one of the application.
 - A pressed toggle draws `filled` when the pack has it.
+- Inside, the icon is registered with NG-ZORRO as `acme--truck`: the names of packs, of their entries and of the Ant
+  icons have no double hyphen, so the two kinds never meet.
 
 ### 5. Only what the application uses
 
@@ -131,7 +135,7 @@ The pruning happens **when publishing**, the one moment when the whole applicati
 - `quadrava validate` collects every icon name and every `asset:` address of the screens, the navigation and the themes.
   It reports a name that no pack has (an error), and a pack entry that nobody uses (only a notice).
 - `quadrava publish` publishes the document `assets/acme` with **only the used entries**. The project keeps the whole
-  pack, so a new screen that uses `acme:pallet` adds it at the next publish.
+  pack, so a new screen that uses `acme/pallet` adds it at the next publish.
 - The runtime loads a pack document the first time a screen uses one of its names, and registers its icons with
   NG-ZORRO. An application that does not use packs loads nothing.
 
@@ -158,7 +162,7 @@ Example: a pack of 300 icons, of which an application uses 12, publishes 12 icon
 
 - **Contract first:**
   - `contracts/registry.yaml` gains the document kind `assets` (a minor version);
-  - the new schema is `asset-pack.schema.json`, with `description` on every property;
+  - the new schema is `assets.schema.json`, with `description` on every property;
   - `project.json` does not change, since the packs are the files of `assets/`.
 - **`DefinitionSource`** gains `assets(name)`. It comes with a default implementation that answers «not there», so an
   existing implementation (the commercial edition's included) keeps compiling.
@@ -186,8 +190,8 @@ Example: a pack of 300 icons, of which an application uses 12, publishes 12 icon
   then the browser cache serves it.
 - An application brings its own icons and images, versioned and approved like its screens, and publishes only the ones it
   uses.
-- The CLI gains a dependency to read SVG in Node (to be proposed separately: a small XML parser, or `svgo`). It is used
-  only by the CLI and Studio, never in the runtime bundle.
+- The CLI gains a dependency to read and clean SVG in Node, `svgo`. It is used only by the CLI and Studio, never in the
+  runtime bundle.
 - One more document kind for the BFFs that serve the registry (reference, light BFFs) and for their conformance kits.
 
 ## Phases
@@ -200,6 +204,7 @@ Example: a pack of 300 icons, of which an application uses 12, publishes 12 icon
 
 ## Decided on acceptance
 
-- The prefix of a pack icon is `acme:truck`; images keep `asset:acme/empty-orders`.
+- The name of a pack icon is `acme/truck` (first proposed as `acme:truck`), the same form as the images,
+  `asset:acme/empty-orders`.
 - Phase 1 is a release of its own; the phases follow one another.
-- The SVG parser of the CLI is a new dependency, proposed on its own before phase 3.
+- The SVG parser of the CLI is `svgo`, approved before phase 3.

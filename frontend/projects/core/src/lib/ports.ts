@@ -208,7 +208,7 @@ export abstract class IconFiles {
 }
 
 /**
- * Source of the definitions: screens, data sources, navigation and themes. In production the registry (the documents published in an
+ * Source of the definitions: screens, data sources, navigation, themes, catalogues and asset packs. In production the registry (the documents published in an
  * environment), in the demo the example files. It returns the JSON as it is: whoever uses it validates it. It throws
  * if the document is not there or cannot be loaded; the error has `status` (HTTP code, 0 if the source does not answer)
  * when the source knows it, so whoever shows the error can tell a missing document from a failure.
@@ -223,4 +223,11 @@ export abstract class DefinitionSource {
   abstract themes(): string[];
   /** Translation catalogue of one language: a key → text object. */
   abstract messages(locale: string): Promise<unknown>;
+  /**
+   * An asset pack of the application (ADR-29): its icons and images. Not abstract, so that the sources written before the
+   * packs still compile: by default no pack is there (status 404).
+   */
+  assets(name: string): Promise<unknown> {
+    return Promise.reject(Object.assign(new Error(`asset pack ${name} is not available`), { status: 404 }));
+  }
 }

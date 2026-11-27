@@ -40,7 +40,7 @@
 | --- | --- | --- |
 | `label` * | text | Text of the button; it can contain {{ }}. |
 | `onClick` * | list of step | Steps run on click, in order (call, set, navigate, refresh…). The button stays busy until they finish. |
-| `icon` | icon | Icon shown before the text of the button, from the built-in set or by its Ant Design name (for example save, edit, delete, plus); with display icon it is shown alone. An unknown name shows no icon. |
+| `icon` | icon | Icon shown before the text of the button, from the built-in set, by its Ant Design name or as pack/name from an asset pack (for example save, edit, delete, plus); with display icon it is shown alone. An unknown name shows no icon. |
 | `tone` | text | Colour of the button: neutral, primary, success or danger, or an expression that gives one of them. On a toggle (pressed) it is the colour of the pressed state, for example danger for a flag (primary if absent); otherwise it fills the button (a button with text is primary if absent, an icon button neutral). Any other value is neutral. |
 | `display` | `label`, `icon` | How the button is shown: label (icon, if any, and text) or icon (the icon alone, which needs icon; the text becomes the name read by screen readers and the tooltip). label if absent. |
 | `count` | text | A number shown next to the icon or the text, usually an expression (for example {{ size(data.watchers) }}); screen readers hear it after the text («Watchers: 2»). Nothing is shown when it is empty or not a number. |
@@ -52,7 +52,7 @@
 | --- | --- | --- |
 | `label` * | text | Text of the button, for example the current status; it can contain {{ }}. |
 | `tone` | text | Colour of the button: neutral, primary, success or danger, or an expression that gives one of them (for example the category of the current status). On a toggle (pressed) it is the colour of the pressed state (primary if absent). Any other value is neutral (neutral if absent). |
-| `icon` | icon | Icon shown before the text of the button, from the built-in set or by its Ant Design name; with display icon it is shown alone. An unknown name shows no icon. |
+| `icon` | icon | Icon shown before the text of the button, from the built-in set, by its Ant Design name or as pack/name from an asset pack; with display icon it is shown alone. An unknown name shows no icon. |
 | `items` * | list of menuItem | Entries of the menu opened by the button, in order: fixed items, items from a data source and dividers. With no item to show, the menu says there is nothing to choose. |
 | `display` | `label`, `icon` | How the button is shown: label (icon, if any, text and the arrow) or icon (the icon alone, without the arrow, for example the «…» button with icon more; it needs icon, and the text becomes the name read by screen readers and the tooltip). label if absent. |
 | `count` | text | A number shown next to the icon or the text, usually an expression (for example {{ size(data.watchers) }}); screen readers hear it after the text («Watchers: 2»). Nothing is shown when it is empty or not a number. |
@@ -782,7 +782,7 @@ Data sources of a project, shared by its screens: one document holds one or more
 
 ## Project manifest (`project.schema.json`)
 
-Manifest of a Quadrava project (project.json): the configuration of an application. Its resources sit next to it, one file each: screens/, datasources/, themes/, i18n/ and navigation.json.
+Manifest of a Quadrava project (project.json): the configuration of an application. Its resources sit next to it, one file each: screens/, datasources/, themes/, i18n/, assets/ and navigation.json.
 
 | Property | Type | Description |
 | --- | --- | --- |
@@ -794,3 +794,35 @@ Manifest of a Quadrava project (project.json): the configuration of an applicati
 | `defaultLanguage` * | text | Language of the fallback texts written in the screens; one of languages. |
 | `themes` | list of text | Themes the user can choose, in order: the first one is the initial one (all those in themes/ if missing). |
 | `settings` | object | Values of the application that the expressions read as settings.name, for example the base address of a service: {"ordersApi": "/api/orders"} is {{ settings.ordersApi }} in a data source. They reach the browser: never secrets or tokens. |
+
+## Asset pack (`assets.schema.json`)
+
+Icons and images of an application (ADR-29), already cleaned by the CLI: icons are geometry only, images are base64 content. Published with only the entries the application uses. Icons are named pack/name, images asset:pack/name.
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `schemaVersion` * | `"1.0"` | Version of the format. |
+| `assets` * | text | Name of the pack, the namespace of its entries (acme in acme/truck), which is also the identifier of the document in the registry. |
+| `version` * | text | Version of the pack as its authors released it, for example 1.2.0. |
+| `license` * | text | Licence of the content, for example "MIT" or "Proprietary, ACME S.p.A.", so that the notices of the application can name it. |
+| `description` | text | What the pack holds, for the people who choose it. |
+| `icons` | object | Icons by name: in the JSON of the screens and the navigation they are named pack/name, for example acme/truck. |
+| `images` | object | Images by name, for example the illustration of an empty state or a logo: addressed as asset:pack/name. |
+
+### Icon of a pack
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `viewBox` * | text | Coordinates of the drawing of the icon: min-x, min-y, width and height, for example "0 0 1024 1024". |
+| `paths` * | list of text | Path data of the icon (the d attribute of an SVG path), drawn in the current text colour. Only geometry: the CLI turns the other shapes into paths and drops the rest. |
+| `fillRule` | `nonzero`, `evenodd` | How the paths fill their overlaps (nonzero if absent). |
+| `filled` | object | Filled form of the icon, drawn for a pressed toggle. |
+| `keywords` | list of text | Words that find the icon in the icon picker of Studio, for example delivery, shipping. |
+
+### Image of a pack
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `type` * | `image/png`, `image/jpeg`, `image/webp`, `image/gif`, `image/svg+xml` | Media type of the image. |
+| `data` * | text | Content of the image in base64 (at most about 200 kB); an SVG is cleaned by the CLI like the icons. |
+| `alt` | text | Default text alternative of the image, used when the screen gives none. |

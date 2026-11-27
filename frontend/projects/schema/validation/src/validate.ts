@@ -1,5 +1,5 @@
-import { datasourcesValidator, messagesValidator, navigationValidator, projectValidator, screenValidator, themeValidator } from './validators.generated';
-import type { DataSourcesDefinition, MessagesDefinition, NavigationDefinition, ProjectDefinition, ScreenDefinition, ThemeDefinition } from 'schema';
+import { assetsValidator, datasourcesValidator, messagesValidator, navigationValidator, projectValidator, screenValidator, themeValidator } from './validators.generated';
+import type { AssetsDefinition, DataSourcesDefinition, MessagesDefinition, NavigationDefinition, ProjectDefinition, ScreenDefinition, ThemeDefinition } from 'schema';
 
 export interface ValidationIssue {
   /** Position in the document, for example `/components/0/columns`. */
@@ -48,6 +48,11 @@ export function validateDataSources(document: unknown): ValidationResult<DataSou
 /** Validates the manifest of a project (project.json). Does not throw. */
 export function validateProject(document: unknown): ValidationResult<ProjectDefinition> {
   return run<ProjectDefinition>(projectValidator, document);
+}
+
+/** Validates an asset pack (icons and images of an application, ADR-29). Does not throw. */
+export function validateAssets(document: unknown): ValidationResult<AssetsDefinition> {
+  return run<AssetsDefinition>(assetsValidator, document);
 }
 
 function run<T>(validator: ValidateFunction, document: unknown): ValidationResult<T> {

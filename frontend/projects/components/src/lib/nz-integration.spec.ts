@@ -1,6 +1,6 @@
 import { CSP_NONCE } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
-import { Authorization, DataClient, IconFiles, Notifier, ScreenComponent, ScreenNavigator, ThemeService, UserProvider, type DataRequest } from 'core';
+import { AssetPacks, Authorization, DataClient, DefinitionSource, IconFiles, Notifier, ScreenComponent, ScreenNavigator, ThemeService, UserProvider, type DataRequest } from 'core';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import type { NodeDefinition, ScreenDefinition, ThemeDefinition } from 'schema';
 import { hasFilledForm, iconType, IconComponent } from './icon.component';
@@ -155,6 +155,36 @@ describe('integration with NG-ZORRO', () => {
         await settle(icon);
         expect((icon.nativeElement as HTMLElement).querySelector('[nz-icon]')).toBeNull();
       }
+    });
+
+    it('an icon of a pack, pack/name, is drawn from the geometry of the pack, filled when pressed', async () => {
+      expect(iconType('acme/truck')).toBe('acme--truck');
+      const packs: Record<string, unknown> = {
+        acme: {
+          schemaVersion: '1.0',
+          assets: 'acme',
+          version: '1.0.0',
+          license: 'MIT',
+          icons: { truck: { viewBox: '0 0 24 24', paths: ['M2 6h12v9H2z'], filled: { viewBox: '0 0 24 24', paths: ['M2 6h20v9H2z'] } }, box: { viewBox: '0 0 24 24', paths: ['M4 4h16v16H4z'] } },
+        },
+      };
+      const source = { assets: async (name: string) => packs[name] ?? Promise.reject(Object.assign(new Error('not found'), { status: 404 })) } as unknown as DefinitionSource;
+      TestBed.configureTestingModule({ providers: [provideLcComponents(), { provide: DefinitionSource, useValue: source }] });
+      await TestBed.inject(AssetPacks).pack('acme');
+      const draw = async (name: string, filled = false) => {
+        const icon = TestBed.createComponent(IconComponent);
+        icon.componentRef.setInput('name', name);
+        icon.componentRef.setInput('filled', filled);
+        icon.detectChanges();
+        await settle(icon);
+        return icon.nativeElement as HTMLElement;
+      };
+      expect((await draw('acme/truck')).querySelector('svg path')?.getAttribute('d')).toBe('M2 6h12v9H2z');
+      expect((await draw('acme/truck', true)).querySelector('svg path')?.getAttribute('d')).toBe('M2 6h20v9H2z');
+      // Without a filled form the outlined one; an entry or a pack that is not there draws nothing.
+      expect((await draw('acme/box', true)).querySelector('svg path')?.getAttribute('d')).toBe('M4 4h16v16H4z');
+      expect((await draw('acme/ship')).querySelector('[nz-icon]')).toBeNull();
+      expect((await draw('other/truck')).querySelector('[nz-icon]')).toBeNull();
     });
 
     it('the notifier uses NG-ZORRO messages and does not interpret HTML', async () => {

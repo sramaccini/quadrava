@@ -1040,6 +1040,38 @@ export interface MessagesDefinition {
   texts: Record<string, string>;
 }
 
+/** Drawing of an icon of an asset pack: geometry only, in the current text colour. */
+export interface AssetIconGeometry {
+  viewBox: string;
+  /** Path data (the `d` attribute of SVG paths). */
+  paths: string[];
+  fillRule?: 'nonzero' | 'evenodd';
+}
+/** An icon of an asset pack, named `pack/name` in the JSON. */
+export interface AssetIcon extends AssetIconGeometry {
+  /** Filled form, for a pressed toggle. */
+  filled?: AssetIconGeometry;
+  keywords?: string[];
+}
+/** An image of an asset pack, addressed as `asset:pack/name`. */
+export interface AssetImage {
+  type: 'image/png' | 'image/jpeg' | 'image/webp' | 'image/gif' | 'image/svg+xml';
+  /** Base64 content. */
+  data: string;
+  alt?: string;
+}
+/** Asset pack (`assets` document of the registry, ADR-29), already cleaned by the CLI. Aligned with schemas/assets.schema.json. */
+export interface AssetsDefinition {
+  schemaVersion: string;
+  /** Name of the pack, the namespace of its entries and the identifier of the document. */
+  assets: string;
+  version: string;
+  license: string;
+  description?: string;
+  icons?: Record<string, AssetIcon>;
+  images?: Record<string, AssetImage>;
+}
+
 /** Manifest of a project (`project.json`): the configuration of an application. Aligned with schemas/project.schema.json. */
 export interface ProjectDefinition {
   schemaVersion: string;

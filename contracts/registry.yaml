@@ -1,13 +1,14 @@
 openapi: 3.1.0
 info:
   title: Quadrava - Registry contract
-  version: 0.7.0
+  version: 0.8.0
   description: >
     Registry of the application definitions. An application is made of separate documents: every screen, every data
     sources document, the navigation and every theme are documents of their own, with their own versions and publications.
     Versions are immutable and identified by the hash of their content; publishing means pointing an environment at a
     version of a document. The registry validates the content against the schema of the document kind
-    (screen.schema.json, datasources.schema.json, navigation.schema.json, theme.schema.json, messages.schema.json) and
+    (screen.schema.json, datasources.schema.json, navigation.schema.json, theme.schema.json, messages.schema.json,
+    assets.schema.json) and
     rejects invalid documents.
 
     0.3: translation catalogues as documents (kind messages, one document per language); review of versions (draft →
@@ -33,6 +34,11 @@ info:
     configuration of each registry: in a registry without protected environments every version can be published
     anywhere, and the review states and actions stay available without gating publication. A client cannot assume that
     an environment is protected, nor that it is not: it reads the outcome of the publication.
+
+    0.8 (compatible with 0.7): asset packs as documents (kind assets, schema assets.schema.json, ADR-29): the icons and
+    images of an application, already cleaned by the CLI (icons are geometry only, images base64 content), usually
+    published with only the entries the application uses. Screens and navigation name their icons `pack/name`;
+    `getReferences` does not check them: an icon that is not there is simply not drawn.
   license:
     name: Mozilla Public License 2.0
     identifier: MPL-2.0
@@ -113,7 +119,7 @@ paths:
           schema: { type: string }
       description: >
         The content is validated against the schema of the document kind (if it is not valid: 400 with `errors`).
-        The identifier in the content (`screen`, `navigation`, `theme` or `messages`) must match `documentId`.
+        The identifier in the content (`screen`, `navigation`, `theme`, `messages`, `datasources` or `assets`) must match `documentId`.
         Saving the same content twice returns the same version. With `If-Match` (the hash of the latest version the
         client knows) the save succeeds only if nobody saved in the meantime; otherwise 412.
         The new version is a draft.
@@ -299,7 +305,7 @@ components:
       name: documentId
       in: path
       required: true
-      description: Identifier of the document (kebab-case), equal to `screen`, `navigation`, `theme` or `messages` in the content.
+      description: Identifier of the document (kebab-case), equal to `screen`, `navigation`, `theme`, `messages`, `datasources` or `assets` in the content.
       schema: { type: string, pattern: '^[a-z0-9]+(-[a-z0-9]+)*$' }
   responses:
     Problem:
@@ -310,10 +316,11 @@ components:
   schemas:
     DocumentKind:
       type: string
-      enum: [screen, datasources, navigation, theme, messages]
+      enum: [screen, datasources, navigation, theme, messages, assets]
       description: >
         Document kind, which decides the validation schema (datasources = data sources shared by the screens, schema
-        datasources.schema.json; messages = translation catalogue of one language, schema messages.schema.json).
+        datasources.schema.json; messages = translation catalogue of one language, schema messages.schema.json;
+        assets = asset pack with icons and images, schema assets.schema.json).
     AppSummary:
       type: object
       required: [id, name]

@@ -31,6 +31,7 @@ import showcaseTablesSources from '../../public/examples/datasources/showcase-ta
 import showcaseTasksSources from '../../public/examples/datasources/showcase-tasks.json';
 import showcaseValidationSources from '../../public/examples/datasources/showcase-validation.json';
 import showcaseViewsSources from '../../public/examples/datasources/showcase-views.json';
+import logisticsPack from '../../public/examples/assets/logistics.json';
 import catalogIt from '../../public/examples/i18n/it.json';
 import catalogEn from '../../public/examples/i18n/en.json';
 import { App } from './app';
@@ -41,6 +42,7 @@ import { ShellSession } from './shell-session';
 export const SHOWCASE_FILES: Record<string, unknown> = {
   'examples/navigation.json': navigationDoc,
   // The data sources documents the screens refer to.
+  'examples/assets/logistics.json': logisticsPack,
   'examples/datasources/expenses.json': expensesSources,
   'examples/datasources/invoices.json': invoicesSources,
   'examples/datasources/orders.json': ordersSources,

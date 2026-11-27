@@ -12,6 +12,20 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Added
+
+- Asset packs (ADR-29, phase 2): a new document kind `assets` (`assets.schema.json`, registry contract 0.8, folder
+  `assets/` of a project, checked by `quadrava validate` and published before the screens by `quadrava publish`). Its
+  icons are named `pack/name` (`logistics/truck`) in the screens and the navigation, and are drawn from their geometry,
+  filled when pressed. `DefinitionSource` gains `assets(name)`, with a default that answers 404, so existing sources
+  still compile; `RegistryDefinitions` and `SnapshotDefinitions` (a `ProjectSnapshot` may carry `assets`) read them,
+  and the new `AssetPacks` loads and validates each pack once.
+
+### Fixed
+
+- The icon of a menu group named after an Ant Design icon outside the built-in set is now fetched and drawn, as on the
+  buttons; NG-ZORRO no longer tries to load it by itself.
+
 ## [0.30.0] - 2026-11-27
 
 ### Added

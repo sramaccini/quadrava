@@ -9,7 +9,7 @@ export interface ProjectFile {
 }
 
 /** The folders of a project (ADR-14) and the files at its root. */
-const FOLDERS = ['screens', 'datasources', 'themes', 'i18n'];
+const FOLDERS = ['screens', 'datasources', 'themes', 'i18n', 'assets'];
 const ROOT_FILES = ['project.json', 'navigation.json'];
 
 /** Reads the files of a project folder: the manifest, the navigation and the JSON files of its folders, in name order. */

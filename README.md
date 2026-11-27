@@ -240,7 +240,7 @@ The demo remembers the chosen language and starts from the browser language when
 | `reference/` | Spring Boot (Maven multi-module): `bff`, `authz`, `telemetry` |
 | `idp/` | Keycloak for local development (Docker Compose and sample realm) |
 | `docker/` | The container image of the runtime (`docker/runtime/`, ADR-20) |
-| `examples/` | The demo **project**: `project.json` (manifest: name, languages, themes), `screens/`, `datasources/`, `navigation.json`, `themes/`, `i18n/`; used by the demo, validation and tests |
+| `examples/` | The demo **project**: `project.json` (manifest: name, languages, themes), `screens/`, `datasources/`, `navigation.json`, `themes/`, `i18n/`, `assets/` (asset packs, ADR-29); used by the demo, validation and tests |
 | `docs/` | Documentation entry point and architecture decision records |
 | `assets/brand/` | Quadrava brand: icons, logos, colours and usage rules (`assets/brand/README.md`) |
 

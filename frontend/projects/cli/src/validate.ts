@@ -3,6 +3,7 @@ import { checkNavigation } from '../../core/src/lib/navigation-check';
 import { unknownSourceReferences } from '../../core/src/lib/source-references';
 import { ExpressionEngine } from '../../expressions/src/public-api';
 import {
+  validateAssets,
   validateDataSources,
   validateMessages,
   validateNavigation,
@@ -15,7 +16,7 @@ import type { NavigationDefinition } from '../../schema/src/public-api';
 import type { ProjectFile } from './project';
 
 /** The kinds of document of a project; `messages` is a catalogue of `i18n/`, published as a messages document. */
-export type Kind = 'project' | 'navigation' | 'screen' | 'datasources' | 'theme' | 'messages';
+export type Kind = 'project' | 'navigation' | 'screen' | 'datasources' | 'theme' | 'messages' | 'assets';
 
 export interface ProjectDocument {
   kind: Kind;
@@ -32,7 +33,7 @@ export interface Issue {
   message: string;
 }
 
-const KIND_OF_FOLDER: Record<string, Kind> = { screens: 'screen', datasources: 'datasources', themes: 'theme', i18n: 'messages' };
+const KIND_OF_FOLDER: Record<string, Kind> = { screens: 'screen', datasources: 'datasources', themes: 'theme', i18n: 'messages', assets: 'assets' };
 const VALIDATORS: Record<Kind, (doc: unknown) => ValidationResult<unknown>> = {
   project: validateManifest,
   navigation: validateNavigation,
@@ -40,9 +41,10 @@ const VALIDATORS: Record<Kind, (doc: unknown) => ValidationResult<unknown>> = {
   datasources: validateDataSources,
   theme: validateTheme,
   messages: validateMessages,
+  assets: validateAssets,
 };
 /** The property holding the identifier, which must be the name of the file. */
-const IDENTIFIER: Partial<Record<Kind, string>> = { screen: 'screen', datasources: 'datasources', theme: 'theme' };
+const IDENTIFIER: Partial<Record<Kind, string>> = { screen: 'screen', datasources: 'datasources', theme: 'theme', assets: 'assets' };
 
 type Json = Record<string, unknown>;
 const isObject = (value: unknown): value is Json => typeof value === 'object' && value !== null && !Array.isArray(value);

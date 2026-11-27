@@ -196,6 +196,66 @@
       ]
     },
     {
+      "id": "section-icons",
+      "type": "section",
+      "title": "{{ t('showcase_basics.icons', 'Icons') }}",
+      "components": [
+        {
+          "id": "icons-intro",
+          "type": "text",
+          "text": "{{ t('showcase_basics.icons_intro', 'Icons come from the built-in set (save), from Ant Design by name (team, fetched on first use) or from an asset pack of the application, named pack/name (logistics/truck, from examples/assets/logistics.json).') }}"
+        },
+        {
+          "id": "icon-builtin",
+          "type": "button",
+          "label": "{{ t('showcase_basics.icon_builtin', 'Built-in set') }}",
+          "icon": "save",
+          "onClick": [
+            {
+              "toast": "{{ t('showcase_basics.icon_builtin', 'Built-in set') }}"
+            }
+          ]
+        },
+        {
+          "id": "icon-ant",
+          "type": "button",
+          "label": "{{ t('showcase_basics.icon_ant', 'Ant Design') }}",
+          "icon": "team",
+          "onClick": [
+            {
+              "toast": "{{ t('showcase_basics.icon_ant', 'Ant Design') }}"
+            }
+          ]
+        },
+        {
+          "id": "icon-pack",
+          "type": "button",
+          "label": "{{ t('showcase_basics.icon_pack', 'Asset pack') }}",
+          "icon": "logistics/truck",
+          "onClick": [
+            {
+              "toast": "{{ t('showcase_basics.icon_pack', 'Asset pack') }}"
+            }
+          ]
+        },
+        {
+          "id": "icon-pack-toggle",
+          "type": "button",
+          "label": "{{ t('showcase_basics.icon_in_stock', 'In stock') }}",
+          "icon": "logistics/warehouse",
+          "pressed": "{{ has(state.inStock) && state.inStock }}",
+          "onClick": [
+            {
+              "set": {
+                "path": "state.inStock",
+                "value": "{{ !(has(state.inStock) && state.inStock) }}"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "section-sequences",
       "type": "section",
       "title": "{{ t('showcase_basics.sequences_and_responses', 'Sequences and responses') }}",

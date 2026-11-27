@@ -27,6 +27,8 @@ export interface ProjectSnapshot {
   readonly themes: Readonly<Record<string, unknown>>;
   /** Translation catalogues by language (key → text). */
   readonly messages: Readonly<Record<string, unknown>>;
+  /** Asset packs by name (ADR-29); absent from the Studio versions before them. */
+  readonly assets?: Readonly<Record<string, unknown>>;
 }
 
 export type FromRuntime = { type: 'lc-studio:ready' };
@@ -49,8 +51,9 @@ function resources(value: unknown, key: RegExp): boolean {
 /** A snapshot in its expected shape (identifiers, languages, size). The documents themselves are validated by the runtime. */
 export function isProjectSnapshot(value: unknown): value is ProjectSnapshot {
   if (!isRecord(value)) return false;
-  const { screens, dataSources, themes, messages } = value;
+  const { screens, dataSources, themes, messages, assets } = value;
   if (!resources(screens, ID) || !resources(dataSources, ID) || !resources(themes, ID) || !resources(messages, LANGUAGE)) return false;
+  if (assets !== undefined && !resources(assets, ID)) return false;
   try {
     return JSON.stringify(value).length <= MAX_SIZE;
   } catch {
@@ -111,5 +114,9 @@ export class SnapshotDefinitions extends DefinitionSource {
 
   messages(locale: string): Promise<unknown> {
     return this.read(this.project.messages, locale, `catalogue ${locale}`);
+  }
+
+  override assets(name: string): Promise<unknown> {
+    return this.read(this.project.assets ?? {}, name, `asset pack ${name}`);
   }
 }

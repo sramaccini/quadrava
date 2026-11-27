@@ -11,13 +11,13 @@ export interface PublishOptions {
 }
 
 /** The data sources first, since the screens refer to them; the manifest is not a registry document. */
-const ORDER: Kind[] = ['datasources', 'screen', 'navigation', 'theme', 'messages'];
+const ORDER: Kind[] = ['datasources', 'assets', 'screen', 'navigation', 'theme', 'messages'];
 
 /** The registry document kind of a project document. */
-const REGISTRY_KIND: Partial<Record<Kind, string>> = { datasources: 'datasources', screen: 'screen', navigation: 'navigation', theme: 'theme', messages: 'messages' };
+const REGISTRY_KIND: Partial<Record<Kind, string>> = { datasources: 'datasources', screen: 'screen', navigation: 'navigation', theme: 'theme', messages: 'messages', assets: 'assets' };
 
 /**
- * Saves a version of every document and publishes it in the environment (contracts/registry.yaml 0.7): one document
+ * Saves a version of every document and publishes it in the environment (contracts/registry.yaml 0.8): one document
  * after the other, carrying on after a failure. Returns how many failed. The protected environments of a registry, if
  * it has any, accept approved versions only, so publishing there fails until a reviewer approves them.
  */

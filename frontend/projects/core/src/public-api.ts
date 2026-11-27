@@ -14,6 +14,7 @@ export * from './lib/password-strength';
 export * from './lib/remote-checks';
 export * from './lib/field-errors';
 export * from './lib/data-source-loading';
+export * from './lib/asset-packs';
 export * from './lib/csv';
 export * from './lib/download';
 export * from './lib/markdown';

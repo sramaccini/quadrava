@@ -8,7 +8,7 @@ import { NzInputModule } from 'ng-zorro-antd/input';
 import { NzMenuModule } from 'ng-zorro-antd/menu';
 import { NzSelectModule } from 'ng-zorro-antd/select';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
-import { IconComponent, iconType } from './icon.component';
+import { IconComponent, IconLoader, iconType } from './icon.component';
 import { nextId } from './shared';
 
 export interface NavigateEvent {
@@ -238,6 +238,7 @@ export interface NavigateEvent {
 })
 export class SidebarComponent {
   protected readonly i18n = inject(I18n);
+  private readonly icons = inject(IconLoader);
   readonly navigation = input.required<NavigationRuntime>();
   /** Name shown next to the logo. */
   readonly brand = input('Quadrava');
@@ -351,8 +352,13 @@ export class SidebarComponent {
     return items.filter((i): i is VisibleLeaf => i.kind !== 'group');
   }
 
+  /** The icon of a group, drawn by NG-ZORRO itself: given only once it is registered (fetched or from a pack). */
   protected type(icon: string | undefined): string | null {
-    return iconType(icon);
+    const type = iconType(icon);
+    if (!type) return null;
+    this.icons.version();
+    this.icons.load(type, 'outline');
+    return this.icons.has(type, 'outline') ? type : null;
   }
 
   protected setOpen(id: string, open: boolean): void {

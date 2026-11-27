@@ -130,6 +130,17 @@ describe('quadrava validate', () => {
     assert.match(stderr, /screens\/order-list\.json \/components\/\d+\/source: uses the data source «nowhere»/);
   });
 
+  it('checks the asset packs of assets/: the schema and the name of the file', async () => {
+    const dir = project((d) => {
+      change(d, 'assets/logistics.json', (p) => ({ ...p, icons: { ...p.icons, bad: { viewBox: '0 0 24 24', paths: ['<path/>'] } } }));
+      writeJson(d, 'assets/other.json', { ...readJson(d, 'assets/logistics.json'), icons: {} });
+    });
+    const { code, stderr } = await run(['validate', dir]);
+    assert.equal(code, 1);
+    assert.match(stderr, /assets\/logistics\.json \/icons\/bad\/paths\/0/);
+    assert.match(stderr, /assets\/other\.json: the identifier «logistics» is not the name of the file/);
+  });
+
   it('exits with 2 for a wrong command', async () => {
     assert.equal((await run(['frobnicate'])).code, 2);
     assert.equal((await run(['validate', '--nope'])).code, 2);
@@ -151,6 +162,8 @@ describe('quadrava publish', () => {
     const kinds = saves.map((c) => c.url.split('/')[5]);
     assert.equal(kinds[0], 'datasources');
     assert.ok(kinds.lastIndexOf('datasources') < kinds.indexOf('screen'));
+    // The asset packs before the screens that name their icons.
+    assert.ok(kinds.includes('assets') && kinds.lastIndexOf('assets') < kinds.indexOf('screen'));
     assert.ok(saves.every((c) => c.url.startsWith('/registry/apps/tracker/documents/')));
     // The catalogues are published as messages documents; the manifest is not a registry document.
     const english = saves.find((c) => c.url.includes('/documents/messages/en/'));

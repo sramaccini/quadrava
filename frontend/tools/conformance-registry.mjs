@@ -1,4 +1,4 @@
-// Conformance kit for the registry contract (contracts/registry.yaml 0.7): checks from the outside, over HTTP, that a
+// Conformance kit for the registry contract (contracts/registry.yaml 0.8): checks from the outside, over HTTP, that a
 // registry (the reference one or a customer's) behaves as the contract describes.
 //
 //   node tools/conformance-registry.mjs --registry http://localhost:8081
@@ -196,5 +196,20 @@ await check(`approved screen with unpublished data sources: in ${protectedEnv} 4
   expect(r.status === 409 && isProblem(r), `expected 409 in Problem format, got ${r.status}`);
   expect(Array.isArray(r.json?.missingDataSources) && r.json.missingDataSources.some((m) => m.datasources === 'probes'), 'the Problem must list missingDataSources');
 }, { skip: !reviewer || unprotected });
+
+// 0.8: asset packs, a document kind like the others.
+const pack = { schemaVersion: '1.0', assets: 'probes', version: '1.0.0', license: 'MIT', icons: { probe: { viewBox: '0 0 24 24', paths: ['M2 2h20v20H2z'] } } };
+
+await check('asset packs: a valid pack is saved and published, a pack with markup in its paths is rejected with 400', async () => {
+  const path = `/registry/apps/${app}/documents/assets/probes`;
+  const bad = await call('POST', `${path}/versions`, { body: { ...pack, icons: { probe: { viewBox: '0 0 24 24', paths: ['<script>'] } } } });
+  expect(bad.status === 400 && isProblem(bad), `expected 400 in Problem format, got ${bad.status}`);
+  const saved = await call('POST', `${path}/versions`, { body: pack });
+  expect(saved.status === 201, `save: expected 201, got ${saved.status}`);
+  const published = await call('PUT', `${path}/published?env=development`, { body: { hash: saved.json?.hash } });
+  expect(published.status === 204, `publish: expected 204, got ${published.status}`);
+  const read = await call('GET', `${path}/published?env=development`);
+  expect(read.status === 200 && read.json?.icons?.probe?.paths?.[0] === 'M2 2h20v20H2z', `read: expected 200 with the pack, got ${read.status}`);
+});
 
 report(`Conformance with the registry contract (${registry}, application ${app})`);

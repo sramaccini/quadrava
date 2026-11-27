@@ -59,4 +59,10 @@ describe('definitions from the registry', () => {
     req.flush({ schemaVersion: '1.0', messages: 'en', texts: { 'app.title': 'Hello' } }, { headers: { ETag: '"m1"' } });
     expect(await p).toEqual({ 'app.title': 'Hello' });
   });
+
+  it('an asset pack is the published assets document', async () => {
+    const p = source.assets('acme');
+    http.expectOne((r) => r.url === '/registry/apps/order%20management/documents/assets/acme/published').flush({ assets: 'acme' });
+    expect(await p).toEqual({ assets: 'acme' });
+  });
 });
