@@ -12,6 +12,8 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+## [0.31.0] - 2026-11-27
+
 ### Added
 
 - Asset packs (ADR-29, phase 2): a new document kind `assets` (`assets.schema.json`, registry contract 0.8, folder
@@ -796,7 +798,8 @@ The first versioned release.
 - **Demo back end of the stack**: the event stream `/api/streams/tasks`, so that behind the BFF the live boards of the
   showcase follow the changes of other users.
 
-[Unreleased]: https://github.com/sramaccini/quadrava/compare/v0.30.0...HEAD
+[Unreleased]: https://github.com/sramaccini/quadrava/compare/v0.31.0...HEAD
+[0.31.0]: https://github.com/sramaccini/quadrava/compare/v0.30.0...v0.31.0
 [0.30.0]: https://github.com/sramaccini/quadrava/compare/v0.29.0...v0.30.0
 [0.29.0]: https://github.com/sramaccini/quadrava/compare/v0.28.0...v0.29.0
 [0.28.0]: https://github.com/sramaccini/quadrava/compare/v0.27.0...v0.28.0
