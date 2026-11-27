@@ -108,7 +108,9 @@ a diff, validated by `quadrava validate`. The zip is not needed after this step.
 - Icons become **geometry only**: a `viewBox` and the path data. Other shapes (`circle`, `rect`, `polygon`) are turned
   into paths, colours become the current text colour (so the icon follows the theme and the tone), and anything else is
   dropped (scripts, styles, links, `foreignObject`, event attributes).
-- Images keep their content, as base64, within a size limit (PNG, JPEG, WebP, GIF, and SVG cleaned in the same way).
+- Images keep their content, as base64, within a size limit (PNG, JPEG, WebP, GIF, and SVG). An SVG image
+  loses only scripts, event attributes, links and embedded rasters: none of the optimisations of the icons runs on it,
+  because rounding numbers or applying transforms changes a logo at the edges of its curves.
   They become `data:` addresses in the browser, which the Content-Security-Policy already allows.
 - What cannot become geometry filled with one colour is refused, with the reason, rather than drawn wrongly: strokes
   (outlined in the drawing tool), text, embedded images, masks, paths with different fill rules.

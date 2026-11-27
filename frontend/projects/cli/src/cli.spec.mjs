@@ -241,6 +241,19 @@ describe('quadrava assets', () => {
     assert.match((await run(['assets', 'add', file, dir])).stdout, /replaced/);
   });
 
+  it('assets add keeps the drawing of an SVG image exactly: only scripts and events go', async () => {
+    const dir = project();
+    const lettering = '<g transform="matrix(0.8333 0 0 -0.8333 12.4567 98.7654)"><path d="M10.123456 20.654321C11.111111 22.222222 13.333333 24.444444 15.555555 26.666666z" fill="#123456"/></g>';
+    const file = zip(acme({}, { logo: { file: 'logo.svg', alt: 'ACME' } }), {
+      'logo.svg': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><script>alert(1)</script>${lettering}<rect width="4" height="4" onclick="alert(2)"/></svg>`,
+    });
+    const { code, stdout, stderr } = await run(['assets', 'add', file, dir]);
+    assert.equal(code, 0, stdout + stderr);
+    const logo = Buffer.from(readJson(dir, 'assets/acme.json').images.logo.data, 'base64').toString();
+    assert.ok(logo.includes(lettering), logo);
+    assert.ok(!logo.includes('alert'), logo);
+  });
+
   it('assets add refuses a path out of the zip and a file that is not there, and writes nothing', async () => {
     const dir = project();
     const outside = await run(['assets', 'add', zip(acme({ up: { file: '../up.svg' } }), {}), dir]);

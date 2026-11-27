@@ -96,7 +96,7 @@ the files it names.
 It writes `assets/acme.json` (or replaces it), already cleaned: every icon becomes its geometry only, a `viewBox` and the
 path data drawn in the colour of the text (shapes become paths, transforms are applied, colours, scripts and styles are
 dropped); every image keeps its content, in base64 (PNG, JPEG, WebP, GIF up to 200 kB, or an SVG without scripts and
-links). What cannot become geometry is refused with the reason, and then nothing is written: strokes (outline them in the
+links, its drawing untouched: numbers are not rounded nor transforms applied, as they are for icons). What cannot become geometry is refused with the reason, and then nothing is written: strokes (outline them in the
 drawing tool), text, embedded images, masks, paths with different fill rules. The screens then name the icons
 `acme/truck`.
 

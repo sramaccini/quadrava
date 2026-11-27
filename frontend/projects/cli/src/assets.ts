@@ -237,13 +237,17 @@ function viewBoxOf(svg: XastElement): string | null {
   return numbers.map((n) => String(Math.round(n * 1000) / 1000)).join(' ');
 }
 
-/** The content of an image: a raster as it is, if it is what its extension says; an SVG cleaned of scripts and links. */
+/**
+ * The content of an image: a raster as it is, if it is what its extension says; an SVG cleaned of scripts, links and
+ * embedded rasters only. None of the optimisations of the icons runs on an image: rounding the numbers or applying the
+ * transforms changes the drawing at the edges, and a logo must stay what its author drew.
+ */
 function imageContent(bytes: Uint8Array, file: string, issues: PackIssue[]): Pick<AssetImage, 'type' | 'data'> | null {
   const type = IMAGE_TYPES[file.toLowerCase().split('.').pop() ?? ''];
   if (type === 'image/svg+xml') {
     let cleaned: string;
     try {
-      cleaned = optimize(text(bytes), { multipass: true, plugins: ['preset-default', 'removeScripts', 'removeXlink', 'removeRasterImages'] }).data;
+      cleaned = optimize(text(bytes), { plugins: ['removeScripts', 'removeXlink', 'removeRasterImages'] }).data;
     } catch (e) {
       issues.push({ file, message: `not a valid SVG (${e instanceof Error ? e.message.split('\n')[0] : e})` });
       return null;

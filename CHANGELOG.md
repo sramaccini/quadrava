@@ -17,6 +17,12 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 - `highlight` on `dataTable` and `serverDataTable`, as on `table` and `kanban`: the rows for which `when` is true take
   the tone and a mark with a name in their first cell; group rows are never highlighted.
 
+### Fixed
+
+- `quadrava assets add` no longer optimises SVG images: it removed only scripts and links in name, but also rounded
+  numbers and applied transforms, which changed outlined lettering at the edges. An SVG image now keeps its drawing
+  exactly; icons are still reduced to their geometry.
+
 ## [0.31.0] - 2026-11-27
 
 ### Added
