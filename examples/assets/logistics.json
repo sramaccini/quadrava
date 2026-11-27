@@ -65,5 +65,12 @@
         "scan"
       ]
     }
+  },
+  "images": {
+    "parcel": {
+      "type": "image/svg+xml",
+      "data": "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAgODAiPjxyZWN0IHdpZHRoPSIxMjAiIGhlaWdodD0iODAiIHJ4PSI4IiBmaWxsPSIjZThmMGZiIi8+PHBhdGggZD0iTTYwIDE0IDkyIDI4djMwTDYwIDcyIDI4IDU4VjI4eiIgZmlsbD0iI2M4YTA2YSIvPjxwYXRoIGQ9Ik02MCAxNCA5MiAyOCA2MCA0MiAyOCAyOHoiIGZpbGw9IiNlMGJmOGYiLz48cGF0aCBkPSJNNjAgNDJ2MzBMMjggNThWMjh6IiBmaWxsPSIjYjQ4YTU1Ii8+PHBhdGggZD0iTTQ0IDIxIDc2IDM1djhsLTYtM3YtOEwzOCAxOHoiIGZpbGw9IiNmNGUzYzYiLz48L3N2Zz4=",
+      "alt": "A parcel"
+    }
   }
 }

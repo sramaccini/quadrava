@@ -623,7 +623,7 @@ What **must** happen regardless (checks, rules, audit, several calls to keep con
 
 ### 2.23 Image, link, progress
 
-- **image**: `src` (relative, `https://` or `data:image/png|jpeg|gif|webp|svg+xml;base64`; may contain `{{ }}`), mandatory `alt`, `width`/`height` in px, `fit` (`contain` or `cover`). Any other address (javascript:, http:, `//`, `..`) is not loaded: the alternative text is shown, as when the image fails to load. Lazy loading, no `Referer`.
+- **image**: `src` (relative, `https://`, `data:image/png|jpeg|gif|webp|svg+xml;base64` or an image of an asset pack of the application, `asset:pack/name`; may contain `{{ }}`), mandatory `alt`, `width`/`height` in px, `fit` (`contain` or `cover`). Any other address (javascript:, http:, `//`, `..`) is not loaded: the alternative text is shown, as when the image fails to load. Lazy loading, no `Referer`. An image of a pack is taken from the pack, loaded once, as a `data:` address; nothing is shown while it loads, and the alternative text if the pack does not have it. The theme takes the same addresses for its logo and icons (`"logo": "asset:brand/logo"`): the classic theme of the demo has its brand in `examples/assets/brand.json`.
 - **link**: `label` and `screen` (+ `params`) to open a screen of the application, **or** `href`: `https://…` (new tab, `noopener noreferrer`, external-link icon) or a relative path (same tab). The schema rejects other protocols and the presence of both.
 - **progress**: `value` and `max` (100 if missing) as numbers or expressions, `label`, `kind` (`line` or `circle`), `tone`. Percentage rounded between 0 and 100; a non-numeric value shows «—». Accessible as a `progressbar` with its current value.
 
@@ -973,7 +973,8 @@ publish` publishes only the icons the project names. The pack is geometry only: 
 `filled` form for a pressed toggle (format in [schema-reference.md](schema-reference.md#asset-pack-assetsschemajson)).
 The runtime loads a pack the first time a screen draws one of its icons, checks it against the schema and builds the
 SVG itself; a pack that is missing or not valid draws nothing and goes to the diagnostics. The showcase «Basic
-components» uses the pack of the demo, `examples/assets/logistics.json`, in its section «Icons».
+components» uses the pack of the demo, `examples/assets/logistics.json`, in its section «Icons», for an image too
+(`asset:logistics/parcel`).
 
 ### 2.33 Breadcrumb declared by the screen
 

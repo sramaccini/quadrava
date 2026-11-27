@@ -252,6 +252,14 @@
               }
             }
           ]
+        },
+        {
+          "id": "icons-image",
+          "type": "image",
+          "src": "asset:logistics/parcel",
+          "alt": "{{ t('showcase_basics.icon_parcel', 'A parcel, an image of the asset pack') }}",
+          "width": 120,
+          "height": 80
         }
       ]
     },

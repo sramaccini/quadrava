@@ -210,6 +210,7 @@
   "showcase_basics.icon_ant": "Ant Design",
   "showcase_basics.icon_pack": "Asset pack",
   "showcase_basics.icon_in_stock": "In stock",
+  "showcase_basics.icon_parcel": "A parcel, an image of the asset pack",
   "showcase_basics.call_a_service_call": "Call a service (call)",
   "showcase_basics.call_failed": "Call failed",
   "showcase_basics.conflict_409_the_case_was_alread": "Conflict (409): the case was already sent",

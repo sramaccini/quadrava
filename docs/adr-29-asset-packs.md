@@ -1,6 +1,6 @@
 # ADR-29: asset packs, only what each application uses
 
-Status: accepted (27 November 2026); phases 1, 2 and 3 implemented on 27 November 2026, phase 4 to follow.
+Status: accepted (27 November 2026); implemented on 27 November 2026, in four phases.
 
 ## Context
 
@@ -122,7 +122,12 @@ a diff, validated by `quadrava validate`. The zip is not needed after this step.
 { "type": "image", "src": "asset:acme/empty-orders" }
 ```
 
-In a theme: `"logo": "asset:acme/logo"`.
+In a theme: `"logo": "asset:acme/logo"`, and so for `logoOnDark`, `icon` and the icons of the browser tab.
+
+- The runtime gives the image as a `data:` address, which the image rules already accept. The image component shows
+  nothing while the pack loads; the images of a theme are put in place before the theme is applied, and one that the
+  pack does not have is left out (the name of the brand shows instead).
+- The `alt` of an image in the pack is a default for the editor: the `image` component still requires its own.
 
 - A short name (`save`) and an Ant name (`share-alt`) have no prefix. An icon of a pack has always the prefix, so two
   packs never collide and a new Ant icon never hides one of the application.

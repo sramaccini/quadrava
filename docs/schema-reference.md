@@ -279,7 +279,7 @@
 
 | Property | Type | Description |
 | --- | --- | --- |
-| `src` * | text | Address of the image: relative (/img/logo.png), https:// or data:image/…; it can contain {{ }}. Any other address is not shown. |
+| `src` * | text | Address of the image: relative (/img/logo.png), https://, data:image/… or an image of an asset pack of the application, asset:pack/name (asset:acme/empty-orders); it can contain {{ }}. Any other address is not shown. |
 | `alt` * | text | Alternative text (required for accessibility); it is shown also if the image does not load. |
 | `width` | integer 16–2000 | Maximum width in px (it adapts to the available space). |
 | `height` | integer 16–2000 | Height in px. |

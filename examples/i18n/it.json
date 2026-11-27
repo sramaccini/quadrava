@@ -210,6 +210,7 @@
   "showcase_basics.icon_ant": "Ant Design",
   "showcase_basics.icon_pack": "Pacchetto di asset",
   "showcase_basics.icon_in_stock": "In magazzino",
+  "showcase_basics.icon_parcel": "Un pacco, un'immagine del pacchetto di asset",
   "showcase_basics.call_a_service_call": "Chiama un servizio (call)",
   "showcase_basics.call_failed": "Chiamata non riuscita",
   "showcase_basics.conflict_409_the_case_was_alread": "Conflitto (409): la pratica è già stata inviata",

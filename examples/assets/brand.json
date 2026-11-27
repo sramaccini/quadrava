@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "1.0",
+  "assets": "brand",
+  "version": "1.0.0",
+  "license": "MPL-2.0",
+  "description": "Brand of the demo company Acme Office: logo, logo for dark backgrounds and icon.",
+  "images": {
+    "logo": {
+      "type": "image/svg+xml",
+      "data": "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNTAiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAxNTAgMzIiPjxyZWN0IHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgcng9IjciIGZpbGw9IiMxZjVmYmYiLz48cGF0aCBkPSJNOSAyMyAxNiA4bDcgMTVoLTQuMkwxNiAxNi42IDEzLjIgMjN6IiBmaWxsPSIjZmZmIi8+PHRleHQgeD0iNDAiIHk9IjIyIiBmb250LWZhbWlseT0iU2Vnb2UgVUksIEFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjE3IiBmb250LXdlaWdodD0iNjAwIiBmaWxsPSIjMWIyNDMwIj5BY21lIE9mZmljZTwvdGV4dD48L3N2Zz4=",
+      "alt": "Acme Office"
+    },
+    "logo-on-dark": {
+      "type": "image/svg+xml",
+      "data": "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNTAiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAxNTAgMzIiPjxyZWN0IHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgcng9IjciIGZpbGw9IiMxZjVmYmYiLz48cGF0aCBkPSJNOSAyMyAxNiA4bDcgMTVoLTQuMkwxNiAxNi42IDEzLjIgMjN6IiBmaWxsPSIjZmZmIi8+PHRleHQgeD0iNDAiIHk9IjIyIiBmb250LWZhbWlseT0iU2Vnb2UgVUksIEFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjE3IiBmb250LXdlaWdodD0iNjAwIiBmaWxsPSIjZmZmZmZmIj5BY21lIE9mZmljZTwvdGV4dD48L3N2Zz4=",
+      "alt": "Acme Office"
+    },
+    "icon": {
+      "type": "image/svg+xml",
+      "data": "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgdmlld0JveD0iMCAwIDMyIDMyIj48cmVjdCB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHJ4PSI3IiBmaWxsPSIjMWY1ZmJmIi8+PHBhdGggZD0iTTkgMjMgMTYgOGw3IDE1aC00LjJMMTYgMTYuNiAxMy4yIDIzeiIgZmlsbD0iI2ZmZiIvPjwvc3ZnPg==",
+      "alt": "Acme Office"
+    }
+  }
+}

@@ -25,6 +25,10 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
   with the reason). `quadrava validate` reports an icon or image of a pack that is not there and notes (`NOTICE`) the
   entries nobody uses; `quadrava publish` publishes a pack with only the entries the project uses, and skips a pack
   nobody uses.
+- Images of asset packs (ADR-29, phase 4): `image` takes `src: "asset:pack/name"` and the brand of a theme takes the
+  same addresses for `logo`, `logoOnDark`, `icon` and `icons`; the runtime gives them as `data:` addresses from the
+  pack. `AssetPacks.image` and `AssetPacks.withImages` in `core`. The classic theme of the demo has its brand in the
+  pack `examples/assets/brand.json`.
 
 ### Changed
 
