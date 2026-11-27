@@ -2,8 +2,8 @@ import { provideHttpClient, withFetch } from '@angular/common/http';
 import { ApplicationConfig, provideBrowserGlobalErrorListeners, type EnvironmentProviders, type Provider } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { NzNotifier, SectionTools, provideLcComponents } from 'components';
-import { Authorization, DataClient, DefinitionSource, LiveUpdates, Notifier, RuntimeDiagnostics, ScreenNavigator, SETTINGS_VALUES, SnapshotDefinitions, UserProvider, type ProjectSnapshot } from 'core';
-import { provideLcServices, provideRegistryDefinitions } from 'services';
+import { Authorization, DataClient, DefinitionSource, IconFiles, LiveUpdates, Notifier, RuntimeDiagnostics, ScreenNavigator, SETTINGS_VALUES, SnapshotDefinitions, UserProvider, type ProjectSnapshot } from 'core';
+import { HttpIconFiles, provideLcServices, provideRegistryDefinitions } from 'services';
 import { DemoDiagnostics, DemoLiveUpdates, DemoSession, MockDataClient } from '../demo/demo-ports';
 import { ExampleDefinitions } from '../demo/example-definitions';
 import { routes } from './app.routes';
@@ -40,6 +40,7 @@ function ports(config: RuntimeConfig): (Provider | EnvironmentProviders)[] {
     { provide: UserProvider, useExisting: DemoSession },
     { provide: DataClient, useExisting: MockDataClient },
     { provide: LiveUpdates, useExisting: DemoLiveUpdates },
+    { provide: IconFiles, useExisting: HttpIconFiles },
     { provide: RuntimeDiagnostics, useExisting: DemoDiagnostics },
     { provide: ShellSession, useExisting: DemoShellSession },
   ];

@@ -954,7 +954,8 @@ click removes the flag); the thumb counts the votes:
 
 The names are those of the built-in set, the same as in the navigation, or the name of any Ant Design icon in the
 outlined form (`share-alt`, `team`, `calendar`, as on the Ant Design site without the `Outlined` suffix); a pressed toggle
-draws the filled form when the icon has one. An unknown name shows no icon. The short names for the actions:
+draws the filled form when the icon has one. The short names come with the bundle; an Ant Design icon is fetched the first
+time it is drawn, from the static files of the runtime (`assets/outline`, `assets/fill`), then the browser keeps it. An unknown name shows no icon. The short names for the actions:
 `save`, `edit`, `delete`, `plus`, `check`, `close`, `link`, `eye`, `eye-invisible`, `flag`, `like`, `user-add`, `back`, `move`,
 `play`, `reload`, `download`, `upload`, `external`, `copy`, `share`, `search`, `filter`, `settings`. The showcases «Tables»,
 «Forms» and «Containers» have examples.

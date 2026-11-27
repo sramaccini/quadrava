@@ -199,6 +199,15 @@ export abstract class FormPopover {
 }
 
 /**
+ * The SVG files of the icons that are not in the bundle (ADR-29): the Ant Design icons, served as static files by the
+ * same origin. The components ask only for names they know; the implementation returns the text of an SVG, or null when
+ * the file is not there or the answer is not an SVG. It never throws. Without it only the icons of the bundle are drawn.
+ */
+export abstract class IconFiles {
+  abstract svg(theme: 'outline' | 'fill', name: string): Promise<string | null>;
+}
+
+/**
  * Source of the definitions: screens, data sources, navigation and themes. In production the registry (the documents published in an
  * environment), in the demo the example files. It returns the JSON as it is: whoever uses it validates it. It throws
  * if the document is not there or cannot be loaded; the error has `status` (HTTP code, 0 if the source does not answer)

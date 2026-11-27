@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Injectable, computed, effect, inject, input, signal } from '@angular/core';
 import {
   AppstoreOutline,
   BellOutline,
@@ -60,14 +60,16 @@ import {
   LikeFill,
   LikeOutline,
 } from '@ant-design/icons-angular/icons';
-import * as AntIcons from '@ant-design/icons-angular/icons';
 import type { IconDefinition } from '@ant-design/icons-angular';
-import { NzIconModule } from 'ng-zorro-antd/icon';
+import { IconFiles } from 'core';
+import { NzIconModule, NzIconService } from 'ng-zorro-antd/icon';
+import { ANT_FILLED, ANT_OUTLINED } from './ant-icon-names.generated';
 
 /**
- * Short names of the built-in set (name used in the JSON → Ant Design icon), kept next to the Ant Design names. The
- * icons are all registered statically (`provideLcComponents`): an unknown name shows nothing and never causes icons to
- * be loaded from the network. `filled` is the filled form, drawn for a pressed toggle.
+ * Short names of the built-in set (name used in the JSON → Ant Design icon), registered statically with the bundle
+ * (`provideLcComponents`). The other Ant Design icons are known by name and fetched on first use from the static files
+ * of the same origin (ADR-29); an unknown name shows nothing and fetches nothing. `filled` is the filled form, drawn
+ * for a pressed toggle.
  */
 export const ICON_TYPES: Record<string, { type: string; icon: IconDefinition; filled?: IconDefinition }> = {
   help: { type: 'question-circle', icon: QuestionCircleOutline },
@@ -135,12 +137,8 @@ export const ICON_TYPES: Record<string, { type: string; icon: IconDefinition; fi
   'rich-clear': { type: 'clear', icon: ClearOutline },
 };
 
-/** Every Ant Design icon in the outlined and filled forms (the two-tone ones are not used). */
-export const ANT_ICONS: readonly IconDefinition[] = Object.values(AntIcons as Record<string, IconDefinition>).filter(
-  (i) => i.theme === 'outline' || i.theme === 'fill',
-);
-const OUTLINED = new Set(ANT_ICONS.filter((i) => i.theme === 'outline').map((i) => i.name));
-const FILLED = new Set(ANT_ICONS.filter((i) => i.theme === 'fill').map((i) => i.name));
+const OUTLINED = new Set(ANT_OUTLINED);
+const FILLED = new Set(ANT_FILLED);
 
 /**
  * NG-ZORRO type of an icon name: a short name of the built-in set (`ICON_TYPES`) or the name of an Ant Design icon
@@ -157,14 +155,48 @@ export function hasFilledForm(name: string | undefined): boolean {
   return type !== null && FILLED.has(type);
 }
 
+type IconTheme = 'outline' | 'fill';
+
+/**
+ * Fetches the Ant Design icons that are not in the bundle, once each, through the `IconFiles` port (ADR-29), and
+ * registers them with NG-ZORRO. Only names of the generated list are asked for. A failure registers nothing and the icon
+ * is not drawn; it never throws, unlike the dynamic loading of NG-ZORRO, which is not used.
+ */
+@Injectable({ providedIn: 'root' })
+export class IconLoader {
+  private readonly icons = inject(NzIconService);
+  private readonly files = inject(IconFiles, { optional: true });
+  private readonly started = new Set<string>();
+  /** Bumped at every icon registered, so that the icons waiting for it are drawn. */
+  readonly version = signal(0);
+
+  /** Whether NG-ZORRO already has the icon (from the bundle or fetched). */
+  has(type: string, theme: IconTheme): boolean {
+    return this.icons.getCachedIcons().has(theme === 'fill' ? `${type}-fill` : `${type}-o`);
+  }
+
+  /** Fetches the icon once, if it is not there yet. */
+  load(type: string, theme: IconTheme): void {
+    const key = `${theme}/${type}`;
+    const files = this.files;
+    if (!files || this.has(type, theme) || this.started.has(key) || (theme === 'outline' ? !OUTLINED.has(type) : !FILLED.has(type))) return;
+    this.started.add(key);
+    void files.svg(theme, type).then((svg) => {
+      if (svg === null) return;
+      this.icons.addIcon({ name: type, theme, icon: svg });
+      this.version.update((v) => v + 1);
+    });
+  }
+}
+
 @Component({
   selector: 'lc-icon',
   imports: [NzIconModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `:host { display: inline-flex; width: 1em; flex: none; justify-content: center; }`,
   template: `
-    @if (type(); as t) {
-      <span nz-icon [nzType]="t" [nzTheme]="theme()" aria-hidden="true"></span>
+    @if (shown(); as icon) {
+      <span nz-icon [nzType]="icon.type" [nzTheme]="icon.theme" aria-hidden="true"></span>
     }
   `,
 })
@@ -172,6 +204,25 @@ export class IconComponent {
   readonly name = input<string | undefined>(undefined);
   /** Draws the filled form, when the icon has one (a pressed toggle). */
   readonly filled = input(false);
-  protected readonly type = computed(() => iconType(this.name()));
-  protected readonly theme = computed(() => (this.filled() && hasFilledForm(this.name()) ? 'fill' : 'outline'));
+  private readonly loader = inject(IconLoader);
+  private readonly type = computed(() => iconType(this.name()));
+  private readonly wantsFill = computed(() => this.filled() && hasFilledForm(this.name()));
+
+  /** The icon as it can be drawn now: the filled form once it is there, otherwise the outlined one; null until then. */
+  protected readonly shown = computed<{ type: string; theme: IconTheme } | null>(() => {
+    const type = this.type();
+    if (!type) return null;
+    this.loader.version();
+    if (this.wantsFill() && this.loader.has(type, 'fill')) return { type, theme: 'fill' };
+    return this.loader.has(type, 'outline') ? { type, theme: 'outline' } : null;
+  });
+
+  constructor() {
+    effect(() => {
+      const type = this.type();
+      if (!type) return;
+      this.loader.load(type, 'outline');
+      if (this.wantsFill()) this.loader.load(type, 'fill');
+    });
+  }
 }

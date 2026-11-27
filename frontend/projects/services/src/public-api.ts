@@ -3,6 +3,7 @@ export * from './lib/config';
 export * from './lib/diagnostics';
 export * from './lib/errors';
 export * from './lib/http-data-client';
+export * from './lib/icon-files';
 export * from './lib/interceptor';
 export * from './lib/live-updates';
 export * from './lib/provide';

@@ -32,6 +32,11 @@
               {
                 "glob": "THIRD-PARTY-NOTICES.md",
                 "input": "."
+              },
+              {
+                "glob": "{outline,fill}/*.svg",
+                "input": "node_modules/@ant-design/icons-angular/src/inline-svg",
+                "output": "assets"
               }
             ],
             "styles": [
@@ -92,6 +97,11 @@
                 {
                   "glob": "THIRD-PARTY-NOTICES.md",
                   "input": "."
+                },
+                {
+                  "glob": "{outline,fill}/*.svg",
+                  "input": "node_modules/@ant-design/icons-angular/src/inline-svg",
+                  "output": "assets"
                 }
               ]
             },
@@ -112,6 +122,11 @@
                 {
                   "glob": "THIRD-PARTY-NOTICES.md",
                   "input": "."
+                },
+                {
+                  "glob": "{outline,fill}/*.svg",
+                  "input": "node_modules/@ant-design/icons-angular/src/inline-svg",
+                  "output": "assets"
                 }
               ]
             }

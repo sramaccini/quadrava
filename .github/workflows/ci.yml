@@ -42,6 +42,7 @@ jobs:
       - run: npm run cli:test
       - run: npm run notices:check
       - run: npm run nz:dark:check
+      - run: npm run icons:check
       # The SBOM of the release: it must be possible to generate it.
       - run: npm sbom --sbom-format cyclonedx --package-lock-only > /dev/null
       - run: npm run build:libs

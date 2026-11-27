@@ -18,6 +18,20 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
   `danger`, `success`, `primary`) and a mark, an icon whose `label` is read by screen readers and shown as its tooltip,
   so the highlight is not told by colour alone. An expression in error highlights nothing.
 
+### Changed
+
+- The Ant Design icons are no longer all in the bundle (ADR-29): the short names of the built-in set still are, any other
+  icon is fetched the first time it is drawn from the static files of the runtime (`assets/outline/<name>.svg`,
+  `assets/fill/<name>.svg`) and kept by the browser. The initial bundle goes back to about 500 kB gzip (620 kB in 0.29.0).
+  The names do not change. An application that embeds the components in its own build must serve those files: add to
+  the `assets` of `angular.json` `{ "glob": "{outline,fill}/*.svg", "input": "node_modules/@ant-design/icons-angular/src/inline-svg", "output": "assets" }`.
+
+### Removed
+
+- `ANT_ICONS` (added in 0.29.0), the list of every Ant Design icon: the icons are no longer in the bundle. `iconType`,
+  `hasFilledForm` and `ICON_TYPES` stay; the others are read through the new port `IconFiles` (core), provided by
+  `provideLcServices` (`HttpIconFiles`). Without it only the short names are drawn.
+
 ## [0.29.0] - 2026-11-27
 
 ### Added

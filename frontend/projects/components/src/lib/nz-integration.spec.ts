@@ -1,6 +1,6 @@
 import { CSP_NONCE } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
-import { Authorization, DataClient, Notifier, ScreenComponent, ScreenNavigator, ThemeService, UserProvider, type DataRequest } from 'core';
+import { Authorization, DataClient, IconFiles, Notifier, ScreenComponent, ScreenNavigator, ThemeService, UserProvider, type DataRequest } from 'core';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import type { NodeDefinition, ScreenDefinition, ThemeDefinition } from 'schema';
 import { hasFilledForm, iconType, IconComponent } from './icon.component';
@@ -117,21 +117,44 @@ describe('integration with NG-ZORRO', () => {
       expect(unknown.nativeElement.querySelector('[nz-icon], nz-icon')).toBeNull();
     });
 
-    it('Ant Design names are known as well, already registered, with the filled form for a pressed toggle', async () => {
+    it('an Ant Design name is fetched once on first use through IconFiles, in the filled form when pressed', async () => {
       expect(iconType('share-alt')).toBe('share-alt');
       expect(iconType('team')).toBe('team');
       expect(iconType('share')).toBe('share-alt');
-      expect(hasFilledForm('star')).toBe(true);
+      expect(hasFilledForm('heart')).toBe(true);
       expect(hasFilledForm('share')).toBe(false);
-      TestBed.configureTestingModule({ providers: [provideLcComponents()] });
-      const star = TestBed.createComponent(IconComponent);
-      star.componentRef.setInput('name', 'star');
-      star.componentRef.setInput('filled', true);
-      star.detectChanges();
-      await star.whenStable();
-      const icon = star.nativeElement.querySelector('[nz-icon]') as HTMLElement;
-      expect(icon.classList).toContain('anticon-star');
-      expect(icon.querySelector('svg')).not.toBeNull();
+      const asked: string[] = [];
+      const files: IconFiles = { svg: async (theme, name) => (asked.push(`${theme}/${name}`), '<svg viewBox="0 0 1024 1024"><path d="M0 0h1024v1024H0z"></path></svg>') };
+      TestBed.configureTestingModule({ providers: [provideLcComponents(), { provide: IconFiles, useValue: files }] });
+      const draw = async (name: string, filled = false) => {
+        const icon = TestBed.createComponent(IconComponent);
+        icon.componentRef.setInput('name', name);
+        icon.componentRef.setInput('filled', filled);
+        icon.detectChanges();
+        await settle(icon);
+        return icon.nativeElement as HTMLElement;
+      };
+      const heart = await draw('heart', true);
+      expect(heart.querySelector('[nz-icon]')?.classList).toContain('anticon-heart');
+      expect(heart.querySelector('svg')).not.toBeNull();
+      expect(asked.sort()).toEqual(['fill/heart', 'outline/heart']);
+      // Fetched once: a second heart asks for nothing; a short name comes with the bundle; an unknown name is never asked for.
+      await draw('heart', true);
+      await draw('save');
+      expect((await draw('no-such-icon')).querySelector('[nz-icon]')).toBeNull();
+      expect(asked).toHaveLength(2);
+    });
+
+    it('an icon that IconFiles does not have, or without IconFiles, is not drawn and throws nothing', async () => {
+      for (const providers of [[{ provide: IconFiles, useValue: { svg: async () => null } satisfies IconFiles }], []]) {
+        TestBed.resetTestingModule();
+        TestBed.configureTestingModule({ providers: [provideLcComponents(), ...providers] });
+        const icon = TestBed.createComponent(IconComponent);
+        icon.componentRef.setInput('name', 'team');
+        icon.detectChanges();
+        await settle(icon);
+        expect((icon.nativeElement as HTMLElement).querySelector('[nz-icon]')).toBeNull();
+      }
     });
 
     it('the notifier uses NG-ZORRO messages and does not interpret HTML', async () => {

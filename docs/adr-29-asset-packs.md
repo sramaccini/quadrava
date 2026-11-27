@@ -1,6 +1,6 @@
 # ADR-29: asset packs, only what each application uses
 
-Status: accepted (27 November 2026); to be implemented in the phases below.
+Status: accepted (27 November 2026); phase 1 implemented on 27 November 2026, the others to follow.
 
 ## Context
 
@@ -43,10 +43,12 @@ Two parts: the Ant Design icons are loaded on demand, and an application brings 
 - The initial bundle goes back to the short names of the built-in set (the ones the platform uses itself: `save`, `edit`,
   `more` and so on).
 - The outlined and filled Ant SVG files (already in `@ant-design/icons-angular`) are copied into the runtime as static
-  files, `/assets/icons/ant/{outline,fill}/<name>.svg`. They are served by the same origin and cached for a year.
+  files, `/assets/{outline,fill}/<name>.svg`, served by the same origin and cached for a day. The components ask for
+  one the first time it is drawn through the port `IconFiles` (`HttpIconFiles` in `services`, which refuses an answer
+  that is not an SVG) and register it with NG-ZORRO; nginx answers 404 for a missing file, never the page.
 - The bundle holds only the **list of names**, about 8 kB. A name on the list is fetched the first time it is drawn. Any
   other name still shows nothing and fetches nothing, so `../../evil` never reaches the network.
-- The icons of the navigation are requested together at start-up, so the side menu does not flicker.
+- The icons of a screen are requested together when it is drawn, in parallel, each once.
 - Names stay those of 0.29.0, so nothing changes for the applications. The bundle returns to about 497 kB gzip.
 
 ### 2. The asset pack, as it is distributed: a zip with a descriptor

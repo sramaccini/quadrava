@@ -73,7 +73,8 @@ The browser talks only to the BFF, on the origin of the page (`contracts/bff.yam
   when it starts: it must already be known then (in Docker Compose, `depends_on` the BFF).
 
 `runtime-config.json` and `index.html` are served with `Cache-Control: no-cache`; the bundles, which have the hash of
-their content in the name, are cached for a year.
+their content in the name, are cached for a year; the icons under `/assets/` (ADR-29) for a day, and a missing one is a
+404.
 
 ## Security headers
 

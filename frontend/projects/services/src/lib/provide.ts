@@ -1,10 +1,11 @@
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { EnvironmentProviders, inject, makeEnvironmentProviders, provideAppInitializer } from '@angular/core';
-import { Authorization, DataClient, LiveUpdates, RuntimeDiagnostics, RuntimeTracer, UserProvider } from 'core';
+import { Authorization, DataClient, IconFiles, LiveUpdates, RuntimeDiagnostics, RuntimeTracer, UserProvider } from 'core';
 import { HttpAuthorization } from './authorization';
 import { LC_SERVICES_CONFIG, resolveConfig, type LcServicesConfig } from './config';
 import { HttpDataClient } from './http-data-client';
 import { HttpDiagnostics } from './diagnostics';
+import { HttpIconFiles } from './icon-files';
 import { lcHttpInterceptor } from './interceptor';
 import { EventSourceLiveUpdates } from './live-updates';
 import { HttpSession } from './session';
@@ -24,6 +25,7 @@ export function provideLcServices(config: LcServicesConfig): EnvironmentProvider
     { provide: RuntimeDiagnostics, useExisting: HttpDiagnostics },
     { provide: RuntimeTracer, useExisting: HttpTracer },
     { provide: LiveUpdates, useExisting: EventSourceLiveUpdates },
+    { provide: IconFiles, useExisting: HttpIconFiles },
     provideAppInitializer(async () => {
       // All dependencies before the first await: afterwards, inject() is no longer in the injection context.
       const session = inject(HttpSession);
