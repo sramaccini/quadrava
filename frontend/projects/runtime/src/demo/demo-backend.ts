@@ -102,11 +102,11 @@ export class DemoBackend {
    * Tasks of the showcase kanban, in the order of the board: /api/tasks/{id}/move changes the status and, with beforeId or
    * afterId (the cards that will be around it), the place; with field and lane (who or priority), the lane too.
    */
-  private readonly tasks: { id: number; title: string; who: string; status: string; priority: string; points: number }[] = [
+  private readonly tasks: { id: number; title: string; who: string; status: string; priority: string; points: number; flagged?: boolean }[] = [
     { id: 1, title: 'Quote for Smith Ltd', who: 'Anna Rossi', status: 'to-do', priority: 'high', points: 3 },
     { id: 2, title: 'Contract for Baker Inc', who: 'Luca Bianchi', status: 'to-do', priority: 'normal', points: 5 },
     { id: 3, title: 'Invoice FT-2026-012', who: 'Anna Rossi', status: 'in-progress', priority: 'normal', points: 2 },
-    { id: 4, title: 'Reminder to Walker & Co.', who: 'Marta Verdi', status: 'in-progress', priority: 'high', points: 1 },
+    { id: 4, title: 'Reminder to Walker & Co.', who: 'Marta Verdi', status: 'in-progress', priority: 'high', points: 1, flagged: true },
     { id: 5, title: 'Order 1001 shipped', who: 'Luca Bianchi', status: 'done', priority: 'low', points: 2 },
   ];
   /**

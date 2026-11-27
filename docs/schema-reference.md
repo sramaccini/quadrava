@@ -44,7 +44,7 @@
 | `tone` | text | Colour of the button: neutral, primary, success or danger, or an expression that gives one of them. On a toggle (pressed) it is the colour of the pressed state, for example danger for a flag (primary if absent); otherwise it fills the button (a button with text is primary if absent, an icon button neutral). Any other value is neutral. |
 | `display` | `label`, `icon` | How the button is shown: label (icon, if any, and text) or icon (the icon alone, which needs icon; the text becomes the name read by screen readers and the tooltip). label if absent. |
 | `count` | text | A number shown next to the icon or the text, usually an expression (for example {{ size(data.watchers) }}); screen readers hear it after the text («Watchers: 2»). Nothing is shown when it is empty or not a number. |
-| `pressed` | expression | The button is shown as pressed (highlighted with the colour of tone, aria-pressed) while the expression is true, for example while the user watches an item. Without it the button is not a toggle. A pressed icon is drawn filled when the set has a filled form (flag, like). |
+| `pressed` | expression | The button is shown as pressed (highlighted with the colour of tone, aria-pressed) while the expression is true, for example while the user watches an item. Without it the button is not a toggle. A pressed icon is drawn filled when it has a filled form (flag, like, star). |
 
 ### `menuButton`
 
@@ -56,7 +56,7 @@
 | `items` * | list of menuItem | Entries of the menu opened by the button, in order: fixed items, items from a data source and dividers. With no item to show, the menu says there is nothing to choose. |
 | `display` | `label`, `icon` | How the button is shown: label (icon, if any, text and the arrow) or icon (the icon alone, without the arrow, for example the «…» button with icon more; it needs icon, and the text becomes the name read by screen readers and the tooltip). label if absent. |
 | `count` | text | A number shown next to the icon or the text, usually an expression (for example {{ size(data.watchers) }}); screen readers hear it after the text («Watchers: 2»). Nothing is shown when it is empty or not a number. |
-| `pressed` | expression | The button is shown as pressed (highlighted with the colour of tone, aria-pressed) while the expression is true, for example while the user watches an item. Without it the button is not a toggle. A pressed icon is drawn filled when the set has a filled form (flag, like). |
+| `pressed` | expression | The button is shown as pressed (highlighted with the colour of tone, aria-pressed) while the expression is true, for example while the user watches an item. Without it the button is not a toggle. A pressed icon is drawn filled when it has a filled form (flag, like, star). |
 
 ### `filterBar`
 
@@ -78,6 +78,7 @@
 | `rowActionsInline` | integer 0–10 | How many (visible) row actions to show as buttons; the others go into the «⋯» menu. 0 = all in the menu; if missing, all buttons. |
 | `expand` | object | Area that opens under the row: its nodes see the row as `row`. Data sources belong to the screen: inside the area the values of `row` are used. |
 | `refreshable` | yes/no | «Refresh» button in the table footer, on the left (pages are on the right): it reloads the data source like the refresh step. Absent if false or not given. |
+| `highlight` | rowHighlight | Highlights the rows for which when is true, for example the flagged issues of a backlog: the row takes the colour of tone and its first cell an icon with a name for screen readers. |
 
 ### `form`
 
@@ -337,6 +338,7 @@
 | `moveIf` | expression | Condition for moving a card (it sees the row in row), for example a permission. With lanes it also sees the lane of the card in fromLane and fromLaneLabel and the target one in lane and laneLabel: equal to those of the card when deciding whether the card moves at all, those of each other lane with moveAcrossLanes, for example {{ lane == fromLane \|\| can('issues.issue.assign') }}. |
 | `onMove` | list of step | Steps that move a card (usually call and refresh): they see the row in row, the starting column in from, the target one in to, and the keys (keyField) of the cards that will be before and after it in beforeId and afterId (null at the ends of the column). With lanes they also see the starting lane in fromLane and fromLaneLabel and the target one in lane and laneLabel (the value is null for the lane of the cards without a value, and for the board without lanes). The card changes place only with the reloaded data: if a confirm is cancelled or a call fails it stays where it was. |
 | `onOpen` | list of step | Steps that open a card (usually navigate to its detail screen): they see the row in row. The title of the card becomes a button, so a card opens with a click on it or from the keyboard; dragging a card does not open it. |
+| `highlight` | rowHighlight | Highlights the cards for which when is true, for example the flagged issues: the card takes the colour of tone and, before the title, an icon with a name for screen readers. |
 
 ### `comments`
 

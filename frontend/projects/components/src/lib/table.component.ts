@@ -11,6 +11,7 @@ import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import { inlineDataSource, type ActionDefinition, type ColumnDefinition, type SortSpec, type Step, type TableColumnDefinition, type TableNode } from 'schema';
 import { RowActionsComponent } from './row-actions.component';
 import { IconComponent } from './icon.component';
+import { rowHighlight, type ResolvedHighlight } from './row-highlight';
 import { TONE_COLORS } from './shared';
 import { aggregate, asSort, sortRows, type Row } from './table-data';
 
@@ -28,6 +29,10 @@ const DEFAULT_PAGE_SIZE = 10;
   imports: [BusyComponent, TableFooterComponent, NodeHostComponent, RowActionsComponent, IconComponent, NzCheckboxModule, NzTableModule, NzTagModule, NzButtonModule, NzAlertModule, NzTooltipModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
+    /* Highlighted rows: the colour of the tone, also on hover; a selected row keeps the colour of the selection. */
+    tr.lc-highlighted > td, tr.lc-highlighted:hover > td { background: var(--lc-highlight-bg); }
+    tr.lc-highlighted > td:first-child { box-shadow: inset 4px 0 0 var(--lc-highlight-edge); }
+    .mark { display: inline-flex; margin-inline-end: 6px; vertical-align: -0.125em; }
     /* Selected rows: colours of the theme, readable also on hover (the default of the table may be dark). */
     tr.ant-table-row-selected > td { background: var(--lc-selected-row-bg, rgba(127, 127, 127, 0.12)); }
     tr.ant-table-row-selected:hover > td { background: var(--lc-selected-row-hover-bg, rgba(127, 127, 127, 0.18)); }
@@ -116,7 +121,13 @@ const DEFAULT_PAGE_SIZE = 10;
           </thead>
           <tbody>
             @for (row of rows(); track $index) {
-              <tr [class.ant-table-row-selected]="isSelected(row)">
+              @let mark = highlight(row);
+              <tr
+                [class.ant-table-row-selected]="isSelected(row)"
+                [class.lc-highlighted]="mark !== null"
+                [style.--lc-highlight-bg]="mark?.background"
+                [style.--lc-highlight-edge]="mark?.edge"
+              >
                 @if (node().expand) {
                   <td class="expand-cell">
                     @if (canExpand(row)) {
@@ -137,8 +148,11 @@ const DEFAULT_PAGE_SIZE = 10;
                     <label nz-checkbox class="select-box" [nzChecked]="isSelected(row)" (nzCheckedChange)="toggle(row, $event)"><span class="visually-hidden">{{ rowName(row) }}</span></label>
                   </td>
                 }
-                @for (column of columns(); track column.field) {
+                @for (column of columns(); track column.field; let first = $first) {
                   <td [nzAlign]="numeric(column) ? 'right' : 'left'">
+                    @if (first && mark) {
+                      <span class="mark" role="img" [attr.aria-label]="mark.label" [attr.title]="mark.label" [style.color]="mark.mark"><lc-icon [name]="mark.icon" [filled]="true" /></span>
+                    }
                     @if (cell(row, column); as view) {
                       @if (column.onClick) {
                         <button type="button" class="cell-link" [disabled]="busy()" (click)="runCell(column.onClick, row)">
@@ -347,6 +361,23 @@ export class TableComponent {
     } finally {
       this.busy.set(false);
     }
+  }
+
+  /** The highlighted rows (`highlight`), evaluated once per load of the data. */
+  private readonly highlights = computed(() => {
+    const highlight = this.node().highlight;
+    const marks = new Map<Row, ResolvedHighlight>();
+    if (!highlight) return marks;
+    const label = this.i18n.t('lc.highlighted');
+    for (const row of this.rows()) {
+      const mark = rowHighlight(this.runtime(), highlight, { ...this.scope(), row }, label);
+      if (mark) marks.set(row, mark);
+    }
+    return marks;
+  });
+
+  protected highlight(row: Row): ResolvedHighlight | null {
+    return this.highlights().get(row) ?? null;
   }
 
   /** Name of the checkbox of a row: «Select» and the value of the first column (or the key). */

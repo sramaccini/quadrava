@@ -134,6 +134,11 @@
               "label": "{{ t('showcase_tasks.points', 'Points') }}"
             }
           ],
+          "highlight": {
+            "when": "{{ has(row.flagged) && row.flagged }}",
+            "icon": "flag",
+            "label": "{{ t('showcase_tasks.flagged', 'Flagged') }}"
+          },
           "columns": [
             {
               "value": "to-do",

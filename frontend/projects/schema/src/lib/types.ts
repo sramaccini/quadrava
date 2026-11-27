@@ -168,6 +168,16 @@ export interface ActionDefinition {
 }
 
 /** Action on a row of a table: it runs steps or opens a relative path of the application, with the row in `row`. */
+/** Highlight of a row or a card: colour of `tone` and an icon whose `label` screen readers hear (not colour alone). */
+export interface RowHighlight {
+  /** Condition that sees the row as `row`; an error does not highlight. */
+  when: Expression;
+  /** `warning` if absent. */
+  tone?: 'warning' | 'danger' | 'success' | 'primary';
+  /** `warning` if absent; drawn filled when it has a filled form. */
+  icon?: string;
+  label: string;
+}
 export type RowActionDefinition = (Omit<ActionDefinition, 'onClick'> & { onClick: Step[]; href?: never }) | (Omit<ActionDefinition, 'onClick'> & { href: string; onClick?: never });
 
 /** Sizes of an input: about 8, 16, 32 and 48 characters, or the whole line (`full`). */
@@ -459,6 +469,8 @@ export interface TableNode extends NodeBase {
   rowActionsInline?: number;
   /** Area that opens under the row; its nodes see the row as `row`. */
   expand?: { components: NodeDefinition[]; expandIf?: Expression };
+  /** Rows highlighted while `when` is true. */
+  highlight?: RowHighlight;
 }
 /** Fields of a form that are data (`fieldsFrom`): one row per field, the names of its properties configurable. */
 export interface FieldsFromDefinition {
@@ -787,6 +799,8 @@ export interface KanbanNode extends NodeBase {
   badges?: { field: string; tones?: Record<string, Tone>; valueKey?: string }[];
   /** Values at the bottom of the card. */
   footerFields?: { field: string; label?: string }[];
+  /** Cards highlighted while `when` is true. */
+  highlight?: RowHighlight;
   /** Columns, or an expression that returns them; `limit` is the maximum number of cards (work in progress). */
   columns?: KanbanColumnDefinition[] | Expression;
   /** Columns read from a data source instead of `columns`. */

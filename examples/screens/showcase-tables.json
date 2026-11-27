@@ -91,6 +91,12 @@
               "valueKey": "values.status"
             }
           ],
+          "highlight": {
+            "when": "{{ row.status == 'submitted' }}",
+            "tone": "primary",
+            "icon": "clock-circle",
+            "label": "{{ t('showcase_tables.awaiting_approval', 'Awaiting approval') }}"
+          },
           "rowActions": [
             {
               "id": "btn-open",

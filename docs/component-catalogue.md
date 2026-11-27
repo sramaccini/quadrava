@@ -26,7 +26,7 @@ Rules common to all components, new ones included:
 | `button` | Button that runs a sequence of steps (`onClick`). |
 | `menuButton` | Button that opens a menu of fixed items, items from a data source and dividers; label and tone are expressions (§ 2.34). |
 | `filterBar` | Filter bar that writes to the screen state (`bind`). |
-| `table` | Table with server-side paging, cell formats, sorting, selection and bulk actions, action menu, expandable rows, clickable cells and totals. |
+| `table` | Table with server-side paging, cell formats, sorting, selection and bulk actions, action menu, expandable rows, clickable cells, totals and highlighted rows (§ 2.37). |
 | `dataTable` | Data table with filters, sorting and grouping in the page (§ 2.18). |
 | `serverDataTable` | The same data table, but filters, sorting, groups, totals and pages are computed by the service (§ 2.19). |
 | `form` | Form with validation, conditional fields, column grid, fields from a data source (§ 2.31) and actions; with `edit: "inline"` each field is changed on its own, click to edit (§ 2.36). |
@@ -1116,6 +1116,36 @@ with the call sending only the field that changed: `"body": "{{ {field: value} }
   form, if any, stay under the fields.
 
 The showcase «Forms» has a work item in the section «Inline editing».
+
+### 2.37 Highlighted rows and cards
+
+A `table` or a `kanban` can make some rows stand out, for example the flagged issues of a backlog or a board.
+
+```json
+{ "type": "kanban", "source": "issues", "columnField": "status", "titleField": "summary",
+  "highlight": { "when": "{{ row.flagged }}", "icon": "flag", "label": "{{ t('issues.flagged', 'Flagged') }}" } }
+```
+
+```
+ kanban                               table
+ ┌────────────────────────┐           ┌──┬──────────┬──────────┐
+ ▌ ⚑ ODT-12 Login fails   │  warning   ▌⚑ ODT-12  │ To do    │  ← tinted row, mark in the first cell
+ ▌   High   Points: 3     │  tone      ├──┼──────────┼──────────┤
+ └────────────────────────┘           │  ODT-13  │ Done     │
+                                      └──┴──────────┴──────────┘
+```
+
+- **`when`** decides, with the row as `row`. An expression in error does not highlight (fail-closed) and goes to the
+  diagnostics.
+- **`tone`**: `warning` (default), `danger`, `success` or `primary`. The background, the stripe on the leading edge
+  and the icon take the colours of the theme, the same as the alerts, dark themes included.
+- **Not by colour alone** (WCAG 1.4.1): the card has the mark before its title, the row in its first cell. The mark is
+  an icon (`icon`, `warning` if absent, drawn filled when it has a filled form) whose name is `label`, read by screen
+  readers and shown as its tooltip. `label` is required; if it resolves to empty text the name is «Highlighted».
+- **A selected row** keeps the colour of the selection; the mark stays.
+- `when` is evaluated once per load of the data, not at every redraw.
+- In the showcases: «Tasks» flags the reminder to Walker & Co. on the board; «Tables» highlights the orders awaiting
+  approval with `clock-circle`, an Ant Design icon.
 
 ## 3. Implementation notes and known limits
 

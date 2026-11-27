@@ -12,6 +12,12 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Added
+
+- `highlight` on `table` and `kanban`: the rows or cards for which `when` is true take a tone (`warning` by default,
+  `danger`, `success`, `primary`) and a mark, an icon whose `label` is read by screen readers and shown as its tooltip,
+  so the highlight is not told by colour alone. An expression in error highlights nothing.
+
 ## [0.29.0] - 2026-11-27
 
 ### Added

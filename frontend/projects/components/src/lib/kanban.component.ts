@@ -10,6 +10,7 @@ import { NzTagModule } from 'ng-zorro-antd/tag';
 import type { KanbanNode, Tone } from 'schema';
 import { TONE_COLORS, TONE_TEXT } from './display.component';
 import { IconComponent } from './icon.component';
+import { rowHighlight, type ResolvedHighlight } from './row-highlight';
 import { cardKey, columnsOf, initials, kanbanBoard, lanesOf, placement, type KanbanLane, type KanbanLaning } from './kanban-board';
 
 type Row = Record<string, unknown>;
@@ -54,10 +55,14 @@ type Row = Record<string, unknown>;
       border: 1px solid var(--lc-color-border, #d0d7de); }
     .card[draggable='true'] { cursor: grab; }
     .card.busy { opacity: 0.6; }
+    .card.highlighted { background: var(--lc-highlight-bg); border-inline-start: 4px solid var(--lc-highlight-edge); }
+    .mark { display: inline-flex; flex: none; margin-inline-end: 6px; line-height: 1.5715; }
     .card.drop-before { box-shadow: 0 -3px 0 var(--lc-color-primary, #1f5fbf); }
     ul.drop-end::after { content: ''; height: 3px; border-radius: 2px; background: var(--lc-color-primary, #1f5fbf); }
     .text { flex: 1; min-width: 0; }
     .title { display: block; font-weight: 600; overflow-wrap: anywhere; }
+    .headline { display: flex; align-items: flex-start; }
+    .headline .title { flex: 1; min-width: 0; }
     button.title { padding: 0; border: 0; background: transparent; color: var(--lc-color-primary, #1f5fbf); font: inherit; font-weight: 600; text-align: start; cursor: pointer; }
     button.title:hover { text-decoration: underline; }
     button.title:focus-visible { outline: 2px solid var(--lc-focus-ring, var(--lc-color-primary, #1f5fbf)); outline-offset: 2px; border-radius: 2px; }
@@ -144,8 +149,12 @@ type Row = Record<string, unknown>;
         @for (row of rows; track key(row); let i = $index, first = $first, last = $last) {
           @let movable = canMove(row, lane, lane);
           @let title = text(row, node().titleField);
+          @let mark = highlight(row);
           <li
             class="card"
+            [class.highlighted]="mark !== null"
+            [style.--lc-highlight-bg]="mark?.background"
+            [style.--lc-highlight-edge]="mark?.edge"
             [class.busy]="busy() === row"
             [class.drop-before]="dropGap()?.lane === lane && dropGap()?.column === column && dropGap()?.gap === i"
             [class.openable]="openable()"
@@ -156,11 +165,16 @@ type Row = Record<string, unknown>;
             (click)="cardClick($event, row)"
           >
             <span class="text">
+              <span class="headline">
+              @if (mark) {
+                <span class="mark" role="img" [attr.aria-label]="mark.label" [attr.title]="mark.label" [style.color]="mark.mark"><lc-icon [name]="mark.icon" [filled]="true" /></span>
+              }
               @if (openable()) {
                 <button type="button" class="title" (click)="open(row)">{{ title }}</button>
               } @else {
                 <span class="title">{{ title }}</span>
               }
+              </span>
               @if (node().descriptionField) {
                 &ngsp;<span class="description">{{ text(row, node().descriptionField!) }}</span>
               }
@@ -320,6 +334,23 @@ export class KanbanComponent {
 
   protected textColor(tone: Tone): string {
     return TONE_TEXT[tone];
+  }
+
+  /** The highlighted cards (`highlight`), evaluated once per load of the data. */
+  private readonly highlights = computed(() => {
+    const node = this.node();
+    const marks = new Map<Row, ResolvedHighlight>();
+    if (!node.highlight) return marks;
+    const label = this.i18n.t('lc.highlighted');
+    for (const row of rowsOf(this.source().data)) {
+      const mark = rowHighlight(this.runtime(), node.highlight, this.cardScope(row), label);
+      if (mark) marks.set(row, mark);
+    }
+    return marks;
+  });
+
+  protected highlight(row: Row): ResolvedHighlight | null {
+    return this.highlights().get(row) ?? null;
   }
 
   protected cardScope(row: Row): Scope {
