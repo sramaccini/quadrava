@@ -58,6 +58,14 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
         "$ref": "#/$defs/steps"
       }
     },
+    "shortcuts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/shortcut"
+      },
+      "description": "Keyboard shortcuts of the screen: a key runs steps, as a button would. They do not work while the user is typing in a field or while a window is open over the screen; ? shows the list of those available. (no shortcuts if absent)"
+    },
     "components": {
       "type": "array",
       "description": "Components of the screen, from the top.",
@@ -5431,6 +5439,43 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
         "visibleIf": {
           "$ref": "#/$defs/expression",
           "description": "The item is in the path only while the expression is true, for example the parent of an issue that has one: {{ has(data.issue) && data.issue.parent != null }}. An expression in error leaves it out."
+        }
+      }
+    },
+    "shortcut": {
+      "type": "object",
+      "required": [
+        "key",
+        "label",
+        "onClick"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "key": {
+          "type": "string",
+          "pattern": "^(?:(?:ctrl|alt|shift|meta)\\+)*(?:[a-z0-9]|f[1-9]|f1[0-2])$",
+          "description": "The key, in lower case: a letter, a digit or f1 to f12, after the modifiers it needs joined with +, for example m, shift+e or ctrl+k. ? is kept for the list of shortcuts."
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "description": "What the shortcut does, shown in the list opened with ?: plain text or an expression such as {{ t('issue.comment', 'Comment') }}."
+        },
+        "onClick": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/step"
+          },
+          "description": "Steps run by the key, in order."
+        },
+        "visibleIf": {
+          "$ref": "#/$defs/expression",
+          "description": "The shortcut works, and is in the list, only while the expression is true. An expression in error turns it off."
+        },
+        "enabledIf": {
+          "$ref": "#/$defs/expression",
+          "description": "As visibleIf, for a shortcut whose button is shown but disabled: the key does nothing while the expression is not true."
         }
       }
     },

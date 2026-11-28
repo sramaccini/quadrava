@@ -899,6 +899,16 @@ export interface BreadcrumbItem {
   visibleIf?: Expression;
 }
 
+/** A key of the screen that runs steps. */
+export interface Shortcut {
+  /** `m`, `shift+e`, `ctrl+k`: modifiers joined with `+`, in lower case. */
+  key: string;
+  label: string;
+  onClick: Step[];
+  visibleIf?: Expression;
+  enabledIf?: Expression;
+}
+
 export interface ScreenDefinition {
   schemaVersion: string;
   screen: string;
@@ -914,6 +924,8 @@ export interface ScreenDefinition {
   dataSources?: Record<string, DataSourceEntry>;
   /** Named sequences of steps, called by the `run` step. */
   actions?: Record<string, Step | Step[]>;
+  /** Keys that run steps; `?` shows the list. */
+  shortcuts?: Shortcut[];
   components: NodeDefinition[];
 }
 

@@ -43,6 +43,7 @@ Rules common to all components, new ones included:
 | Fields | `text`, `number`, `select`, `checkbox`, `date`, `textarea`, `datetime`, `radio`, `switch`, `multiselect`, `tags`, `lookup`, `file`, `repeater`, `richtext` (§ 2.26). |
 | Cell formats | `text`, `number`, `currency`, `percent`, `date`, `datetime`, `relative`, `boolean`, `badge`, `markdown`. `relative` shows a date as its distance from now («3 days ago», «yesterday», «in 2 hours»; with `Intl.RelativeTimeFormat`, in the language of the user), with the full date as tooltip and, for screen readers, as text; a date without time counts calendar days («today»). In tables and in the detail. |
 | Steps | `set`, `call` (with `as` and `onError`), `refresh`, `navigate`, `toast`, `confirm`, `dialog`, `view` and `popover` (§ 2.11), `validate`, `print`, `focus`, `export`, `download`, `copy` and `copyLink` (§ 2.22), `if` and `run`; named sequences in `actions` (§ 2.22b). |
+| Keyboard shortcuts | `shortcuts` of the screen: a key runs steps, `?` lists them (§ 2.39). |
 | Shell | Side bar (`lc-sidebar`, with search, counters and keyboard support: § 2.25; the application brand is inserted with an `lcBrand` element, otherwise logo and name), messages of the user (`lc-notification-bell`: a bell with the unread count and the list, ADR-22; `notificationsOf` keeps only well-formed messages), user menu (`lc-user-menu`: an icon with the initial and the name in its tooltip, application items (in the runtime those of `userMenu` of the navigation, ADR-25), optional groups of choices with the current one ticked in each, such as the tenants of ADR-18 and the operational roles of ADR-28 (`choices` takes one group or a list, `choiceIn` gives the group of a choice), and sign-out last, after a confirmation; a menu for screen readers and the keyboard: arrows, Home, End, Enter, Esc, submenus with the side arrows), responsive top bar, `lc-quadrava-wordmark` logotype, syntax-highlighted code viewer `lc-code-view`, tools in section headers (`SectionTools`: «JSON» and «Aiuto» in the demo showcase). |
 
 ## 2. Added in October 2026
@@ -1270,6 +1271,40 @@ A field of a form can have small links under it, such as «Assign to me» under 
 - The links are grouped under the label of the field, so a screen reader says which field they belong to. While an
   inline field is being edited they are hidden. Only in a form: a standalone `input` and the filter bar ignore them.
 - The showcase «Forms» has «Unassign» under the assignee of the work item, in the section «Inline editing».
+
+### 2.39 Keyboard shortcuts
+
+A screen can give keys to its most frequent actions, as the issue page of a tracker: M to comment, A to assign, E to
+edit the description. Each key runs steps, as a button would.
+
+```json
+"shortcuts": [
+  { "key": "m", "label": "{{ t('issue.comment', 'Comment') }}", "onClick": [ { "focus": "comment-box" } ] },
+  { "key": "i", "label": "{{ t('issue.assignToMe', 'Assign to me') }}", "visibleIf": "{{ data.issue.assignee != user.id }}",
+    "onClick": [ { "call": "assign", "args": { "assignee": "{{ user.id }}" } }, { "refresh": "issue" } ] },
+  { "key": "e", "label": "{{ t('issue.editDescription', 'Edit description') }}",
+    "onClick": [ { "focus": { "component": "issue-content", "field": "description" } } ] }
+]
+```
+
+```
+ Keyboard shortcuts                        ×
+   M          Comment
+   I          Assign to me
+   E          Edit description
+   ?          Show the keyboard shortcuts
+                                       [ Close ]
+```
+
+- **The key**: a letter, a digit or `f1` to `f12`, in lower case, after the modifiers it needs joined with `+`:
+  `m`, `shift+e`, `ctrl+k`. A key matches with exactly its modifiers: `m` is not Shift+M. `?` is kept for the list.
+- **When not**: the keys are the user's while they type in a field, an editor, a list of options or a menu, and while a
+  window or a panel is open over the screen. A screen opened inside a window has its own shortcuts.
+- **Conditions**: `visibleIf` and `enabledIf` as on buttons. A shortcut that is off does nothing and is not in the list.
+- **The list**: `?` opens a window with the shortcuts available at that moment, their keys (modifiers in the language of
+  the user) and labels. It is drawn by the `ShortcutHelp` port: `provideLcComponents()` gives the NG-ZORRO one.
+- **Repeats**: a key held down runs once, and pressing it again while its steps run does nothing.
+- In the showcase «Forms», E opens the description of the work item and L copies the link of the page.
 
 ## 3. Implementation notes and known limits
 

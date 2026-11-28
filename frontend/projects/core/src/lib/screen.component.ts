@@ -1,13 +1,15 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, Injector, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, Injector, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzBreadCrumbModule } from 'ng-zorro-antd/breadcrumb';
 import { NzTypographyModule } from 'ng-zorro-antd/typography';
-import type { ScreenDefinition } from 'schema';
-import { SETTINGS_VALUES, Authorization, ClipboardWriter, Confirmation, DataClient, FormDialog, FormPopover, ViewDialog, LiveUpdates, Notifier, RuntimeDiagnostics, RuntimeTracer, ScreenNavigator, UserProvider } from './ports';
+import type { ScreenDefinition, Shortcut } from 'schema';
+import { SETTINGS_VALUES, Authorization, ClipboardWriter, Confirmation, DataClient, FormDialog, FormPopover, ViewDialog, LiveUpdates, Notifier, RuntimeDiagnostics, RuntimeTracer, ScreenNavigator, ShortcutHelp, UserProvider } from './ports';
 import { I18n } from './i18n';
+import { runSteps } from './action-engine';
 import { NodeHostComponent } from './node-host.component';
 import { ScreenRuntime } from './screen-runtime';
 import { ScreenTitle } from './screen-title';
+import { asksForShortcuts, isTypingTarget, matchesShortcut, parseShortcut, shortcutParts } from './shortcuts';
 import { ValidatorRegistry } from './validators';
 
 /** Item of the breadcrumb as drawn: the label resolved and, for a link, the screen with its parameters. */
@@ -23,6 +25,7 @@ interface Crumb {
   selector: 'lc-screen',
   imports: [NodeHostComponent, NzAlertModule, NzBreadCrumbModule, NzTypographyModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { '(document:keydown)': 'key($event)' },
   styles: `
     :host { display: block; }
     .page-header { padding: 16px var(--lc-content-padding, 24px) 20px; background: var(--lc-page-header-bg, #fff); color: var(--lc-page-header-text, inherit); border-bottom: 1px solid var(--lc-page-header-border, #e3e8ef); }
@@ -107,6 +110,11 @@ export class ScreenComponent {
   private readonly validators = inject(ValidatorRegistry);
   private readonly settings = inject(SETTINGS_VALUES);
   private readonly screenTitle = inject(ScreenTitle);
+  private readonly shortcutHelp = inject(ShortcutHelp, { optional: true });
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+  /** Shortcuts whose steps are running: the same key pressed again meanwhile does nothing. */
+  private readonly running = new Set<Shortcut>();
+  private helpOpen = false;
 
   /**
    * The breadcrumb declared by the screen (labels and parameters resolved), otherwise the one of the host. An item
@@ -127,6 +135,47 @@ export class ScreenComponent {
       return [{ label, screen: item.navigate, params, href: this.navigator.href?.(item.navigate, params) ?? null }];
     });
   });
+
+  /**
+   * A key pressed on the page: a shortcut of the screen runs its steps, `?` shows the list. Not while the user is typing
+   * (a field, an editor, a menu), nor while a window is open over the screen: a screen inside the window has its own.
+   */
+  protected key(event: KeyboardEvent): void {
+    const rt = this.runtime();
+    const shortcuts = rt?.definition.shortcuts;
+    if (!rt || !shortcuts?.length || !rt.allowed() || event.defaultPrevented || event.repeat || event.isComposing) return;
+    if (isTypingTarget(event.target) || this.covered()) return;
+    const available = shortcuts.filter((s) => rt.isVisible(s) && rt.isEnabled(s));
+    if (asksForShortcuts(event)) {
+      event.preventDefault();
+      void this.help(available);
+      return;
+    }
+    const shortcut = available.find((s) => matchesShortcut(parseShortcut(s.key), event));
+    if (!shortcut) return;
+    event.preventDefault();
+    if (this.running.has(shortcut)) return;
+    this.running.add(shortcut);
+    void runSteps(rt, shortcut.onClick).finally(() => this.running.delete(shortcut));
+  }
+
+  /** A window or a panel (a dialog) is open and the screen is not in it. */
+  private covered(): boolean {
+    const windows = this.host.ownerDocument.querySelectorAll('[role="dialog"], [role="alertdialog"]');
+    const top = windows[windows.length - 1];
+    return !!top && !top.contains(this.host);
+  }
+
+  private async help(available: readonly Shortcut[]): Promise<void> {
+    const rt = this.runtime();
+    if (!rt || !this.shortcutHelp || this.helpOpen) return;
+    this.helpOpen = true;
+    try {
+      await this.shortcutHelp.open(available.map((s) => ({ keys: shortcutParts(s.key), label: rt.text(s.label) })));
+    } finally {
+      this.helpOpen = false;
+    }
+  }
 
   /** A plain click navigates inside the application; with a modifier the browser opens the address (a new tab). */
   protected follow(event: MouseEvent, crumb: Crumb): void {

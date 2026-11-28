@@ -22,6 +22,7 @@ export interface ScreenHarness {
 export async function renderScreen(options: {
   components: NodeDefinition[];
   dataSources?: ScreenDefinition['dataSources'];
+  shortcuts?: ScreenDefinition['shortcuts'];
   respond?: (request: DataRequest) => unknown;
   granted?: string[];
   extraProviders?: unknown[];
@@ -49,6 +50,7 @@ export async function renderScreen(options: {
     schemaVersion: '1.0',
     screen: 'test',
     dataSources: options.dataSources ?? {},
+    ...(options.shortcuts ? { shortcuts: options.shortcuts } : {}),
     components: options.components,
   } satisfies ScreenDefinition);
   const settle = async (rounds = 4): Promise<void> => {

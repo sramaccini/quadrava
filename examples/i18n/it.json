@@ -402,7 +402,7 @@
   "showcase_form.inline_description": "Descrizione",
   "showcase_form.inline_description_empty": "Aggiungi una descrizione…",
   "showcase_form.inline_due": "Scadenza",
-  "showcase_form.inline_intro": "Con edit inline ogni campo mostra il suo valore come testo, come il riepilogo e la descrizione di un elemento di lavoro: fai clic (o porta il fuoco e premi Invio) per aprire solo quel campo. Invio o ✓ conferma una riga, Ctrl+Invio o Salva la descrizione, scegliere un valore conferma l'assegnatario e la priorità; Esc o Annulla rimette il valore. La casella si salva a ogni clic. Ogni conferma invia solo quel campo.",
+  "showcase_form.inline_intro": "Con edit inline ogni campo mostra il suo valore come testo, come il riepilogo e la descrizione di un elemento di lavoro: fai clic (o porta il fuoco e premi Invio) per aprire solo quel campo; il tasto E apre la descrizione e ? elenca i tasti della pagina. Invio o ✓ conferma una riga, Ctrl+Invio o Salva la descrizione, scegliere un valore conferma l'assegnatario e la priorità; Esc o Annulla rimette il valore. La casella si salva a ogni clic. Ogni conferma invia solo quel campo.",
   "showcase_form.inline_key": "Chiave",
   "showcase_form.inline_priority": "Priorità",
   "showcase_form.inline_saved": "Salvato: {field}",

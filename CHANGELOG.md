@@ -14,6 +14,10 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ### Added
 
+- Keyboard shortcuts of a screen: `shortcuts` gives keys (`m`, `shift+e`, `ctrl+k`) that run steps, with
+  `visibleIf` and `enabledIf`; they are off while the user types in a field or a window is open over the screen, and
+  `?` lists those available. The list is drawn by the new `ShortcutHelp` port, provided by `provideLcComponents()`.
+
 - A `focus` step: `{ "focus": "link-form" }` brings a component into view and focuses its first field, `{ "focus":
   { "component": "content", "field": "description" } }` a field of a form, opening its editor in an inline form. It
   waits a moment for a component the steps before have just shown; a target not found goes to the diagnostics.

@@ -32,6 +32,30 @@
       "ref": "showcase-form/patchWorkItem"
     }
   },
+  "shortcuts": [
+    {
+      "key": "e",
+      "label": "{{ t('showcase_form.edit_description', 'Edit description') }}",
+      "onClick": [
+        {
+          "focus": {
+            "component": "inline-form",
+            "field": "description"
+          }
+        }
+      ]
+    },
+    {
+      "key": "l",
+      "label": "{{ t('showcase_form.copy_link', 'Copy link') }}",
+      "onClick": [
+        {
+          "copyLink": {},
+          "copied": "{{ t('showcase_form.link_copied', 'Link copied') }}"
+        }
+      ]
+    }
+  ],
   "components": [
     {
       "id": "title",
@@ -422,7 +446,7 @@
         {
           "id": "inline-intro",
           "type": "text",
-          "text": "{{ t('showcase_form.inline_intro', 'With edit inline each field shows its value as text, like the summary and description of a work item: click it (or focus it and press Enter) to open only that field. Enter or ✓ confirms a single line, Ctrl+Enter or Save the description, choosing a value confirms the assignee and the priority; Escape or Cancel puts the value back. The checkbox saves at every click. Every confirmation sends only that field.') }}"
+          "text": "{{ t('showcase_form.inline_intro', 'With edit inline each field shows its value as text, like the summary and description of a work item: click it (or focus it and press Enter) to open only that field; the key E opens the description and ? lists the keys of the page. Enter or ✓ confirms a single line, Ctrl+Enter or Save the description, choosing a value confirms the assignee and the priority; Escape or Cancel puts the value back. The checkbox saves at every click. Every confirmation sends only that field.') }}"
         },
         {
           "id": "inline-share",

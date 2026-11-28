@@ -147,6 +147,17 @@ export abstract class Confirmation {
   abstract confirm(message: string): Promise<boolean>;
 }
 
+/** A shortcut as the list shows it: the parts of its key (`['shift', 'e']`) and what it does, already resolved. */
+export interface ShortcutHelpItem {
+  keys: readonly string[];
+  label: string;
+}
+
+/** The list of the keyboard shortcuts of the screen, opened with `?`. Resolves when the user closes it. */
+export abstract class ShortcutHelp {
+  abstract open(shortcuts: readonly ShortcutHelpItem[]): Promise<void>;
+}
+
 /** Request for a window with a form: the form (with the submit action) and the point of the screen it starts from. */
 export interface FormDialogRequest {
   /** Title already resolved, to show as text. */
