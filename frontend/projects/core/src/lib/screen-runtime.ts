@@ -1,6 +1,6 @@
 import { effect, Injector, signal, computed, untracked, type EffectRef } from '@angular/core';
 import { ExpressionEngine, parseTemplate } from 'expressions';
-import { inlineDataSource, type DialogStep, type ViewStep, type PopoverStep, type FormNode, type FieldDefinition, type InputNode, type NodeDefinition, type ScreenDefinition, type Step } from 'schema';
+import { inlineDataSource, type DialogStep, type PreviewStep, type ViewStep, type PopoverStep, type FormNode, type FieldDefinition, type InputNode, type NodeDefinition, type ScreenDefinition, type Step } from 'schema';
 import {
   Authorization,
   Confirmation,
@@ -8,6 +8,7 @@ import {
   FormDialog,
   ClipboardWriter, FormPopover,
   ViewDialog,
+  FilePreview,
   LiveUpdates,
   Notifier,
   RuntimeDiagnostics,
@@ -27,6 +28,8 @@ import type { CallResult, DataSourceState, DownloadResult, Scope } from './types
 import { fieldErrorsOf, type FieldError } from './field-errors';
 import { remoteSources } from './validation';
 import { ValidatorRegistry } from './validators';
+import { rowsOf } from './csv';
+import { previewFiles } from './preview';
 
 /** A standalone field on the screen, as its validation group knows it. */
 export interface GroupField {
@@ -55,6 +58,8 @@ export interface RuntimeDeps {
   formDialog?: FormDialog | null;
   /** If missing, `view` steps do not go on (fail-closed). */
   viewDialog?: ViewDialog | null;
+  /** If missing, `preview` steps do not go on (fail-closed). */
+  filePreview?: FilePreview | null;
   /** If missing, `popover` steps open as a form window (`formDialog`). */
   formPopover?: FormPopover | null;
   /** If missing, `copy` steps use the clipboard of the browser. */
@@ -572,13 +577,20 @@ export class ScreenRuntime {
    * Runs a data source with the given arguments (variables available to `url` and `params`). With `file` the request
    * becomes multipart: the file travels as a file and not in the JSON body. `trace`: the span of the action it starts from.
    */
-  async execute(name: string, args: Record<string, unknown> = {}, scope: Scope = {}, file?: DataRequest['file'], trace?: SpanContext): Promise<CallResult> {
+  async execute(
+    name: string,
+    args: Record<string, unknown> = {},
+    scope: Scope = {},
+    file?: DataRequest['file'],
+    trace?: SpanContext,
+    onProgress?: (sent: number, total: number) => void,
+  ): Promise<CallResult> {
     const built = this.build(name, args, scope);
     if (!built.ok) {
       this.report(`call ${name}`, built.error);
       return { ok: false, error: built.error };
     }
-    return this.run(name, file && built.request.method !== 'GET' && built.request.method !== 'DELETE' ? { ...built.request, file } : built.request, trace);
+    return this.run(name, file && built.request.method !== 'GET' && built.request.method !== 'DELETE' ? { ...built.request, file } : built.request, trace, onProgress);
   }
 
   /**
@@ -695,6 +707,23 @@ export class ScreenRuntime {
    * closes it. The components that write to the state get their initial value as those of the screen. Without a
    * service it does not go on.
    */
+  /** The `preview` step: the files of the rows of the data source, from the one asked. False when there is nothing to show. */
+  async openPreview(spec: PreviewStep['preview'], scope: Scope = {}): Promise<boolean> {
+    const preview = this.deps.filePreview;
+    if (!preview) {
+      this.report('preview', 'no service for the preview of files: action not run');
+      return false;
+    }
+    const start = spec.start === undefined ? undefined : this.text(spec.start, scope);
+    const { files, start: at } = previewFiles(rowsOf(untracked(() => this.source(spec.source).data)), spec, start);
+    if (!files.length) {
+      this.report(`preview ${spec.source}`, 'no image or PDF with an address of the application in the rows');
+      return false;
+    }
+    await preview.open(files, at);
+    return true;
+  }
+
   async openView(spec: ViewStep['view'], scope: Scope = {}): Promise<boolean> {
     const view = this.deps.viewDialog;
     if (!view) {
@@ -771,7 +800,7 @@ export class ScreenRuntime {
     return values.reduce((out, value) => out.split(value).join('[sensitive]'), text);
   }
 
-  private async run(name: string, request: DataRequest, trace?: SpanContext): Promise<CallResult> {
+  private async run(name: string, request: DataRequest, trace?: SpanContext, onProgress?: (sent: number, total: number) => void): Promise<CallResult> {
     const seq = (this.sequence.get(name) ?? 0) + 1;
     this.sequence.set(name, seq);
     const previous = this.source(name);
@@ -784,7 +813,7 @@ export class ScreenRuntime {
       this.inflight.set(name, controller);
     }
     try {
-      const data = await this.deps.data.request(request, { signal: controller?.signal, source: name, trace, baggage: this.baggage(trace) });
+      const data = await this.deps.data.request(request, { signal: controller?.signal, source: name, trace, baggage: this.baggage(trace), ...(onProgress ? { onProgress } : {}) });
       // An older response must not overwrite a newer one.
       if (this.sequence.get(name) === seq) this.setSource(name, { status: 'ready', data });
       return { ok: true, data };

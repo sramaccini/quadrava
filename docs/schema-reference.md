@@ -444,6 +444,12 @@
 | --- | --- | --- |
 | `focus` * |  | Brings a component into view and moves the focus into it: its first field, or the field named. An inline form opens the editor of that field. The step waits a moment for a component the previous steps have just shown; a component or field not found is reported in the diagnostics and the sequence goes on. |
 
+### `preview`
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `preview` * | object | Shows the files of the rows of a data source in a window over the whole page, images and PDFs, with next and previous. Rows of other types are left out. The window also offers the download of the file. |
+
 ### `export`
 
 | Property | Type | Description |
@@ -518,7 +524,7 @@
 | `newPassword` | yes/no | For password: a new password (registration, change): shows the strength meter and lets the browser propose a generated one. Without it the browser fills in the saved one. |
 | `minStrength` | integer 0–4 | For password: minimum strength, from 0 (very weak) to 4 (strong). The estimate counts length and kinds of characters, and discounts repetitions, sequences, years, common words and the values of the other fields. |
 | `minItems` | integer 1–100 | For multiselect and tags: minimum number of choices or tags (an empty list is left to required). |
-| `maxItems` | integer 1–100 | For multiselect and tags: maximum number of choices or tags. |
+| `maxItems` | integer 1–100 | For multiselect and tags: maximum number of choices or tags. For a file field with multiple: maximum number of files. |
 | `transform` | list of `trim`, `uppercase`, `lowercase`, `removeSpaces` | For text and textarea: changes applied to the value, in order, when the user leaves the field and before checking and sending it (never while typing). trim: spaces at the ends; uppercase / lowercase; removeSpaces: every space. For example ["removeSpaces", "uppercase"] for an IBAN. |
 | `messages` | object | Messages that replace the standard ones, by constraint (required, minLength, format…). Plain text or with {{ }}, for example {{t('order.qtyTooHigh')}}. |
 | `validation` | list of fieldRule | Advanced validation: rules checked in order after the flat constraints, each with an optional message, condition (when) and severity (a warning does not block). For example [{ "format": "vatNumber", "country": "{{form.country}}" }, { "required": true, "when": "{{form.company}}" }]. |
@@ -530,6 +536,7 @@
 | `suggest` | object | For type text and tags: suggestions from a GET data source while typing; the value stays free text (for example a query). For tags the data source sees the text typed in search and word, and a suggestion is added as a tag. The data source sees `search` (the whole text) and `word` (the word at the cursor, delimited by spaces, brackets and commas), for example "params": { "q": "{{ search }}", "word": "{{ word }}" }; choosing a suggestion replaces that word. |
 | `accept` | text | For type file: allowed extensions (.pdf) and MIME types (image/*, application/pdf), separated by commas. |
 | `maxSizeKb` | integer 1–102400 | For type file: maximum size in KB (1024 if absent). Up to 102400 with multipart upload; base64 content is limited to 10240. |
+| `multiple` | yes/no | For type file: several files, each checked and uploaded on its own with its progress and its error; the value is the list of the files (maxItems the most). One file if absent. |
 | `display` | `button`, `dropzone`, `heading` | How the field is drawn. For file fields: button (a button and the chosen file, button if absent) or dropzone (an area with a dashed border across the cell, the button in the middle with the label as its text, and files can also be dropped on it; the label is not repeated above the area). For text fields of an inline form: heading (the value as a large title, the label kept only for assistive technologies). |
 | `hint` | text | Only for file fields shown as dropzone: a short text under the button, for example the largest size allowed. It can contain {{ }}. |
 | `actions` | list of fieldAction | Actions shown as small links under the field, for example «Assign to me» under an assignee: they follow the field in the tab order and are grouped under its label for screen readers. Only in a form (inline forms included); while an inline field is being edited they are hidden. |

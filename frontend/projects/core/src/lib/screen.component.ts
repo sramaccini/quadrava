@@ -3,7 +3,7 @@ import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzBreadCrumbModule } from 'ng-zorro-antd/breadcrumb';
 import { NzTypographyModule } from 'ng-zorro-antd/typography';
 import type { ScreenDefinition, Shortcut } from 'schema';
-import { SETTINGS_VALUES, Authorization, ClipboardWriter, Confirmation, DataClient, FormDialog, FormPopover, ViewDialog, LiveUpdates, Notifier, RuntimeDiagnostics, RuntimeTracer, ScreenNavigator, ShortcutHelp, UserProvider } from './ports';
+import { SETTINGS_VALUES, Authorization, ClipboardWriter, Confirmation, DataClient, FormDialog, FormPopover, ViewDialog, LiveUpdates, Notifier, RuntimeDiagnostics, RuntimeTracer, ScreenNavigator, ShortcutHelp, UserProvider, FilePreview } from './ports';
 import { I18n } from './i18n';
 import { runSteps } from './action-engine';
 import { NodeHostComponent } from './node-host.component';
@@ -103,6 +103,7 @@ export class ScreenComponent {
   private readonly confirmation = inject(Confirmation, { optional: true });
   private readonly formDialog = inject(FormDialog, { optional: true });
   private readonly viewDialog = inject(ViewDialog, { optional: true });
+  private readonly filePreview = inject(FilePreview, { optional: true });
   private readonly formPopover = inject(FormPopover, { optional: true });
   private readonly clipboard = inject(ClipboardWriter, { optional: true });
   private readonly live = inject(LiveUpdates, { optional: true });
@@ -210,6 +211,7 @@ export class ScreenComponent {
               confirmation: this.confirmation,
               formDialog: this.formDialog,
               viewDialog: this.viewDialog,
+              filePreview: this.filePreview,
               formPopover: this.formPopover,
               clipboard: this.clipboard,
               diagnostics: this.diagnostics,

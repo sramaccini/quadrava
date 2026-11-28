@@ -57,6 +57,7 @@ export function describeSteps(steps: Step[]): string {
       if ('export' in step) return named('export', step.export.source);
       if ('copyLink' in step) return named('copyLink', step.copyLink.screen ?? 'current');
       if ('copy' in step) return 'copy';
+      if ('preview' in step) return named('preview', step.preview.source);
       return SIMPLE_KINDS.find((kind) => kind in step) ?? 'step';
     })
     .join(', ')
@@ -215,6 +216,10 @@ async function runSimpleStep(
   if ('print' in step) {
     runtime.print();
     return true;
+  }
+  if ('preview' in step) {
+    // The sequence goes on when the user closes the window.
+    return runtime.openPreview(step.preview, scope);
   }
   if ('focus' in step) {
     // A target not found is a diagnostic: the steps after it still run.

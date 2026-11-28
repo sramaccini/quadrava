@@ -260,6 +260,9 @@
           "$ref": "#/$defs/stepFocus"
         },
         {
+          "$ref": "#/$defs/stepPreview"
+        },
+        {
           "$ref": "#/$defs/stepExport"
         },
         {
@@ -782,7 +785,7 @@
           "type": "integer",
           "minimum": 1,
           "maximum": 100,
-          "description": "For multiselect and tags: maximum number of choices or tags."
+          "description": "For multiselect and tags: maximum number of choices or tags. For a file field with multiple: maximum number of files."
         },
         "transform": {
           "type": "array",
@@ -983,6 +986,10 @@
           "minimum": 1,
           "maximum": 102400,
           "description": "For type file: maximum size in KB (1024 if absent). Up to 102400 with multipart upload; base64 content is limited to 10240."
+        },
+        "multiple": {
+          "type": "boolean",
+          "description": "For type file: several files, each checked and uploaded on its own with its progress and its error; the value is the list of the files (maxItems the most). One file if absent."
         },
         "display": {
           "enum": [
@@ -1309,7 +1316,29 @@
           },
           "then": {
             "properties": {
-              "minItems": false,
+              "minItems": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "not": {
+                  "enum": [
+                    "multiselect",
+                    "tags",
+                    "file"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "properties": {
               "maxItems": false
             }
           }
@@ -3696,9 +3725,10 @@
             "relative",
             "boolean",
             "badge",
-            "markdown"
+            "markdown",
+            "image"
           ],
-          "description": "How to show the value: number (number with digits grouped according to the language, `decimals` decimals), currency (amount with symbol), percent (the value is already in percentage points, 10 = 10 %), date and datetime (ISO 8601 text), relative (the distance from now, such as «3 days ago» or «in 2 hours», with the full date as tooltip; ISO 8601 text), boolean (Yes/No), badge (coloured label according to `badges`). markdown: formatted text (restricted Markdown); in the detail it is shown formatted, in tables as plain text."
+          "description": "How to show the value: number (number with digits grouped according to the language, `decimals` decimals), currency (amount with symbol), percent (the value is already in percentage points, 10 = 10 %), date and datetime (ISO 8601 text), relative (the distance from now, such as «3 days ago» or «in 2 hours», with the full date as tooltip; ISO 8601 text), boolean (Yes/No), badge (coloured label according to `badges`). image: a small picture from the address in the value (a path of the same application or https), with the file name for screen readers. markdown: formatted text (restricted Markdown); in the detail it is shown formatted, in tables as plain text."
         },
         "currency": {
           "type": "string",
@@ -4255,6 +4285,49 @@
               }
             }
           ]
+        }
+      }
+    },
+    "stepPreview": {
+      "type": "object",
+      "required": [
+        "preview"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "preview": {
+          "type": "object",
+          "required": [
+            "source"
+          ],
+          "additionalProperties": false,
+          "description": "Shows the files of the rows of a data source in a window over the whole page, images and PDFs, with next and previous. Rows of other types are left out. The window also offers the download of the file.",
+          "properties": {
+            "source": {
+              "type": "string",
+              "minLength": 1,
+              "description": "The data source whose rows are the files, already loaded (the one of the table of the attachments)."
+            },
+            "start": {
+              "type": "string",
+              "description": "The address of the file shown first, usually {{ row.url }} in a row action; the first file if absent or not found."
+            },
+            "urlField": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Field of the row with the address of the file: a path of the same application (url if absent)."
+            },
+            "nameField": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Field of the row with the name of the file, shown as the title (name if absent; the end of the address without it)."
+            },
+            "typeField": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Field of the row with the type of the file, such as image/png or application/pdf (type if absent; without it the extension of the name decides)."
+            }
+          }
         }
       }
     },

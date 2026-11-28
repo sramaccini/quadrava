@@ -142,6 +142,10 @@ export interface CopyLinkStep {
 export interface PrintStep {
   print: true;
 }
+/** Shows the files (images, PDFs) of the rows of a data source, with next and previous. */
+export interface PreviewStep {
+  preview: { source: string; start?: string; urlField?: string; nameField?: string; typeField?: string };
+}
 /** Brings a component into view and focuses its first field, or the field named. */
 export interface FocusStep {
   focus: string | { component: string; field?: string };
@@ -150,7 +154,7 @@ export interface FocusStep {
 export interface ExportStep {
   export: { source: string; fileName?: string; args?: Record<string, unknown>; columns: { field: string; label?: string }[] };
 }
-export type Step = CallStep | DownloadStep | CopyStep | CopyLinkStep | RefreshStep | NavigateStep | ToastStep | SetStep | ConfirmStep | DialogStep | ViewStep | PopoverStep | ValidateStep | PrintStep | FocusStep | ExportStep | IfStep | RunStep;
+export type Step = CallStep | DownloadStep | CopyStep | CopyLinkStep | RefreshStep | NavigateStep | ToastStep | SetStep | ConfirmStep | DialogStep | ViewStep | PopoverStep | ValidateStep | PrintStep | FocusStep | PreviewStep | ExportStep | IfStep | RunStep;
 
 export interface ConditionalProps {
   visibleIf?: Expression;
@@ -206,6 +210,8 @@ export interface FieldDefinition {
   accept?: string;
   /** For `file`: maximum size in KB (1024 if absent). */
   maxSizeKb?: number;
+  /** For `file`: several files, each uploaded on its own; the value is their list. */
+  multiple?: boolean;
   /** For `file`: a button (default) or a drop zone, with the label as the text of its button; for text in an inline form: a heading. */
   display?: 'button' | 'dropzone' | 'heading';
   /** For `file` shown as dropzone: a short text under the button. */
@@ -333,7 +339,7 @@ export interface FormValidationRule extends ValidationRule {
 }
 
 export type Tone = 'neutral' | 'primary' | 'success' | 'danger';
-export type CellFormat = 'text' | 'number' | 'currency' | 'percent' | 'date' | 'datetime' | 'relative' | 'boolean' | 'badge' | 'markdown';
+export type CellFormat = 'text' | 'number' | 'currency' | 'percent' | 'date' | 'datetime' | 'relative' | 'boolean' | 'badge' | 'markdown' | 'image';
 /** Plain or formatted text (restricted Markdown). */
 export type TextFormat = 'plain' | 'markdown';
 

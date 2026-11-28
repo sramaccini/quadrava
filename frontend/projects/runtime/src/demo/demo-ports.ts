@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { Authorization, DataClient, LiveUpdates, RuntimeDiagnostics, UserProvider, type DataRequest, type DataRequestOptions } from 'core';
+import { Authorization, DataClient, LiveUpdates, RuntimeDiagnostics, UserProvider, type DataRequest, type DataRequestOptions, type DownloadedFile } from 'core';
 import type { SessionRole, SessionTenant } from 'services';
 import { DemoBackend } from './demo-backend';
 
@@ -160,9 +160,25 @@ export class MockDataClient extends DataClient {
   private readonly network = inject(DemoNetwork);
 
   async request(req: DataRequest, options: DataRequestOptions = {}): Promise<unknown> {
-    await new Promise((resolve) => setTimeout(resolve, this.network.latency()));
+    const onProgress = options.onProgress;
+    if (req.file && onProgress) {
+      // An upload with its progress: four steps over the time of the network (long enough to see the bar).
+      const step = Math.max(this.network.latency(), 800) / 4;
+      for (let part = 1; part <= 4; part++) {
+        await new Promise((resolve) => setTimeout(resolve, step));
+        onProgress(Math.round((req.file.blob.size * part) / 4), req.file.blob.size);
+      }
+    } else {
+      await new Promise((resolve) => setTimeout(resolve, this.network.latency()));
+    }
     // Like a real network: a read cancelled during the wait does not reach the back end.
     if (options.signal?.aborted) throw new DOMException('Request cancelled', 'AbortError');
+    // The files of the example project (the preview of a PDF) are read from the server of the demo, as they are.
+    if (options.download && req.method === 'GET' && req.url.startsWith('/examples/')) {
+      const answer = await fetch(req.url, { signal: options.signal });
+      if (!answer.ok) throw new Error(String(answer.status));
+      return { blob: await answer.blob(), fileName: req.url.split('/').pop() } satisfies DownloadedFile;
+    }
     return this.backend.handle(req);
   }
 }

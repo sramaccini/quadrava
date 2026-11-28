@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, input, output, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, input, linkedSignal, output, signal, viewChild } from '@angular/core';
 import { I18n, type ScreenRuntime, type Scope } from 'core';
 import { NgTemplateOutlet } from '@angular/common';
 import { NzButtonModule } from 'ng-zorro-antd/button';
@@ -30,6 +30,22 @@ export function labelInControl(field: FieldDefinition): boolean {
   return field.type === 'checkbox' || (field.type === 'file' && field.display === 'dropzone');
 }
 
+/** A file of a multiple field being uploaded: `progress` from 0 to 1 (null while unknown), or the message of its failure. */
+interface Upload {
+  readonly id: number;
+  readonly name: string;
+  readonly size: number;
+  readonly progress: number | null;
+  readonly error: string | null;
+}
+
+/** The name and size of a file in a value; null when it is not one. */
+function fileOf(value: unknown): { name: string; size: number } | null {
+  if (value === null || typeof value !== 'object') return null;
+  const { name, size } = value as Record<string, unknown>;
+  return typeof name === 'string' ? { name, size: typeof size === 'number' ? size : 0 } : null;
+}
+
 /** Content of a file in base64 (without the `data:` prefix). */
 function readBase64(file: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -47,7 +63,9 @@ function readBase64(file: Blob): Promise<string> {
  * `upload` the value also contains `content` (base64). The name of the file is always text. With `display: "dropzone"` it
  * is an area with a dashed border: the button in the middle has the label as its text, `hint` goes under it, and a file
  * dropped on the area is checked and uploaded as a chosen one (the first, if more are dropped). From the keyboard the
- * button works as always.
+ * button works as always. With `multiple` the value is a list: every file chosen or dropped is checked and uploaded on
+ * its own, one after the other, with a bar of its progress (of unknown length when the client cannot measure it) and
+ * its own error; the files uploaded are listed under the button, each with its remove button.
  */
 @Component({
   selector: 'lc-file-field',
@@ -70,6 +88,10 @@ function readBase64(file: Blob): Promise<string> {
     .zone.over { border-color: var(--lc-color-primary); background: color-mix(in srgb, var(--lc-color-primary) 8%, transparent); }
     .zone .row { justify-content: center; }
     .hint { margin: 0; color: var(--lc-color-muted, #5d6b7a); font-size: 12px; }
+    .files { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+    .files li { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-height: 32px; }
+    .files .error { margin: 0; }
+    progress { width: 120px; height: 6px; accent-color: var(--lc-color-primary, #1677ff); }
   `,
   template: `
     @if (zone()) {
@@ -85,14 +107,43 @@ function readBase64(file: Blob): Promise<string> {
     @if (error(); as e) {
       <p class="error" role="alert">{{ e }}</p>
     }
+    @if (multiple() && (files().length || uploads().length)) {
+      <ul class="files">
+        @for (f of files(); track $index) {
+          <li>
+            <span class="name"><lc-icon name="attachment" />{{ f.name }}</span>
+            <span class="size">{{ size(f.size) }}</span>
+            @if (!disabled()) {
+              <button nz-button nzType="text" nzSize="small" type="button" [attr.aria-label]="i18n.t('lc.removeFile', { name: f.name })" (click)="remove($index)">
+                <lc-icon name="close" />
+              </button>
+            }
+          </li>
+        }
+        @for (u of uploads(); track u.id) {
+          <li [class.failed]="!!u.error">
+            <span class="name"><lc-icon name="attachment" />{{ u.name }}</span>
+            <span class="size">{{ size(u.size) }}</span>
+            @if (u.error) {
+              <span class="error" role="alert">{{ u.error }}</span>
+              <button nz-button nzType="text" nzSize="small" type="button" [attr.aria-label]="i18n.t('lc.dismissFile', { name: u.name })" (click)="dismiss(u.id)">
+                <lc-icon name="close" />
+              </button>
+            } @else {
+              <progress [attr.value]="u.progress" max="1" [attr.aria-label]="i18n.t('lc.uploading', { name: u.name })"></progress>
+            }
+          </li>
+        }
+      </ul>
+    }
     <ng-template #picker>
     <div class="row">
-      <input #input type="file" [id]="inputId()" [attr.aria-label]="zone() ? buttonText() : null" [attr.accept]="field().accept ?? null" [disabled]="disabled() || busy()" (change)="picked(input)" />
+      <input #input type="file" [id]="inputId()" [attr.aria-label]="zone() ? buttonText() : null" [attr.accept]="field().accept ?? null" [multiple]="multiple()" [disabled]="disabled() || busy()" (change)="picked(input)" />
       <button nz-button type="button" [nzLoading]="busy()" [disabled]="disabled()" [attr.aria-describedby]="hint() ? hintId : null" (click)="input.click()">
         <lc-icon name="upload" />
         {{ buttonText() }}
       </button>
-      @if (file(); as f) {
+      @if (!multiple() && file(); as f) {
         <span class="name"><lc-icon name="attachment" />{{ f.name }}</span>
         <span class="size">{{ size(f.size) }}</span>
         @if (!disabled()) {
@@ -129,12 +180,30 @@ export class FileFieldComponent {
     return label || this.i18n.t(this.file() ? 'lc.replaceFile' : 'lc.chooseFile');
   });
 
+  /** Several files: the value is their list. */
+  protected readonly multiple = computed(() => !!this.field().multiple);
+  /** Files of a multiple field being uploaded, or whose upload failed (until dismissed). */
+  protected readonly uploads = signal<readonly Upload[]>([]);
+  private uploadId = 0;
+  /**
+   * The list of a multiple field: its value, and the changes sent and not yet back as the value (files uploaded one
+   * after the other each add to the list before the previous one has returned).
+   */
+  private readonly list = linkedSignal<readonly unknown[]>(() => {
+    const v = this.value();
+    return Array.isArray(v) ? v : [];
+  });
+  /** The files of a multiple field, read from its value. */
+  protected readonly files = computed(() => {
+    return this.list().flatMap((item) => {
+      const named = fileOf(item);
+      return named ? [named] : [];
+    });
+  });
+
   /** Current file, read from the value of the field (also when it comes from the initial data). */
   protected readonly file = computed<{ name: string; size: number } | null>(() => {
-    const v = this.value();
-    if (v === null || typeof v !== 'object') return null;
-    const { name, size } = v as Record<string, unknown>;
-    return typeof name === 'string' ? { name, size: typeof size === 'number' ? size : 0 } : null;
+    return fileOf(this.value());
   });
 
   protected size(bytes: number): string {
@@ -144,9 +213,10 @@ export class FileFieldComponent {
   }
 
   protected picked(input: HTMLInputElement): void {
-    const chosen = input.files?.[0];
+    const chosen = [...(input.files ?? [])];
     input.value = '';
-    if (chosen) void this.take(chosen);
+    if (this.multiple()) void this.takeAll(chosen);
+    else if (chosen[0]) void this.take(chosen[0]);
   }
 
   /** Something dragged over the zone: files are accepted (copy) unless the field is disabled or busy. */
@@ -166,49 +236,107 @@ export class FileFieldComponent {
   protected dropped(event: DragEvent): void {
     event.preventDefault();
     this.over.set(false);
-    const dropped = event.dataTransfer?.files?.[0];
-    if (dropped && !this.disabled() && !this.busy()) void this.take(dropped);
+    const dropped = [...(event.dataTransfer?.files ?? [])];
+    if (!dropped.length || this.disabled() || this.busy()) return;
+    if (this.multiple()) void this.takeAll(dropped);
+    else void this.take(dropped[0]);
   }
 
   /** Checks type and size of a chosen or dropped file, then keeps it or uploads it. */
   private async take(chosen: File): Promise<void> {
-    const field = this.field();
-    const multipart = !!field.upload && field.uploadAs !== 'base64';
-    const max = Math.min(field.maxSizeKb ?? DEFAULT_MAX_KB, multipart ? Infinity : MAX_BASE64_KB);
-    if (!accepts(field.accept, chosen)) {
-      this.error.set(this.i18n.t('lc.fileType', { accept: field.accept ?? '' }));
-      return;
+    const problem = this.check(chosen);
+    this.error.set(problem);
+    if (problem) return;
+    this.busy.set(true);
+    try {
+      const sent = await this.send(chosen);
+      if (typeof sent === 'string') this.error.set(sent);
+      else this.valueChange.emit(sent);
+    } finally {
+      this.busy.set(false);
     }
-    if (chosen.size > max * 1024) {
-      this.error.set(this.i18n.t('lc.fileTooLarge', { max: max >= 1024 ? `${max / 1024} MB` : `${max} KB` }));
+  }
+
+  /**
+   * The files of a multiple field, one after the other: each one is checked and uploaded on its own, and joins the
+   * value as soon as it arrives; one that fails stays in the list with its error. Beyond `maxItems` none is taken.
+   */
+  private async takeAll(chosen: readonly File[]): Promise<void> {
+    const max = this.field().maxItems;
+    if (max !== undefined && this.files().length + chosen.length > max) {
+      this.error.set(this.i18n.t('lc.tooManyFiles', { max }));
       return;
     }
     this.error.set(null);
+    const queued = chosen.map((file) => ({ file, upload: { id: ++this.uploadId, name: file.name, size: file.size, progress: null, error: this.check(file) } satisfies Upload }));
+    this.uploads.update((all) => [...all, ...queued.map((q) => q.upload)]);
     this.busy.set(true);
+    try {
+      for (const { file, upload } of queued) {
+        if (upload.error) continue;
+        const sent = await this.send(file, (done, total) => this.patch(upload.id, { progress: total > 0 ? Math.min(done / total, 1) : null }));
+        if (typeof sent === 'string') {
+          this.patch(upload.id, { error: sent });
+          continue;
+        }
+        this.uploads.update((all) => all.filter((u) => u.id !== upload.id));
+        // Added to the list as it is now: the files removed meanwhile stay removed.
+        this.emitList([...this.list(), sent]);
+      }
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  /** The message for a file of the wrong type or too large; null when it can be taken. */
+  private check(chosen: File): string | null {
+    const field = this.field();
+    const multipart = !!field.upload && field.uploadAs !== 'base64';
+    const max = Math.min(field.maxSizeKb ?? DEFAULT_MAX_KB, multipart ? Infinity : MAX_BASE64_KB);
+    if (!accepts(field.accept, chosen)) return this.i18n.t('lc.fileType', { accept: field.accept ?? '' });
+    if (chosen.size > max * 1024) return this.i18n.t('lc.fileTooLarge', { max: max >= 1024 ? `${max / 1024} MB` : `${max} KB` });
+    return null;
+  }
+
+  /** Uploads a file (or reads it, without `upload`): its value, or the message of the failure. */
+  private async send(chosen: File, onProgress?: (sent: number, total: number) => void): Promise<Record<string, unknown> | string> {
+    const field = this.field();
+    const multipart = !!field.upload && field.uploadAs !== 'base64';
     try {
       const meta = { name: chosen.name, type: chosen.type, size: chosen.size };
       let result;
       if (multipart) {
-        result = await this.runtime().execute(field.upload!, { file: meta }, this.scope(), { field: 'file', name: chosen.name, type: chosen.type, blob: chosen });
+        result = await this.runtime().execute(field.upload!, { file: meta }, this.scope(), { field: 'file', name: chosen.name, type: chosen.type, blob: chosen }, undefined, onProgress);
       } else {
         const content = await readBase64(chosen);
-        if (!field.upload) {
-          this.valueChange.emit({ ...meta, content });
-          return;
-        }
-        result = await this.runtime().execute(field.upload, { file: { ...meta, content } }, this.scope());
+        if (!field.upload) return { ...meta, content };
+        result = await this.runtime().execute(field.upload, { file: { ...meta, content } }, this.scope(), undefined, undefined, onProgress);
       }
-      if (!result.ok) {
-        this.error.set(this.i18n.t('lc.uploadFailed'));
-        return;
-      }
+      if (!result.ok) return this.i18n.t('lc.uploadFailed');
       const response = result.data !== null && typeof result.data === 'object' && !Array.isArray(result.data) ? (result.data as Record<string, unknown>) : {};
-      this.valueChange.emit({ ...response, ...meta });
+      return { ...response, ...meta };
     } catch {
-      this.error.set(this.i18n.t('lc.uploadFailed'));
-    } finally {
-      this.busy.set(false);
+      return this.i18n.t('lc.uploadFailed');
     }
+  }
+
+  private patch(id: number, change: Partial<Upload>): void {
+    this.uploads.update((all) => all.map((u) => (u.id === id ? { ...u, ...change } : u)));
+  }
+
+  /** Takes a file out of the list of a multiple field. */
+  protected remove(index: number): void {
+    this.emitList(this.list().filter((_, i) => i !== index));
+  }
+
+  private emitList(files: readonly unknown[]): void {
+    this.list.set(files);
+    this.valueChange.emit([...files]);
+  }
+
+  /** Takes a failed upload out of the list. */
+  protected dismiss(id: number): void {
+    this.uploads.update((all) => all.filter((u) => u.id !== id));
   }
 
   protected clear(): void {

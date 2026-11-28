@@ -51,6 +51,7 @@ export * from './lib/dialog-confirmation';
 export * from './lib/dialog-form';
 export * from './lib/view-dialog';
 export * from './lib/shortcut-help';
+export * from './lib/file-preview';
 export * from './lib/form-popover';
 export * from './lib/notifier';
 export * from './lib/theme-bridge';

@@ -1,3 +1,4 @@
+import { lastPathSegment } from './download';
 import { markdownToPlain } from './markdown';
 import type { ColumnDefinition, Tone } from 'schema';
 
@@ -7,6 +8,8 @@ export interface FormattedValue {
   tone?: Tone;
   /** Present only for the `relative` format: the full date and time, for the tooltip and screen readers. */
   title?: string;
+  /** Present only for the `image` format: the address of the picture, to check before drawing it; `text` is its name. */
+  image?: string;
 }
 
 type FormatSpec = Pick<ColumnDefinition, 'format' | 'currency' | 'badges' | 'valueKey' | 'valueKeys' | 'decimals'>;
@@ -130,6 +133,10 @@ export function formatValue(value: unknown, spec: FormatSpec, locale = 'en-GB', 
       }
       case 'boolean':
         return { text: value === true ? labels.yes : value === false ? labels.no : String(value) };
+      case 'image': {
+        const address = String(value);
+        return { text: lastPathSegment(address) ?? '', image: address };
+      }
       case 'markdown':
         // In tables formatted text is shown as plain text (the detail draws it formatted).
         return { text: markdownToPlain(typeof value === 'string' ? value : String(value)).replace(/\n+/g, ' ') };

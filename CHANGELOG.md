@@ -14,6 +14,12 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ### Added
 
+- Attachments: a file field with `multiple` takes several files, each checked and uploaded on its own with a progress
+  bar and its own error (`maxItems` the most); the `image` cell format draws a thumbnail from an address; the
+  `preview` step shows the images and PDFs of the rows of a data source in a window as large as the page, with next and
+  previous, through the new `FilePreview` port. `DataRequestOptions.onProgress` reports the progress of an upload
+  (`HttpDataClient` with the XMLHttpRequest backend of `HttpClient`).
+
 - Keyboard shortcuts of a screen: `shortcuts` gives keys (`m`, `shift+e`, `ctrl+k`) that run steps, with
   `visibleIf` and `enabledIf`; they are off while the user types in a field or a window is open over the screen, and
   `?` lists those available. The list is drawn by the new `ShortcutHelp` port, provided by `provideLcComponents()`.

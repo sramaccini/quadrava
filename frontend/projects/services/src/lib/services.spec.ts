@@ -1,4 +1,4 @@
-import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common/http';
+import { HttpClient, HttpEventType, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApplicationInitStatus, type Provider } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -467,6 +467,22 @@ describe('HttpDataClient', () => {
     expect((form.get('file') as File).name).toBe('note.txt');
     req.flush({ id: 9 });
     expect(await p).toEqual({ id: 9 });
+  });
+
+  it('with onProgress the upload reports the bytes sent, then answers with the body', async () => {
+    const { http } = setup();
+    const progress: [number, number][] = [];
+    const p = TestBed.inject(HttpDataClient).request(
+      { method: 'POST', url: '/api/attachments', body: { name: 'a.pdf' }, file: { field: 'file', name: 'a.pdf', type: 'application/pdf', blob: new Blob(['pdf']) } },
+      { onProgress: (sent, total) => progress.push([sent, total]) },
+    );
+    const req = http.expectOne('/api/attachments');
+    expect(req.request.reportProgress).toBe(true);
+    req.event({ type: HttpEventType.UploadProgress, loaded: 1, total: 3 });
+    req.event({ type: HttpEventType.UploadProgress, loaded: 3, total: 3 });
+    req.flush({ id: 4 });
+    expect(await p).toEqual({ id: 4 });
+    expect(progress).toEqual([[1, 3], [3, 3]]);
   });
 
   it('rejects absolute URLs or URLs with ".." without making requests', async () => {

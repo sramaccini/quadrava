@@ -111,6 +111,10 @@ describe('formatValue', () => {
     expect(formatValue(5, { format: 'currency', currency: 'xx' }).text).toBe('5');
   });
 
+  it('image: the address to draw and the file name as its text', () => {
+    expect(formatValue('/api/files/7/plan.png', { format: 'image' })).toEqual({ text: 'plan.png', image: '/api/files/7/plan.png' });
+  });
+
   it('without a format it shows the text of the value', () => {
     expect(formatValue(42, {}).text).toBe('42');
     expect(formatValue('ciao', { format: 'text' }).text).toBe('ciao');

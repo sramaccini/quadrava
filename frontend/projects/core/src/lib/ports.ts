@@ -67,6 +67,11 @@ export interface DataRequestOptions {
    * and the runtime saves that answer as JSON.
    */
   download?: boolean;
+  /**
+   * Progress of the upload of a file (`request.file`): bytes sent and total. A client that cannot measure it never calls
+   * it, and the field shows an upload of unknown length.
+   */
+  onProgress?: (sent: number, total: number) => void;
 }
 
 /** Screen change. */
@@ -145,6 +150,19 @@ export abstract class LiveUpdates {
 /** Asks the user to confirm before a sensitive action. Resolves true only if the user explicitly confirms. */
 export abstract class Confirmation {
   abstract confirm(message: string): Promise<boolean>;
+}
+
+/** A file shown by the `preview` step: its address (checked), name and type. */
+export interface PreviewFile {
+  url: string;
+  name: string;
+  /** `image` or `pdf`: the files of other types are left out before. */
+  kind: 'image' | 'pdf';
+}
+
+/** Window over the page with the files of a list, one at a time, with next and previous. Resolves when it closes. */
+export abstract class FilePreview {
+  abstract open(files: readonly PreviewFile[], start: number): Promise<void>;
 }
 
 /** A shortcut as the list shows it: the parts of its key (`['shift', 'e']`) and what it does, already resolved. */

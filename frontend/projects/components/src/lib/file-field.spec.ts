@@ -1,3 +1,4 @@
+import { DataClient, type DataRequest, type DataRequestOptions } from 'core';
 import type { NodeDefinition } from 'schema';
 import { accepts } from './file-field.component';
 import { plain, renderScreen, type ScreenHarness } from './screen-testing';
@@ -138,6 +139,68 @@ describe('file upload', () => {
       zone(h).dispatchEvent(drag('drop', [new File(['pdf'], 'spec.pdf', { type: 'application/pdf' })]));
       await h.settle();
       expect(h.requests).toEqual([]);
+    });
+  });
+  describe('several files', () => {
+    const many = (extra: Record<string, unknown> = {}): NodeDefinition =>
+      ({
+        type: 'input',
+        field: { name: 'files', type: 'file', label: 'Add files', display: 'dropzone', multiple: true, accept: '.pdf', maxSizeKb: 1, upload: 'store', ...extra },
+      }) as NodeDefinition;
+    const rows = (h: ScreenHarness): string[] =>
+      [...h.el.querySelectorAll('lc-file-field .files li')].map((li) => [...li.children].map((part) => plain(part.textContent)).filter(Boolean).join(' '));
+    const pdf = (name: string): File => new File(['pdf'], name, { type: 'application/pdf' });
+
+    it('each file is checked and uploaded on its own; a wrong one stays with its error until removed', async () => {
+      const h = await renderScreen({ components: [many()], dataSources, respond: (r) => ({ id: (r.file?.name ?? '').length }) });
+      choose(h, pdf('a.pdf'));
+      await h.until(() => rows(h).length === 1 && !h.el.querySelector('progress'), 'first uploaded');
+      const input = h.el.querySelector('lc-file-field input[type="file"]') as HTMLInputElement;
+      expect(input.multiple).toBe(true);
+      Object.defineProperty(input, 'files', { configurable: true, value: [pdf('bb.pdf'), new File(['x'], 'notes.txt', { type: 'text/plain' }), pdf('ccc.pdf')] });
+      input.dispatchEvent(new Event('change'));
+      await h.until(() => h.requests.length === 3 && !h.el.querySelector('progress'), 'the others uploaded');
+      expect(h.requests.map((r) => r.file?.name)).toEqual(['a.pdf', 'bb.pdf', 'ccc.pdf']);
+      expect(rows(h)).toEqual(['a.pdf 0.1 KB', 'bb.pdf 0.1 KB', 'ccc.pdf 0.1 KB', 'notes.txt 0.1 KB File type not allowed (allowed: .pdf)']);
+      const failed = h.el.querySelector('lc-file-field li.failed button') as HTMLButtonElement;
+      expect(failed.getAttribute('aria-label')).toBe('Remove notes.txt from the list');
+      failed.click();
+      (h.el.querySelector('lc-file-field li button') as HTMLButtonElement).click();
+      await h.until(() => rows(h).length === 2, 'removed');
+      expect(rows(h)).toEqual(['bb.pdf 0.1 KB', 'ccc.pdf 0.1 KB']);
+      expect(h.reports).toEqual([]);
+    });
+
+    it('beyond maxItems no file is taken', async () => {
+      const h = await renderScreen({ components: [many({ maxItems: 2 })], dataSources });
+      const input = h.el.querySelector('lc-file-field input[type="file"]') as HTMLInputElement;
+      Object.defineProperty(input, 'files', { configurable: true, value: [pdf('a.pdf'), pdf('b.pdf'), pdf('c.pdf')] });
+      input.dispatchEvent(new Event('change'));
+      await h.until(() => !!error(h), 'the message');
+      expect(error(h)).toBe('Too many files (maximum 2)');
+      expect(h.requests).toEqual([]);
+    });
+
+    it('a bar shows the progress the client reports, and the failure of a file', async () => {
+      let report: ((sent: number, total: number) => void) | undefined;
+      let finish: ((ok: boolean) => void) | undefined;
+      const client = {
+        request: (_: DataRequest, options?: DataRequestOptions) =>
+          new Promise((resolve, reject) => {
+            report = options?.onProgress;
+            finish = (ok) => (ok ? resolve({}) : reject(new Error('500')));
+          }),
+      };
+      const h = await renderScreen({ components: [many()], dataSources, extraProviders: [{ provide: DataClient, useValue: client }] });
+      choose(h, pdf('a.pdf'));
+      await h.until(() => !!h.el.querySelector('progress'), 'the bar');
+      const bar = h.el.querySelector('progress')!;
+      expect(bar.hasAttribute('value')).toBe(false);
+      expect(bar.getAttribute('aria-label')).toBe('Uploading a.pdf');
+      report!(30, 120);
+      await h.until(() => h.el.querySelector('progress')?.getAttribute('value') === '0.25', 'a quarter');
+      finish!(false);
+      await h.until(() => rows(h)[0]?.includes('File upload failed'), 'the error of the file');
     });
   });
 });

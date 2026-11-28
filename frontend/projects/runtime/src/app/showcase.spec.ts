@@ -273,11 +273,15 @@ describe('Component showcase', () => {
 
     it('the links of the rows open a path of the application built from the row', async () => {
       const { fixture, el } = await open('/showcase/showcase-tables');
-      await until(fixture, () => rows(el, 3) === 3, 'attachments');
+      await until(fixture, () => rows(el, 3) === 4, 'attachments');
       const table = el.querySelectorAll('main nz-table')[3];
-      const paths = ['/examples/images/tasks.svg', '/examples/i18n/en.json', '/examples/i18n/it.json'];
+      const paths = ['/examples/images/tasks.svg', '/examples/i18n/en.json', '/examples/files/handbook.pdf', '/examples/i18n/it.json'];
       expect([...table.querySelectorAll('td a.cell-link')].map((a) => a.getAttribute('href'))).toEqual(paths);
       expect([...table.querySelectorAll('td .actions a')].map((a) => [plain(a.textContent), a.getAttribute('href')])).toEqual(paths.map((p) => ['Download', p]));
+      // A thumbnail for the image, and Preview only on the image and the PDF.
+      expect([...table.querySelectorAll('td img')].map((img) => img.getAttribute('src'))).toEqual(['/examples/images/tasks.svg']);
+      const previews = [...table.querySelectorAll('tbody tr')].map((tr) => [...tr.querySelectorAll('.actions button')].some((b) => plain(b.textContent) === 'Preview'));
+      expect(previews).toEqual([true, false, true, false]);
     });
   });
 

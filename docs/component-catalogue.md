@@ -41,8 +41,8 @@ Rules common to all components, new ones included:
 | `squareChart` | Compact square columns for dense time-series data. |
 | `graph` | Nodes and connections laid out from left to right, for example a workflow (§ 2.35). |
 | Fields | `text`, `number`, `select`, `checkbox`, `date`, `textarea`, `datetime`, `radio`, `switch`, `multiselect`, `tags`, `lookup`, `file`, `repeater`, `richtext` (§ 2.26). |
-| Cell formats | `text`, `number`, `currency`, `percent`, `date`, `datetime`, `relative`, `boolean`, `badge`, `markdown`. `relative` shows a date as its distance from now («3 days ago», «yesterday», «in 2 hours»; with `Intl.RelativeTimeFormat`, in the language of the user), with the full date as tooltip and, for screen readers, as text; a date without time counts calendar days («today»). In tables and in the detail. |
-| Steps | `set`, `call` (with `as` and `onError`), `refresh`, `navigate`, `toast`, `confirm`, `dialog`, `view` and `popover` (§ 2.11), `validate`, `print`, `focus`, `export`, `download`, `copy` and `copyLink` (§ 2.22), `if` and `run`; named sequences in `actions` (§ 2.22b). |
+| Cell formats | `text`, `number`, `currency`, `percent`, `date`, `datetime`, `relative`, `boolean`, `badge`, `markdown`, `image`. `image` draws a small picture from the address in the value (a path of the application, https or an embedded image; anything else draws nothing), with the name of the file for screen readers (§ 2.40). `relative` shows a date as its distance from now («3 days ago», «yesterday», «in 2 hours»; with `Intl.RelativeTimeFormat`, in the language of the user), with the full date as tooltip and, for screen readers, as text; a date without time counts calendar days («today»). In tables and in the detail. |
+| Steps | `set`, `call` (with `as` and `onError`), `refresh`, `navigate`, `toast`, `confirm`, `dialog`, `view` and `popover` (§ 2.11), `validate`, `print`, `focus`, `export`, `download`, `copy` and `copyLink` (§ 2.22), `preview` (§ 2.40), `if` and `run`; named sequences in `actions` (§ 2.22b). |
 | Keyboard shortcuts | `shortcuts` of the screen: a key runs steps, `?` lists them (§ 2.39). |
 | Shell | Side bar (`lc-sidebar`, with search, counters and keyboard support: § 2.25; the application brand is inserted with an `lcBrand` element, otherwise logo and name), messages of the user (`lc-notification-bell`: a bell with the unread count and the list, ADR-22; `notificationsOf` keeps only well-formed messages), user menu (`lc-user-menu`: an icon with the initial and the name in its tooltip, application items (in the runtime those of `userMenu` of the navigation, ADR-25), optional groups of choices with the current one ticked in each, such as the tenants of ADR-18 and the operational roles of ADR-28 (`choices` takes one group or a list, `choiceIn` gives the group of a choice), and sign-out last, after a confirmation; a menu for screen readers and the keyboard: arrows, Home, End, Enter, Esc, submenus with the side arrows), responsive top bar, `lc-quadrava-wordmark` logotype, syntax-highlighted code viewer `lc-code-view`, tools in section headers (`SectionTools`: «JSON» and «Aiuto» in the demo showcase). |
 
@@ -229,7 +229,7 @@ status:paid customer:▌        → Enter: only the word at the cursor is replac
 { "name": "attachment", "type": "file", "accept": ".pdf,image/*", "maxSizeKb": 20480, "upload": "uploadAttachment" }
 ```
 
-- One file per field; `accept` and `maxSizeKb` are checked before anything is sent.
+- One file per field (several with `multiple`, below); `accept` and `maxSizeKb` are checked before anything is sent.
 - With `upload` the file is sent immediately to the data source (POST). In **multipart** (`uploadAs: "multipart"`, the default) the file travels as a file in the `file` part of the request, up to 100 MB; the `file` variable has `name`, `type` and `size`, and every body entry (for example `"body": "{{ file }}"`) becomes a text part. In **base64** (`uploadAs: "base64"`) the content is in `file.content` inside the JSON body, up to 10 MB.
 - The field value becomes `{ name, type, size }` plus the service response (for example the `id`). Without `upload` the value also contains `content` (base64, up to 10 MB).
 - The `DataClient` port receives the file in `DataRequest.file`; `HttpDataClient` sends it as `FormData`.
@@ -245,7 +245,33 @@ more are dropped). From the keyboard the button works as always.
   "hint": "Up to 25 MB per file", "maxSizeKb": 25600, "upload": "uploadAttachment" } }
 ```
 
-The showcase «Fields and forms» has one in the section «File upload».
+**Several files.** With `multiple: true` the value is a list, and the files chosen or dropped at once are checked and
+uploaded one by one, each in its own request:
+
+```json
+{ "name": "attachments", "type": "file", "label": "Add attachments", "display": "dropzone", "multiple": true,
+  "maxItems": 10, "accept": ".pdf,image/*", "maxSizeKb": 25600, "upload": "uploadAttachment" }
+```
+
+```
+ ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐
+        [ ⤒ Add attachments ]
+        Up to 25 MB per file
+ └ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘
+ 📎 plan.png    120 KB                         ×
+ 📎 quote.pdf   2.1 MB   ▓▓▓▓▓▓░░░░
+ 📎 notes.txt   1 KB     File type not allowed  ×
+```
+
+- **Each file on its own.** A file joins the value as soon as its upload succeeds; a file of the wrong type or size, or
+  one whose upload fails, stays in the list with its error until the user removes it, and the others go on.
+- **Progress.** A bar per file shows the bytes sent, from the `onProgress` of `DataRequestOptions`. `HttpDataClient`
+  reports it through the events of `HttpClient`, which only the XMLHttpRequest backend gives: with `withFetch()` (as in
+  `provideLcServices()`) the bar moves without a measure, as for an upload of unknown length.
+- **Limits.** `maxItems` is the most files the field takes: a choice that goes beyond it is refused as a whole.
+- **Remove.** Every file uploaded has its remove button; the list keeps the order of arrival.
+
+The showcase «Fields and forms» has one, which takes several files, in the section «File upload».
 
 ### 2.9 Column grid, field widths and flow in the form
 
@@ -1305,6 +1331,44 @@ edit the description. Each key runs steps, as a button would.
   the user) and labels. It is drawn by the `ShortcutHelp` port: `provideLcComponents()` gives the NG-ZORRO one.
 - **Repeats**: a key held down runs once, and pressing it again while its steps run does nothing.
 - In the showcase «Forms», E opens the description of the work item and L copies the link of the page.
+
+### 2.40 Attachments: thumbnails and preview
+
+The attachments of an issue are a table of files: a thumbnail for the images, and a window that shows images and PDFs
+one after the other.
+
+```json
+{ "type": "table", "source": "attachments",
+  "columns": [ { "field": "url", "label": "", "format": "image" }, { "field": "name", "label": "Name" } ],
+  "rowActions": [ { "label": "Preview", "icon": "eye",
+                    "onClick": [ { "preview": { "source": "attachments", "start": "{{ row.url }}" } } ] } ] }
+```
+
+```
+ quote.pdf                                2 of 3   [‹] [›] [⤓] [Close]
+ ┌──────────────────────────────────────────────────────────────────┐
+ │                                                                  │
+ │                    the PDF, or the image                         │
+ │                                                                  │
+ └──────────────────────────────────────────────────────────────────┘
+```
+
+- **The `image` format** (tables, data tables, detail): the value is the address of the picture, drawn 32 px high. A
+  path of the application, https or an image embedded in base64; any other address draws nothing. The picture is named
+  after the file at the end of the address, for screen readers.
+- **The `preview` step** takes the rows of `source` (already loaded) and keeps the images and PDFs: the type comes from
+  `typeField` (`type`; `image/…` or `application/pdf`), or from the extension of the name when the row has none. The
+  address is in `urlField` (`url`) and must be a path of the application; the title is `nameField` (`name`, the end of
+  the address without it). `start` is the address of the file shown first.
+- **The window** is as large as the page: previous and next (also the left and right keys) go round the list, the
+  download button saves the file, Esc or Close closes it and the sequence goes on. A source with nothing to show is
+  reported in the diagnostics and the sequence stops.
+- **PDFs safely.** An image is drawn from its address. A PDF is read through the `DataClient` (with the session, as every
+  call) and shown from a copy in memory whose type is forced to PDF: a file that is not really a PDF (an HTML page
+  uploaded as an attachment) is never opened as a page of the application. The window is drawn by the `FilePreview`
+  port; `provideLcComponents()` gives the NG-ZORRO one.
+- In the showcase «Tables», the section «Links from the rows» has thumbnails and Preview on an image and a PDF of the
+  example project.
 
 ## 3. Implementation notes and known limits
 

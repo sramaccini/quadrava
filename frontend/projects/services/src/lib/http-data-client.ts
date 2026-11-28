@@ -1,4 +1,4 @@
-import { HttpClient, HttpContext, HttpErrorResponse, HttpParams, HttpResponse } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpErrorResponse, HttpEventType, HttpParams, HttpResponse, type HttpEvent } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { DataClient, fieldErrorsOf, fileNameFromDisposition, type DataRequest, type DataRequestOptions, type DownloadedFile } from 'core';
 import { DataError } from './errors';
@@ -54,6 +54,7 @@ export class HttpDataClient extends DataClient {
     if (signal?.aborted) throw abortError();
     try {
       if (options.download) return await this.file(request, options);
+      if (request.file && options.onProgress) return await this.upload(request, options, options.onProgress);
       return await new Promise((resolve, reject) => {
         const subscription = this.http
           .request(request.method, request.url, {
@@ -84,6 +85,39 @@ export class HttpDataClient extends DataClient {
       }
       throw new DataError(0);
     }
+  }
+
+  /**
+   * A file sent with its progress: the events of the upload go to `onProgress`. Only the XMLHttpRequest backend of
+   * `HttpClient` reports them; with `withFetch()` the upload has no progress and the field shows it as of unknown length.
+   */
+  private upload(request: DataRequest, options: DataRequestOptions, onProgress: (sent: number, total: number) => void): Promise<unknown> {
+    return new Promise((resolve, reject) => {
+      const subscription = this.http
+        .request(request.method, request.url, {
+          params: toParams(request.query),
+          context: new HttpContext().set(LC_TRACE, { source: options.source, parent: options.trace, baggage: options.baggage }),
+          body: toFormData(request.body, request.file!),
+          observe: 'events',
+          reportProgress: true,
+        })
+        .subscribe({
+          next: (event: HttpEvent<unknown>) => {
+            if (event.type === HttpEventType.UploadProgress) onProgress(event.loaded, event.total ?? 0);
+            else if (event.type === HttpEventType.Response) resolve(event.body);
+          },
+          error: reject,
+          complete: () => resolve(null),
+        });
+      options.signal?.addEventListener(
+        'abort',
+        () => {
+          subscription.unsubscribe();
+          reject(abortError());
+        },
+        { once: true },
+      );
+    });
   }
 
   /** A GET whose answer is a file: the body as it is, with its type, and the name of `Content-Disposition`. */

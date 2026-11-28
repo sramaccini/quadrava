@@ -241,13 +241,18 @@
         {
           "id": "txt-downloads",
           "type": "text",
-          "text": "{{ t('showcase_tables.downloads_text', 'The name of the file and the Download action are links to a path of the application built from the row (href). Here they open files of the example project; a service that answers with Content-Disposition: attachment makes the browser download them, without leaving the screen.') }}"
+          "text": "{{ t('showcase_tables.downloads_text', 'The name of the file and the Download action are links to a path of the application built from the row (href). Here they open files of the example project; a service that answers with Content-Disposition: attachment makes the browser download them, without leaving the screen. Images show a thumbnail, and Preview opens images and PDFs in a window as large as the page, with the arrows to move among them.') }}"
         },
         {
           "id": "attachment-table",
           "type": "table",
           "source": "attachments",
           "columns": [
+            {
+              "field": "thumb",
+              "label": "{{ t('showcase_tables.preview', 'Preview') }}",
+              "format": "image"
+            },
             {
               "field": "file",
               "label": "{{ t('showcase_tables.file', 'File') }}",
@@ -259,6 +264,21 @@
             }
           ],
           "rowActions": [
+            {
+              "id": "btn-preview",
+              "label": "{{ t('showcase_tables.preview', 'Preview') }}",
+              "icon": "eye",
+              "visibleIf": "{{ row.type == 'application/pdf' || row.type.startsWith('image/') }}",
+              "onClick": [
+                {
+                  "preview": {
+                    "source": "attachments",
+                    "start": "{{ row.url }}",
+                    "nameField": "file"
+                  }
+                }
+              ]
+            },
             {
               "id": "btn-download",
               "label": "{{ t('showcase_tables.download', 'Download') }}",

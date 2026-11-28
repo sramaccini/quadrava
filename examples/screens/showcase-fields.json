@@ -255,7 +255,7 @@
         {
           "id": "file-dropzone-explain",
           "type": "text",
-          "text": "{{ t('showcase_fields.dropzone_explain', 'As a drop zone, like the attachments of an issue: drag a file onto the area or use the button; the label is the text of the button and the hint goes under it. Below, a box with a dashed frame around the action that adds an item.') }}"
+          "text": "{{ t('showcase_fields.dropzone_explain', 'As a drop zone, like the attachments of an issue: drag one or more files onto the area or use the button; each file is uploaded on its own, with its bar and its error, and listed under it. The label is the text of the button and the hint goes under it. Below, a box with a dashed frame around the action that adds an item.') }}"
         },
         {
           "id": "file-dropzone",
@@ -268,6 +268,8 @@
             "hint": "{{ t('showcase_fields.dropzone_hint', 'PDF or images, up to 20 MB per file') }}",
             "accept": ".pdf,image/*",
             "maxSizeKb": 20480,
+            "multiple": true,
+            "maxItems": 10,
             "upload": "uploadAttachment"
           }
         },

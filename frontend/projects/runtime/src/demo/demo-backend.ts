@@ -585,11 +585,13 @@ export class DemoBackend {
     }
     // Files of the example project, for the links of the rows (href): the folder and the name build the path.
     if (path === '/api/attachments' && req.method === 'GET') {
+      // The address and the type of every file, for the preview (images and PDFs) and its thumbnails.
       return [
-        { id: 1, folder: 'images', file: 'tasks.svg', kind: 'Image' },
-        { id: 2, folder: 'i18n', file: 'en.json', kind: 'Translations' },
-        { id: 3, folder: 'i18n', file: 'it.json', kind: 'Translations' },
-      ];
+        { id: 1, folder: 'images', file: 'tasks.svg', kind: 'Image', type: 'image/svg+xml', thumb: '/examples/images/tasks.svg' },
+        { id: 2, folder: 'i18n', file: 'en.json', kind: 'Translations', type: 'application/json', thumb: null },
+        { id: 3, folder: 'files', file: 'handbook.pdf', kind: 'Document', type: 'application/pdf', thumb: null },
+        { id: 4, folder: 'i18n', file: 'it.json', kind: 'Translations', type: 'application/json', thumb: null },
+      ].map((row) => ({ ...row, url: `/examples/${row.folder}/${row.file}` }));
     }
     if (path === '/api/packages' && req.method === 'GET') return this.packages.map((p) => ({ ...p }));
     if (path === '/api/packages' && req.method === 'POST') {
