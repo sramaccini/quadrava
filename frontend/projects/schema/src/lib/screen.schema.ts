@@ -265,6 +265,12 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
           "$ref": "#/$defs/stepPreview"
         },
         {
+          "$ref": "#/$defs/stepOpenScreen"
+        },
+        {
+          "$ref": "#/$defs/stepClose"
+        },
+        {
           "$ref": "#/$defs/stepExport"
         },
         {
@@ -1414,7 +1420,8 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
             "progress",
             "timeline",
             "kanban",
-            "comments"
+            "comments",
+            "search"
           ],
           "description": "Type of component; the other properties depend on it."
         },
@@ -3643,6 +3650,73 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
               }
             }
           }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "search"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "required": [
+              "source"
+            ],
+            "properties": {
+              "source": {
+                "type": "string",
+                "description": "GET data source asked while the user types, with the text in the search variable (for example ?q={{ search }}); it returns the results, a list or the items of a page."
+              },
+              "label": {
+                "type": "string",
+                "description": "Accessible name of the box, also its placeholder when placeholder is absent: plain text or {{ }}. «Search» if absent."
+              },
+              "placeholder": {
+                "type": "string",
+                "description": "Text shown in the empty box, such as «Search issues»; it can contain {{ }}. The label if absent."
+              },
+              "minChars": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 10,
+                "description": "Characters typed before the search starts (2 if absent)."
+              },
+              "labelField": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Field of a result with its text (label if absent)."
+              },
+              "secondaryField": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Field of a result with a second, smaller text, such as the key and the project. None if absent."
+              },
+              "iconField": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Field of a result with the name of an icon of the built-in set or of Ant Design. None if absent."
+              },
+              "onPick": {
+                "$ref": "#/$defs/steps",
+                "description": "Steps run when the user picks a result (click, or Enter on the result chosen with the arrows): they see the result in row and the text in search, for example a navigate step to its screen."
+              },
+              "onSubmit": {
+                "$ref": "#/$defs/steps",
+                "description": "Steps run by Enter when no result is chosen: they see the text in search, for example a navigate step to a page of results. Enter does nothing if absent."
+              },
+              "width": {
+                "type": "integer",
+                "minimum": 120,
+                "maximum": 800,
+                "description": "Width of the box in pixels (280 if absent); it narrows with the space."
+              }
+            }
+          }
         }
       ],
       "unevaluatedProperties": false
@@ -4330,6 +4404,45 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
               "description": "Field of the row with the type of the file, such as image/png or application/pdf (type if absent; without it the extension of the name decides)."
             }
           }
+        }
+      }
+    },
+    "stepOpenScreen": {
+      "type": "object",
+      "required": [
+        "openScreen"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "openScreen": {
+          "$ref": "#/$defs/id",
+          "description": "Identifier of a screen opened in a window over the page, such as the creation of an issue: it has its own data sources, steps and permissions, and its title is the title of the window. The sequence goes on when a close step of the screen closes the window; if the user closes it (Esc, the cross) the sequence stops."
+        },
+        "params": {
+          "type": "object",
+          "description": "Parameters of the screen, resolved before opening it, for example { \"project\": \"{{ params.key }}\" }; the screen reads them as params."
+        },
+        "size": {
+          "enum": [
+            "small",
+            "medium",
+            "large",
+            "full"
+          ],
+          "description": "Width of the window: small 520 px, medium 720 px, large 960 px, full the page (medium if absent)."
+        }
+      }
+    },
+    "stepClose": {
+      "type": "object",
+      "required": [
+        "close"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "close": {
+          "const": true,
+          "description": "Closes the window the screen was opened in by openScreen, as done: the sequence that opened it goes on. In a screen that is not in such a window it is reported and stops the sequence."
         }
       }
     },

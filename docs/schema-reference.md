@@ -366,6 +366,21 @@
 | `editedField` | text | Field of the row that says the comment was changed (a date or true): when it has a value, edited is shown next to the date. Nothing is shown if absent. |
 | `mentions` | object | People who can be mentioned: typing @ followed by letters asks this GET data source with the search variable (as a lookup does) and the chosen person is inserted as @ followed by the label. |
 
+### `search`
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `source` * | text | GET data source asked while the user types, with the text in the search variable (for example ?q={{ search }}); it returns the results, a list or the items of a page. |
+| `label` | text | Accessible name of the box, also its placeholder when placeholder is absent: plain text or {{ }}. «Search» if absent. |
+| `placeholder` | text | Text shown in the empty box, such as «Search issues»; it can contain {{ }}. The label if absent. |
+| `minChars` | integer 1–10 | Characters typed before the search starts (2 if absent). |
+| `labelField` | text | Field of a result with its text (label if absent). |
+| `secondaryField` | text | Field of a result with a second, smaller text, such as the key and the project. None if absent. |
+| `iconField` | text | Field of a result with the name of an icon of the built-in set or of Ant Design. None if absent. |
+| `onPick` | steps | Steps run when the user picks a result (click, or Enter on the result chosen with the arrows): they see the result in row and the text in search, for example a navigate step to its screen. |
+| `onSubmit` | steps | Steps run by Enter when no result is chosen: they see the text in search, for example a navigate step to a page of results. Enter does nothing if absent. |
+| `width` | integer 120–800 | Width of the box in pixels (280 if absent); it narrows with the space. |
+
 ## Action steps
 
 ### `call`
@@ -449,6 +464,20 @@
 | Property | Type | Description |
 | --- | --- | --- |
 | `preview` * | object | Shows the files of the rows of a data source in a window over the whole page, images and PDFs, with next and previous. Rows of other types are left out. The window also offers the download of the file. |
+
+### `openScreen`
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `openScreen` * | id | Identifier of a screen opened in a window over the page, such as the creation of an issue: it has its own data sources, steps and permissions, and its title is the title of the window. The sequence goes on when a close step of the screen closes the window; if the user closes it (Esc, the cross) the sequence stops. |
+| `params` | object | Parameters of the screen, resolved before opening it, for example { "project": "{{ params.key }}" }; the screen reads them as params. |
+| `size` | `small`, `medium`, `large`, `full` | Width of the window: small 520 px, medium 720 px, large 960 px, full the page (medium if absent). |
+
+### `close`
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `close` * | `true` | Closes the window the screen was opened in by openScreen, as done: the sequence that opened it goes on. In a screen that is not in such a window it is reported and stops the sequence. |
 
 ### `export`
 

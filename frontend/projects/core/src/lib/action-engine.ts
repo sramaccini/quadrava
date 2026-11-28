@@ -42,7 +42,7 @@ export interface StepOptions {
   onFieldErrors?: (errors: readonly FieldError[]) => number;
 }
 
-const SIMPLE_KINDS = ['if', 'set', 'toast', 'confirm', 'dialog', 'view', 'popover', 'validate', 'print', 'focus'] as const;
+const SIMPLE_KINDS = ['if', 'set', 'toast', 'confirm', 'dialog', 'view', 'popover', 'validate', 'print', 'focus', 'close'] as const;
 
 /** Steps of a sequence for traces: kind and name from the definition (`call save, refresh list`), never values. */
 export function describeSteps(steps: Step[]): string {
@@ -58,6 +58,7 @@ export function describeSteps(steps: Step[]): string {
       if ('copyLink' in step) return named('copyLink', step.copyLink.screen ?? 'current');
       if ('copy' in step) return 'copy';
       if ('preview' in step) return named('preview', step.preview.source);
+      if ('openScreen' in step) return named('openScreen', step.openScreen);
       return SIMPLE_KINDS.find((kind) => kind in step) ?? 'step';
     })
     .join(', ')
@@ -216,6 +217,13 @@ async function runSimpleStep(
   if ('print' in step) {
     runtime.print();
     return true;
+  }
+  if ('openScreen' in step) {
+    // The sequence goes on when the screen closes the window as done; closed by the user, it stops.
+    return runtime.openScreen(step, scope);
+  }
+  if ('close' in step) {
+    return runtime.closeScreen();
   }
   if ('preview' in step) {
     // The sequence goes on when the user closes the window.

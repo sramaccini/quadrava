@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "top-bar",
+  "description": "{{ t('top_bar.description', 'The top bar of the application: the search of the orders and the Create button.') }}",
+  "requires": "orders.order.read",
+  "dataSources": {
+    "search": {
+      "ref": "orders/search"
+    }
+  },
+  "components": [
+    {
+      "id": "top-search",
+      "type": "search",
+      "source": "search",
+      "label": "{{ t('top_bar.search', 'Search orders') }}",
+      "placeholder": "{{ t('top_bar.search_placeholder', 'Search orders by number or customer') }}",
+      "secondaryField": "secondary",
+      "iconField": "icon",
+      "width": 300,
+      "onPick": [
+        {
+          "navigate": "order-detail",
+          "params": {
+            "id": "{{ row.id }}"
+          }
+        }
+      ],
+      "onSubmit": [
+        {
+          "navigate": "order-list"
+        }
+      ]
+    },
+    {
+      "id": "top-create",
+      "type": "button",
+      "label": "{{ t('top_bar.create', 'Create') }}",
+      "icon": "plus",
+      "visibleIf": "{{ can('packages.package.create') }}",
+      "onClick": [
+        {
+          "openScreen": "package-create",
+          "size": "small"
+        },
+        {
+          "toast": "{{ t('package_new.package_created', 'Package created') }}"
+        }
+      ]
+    }
+  ]
+}

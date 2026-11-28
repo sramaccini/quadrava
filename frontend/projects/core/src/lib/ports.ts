@@ -152,6 +152,26 @@ export abstract class Confirmation {
   abstract confirm(message: string): Promise<boolean>;
 }
 
+/** A screen to open in a window (the `openScreen` step): its identifier, parameters already resolved, width. */
+export interface ScreenDialogRequest {
+  screen: string;
+  params: Record<string, unknown>;
+  size: 'small' | 'medium' | 'large' | 'full';
+}
+
+/**
+ * Window with a screen of the application, which loads it as the router does. Resolves true when the screen closes it
+ * with the `close` step, false when the user closes it. Provided by the application (the runtime has one).
+ */
+export abstract class ScreenDialog {
+  abstract open(request: ScreenDialogRequest): Promise<boolean>;
+}
+
+/** The window a screen was opened in, provided to the screens inside it: the `close` step closes it as done. */
+export abstract class ScreenDialogHost {
+  abstract close(): void;
+}
+
 /** A file shown by the `preview` step: its address (checked), name and type. */
 export interface PreviewFile {
   url: string;

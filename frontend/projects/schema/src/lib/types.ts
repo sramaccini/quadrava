@@ -146,6 +146,16 @@ export interface PrintStep {
 export interface PreviewStep {
   preview: { source: string; start?: string; urlField?: string; nameField?: string; typeField?: string };
 }
+/** Opens a screen in a window; the sequence goes on when the screen closes it with `close`. */
+export interface OpenScreenStep {
+  openScreen: string;
+  params?: Record<string, unknown>;
+  size?: 'small' | 'medium' | 'large' | 'full';
+}
+/** Closes, as done, the window the screen was opened in. */
+export interface CloseStep {
+  close: true;
+}
 /** Brings a component into view and focuses its first field, or the field named. */
 export interface FocusStep {
   focus: string | { component: string; field?: string };
@@ -154,7 +164,7 @@ export interface FocusStep {
 export interface ExportStep {
   export: { source: string; fileName?: string; args?: Record<string, unknown>; columns: { field: string; label?: string }[] };
 }
-export type Step = CallStep | DownloadStep | CopyStep | CopyLinkStep | RefreshStep | NavigateStep | ToastStep | SetStep | ConfirmStep | DialogStep | ViewStep | PopoverStep | ValidateStep | PrintStep | FocusStep | PreviewStep | ExportStep | IfStep | RunStep;
+export type Step = CallStep | DownloadStep | CopyStep | CopyLinkStep | RefreshStep | NavigateStep | ToastStep | SetStep | ConfirmStep | DialogStep | ViewStep | PopoverStep | ValidateStep | PrintStep | FocusStep | PreviewStep | OpenScreenStep | CloseStep | ExportStep | IfStep | RunStep;
 
 export interface ConditionalProps {
   visibleIf?: Expression;
@@ -893,7 +903,22 @@ export interface InputNode extends NodeBase {
   errorPath?: string;
 }
 
-export type NodeDefinition = SectionNode | TextNode | ButtonNode | MenuButtonNode | FilterBarNode | TableNode | FormNode | TabsNode | DetailNode | AlertNode | StatsNode | WizardNode | TreeNode | CalendarNode | ChartNode | SquareChartNode | GraphNode | DataTableNode | ServerDataTableNode | InputNode | BoxNode | GridNode | BorderNode | ImageNode | LinkNode | ProgressNode | TimelineNode | KanbanNode | CommentsNode;
+/** Box of a search over a data source asked while typing, with the results in a list (the search of the top bar). */
+export interface SearchNode extends NodeBase {
+  type: 'search';
+  source: string;
+  label?: string;
+  placeholder?: string;
+  minChars?: number;
+  labelField?: string;
+  secondaryField?: string;
+  iconField?: string;
+  onPick?: Step[];
+  onSubmit?: Step[];
+  width?: number;
+}
+
+export type NodeDefinition = SectionNode | TextNode | ButtonNode | MenuButtonNode | FilterBarNode | TableNode | FormNode | TabsNode | DetailNode | AlertNode | StatsNode | WizardNode | TreeNode | CalendarNode | ChartNode | SquareChartNode | GraphNode | DataTableNode | ServerDataTableNode | InputNode | BoxNode | GridNode | BorderNode | ImageNode | LinkNode | ProgressNode | TimelineNode | KanbanNode | CommentsNode | SearchNode;
 export type NodeType = NodeDefinition['type'];
 
 /** Item of the path above the title of a screen: a link when it has `navigate`. */
@@ -1071,6 +1096,8 @@ export interface NavigationDefinition {
   badges?: { url: string; refreshSeconds?: number };
   /** Messages of the user behind a bell in the top bar (ADR-22). */
   notifications?: NavigationNotifications;
+  /** A screen drawn in the top bar (a search, a Create button). */
+  topBar?: { screen: string };
   /** Items of the application in the user menu, each opening a screen (ADR-25). */
   userMenu?: NavigationLeaf[];
   /** Sections of the application in the settings dialog, each drawing a screen in a tab (ADR-25). */

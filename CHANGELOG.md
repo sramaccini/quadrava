@@ -14,6 +14,12 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ### Added
 
+- A top bar for the application: `topBar` in the navigation names a screen whose components are drawn after the
+  breadcrumb. The new `search` component asks a GET data source while the user types (the text in `search`) and lists
+  the results (`labelField`, `secondaryField`, `iconField`); picking one runs `onPick` with it in `row`, Enter runs
+  `onSubmit` with the text. The `openScreen` step opens any screen in a window, through the new `ScreenDialog` port, and
+  goes on when that screen runs `close` (`ScreenDialogHost`).
+
 - Attachments: a file field with `multiple` takes several files, each checked and uploaded on its own with a progress
   bar and its own error (`maxItems` the most); the `image` cell format draws a thumbnail from an address; the
   `preview` step shows the images and PDFs of the rows of a data source in a window as large as the page, with next and

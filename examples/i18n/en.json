@@ -13,6 +13,8 @@
   "app.help.chart.title": "Chart",
   "app.help.graph": "Nodes and connections read from one data source and laid out from left to right, for example the statuses of a workflow and its transitions. A node can be highlighted with an expression (the current status) and one marked as the start; a connection without a starting node comes from any node. Zoom and the names of the connections are in the toolbar; screen readers get the graph as two lists.",
   "app.help.graph.title": "Graph",
+  "app.help.search": "A search box that asks a data source while the user types and lists the results under it, with a second text and an icon; picking one runs steps with the result, Enter runs steps with the text. In the demo it is in the top bar and searches the orders.",
+  "app.help.search.title": "Search",
   "app.help.menuButton": "A button that opens a menu: fixed items, items made from the rows of a data source (with a coloured label, for example the status they lead to) and dividers. Each item runs its own steps, which see the row as `item`; label and tone of the button are expressions, for example the current status.",
   "app.help.menuButton.title": "Menu button",
   "app.help.squareChart": "A compact square-column chart for dense time series, with an accessible data table.",
@@ -702,5 +704,10 @@
   "showcase_form.widths_sent_on": "Sent on",
   "showcase_form.widths_channels": "Sent by",
   "values.channel.post": "Post",
-  "values.channel.any": "Any channel"
+  "values.channel.any": "Any channel",
+  "top_bar.description": "The top bar of the application: the search of the orders and the Create button.",
+  "top_bar.search": "Search orders",
+  "top_bar.search_placeholder": "Search orders by number or customer",
+  "top_bar.create": "Create",
+  "package_create.description": "Opened in a window by Create in the top bar: the window closes when the package is created."
 }

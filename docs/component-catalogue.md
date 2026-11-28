@@ -40,9 +40,10 @@ Rules common to all components, new ones included:
 | `chart` | Bar, line and pie charts. |
 | `squareChart` | Compact square columns for dense time-series data. |
 | `graph` | Nodes and connections laid out from left to right, for example a workflow (§ 2.35). |
+| `search` | A search box that asks a data source as the user types and lists the results under it, for example in the top bar (§ 2.41). |
 | Fields | `text`, `number`, `select`, `checkbox`, `date`, `textarea`, `datetime`, `radio`, `switch`, `multiselect`, `tags`, `lookup`, `file`, `repeater`, `richtext` (§ 2.26). |
 | Cell formats | `text`, `number`, `currency`, `percent`, `date`, `datetime`, `relative`, `boolean`, `badge`, `markdown`, `image`. `image` draws a small picture from the address in the value (a path of the application, https or an embedded image; anything else draws nothing), with the name of the file for screen readers (§ 2.40). `relative` shows a date as its distance from now («3 days ago», «yesterday», «in 2 hours»; with `Intl.RelativeTimeFormat`, in the language of the user), with the full date as tooltip and, for screen readers, as text; a date without time counts calendar days («today»). In tables and in the detail. |
-| Steps | `set`, `call` (with `as` and `onError`), `refresh`, `navigate`, `toast`, `confirm`, `dialog`, `view` and `popover` (§ 2.11), `validate`, `print`, `focus`, `export`, `download`, `copy` and `copyLink` (§ 2.22), `preview` (§ 2.40), `if` and `run`; named sequences in `actions` (§ 2.22b). |
+| Steps | `set`, `call` (with `as` and `onError`), `refresh`, `navigate`, `toast`, `confirm`, `dialog`, `view` and `popover` (§ 2.11), `validate`, `print`, `focus`, `export`, `download`, `copy` and `copyLink` (§ 2.22), `preview` (§ 2.40), `openScreen` and `close` (§ 2.41), `if` and `run`; named sequences in `actions` (§ 2.22b). |
 | Keyboard shortcuts | `shortcuts` of the screen: a key runs steps, `?` lists them (§ 2.39). |
 | Shell | Side bar (`lc-sidebar`, with search, counters and keyboard support: § 2.25; the application brand is inserted with an `lcBrand` element, otherwise logo and name), messages of the user (`lc-notification-bell`: a bell with the unread count and the list, ADR-22; `notificationsOf` keeps only well-formed messages), user menu (`lc-user-menu`: an icon with the initial and the name in its tooltip, application items (in the runtime those of `userMenu` of the navigation, ADR-25), optional groups of choices with the current one ticked in each, such as the tenants of ADR-18 and the operational roles of ADR-28 (`choices` takes one group or a list, `choiceIn` gives the group of a choice), and sign-out last, after a confirmation; a menu for screen readers and the keyboard: arrows, Home, End, Enter, Esc, submenus with the side arrows), responsive top bar, `lc-quadrava-wordmark` logotype, syntax-highlighted code viewer `lc-code-view`, tools in section headers (`SectionTools`: «JSON» and «Aiuto» in the demo showcase). |
 
@@ -1370,7 +1371,50 @@ one after the other.
 - In the showcase «Tables», the section «Links from the rows» has thumbnails and Preview on an image and a PDF of the
   example project.
 
-## 3. Implementation notes and known limits
+### 2.41 Top bar: search and Create
+
+The top bar of a tracker has a search box (type a few letters, pick an issue) and a Create button that opens the form of
+a new issue in a window, over the page the user is on. Both come from a screen named in the navigation:
+
+```json
+"topBar": { "screen": "top-bar" }
+```
+
+```json
+{ "schemaVersion": "1.0", "screen": "top-bar",
+  "dataSources": { "find": { "type": "rest", "method": "GET", "url": "/api/issues/search", "params": { "q": "{{ search }}" } } },
+  "components": [
+    { "type": "search", "source": "find", "label": "Search issues", "labelField": "title", "secondaryField": "key",
+      "onPick": [ { "navigate": "issue", "params": { "id": "{{ row.id }}" } } ],
+      "onSubmit": [ { "navigate": "issue-list", "params": { "q": "{{ search }}" } } ] },
+    { "type": "button", "label": "Create", "icon": "plus", "visibleIf": "{{ can('issues.issue.create') }}",
+      "onClick": [ { "openScreen": "issue-create", "size": "large" }, { "toast": "Issue created" } ] } ] }
+```
+
+```
+ ☰  Home › Issues    [🔍 log            ]  [+ Create]                 🔔  (A)
+                     ┌──────────────────────┐
+                     │ Login fails   ODT-1  │
+                     │ Logout button ODT-2  │
+                     └──────────────────────┘
+```
+
+- **The bar** is an ordinary screen, loaded and checked like the others, drawn after the breadcrumb: only its components,
+  side by side, with no title. If it cannot be loaded, or `requires` is not met, nothing is drawn (the reason goes to
+  the diagnostics); the navigation check reports a `topBar` screen that does not exist.
+- **`search`** asks its GET data source while the user types, with the text in `search`, after `minChars` characters
+  (2) and a short pause; a data source used by a search is not loaded when the screen opens. Each result shows
+  `labelField` (`label`), and `secondaryField` and `iconField` when given. A click, or Enter on the result chosen
+  with the arrows, runs `onPick` with the result in `row`; Enter with no result chosen runs `onSubmit` with the text.
+  Escape closes the list, and empties the box when it is already closed. It is a WAI-ARIA combobox: the number of
+  results is announced. The width is `width` (280 px).
+- **`openScreen`** opens a screen in a window (`size` small, medium or large, as `view`), with `params` as its
+  parameters. The steps after it run only when the screen closes the window with **`close`** (`{ "close": true }`),
+  for example after its call has saved; the cross or Esc closes it and stops the sequence. A `close` outside a window
+  is reported and stops the sequence. The window is drawn by the `ScreenDialog` port, which the runtime provides.
+- In the demo the top bar searches the orders by number or customer and, for the profiles that may create packages,
+  Create opens the new package in a window.
+
 
 - **Loading data sources.** A GET data source reloads by itself only if the resolved request (URL and parameters) changes. A state change that does not touch the request (a selection, a wizard step, a chosen node) does not trigger new calls; to reload anyway, use the `refresh` step.
 - **Live data sources.** With `live` (a same-origin event stream and the names of its events) a GET data source is read again when one of its events arrives, or after the stream reconnects; a burst of events within 200 ms is one read, and it behaves like a `refresh` (previous data visible while loading). Only while the screen is open and allowed; without the `LiveUpdates` port (an application that does not provide it) nothing is listened to. The boards of the showcase tasks screen use it ([ADR-19](adr-19-live-data-sources.md)).

@@ -36,6 +36,9 @@
     }
   ],
   "default": "invoice-lookup",
+  "topBar": {
+    "screen": "top-bar"
+  },
   "areas": [
     {
       "id": "invoice-entry",

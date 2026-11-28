@@ -43,6 +43,9 @@
           </button>
         }
         <span class="crumb">{{ i18n.t('app.title', {}, '') }}</span>
+        @if (navigation.runtime()?.definition?.topBar?.screen; as bar) {
+          <lc-screen-view class="top-bar" [name]="bar" layout="bar" />
+        }
         <span class="spacer"></span>
         @if (notifications.config(); as inbox) {
           <lc-notification-bell [items]="notifications.items()" [canMarkRead]="!!inbox.readUrl" (opened)="notifications.read()" (choice)="openNotification($event)" (markAllRead)="notifications.markAllRead()" />

@@ -2,12 +2,13 @@ import { provideHttpClient, withFetch } from '@angular/common/http';
 import { ApplicationConfig, provideBrowserGlobalErrorListeners, type EnvironmentProviders, type Provider } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { NzNotifier, SectionTools, provideLcComponents } from 'components';
-import { Authorization, DataClient, DefinitionSource, IconFiles, LiveUpdates, Notifier, RuntimeDiagnostics, ScreenNavigator, SETTINGS_VALUES, SnapshotDefinitions, UserProvider, type ProjectSnapshot } from 'core';
+import { Authorization, DataClient, DefinitionSource, IconFiles, LiveUpdates, Notifier, RuntimeDiagnostics, ScreenDialog, ScreenNavigator, SETTINGS_VALUES, SnapshotDefinitions, UserProvider, type ProjectSnapshot } from 'core';
 import { HttpIconFiles, provideLcServices, provideRegistryDefinitions } from 'services';
 import { DemoDiagnostics, DemoLiveUpdates, DemoSession, MockDataClient } from '../demo/demo-ports';
 import { ExampleDefinitions } from '../demo/example-definitions';
 import { routes } from './app.routes';
 import { RouterNavigator } from './navigation.service';
+import { DialogScreen } from './screen-dialog';
 import { ShowcaseTools } from './showcase/showcase-tools';
 import { APPLICATION_SETTINGS, DEFAULT_APPLICATION_SETTINGS, DEFAULT_RUNTIME_CONFIG, type ApplicationSettings, type RuntimeConfig } from './runtime-config';
 import { BffShellSession, DemoShellSession, ShellSession } from './shell-session';
@@ -58,6 +59,7 @@ export function appConfigFor(config: RuntimeConfig, settings: ApplicationSetting
       ...definitions(config, settings, project),
       ...ports(config),
       { provide: ScreenNavigator, useExisting: RouterNavigator },
+      { provide: ScreenDialog, useExisting: DialogScreen },
       { provide: Notifier, useExisting: NzNotifier },
       // In the showcases every section has «JSON» and «Help».
       { provide: SectionTools, useExisting: ShowcaseTools },

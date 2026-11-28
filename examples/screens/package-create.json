@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "1.0",
+  "screen": "package-create",
+  "title": "{{ t('package_new.new_package', 'New package') }}",
+  "description": "{{ t('package_create.description', 'Opened in a window by Create in the top bar: the window closes when the package is created.') }}",
+  "requires": "packages.package.create",
+  "dataSources": {
+    "createPackage": {
+      "ref": "packages/createPackage"
+    }
+  },
+  "components": [
+    {
+      "id": "package-create-form",
+      "type": "form",
+      "fields": [
+        {
+          "name": "name",
+          "type": "text",
+          "label": "{{ t('package_new.package_name', 'Package name') }}",
+          "required": true
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "label": "{{ t('common.description', 'Description') }}"
+        }
+      ],
+      "actions": [
+        {
+          "id": "btn-create-package",
+          "label": "{{ t('package_new.create_package', 'Create package') }}",
+          "onClick": [
+            {
+              "call": "createPackage",
+              "onError": {
+                "toast": "{{ t('package_new.creation_failed', 'Creation failed') }}"
+              }
+            },
+            {
+              "close": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

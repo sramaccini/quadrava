@@ -36,6 +36,7 @@ import { ImageComponent, LinkComponent, ProgressComponent } from './display.comp
 import { KanbanComponent } from './kanban.component';
 import { TimelineComponent } from './timeline.component';
 import { CommentsComponent } from './comments.component';
+import { SearchComponent } from './search.component';
 import { TreeComponent } from './tree.component';
 import { WizardComponent } from './wizard.component';
 import { TableComponent } from './table.component';
@@ -98,6 +99,7 @@ export const STANDARD_COMPONENTS: ComponentCatalog = {
   timeline: TimelineComponent,
   kanban: KanbanComponent,
   comments: CommentsComponent,
+  search: SearchComponent,
 };
 
 /**

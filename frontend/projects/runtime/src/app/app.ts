@@ -13,6 +13,7 @@ import { NavigationService } from './navigation.service';
 import { NotificationsService } from './notifications.service';
 import { APPLICATION_SETTINGS, type ApplicationSettings } from './runtime-config';
 import { SettingsDialogComponent } from './settings-dialog.component';
+import { ScreenView } from './pages/screen-view.component';
 import { ShellSession } from './shell-session';
 
 /** Languages of the demo: each has its `examples/i18n/<language>.json`. */
@@ -76,7 +77,7 @@ function initialLanguage(settings: ApplicationSettings): string {
 /** Shell of the application: top bar with the user menu, side menu, content and notifications. */
 @Component({
   selector: 'lc-root',
-  imports: [NgTemplateOutlet, RouterOutlet, AppBrandComponent, IconComponent, QuadravaWordmarkComponent, SidebarComponent, UserMenuComponent, NotificationBellComponent, SettingsDialogComponent, FormsModule, NzButtonModule, NzDrawerModule, NzLayoutModule, NzSelectModule],
+  imports: [NgTemplateOutlet, RouterOutlet, AppBrandComponent, IconComponent, QuadravaWordmarkComponent, SidebarComponent, UserMenuComponent, NotificationBellComponent, SettingsDialogComponent, ScreenView, FormsModule, NzButtonModule, NzDrawerModule, NzLayoutModule, NzSelectModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './app.scss',
   templateUrl: './app.html',

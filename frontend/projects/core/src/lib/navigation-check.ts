@@ -9,7 +9,7 @@ export interface NavigationIssue {
 
 /**
  * Consistency checks the schema cannot do: unique identifiers, existing `default`,
- * existing screens (if the list of the published ones is passed, user menu and settings included) and valid `visibleIf` expressions.
+ * existing screens (if the list of the published ones is passed, user menu, settings and top bar included) and valid `visibleIf` expressions.
  * Used at start-up and in the editor; it runs nothing.
  */
 export function checkNavigation(definition: NavigationDefinition, engine: ExpressionEngine, knownScreens?: ReadonlySet<string>): NavigationIssue[] {
@@ -42,6 +42,9 @@ export function checkNavigation(definition: NavigationDefinition, engine: Expres
   // The items of the user menu and the sections of the settings open screens too (ADR-25).
   walk(definition.userMenu ?? [], '/userMenu');
   walk(definition.settings ?? [], '/settings');
+  // So does the top bar.
+  const bar = definition.topBar?.screen;
+  if (bar && knownScreens && !knownScreens.has(bar)) issues.push({ path: '/topBar/screen', message: `unknown screen "${bar}"` });
 
   if (definition.default && !definition.areas.some((u) => u.id === definition.default)) {
     issues.push({ path: '/default', message: `unknown default area "${definition.default}"` });

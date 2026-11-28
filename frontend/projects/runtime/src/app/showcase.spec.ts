@@ -25,6 +25,8 @@ describe('Component showcase', () => {
     'examples/navigation.json': navigationDoc,
     // The data sources documents and the asset packs the screens refer to.
     ...Object.fromEntries(Object.entries(SHOWCASE_FILES).filter(([url]) => url.startsWith('examples/datasources/') || url.startsWith('examples/assets/'))),
+    // The screen of the top bar, drawn on every page.
+    'examples/screens/top-bar.json': SHOWCASE_FILES['examples/screens/top-bar.json'],
     // The initial destination, which opens before going to the showcase screen.
     'examples/screens/invoice-list.json': invoices,
     'examples/screens/showcase-basics.json': base,

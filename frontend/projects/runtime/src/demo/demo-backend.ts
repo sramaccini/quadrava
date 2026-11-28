@@ -199,6 +199,14 @@ export class DemoBackend {
     const path = req.url.split('?')[0];
     if (path === '/api/medical-staff' || path.startsWith('/api/medical-staff/')) return this.medicalStaff.handle(req, path);
 
+    // The search of the top bar: the orders whose number or customer contains the text, at most eight.
+    if (req.method === 'GET' && path === '/api/orders/search') {
+      const q = String(req.query?.['q'] ?? '').trim().toLowerCase();
+      return this.orders
+        .filter((o) => q && (o.number.toLowerCase().includes(q) || o.customer.toLowerCase().includes(q)))
+        .slice(0, 8)
+        .map((o) => ({ id: o.id, label: o.number, secondary: `${o.customer} · ${o.status}`, icon: 'receipt' }));
+    }
     if (req.method === 'GET' && path === '/api/orders') {
       const status = req.query?.['status'];
       const page = Number(req.query?.['page'] ?? 0);

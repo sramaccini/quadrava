@@ -13,6 +13,8 @@
   "app.help.chart.title": "Grafico",
   "app.help.graph": "Nodi e collegamenti letti da un data source e disposti da sinistra a destra, per esempio gli stati di un flusso di lavoro e le sue transizioni. Un nodo si può evidenziare con un'espressione (lo stato attuale) e uno si può segnare come inizio; un collegamento senza nodo di partenza viene da un nodo qualsiasi. Zoom e nomi dei collegamenti sono nella barra degli strumenti; chi usa un lettore di schermo riceve il grafo come due elenchi.",
   "app.help.graph.title": "Grafo",
+  "app.help.search": "Una casella di ricerca che interroga un data source mentre l'utente scrive e mostra i risultati sotto, con un secondo testo e un'icona; sceglierne uno esegue dei passi con il risultato, Invio esegue dei passi con il testo. Nella demo è nella barra in alto e cerca gli ordini.",
+  "app.help.search.title": "Ricerca",
   "app.help.menuButton": "Un pulsante che apre un menu: voci fisse, voci ricavate dalle righe di un data source (con un'etichetta colorata, per esempio lo stato a cui portano) e separatori. Ogni voce esegue i suoi passi, che vedono la riga come `item`; testo e tono del pulsante sono espressioni, per esempio lo stato attuale.",
   "app.help.menuButton.title": "Pulsante con menu",
   "app.help.squareChart": "Grafico compatto a colonne di quadratini per serie temporali dense, con tabella accessibile.",
@@ -702,5 +704,10 @@
   "showcase_form.widths_sent_on": "Inviata il",
   "showcase_form.widths_channels": "Inviata per",
   "values.channel.post": "Posta",
-  "values.channel.any": "Qualsiasi canale"
+  "values.channel.any": "Qualsiasi canale",
+  "top_bar.description": "La barra in alto dell'applicazione: la ricerca degli ordini e il pulsante Crea.",
+  "top_bar.search": "Cerca ordini",
+  "top_bar.search_placeholder": "Cerca ordini per numero o cliente",
+  "top_bar.create": "Crea",
+  "package_create.description": "Aperta in una finestra da Crea nella barra in alto: la finestra si chiude quando il pacchetto è creato."
 }

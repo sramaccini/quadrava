@@ -151,6 +151,13 @@ describe('NavigationRuntime: user menu and settings', () => {
     expect(issues.map((i) => i.path)).toEqual(expect.arrayContaining(['/settings/1/screen', '/settings/2']));
     expect(issues.find((i) => i.path === '/settings/1/screen')?.message).toBe('unknown screen "admin-settings"');
   });
+
+  it('checkNavigation looks at the screen of the top bar', () => {
+    const engine = new ExpressionEngine({ can: () => false });
+    const screens = new Set(['invoice-new', 'order-list', 'invoice-list', 'x', 'y', 'profile', 'billing', 'z', 'alert-settings', 'admin-settings']);
+    expect(checkNavigation({ ...withExtras, topBar: { screen: 'top-bar' } }, engine, screens).map((i) => [i.path, i.message])).toEqual([['/topBar/screen', 'unknown screen "top-bar"']]);
+    expect(checkNavigation({ ...withExtras, topBar: { screen: 'top-bar' } }, engine, new Set([...screens, 'top-bar']))).toEqual([]);
+  });
 });
 
 describe('checkNavigation', () => {

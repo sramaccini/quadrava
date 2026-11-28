@@ -9,7 +9,7 @@ type Loaded = { ok: true; definition: ScreenDefinition } | { ok: false; issues: 
 /**
  * A screen of the application by name: loads it from the definition source, validates it (schema and expressions),
  * resolves its references to the data sources of the application and shows it. Used by the router page and by the
- * sections of the settings dialog (ADR-25).
+ * sections of the settings dialog (ADR-25), the top bar and the windows of the openScreen step.
  */
 @Component({
   selector: 'lc-screen-view',
@@ -19,7 +19,9 @@ type Loaded = { ok: true; definition: ScreenDefinition } | { ok: false; issues: 
   template: `
     @if (screen.value(); as loaded) {
       @if (loaded.ok) {
-        <lc-screen [definition]="loaded.definition" [params]="params()" [breadcrumb]="breadcrumb()" />
+        <lc-screen [definition]="loaded.definition" [params]="params()" [breadcrumb]="breadcrumb()" [layout]="layout()" />
+      } @else if (layout() === 'bar') {
+        <!-- A bar has no room for the message: the navigation check and the reports say what is wrong. -->
       } @else if ('failed' in loaded) {
         <div class="pad" role="alert"><nz-alert nzType="error" nzShowIcon [nzMessage]="i18n.t(loaded.failed)" /></div>
       } @else {
@@ -34,7 +36,7 @@ type Loaded = { ok: true; definition: ScreenDefinition } | { ok: false; issues: 
           </ng-template>
         </div>
       }
-    } @else {
+    } @else if (layout() === 'page') {
       <p class="pad" role="status">{{ i18n.t('lc.loading') }}</p>
     }
   `,
@@ -45,6 +47,8 @@ export class ScreenView {
   readonly params = input<Record<string, unknown>>({});
   /** Path shown above the title (for example area, group, item). */
   readonly breadcrumb = input<readonly string[]>([]);
+  /** `bar` for the screen of the top bar: only its components, side by side, and nothing while it loads or if it fails. */
+  readonly layout = input<'page' | 'bar'>('page');
 
   protected readonly i18n = inject(I18n);
   private readonly definitions = inject(DefinitionSource);

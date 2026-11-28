@@ -1,6 +1,6 @@
 import { effect, Injector, signal, computed, untracked, type EffectRef } from '@angular/core';
 import { ExpressionEngine, parseTemplate } from 'expressions';
-import { inlineDataSource, type DialogStep, type PreviewStep, type ViewStep, type PopoverStep, type FormNode, type FieldDefinition, type InputNode, type NodeDefinition, type ScreenDefinition, type Step } from 'schema';
+import { inlineDataSource, type DialogStep, type OpenScreenStep, type PreviewStep, type ViewStep, type PopoverStep, type FormNode, type FieldDefinition, type InputNode, type NodeDefinition, type ScreenDefinition, type Step } from 'schema';
 import {
   Authorization,
   Confirmation,
@@ -9,6 +9,8 @@ import {
   ClipboardWriter, FormPopover,
   ViewDialog,
   FilePreview,
+  ScreenDialog,
+  ScreenDialogHost,
   LiveUpdates,
   Notifier,
   RuntimeDiagnostics,
@@ -59,6 +61,10 @@ export interface RuntimeDeps {
   /** If missing, `view` steps do not go on (fail-closed). */
   viewDialog?: ViewDialog | null;
   /** If missing, `preview` steps do not go on (fail-closed). */
+  /** If missing, `openScreen` steps do not go on (fail-closed). */
+  screenDialog?: ScreenDialog | null;
+  /** The window the screen is in, for the `close` step; missing outside one. */
+  dialogHost?: ScreenDialogHost | null;
   filePreview?: FilePreview | null;
   /** If missing, `popover` steps open as a form window (`formDialog`). */
   formPopover?: FormPopover | null;
@@ -170,8 +176,8 @@ export class ScreenRuntime {
     // The declared filters exist in the state from the start (null): the data sources that use them do not fail on the first load.
     this.seedFilters(definition.components);
     // A reference not resolved (`resolveDataSources`) is not a data source: fail-closed.
-    // The data sources of remote rules are asked only with a value to check.
-    const checks = remoteSources(definition.components);
+    // The data sources of remote rules are asked only with a value to check, those of a search box only with a text.
+    const checks = new Set([...remoteSources(definition.components), ...searchSources(definition.components)]);
     const reads = Object.entries(definition.dataSources ?? {}).filter(([name, source]) => inlineDataSource(source)?.method === 'GET' && !checks.has(name));
     for (const [name] of reads) this.pendingFirstLoad.add(name);
     this.openSpan = this.startSpan('screen.open', { 'lc.datasources': reads.length });
@@ -724,6 +730,29 @@ export class ScreenRuntime {
     return true;
   }
 
+  /** The `openScreen` step: the screen in a window. True when the screen closed it as done. */
+  async openScreen(step: OpenScreenStep, scope: Scope = {}): Promise<boolean> {
+    const dialog = this.deps.screenDialog;
+    if (!dialog) {
+      this.report(`openScreen ${step.openScreen}`, 'no service for windows with screens: action not run');
+      return false;
+    }
+    const resolved = this.resolveValue(step.params ?? {}, scope);
+    const params = resolved && typeof resolved === 'object' ? (resolved as Record<string, unknown>) : {};
+    return dialog.open({ screen: step.openScreen, params, size: step.size ?? 'medium' });
+  }
+
+  /** The `close` step: closes, as done, the window of `openScreen` the screen is in. */
+  closeScreen(): boolean {
+    const host = this.deps.dialogHost;
+    if (!host) {
+      this.report('close', 'the screen is not in a window opened by openScreen');
+      return false;
+    }
+    host.close();
+    return true;
+  }
+
   async openView(spec: ViewStep['view'], scope: Scope = {}): Promise<boolean> {
     const view = this.deps.viewDialog;
     if (!view) {
@@ -907,6 +936,21 @@ function assign(target: Record<string, unknown>, keys: string[], value: unknown)
 }
 
 /** State of an `input` field: `bind`, or `state.<field name>`. */
+/** Data sources of the search boxes of a screen: asked only with the text typed, they do not load when the screen opens. */
+function searchSources(nodes: readonly NodeDefinition[]): Set<string> {
+  const names = new Set<string>();
+  const walk = (value: unknown): void => {
+    if (Array.isArray(value)) value.forEach(walk);
+    else if (value !== null && typeof value === 'object') {
+      const node = value as { type?: unknown; source?: unknown };
+      if (node.type === 'search' && typeof node.source === 'string') names.add(node.source);
+      Object.values(value).forEach(walk);
+    }
+  };
+  walk(nodes);
+  return names;
+}
+
 /** How many frames the `focus` step waits for a component that is not drawn yet (about half a second). */
 const FOCUS_FRAMES = 30;
 

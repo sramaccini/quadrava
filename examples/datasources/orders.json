@@ -27,6 +27,14 @@
       "type": "rest",
       "method": "POST",
       "url": "/api/orders/{{id}}/approve"
+    },
+    "search": {
+      "type": "rest",
+      "method": "GET",
+      "url": "/api/orders/search",
+      "params": {
+        "q": "{{ search }}"
+      }
     }
   }
 }

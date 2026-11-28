@@ -13,6 +13,9 @@ import dashboard from '../../public/examples/screens/showcase-dashboard.json';
 import views from '../../public/examples/screens/showcase-views.json';
 import datatable from '../../public/examples/screens/showcase-datatable.json';
 import validation from '../../public/examples/screens/showcase-validation.json';
+import topBar from '../../public/examples/screens/top-bar.json';
+import packageCreate from '../../public/examples/screens/package-create.json';
+import orderDetail from '../../public/examples/screens/order-detail.json';
 import light from '../../public/examples/themes/light.json';
 import expensesSources from '../../public/examples/datasources/expenses.json';
 import invoicesSources from '../../public/examples/datasources/invoices.json';
@@ -74,6 +77,10 @@ export const SHOWCASE_FILES: Record<string, unknown> = {
   'examples/screens/showcase-views.json': views,
   'examples/screens/showcase-datatable.json': datatable,
   'examples/screens/showcase-validation.json': validation,
+  // The screen of the top bar, the window its Create button opens and the order its search opens.
+  'examples/screens/top-bar.json': topBar,
+  'examples/screens/package-create.json': packageCreate,
+  'examples/screens/order-detail.json': orderDetail,
   'examples/i18n/it.json': catalogIt,
   'examples/i18n/en.json': catalogEn,
   'examples/themes/light.json': light,

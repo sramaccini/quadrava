@@ -3,7 +3,7 @@ import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzBreadCrumbModule } from 'ng-zorro-antd/breadcrumb';
 import { NzTypographyModule } from 'ng-zorro-antd/typography';
 import type { ScreenDefinition, Shortcut } from 'schema';
-import { SETTINGS_VALUES, Authorization, ClipboardWriter, Confirmation, DataClient, FormDialog, FormPopover, ViewDialog, LiveUpdates, Notifier, RuntimeDiagnostics, RuntimeTracer, ScreenNavigator, ShortcutHelp, UserProvider, FilePreview } from './ports';
+import { SETTINGS_VALUES, Authorization, ClipboardWriter, Confirmation, DataClient, FormDialog, FormPopover, ViewDialog, LiveUpdates, Notifier, RuntimeDiagnostics, RuntimeTracer, ScreenNavigator, ShortcutHelp, UserProvider, FilePreview, ScreenDialog, ScreenDialogHost } from './ports';
 import { I18n } from './i18n';
 import { runSteps } from './action-engine';
 import { NodeHostComponent } from './node-host.component';
@@ -39,10 +39,20 @@ interface Crumb {
     .description { margin: 4px 0 0; color: var(--lc-page-header-muted, #5d6b7a); }
     .page-body { padding: var(--lc-content-padding, 24px); }
     .stack { display: flex; flex-direction: column; gap: var(--lc-gap, 12px); }
+    .row { display: flex; align-items: center; gap: 8px; min-width: 0; }
   `,
   template: `
     @if (runtime(); as rt) {
-      @if (rt.allowed()) {
+      @if (layout() === 'bar') {
+        <!-- In a bar: the components side by side, nothing at all for a user who may not see the screen. -->
+        @if (rt.allowed()) {
+          <div class="row">
+            @for (node of rt.definition.components; track $index) {
+              <lc-node [node]="node" [runtime]="rt" />
+            }
+          </div>
+        }
+      } @else if (rt.allowed()) {
         @if (rt.definition.title || crumbs().length) {
           <header class="page-header">
             @if (crumbs().length) {
@@ -89,6 +99,8 @@ export class ScreenComponent {
    * the definition, when there is one, takes its place.
    */
   readonly breadcrumb = input<readonly string[]>([]);
+  /** `page` (title, path and the components one under the other) or `bar` (only the components, side by side: the top bar). */
+  readonly layout = input<'page' | 'bar'>('page');
 
   readonly runtime = signal<ScreenRuntime | null>(null);
 
@@ -104,6 +116,8 @@ export class ScreenComponent {
   private readonly formDialog = inject(FormDialog, { optional: true });
   private readonly viewDialog = inject(ViewDialog, { optional: true });
   private readonly filePreview = inject(FilePreview, { optional: true });
+  private readonly screenDialog = inject(ScreenDialog, { optional: true });
+  private readonly dialogHost = inject(ScreenDialogHost, { optional: true });
   private readonly formPopover = inject(FormPopover, { optional: true });
   private readonly clipboard = inject(ClipboardWriter, { optional: true });
   private readonly live = inject(LiveUpdates, { optional: true });
@@ -178,6 +192,11 @@ export class ScreenComponent {
     }
   }
 
+  /** The screen of the page names the browser tab; a bar or a screen in a window does not. */
+  private namesTab(): boolean {
+    return this.layout() === 'page' && !this.dialogHost;
+  }
+
   /** A plain click navigates inside the application; with a modifier the browser opens the address (a new tab). */
   protected follow(event: MouseEvent, crumb: Crumb): void {
     if (crumb.href && (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || event.button !== 0)) return;
@@ -188,11 +207,14 @@ export class ScreenComponent {
   constructor() {
     // The title of the screen, for the application (the browser tab).
     effect(() => {
+      if (!this.namesTab()) return;
       const rt = this.runtime();
       const title = rt?.definition.title ? rt.text(rt.definition.title) : '';
       untracked(() => this.screenTitle.current.set(title));
     });
-    inject(DestroyRef).onDestroy(() => this.screenTitle.current.set(''));
+    inject(DestroyRef).onDestroy(() => {
+      if (this.namesTab()) this.screenTitle.current.set('');
+    });
     effect(() => {
       const definition = this.definition();
       const params = this.params();
@@ -212,6 +234,8 @@ export class ScreenComponent {
               formDialog: this.formDialog,
               viewDialog: this.viewDialog,
               filePreview: this.filePreview,
+              screenDialog: this.screenDialog,
+              dialogHost: this.dialogHost,
               formPopover: this.formPopover,
               clipboard: this.clipboard,
               diagnostics: this.diagnostics,
