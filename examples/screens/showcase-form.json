@@ -460,6 +460,18 @@
                   ]
                 },
                 {
+                  "id": "inline-more-edit",
+                  "label": "{{ t('showcase_form.edit_description', 'Edit description') }}",
+                  "onClick": [
+                    {
+                      "focus": {
+                        "component": "inline-form",
+                        "field": "description"
+                      }
+                    }
+                  ]
+                },
+                {
                   "id": "inline-more-key",
                   "label": "{{ t('showcase_form.copy_key', 'Copy key') }}",
                   "onClick": [

@@ -1,5 +1,5 @@
 import { afterEveryRender, afterNextRender, ChangeDetectionStrategy, Component, computed, DestroyRef, effect, ElementRef, inject, Injector, input, output, signal, untracked } from '@angular/core';
-import { codeMessage, formRules, I18n, isRequired, NO_PROBLEM, pointerSegments, RemoteChecks, rowsOf, runSteps, transformValue, type CompiledRule, type FieldCheck, type FieldError, type ScreenRuntime, type Scope } from 'core';
+import { codeMessage, firstFocusable, formRules, I18n, isRequired, NO_PROBLEM, pointerSegments, RemoteChecks, rowsOf, runSteps, transformValue, type CompiledRule, type FieldCheck, type FieldError, type ScreenRuntime, type Scope } from 'core';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzFormModule } from 'ng-zorro-antd/form';
@@ -345,6 +345,27 @@ export class FormComponent {
         untracked(() => this.values.set(this.normalize({ ...this.empty(), ...(data as Record<string, unknown>) })));
       }
     });
+    // The `focus` step can reach a field of a form with an id.
+    effect((onCleanup) => {
+      const id = this.node().id;
+      if (id) onCleanup(this.runtime().registerFieldFocus(id, (name) => untracked(() => this.focusField(name))));
+    });
+  }
+
+  /** The `focus` step on a field: an inline field opens its editor, the others take the focus where they are. */
+  private focusField(name: string): boolean {
+    const item = this.items().find((i) => i.key === name || i.field.name === name);
+    if (!item || !this.runtime().isVisible(item.field, this.fieldScope())) return false;
+    const box = this.host.querySelector<HTMLElement>(`[data-lc-input="${CSS.escape(this.id + item.key)}"]`);
+    if (!box) return false;
+    box.scrollIntoView?.({ block: 'nearest' });
+    if (this.inline() && isInlineType(item.field) && !this.readOnly(item.field) && this.editing() !== item.key) {
+      this.edit(item);
+      return true;
+    }
+    const target = box.querySelector<HTMLElement>(`[id="${CSS.escape(this.id + item.key)}"]`) ?? firstFocusable(box);
+    target?.focus();
+    return !!target;
   }
 
   /**

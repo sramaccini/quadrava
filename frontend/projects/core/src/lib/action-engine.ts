@@ -42,7 +42,7 @@ export interface StepOptions {
   onFieldErrors?: (errors: readonly FieldError[]) => number;
 }
 
-const SIMPLE_KINDS = ['if', 'set', 'toast', 'confirm', 'dialog', 'view', 'popover', 'validate', 'print'] as const;
+const SIMPLE_KINDS = ['if', 'set', 'toast', 'confirm', 'dialog', 'view', 'popover', 'validate', 'print', 'focus'] as const;
 
 /** Steps of a sequence for traces: kind and name from the definition (`call save, refresh list`), never values. */
 export function describeSteps(steps: Step[]): string {
@@ -214,6 +214,12 @@ async function runSimpleStep(
   }
   if ('print' in step) {
     runtime.print();
+    return true;
+  }
+  if ('focus' in step) {
+    // A target not found is a diagnostic: the steps after it still run.
+    const target = typeof step.focus === 'string' ? { component: step.focus } : step.focus;
+    await runtime.focus(target.component, target.field);
     return true;
   }
   if ('export' in step) {

@@ -14,6 +14,10 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ### Added
 
+- A `focus` step: `{ "focus": "link-form" }` brings a component into view and focuses its first field, `{ "focus":
+  { "component": "content", "field": "description" } }` a field of a form, opening its editor in an inline form. It
+  waits a moment for a component the steps before have just shown; a target not found goes to the diagnostics.
+
 - An activity feed in `comments`: with `kindField` the rows of `changes` are drawn as «changed Status from To do to
   Done» (field names and values translated with `fieldKey` and `valueKey`) and those of `workLog` as «logged 2 hrs»
   with their text; `filters` adds chips (the standard All, Comments, History, Work log, or the chips of the screen with

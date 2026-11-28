@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, inject, input } from '@angular/core';
 import { NgComponentOutlet } from '@angular/common';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import type { NodeDefinition } from 'schema';
@@ -52,4 +52,11 @@ export class NodeHostComponent {
   });
   protected readonly fit = computed(() => this.node().type === 'button');
   protected readonly inputs = computed(() => ({ node: this.node(), runtime: this.runtime(), scope: this.scope() }));
+
+  private readonly element = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+  /** A component with an id can be reached by the `focus` step. */
+  private readonly focusable = effect((onCleanup) => {
+    const id = this.node().id;
+    if (id) onCleanup(this.runtime().registerFocusElement(id, this.element));
+  });
 }

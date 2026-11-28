@@ -42,7 +42,7 @@ Rules common to all components, new ones included:
 | `graph` | Nodes and connections laid out from left to right, for example a workflow (§ 2.35). |
 | Fields | `text`, `number`, `select`, `checkbox`, `date`, `textarea`, `datetime`, `radio`, `switch`, `multiselect`, `tags`, `lookup`, `file`, `repeater`, `richtext` (§ 2.26). |
 | Cell formats | `text`, `number`, `currency`, `percent`, `date`, `datetime`, `relative`, `boolean`, `badge`, `markdown`. `relative` shows a date as its distance from now («3 days ago», «yesterday», «in 2 hours»; with `Intl.RelativeTimeFormat`, in the language of the user), with the full date as tooltip and, for screen readers, as text; a date without time counts calendar days («today»). In tables and in the detail. |
-| Steps | `set`, `call` (with `as` and `onError`), `refresh`, `navigate`, `toast`, `confirm`, `dialog`, `view` and `popover` (§ 2.11), `validate`, `print`, `export`, `download`, `copy` and `copyLink` (§ 2.22), `if` and `run`; named sequences in `actions` (§ 2.22b). |
+| Steps | `set`, `call` (with `as` and `onError`), `refresh`, `navigate`, `toast`, `confirm`, `dialog`, `view` and `popover` (§ 2.11), `validate`, `print`, `focus`, `export`, `download`, `copy` and `copyLink` (§ 2.22), `if` and `run`; named sequences in `actions` (§ 2.22b). |
 | Shell | Side bar (`lc-sidebar`, with search, counters and keyboard support: § 2.25; the application brand is inserted with an `lcBrand` element, otherwise logo and name), messages of the user (`lc-notification-bell`: a bell with the unread count and the list, ADR-22; `notificationsOf` keeps only well-formed messages), user menu (`lc-user-menu`: an icon with the initial and the name in its tooltip, application items (in the runtime those of `userMenu` of the navigation, ADR-25), optional groups of choices with the current one ticked in each, such as the tenants of ADR-18 and the operational roles of ADR-28 (`choices` takes one group or a list, `choiceIn` gives the group of a choice), and sign-out last, after a confirmation; a menu for screen readers and the keyboard: arrows, Home, End, Enter, Esc, submenus with the side arrows), responsive top bar, `lc-quadrava-wordmark` logotype, syntax-highlighted code viewer `lc-code-view`, tools in section headers (`SectionTools`: «JSON» and «Aiuto» in the demo showcase). |
 
 ## 2. Added in October 2026
@@ -547,7 +547,7 @@ Three containers that decide only **where** their children go (no frame or backg
 
 Common rules: a hidden child (`visibleIf`) takes no space; inside containers fields fill the cell (outside they stay at most 560 px wide); sections side by side stretch to the row height. Containers nest freely (a box inside a border region, a grid in a section…). In the editor they are in the «Struttura e testi» group; the border starts with three sample areas (north, west, centre).
 
-### 2.22 validate, print, export, download and copy steps
+### 2.22 validate, print, focus, export, download and copy steps
 
 ```json
 "onClick": [
@@ -556,12 +556,29 @@ Common rules: a hidden child (`visibleIf`) takes no space; inside containers fie
   { "export": { "source": "invoices", "fileName": "invoices",
                 "columns": [ { "field": "number", "label": "{{ t('common.number', 'Numero') }}" }, { "field": "amount" } ] } },
   { "download": "exportUser", "args": { "username": "{{ row.username }}" }, "fileName": "{{ row.username }}.json" },
-  { "print": true }
+  { "print": true },
+  { "focus": { "component": "content", "field": "description" } }
 ]
 ```
 
 - **validate**: checks the standalone fields of the given group (`group` of `input` nodes, `default` if not given; `*` = all those on screen). Every field shows its own errors; if one is invalid the warning «Controlla i campi evidenziati» (check the highlighted fields) appears and the sequence stops. A hidden field does not count.
 - **print**: opens the browser's print dialog; the runtime's print stylesheet hides menu, top bar, buttons and pagination.
+- **focus**: brings a component into view and puts the keyboard in it, for a «+» menu that opens a section in place or
+  a keyboard shortcut («E» edits the description).
+
+  ```json
+  [ { "set": { "path": "state.linking", "value": true } }, { "focus": "link-form" } ]
+  { "focus": { "component": "issue-content", "field": "description" } }
+  ```
+
+  - **The target**: the `id` of a component. With only the id the focus goes to its first field, button or link;
+    with `field`, to that field of a form. In an inline form (`edit: "inline"`) the editor of the field opens, as if
+    the user had clicked it.
+  - **Just shown**: the component can be one the steps before have just made visible (a section opened with `set`):
+    the step waits for it about half a second.
+  - **Not found**: a component not on the screen, or a field the form does not have (or hides), goes to the
+    diagnostics; the steps after it still run.
+  - In the showcase «Forms», the «…» menu of «Inline editing» has «Edit description».
 - **export**: runs the data source (GET; `args` as in `call`) and downloads the rows (a list, or the `items` of a paged response) as CSV for Excel in Italian: semicolons, CRLF line endings, UTF-8 BOM. Headers go through `t()`; values are the raw ones (unformatted numbers). Cells starting with `=`, `+`, `-`, `@` (or tab and carriage return) are prefixed with an apostrophe: a spreadsheet does not run them as formulas. The file name is cleaned up and gets `.csv`.
 - **download**: saves as a file the answer of a GET data source (`args` as in `call`), such as an export the service
   writes itself (a JSON, a PDF, a ZIP).

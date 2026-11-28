@@ -249,6 +249,9 @@
           "$ref": "#/$defs/stepPrint"
         },
         {
+          "$ref": "#/$defs/stepFocus"
+        },
+        {
           "$ref": "#/$defs/stepExport"
         },
         {
@@ -4206,6 +4209,44 @@
         "print": {
           "const": true,
           "description": "Opens the browser's print dialog: menus, bars and buttons are not printed."
+        }
+      }
+    },
+    "stepFocus": {
+      "type": "object",
+      "required": [
+        "focus"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "focus": {
+          "description": "Brings a component into view and moves the focus into it: its first field, or the field named. An inline form opens the editor of that field. The step waits a moment for a component the previous steps have just shown; a component or field not found is reported in the diagnostics and the sequence goes on.",
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "description": "The id of the component."
+            },
+            {
+              "type": "object",
+              "required": [
+                "component"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "component": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "The id of the component."
+                },
+                "field": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "The name of a field of the form; its first field if absent."
+                }
+              }
+            }
+          ]
         }
       }
     },

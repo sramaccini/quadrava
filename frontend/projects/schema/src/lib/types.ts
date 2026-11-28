@@ -142,11 +142,15 @@ export interface CopyLinkStep {
 export interface PrintStep {
   print: true;
 }
+/** Brings a component into view and focuses its first field, or the field named. */
+export interface FocusStep {
+  focus: string | { component: string; field?: string };
+}
 /** Downloads as CSV the rows of a data source. */
 export interface ExportStep {
   export: { source: string; fileName?: string; args?: Record<string, unknown>; columns: { field: string; label?: string }[] };
 }
-export type Step = CallStep | DownloadStep | CopyStep | CopyLinkStep | RefreshStep | NavigateStep | ToastStep | SetStep | ConfirmStep | DialogStep | ViewStep | PopoverStep | ValidateStep | PrintStep | ExportStep | IfStep | RunStep;
+export type Step = CallStep | DownloadStep | CopyStep | CopyLinkStep | RefreshStep | NavigateStep | ToastStep | SetStep | ConfirmStep | DialogStep | ViewStep | PopoverStep | ValidateStep | PrintStep | FocusStep | ExportStep | IfStep | RunStep;
 
 export interface ConditionalProps {
   visibleIf?: Expression;

@@ -118,6 +118,9 @@ export class ScreenRuntime {
   private readonly groups = signal<ReadonlyMap<string, readonly GroupField[]>>(new Map());
   /** Checks of the standalone fields, by validation group. */
   private readonly validators = new Map<string, Set<() => boolean>>();
+  /** The components with an id on the screen, and the forms that can focus a field, for the `focus` step. */
+  private readonly focusElements = new Map<string, HTMLElement>();
+  private readonly fieldFocus = new Map<string, (field: string) => boolean>();
   /** Last request of the automatic load of every GET data source (so as not to repeat it if it does not change). */
   private readonly lastAutoRequest = new Map<string, string>();
   /** Span of the opening: it closes when every GET data source has finished its first read. */
@@ -495,6 +498,48 @@ export class ScreenRuntime {
     }
   }
 
+  /** A component with an id, drawn on the screen: the `focus` step can reach it. Returns the function that removes it. */
+  registerFocusElement(id: string, element: HTMLElement): () => void {
+    this.focusElements.set(id, element);
+    return () => {
+      if (this.focusElements.get(id) === element) this.focusElements.delete(id);
+    };
+  }
+
+  /**
+   * A form that can focus one of its fields (opening its editor when it is inline): `focus` returns false when the form
+   * has no such field. Returns the function that removes it.
+   */
+  registerFieldFocus(id: string, focus: (field: string) => boolean): () => void {
+    this.fieldFocus.set(id, focus);
+    return () => {
+      if (this.fieldFocus.get(id) === focus) this.fieldFocus.delete(id);
+    };
+  }
+
+  /**
+   * The `focus` step: brings the component into view and moves the focus to its first field, or to the field named. The
+   * component may have been shown by the steps just before (a section opened with `set`): it is waited for a few frames.
+   */
+  async focus(component: string, field?: string): Promise<boolean> {
+    for (let frame = 0; frame < FOCUS_FRAMES; frame++) {
+      if (this.focusNow(component, field)) return true;
+      await nextFrame();
+    }
+    this.report(`focus ${component}`, field ? `no field ${field} in the component` : 'component not on the screen or with nothing to focus');
+    return false;
+  }
+
+  private focusNow(component: string, field?: string): boolean {
+    if (field) return this.fieldFocus.get(component)?.(field) ?? false;
+    const element = this.focusElements.get(component);
+    const target = element ? firstFocusable(element) : null;
+    if (!element || !target) return false;
+    element.scrollIntoView?.({ block: 'nearest' });
+    target.focus();
+    return true;
+  }
+
   /** Browser print (the print style sheet hides the application shell). */
   print(): void {
     globalThis.print?.();
@@ -833,6 +878,22 @@ function assign(target: Record<string, unknown>, keys: string[], value: unknown)
 }
 
 /** State of an `input` field: `bind`, or `state.<field name>`. */
+/** How many frames the `focus` step waits for a component that is not drawn yet (about half a second). */
+const FOCUS_FRAMES = 30;
+
+function nextFrame(): Promise<void> {
+  return new Promise((resolve) => (globalThis.requestAnimationFrame ? globalThis.requestAnimationFrame(() => resolve()) : setTimeout(resolve, 16)));
+}
+
+/** The first element of a component that takes the focus: a field, a button, a link. */
+export function firstFocusable(element: HTMLElement): HTMLElement | null {
+  const selector = 'input:not([type="hidden"]), textarea, select, button, a[href], [contenteditable="true"], [tabindex]:not([tabindex="-1"])';
+  for (const candidate of element.querySelectorAll<HTMLElement>(selector)) {
+    if (!candidate.matches(':disabled') && candidate.getAttribute('aria-disabled') !== 'true') return candidate;
+  }
+  return null;
+}
+
 export function inputPath(node: InputNode): string {
   return node.bind ?? `state.${node.field.name}`;
 }

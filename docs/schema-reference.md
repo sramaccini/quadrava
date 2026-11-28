@@ -438,6 +438,12 @@
 | --- | --- | --- |
 | `print` * | `true` | Opens the browser's print dialog: menus, bars and buttons are not printed. |
 
+### `focus`
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `focus` * |  | Brings a component into view and moves the focus into it: its first field, or the field named. An inline form opens the editor of that field. The step waits a moment for a component the previous steps have just shown; a component or field not found is reported in the diagnostics and the sequence goes on. |
+
 ### `export`
 
 | Property | Type | Description |
