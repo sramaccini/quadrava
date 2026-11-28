@@ -12,6 +12,8 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+## [0.34.0] - 2026-11-28
+
 ### Added
 
 - A top bar for the application: `topBar` in the navigation names a screen whose components are drawn after the
@@ -862,7 +864,8 @@ The first versioned release.
 - **Demo back end of the stack**: the event stream `/api/streams/tasks`, so that behind the BFF the live boards of the
   showcase follow the changes of other users.
 
-[Unreleased]: https://github.com/sramaccini/quadrava/compare/v0.33.0...HEAD
+[Unreleased]: https://github.com/sramaccini/quadrava/compare/v0.34.0...HEAD
+[0.34.0]: https://github.com/sramaccini/quadrava/compare/v0.33.0...v0.34.0
 [0.33.0]: https://github.com/sramaccini/quadrava/compare/v0.32.0...v0.33.0
 [0.32.0]: https://github.com/sramaccini/quadrava/compare/v0.31.0...v0.32.0
 [0.31.0]: https://github.com/sramaccini/quadrava/compare/v0.30.0...v0.31.0
