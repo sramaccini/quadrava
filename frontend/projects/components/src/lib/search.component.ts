@@ -41,7 +41,7 @@ export function searchResults(data: unknown, node: Pick<SearchNode, 'labelField'
   styles: `
     :host { display: block; position: relative; max-width: 100%; }
     .box {
-      display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border-radius: var(--lc-radius, 6px);
+      display: flex; align-items: center; max-width: 100%; gap: 6px; height: 32px; padding: 0 10px; border-radius: var(--lc-radius, 6px);
       border: 1px solid var(--lc-color-border, #d0d7de); background: var(--lc-color-surface, #fff); color: var(--lc-color-on-surface, #1f2933);
     }
     .box:focus-within { border-color: var(--lc-color-primary, #1677ff); box-shadow: 0 0 0 2px var(--lc-focus-ring, color-mix(in srgb, var(--lc-color-primary, #1677ff) 25%, transparent)); }

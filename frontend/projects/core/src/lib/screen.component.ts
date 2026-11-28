@@ -40,6 +40,9 @@ interface Crumb {
     .page-body { padding: var(--lc-content-padding, 24px); }
     .stack { display: flex; flex-direction: column; gap: var(--lc-gap, 12px); }
     .row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    /* In a narrow bar the components keep their size and a search box gives way, so the page does not widen. */
+    .row > lc-node { flex: none; }
+    .row > lc-node[data-node-type='search'] { flex: 0 1 auto; min-width: 0; }
   `,
   template: `
     @if (runtime(); as rt) {
