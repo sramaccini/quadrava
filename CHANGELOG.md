@@ -12,6 +12,12 @@ How to release: DEVELOPMENT-GUIDE, «Releasing a version».
 
 ## [Unreleased]
 
+### Changed
+
+- The `focus` step on a `comments` node puts the cursor in its writing box (also as `field: "text"`) instead of the
+  first button of the thread; with no box (no `onPost`, or `postIf` false) it is reported. A component can choose
+  what `focus` reaches with `ScreenRuntime.registerFocus`.
+
 ## [0.34.0] - 2026-11-28
 
 ### Added

@@ -457,7 +457,7 @@
 
 | Property | Type | Description |
 | --- | --- | --- |
-| `focus` * |  | Brings a component into view and moves the focus into it: its first field, or the field named. An inline form opens the editor of that field. The step waits a moment for a component the previous steps have just shown; a component or field not found is reported in the diagnostics and the sequence goes on. |
+| `focus` * |  | Brings a component into view and moves the focus into it: its first field, or the field named. An inline form opens the editor of that field; a comments node focuses its writing box (field text), and with no box (no onPost, or postIf false) is reported. The step waits a moment for a component the previous steps have just shown; a component or field not found is reported in the diagnostics and the sequence goes on. |
 
 ### `preview`
 

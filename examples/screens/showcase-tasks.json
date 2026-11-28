@@ -48,6 +48,17 @@
       "ref": "showcase-tasks/colleagueMove"
     }
   },
+  "shortcuts": [
+    {
+      "key": "m",
+      "label": "{{ t('showcase_tasks.write_comment', 'Write a comment') }}",
+      "onClick": [
+        {
+          "focus": "comments"
+        }
+      ]
+    }
+  ],
   "components": [
     {
       "id": "header",

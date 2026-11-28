@@ -4334,7 +4334,7 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
       "additionalProperties": false,
       "properties": {
         "focus": {
-          "description": "Brings a component into view and moves the focus into it: its first field, or the field named. An inline form opens the editor of that field. The step waits a moment for a component the previous steps have just shown; a component or field not found is reported in the diagnostics and the sequence goes on.",
+          "description": "Brings a component into view and moves the focus into it: its first field, or the field named. An inline form opens the editor of that field; a comments node focuses its writing box (field text), and with no box (no onPost, or postIf false) is reported. The step waits a moment for a component the previous steps have just shown; a component or field not found is reported in the diagnostics and the sequence goes on.",
           "oneOf": [
             {
               "type": "string",
@@ -4356,7 +4356,7 @@ export const SCREEN_SCHEMA: Record<string, unknown> = {
                 "field": {
                   "type": "string",
                   "minLength": 1,
-                  "description": "The name of a field of the form; its first field if absent."
+                  "description": "The name of a field of the form (text for the writing box of a comments node); its first field if absent."
                 }
               }
             }

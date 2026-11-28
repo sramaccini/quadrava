@@ -132,6 +132,7 @@ export class ScreenRuntime {
   /** The components with an id on the screen, and the forms that can focus a field, for the `focus` step. */
   private readonly focusElements = new Map<string, HTMLElement>();
   private readonly fieldFocus = new Map<string, (field: string) => boolean>();
+  private readonly ownFocus = new Map<string, () => boolean>();
   /** Last request of the automatic load of every GET data source (so as not to repeat it if it does not change). */
   private readonly lastAutoRequest = new Map<string, string>();
   /** Span of the opening: it closes when every GET data source has finished its first read. */
@@ -529,6 +530,17 @@ export class ScreenRuntime {
   }
 
   /**
+   * A component that chooses what `focus` reaches instead of its first focusable element (the writing box of
+   * `comments`): `focus` returns false when there is nothing to focus. Returns the function that removes it.
+   */
+  registerFocus(id: string, focus: () => boolean): () => void {
+    this.ownFocus.set(id, focus);
+    return () => {
+      if (this.ownFocus.get(id) === focus) this.ownFocus.delete(id);
+    };
+  }
+
+  /**
    * The `focus` step: brings the component into view and moves the focus to its first field, or to the field named. The
    * component may have been shown by the steps just before (a section opened with `set`): it is waited for a few frames.
    */
@@ -543,6 +555,8 @@ export class ScreenRuntime {
 
   private focusNow(component: string, field?: string): boolean {
     if (field) return this.fieldFocus.get(component)?.(field) ?? false;
+    const own = this.ownFocus.get(component);
+    if (own) return own();
     const element = this.focusElements.get(component);
     const target = element ? firstFocusable(element) : null;
     if (!element || !target) return false;

@@ -709,5 +709,6 @@
   "top_bar.search": "Search orders",
   "top_bar.search_placeholder": "Search orders by number or customer",
   "top_bar.create": "Create",
-  "package_create.description": "Opened in a window by Create in the top bar: the window closes when the package is created."
+  "package_create.description": "Opened in a window by Create in the top bar: the window closes when the package is created.",
+  "showcase_tasks.write_comment": "Write a comment"
 }

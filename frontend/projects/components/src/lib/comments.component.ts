@@ -1,4 +1,4 @@
-import { afterNextRender, ChangeDetectionStrategy, Component, computed, ElementRef, inject, Injector, input, linkedSignal, signal } from '@angular/core';
+import { afterNextRender, ChangeDetectionStrategy, Component, computed, effect, ElementRef, inject, Injector, input, linkedSignal, signal, untracked } from '@angular/core';
 import { I18n, rowsOf, runSteps, type ScreenRuntime, type Scope } from 'core';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzButtonModule } from 'ng-zorro-antd/button';
@@ -239,6 +239,27 @@ export class CommentsComponent {
     const m = this.node().mentions;
     return m ? { source: m.source, valueField: m.valueField ?? 'id', labelField: m.labelField, minChars: m.minChars } : null;
   });
+
+  constructor() {
+    // The `focus` step reaches the writing box, by the id of the node or as its field `text`.
+    effect((onCleanup) => {
+      const id = this.node().id;
+      if (!id) return;
+      const rt = this.runtime();
+      const off = rt.registerFocus(id, () => untracked(() => this.focusBox()));
+      const offField = rt.registerFieldFocus(id, (field) => field === 'text' && untracked(() => this.focusBox()));
+      onCleanup(() => (off(), offField()));
+    });
+  }
+
+  /** The writing box in view with the focus; false when `onPost` or `postIf` leaves it out. */
+  private focusBox(): boolean {
+    const box = this.canPost() ? this.host.nativeElement.querySelector<HTMLElement>(`[id="${this.boxId}"]`) : null;
+    if (!box) return false;
+    box.scrollIntoView?.({ block: 'nearest' });
+    box.focus();
+    return true;
+  }
 
   protected toggleOrder(): void {
     const next = this.order() === 'desc' ? 'asc' : 'desc';

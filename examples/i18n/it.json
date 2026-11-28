@@ -709,5 +709,6 @@
   "top_bar.search": "Cerca ordini",
   "top_bar.search_placeholder": "Cerca ordini per numero o cliente",
   "top_bar.create": "Crea",
-  "package_create.description": "Aperta in una finestra da Crea nella barra in alto: la finestra si chiude quando il pacchetto è creato."
+  "package_create.description": "Aperta in una finestra da Crea nella barra in alto: la finestra si chiude quando il pacchetto è creato.",
+  "showcase_tasks.write_comment": "Scrivi un commento"
 }
